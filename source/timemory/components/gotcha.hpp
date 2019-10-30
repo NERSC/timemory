@@ -102,7 +102,8 @@ struct gotcha
     // clang-format off
     using value_type     = void;
     using this_type      = gotcha<_Nt, _Components, _Differentiator>;
-    using base_type      = base<this_type, value_type, policy::global_init, policy::global_finalize, policy::thread_init>;
+    using base_type      = base<this_type, value_type, policy::global_init,
+                                policy::global_finalize, policy::thread_init>;
     using storage_type   = typename base_type::storage_type;
     using component_type = typename _Components::component_type;
     // clang-format on

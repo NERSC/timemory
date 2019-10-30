@@ -55,12 +55,31 @@ manager::f_manager_instance_count()
 }
 
 //======================================================================================//
+// generate a master instance and a nullptr on the first pass
+// generate a worker instance on subsequent and return master and worker
+//
+inline manager::pointer_pair_t&
+manager::instance_pair()
+{
+    static auto              _master_instance = std::make_shared<manager>();
+    static std::atomic<int>  _counter;
+    static thread_local auto _worker_instance =
+        pointer_t((_counter++ == 0) ? nullptr : new manager());
+    static thread_local auto _instance =
+        pointer_pair_t{ _master_instance, _worker_instance };
+    return _instance;
+}
+
+//======================================================================================//
 // get either master or thread-local instance
 //
 inline manager::pointer_t
 manager::instance()
 {
-    return details::manager_singleton().smart_instance();
+    static thread_local auto& _pinst = manager::instance_pair();
+    static thread_local auto& _instance =
+        _pinst.second.get() ? _pinst.second : _pinst.first;
+    return _instance;
 }
 
 //======================================================================================//
@@ -69,29 +88,17 @@ manager::instance()
 inline manager::pointer_t
 manager::master_instance()
 {
-    return details::manager_singleton().smart_master_instance();
+    static auto& _pinst = manager::instance_pair();
+    return _pinst.first;
 }
 
-//======================================================================================//
-// static function
-inline manager::pointer
-manager::noninit_instance()
-{
-    return details::manager_singleton().instance_ptr();
-}
-
-//======================================================================================//
-// static function
-inline manager::pointer
-manager::noninit_master_instance()
-{
-    return details::manager_singleton().master_instance_ptr();
-}
 #endif
 //======================================================================================//
 
 inline manager::manager()
 : m_instance_count(f_manager_instance_count()++)
+, m_hash_ids(get_hash_ids())
+, m_hash_aliases(get_hash_aliases())
 {
     f_thread_counter()++;
     static std::atomic<int> _once(0);
@@ -111,13 +118,6 @@ inline manager::manager()
                 "---------------------#\n\n",
                 m_instance_count);
     }
-
-    if(singleton_t::master_instance_ptr() && singleton_t::instance_ptr())
-    {
-        std::ostringstream errss;
-        errss << "manager singleton has already been created";
-        throw std::runtime_error(errss.str().c_str());
-    }
 }
 
 //======================================================================================//
@@ -126,7 +126,7 @@ inline manager::~manager()
 {
     --f_manager_instance_count();
 
-    if(singleton_t::is_master(this))
+    if(instance_pair().second == nullptr)
     {
         f_thread_counter().store(0, std::memory_order_relaxed);
         exit_hook();
@@ -140,19 +140,53 @@ inline manager::~manager()
 
 //======================================================================================//
 
+template <typename _Func>
+inline void
+manager::add_finalizer(_Func&& _func, bool _is_master)
+{
+    auto_lock_t lk(m_mutex, std::defer_lock);
+    if(!lk.owns_lock())
+        lk.lock();
+
+    if(_is_master)
+        m_master_finalizers.push_back(std::forward<_Func>(_func));
+    else
+        m_worker_finalizers.push_back(std::forward<_Func>(_func));
+}
+
+//======================================================================================//
+
+inline void
+manager::finalize()
+{
+    auto_lock_t lk(m_mutex, std::defer_lock);
+    if(!lk.owns_lock())
+        lk.lock();
+
+    auto _finalize = [](finalizer_list_t& _finalizers) {
+        // reverse to delete the most recent additions first
+        std::reverse(_finalizers.begin(), _finalizers.end());
+        // invoke all the functions
+        for(auto& itr : _finalizers)
+            itr();
+        // remove all these finalizers
+        _finalizers.clear();
+    };
+
+    //
+    //  ideally, only of these will be populated
+    //
+    // finalize workers first
+    _finalize(m_worker_finalizers);
+    // finalize masters second
+    _finalize(m_master_finalizers);
+}
+
+//======================================================================================//
+
 inline void
 manager::exit_hook()
 {
-    auto* ptr = noninit_master_instance();
-    if(ptr)
-    {
-        int32_t count = ptr->instance_count();
-        if(settings::banner())
-            printf(
-                "\n\n#---------------------- tim::manager destroyed [%i] "
-                "----------------------#\n",
-                count);
-    }
     papi::shutdown();
     mpi::finalize();
 }

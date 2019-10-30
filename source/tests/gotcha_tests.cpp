@@ -24,7 +24,7 @@
 //
 
 #include "gotcha_tests_lib.hpp"
-#include "malloc_gotcha.hpp"
+#include "timemory/components/derived/malloc_gotcha.hpp"
 
 #include "gtest/gtest.h"
 
@@ -215,13 +215,14 @@ TEST_F(gotcha_tests, mpi_macro)
 
 TEST_F(gotcha_tests, work_explicit)
 {
-    using tuple_t = std::tuple<float, double>;
-    using pair_t  = std::pair<float, double>;
+    using tuple_type = std::tuple<float, double>;
+    using pair_type  = std::pair<float, double>;
 
     work_gotcha_t::get_initializer() = [=]() {
         PRINT_HERE(details::get_test_name().c_str());
         auto mangled_do_work = tim::mangle<decltype(ext::do_work)>("ext::do_work");
-        work_gotcha_t::configure<0, tuple_t, int64_t, const pair_t&>(mangled_do_work);
+        work_gotcha_t::configure<0, tuple_type, int64_t, const pair_type&>(
+            mangled_do_work);
     };
 
     TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
@@ -230,7 +231,7 @@ TEST_F(gotcha_tests, work_explicit)
     double dsum = 0.0;
     for(int i = 0; i < nitr; ++i)
     {
-        auto ret = ext::do_work(1000, pair_t(0.25, 0.125));
+        auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
         fsum += std::get<0>(ret);
         dsum += std::get<1>(ret);
     }
@@ -260,7 +261,7 @@ TEST_F(gotcha_tests, work_explicit)
 
 TEST_F(gotcha_tests, work_macro)
 {
-    using pair_t = std::pair<float, double>;
+    using pair_type = std::pair<float, double>;
 
     work_gotcha_t::get_initializer() = [=]() {
         PRINT_HERE(details::get_test_name().c_str());
@@ -273,7 +274,7 @@ TEST_F(gotcha_tests, work_macro)
     double dsum = 0.0;
     for(int i = 0; i < nitr; ++i)
     {
-        auto ret = ext::do_work(1000, pair_t(0.25, 0.125));
+        auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
         fsum += std::get<0>(ret);
         dsum += std::get<1>(ret);
     }
@@ -319,17 +320,23 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using malloc_analyzer_t =
-        tim::auto_tuple<real_clock, cpu_clock, peak_rss, malloc_gotcha>;
-    using malloc_gotcha_t = tim::component::gotcha<4, malloc_analyzer_t, int>;
-    using toolset_t       = tim::auto_tuple<real_clock, malloc_gotcha_t>;
+    using base_toolset_t       = tim::auto_tuple<real_clock, cpu_clock, peak_rss>;
+    using malloc_gotcha_spec_t = malloc_gotcha::gotcha_spec<base_toolset_t>;
+    using toolset_t            = typename malloc_gotcha_spec_t::component_type;
+    using malloc_gotcha_t      = typename malloc_gotcha_spec_t::gotcha_type;
 
     malloc_gotcha_t::get_initializer() = []() {
+    // malloc_gotcha_spec_t::get_initializer();
+#if defined(TIMEMORY_USE_CUDA)
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, cudaMalloc);
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 3, free);
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 4, cudaFree);
+#else
         TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
         TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
         TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, free);
-#if defined(TIMEMORY_USE_MPI)
-        // TIMEMORY_C_GOTCHA(malloc_gotcha_t, 3, MPI_Allreduce);
 #endif
     };
 
@@ -375,7 +382,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
 
 TEST_F(gotcha_tests, member_functions)
 {
-    using pair_t = std::pair<float, double>;
+    using pair_type = std::pair<float, double>;
 
     memfun_gotcha_t::get_default_ready() = true;
     memfun_gotcha_t::get_initializer()   = [=]() {
@@ -410,7 +417,7 @@ TEST_F(gotcha_tests, member_functions)
 
     float  fsum = 0.0;
     double dsum = 0.0;
-    DoWork dw(pair_t(0.25, 0.5));
+    DoWork dw(pair_type(0.25, 0.5));
 
     // auto orig = tim::settings::verbose();
     for(int i = 0; i < nitr; ++i)

@@ -28,7 +28,11 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/gotcha.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/utility/graph_data.hpp"
+#include "timemory/mpl/apply.hpp"
+
+#if defined(TIMEMORY_USE_CUDA)
+#    include "timemory/backends/cuda.hpp"
+#endif
 
 #include <cstdint>
 #include <string>
@@ -36,10 +40,11 @@
 
 namespace tim
 {
+//
 // clang-format off
 namespace component { struct malloc_gotcha; }
 // clang-format on
-
+//
 //======================================================================================//
 
 namespace trait
@@ -47,35 +52,41 @@ namespace trait
 template <>
 struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t>>
 : std::true_type
-{
-};
+{};
 
 template <>
 struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t, size_t>>
 : std::true_type
-{
-};
+{};
 
 template <>
 struct supports_args<component::malloc_gotcha, std::tuple<std::string, void*>>
 : std::true_type
-{
-};
+{};
+
+#if defined(TIMEMORY_USE_CUDA)
+template <>
+struct supports_args<component::malloc_gotcha, std::tuple<std::string, void**, size_t>>
+: std::true_type
+{};
+
+template <>
+struct supports_args<component::malloc_gotcha, std::tuple<std::string, cuda::error_t>>
+: std::true_type
+{};
+#endif
 
 template <>
 struct uses_memory_units<component::malloc_gotcha> : std::true_type
-{
-};
+{};
 
 template <>
 struct is_memory_category<component::malloc_gotcha> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_prefix<component::malloc_gotcha> : std::true_type
-{
-};
+{};
 
 }  // namespace trait
 
@@ -84,7 +95,13 @@ namespace component
 struct malloc_gotcha
 : base<malloc_gotcha, double, policy::global_init, policy::global_finalize>
 {
+#if defined(TIMEMORY_USE_CUDA)
+    static constexpr uintmax_t data_size = 5;
+    static constexpr uintmax_t num_alloc = 3;
+#else
     static constexpr uintmax_t data_size = 3;
+    static constexpr uintmax_t num_alloc = 2;
+#endif
 
     // clang-format off
     using value_type   = double;
@@ -114,14 +131,40 @@ struct malloc_gotcha
     using base_type::value;
 
 public:
+    template <typename... _Types>
+    struct gotcha_spec;
+
+    template <typename... _Types, template <typename...> class _Tuple>
+    struct gotcha_spec<_Tuple<_Types...>>
+    {
+        using gotcha_component_type = _Tuple<_Types..., this_type>;
+        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
+        using component_type        = _Tuple<_Types..., gotcha_type>;
+
+        static std::function<void()>& get_initializer()
+        {
+            static std::function<void()> _lambda = []() {
+                /*
+#if defined(TIMEMORY_USE_CUDA)
+                TIMEMORY_C_GOTCHA(gotcha_type, 0, malloc);
+                TIMEMORY_C_GOTCHA(gotcha_type, 1, calloc);
+                TIMEMORY_C_GOTCHA(gotcha_type, 2, cudaMalloc);
+                TIMEMORY_C_GOTCHA(gotcha_type, 3, free);
+                TIMEMORY_C_GOTCHA(gotcha_type, 4, cudaFree);
+#else
+                TIMEMORY_C_GOTCHA(gotcha_type, 0, malloc);
+                TIMEMORY_C_GOTCHA(gotcha_type, 1, calloc);
+                TIMEMORY_C_GOTCHA(gotcha_type, 2, free);
+#endif
+                */
+            };
+            return _lambda;
+        }
+    };
+
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init(storage_type*)
-    {
-        // add_hash_id("malloc");
-        // add_hash_id("calloc");
-        // add_hash_id("free");
-    }
+    static void invoke_global_init(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 
@@ -148,8 +191,6 @@ public:
     , prefix_idx(get_index(prefix_hash))
     , prefix(_prefix)
     {
-        // value = { { 0.0, 0.0, 0.0 } };
-        // accum = { { 0.0, 0.0, 0.0 } };
         value = 0.0;
         accum = 0.0;
     }
@@ -193,10 +234,6 @@ public:
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
 
-        // PRINT_HERE(tim::apply<std::string>::join(" ", fname, nbytes, prefix,
-        // prefix_hash,
-        //                                         _hash, prefix_idx, idx).c_str());
-
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
@@ -210,8 +247,7 @@ public:
             // malloc
             value = (nbytes);
             accum += (nbytes);
-        }
-        else
+        } else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -227,10 +263,6 @@ public:
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
 
-        // PRINT_HERE(tim::apply<std::string>::join(" ", fname, nmemb, size, prefix,
-        //                                         prefix_hash, _hash, prefix_idx,
-        //                                         idx).c_str());
-
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
@@ -244,8 +276,7 @@ public:
             // calloc
             value = (nmemb * size);
             accum += (nmemb * size);
-        }
-        else
+        } else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -263,9 +294,6 @@ public:
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
 
-        // PRINT_HERE(tim::apply<std::string>::join(" ", fname, ptr, prefix, prefix_hash,
-        //                                          _hash, prefix_idx, idx).c_str());
-
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
@@ -275,7 +303,7 @@ public:
         }
 
         // malloc
-        if(idx < 2)
+        if(idx < num_alloc)
             get_allocation_map()[ptr] = value;
         else
         {
@@ -285,8 +313,7 @@ public:
                 value = itr->second;
                 accum += itr->second;
                 get_allocation_map().erase(itr);
-            }
-            else
+            } else
             {
                 if(settings::verbose() > 1 || settings::debug())
                     printf("[%s]> free of unknown pointer size: %p\n",
@@ -294,6 +321,79 @@ public:
             }
         }
     }
+
+    //----------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_CUDA)
+
+    //----------------------------------------------------------------------------------//
+
+    void customize(const std::string& fname, void** devPtr, size_t size)
+    {
+        auto _hash = string_hash()(fname);
+        auto idx   = get_index(_hash);
+
+        if(idx > get_hash_array().size())
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                       fname.c_str());
+            return;
+        }
+
+        if(_hash == prefix_hash)
+        {
+            // malloc
+            value = (size);
+            accum += (size);
+            m_last_addr = devPtr;
+        } else
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> skipped function '%s with hash %llu'\n",
+                       this_type::label().c_str(), fname.c_str(),
+                       (long long unsigned) _hash);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void customize(const std::string& fname, cuda::error_t)
+    {
+        auto _hash = string_hash()(fname);
+        auto idx   = get_index(_hash);
+
+        if(idx > get_hash_array().size())
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                       fname.c_str());
+            return;
+        }
+
+        if(_hash == prefix_hash && idx < num_alloc)
+        {
+            // cudaMalloc
+            if(m_last_addr)
+            {
+                void* ptr                 = (void*) ((char**) (m_last_addr)[0]);
+                get_allocation_map()[ptr] = value;
+            }
+        } else if(_hash == prefix_hash && idx >= num_alloc)
+        {
+            // cudaFree
+        } else
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> skipped function '%s with hash %llu'\n",
+                       this_type::label().c_str(), fname.c_str(),
+                       (long long unsigned) _hash);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+#endif
 
     //----------------------------------------------------------------------------------//
 
@@ -314,7 +414,6 @@ public:
     {
         value += rhs.value;
         accum += rhs.accum;
-        // PRINT_HERE(tim::apply<std::string>::join(" ", prefix, value, accum).c_str());
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -326,7 +425,6 @@ public:
     {
         value -= rhs.value;
         accum -= rhs.accum;
-        // PRINT_HERE(tim::apply<std::string>::join(" ", prefix, value, accum).c_str());
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -334,6 +432,7 @@ public:
 
 private:
     using alloc_map_t  = std::unordered_map<void*, size_t>;
+    using vaddr_map_t  = std::unordered_map<void**, size_t>;
     using hash_array_t = std::array<uintmax_t, data_size>;
 
     static alloc_map_t& get_allocation_map()
@@ -342,11 +441,28 @@ private:
         return _instance;
     }
 
+    static vaddr_map_t& get_void_address_map()
+    {
+        static thread_local vaddr_map_t _instance;
+        return _instance;
+    }
+
     static hash_array_t& get_hash_array()
     {
         static auto _get = []() {
+#if defined(TIMEMORY_USE_CUDA)
+            hash_array_t _instance = {
+                { string_hash()("malloc"),
+                  string_hash()("calloc"),
+                  string_hash()("cudaMalloc"),
+                  string_hash()("free"),
+                  string_hash("cudaFree") }
+            };
+#else
             hash_array_t _instance = { { string_hash()("malloc"), string_hash()("calloc"),
                                          string_hash()("free") } };
+#endif
+
             return _instance;
         };
 
@@ -358,6 +474,7 @@ private:
     uintmax_t   prefix_hash = string_hash()("");
     uintmax_t   prefix_idx  = std::numeric_limits<uintmax_t>::max();
     std::string prefix      = "";
+    void**      m_last_addr = nullptr;
 };
 
 }  // namespace component

@@ -67,28 +67,38 @@ class component_tuple;
 class tim_api manager
 {
 public:
-    using this_type     = manager;
-    using pointer_t     = std::shared_ptr<this_type>;
-    using singleton_t   = singleton<this_type, pointer_t>;
-    using size_type     = std::size_t;
-    using string_t      = std::string;
-    using comm_group_t  = std::tuple<mpi::comm_t, int32_t>;
-    using mutex_t       = std::recursive_mutex;
-    using auto_lock_t   = std::unique_lock<mutex_t>;
-    using pointer       = singleton_t::pointer;
-    using smart_pointer = singleton_t::smart_pointer;
+    using this_type        = manager;
+    using pointer_t        = std::shared_ptr<this_type>;
+    using pointer_pair_t   = std::pair<pointer_t, pointer_t>;
+    using size_type        = std::size_t;
+    using string_t         = std::string;
+    using comm_group_t     = std::tuple<mpi::comm_t, int32_t>;
+    using mutex_t          = std::mutex;
+    using auto_lock_t      = std::unique_lock<mutex_t>;
+    using finalizer_func_t = std::function<void()>;
+    using finalizer_list_t = std::deque<finalizer_func_t>;
 
 public:
     // Constructor and Destructors
     manager();
     ~manager();
 
+    manager(const manager&) = delete;
+    manager(manager&&)      = delete;
+
+    manager& operator=(const manager&) = delete;
+    manager& operator=(manager&&) = delete;
+
+    // storage-types add functors to destroy the instances
+    template <typename _Func>
+    void add_finalizer(_Func&&, bool);
+
+    void finalize();
+
 public:
     // Public static functions
     static pointer_t instance();
     static pointer_t master_instance();
-    static pointer   noninit_instance();
-    static pointer   noninit_master_instance();
     static void      enable(bool val = true) { settings::enabled() = val; }
     static void      disable(bool val = true) { settings::enabled() = !val; }
     static bool      is_enabled() { return settings::enabled(); }
@@ -99,6 +109,8 @@ public:
     static void exit_hook();
 
 private:
+    static pointer_pair_t& instance_pair();
+
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
@@ -293,14 +305,15 @@ protected:
 private:
     /// number of timing manager instances
     static std::atomic<int32_t>& f_manager_instance_count();
+    /// instance id
+    int32_t m_instance_count;
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
     graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
     graph_hash_alias_ptr_t m_hash_aliases = get_hash_aliases();
-
-private:
-    /// instance id
-    int32_t m_instance_count;
+    finalizer_list_t       m_master_finalizers;
+    finalizer_list_t       m_worker_finalizers;
+    mutex_t                m_mutex;
 
 private:
     /// num-threads based on number of managers created
@@ -315,15 +328,6 @@ private:
 
 namespace details
 {
-//--------------------------------------------------------------------------------------//
-
-inline manager::singleton_t&
-manager_singleton()
-{
-    static manager::singleton_t _instance = manager::singleton_t::instance();
-    return _instance;
-}
-
 //--------------------------------------------------------------------------------------//
 
 }  // namespace details

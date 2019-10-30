@@ -97,26 +97,6 @@ public:
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
-private:
-    template <typename _Up = _Tp, typename _Vp = _Value,
-              enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
-    void init_storage()
-    {
-        if(!properties_t::has_storage())
-        {
-            static thread_local auto _instance = storage_type::instance();
-            _instance->initialize();
-        }
-    }
-
-protected:
-    static Type dummy()
-    {
-        properties_t::has_storage() = true;
-        Type _fake{};
-        return _fake;
-    }
-
 protected:
     // policy section
     static void global_init_policy(storage_type* _store)
@@ -186,38 +166,6 @@ public:
     void set_prefix(const string_t& _prefix)
     {
         storage_type::instance()->set_prefix(_prefix);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // insert the node into the graph
-    //
-    template <typename _Scope>
-    void insert_node(const _Scope&, const int64_t& _hash)
-    {
-        if(!is_on_stack)
-        {
-            Type& obj   = static_cast<Type&>(*this);
-            graph_itr   = storage_type::instance()->template insert<_Scope>(obj, _hash);
-            is_on_stack = true;
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-    // pop the node off the graph
-    //
-    void pop_node()
-    {
-        if(is_on_stack)
-        {
-            Type& obj = graph_itr->obj();
-            Type& rhs = static_cast<Type&>(*this);
-            obj += rhs;
-            obj.plus(rhs);
-            Type::append(graph_itr, rhs);
-            storage_type::instance()->pop();
-            obj.is_running = false;
-            is_on_stack    = false;
-        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -442,6 +390,63 @@ public:
     const value_type& get_value() const { return value; }
     const value_type& get_accum() const { return accum; }
     const bool&       get_is_transient() const { return is_transient; }
+
+private:
+    //----------------------------------------------------------------------------------//
+    // insert the node into the graph
+    //
+    template <typename _Scope>
+    void insert_node(const _Scope&, const int64_t& _hash)
+    {
+        if(!is_on_stack)
+        {
+            Type& obj   = static_cast<Type&>(*this);
+            graph_itr   = storage_type::instance()->template insert<_Scope>(obj, _hash);
+            is_on_stack = true;
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    // pop the node off the graph
+    //
+    void pop_node()
+    {
+        if(is_on_stack)
+        {
+            Type& obj = graph_itr->obj();
+            Type& rhs = static_cast<Type&>(*this);
+            obj += rhs;
+            obj.plus(rhs);
+            Type::append(graph_itr, rhs);
+            storage_type::instance()->pop();
+            obj.is_running = false;
+            is_on_stack    = false;
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    // initialize the storage
+    //
+    template <typename _Up = _Tp, typename _Vp = _Value,
+              enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
+    void init_storage()
+    {
+        if(!properties_t::has_storage())
+        {
+            static thread_local auto _instance = storage_type::instance();
+            _instance->initialize();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    // create an instance without calling constructor
+    //
+    static Type dummy()
+    {
+        properties_t::has_storage() = true;
+        Type _fake{};
+        return _fake;
+    }
 
 protected:
     void plus(const this_type& rhs)
@@ -705,20 +710,6 @@ public:
     void set_prefix(const string_t&) {}
 
     //----------------------------------------------------------------------------------//
-    // insert the node into the graph
-    //
-    template <typename _Scope = scope::process, typename... _Args>
-    void insert_node(const _Scope&, _Args&&...)
-    {
-        is_on_stack = true;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // pop the node off the graph
-    //
-    void pop_node() { is_on_stack = false; }
-
-    //----------------------------------------------------------------------------------//
     // reset the values
     //
     void reset()
@@ -818,6 +809,21 @@ public:
     int64_t nlaps() const { return 0; }
 
     void* get() { return nullptr; }
+
+private:
+    //----------------------------------------------------------------------------------//
+    // insert the node into the graph
+    //
+    template <typename _Scope = scope::process, typename... _Args>
+    void insert_node(const _Scope&, _Args&&...)
+    {
+        is_on_stack = true;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // pop the node off the graph
+    //
+    void pop_node() { is_on_stack = false; }
 
 protected:
     void plus(const this_type& rhs)

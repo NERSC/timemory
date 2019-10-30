@@ -125,6 +125,8 @@ int main(int argc, char** argv)
 
     tim::timemory_finalize();
     status();
+
+    return EXIT_SUCCESS;
 }
 
 //--------------------------------------------------------------------------------------//

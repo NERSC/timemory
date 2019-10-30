@@ -986,23 +986,39 @@ tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurr
 }
 
 #include "timemory/manager.hpp"
+//#include "timemory/utility/singleton.hpp"
 
 namespace tim
 {
 namespace impl
 {
+//--------------------------------------------------------------------------------------//
+
 template <typename ObjectType>
 void
 storage<ObjectType, true>::get_shared_manager()
 {
-    m_manager = ::tim::manager::instance();
+    m_manager         = ::tim::manager::instance();
+    using func_t      = ::tim::manager::finalizer_func_t;
+    bool   _is_master = singleton_t::is_master(this);
+    func_t _finalize  = [&]() { this_type::get_singleton().reset(this); };
+    m_manager->add_finalizer(std::move(_finalize), _is_master);
 }
+
+//--------------------------------------------------------------------------------------//
+
 template <typename ObjectType>
 void
 storage<ObjectType, false>::get_shared_manager()
 {
-    m_manager = ::tim::manager::instance();
+    m_manager         = ::tim::manager::instance();
+    using func_t      = ::tim::manager::finalizer_func_t;
+    bool   _is_master = singleton_t::is_master(this);
+    func_t _finalize  = [&]() { this_type::get_singleton().reset(this); };
+    m_manager->add_finalizer(std::move(_finalize), _is_master);
 }
+
+//--------------------------------------------------------------------------------------//
 }  // namespace impl
 }  // namespace tim
 //======================================================================================//

@@ -96,12 +96,31 @@ manager::f_manager_instance_count()
 }
 
 //======================================================================================//
+// generate a master instance and a nullptr on the first pass
+// generate a worker instance on subsequent and return master and worker
+//
+manager::pointer_pair_t&
+manager::instance_pair()
+{
+    static auto              _master_instance = std::make_shared<manager>();
+    static std::atomic<int>  _counter;
+    static thread_local auto _worker_instance =
+        pointer_t((_counter++ == 0) ? nullptr : new manager());
+    static thread_local auto _instance =
+        pointer_pair_t{ _master_instance, _worker_instance };
+    return _instance;
+}
+
+//======================================================================================//
 // get either master or thread-local instance
 //
 manager::pointer_t
 manager::instance()
 {
-    return details::manager_singleton().smart_instance();
+    static thread_local auto& _pinst = manager::instance_pair();
+    static thread_local auto& _instance =
+        _pinst.second.get() ? _pinst.second : _pinst.first;
+    return _instance;
 }
 
 //======================================================================================//
@@ -110,23 +129,8 @@ manager::instance()
 manager::pointer_t
 manager::master_instance()
 {
-    return details::manager_singleton().smart_master_instance();
-}
-
-//======================================================================================//
-// static function
-manager::pointer
-manager::noninit_instance()
-{
-    return details::manager_singleton().instance_ptr();
-}
-
-//======================================================================================//
-// static function
-manager::pointer
-manager::noninit_master_instance()
-{
-    return details::manager_singleton().master_instance_ptr();
+    static auto& _pinst = manager::instance_pair();
+    return _pinst.first;
 }
 
 //======================================================================================//

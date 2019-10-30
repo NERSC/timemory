@@ -138,7 +138,7 @@ template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
           typename _Func = std::function<_Vp(_Vp)>>
 inline void
 print_info(const _Tp& obj, const _Up& expected, const string_t& unit,
-           _Func _func = [](const _Vp& obj) { return obj; })
+           _Func _func = [](const _Vp& _obj) { return _obj; })
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;
@@ -197,7 +197,7 @@ TEST_F(hybrid_tests, hybrid)
     obj.stop();
     std::cout << "\n" << obj << std::endl;
 
-    auto clock_convert    = [](const int64_t& obj) { return obj; };
+    auto clock_convert    = [](const int64_t& _obj) { return _obj; };
     auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
         return static_cast<double>(val.first) / val.second * 100.0;
     };
@@ -243,7 +243,7 @@ TEST_F(hybrid_tests, auto_timer)
     obj.stop();
     std::cout << "\n" << obj << std::endl;
 
-    auto clock_convert    = [](const int64_t& obj) { return obj; };
+    auto clock_convert    = [](const int64_t& _obj) { return _obj; };
     auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
         return static_cast<double>(val.first) / val.second * 100.0;
     };

@@ -85,7 +85,6 @@ void
 timemory_init(int* argc, char*** argv, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
 /// finalization of the specified types
-template <typename _Tuple = available_tuple<complete_tuple_t>>
 void
 timemory_finalize();
 
@@ -207,20 +206,17 @@ tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _CompTuple>
+#include "timemory/manager.hpp"
+
+//--------------------------------------------------------------------------------------//
+
 inline void
 tim::timemory_finalize()
 {
-    using _Tuple = available_tuple<_CompTuple>;
-
-    // #if defined(__INTEL_COMPILER)
-    apply<void>::type_access<operation::print_storage, _Tuple>();
-    // #endif
-    // #if defined(__INTEL_COMPILER) || defined(__PGI__)
-    tim::settings::auto_output() = false;
-    // #endif
+    tim::manager::instance()->finalize();
     tim::disable_signal_detection();
 }
+
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/utility/bits/storage.hpp"
@@ -231,7 +227,7 @@ tim::timemory_finalize()
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_FINALIZE() ::
+#define TIMEMORY_FINALIZE() ::tim::timemory_finalize()
 
 //--------------------------------------------------------------------------------------//
 

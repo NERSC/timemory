@@ -69,16 +69,16 @@ struct is_enabled
 template <typename _Tp>
 struct init_storage
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-    using string_t   = std::string;
+    using Type         = _Tp;
+    using value_type   = typename Type::value_type;
+    using base_type    = typename Type::base_type;
+    using string_t     = std::string;
+    using storage_type = storage<Type>;
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(trait::is_available<_Up>::value), char> = 0>
     init_storage()
     {
-        using storage_type                 = storage<Type>;
         static thread_local auto _instance = storage_type::instance();
         _instance->initialize();
     }
@@ -87,6 +87,53 @@ struct init_storage
               enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
     init_storage()
     {
+    }
+
+    using master_pointer_t = decltype(storage_type::master_instance());
+    using pointer_t        = decltype(storage_type::instance());
+
+    using get_type = std::tuple<master_pointer_t, pointer_t, bool, bool, bool>;
+
+    template <typename U = base_type, enable_if_t<(U::implements_storage_v), int> = 0>
+    static get_type get()
+    {
+        static auto _lambda = []() {
+            static thread_local auto _main_inst = storage_type::master_instance();
+            static thread_local auto _this_inst = storage_type::instance();
+            if(_main_inst != _this_inst)
+            {
+                static bool              _main_glob = _main_inst->global_init();
+                static bool              _this_glob = _this_inst->global_init();
+                static thread_local bool _main_work = _main_inst->thread_init();
+                static thread_local bool _this_work = _this_inst->thread_init();
+                static thread_local bool _main_data = _main_inst->data_init();
+                static thread_local bool _this_data = _this_inst->data_init();
+                return get_type{ _main_inst, _this_inst, (_main_glob && _this_glob),
+                                 (_main_work && _this_work), (_main_data && _this_data) };
+            }
+            else
+            {
+                static bool              _this_glob = _this_inst->global_init();
+                static thread_local bool _this_work = _this_inst->thread_init();
+                static thread_local bool _this_data = _this_inst->data_init();
+                return get_type{ _main_inst, _this_inst, (_this_glob), (_this_work),
+                                 (_this_data) };
+            }
+        };
+        static thread_local auto _instance = _lambda();
+        return _instance;
+    }
+
+    template <typename U = base_type, enable_if_t<!(U::implements_storage_v), int> = 0>
+    static get_type get()
+    {
+        static auto _lambda = []() {
+            static thread_local auto _main_inst = storage_type::master_instance();
+            static thread_local auto _this_inst = storage_type::instance();
+            return get_type{ _main_inst, _this_inst, false, false, false };
+        };
+        static thread_local auto _instance = _lambda();
+        return _instance;
     }
 };
 
@@ -142,29 +189,8 @@ struct insert_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type& obj, const int64_t& _hash)
     {
-        using storage_type                  = typename Type::storage_type;
-        static thread_local auto _main_inst = storage_type::master_instance();
-        static thread_local auto _this_inst = storage_type::instance();
-        if(_main_inst != _this_inst)
-        {
-            static bool              _main_glob = _main_inst->global_init();
-            static bool              _this_glob = _this_inst->global_init();
-            static thread_local bool _main_work = _main_inst->thread_init();
-            static thread_local bool _this_work = _this_inst->thread_init();
-            static thread_local bool _main_data = _main_inst->data_init();
-            static thread_local bool _this_data = _this_inst->data_init();
-            if(!(_main_glob && _this_glob && _main_work && _this_work && _main_data &&
-                 _this_data))
-                PRINT_HERE("Weird");
-        }
-        else
-        {
-            static bool              _this_glob = _this_inst->global_init();
-            static thread_local bool _this_work = _this_inst->thread_init();
-            static thread_local bool _this_data = _this_inst->data_init();
-            if(!(_this_glob && _this_work && _this_data))
-                PRINT_HERE("Weird");
-        }
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
 
         obj.insert_node(_Scope{}, _hash);
     }
@@ -265,7 +291,12 @@ struct measure
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit measure(base_type& obj) { obj.measure(); }
+    explicit measure(base_type& obj)
+    {
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
+        obj.measure();
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -277,7 +308,12 @@ struct start
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit start(base_type& obj) { obj.start(); }
+    explicit start(base_type& obj)
+    {
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
+        obj.start();
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -293,6 +329,8 @@ struct priority_start
               enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
     explicit priority_start(base_type& obj)
     {
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
         obj.start();
     }
 
@@ -322,6 +360,8 @@ struct standard_start
               enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
     explicit standard_start(base_type& obj)
     {
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
         obj.start();
     }
 };
@@ -401,6 +441,8 @@ struct mark_begin
               enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
     explicit mark_begin(Type& obj)
     {
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
         obj.mark_begin();
     }
 
@@ -415,6 +457,8 @@ struct mark_begin
               enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     mark_begin(Type& obj, _Args&&... _args)
     {
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
         obj.mark_begin(std::forward<_Args>(_args)...);
     }
 

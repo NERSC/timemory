@@ -77,8 +77,8 @@ public:
     static pointer master_instance();
 
     // instance functions that do not initialize
-    static smart_pointer smart_instance() { return _local_instance(); }
-    static smart_pointer smart_master_instance() { return _master_instance(); }
+    static smart_pointer& smart_instance() { return _local_instance(); }
+    static smart_pointer& smart_master_instance() { return _master_instance(); }
 
     // for checking but not allocating
     static pointer instance_ptr() { return _local_instance().get(); }
@@ -131,6 +131,32 @@ public:
     }
 
     static mutex_t& get_mutex() { return f_mutex(); }
+
+    void reset(pointer ptr)
+    {
+        if(is_master(ptr))
+        {
+            // should be called at __cxa_finalize so don't bother deleting
+            // auto& del = get_deleter();
+            // del(_master_instance());
+            if(_master_instance().get())
+                _master_instance().reset();
+            else if(f_master_instance())
+            {
+                auto& del = get_deleter();
+                del(_master_instance());
+                delete f_master_instance();
+                f_master_instance() = nullptr;
+            }
+        }
+        else
+        {
+            // should be called at __cxa_finalize so don't bother deleting
+            // auto& del = get_deleter();
+            // del(_local_instance());
+            _local_instance().reset();
+        }
+    }
 
 private:
     // Private functions
