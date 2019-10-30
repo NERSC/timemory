@@ -1350,19 +1350,19 @@ static void CUPTIAPI
             status = cuptiActivityGetNextRecord(buffer, validSize, &record);
             if(status == CUPTI_SUCCESS)
             {
-                using name_pair_t = std::tuple<const char*, int64_t>;
+                using name_pair_t = std::tuple<std::string, int64_t>;
                 if(settings::verbose() > 3 || settings::debug())
                     print(record);
-                auto              _name  = get_name(record);
+                std::string       _name  = get_name(record);
                 auto              _time  = get_elapsed(record);
                 auto              _extra = get_kind_extra(record);
                 std::stringstream ss;
                 if(std::strlen(_extra) > 0)
                 {
                     ss << _name << "_" << _extra;
-                    _name = ss.str().c_str();
+                    _name = ss.str();
                 }
-                auto _name_len = std::strlen(_name);
+                auto _name_len = _name.length();
                 switch(record->kind)
                 {
                     case CUPTI_ACTIVITY_KIND_OVERHEAD:
@@ -1399,8 +1399,9 @@ static void CUPTIAPI
                         else if(_name_len == 0 && _time > 0)
                         {
                             std::stringstream ss;
-                            ss << "CUPTI_ACTIVITY_KIND_ENUM_" << (int) record->kind;
-                            _receiver += name_pair_t{ ss.str().c_str(), _time };
+                            ss << "CUPTI_ACTIVITY_KIND_ENUM_"
+                               << static_cast<int>(record->kind);
+                            _receiver += name_pair_t{ ss.str(), _time };
                             break;
                         }
                     }
@@ -1502,9 +1503,12 @@ finalize_trace(const std::vector<activity_kind_t>& _kind_types)
 
 template <typename _Tp>
 inline void
-start_trace(_Tp* obj)
+start_trace(_Tp* obj, bool flush)
 {
     auto& _receiver = get_receiver();
+    // clang-format off
+    if(flush) { CUPTI_CALL(cuptiActivityFlushAll(0)); }
+    // clang-format on
     _receiver.insert(obj);
 }
 

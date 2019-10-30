@@ -185,7 +185,7 @@ public:
     void start()
     {
         set_started();
-        cupti::activity::start_trace(this);
+        cupti::activity::start_trace(this, depth_change);
         value           = cupti::activity::get_receiver().get();
         m_kernels_index = cupti::activity::get_receiver().get_named_index();
     }

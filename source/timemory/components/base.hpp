@@ -88,7 +88,20 @@ private:
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 
 public:
-    base() { init_storage(); }
+    base()
+    : is_running(false)
+    , is_on_stack(false)
+    , is_transient(false)
+    , depth_change(false)
+    , value(value_type())
+    , accum(value_type())
+    , laps(0)
+    , graph_itr(graph_iterator{ nullptr })
+    {
+        static thread_local bool _inited = init_storage();
+        consume_parameters(_inited);
+    }
+
     ~base() = default;
 
     explicit base(const this_type&) = default;
@@ -163,10 +176,7 @@ public:
     //----------------------------------------------------------------------------------//
     // set the graph node prefix
     //
-    void set_prefix(const string_t& _prefix)
-    {
-        storage_type::instance()->set_prefix(_prefix);
-    }
+    void set_prefix(const string_t& _prefix) { get_storage()->set_prefix(_prefix); }
 
     //----------------------------------------------------------------------------------//
     // reset the values
@@ -400,9 +410,13 @@ private:
     {
         if(!is_on_stack)
         {
-            Type& obj   = static_cast<Type&>(*this);
-            graph_itr   = storage_type::instance()->template insert<_Scope>(obj, _hash);
-            is_on_stack = true;
+            auto  _storage   = get_storage();
+            auto  _beg_depth = _storage->depth();
+            Type& obj        = static_cast<Type&>(*this);
+            graph_itr        = _storage->template insert<_Scope>(obj, _hash);
+            is_on_stack      = true;
+            auto _end_depth  = _storage->depth();
+            depth_change     = (_beg_depth < _end_depth);
         }
     }
 
@@ -413,14 +427,20 @@ private:
     {
         if(is_on_stack)
         {
+            auto _storage   = get_storage();
+            auto _beg_depth = _storage->depth();
+
             Type& obj = graph_itr->obj();
             Type& rhs = static_cast<Type&>(*this);
             obj += rhs;
             obj.plus(rhs);
             Type::append(graph_itr, rhs);
-            storage_type::instance()->pop();
+            _storage->pop();
             obj.is_running = false;
             is_on_stack    = false;
+
+            auto _end_depth = _storage->depth();
+            depth_change    = (_beg_depth > _end_depth);
         }
     }
 
@@ -429,13 +449,15 @@ private:
     //
     template <typename _Up = _Tp, typename _Vp = _Value,
               enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
-    void init_storage()
+    bool init_storage()
     {
         if(!properties_t::has_storage())
         {
             static thread_local auto _instance = storage_type::instance();
             _instance->initialize();
+            get_storage() = _instance;
         }
+        return properties_t::has_storage();
     }
 
     //----------------------------------------------------------------------------------//
@@ -470,11 +492,17 @@ protected:
     bool           is_running   = false;
     bool           is_on_stack  = false;
     bool           is_transient = false;
+    bool           depth_change = false;
     value_type     value        = value_type();
     value_type     accum        = value_type();
     int64_t        laps         = 0;
     graph_iterator graph_itr    = graph_iterator{ nullptr };
-    // storage_type*  m_storage    = storage_type::instance();
+
+    static storage_type*& get_storage()
+    {
+        static thread_local storage_type* _instance = nullptr;
+        return _instance;
+    }
 
 private:
     template <typename _Vp>
@@ -874,7 +902,6 @@ void
 base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
                                              const Type& rhs)
 {
-    PRINT_HERE(demangle<this_type>().c_str());
     static_assert(trait::secondary_data<_Tp>::value,
                   "append_impl should not be compiled");
     static_assert(std::is_same<_Vp, _Value>::value, "Type mismatch");

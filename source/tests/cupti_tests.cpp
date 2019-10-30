@@ -210,6 +210,17 @@ TEST_F(cupti_tests, activity)
 
     int64_t sleep_msec = 700;
 
+    tuple_t async_timer(details::get_test_name() + "_no_subtimers", true);
+    async_timer.start();
+    for(int i = 0; i < num_iter; ++i)
+    {
+        printf("[%s]> iteration %i...\n", __FUNCTION__, i);
+        auto _stream = streams.at(i % nstream);
+        details::KERNEL_A(data, num_data, _stream);
+        details::KERNEL_B(data, num_data, _stream);
+    }
+    async_timer.stop();
+
     std::vector<tuple_t> subtimers;
     for(int i = 0; i < num_iter; ++i)
     {

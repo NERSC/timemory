@@ -1052,12 +1052,12 @@ public:
     }
 
     template <typename _Up>
-    inline receiver& operator+=(const std::tuple<const char*, _Up>& rhs)
+    inline receiver& operator+=(const std::tuple<std::string, _Up>& rhs)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock() && !m_external_hold)
             lk.lock();
-        auto _name = demangle(std::get<0>(rhs));
+        auto&& _name = demangle(std::get<0>(rhs));
         m_elapsed += std::get<1>(rhs);
         for(auto& itr : m_named_elapsed)
             (itr.second)[_name] += std::get<1>(rhs);
@@ -1065,14 +1065,14 @@ public:
     }
 
     template <typename _Up>
-    inline receiver& operator-=(const std::tuple<const char*, _Up>& rhs)
+    inline receiver& operator-=(const std::tuple<std::string, _Up>& rhs)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
             lk.lock();
         // the operator-= is generally only used by overhead so we subtract
         // from m_elapsed but we add to the named elapsed
-        auto _name = demangle(std::get<0>(rhs));
+        auto&& _name = demangle(std::get<0>(rhs));
         m_elapsed -= std::get<1>(rhs);
         for(auto& itr : m_named_elapsed)
             (itr.second)[_name] += std::get<1>(rhs);
@@ -1228,7 +1228,7 @@ finalize_trace(const std::vector<activity_kind_t>&)
 
 template <typename _Tp>
 inline void
-start_trace(_Tp*)
+start_trace(_Tp*, bool = false)
 {
 }
 
@@ -1274,7 +1274,7 @@ finalize_trace(const std::vector<activity_kind_t>&);
 
 template <typename _Tp>
 inline void
-start_trace(_Tp*);
+start_trace(_Tp*, bool flush = false);
 
 //--------------------------------------------------------------------------------------//
 

@@ -639,8 +639,14 @@ public:
         if(!_data().graph().is_valid(_itr))
             return;
 
-        // compute hash and depth
-        auto _hash  = add_hash_id(std::get<1>(_secondary));
+        // compute hash of prefix
+        auto _hash_id = add_hash_id(m_hash_ids, std::get<1>(_secondary));
+        // compute hash w.r.t. parent iterator (so identical kernels from different
+        // call-graph parents do not locate same iterator)
+        auto _hash = _hash_id + _itr->id();
+        // add the hash alias
+        add_hash_id(m_hash_ids, m_hash_aliases, _hash_id, _hash);
+        // compute depth
         auto _depth = _itr->depth() + 1;
 
         // see if depth + hash entry exists already
