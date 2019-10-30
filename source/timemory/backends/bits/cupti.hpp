@@ -841,13 +841,17 @@ namespace activity
 class receiver
 {
 public:
-    using mutex_type      = std::recursive_mutex;
-    using lock_type       = std::unique_lock<mutex_type>;
-    using data_type       = std::list<void*>;
-    using size_type       = typename data_type::size_type;
-    using iterator        = typename data_type::iterator;
-    using const_iterator  = typename data_type::const_iterator;
-    using named_elapsed_t = std::unordered_map<std::string, uint64_t>;
+    template <typename _Lhs, typename _Rhs>
+    using uomap_t = std::unordered_map<_Lhs, _Rhs>;
+
+    using mutex_type          = std::recursive_mutex;
+    using lock_type           = std::unique_lock<mutex_type>;
+    using data_type           = std::list<void*>;
+    using size_type           = typename data_type::size_type;
+    using iterator            = typename data_type::iterator;
+    using const_iterator      = typename data_type::const_iterator;
+    using named_elapsed_t     = uomap_t<std::string, uint64_t>;
+    using named_elapsed_map_t = uomap_t<uint64_t, named_elapsed_t>;
 
     // value_type is not used but keeping it here bc of plans to use something
     // similar later for a "thread_value" to distinguish traditional additions
@@ -920,6 +924,7 @@ public:
     receiver(receiver&& rhs) noexcept
     : m_external_hold(rhs.m_external_hold)
     , m_elapsed(rhs.m_elapsed)
+    , m_named_index_counter(rhs.m_named_index_counter)
     , m_named_elapsed(rhs.m_named_elapsed)
     {
         std::swap(m_data, rhs.m_data);
@@ -930,9 +935,10 @@ public:
         if(this == &rhs)
             return *this;
 
-        m_external_hold = rhs.m_external_hold;
-        m_elapsed       = rhs.m_elapsed;
-        m_named_elapsed = rhs.m_named_elapsed;
+        m_external_hold       = rhs.m_external_hold;
+        m_elapsed             = rhs.m_elapsed;
+        m_named_index_counter = rhs.m_named_index_counter;
+        m_named_elapsed       = rhs.m_named_elapsed;
         std::swap(m_data, rhs.m_data);
         return *this;
     }
@@ -1006,12 +1012,20 @@ public:
         return m_elapsed;
     }
 
-    named_elapsed_t get_named()
+    named_elapsed_t get_named(uint64_t idx, bool remove = false)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
             lk.lock();
-        return m_named_elapsed;
+        auto ret = named_elapsed_t{};
+        auto itr = m_named_elapsed.find(idx);
+        if(itr != m_named_elapsed.end())
+        {
+            ret = itr->second;
+            if(remove)
+                m_named_elapsed.erase(itr);
+        }
+        return ret;
     }
 
     // this operator is invoked from the CUPTI callback which implements an external
@@ -1045,7 +1059,8 @@ public:
             lk.lock();
         auto _name = demangle(std::get<0>(rhs));
         m_elapsed += std::get<1>(rhs);
-        m_named_elapsed[_name] += std::get<1>(rhs);
+        for(auto& itr : m_named_elapsed)
+            (itr.second)[_name] += std::get<1>(rhs);
         return *this;
     }
 
@@ -1055,10 +1070,32 @@ public:
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
             lk.lock();
+        // the operator-= is generally only used by overhead so we subtract
+        // from m_elapsed but we add to the named elapsed
         auto _name = demangle(std::get<0>(rhs));
         m_elapsed -= std::get<1>(rhs);
-        m_named_elapsed[_name] -= std::get<1>(rhs);
+        for(auto& itr : m_named_elapsed)
+            (itr.second)[_name] += std::get<1>(rhs);
         return *this;
+    }
+
+    uint64_t get_named_index()
+    {
+        auto      idx = (*m_named_index_counter)++;
+        lock_type lk(m_mutex, std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+        m_named_elapsed[idx] = named_elapsed_t{};
+        return idx;
+    }
+
+    void remove_named_index(uint64_t idx)
+    {
+        lock_type lk(m_mutex, std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+        if(m_named_elapsed.find(idx) != m_named_elapsed.end())
+            m_named_elapsed.erase(idx);
     }
 
 protected:
@@ -1093,11 +1130,15 @@ protected:
     }
 
 protected:
-    mutable bool       m_external_hold = false;
-    uint64_t           m_elapsed       = 0;
-    mutable mutex_type m_mutex;
-    data_type          m_data;
-    named_elapsed_t    m_named_elapsed;
+    using atomic_u64_t        = std::atomic<uint64_t>;
+    using shared_atomic_u64_t = std::shared_ptr<atomic_u64_t>;
+
+    mutable bool        m_external_hold       = false;
+    uint64_t            m_elapsed             = 0;
+    shared_atomic_u64_t m_named_index_counter = shared_atomic_u64_t(new atomic_u64_t);
+    mutable mutex_type  m_mutex;
+    data_type           m_data;
+    named_elapsed_map_t m_named_elapsed;
 };
 
 //--------------------------------------------------------------------------------------//

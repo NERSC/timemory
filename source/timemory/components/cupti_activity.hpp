@@ -174,6 +174,8 @@ struct cupti_activity
     //----------------------------------------------------------------------------------//
 
 public:
+    cupti_activity() = default;
+
     // make sure it is removed
     ~cupti_activity() { cupti::activity::get_receiver().remove(this); }
 
@@ -185,10 +187,7 @@ public:
         set_started();
         cupti::activity::start_trace(this);
         value           = cupti::activity::get_receiver().get();
-        m_kernels_value = cupti::activity::get_receiver().get_named();
-        m_kernels_names.clear();
-        for(const auto& itr : m_kernels_value)
-            m_kernels_names.insert(itr.first);
+        m_kernels_index = cupti::activity::get_receiver().get_named_index();
     }
 
     //----------------------------------------------------------------------------------//
@@ -196,31 +195,14 @@ public:
     void stop()
     {
         cupti::activity::stop_trace(this);
-        auto tmp        = cupti::activity::get_receiver().get();
-        auto kernel_tmp = cupti::activity::get_receiver().get_named();
+        auto tmp     = cupti::activity::get_receiver().get();
+        auto kernels = cupti::activity::get_receiver().get_named(m_kernels_index, true);
+
         accum += (tmp - value);
         value = std::move(tmp);
-
-        /*for(const auto& itr : m_kernels_names)
-        {
-            auto kitr = kernel_tmp.find(itr);
-            auto vitr = m_kernels_value.find(itr);
-            if(kitr != kernel_tmp.end() && vitr != m_kernels_value.end() &&
-               kitr->second > vitr->second)
-            {
-                // if kernel found in start and stop, add difference
-                m_kernels_accum[itr] += (kitr->second - vitr->second);
-            }
-        }*/
-
-        for(const auto& itr : kernel_tmp)
-        {
-            // if found in stop but not in start -> new kernel between start/stop
-            if(m_kernels_names.count(itr.first) == 0)
-                m_kernels_accum[itr.first] += itr.second;
-        }
-
-        m_kernels_value = std::move(kernel_tmp);
+        for(const auto& itr : kernels)
+            m_kernels_accum[itr.first] += itr.second;
+        m_kernels_value = std::move(kernels);
 
         set_stopped();
     }
@@ -251,7 +233,7 @@ public:
     }
 
 private:
-    kernel_names_t   m_kernels_names;
+    uint64_t         m_kernels_index = 0;
     kernel_elapsed_t m_kernels_value;
     kernel_elapsed_t m_kernels_accum;
 };

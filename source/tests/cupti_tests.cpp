@@ -610,10 +610,10 @@ main(int argc, char** argv)
     tim::settings::debug()        = true;
     tim::settings::verbose()      = 4;
     tim::timemory_init(argc, argv);
-    tim::settings::banner() = false;
+    tim::settings::banner()      = false;
     tim::settings::dart_output() = true;
-    tim::settings::dart_count() = 1;
-    tim::settings::banner() = false;
+    tim::settings::dart_count()  = 1;
+    tim::settings::banner()      = false;
 
     return RUN_ALL_TESTS();
 }
