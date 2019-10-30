@@ -40,8 +40,8 @@ class Timemory(CMakePackage):
     variant('gperftools', default=True, description="Enable gperftools support")
     variant('cupti', default=True, description="Enable CUPTI support")
 
-    extends('python', when="+python", type=('build', 'run'))
-    depends_on('python@3:', when="+python")
+    extends('python', when="+python")
+    depends_on('python@3:', when="+python", type=('build', 'run'))
     depends_on('py-pip', when='+python')
     depends_on('mpi', when='+mpi')
     depends_on('papi', when='+papi')
@@ -81,7 +81,7 @@ class Timemory(CMakePackage):
 
         if '+papi' in spec:
             args.append('-DTIMEMORY_USE_PAPI=ON')
-            args.append('-DPAPI_ROOT_DIR={}'.format(spec['papi'].prefix))
+            args.append('-DPAPI_ROOT_DIR={0}'.format(spec['papi'].prefix))
         else:
             args.append('-DTIMEMORY_USE_PAPI=OFF')
 
@@ -95,7 +95,5 @@ class Timemory(CMakePackage):
             args.append('-DTIMEMORY_USE_CUPTI=ON')
         else:
             args.append('-DTIMEMORY_USE_CUPTI=OFF')
-
-        args.append("-DCMAKE_BUILD_TYPE:STRING=Release")
 
         return args
