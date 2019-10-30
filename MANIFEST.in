@@ -15,10 +15,11 @@ include update-conda-yaml.py
 
 recursive-include cmake *
 recursive-include examples *
-recursive-include pybind11 *
+recursive-include external *
 recursive-include source *
 recursive-include timemory *.py*
 recursive-include .licenses *
+recursive-include tests *
 
 # global exclude
 

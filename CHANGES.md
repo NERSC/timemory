@@ -1,5 +1,14 @@
-TiMemory
+timemory
 ========
+
+Release: timemory 3.0.0
+-----------------------
+
+Author: Jonathan R. Madsen
+Date: Wed, 30 Oct 2019 01:23:50 -0700
+
+- Introducing the variadic interface
+- Refer to new documentation at https://timemory.readthedocs.io
 
 Release: TiMemory 2.3.0
 -----------------------

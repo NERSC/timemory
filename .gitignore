@@ -34,6 +34,7 @@ timing_report*
 /TiMemory-*
 /dist
 /.eggs
+/MANIFEST
 
 # info files
 /timemory/mpi_support/*.txt
