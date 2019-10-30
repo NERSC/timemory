@@ -98,6 +98,6 @@ build_script:
   - ls
   - .\outputs\runtime\%CONFIG%\ex_cxx_basic.exe
   #- .\outputs\runtime\%CONFIG%\ex_optional_on.exe
-  #- .\outputs\runtime\%CONFIG%\ex_optional_off.exe
-  - .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe
-  - .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe
+  - .\outputs\runtime\%CONFIG%\ex_optional_off.exe
+  #- .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe
+  #- .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe
