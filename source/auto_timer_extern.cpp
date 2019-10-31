@@ -32,101 +32,13 @@
 
 #define EXTERN_TEMPLATE_BUILD
 
-#include "timemory/components.hpp"           // for papi_array_t
-#include "timemory/components/types.hpp"     // for cpu_roofline_dp_flops
-#include "timemory/utility/macros.hpp"       // for TIMEMORY_INSTANTIATE_EXT...
+#include "timemory/components.hpp"        // for papi_array_t
+#include "timemory/components/types.hpp"  // for cpu_roofline_dp_flops
+#include "timemory/utility/macros.hpp"    // for TIMEMORY_INSTANTIATE_EXT...
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_timer.hpp"  // for auto_timer_list_t, auto_...
-namespace tim
-{
-namespace component
-{
-struct caliper;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct cpu_util;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct cuda_event;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct cupti_activity;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct cupti_counters;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct gperf_cpu_profiler;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct gperf_heap_profiler;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct nvtx_marker;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct page_rss;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct peak_rss;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct real_clock;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct system_clock;
-}
-}  // namespace tim
-namespace tim
-{
-namespace component
-{
-struct user_clock;
-}
-}  // namespace tim
+#include "timemory/variadic/auto_tuple.hpp"
 
 //======================================================================================//
 //

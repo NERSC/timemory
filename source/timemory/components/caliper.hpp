@@ -27,22 +27,27 @@
 #include "timemory/backends/caliper.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/storage.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
 namespace component
 {
-struct caliper : public base<caliper, void>
+struct caliper : public base<caliper, void, policy::global_init>
 {
     // timemory component api
     using value_type = void;
-    using base_type  = base<caliper, value_type>;
+    using this_type  = caliper;
+    using base_type  = base<this_type, value_type, policy::global_init>;
 
     static std::string label() { return "caliper"; }
     static std::string description() { return "caliper"; }
     static value_type  record() {}
+
+    static void invoke_global_init(storage_type*) { cali::init(); }
 
     caliper(const std::string& _channel = get_channel(),
             const int& _attributes = get_attributes(), const std::string& _prefix = "")
@@ -54,6 +59,8 @@ struct caliper : public base<caliper, void>
 
     void start() { cali::begin(id, prefix.c_str()); }
     void stop() { cali::end(id); }
+
+    void set_prefix(const std::string& _prefix) { prefix = _prefix; }
 
     //----------------------------------------------------------------------------------//
     //
@@ -94,6 +101,7 @@ struct caliper : public base<caliper, void>
     // Member Variables
     //
     //----------------------------------------------------------------------------------//
+private:
     std::string channel    = get_channel();
     int         attributes = get_attributes();
     cali::id_t  id     = cali::create_attribute(channel, CALI_TYPE_STRING, attributes);

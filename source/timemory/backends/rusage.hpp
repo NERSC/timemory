@@ -123,6 +123,8 @@ int64_t
 get_bytes_read();
 int64_t
 get_bytes_written();
+int64_t
+get_virt_mem();
 
 //--------------------------------------------------------------------------------------//
 
@@ -130,4 +132,4 @@ get_bytes_written();
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/rusage.hpp"
+#include "timemory/backends/bits/rusage.hpp"

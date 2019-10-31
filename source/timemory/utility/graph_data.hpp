@@ -26,9 +26,14 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/graph.hpp"
 
 #include <cstdint>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 
 //--------------------------------------------------------------------------------------//
 
@@ -38,6 +43,128 @@ namespace tim
 //
 //  graph instance + current node + head node
 //
+//--------------------------------------------------------------------------------------//
+
+using graph_hash_map_t       = std::unordered_map<int64_t, std::string>;
+using graph_hash_alias_t     = std::unordered_map<int64_t, int64_t>;
+using graph_hash_map_ptr_t   = std::shared_ptr<graph_hash_map_t>;
+using graph_hash_alias_ptr_t = std::shared_ptr<graph_hash_alias_t>;
+
+//--------------------------------------------------------------------------------------//
+
+inline graph_hash_map_ptr_t
+get_hash_ids()
+{
+    static thread_local auto _pointer = std::make_shared<graph_hash_map_t>();
+    return _pointer;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline graph_hash_alias_ptr_t
+get_hash_aliases()
+{
+    static thread_local auto _pointer = std::make_shared<graph_hash_alias_t>();
+    return _pointer;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline int64_t
+add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
+{
+    int64_t _hash_id = std::hash<std::string>()(prefix.c_str());
+    if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
+    {
+        if(settings::debug())
+            printf("[%s@'%s':%i]> adding hash id: %s...\n", __FUNCTION__, __FILE__,
+                   __LINE__, prefix.c_str());
+
+        (*_hash_map)[_hash_id] = prefix;
+        if(_hash_map->bucket_count() < _hash_map->size())
+            _hash_map->rehash(_hash_map->size() + 10);
+    }
+    return _hash_id;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline int64_t
+add_hash_id(const std::string& prefix)
+{
+    static thread_local auto _hash_map = get_hash_ids();
+    return add_hash_id(_hash_map, prefix);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+add_hash_id(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
+            int64_t _hash_id, int64_t _alias_hash_id)
+{
+    if(_hash_alias->find(_alias_hash_id) == _hash_alias->end() &&
+       _hash_map->find(_hash_id) != _hash_map->end())
+    {
+        (*_hash_alias)[_alias_hash_id] = _hash_id;
+        if(_hash_alias->bucket_count() < _hash_alias->size())
+            _hash_alias->rehash(_hash_alias->size() + 10);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+add_hash_id(int64_t _hash_id, int64_t _alias_hash_id)
+{
+    add_hash_id(get_hash_ids(), get_hash_aliases(), _hash_id, _alias_hash_id);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string
+get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
+                    int64_t _hash_id)
+{
+    auto _map_itr   = _hash_map->find(_hash_id);
+    auto _alias_itr = _hash_alias->find(_hash_id);
+
+    if(_map_itr != _hash_map->end())
+        return _map_itr->second;
+    else if(_alias_itr != _hash_alias->end())
+    {
+        _map_itr = _hash_map->find(_alias_itr->second);
+        if(_map_itr != _hash_map->end())
+            return _map_itr->second;
+    }
+
+    if(settings::verbose() > 0 || settings::debug())
+    {
+        std::stringstream ss;
+        ss << "Error! node with hash " << _hash_id
+           << " did not have an associated prefix!\n";
+        ss << "Hash map:\n";
+        auto _w = 30;
+        for(const auto& itr : *_hash_map)
+            ss << "    " << std::setw(_w) << itr.first << " : " << (itr.second) << "\n";
+        if(_hash_alias->size() > 0)
+        {
+            ss << "Alias hash map:\n";
+            for(const auto& itr : *_hash_alias)
+                ss << "    " << std::setw(_w) << itr.first << " : " << itr.second << "\n";
+        }
+        fprintf(stderr, "%s\n", ss.str().c_str());
+    }
+    return std::string("unknown-hash=") + std::to_string(_hash_id);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string
+get_hash_identifier(int64_t _hash_id)
+{
+    return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id);
+}
+
 //--------------------------------------------------------------------------------------//
 
 template <typename _Node>
@@ -119,6 +246,16 @@ public:
     {
         ++m_depth;
         return (m_current = m_graph.append_child(m_current, node));
+    }
+
+    inline iterator append_head(_Node& node)
+    {
+        return m_graph.append_child(m_head, node);
+    }
+
+    inline iterator emplace_child(iterator _itr, _Node& node)
+    {
+        return m_graph.append_child(_itr, node);
     }
 
 private:

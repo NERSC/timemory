@@ -24,13 +24,14 @@
 
 #pragma once
 
+#include "timemory/backends/bits/cupti.hpp"
+#include "timemory/backends/cuda.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/cupti_activity.hpp"
 #include "timemory/components/cupti_counters.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/cupti.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
@@ -79,6 +80,7 @@ struct gpu_roofline
         base<this_type, value_type, policy::global_init, policy::global_finalize,
              policy::thread_init, policy::thread_finalize, policy::global_finalize,
              policy::serialization>;
+    using storage_type = typename base_type::storage_type;
 
     using size_type     = std::size_t;
     using counters_type = cupti_counters;
@@ -186,8 +188,6 @@ public:
             get_labels() = { std::string("runtime") };
         } else
         {
-            using strvec_t = std::vector<string_t>;
-
             strvec_t events  = { "active_warps", "global_load", "global_store" };
             strvec_t metrics = { "ldst_executed",
                                  "ldst_issued",
@@ -283,12 +283,12 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init()
+    static void invoke_global_init(storage_type*)
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::invoke_global_init();
+            activity_type::invoke_global_init(nullptr);
         else
-            counters_type::invoke_global_init();
+            counters_type::invoke_global_init(nullptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -301,25 +301,28 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(storage_type* _store)
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::invoke_global_finalize();
+            activity_type::invoke_global_finalize(nullptr);
         else
-            counters_type::invoke_global_finalize();
+            counters_type::invoke_global_finalize(nullptr);
 
-        // run roofline peak generation
-        auto ert_config = get_finalizer();
-        auto ert_data   = get_ert_data();
-        apply<void>::access<ert_executor_t>(ert_config, ert_data);
-        if(ert_data && (settings::verbose() > 0 || settings::debug()))
-            std::cout << *(ert_data) << std::endl;
+        if(_store && _store->size() > 0)
+        {
+            // run roofline peak generation
+            auto ert_config = get_finalizer();
+            auto ert_data   = get_ert_data();
+            apply<void>::access<ert_executor_t>(ert_config, ert_data);
+            if(ert_data && (settings::verbose() > 0 || settings::debug()))
+                std::cout << *(ert_data) << std::endl;
+        }
     }
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init() {}
-    static void invoke_thread_finalize() {}
+    static void invoke_thread_init(storage_type*) {}
+    static void invoke_thread_finalize(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 
@@ -344,9 +347,14 @@ public:
     static std::string label()
     {
         if(settings::roofline_type_labels_gpu())
-            return std::string("gpu_roofline_") + get_type_string() + "_" +
-                   get_mode_string();
-        else
+        {
+            auto ret = std::string("gpu_roofline_") + get_type_string() + "_" +
+                       get_mode_string();
+            // erase consecutive underscores
+            while(ret.find("__") != std::string::npos)
+                ret.erase(ret.find("__"), 1);
+            return ret;
+        } else
             return std::string("gpu_roofline_") + get_mode_string();
     }
 

@@ -24,17 +24,18 @@
 
 #include "gtest/gtest.h"
 
+#include <timemory/timemory.hpp>
+
 #include <chrono>
 #include <iostream>
+#include <mutex>
 #include <random>
 #include <thread>
-#include <timemory/timemory.hpp>
 #include <vector>
 
 using namespace tim::component;
 using mutex_t        = std::mutex;
 using lock_t         = std::unique_lock<mutex_t>;
-using condvar_t      = std::condition_variable;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 using floating_t     = double;
@@ -95,7 +96,9 @@ allocate()
         nfib = details::random_entry(v);
         ret += details::fibonacci(nfib);
     }
-    printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
+
+    if(ret < 0)
+        printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 
     curr.stop();
     peak.stop();
@@ -195,6 +198,8 @@ print_info(const _Tp& obj, int64_t expected)
 
 class rusage_tests : public ::testing::Test
 {
+protected:
+    void SetUp() override { tim::settings::file_output() = true; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -244,6 +249,7 @@ main(int argc, char** argv)
     tim::settings::precision()    = 9;
     tim::settings::memory_units() = memory_unit.second;
     tim::timemory_init(argc, argv);
+    tim::settings::file_output() = false;
 
     details::allocate();
 
@@ -256,6 +262,9 @@ main(int argc, char** argv)
     // rb = io.get<read_bytes>();
     // wb = io.get<written_bytes>();
 #endif
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count()  = 1;
+    tim::settings::banner()      = false;
 
     return RUN_ALL_TESTS();
 }

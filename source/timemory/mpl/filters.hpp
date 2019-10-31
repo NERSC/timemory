@@ -164,14 +164,28 @@ using filter_false = typename filter_if_false<Predicate, Sequence>::type;
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, template <typename...> class Operator,
-          typename Sequence>
-struct operation_filter_if_false;
+          typename... Ts>
+struct operation_filter_if_false
+{
+    using type = tuple_concat_t<typename filter_if_false_result<
+        Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
+};
 
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, template <typename...> class Operator,
           typename... Ts>
 struct operation_filter_if_false<Predicate, Operator, std::tuple<Ts...>>
+{
+    using type = tuple_concat_t<typename filter_if_false_result<
+        Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class Predicate, template <typename...> class Operator,
+          typename... Ts>
+struct operation_filter_if_false<Predicate, Operator, std::tuple<std::tuple<Ts...>>>
 {
     using type = tuple_concat_t<typename filter_if_false_result<
         Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
@@ -190,13 +204,26 @@ using operation_filter_false =
 //
 //======================================================================================//
 
-template <template <typename> class Predicate, typename Sequence>
-struct filter_if_true;
+template <template <typename> class Predicate, typename... Ts>
+struct filter_if_true
+{
+    using type = tuple_concat_t<
+        typename filter_if_true_result<Predicate<Ts>::value>::template type<Ts>...>;
+};
 
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_true<Predicate, std::tuple<Ts...>>
+{
+    using type = tuple_concat_t<
+        typename filter_if_true_result<Predicate<Ts>::value>::template type<Ts>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class Predicate, typename... Ts>
+struct filter_if_true<Predicate, std::tuple<std::tuple<Ts...>>>
 {
     using type = tuple_concat_t<
         typename filter_if_true_result<Predicate<Ts>::value>::template type<Ts>...>;
@@ -239,9 +266,8 @@ using operation_filter_true =
 template <typename... _ImplTypes>
 struct get_data_tuple
 {
-    using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
-    using label_type = std::tuple<
-        std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+    using value_type = std::tuple<_ImplTypes...>;
+    using label_type = std::tuple<std::tuple<std::string, _ImplTypes>...>;
 };
 
 template <typename... _ImplTypes>
@@ -266,58 +292,13 @@ struct get_data_tuple<std::tuple<_ImplTypes...>>
 template <typename... Types>
 using implemented = impl::filter_false<trait::is_available, std::tuple<Types...>>;
 
+template <typename _Tuple>
+using available_tuple = impl::filter_false<trait::is_available, _Tuple>;
+
 /// filter out any operations on types that are not available
 template <template <typename...> class Operator, typename... Types>
 using modifiers =
     impl::operation_filter_false<trait::is_available, Operator, std::tuple<Types...>>;
-
-//======================================================================================//
-//
-//      trait::start_priority
-//
-//======================================================================================//
-
-/// filter out any types without start priority
-template <typename _Tuple>
-using priority_start_tuple = impl::filter_false<trait::start_priority, _Tuple>;
-
-/// filter out any types with a start priority
-template <typename _Tuple>
-using standard_start_tuple = impl::filter_true<trait::start_priority, _Tuple>;
-
-/// filter out any operations on types without a start priority
-template <template <typename...> class Operator, typename _Tuple>
-using priority_start_modifiers =
-    impl::operation_filter_false<trait::start_priority, Operator, _Tuple>;
-
-/// filter out any operations on types with a start priority
-template <template <typename...> class Operator, typename _Tuple>
-using standard_start_modifiers =
-    impl::operation_filter_true<trait::start_priority, Operator, _Tuple>;
-
-//======================================================================================//
-//
-//      trait::stop_priority
-//
-//======================================================================================//
-
-/// filter out any types without stop priority
-template <typename _Tuple>
-using priority_stop_tuple = impl::filter_false<trait::stop_priority, _Tuple>;
-
-/// filter out any types with a stop priority
-template <typename _Tuple>
-using standard_stop_tuple = impl::filter_true<trait::stop_priority, _Tuple>;
-
-/// filter out any operations on types without a stop priority
-template <template <typename...> class Operator, typename _Tuple>
-using priority_stop_modifiers =
-    impl::operation_filter_false<trait::stop_priority, Operator, _Tuple>;
-
-/// filter out any operations on types with a stop priority
-template <template <typename...> class Operator, typename _Tuple>
-using standard_stop_modifiers =
-    impl::operation_filter_true<trait::stop_priority, Operator, _Tuple>;
 
 //======================================================================================//
 //

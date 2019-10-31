@@ -27,6 +27,8 @@
  *
  */
 
+#define TIMEMORY_BUILD_EXTERN_INIT
+
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/utility/macros.hpp"
@@ -36,11 +38,56 @@
 
 using namespace tim::component;
 
-//======================================================================================//
 #if defined(TIMEMORY_EXTERN_INIT)
+
+//======================================================================================//
+
+__library_ctor__ void
+timemory_library_constructor()
+{
+#    if defined(DEBUG)
+    auto _debug   = tim::settings::debug();
+    auto _verbose = tim::settings::verbose();
+#    endif
+
+#    if defined(DEBUG)
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing manager...\n", __FUNCTION__);
+#    endif
+
+    // fully initialize manager
+    static thread_local auto _instance = tim::manager::instance();
+    static auto              _master   = tim::manager::master_instance();
+
+    if(_instance != _master)
+        printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
+               (void*) _instance.get(), (void*) _master.get());
+
+#    if defined(DEBUG)
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing storage...\n", __FUNCTION__);
+#    endif
+
+    // initialize storage
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    tim::manager::get_storage<tuple_type>::initialize(_master);
+}
+
+//======================================================================================//
 
 namespace tim
 {
+//======================================================================================//
+
+env_settings*
+env_settings::instance()
+{
+    static env_settings* _instance = new env_settings();
+    return _instance;
+}
+
+//======================================================================================//
+
 std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
@@ -49,37 +96,41 @@ manager::f_manager_instance_count()
 }
 
 //======================================================================================//
+// generate a master instance and a nullptr on the first pass
+// generate a worker instance on subsequent and return master and worker
+//
+manager::pointer_pair_t&
+manager::instance_pair()
+{
+    static auto              _master_instance = std::make_shared<manager>();
+    static std::atomic<int>  _counter;
+    static thread_local auto _worker_instance =
+        pointer_t((_counter++ == 0) ? nullptr : new manager());
+    static thread_local auto _instance =
+        pointer_pair_t{ _master_instance, _worker_instance };
+    return _instance;
+}
+
+//======================================================================================//
 // get either master or thread-local instance
 //
-manager::pointer
+manager::pointer_t
 manager::instance()
 {
-    return details::manager_singleton().instance();
+    static thread_local auto& _pinst = manager::instance_pair();
+    static thread_local auto& _instance =
+        _pinst.second.get() ? _pinst.second : _pinst.first;
+    return _instance;
 }
 
 //======================================================================================//
 // get master instance
 //
-manager::pointer
+manager::pointer_t
 manager::master_instance()
 {
-    return details::manager_singleton().master_instance();
-}
-
-//======================================================================================//
-// static function
-manager::pointer
-manager::noninit_instance()
-{
-    return details::manager_singleton().instance_ptr();
-}
-
-//======================================================================================//
-// static function
-manager::pointer
-manager::noninit_master_instance()
-{
-    return details::manager_singleton().master_instance_ptr();
+    static auto& _pinst = manager::instance_pair();
+    return _pinst.first;
 }
 
 //======================================================================================//
@@ -87,48 +138,312 @@ manager::noninit_master_instance()
 //      template <> get_storage_singleton<TYPE>();
 //      template <> get_noninit_storage_singleton<TYPE>();
 //
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(caliper)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_roofline_dp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_roofline_flops)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_roofline_sp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cuda_event)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cupti_activity)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cupti_counters)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(page_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(data_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(gpu_roofline_dp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(gpu_roofline_flops)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(gpu_roofline_hp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(gpu_roofline_sp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(monotonic_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(monotonic_raw_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_io_in)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_io_out)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_major_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_minor_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_msg_recv)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_msg_sent)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_signals)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_swap)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(nvtx_marker)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(papi_array_t)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(peak_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(priority_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(process_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(process_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(read_bytes)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(real_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(stack_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(system_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(thread_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(thread_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(trip_count)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(user_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(voluntary_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(written_bytes)
+#    if defined(TIMEMORY_USE_CALIPER)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(caliper)
+#    endif
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_clock)
+#    if defined(TIMEMORY_USE_PAPI)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_dp_flops)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_flops)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_sp_flops)
+#    endif
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_util)
+#    if defined(TIMEMORY_USE_CUDA)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cuda_event)
+#    endif
+#    if defined(TIMEMORY_USE_CUPTI)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cupti_activity)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cupti_counters)
+#    endif
+TIMEMORY_INSTANTIATE_EXTERN_INIT(data_rss)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_cpu_profiler)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_heap_profiler)
+#    if defined(TIMEMORY_USE_CUPTI)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_dp_flops)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_flops)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_hp_flops)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_sp_flops)
+#    endif
+TIMEMORY_INSTANTIATE_EXTERN_INIT(monotonic_clock)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(monotonic_raw_clock)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_io_in)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_io_out)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_major_page_faults)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_minor_page_faults)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_msg_recv)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_msg_sent)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_signals)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(num_swap)
+#    if defined(TIMEMORY_USE_NVTX)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(nvtx_marker)
+#    endif
+TIMEMORY_INSTANTIATE_EXTERN_INIT(page_rss)
+#    if defined(TIMEMORY_USE_PAPI)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(papi_array_t)
+#    endif
+TIMEMORY_INSTANTIATE_EXTERN_INIT(peak_rss)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(priority_context_switch)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(process_cpu_clock)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(process_cpu_util)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(read_bytes)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(real_clock)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(stack_rss)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(system_clock)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(thread_cpu_clock)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(thread_cpu_util)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(trip_count)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(user_clock)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(virtual_memory)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(voluntary_context_switch)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(written_bytes)
 
 }  // namespace tim
+
+using string_t = std::string;
+
+#    undef TIMEMORY_STATIC_ACCESSOR
+#    undef TIMEMORY_ENV_STATIC_ACCESSOR
+
+#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
+        TYPE& tim::settings::FUNC()                                                      \
+        {                                                                                \
+            static TYPE instance = INIT;                                                 \
+            return instance;                                                             \
+        }
+
+#    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                      \
+        TYPE& tim::settings::FUNC()                                                      \
+        {                                                                                \
+            static TYPE instance = get_env<TYPE>(ENV_VAR, INIT);                         \
+            return instance;                                                             \
+        }
+
+// namespace tim
+// {
+// namespace settings
+// {
+
+//======================================================================================//
+//
+//                  GENERAL SETTINGS THAT APPLY TO MULTIPLE COMPONENTS
+//
+//======================================================================================//
+
+// logical settings
+TIMEMORY_STATIC_ACCESSOR(bool, suppress_parsing, false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, enabled, "TIMEMORY_ENABLED", TIMEMORY_DEFAULT_ENABLED)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, auto_output, "TIMEMORY_AUTO_OUTPUT", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, cout_output, "TIMEMORY_COUT_OUTPUT", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, file_output, "TIMEMORY_FILE_OUTPUT", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, text_output, "TIMEMORY_TEXT_OUTPUT", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_output, "TIMEMORY_DART_OUTPUT", false)
+
+// general settings
+TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, debug, "TIMEMORY_DEBUG", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
+                             std::numeric_limits<uint16_t>::max())
+
+// general formatting
+TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, precision, "TIMEMORY_PRECISION", -1)
+TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, width, "TIMEMORY_WIDTH", -1)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, scientific, "TIMEMORY_SCIENTIFIC", false)
+
+// timing formatting
+TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, timing_precision, "TIMEMORY_TIMING_PRECISION", -1)
+TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, timing_width, "TIMEMORY_TIMING_WIDTH", -1)
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, timing_units, "TIMEMORY_TIMING_UNITS", "")
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, timing_scientific, "TIMEMORY_TIMING_SCIENTIFIC", false)
+
+// memory formatting
+TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, memory_precision, "TIMEMORY_MEMORY_PRECISION", -1)
+TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, memory_width, "TIMEMORY_MEMORY_WIDTH", -1)
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, memory_units, "TIMEMORY_MEMORY_UNITS", "")
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, memory_scientific, "TIMEMORY_MEMORY_SCIENTIFIC", false)
+
+// output control
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, output_path, "TIMEMORY_OUTPUT_PATH",
+                             "timemory-output/")  // folder
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, output_prefix, "TIMEMORY_OUTPUT_PREFIX",
+                             "")  // file prefix
+
+// dart control
+/// only echo this measurement type
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, dart_type, "TIMEMORY_DART_TYPE", "")
+/// only echo this many measurement
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 0)
+
+//======================================================================================//
+//
+//                          COMPONENTS SPECIFIC SETTINGS
+//
+//======================================================================================//
+
+//--------------------------------------------------------------------------------------//
+//      PAPI
+//--------------------------------------------------------------------------------------//
+
+/// allow multiplexing
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, papi_multiplexing, "TIMEMORY_PAPI_MULTIPLEXING", true)
+
+/// errors with PAPI will throw
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, papi_fail_on_error, "TIMEMORY_PAPI_FAIL_ON_ERROR",
+                             false)
+
+/// PAPI hardware counters
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, papi_events, "TIMEMORY_PAPI_EVENTS", "")
+
+//--------------------------------------------------------------------------------------//
+//      CUDA / CUPTI
+//--------------------------------------------------------------------------------------//
+
+/// batch size for create cudaEvent_t in cuda_event components
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, cuda_event_batch_size,
+                             "TIMEMORY_CUDA_EVENT_BATCH_SIZE", 5)
+
+/// Use cudaDeviceSync when stopping NVTX marker (vs. cudaStreamSychronize)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, nvtx_marker_device_sync,
+                             "TIMEMORY_NVTX_MARKER_DEVICE_SYNC", true)
+
+/// default group of kinds tracked via CUpti Activity API
+TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, cupti_activity_level,
+                             "TIMEMORY_CUPTI_ACTIVITY_LEVEL", 1)
+
+/// specific activity kinds
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, cupti_activity_kinds,
+                             "TIMEMORY_CUPTI_ACTIVITY_KINDS", "")
+
+/// CUPTI events
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, cupti_events, "TIMEMORY_CUPTI_EVENTS", "")
+
+/// CUPTI metrics
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, cupti_metrics, "TIMEMORY_CUPTI_METRICS", "")
+
+/// Device to use CUPTI on
+TIMEMORY_ENV_STATIC_ACCESSOR(int, cupti_device, "TIMEMORY_CUPTI_DEVICE", 0)
+
+//--------------------------------------------------------------------------------------//
+//      ROOFLINE
+//--------------------------------------------------------------------------------------//
+
+/// roofline mode for roofline components
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, roofline_mode, "TIMEMORY_ROOFLINE_MODE", "op")
+
+/// set the roofline mode when running ERT on CPU
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, cpu_roofline_mode, "TIMEMORY_ROOFLINE_MODE_CPU",
+                             roofline_mode())
+
+/// set the roofline mode when running ERT on GPU
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, gpu_roofline_mode, "TIMEMORY_ROOFLINE_MODE_GPU",
+                             roofline_mode())
+
+/// custom hw counters to add to the cpu roofline
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, cpu_roofline_events,
+                             "TIMEMORY_ROOFLINE_EVENTS_CPU", "")
+
+/// custom hw counters to add to the gpu roofline
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, gpu_roofline_events,
+                             "TIMEMORY_ROOFLINE_EVENTS_GPU", "")
+
+/// roofline labels/descriptions/output-files encode the list of data types
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, roofline_type_labels, "TIMEMORY_ROOFLINE_TYPE_LABELS",
+                             false)
+
+/// set the roofline mode when running ERT on CPU
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, roofline_type_labels_cpu,
+                             "TIMEMORY_ROOFLINE_TYPE_LABELS_CPU", roofline_type_labels())
+
+/// set the roofline mode when running ERT on GPU
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, roofline_type_labels_gpu,
+                             "TIMEMORY_ROOFLINE_TYPE_LABELS_GPU", roofline_type_labels())
+
+//--------------------------------------------------------------------------------------//
+//      ERT
+//--------------------------------------------------------------------------------------//
+
+/// set the number of threads when running ERT (0 == default-specific)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_num_threads, "TIMEMORY_ERT_NUM_THREADS", 0)
+
+/// set the number of threads when running ERT on CPU
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_num_threads_cpu,
+                             "TIMEMORY_ERT_NUM_THREADS_CPU",
+                             std::thread::hardware_concurrency())
+
+/// set the number of threads when running ERT on GPU
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_num_threads_gpu,
+                             "TIMEMORY_ERT_NUM_THREADS_GPU", 1)
+
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_num_streams, "TIMEMORY_ERT_NUM_STREAMS", 1)
+
+/// set the grid size (number of blocks) for ERT on GPU (0 == auto-compute)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_grid_size, "TIMEMORY_ERT_GRID_SIZE", 0)
+
+/// set the block size (number of threads per block) for ERT on GPU
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_block_size, "TIMEMORY_ERT_BLOCK_SIZE", 1024)
+
+/// set the alignment (in bits) when running ERT on CPU (0 == 8 * sizeof(T))
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_alignment, "TIMEMORY_ERT_ALIGNMENT", 0)
+
+/// set the minimum working size when running ERT (0 == default specific)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_min_working_size,
+                             "TIMEMORY_ERT_MIN_WORKING_SIZE", 0)
+
+/// set the minimum working size when running ERT on CPU
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_min_working_size_cpu,
+                             "TIMEMORY_ERT_MIN_WORKING_SIZE_CPU", 64)
+
+/// set the minimum working size when running ERT on CPU (default is 10 MB)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_min_working_size_gpu,
+                             "TIMEMORY_ERT_MIN_WORKING_SIZE_GPU", 10 * 1000 * 1000)
+
+/// set the max data size when running ERT on CPU (0 == device-specific)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_max_data_size, "TIMEMORY_ERT_MAX_DATA_SIZE", 0)
+
+/// set the max data size when running ERT on CPU (0 == 2 * max-cache-size)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_max_data_size_cpu,
+                             "TIMEMORY_ERT_MAX_DATA_SIZE_CPU", 0)
+
+/// set the max data size when running ERT on GPU (default is 500 MB)
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_max_data_size_gpu,
+                             "TIMEMORY_ERT_MAX_DATA_SIZE_GPU", 500 * 1000 * 1000)
+
+//--------------------------------------------------------------------------------------//
+//      Signals (more specific signals checked in timemory/details/settings.hpp
+//--------------------------------------------------------------------------------------//
+
+/// allow signal handling to be activated
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, allow_signal_handler, "TIMEMORY_ALLOW_SIGNAL_HANDLER",
+                             true)
+
+/// enable signals in timemory_init
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, enable_signal_handler,
+                             "TIMEMORY_ENABLE_SIGNAL_HANDLER", false)
+
+/// enable all signals
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, enable_all_signals, "TIMEMORY_ENABLE_ALL_SIGNALS",
+                             false)
+
+/// disable all signals
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, disable_all_signals, "TIMEMORY_DISABLE_ALL_SIGNALS",
+                             false)
+
+//--------------------------------------------------------------------------------------//
+//     Number of nodes
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, node_count, "TIMEMORY_NODE_COUNT", 0)
+
+//--------------------------------------------------------------------------------------//
+//     For auto_* types
+//--------------------------------------------------------------------------------------//
+
+/// default setting for auto_{list,tuple,hybrid} "report_at_exit" member variable
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT", false)
+
+// }  // namespace settings
+// }  // namespace tim
 
 #endif  // defined(TIMEMORY_EXTERN_INIT)

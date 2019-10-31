@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/bits/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/utility.hpp"
@@ -40,21 +41,31 @@ namespace impl
 template <typename... _Args>
 struct mangler
 {
-    static std::string mangle(std::string func)
+    static std::string mangle(std::string func, bool is_memfun, bool is_const)
     {
+        auto        nargs = sizeof...(_Args);
         std::string ret   = "_Z";
-        auto        delim = delimit(func, ":()<>");
+        if(func.length() > 0 && func[0] == '&')
+            func = func.substr(1);
+        auto delim = delimit(func, ":()<>");
         if(delim.size() > 1)
             ret += "N";
+        if(is_memfun && is_const)
+            ret += "K";
         for(const auto& itr : delim)
         {
             ret += std::to_string(itr.length());
             ret += itr;
         }
         ret += "E";
-        auto arg_string = apply<std::string>::join("", type_id<_Args>::name()...);
-        ret += arg_string;
-        printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
+
+        if(nargs == 0)
+            ret += "v";
+        else
+            ret += apply<std::string>::join("", type_id<_Args>::name()...);
+
+        if(settings::verbose() > 1 || settings::debug())
+            printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
         return ret;
     }
 };
@@ -64,9 +75,9 @@ struct mangler
 template <typename... _Args>
 struct mangler<std::tuple<_Args...>>
 {
-    static std::string mangle(std::string func)
+    static std::string mangle(std::string func, bool is_memfun, bool is_const)
     {
-        return mangler<_Args...>::mangle(func);
+        return mangler<_Args...>::mangle(func, is_memfun, is_const);
     }
 };
 
@@ -76,11 +87,14 @@ struct mangler<std::tuple<_Args...>>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Func, typename _Tuple = typename function_traits<_Func>::arg_tuple>
+template <typename _Func, typename _Traits = function_traits<_Func>>
 std::string
 mangle(const std::string& func)
 {
-    return impl::mangler<_Tuple>::mangle(func);
+    using _Tuple             = typename _Traits::args_type;
+    constexpr bool is_memfun = _Traits::is_memfun;
+    constexpr bool is_const  = _Traits::is_const;
+    return impl::mangler<_Tuple>::mangle(func, is_memfun, is_const);
 }
 
 //--------------------------------------------------------------------------------------//

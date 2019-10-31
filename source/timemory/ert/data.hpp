@@ -27,11 +27,12 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/timing.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
+#include "timemory/ert/types.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -216,7 +217,6 @@ public:
     void serialize(Archive& ar, const unsigned int)
     {
         constexpr auto sz = std::tuple_size<value_type>::value;
-        // for(size_type i = 0; i < m_values.size(); ++i)
         ar.setNextName("ert");
         ar.startNode();
         ar.makeArray();
@@ -284,13 +284,12 @@ initialize_buffer(_Tp* A, _Tp value, _Intp nsize)
 //--------------------------------------------------------------------------------------//
 //  measure floating-point or integer operations
 //
-template <typename _Device, typename _Tp, typename _ExecData = exec_data,
-          typename _Counter = component::real_clock>
+template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
 class counter
 {
 public:
     using string_t      = std::string;
-    using mutex_t       = std::mutex;
+    using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
     using counter_type  = _Counter;
     using exec_data_t   = _ExecData;
@@ -358,8 +357,8 @@ public:
         _Up* buffer = allocate_aligned<_Up, _Device>(nsize, align);
         if(settings::debug())
             printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
-        device::params<_Device> params(0, 512, 0, 0);
-        device::launch(nsize, params, initialize_buffer<_Device, _Up, uint64_t>, buffer,
+        device::params<_Device> _params(0, 512, 0, 0);
+        device::launch(nsize, _params, initialize_buffer<_Device, _Up, uint64_t>, buffer,
                        _Up(1), nsize);
         return buffer;
     }
@@ -383,8 +382,8 @@ public:
         _Up* buffer = allocate_aligned<_Up, _Device>(nsize, align);
         if(settings::debug())
             printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
-        device::params<_Device> params(0, 512, 0, 0);
-        device::launch(nsize, params, initialize_buffer<_Device, _Up, uint32_t>, buffer,
+        device::params<_Device> _params(0, 512, 0, 0);
+        device::launch(nsize, _params, initialize_buffer<_Device, _Up, uint32_t>, buffer,
                        _Up{ 1, 1 }, nsize);
         return buffer;
     }
@@ -515,6 +514,36 @@ private:
         nsize = std::max<uint64_t>(nsize, 1);
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+serialize(std::string fname, const exec_data& obj)
+{
+    bool                  _init   = mpi::is_initialized();
+    auto                  _rank   = mpi::rank();
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream     ss;
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(ss, opts);
+        oa.setNextName("rank");
+        oa.startNode();
+        oa(cereal::make_nvp("rank_id", _rank));
+        oa(cereal::make_nvp("data", obj));
+        oa.finishNode();
+    }
+    fname = settings::compose_output_filename(fname, ".json", _init, &_rank);
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
+        ofs << ss.str() << std::endl;
+    else
+    {
+        throw std::runtime_error(std::string("Error opening output file: " + fname));
+    }
+}
 
 //--------------------------------------------------------------------------------------//
 

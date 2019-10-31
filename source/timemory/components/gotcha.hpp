@@ -25,32 +25,14 @@
 #pragma once
 
 #include "timemory/backends/gotcha.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/mangler.hpp"
 
 #include <cassert>
-
-namespace std
-{
-template <typename T, typename U>
-ostream&
-operator<<(ostream& os, const tuple<T, U>& p)
-{
-    os << "(" << std::get<0>(p) << "," << std::get<1>(p) << ")";
-    return os;
-}
-template <typename T, typename U>
-ostream&
-operator<<(ostream& os, const pair<T, U>& p)
-{
-    os << "(" << p.first << "," << p.second << ")";
-    return os;
-}
-}  // namespace std
 
 //======================================================================================//
 
@@ -59,6 +41,46 @@ namespace tim
 namespace component
 {
 using size_type = std::size_t;
+
+//======================================================================================//
+//
+class gotcha_suppression
+{
+    template <size_type _Nt, typename _Components, typename _Differentiator>
+    friend struct gotcha;
+
+    static bool& get()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
+
+    struct auto_toggle
+    {
+        explicit auto_toggle(bool& _value, bool _if_equal = false)
+        : m_value(_value)
+        , m_if_equal(_if_equal)
+        {
+            if(m_value == m_if_equal)
+                m_value = !m_value;
+        }
+
+        ~auto_toggle()
+        {
+            if(m_value != m_if_equal)
+                m_value = !m_value;
+        }
+
+        auto_toggle(const auto_toggle&) = delete;
+        auto_toggle(auto_toggle&&)      = delete;
+        auto_toggle& operator=(const auto_toggle&) = delete;
+        auto_toggle& operator=(auto_toggle&&) = delete;
+
+    private:
+        bool& m_value;
+        bool  m_if_equal;
+    };
+};
 
 //
 // template params:
@@ -70,15 +92,21 @@ using size_type = std::size_t;
 //
 template <size_type _Nt, typename _Components, typename _Differentiator>
 struct gotcha
-: public base<gotcha<_Nt, _Components, _Differentiator>, int8_t, policy::global_init>
+: public base<gotcha<_Nt, _Components, _Differentiator>, void, policy::global_init,
+              policy::global_finalize, policy::thread_init>
 {
     static_assert(_Components::contains_gotcha == false,
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
-    using value_type = int8_t;
-    using this_type  = gotcha<_Nt, _Components, _Differentiator>;
-    using base_type  = base<this_type, value_type, policy::global_init>;
+    // clang-format off
+    using value_type     = void;
+    using this_type      = gotcha<_Nt, _Components, _Differentiator>;
+    using base_type      = base<this_type, value_type, policy::global_init,
+                                policy::global_finalize, policy::thread_init>;
+    using storage_type   = typename base_type::storage_type;
+    using component_type = typename _Components::component_type;
+    // clang-format on
 
     template <typename _Tp>
     using array_t = std::array<_Tp, _Nt>;
@@ -89,21 +117,18 @@ struct gotcha
     using error_t       = ::tim::gotcha::error_t;
     using destructor_t  = std::function<void()>;
     using constructor_t = std::function<void()>;
+    using atomic_bool_t = std::atomic<bool>;
+
+    using blacklist_t = std::set<std::string>;
 
     // using config_t = std::tuple<binding_t, wrappee_t, wrappid_t>;
     using config_t          = void;
     using get_initializer_t = std::function<config_t()>;
+    using get_blacklist_t   = std::function<blacklist_t()>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "gotcha"; }
     static std::string description() { return "GOTCHA wrapper"; }
-    static std::string display_unit() { return ""; }
-    static value_type  record() { return 0; }
+    static value_type  record() { return; }
 
     //----------------------------------------------------------------------------------//
 
@@ -118,12 +143,70 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
+    static get_blacklist_t& get_blacklist()
+    {
+        static get_blacklist_t _instance = []() { return blacklist_t{}; };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static bool& get_default_ready()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t _N, typename _Ret, typename... _Args>
     static void construct(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
+        gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
+
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
         auto& _fill_ids = get_filled();
+
+        if(_func.find("MPI_") != std::string::npos ||
+           _func.find("mpi_") != std::string::npos)
+        {
+            static auto mpi_blacklist = {
+                "MPI_Init",        "MPI_Finalize",  "MPI_Pcontrol",  "MPI_Init_thread",
+                "MPI_Initialized", "MPI_Comm_rank", "MPI_Comm_size", "MPI_T_init_thread",
+                "MPI_Comm_split",  "MPI_Abort",     "MPI_Barrier",   "MPI_Comm_split_type"
+            };
+
+            auto tofortran = [](std::string _fort) {
+                for(auto& itr : _fort)
+                    itr = tolower(itr);
+                if(_fort[_fort.length() - 1] != '_')
+                    _fort += "_";
+                return _fort;
+            };
+
+            // if function matches a blacklisted entry, do not construct wrapper
+            for(const auto& itr : mpi_blacklist)
+                if(_func == itr || _func == tofortran(itr))
+                {
+                    if(settings::debug())
+                        printf("[gotcha]> Skipping gotcha binding for %s...\n",
+                               _func.c_str());
+                    return;
+                }
+        }
+
+        // if function matches a blacklisted entry, do not construct wrapper
+        for(const auto& itr : get_blacklist()())
+        {
+            if(_func == itr)
+            {
+                if(settings::debug())
+                    printf("[gotcha]> Skipping gotcha binding for %s...\n",
+                           _func.c_str());
+                return;
+            }
+        }
 
         if(!_fill_ids[_N])
         {
@@ -132,6 +215,7 @@ struct gotcha
             auto& _tool_ids     = get_tool_ids();
             auto& _constructors = get_constructors();
             auto& _destructors  = get_destructors();
+            auto& _ready_flags  = get_ready_flags();
 
             // static int _incr = _priority;
             // _priority        = _incr++;
@@ -144,9 +228,13 @@ struct gotcha
                     _label.erase(_label.find("//"), 1);
             }
 
-            _tool_ids[_N] = _label;
-            _fill_ids[_N] = true;
-            _wrap_ids[_N] = _func;
+            // ensure the hash to string pairing is stored
+            storage_type::instance()->add_hash_id(_label);
+
+            _tool_ids[_N]    = _label;
+            _fill_ids[_N]    = true;
+            _wrap_ids[_N]    = _func;
+            _ready_flags[_N] = get_default_ready();
 
             error_t ret_prio = ::tim::gotcha::set_priority(_label, _priority);
             check_error<_N>(ret_prio, "set priority");
@@ -247,7 +335,27 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init() { configure(); }
+    static void invoke_global_init(storage_type*)
+    {
+        // if(get_default_ready())
+        //     configure();
+    }
+
+    static void invoke_global_finalize(storage_type*)
+    {
+        while(get_started() > 0)
+            --get_started();
+        while(get_thread_started() > 0)
+            --get_thread_started();
+        for(auto& itr : get_destructors())
+            itr();
+    }
+
+    static void invoke_thread_init(storage_type*)
+    {
+        for(size_type i = 0; i < _Nt; ++i)
+            get_ready_flags()[i] = (get_filled()[i] && get_default_ready());
+    }
 
     double get_display() const { return 0; }
 
@@ -256,13 +364,31 @@ struct gotcha
     void start()
     {
         auto _n = get_started()++;
+        auto _t = get_thread_started()++;
+
         if(_n == 0)
+        {
             configure();
+        }
+
+        if(_t == 0)
+        {
+            for(size_type i = 0; i < _Nt; ++i)
+                get_ready_flags()[i] = get_filled()[i];
+        }
     }
 
     void stop()
     {
         auto _n = --get_started();
+        auto _t = --get_thread_started();
+
+        if(_t == 0)
+        {
+            for(size_type i = 0; i < _Nt; ++i)
+                get_ready_flags()[i] = false;
+        }
+
         if(_n == 0)
         {
             for(auto& itr : get_destructors())
@@ -304,6 +430,14 @@ private:
     static std::atomic<int64_t>& get_started()
     {
         static std::atomic<int64_t> _instance;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static int64_t& get_thread_started()
+    {
+        static thread_local int64_t _instance = 0;
         return _instance;
     }
 
@@ -386,6 +520,20 @@ private:
 private:
     //----------------------------------------------------------------------------------//
 
+    static array_t<bool>& get_ready_flags()
+    {
+        static auto _get = []() {
+            array_t<bool> _arr;
+            for(auto& itr : _arr)
+                itr = get_default_ready();
+            return _arr;
+        };
+        static thread_local array_t<bool> _instance = _get();
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t _N>
     static void check_error(error_t _ret, const std::string& _prefix)
     {
@@ -432,7 +580,30 @@ private:
         typedef _Ret (*func_t)(_Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(get_wrappees()[_N]));
 
+        auto& _global_suppress = gotcha_suppression::get();
+
+        if(!get_ready_flags()[_N] || _global_suppress)
+        {
+            if(settings::debug())
+            {
+                static std::atomic<int64_t> _tcount;
+                static thread_local int64_t _tid = _tcount++;
+                std::stringstream           ss;
+                ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
+                   << get_ready_flags()[_N] << ") or is globally suppressed ("
+                   << _global_suppress << ")...\n";
+                std::cout << ss.str().c_str() << std::flush;
+            }
+            return (_orig) ? (*_orig)(_args...) : _Ret{};
+        }
+
+        // make sure the function is not recursively entered (important for
+        // allocation-based wrappers)
+        get_ready_flags()[_N] = false;
+        _global_suppress      = true;
+
 #    if defined(DEBUG)
+        /*
         if(settings::verbose() > 2 || settings::debug())
         {
             static std::atomic<int32_t> _count;
@@ -448,21 +619,27 @@ private:
                        _atype.c_str());
             }
         }
+        */
 #    endif
 
         if(_orig)
         {
-            _Components _obj(get_tool_ids()[_N], true);
-            _obj.start();  // destructor will stop
+            // component_type is always: component_{tuple,list,hybrid}
+            component_type _obj(get_tool_ids()[_N], true, settings::flat_profile());
+            _obj.start();
+            _obj.customize(get_tool_ids()[_N], _args...);
 
-            // return (*_orig)(std::forward<_Args>(_args)...);
-            // return (_orig)(std::move(_args)...);
-            // return (*_orig)(_args...);
-            _Ret _ret = (*_orig)(_args...);
+            get_ready_flags()[_N] = true;
+            _global_suppress      = false;
+            _Ret _ret             = (*_orig)(_args...);
+            _global_suppress      = true;
+            get_ready_flags()[_N] = false;
 
+            _obj.customize(get_tool_ids()[_N], _ret);
             _obj.stop();
 
 #    if defined(DEBUG)
+            /*
             if(settings::verbose() > 2 || settings::debug())
             {
                 static std::atomic<int32_t> _count;
@@ -475,12 +652,21 @@ private:
                               << std::endl;
                 }
             }
+            */
 #    endif
+
+            // allow re-entrance into wrapper
+            _global_suppress      = false;
+            get_ready_flags()[_N] = true;
 
             return _ret;
         }
         if(settings::debug())
             PRINT_HERE("nullptr to original function!");
+
+        // allow re-entrance into wrapper
+        _global_suppress      = false;
+        get_ready_flags()[_N] = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("should not be here!");
@@ -496,16 +682,52 @@ private:
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
         auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(get_wrappees()[_N]);
+
+        auto& _global_suppress = gotcha_suppression::get();
+        if(!get_ready_flags()[_N] || _global_suppress)
+        {
+            if(settings::debug())
+            {
+                static std::atomic<int64_t> _tcount;
+                static thread_local int64_t _tid = _tcount++;
+                std::stringstream           ss;
+                ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
+                   << get_ready_flags()[_N] << ") or is globally suppressed ("
+                   << _global_suppress << ")...\n";
+                std::cout << ss.str().c_str() << std::flush;
+            }
+            if(_orig)
+                (*_orig)(_args...);
+            return;
+        }
+
+        // make sure the function is not recursively entered (important for
+        // allocation-based wrappers)
+        get_ready_flags()[_N] = false;
+        _global_suppress      = true;
+
         if(_orig)
         {
-            _Components _obj(get_tool_ids()[_N], true);
+            component_type _obj(get_tool_ids()[_N], true, settings::flat_profile());
             _obj.start();
-            _orig(_args...);
+            _obj.customize(get_tool_ids()[_N], _args...);
+
+            get_ready_flags()[_N] = true;
+            _global_suppress      = false;
+            (*_orig)(_args...);
+            _global_suppress      = true;
+            get_ready_flags()[_N] = false;
+
+            _obj.customize(get_tool_ids()[_N]);
             _obj.stop();
         } else if(settings::debug())
         {
             PRINT_HERE("nullptr to original function!");
         }
+
+        // allow re-entrance into wrapper
+        _global_suppress      = false;
+        get_ready_flags()[_N] = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("should not be here!");
@@ -526,8 +748,18 @@ private:
 ///
 #define TIMEMORY_C_GOTCHA(type, idx, func)                                               \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(TIMEMORY_STRINGIZE(func))
+
+///
+/// generate a GOTCHA wrapper for function with identical args but different name
+/// -- useful for C++ template function where the mangled name is determined
+///    via `nm --dynamic <EXE>`
+///
+#define TIMEMORY_DERIVED_GOTCHA(type, idx, func, deriv_name)                             \
+    type::instrument<                                                                    \
+        idx, ::tim::function_traits<decltype(func)>::result_type,                        \
+        ::tim::function_traits<decltype(func)>::call_type>::generate(deriv_name)
 
 ///
 /// attempt to generate a GOTCHA wrapper for a C++ function by mangling the function name
@@ -535,15 +767,24 @@ private:
 ///
 #define TIMEMORY_CXX_GOTCHA(type, idx, func)                                             \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)))
+
+///
+/// attempt to generate a GOTCHA wrapper for a C++ function by mangling the function name
+/// in general, mangling template function is not supported
+///
+#define TIMEMORY_CXX_MEMFUN_GOTCHA(type, idx, func)                                      \
+    type::instrument<idx, ::tim::function_traits<decltype(&func)>::result_type,          \
+                     ::tim::function_traits<decltype(&func)>::call_type>::               \
+        generate(::tim::mangle<decltype(&func)>(TIMEMORY_STRINGIZE(func)))
 
 ///
 /// TIMEMORY_C_GOTCHA + ability to pass priority and tool name
 ///
 #define TIMEMORY_C_GOTCHA_TOOL(type, idx, func, ...)                                     \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(TIMEMORY_STRINGIZE(func), __VA_ARGS__)
 
 ///
@@ -551,5 +792,5 @@ private:
 ///
 #define TIMEMORY_CXX_GOTCHA_TOOL(type, idx, func, ...)                                   \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)), __VA_ARGS__)

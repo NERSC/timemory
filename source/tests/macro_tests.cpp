@@ -34,9 +34,8 @@
 #include <vector>
 
 using namespace tim::component;
-using mutex_t   = std::mutex;
-using lock_t    = std::unique_lock<mutex_t>;
-using condvar_t = std::condition_variable;
+using mutex_t = std::mutex;
+using lock_t  = std::unique_lock<mutex_t>;
 
 using auto_tuple_t      = tim::auto_tuple<real_clock, cpu_clock, cpu_util>;
 using component_tuple_t = typename auto_tuple_t::component_type;
@@ -96,8 +95,8 @@ TEST_F(macro_tests, blank_marker)
     TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_96.stop();
-    auto              key = timemory_variable_96.key();
+    timemory_variable_95.stop();
+    auto              key = timemory_variable_95.key();
     std::stringstream expected;
     expected << details::get_test_name();
     if(key != expected.str())
@@ -121,8 +120,8 @@ TEST_F(macro_tests, basic_marker)
     TIMEMORY_BASIC_MARKER(auto_tuple_t, "_", details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_121.stop();
-    auto              key = timemory_variable_121.key();
+    timemory_variable_120.stop();
+    auto              key = timemory_variable_120.key();
     std::stringstream expected;
     expected << __FUNCTION__ << "_" << details::get_test_name();
     if(key != expected.str())
@@ -144,15 +143,16 @@ TEST_F(macro_tests, basic_marker)
 TEST_F(macro_tests, marker)
 {
     TIMEMORY_MARKER(auto_tuple_t, "_", details::get_test_name());
+    auto line = __LINE__ - 1;
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_146.stop();
-    auto              key = timemory_variable_146.key();
+    timemory_variable_145.stop();
+    auto              key = timemory_variable_145.key();
     std::stringstream expected;
     std::string       file = __FILE__;
     file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
     expected << __FUNCTION__ << "_" << details::get_test_name() << "@'" << file
-             << "':146";
+             << "':" << line;
     if(key != expected.str())
     {
         std::cout << std::endl;
@@ -174,6 +174,10 @@ main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
     tim::timemory_init(argc, argv);
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count()  = 1;
+    tim::settings::banner()      = false;
+
     return RUN_ALL_TESTS();
 }
 

@@ -48,8 +48,8 @@ if(TIMEMORY_USE_MPI)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
-    timemory-extern-templates
-    timemory-extern-init
+    # timemory-extern-templates
+    # timemory-extern-init
     timemory-mpi
     timemory-threading
     timemory-papi
@@ -62,7 +62,9 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-gperftools
     timemory-gperftools-cpu
     timemory-gperftools-heap
-    timemory-santizier)
+    timemory-santizier
+    timemory-caliper
+    timemory-gotcha)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -74,6 +76,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-cudart-device
     timemory-gperftools-cpu
     timemory-caliper
+    timemory-gotcha
     ${_MPI_INTERFACE_LIBRARY})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -155,9 +158,11 @@ target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
 #
 #----------------------------------------------------------------------------------------#
 
-target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
-if(TIMEMORY_USE_EXTERN_INIT)
-    target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
+if(NOT WIN32)
+    target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
+    if(TIMEMORY_USE_EXTERN_INIT)
+        # target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
+    endif()
 endif()
 
 
@@ -352,8 +357,10 @@ if(TIMEMORY_BUILD_PYTHON)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # C++ standard
-    set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
-        CACHE STRING "PyBind11 CXX standard" FORCE)
+    if(NOT "${PYBIND11_CPP_STANDARD}" STREQUAL "${CMAKE_CXX_STANDARD}")
+        set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
+            CACHE STRING "PyBind11 CXX standard" FORCE)
+    endif()
 
     set(PYBIND11_INSTALL OFF)
     # add PyBind11 to project
@@ -380,22 +387,11 @@ if(TIMEMORY_BUILD_PYTHON)
     string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
 
     if(SKBUILD)
-        set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory)
-        set(TIMEMORY_INSTALL_FULL_PYTHONDIR
-            ${CMAKE_INSTALL_PREFIX}/lib/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
+        set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory)
     else()
-        set(TIMEMORY_INSTALL_PYTHONDIR
+        set(CMAKE_INSTALL_PYTHONDIR
             ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
-        set(TIMEMORY_INSTALL_FULL_PYTHONDIR
-            ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
     endif()
-
-    set(TIMEMORY_CONFIG_PYTHONDIR
-        ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
-
-else()
-
-    set(TIMEMORY_CONFIG_PYTHONDIR ${CMAKE_INSTALL_PREFIX})
 
 endif()
 
@@ -408,7 +404,7 @@ endif()
 
 find_package(PAPI QUIET)
 
-if(PAPI_FOUND)
+if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
     target_link_libraries(timemory-papi INTERFACE papi-shared)
     target_link_libraries(timemory-papi-static INTERFACE papi-static)
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES papi-shared papi-static)
@@ -487,6 +483,9 @@ if(TIMEMORY_USE_CUDA)
                 set(CUDA_ARCH "${CUDA_AUTO_ARCH}")
             else()
                 set(_ARCH_NUM ${cuda_${CUDA_ARCH}_arch})
+                if(_ARCH_NUM LESS 60)
+                    set(TIMEMORY_DISABLE_CUDA_HALF2 ON)
+                endif()
             endif()
         endif()
 
@@ -494,21 +493,11 @@ if(TIMEMORY_USE_CUDA)
         mark_as_advanced(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
 
         if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
-            add_interface_library(timemory-cuda-7)
-            target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-                $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-                -gencode=arch=compute_20,code=sm_20
-                -gencode=arch=compute_30,code=sm_30
-                -gencode=arch=compute_50,code=sm_50
-                -gencode=arch=compute_52,code=sm_52
-                -gencode=arch=compute_52,code=compute_52
-                >)
-
             add_interface_library(timemory-cuda-8)
             target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
                 $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-                -gencode=arch=compute_20,code=sm_20
                 -gencode=arch=compute_30,code=sm_30
+                -gencode=arch=compute_35,code=sm_35
                 -gencode=arch=compute_50,code=sm_50
                 -gencode=arch=compute_52,code=sm_52
                 -gencode=arch=compute_60,code=sm_60
@@ -520,8 +509,6 @@ if(TIMEMORY_USE_CUDA)
         add_interface_library(timemory-cuda-9)
         target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
             $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
             -gencode=arch=compute_61,code=sm_61
             -gencode=arch=compute_70,code=sm_70
@@ -572,6 +559,11 @@ if(TIMEMORY_USE_CUDA)
 
         target_compile_options(timemory-cuda INTERFACE
             $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+
+        if(TIMEMORY_DISABLE_CUDA_HALF2)
+            target_compile_definitions(timemory-cuda INTERFACE
+                TIMEMORY_DISABLE_CUDA_HALF2)
+        endif()
 
         if(NOT WIN32)
             target_compile_options(timemory-cuda INTERFACE
@@ -763,6 +755,11 @@ endif()
 #                               Caliper
 #
 #----------------------------------------------------------------------------------------#
+if(NOT TIMEMORY_USE_CALIPER)
+    # override locally to suppress building
+    set(TIMEMORY_BUILD_CALIPER OFF)
+endif()
+
 if(TIMEMORY_BUILD_CALIPER)
     set(caliper_FOUND ON)
     checkout_git_submodule(RECURSIVE
@@ -773,14 +770,15 @@ if(TIMEMORY_BUILD_CALIPER)
     set(_ORIG_TESTING ${BUILD_TESTING})
     set(CMAKE_C_EXTENSIONS ON)
     set(BUILD_TESTING OFF)
-    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    set(BUILD_TESTING OFF CACHE BOOL "")
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/caliper)
-    set(BUILD_TESTING ${_ORIG_TESTING} CACHE BOOL "" FORCE)
     set(BUILD_TESTING ${_ORIG_TESTING})
     set(CMAKE_C_EXTENSIONS ${_ORIG_CEXT})
     set(caliper_DIR ${CMAKE_INSTALL_PREFIX})
 else()
-    find_package(caliper QUIET)
+    if(TIMEMORY_USE_CALIPER)
+        find_package(caliper QUIET)
+    endif()
 endif()
 
 if(caliper_FOUND)
@@ -813,7 +811,8 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 if(UNIX AND NOT APPLE)
-    if(TIMEMORY_BUILD_GOTCHA)
+    set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples")
+    if(TIMEMORY_BUILD_GOTCHA AND TIMEMORY_USE_GOTCHA)
         set(gotcha_FOUND ON)
         checkout_git_submodule(RECURSIVE
             RELATIVE_PATH external/gotcha
@@ -822,8 +821,10 @@ if(UNIX AND NOT APPLE)
         list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha gotcha-include)
     elseif(TIMEMORY_USE_GOTCHA)
         find_package(gotcha QUIET)
+        set(TIMEMORY_BUILD_GOTCHA OFF)
     else()
         set(gotcha_FOUND OFF)
+        set(TIMEMORY_BUILD_GOTCHA OFF)
     endif()
 else()
     set(gotcha_FOUND OFF)

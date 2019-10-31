@@ -6,10 +6,10 @@ find_package(timemory REQUIRED COMPONENTS compile-options analysis-tools papi ca
 
 file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)
 
-add_executable(test_optional_on ${sources})
-add_executable(test_optional_off ${sources})
+add_executable(ex_optional_on ${sources})
+add_executable(ex_optional_off ${sources})
 
-target_link_libraries(test_optional_on timemory)
-target_compile_definitions(test_optional_on PRIVATE USE_TIMEMORY)
+target_link_libraries(ex_optional_on timemory)
+target_compile_definitions(ex_optional_on PRIVATE USE_TIMEMORY)
 
-install(TARGETS test_optional_on test_optional_off DESTINATION bin)
+install(TARGETS ex_optional_on ex_optional_off DESTINATION bin)

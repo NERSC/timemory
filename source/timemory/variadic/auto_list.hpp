@@ -46,6 +46,7 @@
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
@@ -53,34 +54,53 @@ namespace tim
 
 template <typename... Types>
 class auto_list
-: public counted_object<auto_list<Types...>>
-, public hashed_object<auto_list<Types...>>
 {
 public:
-    using component_type   = component_list<Types...>;
-    using this_type        = auto_list<Types...>;
-    using data_type        = typename component_type::data_type;
-    using counter_type     = counted_object<this_type>;
-    using counter_void     = counted_object<void>;
-    using hashed_type      = hashed_object<this_type>;
-    using string_t         = std::string;
-    using string_hash      = std::hash<string_t>;
-    using base_type        = component_type;
-    using language_t       = language;
-    using tuple_type       = implemented<Types...>;
-    using init_func_t      = std::function<void(this_type&)>;
-    using type_tuple       = typename component_type::type_tuple;
-    using data_value_tuple = typename component_type::data_value_tuple;
-    using data_label_tuple = typename component_type::data_label_tuple;
+    using this_type       = auto_list<Types...>;
+    using base_type       = component_list<Types...>;
+    using component_type  = typename base_type::component_type;
+    using data_type       = typename component_type::data_type;
+    using type_tuple      = typename component_type::type_tuple;
+    using data_value_type = typename component_type::data_value_type;
+    using data_label_type = typename component_type::data_label_type;
+    using init_func_t     = std::function<void(this_type&)>;
+    using string_t        = std::string;
 
-    static constexpr bool contains_gotcha = component_type::contains_gotcha;
+    // used by component hybrid and gotcha
+    static constexpr bool is_component_list   = false;
+    static constexpr bool is_component_tuple  = false;
+    static constexpr bool is_component_hybrid = false;
+    static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_list(const string_t&, const int64_t& lineno = 0,
-                              const language_t& lang = language_t::cxx(),
-                              bool report_at_exit    = settings::destructor_report());
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
-                              bool report_at_exit = settings::destructor_report());
+    //----------------------------------------------------------------------------------//
+    //
+    static void init_storage() { component_type::init_storage(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
+        return _instance;
+    }
+
+public:
+    template <typename _Scope = scope::process, typename _Func = init_func_t,
+              bool _Flat = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_list(const string_t&,
+                              bool         flat = (_Flat || settings::flat_profile()),
+                              bool         report_at_exit = false,
+                              const _Func& _func          = this_type::get_initializer());
+
+    template <typename _Scope = scope::process, typename _Func = init_func_t,
+              bool _Flat = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_list(component_type& tmp,
+                              bool            flat = (_Flat || settings::flat_profile()),
+                              bool            report_at_exit = false,
+                              const _Func&    _func = this_type::get_initializer());
     inline ~auto_list();
 
     // copy and move
@@ -110,7 +130,7 @@ public:
     inline void start()
     {
         if(m_enabled)
-            m_temporary_object.conditional_start();
+            m_temporary_object.start();
     }
     inline void stop()
     {
@@ -127,17 +147,6 @@ public:
         if(m_enabled)
             m_temporary_object.pop();
     }
-    inline void conditional_start()
-    {
-        if(m_enabled)
-            m_temporary_object.conditional_start();
-    }
-    inline void conditional_stop()
-    {
-        if(m_enabled)
-            m_temporary_object.conditional_stop();
-    }
-
     template <typename... _Args>
     inline void mark_begin(_Args&&... _args)
     {
@@ -150,18 +159,28 @@ public:
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
+    template <typename... _Args>
+    inline void customize(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.customize(std::forward<_Args>(_args)...);
+    }
+
+    inline data_value_type get() const { return m_temporary_object.get(); }
+
+    inline data_label_type get_labeled() const
+    {
+        return m_temporary_object.get_labeled();
+    }
 
     inline bool enabled() const { return m_enabled; }
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
-    inline const bool&      store() const { return m_temporary_object.store(); }
+    inline bool             store() const { return m_temporary_object.store(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
-    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
-    inline const language&  lang() const { return m_temporary_object.lang(); }
-    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
@@ -178,14 +197,14 @@ public:
     }
 
     template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, tuple_type>::value == true), int> = 0>
+              enable_if_t<(is_one_of<_Tp, type_tuple>::value == true), int> = 0>
     void init(_Args&&... _args)
     {
         m_temporary_object.template init<_Tp>(std::forward<_Args>(_args)...);
     }
 
     template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, tuple_type>::value == false), int> = 0>
+              enable_if_t<(is_one_of<_Tp, type_tuple>::value == false), int> = 0>
     void init(_Args&&...)
     {
     }
@@ -205,14 +224,6 @@ public:
         this->initialize<_Tail...>();
     }
 
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
-        };
-        return _instance;
-    }
-
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
@@ -230,48 +241,39 @@ private:
 //======================================================================================//
 
 template <typename... Types>
-auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno,
-                               const language_t& lang, bool report_at_exit)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(object_tag) + static_cast<int64_t>(lang) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(counter_type::enable() && settings::enabled())
+template <typename _Scope, typename _Func, bool _Flat>
+auto_list<Types...>::auto_list(const string_t& object_tag, bool flat, bool report_at_exit,
+                               const _Func& _func)
+: m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
-                     hashed_type::m_hash)
+, m_temporary_object(object_tag, m_enabled, flat || _Flat)
 {
     if(m_enabled)
     {
-        get_initializer()(*this);
+        _func(*this);
         m_temporary_object.start();
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
-                               bool report_at_exit)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(tmp.key()) + static_cast<int64_t>(tmp.lang()) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(true)
+template <typename _Scope, typename _Func, bool _Flat>
+auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                               const _Func& _func)
+: m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(hashed_type::m_hash, true))
+, m_temporary_object(tmp.clone(true, flat || _Flat))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
     {
-        get_initializer()(*this);
+        _func(*this);
         m_temporary_object.start();
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 auto_list<Types...>::~auto_list()
@@ -279,7 +281,7 @@ auto_list<Types...>::~auto_list()
     if(m_enabled)
     {
         // stop the timer
-        m_temporary_object.conditional_stop();
+        m_temporary_object.stop();
 
         // report timer at exit
         if(m_report_at_exit)
@@ -300,7 +302,7 @@ auto_list<Types...>::~auto_list()
 //======================================================================================//
 
 template <typename... _Types,
-          typename _Ret = typename auto_list<_Types...>::data_value_tuple>
+          typename _Ret = typename auto_list<_Types...>::data_value_type>
 _Ret
 get(const auto_list<_Types...>& _obj)
 {
@@ -310,7 +312,7 @@ get(const auto_list<_Types...>& _obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... _Types,
-          typename _Ret = typename auto_list<_Types...>::data_label_tuple>
+          typename _Ret = typename auto_list<_Types...>::data_label_type>
 _Ret
 get_labeled(const auto_list<_Types...>& _obj)
 {
@@ -327,11 +329,11 @@ get_labeled(const auto_list<_Types...>& _obj)
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_LIST(tag, ...)                                      \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                         \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                       \
     TIMEMORY_BASIC_AUTO_LIST(_AUTO_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_LIST(tag, ...)                                            \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                         \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                       \
     TIMEMORY_AUTO_LIST(_AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

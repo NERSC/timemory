@@ -25,10 +25,10 @@
 #pragma once
 
 #include "timemory/backends/papi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
@@ -78,7 +78,8 @@ struct cpu_roofline
     using base_type =
         base<this_type, value_type, policy::thread_init, policy::thread_finalize,
              policy::global_finalize, policy::serialization>;
-    using record_type = std::function<value_type()>;
+    using storage_type = typename base_type::storage_type;
+    using record_type  = std::function<value_type()>;
 
     using device_t    = device::cpu;
     using clock_type  = real_clock;
@@ -202,9 +203,10 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init()
+    static void invoke_thread_init(storage_type*)
     {
         papi::init();
+        papi::register_thread();
 
         // create the hardware counter events to accumulate
         event_type _events;
@@ -246,7 +248,7 @@ struct cpu_roofline
                 _events.push_back(itr);
         }
 
-        papi::create_event_set(_event_set_ptr());
+        papi::create_event_set(_event_set_ptr(), settings::papi_multiplexing());
         if(event_set() == PAPI_NULL)
         {
             fprintf(stderr, "[cpu_roofline]> event_set is PAPI_NULL!\n");
@@ -265,13 +267,13 @@ struct cpu_roofline
                             papi::get_event_code_name(itr).c_str());
             }
             if(_events_ptr()->size() > 0)
-                papi::start(event_set(), settings::papi_multiplexing());
+                papi::start(event_set());
         }
     }
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_finalize()
+    static void invoke_thread_finalize(storage_type*)
     {
         if(event_set() != PAPI_NULL && events().size() > 0)
         {
@@ -287,6 +289,7 @@ struct cpu_roofline
         delete _event_set_ptr();
         _events_ptr()    = nullptr;
         _event_set_ptr() = nullptr;
+        papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//
@@ -299,14 +302,17 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(storage_type* _store)
     {
-        // run roofline peak generation
-        auto ert_config = get_finalizer();
-        auto ert_data   = get_ert_data();
-        apply<void>::access<ert_executor_t>(ert_config, ert_data);
-        if(ert_data && (settings::verbose() > 0 || settings::debug()))
-            std::cout << *(ert_data) << std::endl;
+        if(_store && _store->size() > 0)
+        {
+            // run roofline peak generation
+            auto ert_config = get_finalizer();
+            auto ert_data   = get_ert_data();
+            apply<void>::access<ert_executor_t>(ert_config, ert_data);
+            if(ert_data && (settings::verbose() > 0 || settings::debug()))
+                std::cout << *(ert_data) << std::endl;
+        }
     }
 
     //----------------------------------------------------------------------------------//

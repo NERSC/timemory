@@ -34,6 +34,7 @@
 #include <cstdint>
 #include <string>
 
+#include "timemory/bits/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -79,7 +80,7 @@ using str = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 // helper macros for assembling unique variable name
 //
-#    define _LINE_STRING priv::apply::join("", __LINE__)
+#    define _LINE_STRING ::tim::str::join("", __LINE__)
 #    define _AUTO_NAME_COMBINE(X, Y) X##Y
 #    define _AUTO_NAME(Y) _AUTO_NAME_COMBINE(timemory_variable_, Y)
 #    define _AUTO_TYPEDEF(Y) _AUTO_NAME_COMBINE(timemory_variable_type_, Y)
@@ -88,30 +89,30 @@ using str = tim::apply<std::string>;
 //
 #    if !defined(_WINDOWS)
 #        define _AUTO_STR(A, B)                                                          \
-            priv::apply::join(                                                           \
+            ::tim::str::join(                                                            \
                 "", "@'", std::string(A).substr(std::string(A).find_last_of('/') + 1),   \
                 "':", B)
 #    else
 #        define _AUTO_STR(A, B)                                                          \
-            priv::apply::join(                                                           \
+            ::tim::str::join(                                                            \
                 "", "@'", std::string(A).substr(std::string(A).find_last_of('\\') + 1),  \
                 "':", B)
 #    endif
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_JOIN(delim, ...) priv::apply::join(delim, __VA_ARGS__)
+#    define TIMEMORY_JOIN(delim, ...) ::tim::str::join(delim, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_LABEL(...)                                                    \
-        priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
+        ::tim::str::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_LABEL(...)                                                          \
-        priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                        \
-                          _AUTO_STR(__FILE__, _LINE_STRING))
+        ::tim::str::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                         \
+                         _AUTO_STR(__FILE__, _LINE_STRING))
 
 //======================================================================================//
 //
@@ -120,18 +121,17 @@ using str = tim::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_MARKER(type, ...)                                             \
-        type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
+        type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_MARKER(type, ...)                                             \
-        type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), \
-                                  __LINE__)
+        type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_MARKER(type, ...)                                                   \
-        type _AUTO_NAME(__LINE__)(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+        type _AUTO_NAME(__LINE__)(TIMEMORY_LABEL(__VA_ARGS__))
 
 //======================================================================================//
 //
@@ -141,26 +141,23 @@ using str = tim::apply<std::string>;
 
 #    define TIMEMORY_BLANK_POINTER(type, ...)                                            \
         std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
-            (::tim::settings::enabled())                                                 \
-                ? new type(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)                     \
-                : nullptr)
+            (::tim::settings::enabled()) ? new type(TIMEMORY_JOIN("", __VA_ARGS__))      \
+                                         : nullptr)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_POINTER(type, ...)                                            \
         std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
             (::tim::settings::enabled())                                                 \
-                ? new type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__),        \
-                           __LINE__)                                                     \
+                ? new type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))        \
                 : nullptr)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_POINTER(type, ...)                                                  \
-        std::unique_ptr<type> _AUTO_NAME(__LINE__) =                                     \
-            std::unique_ptr<type>((::tim::settings::enabled())                           \
-                                      ? new type(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)  \
-                                      : nullptr)
+        std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
+            (::tim::settings::enabled()) ? new type(TIMEMORY_LABEL(__VA_ARGS__))         \
+                                         : nullptr)
 
 //======================================================================================//
 //
@@ -169,34 +166,32 @@ using str = tim::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_CALIPER(id, type, ...)                                        \
-        type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
+        type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_CALIPER(id, type, ...)                                        \
-        type _AUTO_NAME(id)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__),       \
-                            __LINE__)
+        type _AUTO_NAME(id)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER(id, type, ...)                                              \
-        type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+        type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_BLANK_CALIPER(id, type, ...)                                 \
-        static type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
+        static type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_BASIC_CALIPER(id, type, ...)                                 \
-        static type _AUTO_NAME(id)(                                                      \
-            TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
+        static type _AUTO_NAME(id)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_CALIPER(id, type, ...)                                       \
-        static type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+        static type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
@@ -226,17 +221,16 @@ using str = tim::apply<std::string>;
 //
 //======================================================================================//
 
-#    define TIMEMORY_BLANK_HANDLE(type, ...)                                             \
-        type(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
+#    define TIMEMORY_BLANK_HANDLE(type, ...) type(TIMEMORY_JOIN("", __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_HANDLE(type, ...)                                             \
-        type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
+        type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_HANDLE(type, ...) type(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+#    define TIMEMORY_HANDLE(type, ...) type(TIMEMORY_LABEL(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
@@ -292,7 +286,7 @@ using str = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 // deprecated macros
-#    include "timemory/details/macros.hpp"
+#    include "timemory/utility/bits/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
 

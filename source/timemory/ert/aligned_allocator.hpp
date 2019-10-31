@@ -66,7 +66,7 @@
 #endif
 
 #include "timemory/backends/device.hpp"
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 
 namespace tim
 {
@@ -230,6 +230,12 @@ public:
     {
         void* const pv = static_cast<void*>(p);
         new(pv) _Tp(t);
+    }
+
+    template <typename... _Args>
+    void construct(_Tp* const p, _Args&&... args) const
+    {
+        ::new((void*) p) _Tp(std::forward<_Args>(args)...);
     }
 
     void destroy(_Tp* const p) const { p->~_Tp(); }

@@ -30,10 +30,10 @@
 
 #pragma once
 
+#include "timemory/backends/bits/cupti.hpp"
 #include "timemory/backends/cuda.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/cupti.hpp"
 #include "timemory/units.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -68,26 +68,21 @@ struct cupti_activity
         base<cupti_activity, value_type, policy::global_init, policy::global_finalize>;
 
     // component-specific aliases
-    using ratio_t          = std::nano;
-    using size_type        = std::size_t;
-    using string_t         = std::string;
-    using receiver_type    = cupti::activity::receiver;
-    using kind_vector_type = std::vector<cupti::activity_kind_t>;
-    using initializer_type = std::function<kind_vector_type()>;
+    using ratio_t           = std::nano;
+    using size_type         = std::size_t;
+    using string_t          = std::string;
+    using receiver_type     = cupti::activity::receiver;
+    using kind_vector_type  = std::vector<cupti::activity_kind_t>;
+    using get_initializer_t = std::function<kind_vector_type()>;
+    using kernel_elapsed_t  = typename cupti::activity::receiver::named_elapsed_t;
+    using kernel_names_t    = std::unordered_set<std::string>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "cupti_activity"; }
     static std::string description() { return "CUpti Activity API"; }
-    static std::string display_unit() { return "sec"; }
 
     //----------------------------------------------------------------------------------//
 
-    static initializer_type& get_initializer()
+    static get_initializer_t& get_initializer()
     {
         static auto _lambda_instance = []() -> kind_vector_type {
             std::vector<cupti::activity_kind_t> _kinds;
@@ -111,43 +106,38 @@ struct cupti_activity
                 return _kinds;
             } else if(lvl == 0)
             {
-                // general settings for kernels, runtime
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_RUNTIME };
+                // general settings for kernels, runtime, overhead
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_RUNTIME,
+                             CUPTI_ACTIVITY_KIND_OVERHEAD } };
             } else if(lvl == 1)
             {
-                // general settings for kernels, runtime, memory
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
-                           CUPTI_ACTIVITY_KIND_RUNTIME };
+                // general settings for kernels, runtime, memory, overhead
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+                             CUPTI_ACTIVITY_KIND_RUNTIME,
+                             CUPTI_ACTIVITY_KIND_OVERHEAD } };
             } else if(lvl == 2)
             {
                 // general settings for kernels, runtime, memory, overhead, and device
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_MEMCPY,
-                           CUPTI_ACTIVITY_KIND_MEMSET,
-                           CUPTI_ACTIVITY_KIND_RUNTIME,
-                           CUPTI_ACTIVITY_KIND_DEVICE,
-                           CUPTI_ACTIVITY_KIND_DRIVER,
-                           CUPTI_ACTIVITY_KIND_OVERHEAD };
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+                             CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_DEVICE,
+                             CUPTI_ACTIVITY_KIND_DRIVER, CUPTI_ACTIVITY_KIND_OVERHEAD } };
             } else if(lvl > 2)
             {
                 // general settings for kernels, runtime, memory, overhead, device,
                 // stream, CDP kernels
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_MEMCPY,
-                           CUPTI_ACTIVITY_KIND_MEMSET,
-                           CUPTI_ACTIVITY_KIND_RUNTIME,
-                           CUPTI_ACTIVITY_KIND_DEVICE,
-                           CUPTI_ACTIVITY_KIND_DRIVER,
-                           CUPTI_ACTIVITY_KIND_OVERHEAD,
-                           CUPTI_ACTIVITY_KIND_MARKER,
-                           CUPTI_ACTIVITY_KIND_STREAM,
-                           CUPTI_ACTIVITY_KIND_CDP_KERNEL };
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+                             CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_DEVICE,
+                             CUPTI_ACTIVITY_KIND_DRIVER, CUPTI_ACTIVITY_KIND_OVERHEAD,
+                             CUPTI_ACTIVITY_KIND_MARKER, CUPTI_ACTIVITY_KIND_STREAM,
+                             CUPTI_ACTIVITY_KIND_CDP_KERNEL } };
             }
             return _kinds;
         };
-        static initializer_type _instance = _lambda_instance;
+        static get_initializer_t _instance = _lambda_instance;
         return _instance;
     }
 
@@ -161,7 +151,7 @@ struct cupti_activity
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init()
+    static void invoke_global_init(storage_type*)
     {
         static std::atomic<short> _once;
         if(_once++ > 0)
@@ -172,7 +162,7 @@ struct cupti_activity
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(storage_type*)
     {
         cupti::activity::finalize_trace(get_kind_types());
     }
@@ -184,6 +174,8 @@ struct cupti_activity
     //----------------------------------------------------------------------------------//
 
 public:
+    cupti_activity() = default;
+
     // make sure it is removed
     ~cupti_activity() { cupti::activity::get_receiver().remove(this); }
 
@@ -193,8 +185,9 @@ public:
     void start()
     {
         set_started();
-        cupti::activity::start_trace(this);
-        value = record();
+        cupti::activity::start_trace(this, depth_change);
+        value           = cupti::activity::get_receiver().get();
+        m_kernels_index = cupti::activity::get_receiver().get_named_index();
     }
 
     //----------------------------------------------------------------------------------//
@@ -202,9 +195,15 @@ public:
     void stop()
     {
         cupti::activity::stop_trace(this);
-        auto tmp = record();
+        auto tmp     = cupti::activity::get_receiver().get();
+        auto kernels = cupti::activity::get_receiver().get_named(m_kernels_index, true);
+
         accum += (tmp - value);
         value = std::move(tmp);
+        for(const auto& itr : kernels)
+            m_kernels_accum[itr.first] += itr.second;
+        m_kernels_value = std::move(kernels);
+
         set_stopped();
     }
 
@@ -225,6 +224,18 @@ public:
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
+
+    //----------------------------------------------------------------------------------//
+
+    kernel_elapsed_t get_secondary() const
+    {
+        return (is_transient) ? m_kernels_accum : m_kernels_value;
+    }
+
+private:
+    uint64_t         m_kernels_index = 0;
+    kernel_elapsed_t m_kernels_value;
+    kernel_elapsed_t m_kernels_accum;
 };
 
 }  // namespace component

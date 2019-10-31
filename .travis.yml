@@ -10,33 +10,9 @@ matrix:
     #   Python 3.6
     #
     # ------------------------------------------------------------------------ #
-    # GCC 5
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: "3.6"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
-            - build-essential
-            - libmpich-dev
-            - mpich
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
-            - lcov
-            - graphviz
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -55,11 +31,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs static'"
     # GCC 7
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -78,21 +53,22 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
-    # Clang 4.0
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static --caliper'"
+    #
+    # GCC 8
     - os: linux
-      dist: xenial
-      sudo: false
+      dist: bionic
       python: "3.6"
       addons:
         apt:
           sources:
-            - llvm-toolchain-xenial-4.0
             - ubuntu-toolchain-r-test
           packages:
-            - clang-4.0
-            - clang++-4.0
+            - gcc-8
+            - g++-8
             - build-essential
+            - libmpich-dev
+            - mpich
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
@@ -100,11 +76,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && COVERAGE=1"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static'"
     # Clang 5.0
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -124,39 +99,35 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static'"
+    # Clang 7
+    - os: linux
+      dist: bionic
+      python: "3.6"
+      addons:
+        apt:
+          packages:
+            - clang-7
+            - clang++-7
+            - build-essential
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
+      env:
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs static --caliper'"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
     #
     # ------------------------------------------------------------------------ #
-    # GCC 5
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: "3.7"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
-            - build-essential
-            - libmpich-dev
-            - mpich
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
-            - lcov
-            - graphviz
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.7"
       addons:
         apt:
@@ -175,19 +146,19 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
-    # GCC 7
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --gotcha'"
+    #
+    # GCC 8
     - os: linux
-      dist: xenial
-      sudo: false
+      dist: bionic
       python: "3.7"
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-7
-            - g++-7
+            - gcc-8
+            - g++-8
             - build-essential
             - libmpich-dev
             - mpich
@@ -198,33 +169,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
-    # Clang 4.0
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared'"
+   # Clang 5.0
     - os: linux
       dist: xenial
-      sudo: false
-      python: "3.7"
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-xenial-4.0
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-4.0
-            - clang++-4.0
-            - build-essential
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
-            - lcov
-            - graphviz
-      env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
-    # Clang 5.0
-    - os: linux
-      dist: xenial
-      sudo: false
       python: "3.7"
       addons:
         apt:
@@ -244,7 +192,28 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && COVERAGE=1 && BUILD_ARGS='--build-libs shared'"
+    # Clang 7
+    - os: linux
+      dist: bionic
+      python: "3.7"
+      addons:
+        apt:
+          packages:
+            - clang-7
+            - clang++-7
+            - build-essential
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
+      env:
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper'"
+
     # ------------------------------------------------------------------------ #
 
 before_install:
@@ -253,39 +222,25 @@ before_install:
   - export CXX=${CXX}
   - export TIMEMORY_VERBOSE=4
   - export TIMEMORY_OUTPUT_TOTAL=1
-  - export USE_MPI=$(if [ ! -z "$(which mpicc)" ]; then echo "ON"; else echo "OFF"; fi)
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p ${HOME}/miniconda
   - export PATH="${HOME}/miniconda/bin:${PATH}"
-  - conda config --add channels conda-forge
   - conda config --set always_yes yes --set changeps1 no
-  - conda update conda
-  - echo "CC = ${CC} $(${CC} -dumpversion)"
-  - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
-  - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
-  - echo "PYBINPATH = ${PYBINPATH}"
-  - echo "PYROOTPATH = ${PYROOTPATH}"
-  - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
 
 install:
   - eval "${MATRIX_EVAL}"
   - env
-  - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
+  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
   - source activate pyctest
-  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-py"
-  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
+  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-mpi ${BUILD_ARGS}"
+  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
-  - if [ -n "${COVERAGE}" ]; then
-    python ./pyctest-runner.py ${ARGS} --coverage --no-py -- -VV;
-    else
-    python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations --no-py -- -VV;
-    fi
-  # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
+  - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
+  - travis_wait 45 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
 
 script:
   - eval "${MATRIX_EVAL}"
-  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
-  - python setup.py install --build-type=${BUILD_TYPE} -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF
+  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DBUILD_STATIC_LIBS=OFF -DTIMEMORY_USE_CALIPER=ON -DTIMEMORY_USE_GOTCHA=ON -- -j2
   - python -c "import timemory; print(timemory.__file__)"
   - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
 

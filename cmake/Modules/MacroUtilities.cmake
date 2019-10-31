@@ -23,12 +23,20 @@ unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 # macro set_ifnot(<var> <value>)
 #       If variable var is not set, set its value to that provided
 #
-FUNCTION(CACHE_LIST _OP _LIST)
+MACRO(CACHE_LIST _OP _LIST)
+    set(_TMP_CACHE_LIST ${${_LIST}})
     # apply operation on list
-    list(${_OP} ${_LIST} ${ARGN})
+    list(${_OP} _TMP_CACHE_LIST ${ARGN})
     # replace list
-    set(${_LIST} ${${_LIST}} CACHE INTERNAL "Cached list ${_LIST}")
-ENDFUNCTION()
+    set(${_LIST} ${_TMP_CACHE_LIST})
+    if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+        set(${_LIST} ${_TMP_CACHE_LIST} PARENT_SCOPE)
+    endif()
+    # apply operation on list
+    #list(${_OP} ${_LIST} ${ARGN})
+    # replace list
+    #set(${_LIST} ${${_LIST}} CACHE INTERNAL "Cached list ${_LIST}")
+ENDMACRO()
 
 
 #-----------------------------------------------------------------------
@@ -159,7 +167,7 @@ ENDFUNCTION()
 # Adds a unit test and links against googletest. Additional arguments are linked
 # against the test.
 #
-FUNCTION(ADD_GOOGLETEST TEST_NAME)
+FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_GTEST)
         return()
     endif()
@@ -627,18 +635,8 @@ MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
         endif()
     endif()
 
-    # if assign to another variable
-    if(NOT "${VAR}" STREQUAL "LIBDIR_DEFAULT")
-        set(${VAR} "${_LIBDIR_DEFAULT}")
-    endif(NOT "${VAR}" STREQUAL "LIBDIR_DEFAULT")
-
-    # cache the value
-    if(NOT DEFINED LIBDIR_DEFAULT)
-        set(LIBDIR_DEFAULT "${_LIBDIR_DEFAULT}" CACHE PATH "Object code libraries (${_LIBDIR_DEFAULT})" FORCE)
-    elseif(DEFINED __LAST_LIBDIR_DEFAULT
-            AND "${__LAST_LIBDIR_DEFAULT}" STREQUAL "${LIBDIR_DEFAULT}")
-        set_property(CACHE LIBDIR_DEFAULT PROPERTY VALUE "${_LIBDIR_DEFAULT}")
-    endif()
+    # assign the variable
+    set(${VAR} "${_LIBDIR_DEFAULT}")
 ENDMACRO()
 
 #----------------------------------------------------------------------------------------#

@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -51,10 +51,10 @@
 #    endif
 #else
 
-// define TIMEMORY_EXTERNAL_PAPI_DEFS if these enumerations/defs cause problems
-#    if !defined(TIMEMORY_EXTERNAL_PAPI_DEFS)
-#        include "timemory/details/papi_defs.hpp"
-#    endif  // !defined(TIMEMORY_EXTERNAL_PAPI_DEFS)
+// define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs cause problems
+#    if !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
+#        include "timemory/backends/bits/papi.hpp"
+#    endif  // !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
 
 #endif
 
@@ -177,7 +177,10 @@ check(int retval, const std::string& mesg, bool quiet = false)
         if(settings::papi_fail_on_error())
             throw std::runtime_error(buf);
         else
-            fprintf(stderr, "%s", buf);
+        {
+            if(working())
+                fprintf(stderr, "%s", buf);
+        }
 #else
         fprintf(stderr, "%s (error code = %i)\n", mesg.c_str(), retval);
 #endif
@@ -320,7 +323,8 @@ attach(int event_set, _Tp pid_or_tid)
 }
 
 //--------------------------------------------------------------------------------------//
-
+namespace details
+{
 inline void
 init_threading()
 {
@@ -334,17 +338,13 @@ init_threading()
     }
     else if(!threading_initialized)
     {
-        if(!is_master_thread())
+        if(is_master_thread() && !working())
         {
-            fprintf(stderr,
-                    "Warning!! Thread support is not enabled because it is not the "
-                    "master thread\n");
-        }
-        else if(!working())
-        {
-            fprintf(stderr,
-                    "Warning!! Thread support is not enabled because it is not currently "
-                    "working\n");
+            static std::atomic<int> _once;
+            if(_once++ == 0)
+                fprintf(stderr,
+                        "Warning!! Thread support is not enabled because it is not "
+                        "currently working\n");
         }
     }
 #endif
@@ -360,8 +360,8 @@ init_multiplexing()
     if(!allow_multiplexing)
         return;
 
-    static bool thread_local multiplexing_initialized = false;
-    if(!multiplexing_initialized && working())
+    static bool multiplexing_initialized = false;
+    if(!multiplexing_initialized)
     {
         int retval = PAPI_multiplex_init();
         working()  = check(retval, "Warning!! Failure initializing PAPI multiplexing");
@@ -393,10 +393,11 @@ init_library()
         int retval = PAPI_library_init(PAPI_VER_CURRENT);
         if(retval != PAPI_VER_CURRENT && retval > 0)
             fprintf(stderr, "PAPI library version mismatch!\n");
-        working() = (retval == PAPI_VER_CURRENT && working());
+        working() = (retval == PAPI_VER_CURRENT);
     }
 #endif
 }
+}  // namespace details
 
 //--------------------------------------------------------------------------------------//
 
@@ -405,14 +406,13 @@ init()
 {
     // initialize the PAPI library
 #if defined(TIMEMORY_USE_PAPI)
-    init_library();
-    init_multiplexing();
-    init_threading();
-    if(!working())
+    if(!PAPI_is_initialized())
     {
-        fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
+        details::init_library();
+        details::init_multiplexing();
+        if(!working())
+            fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
     }
-    register_thread();
 #endif
 }
 
@@ -423,11 +423,15 @@ shutdown()
 {
     // finish using PAPI and free all related resources
 #if defined(TIMEMORY_USE_PAPI)
-    unregister_thread();
-    if(get_tid() != get_master_tid())
-        return;
-    PAPI_shutdown();
-    working() = false;
+    if(PAPI_is_initialized())
+    {
+        unregister_thread();
+        if(get_tid() == get_master_tid())
+        {
+            PAPI_shutdown();
+            working() = false;
+        }
+    }
 #endif
 }
 
@@ -436,7 +440,7 @@ shutdown()
 inline void
 print_hw_info()
 {
-    init_library();
+    init();
 #if defined(TIMEMORY_USE_PAPI)
     const PAPI_hw_info_t* hwinfo = PAPI_get_hardware_info();
     const PAPI_mh_info_t* mh     = &hwinfo->mem_hierarchy;
@@ -473,14 +477,44 @@ print_hw_info()
 //--------------------------------------------------------------------------------------//
 
 inline void
-create_event_set(int* event_set)
+enable_multiplexing(int event_set, int component = 0)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    if(working())
+    {
+        auto              retval = PAPI_assign_eventset_component(event_set, component);
+        std::stringstream ss;
+        ss << "Warning!! Failure to assign event set component. event set: " << event_set
+           << ", component: " << component;
+        working() = check(retval, ss.str());
+    }
+    if(working())
+    {
+        auto              retval = PAPI_set_multiplex(event_set);
+        std::stringstream ss;
+        ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
+        working() = check(retval, ss.str());
+    }
+#else
+    consume_parameters(event_set, component);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+create_event_set(int* event_set, bool enable_multiplex)
 {
     // create a new empty PAPI event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_create_eventset(event_set);
     working()  = check(retval, "Warning!! Failure to create event set");
+    if(working() && enable_multiplex)
+        enable_multiplexing(*event_set);
+    if(working())
+        details::init_threading();
 #else
-    consume_parameters(event_set);
+    consume_parameters(event_set, enable_multiplex);
 #endif
 }
 
@@ -507,36 +541,14 @@ destroy_event_set(int event_set)
 //--------------------------------------------------------------------------------------//
 
 inline void
-enable_multiplexing(int event_set)
-{
-#if defined(TIMEMORY_USE_PAPI)
-    int               retval = PAPI_set_multiplex(event_set);
-    std::stringstream ss;
-    ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
-    working() = check(retval, ss.str());
-#else
-    consume_parameters(event_set);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-start(int event_set, bool enable_multiplex = false)
+start(int event_set)
 {
     // start counting hardware events in an event set
 #if defined(TIMEMORY_USE_PAPI)
-    if(enable_multiplex)
-        enable_multiplexing(event_set);
     int retval = PAPI_start(event_set);
-    if(retval != PAPI_OK)
-    {
-        enable_multiplexing(event_set);
-        retval = PAPI_start(event_set);
-    }
-    working() = check(retval, "Warning!! Failure to start event set");
+    working()  = check(retval, "Warning!! Failure to start event set");
 #else
-    consume_parameters(event_set, enable_multiplex);
+    consume_parameters(event_set);
 #endif
 }
 
@@ -561,8 +573,11 @@ read(int event_set, long long* values)
 {
     // read hardware events from an event set with no reset
 #if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_read(event_set, values);
-    working()  = check(retval, "Warning!! Failure to read event set");
+    if(working())
+    {
+        int retval = PAPI_read(event_set, values);
+        working()  = check(retval, "Warning!! Failure to read event set");
+    }
 #else
     consume_parameters(event_set, values);
 #endif

@@ -13,12 +13,12 @@ project(timemory-ERT-Example LANGUAGES CXX CUDA)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
 set(COMPONENTS cuda compile-options arch vector mpi)
 
-set_source_files_properties(test_ert.cpp PROPERTIES
+set_source_files_properties(ex_ert.cpp PROPERTIES
     LANGUAGE CUDA
     LINKER_LANGUAGE CUDA)
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
-add_executable(test_ert test_ert.cpp)
-target_link_libraries(test_ert timemory-ert-example)
-#set_target_properties(test_ert PROPERTIES LANGUAGE CUDA LINKER_LANGUAGE CUDA)
-install(TARGETS test_ert DESTINATION bin)
+add_executable(ex_ert ex_ert.cpp)
+target_link_libraries(ex_ert timemory-ert-example)
+#set_target_properties(ex_ert PROPERTIES LANGUAGE CUDA LINKER_LANGUAGE CUDA)
+install(TARGETS ex_ert DESTINATION bin)

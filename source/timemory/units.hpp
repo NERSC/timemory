@@ -32,9 +32,13 @@
 
 #include "timemory/utility/macros.hpp"
 
+#include <cctype>
 #include <cstdint>
+#include <cstdlib>
 #include <ratio>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #if defined(_UNIX)
 #    include <unistd.h>
@@ -93,9 +97,9 @@ const int64_t PiB = 1024 * TiB;
 inline int64_t
 get_page_size()
 {
-    return ::sysconf(_SC_PAGESIZE);
+    return sysconf(_SC_PAGESIZE);
 }
-const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
+const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
 #elif defined(_MACOS)
 
@@ -104,7 +108,7 @@ get_page_size()
 {
     return getpagesize();
 }
-const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
+const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
 #elif defined(_WINDOWS)
 
@@ -139,6 +143,8 @@ time_repr(const int64_t& _unit)
     return _sunit;
 }
 
+//--------------------------------------------------------------------------------------//
+
 inline std::string
 mem_repr(const int64_t& _unit)
 {
@@ -151,9 +157,97 @@ mem_repr(const int64_t& _unit)
         case gigabyte: _sunit = "GB"; break;
         case terabyte: _sunit = "TB"; break;
         case petabyte: _sunit = "PB"; break;
+        case kibibyte: _sunit = "KiB"; break;
+        case mebibyte: _sunit = "MiB"; break;
+        case gibibyte: _sunit = "GiB"; break;
+        case tebibyte: _sunit = "TiB"; break;
+        case pebibyte: _sunit = "PiB"; break;
         default: _sunit = "UNK"; break;
     }
     return _sunit;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::tuple<std::string, int64_t>
+get_memory_unit(std::string _unit)
+{
+    using string_t    = std::string;
+    using return_type = std::tuple<string_t, int64_t>;
+
+    if(_unit.length() == 0)
+        return return_type("MB", tim::units::megabyte);
+
+    auto to_lower = [](string_t _str) {
+        for(auto& itr : _str)
+            itr = tolower(itr);
+        return _str;
+    };
+
+    using inner_t          = std::tuple<string_t, string_t, int64_t>;
+    using pair_vector_t    = std::vector<inner_t>;
+    pair_vector_t matching = { inner_t("byte", "B", tim::units::byte),
+                               inner_t("kilobyte", "KB", tim::units::kilobyte),
+                               inner_t("megabyte", "MB", tim::units::megabyte),
+                               inner_t("gigabyte", "GB", tim::units::gigabyte),
+                               inner_t("terabyte", "TB", tim::units::terabyte),
+                               inner_t("petabyte", "PB", tim::units::petabyte),
+                               inner_t("kibibyte", "KiB", tim::units::KiB),
+                               inner_t("mebibyte", "MiB", tim::units::MiB),
+                               inner_t("gibibyte", "GiB", tim::units::GiB),
+                               inner_t("tebibyte", "TiB", tim::units::TiB),
+                               inner_t("pebibyte", "PiB", tim::units::PiB) };
+
+    _unit = to_lower(_unit);
+    for(const auto& itr : matching)
+        if(_unit == to_lower(std::get<0>(itr)) || _unit == to_lower(std::get<1>(itr)))
+            return return_type(std::get<1>(itr), std::get<2>(itr));
+
+    std::cerr << "Warning!! No memory unit matching \"" << _unit << "\". Using default..."
+              << std::endl;
+
+    return return_type("MB", tim::units::megabyte);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::tuple<std::string, int64_t>
+get_timing_unit(std::string _unit)
+{
+    using string_t    = std::string;
+    using return_type = std::tuple<string_t, int64_t>;
+
+    if(_unit.length() == 0)
+        return return_type("sec", tim::units::sec);
+
+    auto to_lower = [](string_t _str) {
+        for(auto& itr : _str)
+            itr = tolower(itr);
+        return _str;
+    };
+
+    using inner_t          = std::tuple<string_t, string_t, int64_t>;
+    using pair_vector_t    = std::vector<inner_t>;
+    pair_vector_t matching = { inner_t("ps", "picosecond", tim::units::psec),
+                               inner_t("ns", "nanosecond", tim::units::nsec),
+                               inner_t("us", "microsecond", tim::units::usec),
+                               inner_t("ms", "millisecond", tim::units::msec),
+                               inner_t("cs", "centisecond", tim::units::csec),
+                               inner_t("ds", "decisecond", tim::units::dsec),
+                               inner_t("s", "second", tim::units::sec) };
+
+    _unit = to_lower(_unit);
+    for(const auto& itr : matching)
+        if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
+           _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
+        {
+            return return_type(std::get<0>(itr) + "ec", std::get<2>(itr));
+        }
+
+    std::cerr << "Warning!! No timing unit matching \"" << _unit << "\". Using default..."
+              << std::endl;
+
+    return return_type("sec", tim::units::sec);
 }
 
 //--------------------------------------------------------------------------------------//

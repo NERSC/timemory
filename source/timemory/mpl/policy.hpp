@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/types.hpp"
 
 namespace tim
 {
@@ -69,38 +70,38 @@ struct wrapper
         _Tp::invoke_serialize(ar, ver);
     }
 
-    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == true),
                           int> = 0>
-    static void invoke_global_init()
+    static void invoke_global_init(_Store* _store)
     {
-        _Tp::invoke_global_init();
+        _Tp::invoke_global_init(_store);
     }
 
     template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
         enable_if_t<(is_one_of<global_finalize, typename _Polp::type>::value == true),
                     int> = 0>
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(_Store* _store)
     {
-        _Tp::invoke_global_finalize();
+        _Tp::invoke_global_finalize(_store);
     }
 
-    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<thread_init, typename _Polp::type>::value == true),
                           int> = 0>
-    static void invoke_thread_init()
+    static void invoke_thread_init(_Store* _store)
     {
-        _Tp::invoke_thread_init();
+        _Tp::invoke_thread_init(_store);
     }
 
     template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
         enable_if_t<(is_one_of<thread_finalize, typename _Polp::type>::value == true),
                     int> = 0>
-    static void invoke_thread_finalize()
+    static void invoke_thread_finalize(_Store* _store)
     {
-        _Tp::invoke_thread_finalize();
+        _Tp::invoke_thread_finalize(_store);
     }
 
     //----------------------------------------------------------------------------------//
@@ -114,33 +115,33 @@ struct wrapper
     {
     }
 
-    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == false),
                           int> = 0>
-    static void invoke_global_init()
+    static void invoke_global_init(_Store*)
     {
     }
 
     template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
         enable_if_t<(is_one_of<global_finalize, typename _Polp::type>::value == false),
                     int> = 0>
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(_Store*)
     {
     }
 
-    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<thread_init, typename _Polp::type>::value == false),
                           int> = 0>
-    static void invoke_thread_init()
+    static void invoke_thread_init(_Store*)
     {
     }
 
     template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
         enable_if_t<(is_one_of<thread_finalize, typename _Polp::type>::value == false),
                     int> = 0>
-    static void invoke_thread_finalize()
+    static void invoke_thread_finalize(_Store*)
     {
     }
 };

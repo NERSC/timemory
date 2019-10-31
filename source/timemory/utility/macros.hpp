@@ -134,6 +134,13 @@
 
 //--------------------------------------------------------------------------------------//
 
+//  nvcc compiler
+#if defined(__NVCC__)
+#    define _TIMEMORY_NVCC
+#endif
+
+//--------------------------------------------------------------------------------------//
+
 //  Intel compiler
 #if defined(__INTEL_COMPILER)
 #    define _TIMEMORY_INTEL
@@ -159,7 +166,8 @@
 //
 //======================================================================================//
 
-#if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL)) &&   \
+#if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL) ||    \
+    defined(_TIMEMORY_NVCC)) &&                                                          \
     defined(_UNIX)
 #    if !defined(_TIMEMORY_ENABLE_DEMANGLE)
 #        define _TIMEMORY_ENABLE_DEMANGLE 1
@@ -176,19 +184,15 @@
 #if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
 #    if defined(_TIMEMORY_DLL)
 #        define tim_api __declspec(dllexport)
-#        define tim_api_static static __declspec(dllexport)
 #    else
 #        if defined(_TIMEMORY_LINK_LIBRARY)
 #            define tim_api __declspec(dllimport)
-#            define tim_api_static static __declspec(dllimport)
 #        else
 #            define tim_api
-#            define tim_api_static static
 #        endif
 #    endif
 #else
 #    define tim_api
-#    define tim_api_static static
 #endif
 
 //======================================================================================//
@@ -269,15 +273,16 @@
 //--------------------------------------------------------------------------------------//
 //      extern storage singleton
 //
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                        \
+#    define TIMEMORY_DECLARE_EXTERN_INIT(TYPE)                                           \
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_storage_singleton<storage<component::TYPE>>();                               \
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
-        get_noninit_storage_singleton<storage<component::TYPE>>();
+        get_noninit_storage_singleton<storage<component::TYPE>>();                       \
+        extern template class storage<component::TYPE>;
 
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE)                                    \
+#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_storage_singleton<storage<component::TYPE>>()                                \
@@ -295,7 +300,8 @@
             using _single_t            = details::storage_singleton_t<_storage_t>;       \
             static _single_t _instance = _single_t::instance_ptr();                      \
             return _instance;                                                            \
-        }
+        }                                                                                \
+        template class storage<component::TYPE>;
 
 #else
 
@@ -320,9 +326,9 @@
 //--------------------------------------------------------------------------------------//
 //      extern storage
 //
-#    define TIMEMORY_EXTERN_STORAGE_TYPE(...)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(...)
+#    define TIMEMORY_EXTERN_INIT_TYPE(...)
+#    define TIMEMORY_DECLARE_EXTERN_INIT(...)
+#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(...)
 
 #endif
 
@@ -350,24 +356,6 @@
             static TYPE _instance = Type::VARIABLE();                                    \
             return _instance;                                                            \
         }
-#endif
-
-//======================================================================================//
-//
-//      FLOATING POINT EXCEPTIONS
-//
-//======================================================================================//
-
-#if !defined(_WINDOWS)
-#    define init_priority(N) __attribute__((init_priority(N)))
-#    define init_construct(N) __attribute__((constructor(N)))
-#    define __c_ctor__ __attribute__((constructor))
-#    define __c_dtor__ __attribute__((destructor))
-#else
-#    define init_priority(N)
-#    define init_construct(N)
-#    define __c_ctor__
-#    define __c_dtor__
 #endif
 
 //======================================================================================//

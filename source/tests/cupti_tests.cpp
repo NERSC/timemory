@@ -179,6 +179,9 @@ class cupti_tests : public ::testing::Test
 TEST_F(cupti_tests, activity)
 {
     using tuple_t = tim::auto_tuple<real_clock, cupti_activity>::component_type;
+    tim::settings::verbose() = 4;
+    tim::settings::debug()   = true;
+
     tuple_t timer(details::get_test_name(), true);
     timer.start();
 
@@ -207,6 +210,17 @@ TEST_F(cupti_tests, activity)
 
     int64_t sleep_msec = 700;
 
+    tuple_t async_timer(details::get_test_name() + "_no_subtimers", true);
+    async_timer.start();
+    for(int i = 0; i < num_iter; ++i)
+    {
+        printf("[%s]> iteration %i...\n", __FUNCTION__, i);
+        auto _stream = streams.at(i % nstream);
+        details::KERNEL_A(data, num_data, _stream);
+        details::KERNEL_B(data, num_data, _stream);
+    }
+    async_timer.stop();
+
     std::vector<tuple_t> subtimers;
     for(int i = 0; i < num_iter; ++i)
     {
@@ -223,14 +237,33 @@ TEST_F(cupti_tests, activity)
     std::this_thread::sleep_for(std::chrono::milliseconds(sleep_msec));
     timer.stop();
 
+    int     kwidth = 60;
     tuple_t subtot(details::get_test_name() + "_itr_subtotal");
     for(const auto& itr : subtimers)
     {
         std::cout << itr << std::endl;
+        // secondaries (individual kernels)
+        std::cout << "Individual kernels:\n";
+        for(const auto& sitr : itr.get<cupti_activity>().get_secondary())
+        {
+            std::cout << "    " << std::setw(kwidth) << sitr.first << " : "
+                      << std::setw(12) << std::setprecision(8) << std::fixed
+                      << sitr.second << "\n";
+        }
+        std::cout << "\n";
         subtot += itr;
     }
     std::cout << subtot << std::endl;
     std::cout << timer << std::endl;
+
+    // secondaries (individual kernels)
+    std::cout << "Individual kernels:\n";
+    for(const auto& itr : timer.get<cupti_activity>().get_secondary())
+    {
+        std::cout << "    " << std::setw(kwidth) << itr.first << " : " << std::setw(12)
+                  << std::setprecision(8) << std::fixed << itr.second << "\n";
+    }
+    std::cout << "\n";
 
     auto& rc = timer.get<real_clock>();
     auto& ca = timer.get<cupti_activity>();
@@ -244,7 +277,7 @@ TEST_F(cupti_tests, activity)
 
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
-    cupti_activity::invoke_global_finalize();
+    cupti_activity::invoke_global_finalize(0);
     num_iter /= 2;
 
     ASSERT_NEAR(real_diff, expected_diff, expected_tol);
@@ -303,7 +336,7 @@ TEST_F(cupti_tests, kernels)
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
     using tuple_t = tim::auto_tuple<real_clock, cupti_counters>::component_type;
-    tuple_t timer(details::get_test_name());
+    tuple_t timer(details::get_test_name(), true);
 
     timer.start();
     for(int i = 0; i < num_iter; ++i)
@@ -392,13 +425,13 @@ TEST_F(cupti_tests, streams)
     float*             data = tim::device::gpu::alloc<float>(num_data);
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
-    tuple_t timer(details::get_test_name());
+    tuple_t timer(details::get_test_name(), true);
     timer.start();
     std::vector<tuple_t> subtimers;
     for(int i = 0; i < num_iter; ++i)
     {
         printf("[%s]> iteration %i...\n", __FUNCTION__, i);
-        tuple_t subtimer(details::get_test_name() + "_itr");
+        tuple_t subtimer(details::get_test_name() + "_itr", true);
         subtimer.start();
         details::KERNEL_A(data, num_data, stream);
         details::KERNEL_B(data, num_data, stream);
@@ -585,8 +618,14 @@ main(int argc, char** argv)
     tim::settings::timing_units() = "sec";
     tim::settings::precision()    = 3;
     tim::settings::width()        = 8;
+    tim::settings::debug()        = true;
+    tim::settings::verbose()      = 4;
     tim::timemory_init(argc, argv);
-    tim::settings::banner() = false;
+    tim::settings::banner()      = false;
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count()  = 1;
+    tim::settings::banner()      = false;
+
     return RUN_ALL_TESTS();
 }
 

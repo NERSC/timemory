@@ -44,17 +44,12 @@
 
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
+#include "timemory/variadic/types.hpp"
 
 //======================================================================================//
 
 namespace tim
 {
-//======================================================================================//
-// forward declaration
-//
-template <typename _CompTuple, typename _CompList>
-class auto_hybrid;
-
 //======================================================================================//
 // variadic list of components
 //
@@ -66,41 +61,58 @@ class component_hybrid
                   "must be tim::component_list<...>");
 
     static const std::size_t num_elements = _CompTuple::size() + _CompList::size();
+
     // empty init for friends
-    explicit component_hybrid() {}
+    explicit component_hybrid() = default;
+
     // manager is friend so can use above
     friend class manager;
 
+    template <typename _TupleC, typename _ListC>
+    friend class auto_hybrid;
+
 public:
-    using size_type       = int64_t;
-    using language_t      = tim::language;
-    using string_hash     = std::hash<string_t>;
+    using this_type       = component_hybrid<_CompTuple, _CompList>;
     using tuple_type      = _CompTuple;
     using list_type       = _CompList;
-    using this_type       = component_hybrid<tuple_type, list_type>;
     using tuple_data_type = typename tuple_type::data_type;
     using list_data_type  = typename list_type::data_type;
-    using data_type       = decltype(std::tuple_cat(std::declval<_CompTuple>().data(),
-                                              std::declval<_CompList>().data()));
+    using data_type       = decltype(std::tuple_cat(std::declval<tuple_type>().data(),
+                                              std::declval<list_type>().data()));
     using type_tuple      = tim::impl::tuple_concat<typename tuple_type::type_tuple,
                                                typename list_type::type_tuple>;
 
     using tuple_type_list = typename tuple_type::data_type;
     using list_type_list  = typename list_type::reference_type;
+    using data_value_type = decltype(std::tuple_cat(std::declval<tuple_type>().get(),
+                                                    std::declval<list_type>().get()));
+    using data_label_type =
+        decltype(std::tuple_cat(std::declval<tuple_type>().get_labeled(),
+                                std::declval<list_type>().get_labeled()));
 
+    // used by gotcha
+    using component_type = component_hybrid<tuple_type, list_type>;
+    using auto_type      = auto_hybrid<tuple_type, list_type>;
+
+    // used by component hybrid and gotcha
+    static constexpr bool is_component_list   = false;
+    static constexpr bool is_component_tuple  = false;
+    static constexpr bool is_component_hybrid = true;
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
-        (_CompTuple::contains_gotcha || _CompList::contains_gotcha);
+        (tuple_type::contains_gotcha || list_type::contains_gotcha);
+
+    using size_type   = int64_t;
+    using string_hash = std::hash<string_t>;
 
 public:
-    using auto_type = auto_hybrid<tuple_type, list_type>;
-
-public:
-    explicit component_hybrid(const string_t& key, const bool& store = false,
-                              const language_t& lang = language_t::cxx(),
-                              int64_t ncount = 0, int64_t nhash = 0)
-    : m_tuple(key, store, lang, ncount, nhash)
-    , m_list(key, store, lang, ncount, nhash)
+    template <typename _Scope = scope::process>
+    explicit component_hybrid(
+        const string_t& key, const bool& store = false,
+        const bool& flat = (settings::flat_profile() ||
+                            std::is_same<_Scope, scope::flat>::value))
+    : m_tuple(key, store, flat)
+    , m_list(key, store, flat)
     {
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
@@ -124,9 +136,9 @@ public:
     component_hybrid& operator=(const component_hybrid& rhs) = default;
     component_hybrid& operator=(component_hybrid&&) = default;
 
-    component_hybrid clone(const int64_t& nhash, bool store)
+    component_hybrid clone(bool store, bool flat)
     {
-        return component_hybrid(m_tuple.clone(nhash, store), m_list.clone(nhash, store));
+        return component_hybrid(m_tuple.clone(store, flat), m_list.clone(store, flat));
     }
 
 public:
@@ -148,15 +160,10 @@ public:
 public:
     inline int64_t laps() const { return m_tuple.laps(); }
 
-    int64_t&  hash() { return m_tuple.hash(); }
     string_t& key() { return m_tuple.key(); }
-    string_t& identifier() { return m_tuple.identifier(); }
 
-    const int64_t&    hash() const { return m_tuple.hash(); }
-    const string_t&   key() const { return m_tuple.key(); }
-    const language_t& lang() const { return m_tuple.lang(); }
-    const string_t&   identifier() const { return m_tuple.identifier(); }
-    void              rekey(const string_t& _key) { m_tuple.rekey(_key); }
+    const string_t& key() const { return m_tuple.key(); }
+    void            rekey(const string_t& _key) { m_tuple.rekey(_key); }
 
     bool&       store() { return m_tuple.store(); }
     const bool& store() const { return m_tuple.store(); }
@@ -205,18 +212,6 @@ public:
         m_list.stop();
     }
 
-    void conditional_start()
-    {
-        m_tuple.conditional_start();
-        m_list.conditional_start();
-    }
-
-    void conditional_stop()
-    {
-        m_tuple.conditional_stop();
-        m_list.conditional_stop();
-    }
-
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
@@ -240,6 +235,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // perform a customized operation (typically for GOTCHA)
+    //
+    template <typename... _Args>
+    void customize(_Args&&... _args)
+    {
+        m_tuple.customize(std::forward<_Args>(_args)...);
+        m_list.customize(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // recording
     //
     this_type& record()
@@ -250,10 +255,28 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // reset data
+    //
     void reset()
     {
         m_tuple.reset();
         m_list.reset();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get data
+    //
+    data_value_type get() const
+    {
+        return std::tuple_cat(get_lhs().get(), get_rhs().get());
+    }
+
+    //----------------------------------------------------------------------------------//
+    // reset data
+    //
+    data_label_type get_labeled() const
+    {
+        return std::tuple_cat(get_lhs().get_labeled(), get_rhs().get_labeled());
     }
 
     //----------------------------------------------------------------------------------//
@@ -403,6 +426,14 @@ public:
     }
 
 public:
+    //----------------------------------------------------------------------------------//
+    static void init_storage()
+    {
+        tuple_type::init_storage();
+        list_type::init_storage();
+    }
+
+public:
     inline data_type data() const
     {
         return std::tuple_cat(m_tuple.data(), m_list.data());
@@ -414,14 +445,14 @@ public:
     //
     template <typename _Tp,
               enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<_CompTuple>().template get<_Tp>())
+    auto get() -> decltype(std::declval<tuple_type>().template get<_Tp>())
     {
         return m_tuple.template get<_Tp>();
     }
 
     template <typename _Tp,
               enable_if_t<(is_one_of<_Tp, list_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<_CompList>().template get<_Tp>())
+    auto get() -> decltype(std::declval<list_type>().template get<_Tp>())
     {
         return m_list.template get<_Tp>();
     }
@@ -431,53 +462,32 @@ public:
     //  apply a member function to a type
     //
     template <typename _Tp, typename _Func, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
+              enable_if_t<(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
+              enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int> = 0>
     void type_apply(_Func&& _func, _Args&&... _args)
     {
         m_tuple.template type_apply<_Tp>(_func, std::forward<_Args>(_args)...);
     }
 
     template <typename _Tp, typename _Func, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, list_type_list>::value == true), int> = 0>
+              enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
+              enable_if_t<(is_one_of<_Tp, list_type_list>::value), int>   = 0>
     void type_apply(_Func&& _func, _Args&&... _args)
     {
         m_list.template type_apply<_Tp>(_func, std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
+              enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int>  = 0>
+    void type_apply(_Func&&, _Args&&...)
+    {
     }
 
 protected:
     // objects
     tuple_type m_tuple;
     list_type  m_list;
-
-protected:
-    /*
-    string_t get_prefix() { return m_tuple.get_prefix(); }
-
-    void compute_identifier(const string_t& key, const language_t& lang)
-    {
-        m_tuple.compute_identifier(key, lang);
-        m_list.compute_identifier(key, lang);
-    }
-
-    void update_identifier() const
-    {
-        m_tuple.update_identifier();
-        m_list.update_identifier();
-    }
-
-    static int64_t output_width(int64_t width = 0)
-    {
-        return std::max<int64_t>(tuple_type::output_width(width),
-                                 list_type::output_width(width));
-    }
-
-    template <typename _Func, typename... _Args>
-    void apply_to_members(_Func&& _func, _Args&&... _args)
-    {
-        ((m_tuple).*(_func))(std::forward<_Args>(_args)...);
-        ((m_list).*(_func))(std::forward<_Args>(_args)...);
-    }
-    */
 };
 
 //--------------------------------------------------------------------------------------//
@@ -486,4 +496,4 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/component_hybrid.hpp"
+#include "timemory/variadic/bits/component_hybrid.hpp"

@@ -202,7 +202,7 @@ if platform.system() == "Darwin":
 # since 'error' in output causes CDash to interpret warning as error
 with warnings.catch_warnings():
     setup(
-        name='TiMemory',
+        name='timemory',
         packages=['timemory'],
         version=get_project_version(),
         include_package_data=False,
@@ -218,8 +218,8 @@ with warnings.catch_warnings():
         long_description=get_long_description(),
         long_description_content_type='text/markdown',
         license='MIT',
-        url='http://timemory.readthedocs.org',
-        download_url='http://github.com/jrmadsen/TiMemory.git',
+        url='http://timemory.readthedocs.io',
+        download_url='http://github.com/NERSC/timemory.git',
         zip_safe=False,
         install_requires=[],
         setup_requires=[],

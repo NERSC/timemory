@@ -1,56 +1,76 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-project(timemory-Minimal-Example LANGUAGES CXX)
+project(timemory-Minimal-Example LANGUAGES C CXX)
 
-include(CheckCCompilerFlag)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-minimal-example)
-set(COMPONENTS compile-options analysis-tools)
+set(COMPONENTS headers compile-options analysis-tools papi caliper)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 set(TIMEMORY_C_LIBRARY )
-if(TARGET timemory-c-shared)
-    set(TIMEMORY_C_LIBRARY timemory-c-shared)
-elseif(TARGET timemory-c-static)
-    set(TIMEMORY_C_LIBRARY timemory-c-static)
-endif()
-
-if(TIMEMORY_C_LIBRARY)
-    check_c_compiler_flag("-Wno-unused-parameter" "no_unused_parameter")
-    if(no_unused_parameter)
-        # use this method so flag is provided after timemory-compile-options
-        add_library(test-c-minimal-compile-options INTERFACE)
-        target_compile_options(test-c-minimal-compile-options INTERFACE
-            $<$<COMPILE_LANGUAGE:C>:-Wno-unused-parameter>)
-        list(APPEND TIMEMORY_C_LIBRARY test-c-minimal-compile-options)
+if("C" IN_LIST timemory_ENABLED_LINK_LANGUAGES)
+    if("SHARED" IN_LIST timemory_ENABLED_LINK_LIBRARIES)
+        set(TIMEMORY_C_LIBRARY timemory-c-shared)
+    elseif("STATIC" IN_LIST timemory_ENABLED_LINK_LIBRARIES)
+        set(TIMEMORY_C_LIBRARY timemory-c-static)
     endif()
-
-    add_executable(test_c_minimal test_minimal.c)
-    target_link_libraries(test_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
-    install(TARGETS test_c_minimal DESTINATION bin)
-
-    add_executable(test_c_minimal_library test_minimal_library.c)
-    target_link_libraries(test_c_minimal_library timemory-minimal-example
-        timemory-cxx-shared ${TIMEMORY_C_LIBRARY})
-    install(TARGETS test_c_minimal_library DESTINATION bin)
 endif()
 
-add_executable(test_cxx_minimal test_minimal.cpp)
-target_link_libraries(test_cxx_minimal timemory-minimal-example)
-install(TARGETS test_cxx_minimal DESTINATION bin)
+set(TIMEMORY_CXX_LIBRARY )
+if("CXX" IN_LIST timemory_ENABLED_LINK_LANGUAGES)
+    if("SHARED" IN_LIST timemory_ENABLED_LINK_LIBRARIES)
+        set(TIMEMORY_CXX_LIBRARY timemory-cxx-shared)
+    elseif("STATIC" IN_LIST timemory_ENABLED_LINK_LIBRARIES)
+        set(TIMEMORY_CXX_LIBRARY timemory-cxx-static)
+    endif()
+endif()
 
-add_executable(test_cxx_minimal_library test_minimal_library.cpp)
-target_link_libraries(test_cxx_minimal_library timemory-minimal-example timemory-cxx-shared)
-install(TARGETS test_cxx_minimal_library DESTINATION bin)
+# if C library is available
+if(TIMEMORY_C_LIBRARY)
+    add_executable(ex_c_minimal ex_minimal.c)
+    target_link_libraries(ex_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
+    install(TARGETS ex_c_minimal DESTINATION bin)
+
+    # if C stubs via CXX library are available
+    if(TIMEMORY_CXX_LIBRARY)
+        add_executable(ex_c_minimal_library_overload ex_minimal_library_overload.c)
+        target_link_libraries(ex_c_minimal_library_overload timemory-minimal-example
+            ${TIMEMORY_C_LIBRARY} ${TIMEMORY_CXX_LIBRARY})
+        install(TARGETS ex_c_minimal_library_overload DESTINATION bin)
+    endif()
+endif()
+
+# if C stubs via CXX library are available
+if(TIMEMORY_CXX_LIBRARY)
+    add_executable(ex_c_minimal_library ex_minimal_library.c)
+    target_link_libraries(ex_c_minimal_library timemory-minimal-example
+        ${TIMEMORY_CXX_LIBRARY} ${TIMEMORY_C_LIBRARY})
+    install(TARGETS ex_c_minimal_library DESTINATION bin)
+endif()
+
+# headers are always available
+add_executable(ex_cxx_minimal ex_minimal.cpp)
+target_link_libraries(ex_cxx_minimal timemory-minimal-example)
+install(TARGETS ex_cxx_minimal DESTINATION bin)
+
+if(TIMEMORY_CXX_LIBRARY)
+    add_executable(ex_cxx_minimal_library ex_minimal_library.cpp)
+    target_link_libraries(ex_cxx_minimal_library timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
+    install(TARGETS ex_cxx_minimal_library DESTINATION bin)
+
+    add_executable(ex_cxx_minimal_library_overload ex_minimal_library_overload.cpp)
+    target_link_libraries(ex_cxx_minimal_library_overload timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
+    install(TARGETS ex_cxx_minimal_library_overload DESTINATION bin)
+endif()
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
 endif()
 
-configure_file(${PROJECT_SOURCE_DIR}/test_python_minimal.py
-    ${CMAKE_BINARY_DIR}/test_python_minimal @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ex_python_minimal.py
+    ${CMAKE_BINARY_DIR}/ex_python_minimal @ONLY)
 
 install(
-    FILES ${CMAKE_BINARY_DIR}/test_python_minimal
+    FILES ${CMAKE_BINARY_DIR}/ex_python_minimal
     DESTINATION bin
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE

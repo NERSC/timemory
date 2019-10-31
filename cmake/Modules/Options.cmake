@@ -51,19 +51,38 @@ else()
     set(_USE_CUDA OFF)
 endif()
 
-set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
-set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
+set(_DEFAULT_BUILD_SHARED ON)
+set(_DEFAULT_BUILD_STATIC ON)
 
-set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
+# if already defined, set default for shared to OFF
+if(DEFINED BUILD_STATIC_LIBS AND BUILD_STATIC_LIBS)
+    set(_DEFAULT_BUILD_STATIC ON)
+    set(_DEFAULT_BUILD_SHARED OFF)
+endif()
+
+# if already defined, set default for shared to OFF
+if(DEFINED BUILD_SHARED_LIBS AND BUILD_SHARED_LIBS)
+    set(_DEFAULT_BUILD_STATIC OFF)
+    set(_DEFAULT_BUILD_SHARED ON)
+endif()
+
+# something got messed up, so reset
+if(NOT _DEFAULT_BUILD_SHARED AND NOT _DEFAULT_BUILD_STATIC)
+    set(_DEFAULT_BUILD_SHARED ON)
+    set(_DEFAULT_BUILD_STATIC ON)
+endif()
+
+# except is setup.py, always default static to off
+if(SKBUILD)
+    set(_DEFAULT_BUILD_SHARED ON)
+    set(_DEFAULT_BUILD_STATIC OFF)
+endif()
+
 set(TIMEMORY_GPERF_COMPONENTS
     "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug"
     CACHE STRING "gperftools components")
 
 set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
-set_property(CACHE TIMEMORY_TLS_MODEL PROPERTY STRINGS "${_TLS_OPTIONS}")
-if(NOT "${TIMEMORY_TLS_MODEL}" IN_LIST _TLS_OPTIONS)
-    message(FATAL_ERROR "TIMEMORY_TLS_MODEL must be one of: \"${_TLS_OPTIONS}\"")
-endif()
 
 # CMake options
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
@@ -72,8 +91,28 @@ add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
 
-set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-set(BUILD_STATIC_LIBS ON CACHE BOOL "Build static libraries")
+set(BUILD_SHARED_LIBS ${_DEFAULT_BUILD_SHARED} CACHE BOOL "Build shared libraries")
+set(BUILD_STATIC_LIBS ${_DEFAULT_BUILD_STATIC} CACHE BOOL "Build static libraries")
+
+add_option(TIMEMORY_SKIP_BUILD "Disable building any libraries" OFF)
+
+if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
+    # local override
+    set(TIMEMORY_BUILD_C OFF)
+    set(TIMEMORY_BUILD_PYTHON OFF)
+    set(TIMEMORY_BUILD_TOOLS OFF)
+    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
+endif()
+
+if(TIMEMORY_SKIP_BUILD)
+    # local override
+    set(BUILD_SHARED_LIBS OFF)
+    set(BUILD_STATIC_LIBS OFF)
+    set(TIMEMORY_BUILD_C OFF)
+    set(TIMEMORY_BUILD_PYTHON OFF)
+    set(TIMEMORY_BUILD_TOOLS OFF)
+    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
+endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
 add_feature(BUILD_STATIC_LIBS "Build static libraries")
@@ -106,7 +145,7 @@ endif()
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
 # Build settings
-add_option(TIMEMORY_DOXYGEN_DOCS
+add_option(TIMEMORY_BUILD_DOCS
     "Make a `doc` make target"  OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_EXAMPLES
     "Build the examples"  OFF)
@@ -126,6 +165,8 @@ add_option(TIMEMORY_BUILD_GTEST
     "Enable GoogleTest" OFF)
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
+add_option(TIMEMORY_BUILD_DEVELOPER
+    "Enable building with developer flags" OFF)
 if(UNIX AND NOT APPLE)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
@@ -136,7 +177,6 @@ endif()
 if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
     add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
-    add_feature(TIMEMORY_INSTALL_PREFIX "${PROJECT_NAME} installation")
 endif()
 
 # timemory options
@@ -179,11 +219,12 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS OFF)
 endif()
 
-add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
-unset(_TLS_DESCRIPT)
-
 if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(TIMEMORY_GPERF_COMPONENTS "gperftool components")
+endif()
+
+if(TIMEMORY_USE_CUDA)
+    add_option(TIMEMORY_DISABLE_CUDA_HALF2 "Disable half2 if CUDA_ARCH < 60" OFF)
 endif()
 
 # cereal options
@@ -192,7 +233,7 @@ add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)
 add_option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON NO_FEATURE)
 add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
 
-if(TIMEMORY_DOXYGEN_DOCS)
+if(TIMEMORY_BUILD_DOCS)
     add_option(TIMEMORY_BUILD_DOXYGEN "Include `doc` make target in all" OFF NO_FEATURE)
     mark_as_advanced(TIMEMORY_BUILD_DOXYGEN)
 endif()

@@ -9,6 +9,7 @@ fi
 rm -rf TiMemory.* .eggs build dist
 python setup.py sdist
 cd dist
+sha256sum *
 gpg --detach-sign -a *
-twine upload *
+# twine upload *
 

@@ -57,8 +57,8 @@
 #include "pybind11/stl.h"
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/ctimemory.h"
-#include "timemory/details/settings.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
@@ -99,14 +99,14 @@ class manager_wrapper
 {
 public:
     manager_wrapper()
-    : m_manager(manager_t::instance())
+    : m_manager(manager_t::instance().get())
     {
     }
 
     ~manager_wrapper() {}
 
     // ensures thread-local version is called
-    manager_t* get() { return manager_t::instance(); }
+    manager_t* get() { return manager_t::instance().get(); }
 
 protected:
     manager_t* m_manager;
@@ -294,10 +294,9 @@ components_enum_to_vec(py::list enum_list)
 //--------------------------------------------------------------------------------------//
 
 component_list_t*
-create_component_list(std::string obj_tag, int lineno, const tim::language& lang,
-                      bool report, const component_enum_vec& components)
+create_component_list(std::string obj_tag, const component_enum_vec& components)
 {
-    auto obj = new component_list_t(obj_tag, lineno, lang, report);
+    auto obj = new component_list_t(obj_tag, true, tim::settings::flat_profile());
     tim::initialize(*obj, components);
     return obj;
 }
@@ -360,25 +359,25 @@ manager()
 //--------------------------------------------------------------------------------------//
 
 tim_timer_t*
-timer(std::string key, int line, bool report_at_exit)
+timer(std::string key)
 {
-    return new tim_timer_t(key, line, tim::language::pyc(), report_at_exit);
+    return new tim_timer_t(key, true, tim::settings::flat_profile());
 }
 
 //--------------------------------------------------------------------------------------//
 
 auto_timer_t*
-auto_timer(std::string key, int line, bool report_at_exit)
+auto_timer(std::string key, bool report_at_exit)
 {
-    return new auto_timer_t(key, line, tim::language::pyc(), report_at_exit);
+    return new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
 
 rss_usage_t*
-rss_usage(std::string key, int line, bool report_at_exit, bool record = false)
+rss_usage(std::string key, bool record)
 {
-    rss_usage_t* _rss = new rss_usage_t(key, line, tim::language::pyc(), report_at_exit);
+    rss_usage_t* _rss = new rss_usage_t(key, true, tim::settings::flat_profile());
     if(record)
         _rss->measure();
     return _rss;
@@ -387,36 +386,33 @@ rss_usage(std::string key, int line, bool report_at_exit, bool record = false)
 //--------------------------------------------------------------------------------------//
 
 component_list_t*
-component_list(py::list components, std::string key, int line, bool report_at_exit)
+component_list(py::list components, std::string key)
 {
-    return create_component_list(key, line, tim::language::pyc(), report_at_exit,
-                                 components_enum_to_vec(components));
+    return create_component_list(key, components_enum_to_vec(components));
 }
 
 //----------------------------------------------------------------------------//
 
 auto_timer_decorator*
-timer_decorator(const std::string& key, int line, bool report_at_exit)
+timer_decorator(const std::string& key, bool report_at_exit)
 {
     auto_timer_decorator* _ptr = new auto_timer_decorator();
-    if(!auto_timer_t::is_enabled())
+    if(!tim::settings::enabled())
         return _ptr;
-    return &(*_ptr = new auto_timer_t(key, line, tim::language::pyc(), report_at_exit));
+    return &(*_ptr =
+                 new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
 
 component_list_decorator*
-component_decorator(py::list components, const std::string& key, int line,
-                    bool report_at_exit)
+component_decorator(py::list components, const std::string& key)
 {
     component_list_decorator* _ptr = new component_list_decorator();
     if(!manager_t::is_enabled())
         return _ptr;
 
-    return &(*_ptr =
-                 create_component_list(key, line, tim::language::pyc(), report_at_exit,
-                                       components_enum_to_vec(components)));
+    return &(*_ptr = create_component_list(key, components_enum_to_vec(components)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -844,6 +840,19 @@ struct construct_dict
 
 //--------------------------------------------------------------------------------------//
 
+template <>
+struct construct_dict<std::tuple<std::string, void*>>
+{
+    using Type = std::tuple<std::string, void*>;
+
+    template <typename... _Args>
+    construct_dict(_Args&&...)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Types>
 struct dict
 {
@@ -871,13 +880,6 @@ struct dict<std::tuple<_Types...>>
 
 struct settings
 {
-    bool& suppress_parsing() { return ::tim::settings::suppress_parsing(); }
-    bool& enabled() { return ::tim::settings::enabled(); }
-    bool& auto_output() { return ::tim::settings::auto_output(); }
-    bool& file_output() { return ::tim::settings::file_output(); }
-    bool& text_output() { return ::tim::settings::text_output(); }
-    bool& json_output() { return ::tim::settings::json_output(); }
-    bool& cout_output() { return ::tim::settings::cout_output(); }
 };
 
 //======================================================================================//

@@ -54,6 +54,7 @@ if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # add_cxx_flag_if_avail("-Wno-unused-private-field")
 else()
     add_cxx_flag_if_avail("-Wno-class-memaccess")
+    add_cxx_flag_if_avail("-Wno-cast-function-type")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -92,6 +93,14 @@ add_interface_library(timemory-compile-timing)
 add_target_flag_if_avail(timemory-compile-timing "-ftime-report")
 if(TIMEMORY_USE_COMPILE_TIMING)
     target_link_libraries(timemory-compile-options INTERFACE timemory-compile-timing)
+endif()
+
+#----------------------------------------------------------------------------------------#
+# developer build flags
+#
+add_interface_library(timemory-develop-options)
+if(TIMEMORY_BUILD_DEVELOPER)
+    add_target_flag_if_avail(timemory-develop-options "-Wshadow")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -186,10 +195,10 @@ if(TIMEMORY_USE_SANITIZER)
         target_link_libraries(timemory-${_TYPE}-sanitizer INTERFACE ${SANITIZER_${_LIB}_LIBRARY})
     endforeach()
 
-    foreach(_TYPE ${SANITIZER_TYPES})
+    foreach(_TYPE ${SANITIZER_TYPE} ${SANITIZER_TYPES})
         set(_LIB ${${_TYPE}_lib})
-        if(c_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
-                cxx_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
+        if((c_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} OR
+                cxx_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE}) AND
                 SANITIZER_${_LIB}_LIBRARY)
             add_interface_library(timemory-sanitizer)
             add_target_flag_if_avail(timemory-sanitizer "-fno-omit-frame-pointer")

@@ -41,10 +41,6 @@ if(SKBUILD)
     set(CMAKE_INSTALL_LIBDIR lib)
 endif()
 
-if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
-    set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "Thread-local static model" FORCE)
-endif()
-
 #----------------------------------------------------------------------------------------#
 #   project
 #----------------------------------------------------------------------------------------#
@@ -72,14 +68,18 @@ set(LIBNAME timemory)
 # set the output directory (critical for Windows and Xcode)
 #
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
+    set(_BIN_DIR ${CMAKE_BINARY_DIR})
+    if(NOT ${PROJECT_NAME}_MASTER_PROJECT)
+        set(_BIN_DIR ${PROJECT_BINARY_DIR})
+    endif()
     if(WIN32)
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/outputs/runtime)
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/outputs/library)
-        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/outputs/archive)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${_BIN_DIR}/outputs/runtime)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${_BIN_DIR}/outputs/library)
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${_BIN_DIR}/outputs/archive)
     else()
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${_BIN_DIR})
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${_BIN_DIR})
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${_BIN_DIR})
     endif()
 endforeach()
 
@@ -89,12 +89,63 @@ endforeach()
 
 include(MacroUtilities)
 include(Options)
+
+#----------------------------------------------------------------------------------------#
+#   handle some additional configuration before other includes
+#----------------------------------------------------------------------------------------#
+
+set(_BUILD_SHARED_CXX ${BUILD_SHARED_LIBS})
+set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})
+
+option(TIMEMORY_BUILD_QUIET "Suppress author warnings without -Wno-dev" OFF)
+mark_as_advanced(TIMEMORY_BUILD_QUIET)
+
+if(SKBUILD)
+    set(_BUILD_SHARED_CXX ON)
+else()
+    if(TIMEMORY_BUILD_PYTHON AND NOT BUILD_SHARED_LIBS)
+        if(NOT TIMEMORY_BUILD_QUIET)
+            message(AUTHOR_WARNING "BUILD_STATIC_LIBS=OFF --> disabling TIMEMORY_BUILD_TOOLS")
+            set(TIMEMORY_BUILD_PYTHON OFF)
+        endif()
+    endif()
+endif()
+
+#----------------------------------------------------------------------------------------#
+#   thread-local static settings.
+#   NOTE: if building Python, the thread-local storage MUST be global-dynamic
+#----------------------------------------------------------------------------------------#
+
+set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
+set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
+
+if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
+    set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "${_TLS_DESCRIPT}")
+    # ensure local override
+    set(TIMEMORY_TLS_MODEL "global-dynamic")
+else()
+    set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
+endif()
+
+set_property(CACHE TIMEMORY_TLS_MODEL PROPERTY STRINGS "${_TLS_OPTIONS}")
+if(NOT "${TIMEMORY_TLS_MODEL}" IN_LIST _TLS_OPTIONS)
+    message(FATAL_ERROR "TIMEMORY_TLS_MODEL must be one of: \"${_TLS_OPTIONS}\"")
+endif()
+
+add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
+unset(_TLS_DESCRIPT)
+unset(_TLS_OPTIONS)
+
+#----------------------------------------------------------------------------------------#
+#   rest of configuration
+#----------------------------------------------------------------------------------------#
+
+include(ClangFormat)
 include(Compilers)
 include(GNUInstallDirs)
 include(ProjectSettings)
 include(BuildSettings)
 include(Packages)
-include(ClangFormat)
 include(CMakeParseArguments)
 
 #----------------------------------------------------------------------------------------#
@@ -102,8 +153,8 @@ include(CMakeParseArguments)
 #----------------------------------------------------------------------------------------#
 
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
-    DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
-    EXPORT ${PROJECT_NAME}LibraryDepends)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    EXPORT ${PROJECT_NAME}-library-depends)
 
 if(TIMEMORY_BUILD_CALIPER)
     set(_CALIPER_TARGETS)
@@ -114,8 +165,8 @@ if(TIMEMORY_BUILD_CALIPER)
     endforeach()
     list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_CALIPER_TARGETS})
     install(TARGETS ${_CALIPER_TARGETS}
-        DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
-        EXPORT ${PROJECT_NAME}LibraryDepends)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        EXPORT ${PROJECT_NAME}-library-depends)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -124,12 +175,16 @@ endif()
 
 add_subdirectory(source)
 
+# Install the export set for use with the install-tree
+install(EXPORT ${PROJECT_NAME}-library-depends
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR})
+
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory install directory" FORCE)
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE INTERNAL "timemory install directory")
     add_subdirectory(examples)
 endif()
 
@@ -141,7 +196,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     include(Documentation)
 
-    if(TIMEMORY_DOXYGEN_DOCS)
+    if(TIMEMORY_BUILD_DOCS)
         SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
         SET(CMAKE_INSTALL_MESSAGE LAZY)

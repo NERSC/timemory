@@ -79,20 +79,9 @@ install:
       mkdir "C:\Users\appveyor\CTestTemp"
       $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
-  # Install MS-MPI
-  # - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe' -FileName "./MSMpiSetup.exe"
-  # - ps: ./MSMpiSetup.exe -unattend
-  # Install MS-MPI SDK
-  # - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi' -FileName "msmpisdk.msi"
-  # - ps: ./msmpisdk.msi /passive
-  # - ps: |
-  #     $env:PATH = "C:\Program Files\Microsoft MPI\Bin;$env:PATH"
-  #     $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:\Program Files (x86)\Microsoft SDKs\MPI;$env:CMAKE_PREFIX_PATH"
-
 build_script:
   - mkdir build-timemory
   - cd build-timemory
-  - ls "C:\Program Files (x86)\Microsoft SDKs"
   - cmake
     -DCMAKE_BUILD_TYPE="%CONFIG%"
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
@@ -102,15 +91,13 @@ build_script:
     -DTIMEMORY_BUILD_PYTHON=ON
     -DTIMEMORY_BUILD_EXAMPLES=ON
     -DTIMEMORY_BUILD_GTEST=OFF
-    -DMPIEXEC="C:\Program Files\Microsoft MPI\Bin\mpiexec.exe"
-    -DMPI_CXX_INCLUDE_PATH="C:\Program Files (x86)\Microsoft SDKs\MPI\Include"
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
   - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
   - ls
-  - .\outputs\runtime\%CONFIG%\test_cxx_basic.exe
-  - .\outputs\runtime\%CONFIG%\test_optional_on.exe
-  - .\outputs\runtime\%CONFIG%\test_optional_off.exe
-  - .\outputs\runtime\%CONFIG%\test_cxx_overhead.exe
-  - .\outputs\runtime\%CONFIG%\test_cxx_tuple.exe
+  - .\outputs\runtime\%CONFIG%\ex_cxx_basic.exe
+  #- .\outputs\runtime\%CONFIG%\ex_optional_on.exe
+  - .\outputs\runtime\%CONFIG%\ex_optional_off.exe
+  #- .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe
+  #- .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe

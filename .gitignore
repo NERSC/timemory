@@ -12,7 +12,7 @@ settings.json
 # build directories
 /build-*
 /build
-/examples/build*
+/examples/**/build*
 /_skbuild
 
 # setup.py files
@@ -34,6 +34,7 @@ timing_report*
 /TiMemory-*
 /dist
 /.eggs
+/MANIFEST
 
 # info files
 /timemory/mpi_support/*.txt
@@ -58,3 +59,4 @@ timing_report*
 # stashed source tree
 /.stash
 /source/tests/timemory-*output
+/examples/ex-pmpi/mfdn-*

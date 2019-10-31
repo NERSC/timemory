@@ -46,6 +46,7 @@
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
@@ -53,30 +54,34 @@ namespace tim
 
 template <typename... Types>
 class auto_tuple
-: public counted_object<auto_tuple<Types...>>
-, public hashed_object<auto_tuple<Types...>>
 {
 public:
-    using component_type = component_tuple<Types...>;
-    using this_type      = auto_tuple<Types...>;
-    using data_type      = typename component_type::data_type;
-    using counter_type   = counted_object<this_type>;
-    using counter_void   = counted_object<void>;
-    using hashed_type    = hashed_object<this_type>;
-    using string_t       = std::string;
-    using string_hash    = std::hash<string_t>;
-    using base_type      = component_type;
-    using language_t     = language;
-    using type_tuple     = typename component_type::type_tuple;
+    using this_type       = auto_tuple<Types...>;
+    using base_type       = component_tuple<Types...>;
+    using component_type  = typename base_type::component_type;
+    using type_tuple      = typename component_type::type_tuple;
+    using data_value_type = typename component_type::data_value_type;
+    using data_label_type = typename component_type::data_label_type;
+    using data_type       = typename component_type::data_type;
+    using string_t        = std::string;
 
-    static constexpr bool contains_gotcha = component_type::contains_gotcha;
+    // used by component hybrid and gotcha
+    static constexpr bool is_component_list   = false;
+    static constexpr bool is_component_tuple  = false;
+    static constexpr bool is_component_hybrid = false;
+    static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&, const int64_t& lineno = 0,
-                               const language_t& lang = language_t::cxx(),
-                               bool report_at_exit    = settings::destructor_report());
-    inline explicit auto_tuple(component_type& tmp, const int64_t& lineno = 0,
-                               bool report_at_exit = settings::destructor_report());
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_tuple(const string_t&,
+                               bool flat           = (_Flat || settings::flat_profile()),
+                               bool report_at_exit = false);
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_tuple(component_type& tmp,
+                               bool            flat = (_Flat || settings::flat_profile()),
+                               bool            report_at_exit = false);
     inline ~auto_tuple();
 
     // copy and move
@@ -106,7 +111,7 @@ public:
     inline void start()
     {
         if(m_enabled)
-            m_temporary_object.conditional_start();
+            m_temporary_object.start();
     }
     inline void stop()
     {
@@ -123,17 +128,6 @@ public:
         if(m_enabled)
             m_temporary_object.pop();
     }
-    inline void conditional_start()
-    {
-        if(m_enabled)
-            m_temporary_object.conditional_start();
-    }
-    inline void conditional_stop()
-    {
-        if(m_enabled)
-            m_temporary_object.conditional_stop();
-    }
-
     template <typename... _Args>
     inline void mark_begin(_Args&&... _args)
     {
@@ -146,18 +140,28 @@ public:
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
+    template <typename... _Args>
+    inline void customize(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.customize(std::forward<_Args>(_args)...);
+    }
+
+    inline data_value_type get() const { return m_temporary_object.get(); }
+
+    inline data_label_type get_labeled() const
+    {
+        return m_temporary_object.get_labeled();
+    }
 
     inline bool enabled() const { return m_enabled; }
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
-    inline const bool&      store() const { return m_temporary_object.store(); }
+    inline bool             store() const { return m_temporary_object.store(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
-    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
-    inline const language&  lang() const { return m_temporary_object.lang(); }
-    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
@@ -180,27 +184,25 @@ public:
         return os;
     }
 
-private:
+    //----------------------------------------------------------------------------------//
+    static void init_storage() { component_type::init_storage(); }
+
+protected:
     bool            m_enabled        = true;
     bool            m_report_at_exit = false;
     component_type  m_temporary_object;
     component_type* m_reference_object = nullptr;
 };
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& lineno,
-                                 const language_t& lang, bool report_at_exit)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(object_tag) * static_cast<int64_t>(lang) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(counter_type::enable() && settings::enabled())
+template <typename _Scope, bool _Flat>
+auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
+                                 bool report_at_exit)
+: m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
-                     hashed_type::m_hash)
+, m_temporary_object(object_tag, m_enabled, flat || _Flat)
 {
     if(m_enabled)
     {
@@ -208,19 +210,14 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& line
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
-                                 bool report_at_exit)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(tmp.key()) * static_cast<int64_t>(tmp.lang()) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(true)
+template <typename _Scope, bool _Flat>
+auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_exit)
+: m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(hashed_type::m_hash, true))
+, m_temporary_object(tmp.clone(true, flat || _Flat))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
@@ -229,7 +226,7 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 auto_tuple<Types...>::~auto_tuple()
@@ -237,7 +234,7 @@ auto_tuple<Types...>::~auto_tuple()
     if(m_enabled)
     {
         // stop the timer
-        m_temporary_object.conditional_stop();
+        m_temporary_object.stop();
 
         // report timer at exit
         if(m_report_at_exit)
@@ -257,9 +254,8 @@ auto_tuple<Types...>::~auto_tuple()
 
 //======================================================================================//
 
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data = typename _Tp::data_type,
-          typename _Ret  = typename _Tp::template data_value_t<_Data>>
+template <typename... _Types,
+          typename _Ret = typename auto_tuple<_Types...>::data_value_type>
 _Ret
 get(const auto_tuple<_Types...>& _obj)
 {
@@ -268,9 +264,8 @@ get(const auto_tuple<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data = typename _Tp::data_type,
-          typename _Ret  = typename _Tp::template data_label_t<_Data>>
+template <typename... _Types,
+          typename _Ret = typename auto_tuple<_Types...>::data_label_type>
 _Ret
 get_labeled(const auto_tuple<_Types...>& _obj)
 {
@@ -287,11 +282,11 @@ get_labeled(const auto_tuple<_Types...>& _obj)
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                      \
     TIMEMORY_BASIC_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                      \
     TIMEMORY_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

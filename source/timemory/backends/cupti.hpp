@@ -30,10 +30,10 @@
 
 #pragma once
 
+#include "timemory/backends/bits/cupti.hpp"
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/details/cupti.hpp"
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -308,7 +308,7 @@ static void CUPTIAPI
     {
         _LOG("New kernel encountered: %s", current_kernel_name.c_str());
         kernel_data_t k_data = dummy;
-        k_data.m_name        = corr_data;
+        k_data.m_name        = demangle(cbInfo->symbolName);
         auto& pass_data      = k_data.m_pass_data;
 
         for(size_t j = 0; j < pass_data.size(); ++j)
@@ -462,7 +462,7 @@ struct profiler
         m_event_ids.resize(events.size());
 
         // Init device, context and setup callback
-        CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, device_num));
+        CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, m_device_num));
         // CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
         CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRetain(&m_context, m_device));
 
@@ -572,7 +572,7 @@ struct profiler
 
         cuptiDisableKernelReplayMode(m_context);
         CUPTI_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_KERNEL));
-        CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRelease(m_device));
+        // CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRelease(m_device));
     }
 
     profiler(const profiler&) = delete;
@@ -583,7 +583,7 @@ struct profiler
     int passes() { return m_metric_passes + m_event_passes; }
 
 private:
-    using mutex_t = std::mutex;
+    using mutex_t = std::recursive_mutex;
     using lock_t  = std::unique_lock<mutex_t>;
 
     static mutex_t& get_mutex()
@@ -730,6 +730,7 @@ public:
         {
             if(kitr.first == impl::dummy_kernel_id)
                 continue;
+            ss << kitr.second.m_name << " : ";
             for(size_t i = 0; i < m_event_names.size(); ++i)
             {
                 if(print_names)
@@ -754,6 +755,7 @@ public:
         {
             if(kitr.first == impl::dummy_kernel_id)
                 continue;
+            ss << kitr.second.m_name << " : ";
             for(size_t i = 0; i < m_metric_names.size(); ++i)
             {
                 if(print_names)
@@ -805,7 +807,11 @@ public:
                 std::string evt_name  = m_event_names[i].c_str();
                 auto        label_idx = get_label_index(evt_name);
                 if(label_idx < 0)
+                {
+                    printf("[%s:'%s'@%i]> Skipping metric '%s'...\n", __FUNCTION__,
+                           __FILE__, __LINE__, evt_name.c_str());
                     continue;
+                }
                 auto         value = static_cast<uint64_t>(kitr.second.m_event_values[i]);
                 data::metric ret;
                 data::unsigned_integer::set(ret, value);
@@ -817,10 +823,18 @@ public:
                 std::string met_name  = m_metric_names[i].c_str();
                 auto        label_idx = get_label_index(met_name);
                 if(label_idx < 0)
+                {
+                    printf("[%s:'%s'@%i]> Skipping metric '%s'...\n", __FUNCTION__,
+                           __FILE__, __LINE__, met_name.c_str());
                     continue;
+                }
                 auto ret =
                     impl::get_metric(m_metric_ids[i], kitr.second.m_metric_values[i]);
-                kern_data[label_idx] += result(met_name, ret, false);
+                result _result(met_name, ret, false);
+                kern_data[label_idx] += _result;
+                std::cout << "\nMETRIC: " << met_name << std::endl;
+                std::cout << "RESULT [indiv]: " << _result << std::endl;
+                std::cout << "RESULT [total]: " << kern_data[label_idx] << std::endl;
             }
         }
         return kern_data;
@@ -990,7 +1004,7 @@ compute_api_kind(CUpti_ActivityComputeApiKind kind)
 
 //--------------------------------------------------------------------------------------//
 
-inline uint64_t
+inline int64_t
 get_elapsed(CUpti_Activity* record)
 {
 #define _CUPTI_CAST_RECORD(ToType, var) ToType* var = (ToType*) record
@@ -1001,39 +1015,33 @@ get_elapsed(CUpti_Activity* record)
         {
             _CUPTI_CAST_RECORD(CUpti_ActivityMemcpy, obj);
             return obj->end - obj->start;
-            break;
         }
         case CUPTI_ACTIVITY_KIND_MEMSET:
         {
             _CUPTI_CAST_RECORD(CUpti_ActivityMemset, obj);
             return obj->end - obj->start;
-            break;
         }
         case CUPTI_ACTIVITY_KIND_KERNEL:
         case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
         {
             _CUPTI_CAST_RECORD(CUpti_ActivityKernel4, obj);
             return obj->end - obj->start;
-            break;
         }
         case CUPTI_ACTIVITY_KIND_DRIVER:
         case CUPTI_ACTIVITY_KIND_RUNTIME:
         {
             _CUPTI_CAST_RECORD(CUpti_ActivityAPI, obj);
             return obj->end - obj->start;
-            break;
         }
         case CUPTI_ACTIVITY_KIND_OVERHEAD:
         {
             _CUPTI_CAST_RECORD(CUpti_ActivityOverhead, obj);
             return obj->end - obj->start;
-            break;
         }
         case CUPTI_ACTIVITY_KIND_CDP_KERNEL:
         {
             _CUPTI_CAST_RECORD(CUpti_ActivityCdpKernel, obj);
             return obj->end - obj->start;
-            break;
         }
         case CUPTI_ACTIVITY_KIND_DEVICE:
         case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
@@ -1045,6 +1053,95 @@ get_elapsed(CUpti_Activity* record)
     }
     return 0;
 #undef _CUPTI_CAST_RECORD
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline const char*
+get_name(CUpti_Activity* record)
+{
+#define _CUPTI_CAST_RECORD(ToType, var) ToType* var = (ToType*) record
+
+    switch(record->kind)
+    {
+        case CUPTI_ACTIVITY_KIND_KERNEL:
+        case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
+        {
+            _CUPTI_CAST_RECORD(CUpti_ActivityKernel4, obj);
+            return obj->name;
+        }
+        case CUPTI_ACTIVITY_KIND_CDP_KERNEL:
+        {
+            _CUPTI_CAST_RECORD(CUpti_ActivityCdpKernel, obj);
+            return obj->name;
+        }
+        case CUPTI_ACTIVITY_KIND_NAME:
+        {
+            _CUPTI_CAST_RECORD(CUpti_ActivityName, obj);
+            return obj->name;
+        }
+        case CUPTI_ACTIVITY_KIND_MARKER:
+        {
+            _CUPTI_CAST_RECORD(CUpti_ActivityMarker2, obj);
+            return obj->name;
+        }
+        case CUPTI_ACTIVITY_KIND_DEVICE:
+        {
+            _CUPTI_CAST_RECORD(CUpti_ActivityDevice2, obj);
+            return obj->name;
+        }
+        case CUPTI_ACTIVITY_KIND_MEMCPY: { return "cudaMemcpy";
+        }
+        case CUPTI_ACTIVITY_KIND_MEMSET: { return "cudaMemset";
+        }
+        case CUPTI_ACTIVITY_KIND_DRIVER: { return "cudaDriver";
+        }
+        case CUPTI_ACTIVITY_KIND_RUNTIME: { return "cudaRuntime";
+        }
+        case CUPTI_ACTIVITY_KIND_CONTEXT: { return "cudaContext";
+        }
+        case CUPTI_ACTIVITY_KIND_OVERHEAD: { return "cuptiOverhead";
+        }
+        case CUPTI_ACTIVITY_KIND_MARKER_DATA:
+        case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
+        default: break;
+    }
+    return "";
+#undef _CUPTI_CAST_RECORD
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline const char*
+get_kind_extra(CUpti_Activity* record)
+{
+    switch(record->kind)
+    {
+        case CUPTI_ACTIVITY_KIND_CONTEXT:
+        {
+            CUpti_ActivityContext* context = (CUpti_ActivityContext*) record;
+            return compute_api_kind(
+                (CUpti_ActivityComputeApiKind) context->computeApiKind);
+        }
+        case CUPTI_ACTIVITY_KIND_MEMCPY:
+        {
+            CUpti_ActivityMemcpy* memcpy = (CUpti_ActivityMemcpy*) record;
+            return memcpy_kind((CUpti_ActivityMemcpyKind) memcpy->copyKind);
+        }
+        case CUPTI_ACTIVITY_KIND_NAME:
+        {
+            CUpti_ActivityName* name = (CUpti_ActivityName*) record;
+            return object_kind(name->objectKind);
+        }
+        case CUPTI_ACTIVITY_KIND_OVERHEAD:
+        {
+            CUpti_ActivityOverhead* overhead = (CUpti_ActivityOverhead*) record;
+            return overhead_kind(overhead->overheadKind);
+        }
+        case CUPTI_ACTIVITY_KIND_MARKER_DATA:
+        default: break;
+    }
+    return "";
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1253,9 +1350,62 @@ static void CUPTIAPI
             status = cuptiActivityGetNextRecord(buffer, validSize, &record);
             if(status == CUPTI_SUCCESS)
             {
+                using name_pair_t = std::tuple<std::string, int64_t>;
                 if(settings::verbose() > 3 || settings::debug())
                     print(record);
-                _receiver += get_elapsed(record);
+                std::string       _name  = get_name(record);
+                auto              _time  = get_elapsed(record);
+                auto              _extra = get_kind_extra(record);
+                std::stringstream ss;
+                if(std::strlen(_extra) > 0)
+                {
+                    ss << _name << "_" << _extra;
+                    _name = ss.str();
+                }
+                auto _name_len = _name.length();
+                switch(record->kind)
+                {
+                    case CUPTI_ACTIVITY_KIND_OVERHEAD:
+                        _receiver -= name_pair_t{ _name, _time };
+                        break;
+                    case CUPTI_ACTIVITY_KIND_KERNEL:
+                    case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
+                    case CUPTI_ACTIVITY_KIND_CDP_KERNEL:
+                        _receiver += name_pair_t{ _name, _time };
+                        break;
+                    case CUPTI_ACTIVITY_KIND_MEMCPY:
+                        _receiver += name_pair_t{ _name, _time };
+                        break;
+                    case CUPTI_ACTIVITY_KIND_MEMSET:
+                        _receiver += name_pair_t{ _name, _time };
+                        break;
+                    case CUPTI_ACTIVITY_KIND_RUNTIME:
+                        _receiver += name_pair_t{ _name, _time };
+                        break;
+                    case CUPTI_ACTIVITY_KIND_NAME:
+                    case CUPTI_ACTIVITY_KIND_DRIVER:
+                    case CUPTI_ACTIVITY_KIND_CONTEXT:
+                    case CUPTI_ACTIVITY_KIND_MARKER:
+                    case CUPTI_ACTIVITY_KIND_DEVICE:
+                    case CUPTI_ACTIVITY_KIND_MARKER_DATA:
+                    case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
+                    default:
+                    {
+                        if(_name_len > 0 && _time > 0)
+                        {
+                            _receiver += name_pair_t{ _name, _time };
+                            break;
+                        }
+                        else if(_name_len == 0 && _time > 0)
+                        {
+                            std::stringstream ss;
+                            ss << "CUPTI_ACTIVITY_KIND_ENUM_"
+                               << static_cast<int>(record->kind);
+                            _receiver += name_pair_t{ ss.str(), _time };
+                            break;
+                        }
+                    }
+                }
             }
             else if(status == CUPTI_ERROR_MAX_LIMIT_REACHED)
                 break;
@@ -1353,9 +1503,12 @@ finalize_trace(const std::vector<activity_kind_t>& _kind_types)
 
 template <typename _Tp>
 inline void
-start_trace(_Tp* obj)
+start_trace(_Tp* obj, bool flush)
 {
     auto& _receiver = get_receiver();
+    // clang-format off
+    if(flush) { CUPTI_CALL(cuptiActivityFlushAll(0)); }
+    // clang-format on
     _receiver.insert(obj);
 }
 

@@ -43,54 +43,94 @@
 #include <string>
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
+#include "timemory/variadic/types.hpp"
 
 //======================================================================================//
 
 namespace tim
 {
 //======================================================================================//
-// forward declaration
-//
-template <typename... Types>
-class auto_tuple;
-
-template <typename _CompTuple, typename _CompList>
-class component_hybrid;
-
-//======================================================================================//
 // variadic list of components
 //
 template <typename... Types>
 class component_tuple
 {
-    static const std::size_t num_elements = sizeof...(Types);
     // empty init for friends
     explicit component_tuple() {}
+
     // manager is friend so can use above
     friend class manager;
 
     template <typename _TupleC, typename _ListC>
     friend class component_hybrid;
 
+    template <typename... _Types>
+    friend class auto_tuple;
+
 public:
+    template <typename... _Types>
+    struct filtered
+    {
+    };
+
+    template <typename... _Types>
+    struct filtered<std::tuple<_Types...>>
+    {
+        using this_type  = component_tuple<_Types...>;
+        using data_type  = std::tuple<_Types...>;
+        using type_tuple = std::tuple<_Types...>;
+
+        template <typename _Archive>
+        using serialize_t = std::tuple<operation::serialization<Types, _Archive>...>;
+        template <typename _Scope>
+        using insert_node_t = std::tuple<operation::insert_node<_Types, _Scope>...>;
+        using pop_node_t    = std::tuple<operation::pop_node<_Types>...>;
+        using measure_t     = std::tuple<operation::measure<_Types>...>;
+        using record_t      = std::tuple<operation::record<_Types>...>;
+        using reset_t       = std::tuple<operation::reset<_Types>...>;
+        using plus_t        = std::tuple<operation::plus<_Types>...>;
+        using minus_t       = std::tuple<operation::minus<_Types>...>;
+        using multiply_t    = std::tuple<operation::multiply<_Types>...>;
+        using divide_t      = std::tuple<operation::divide<_Types>...>;
+        using print_t       = std::tuple<operation::print<_Types>...>;
+        using prior_start_t = std::tuple<operation::priority_start<_Types>...>;
+        using prior_stop_t  = std::tuple<operation::priority_stop<_Types>...>;
+        using stand_start_t = std::tuple<operation::standard_start<_Types>...>;
+        using stand_stop_t  = std::tuple<operation::standard_stop<_Types>...>;
+        using mark_begin_t  = std::tuple<operation::mark_begin<_Types>...>;
+        using mark_end_t    = std::tuple<operation::mark_end<_Types>...>;
+        using customize_t   = std::tuple<operation::customize<_Types>...>;
+        using set_prefix_t  = std::tuple<operation::set_prefix<_Types>...>;
+        using get_data_t    = std::tuple<operation::get_data<_Types>...>;
+        using auto_type     = auto_tuple<_Types...>;
+    };
+
+public:
+    using string_t    = std::string;
     using size_type   = int64_t;
-    using language_t  = tim::language;
     using string_hash = std::hash<string_t>;
     using this_type   = component_tuple<Types...>;
-    using data_type   = implemented<Types...>;
-    using type_tuple  = implemented<Types...>;
+    using data_type   = typename filtered<available_tuple<concat<Types...>>>::data_type;
+    using type_tuple  = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
+    using data_value_type = get_data_value_t<data_type>;
+    using data_label_type = get_data_label_t<data_type>;
+
+    // used by gotcha
+    using component_type = this_type;
+    using auto_type      = auto_tuple<Types...>;
 
     // used by component hybrid
-    static constexpr bool is_component_list  = false;
-    static constexpr bool is_component_tuple = true;
+    static constexpr bool is_component_list   = false;
+    static constexpr bool is_component_tuple  = true;
+    static constexpr bool is_component_hybrid = false;
 
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
@@ -98,49 +138,47 @@ public:
 
 public:
     // modifier types
-    using insert_node_t      = modifiers<operation::insert_node, Types...>;
-    using pop_node_t         = modifiers<operation::pop_node, Types...>;
-    using measure_t          = modifiers<operation::measure, Types...>;
-    using record_t           = modifiers<operation::record, Types...>;
-    using reset_t            = modifiers<operation::reset, Types...>;
-    using plus_t             = modifiers<operation::plus, Types...>;
-    using minus_t            = modifiers<operation::minus, Types...>;
-    using multiply_t         = modifiers<operation::multiply, Types...>;
-    using divide_t           = modifiers<operation::divide, Types...>;
-    using print_t            = modifiers<operation::print, Types...>;
-    using start_t            = modifiers<operation::start, Types...>;
-    using stop_t             = modifiers<operation::stop, Types...>;
-    using cond_start_t       = modifiers<operation::conditional_start, Types...>;
-    using cond_stop_t        = modifiers<operation::conditional_stop, Types...>;
-    using prior_start_t      = modifiers<operation::priority_start, Types...>;
-    using prior_stop_t       = modifiers<operation::priority_stop, Types...>;
-    using prior_cond_start_t = modifiers<operation::conditional_priority_start, Types...>;
-    using prior_cond_stop_t  = modifiers<operation::conditional_priority_stop, Types...>;
-    using stand_start_t      = modifiers<operation::standard_start, Types...>;
-    using stand_stop_t       = modifiers<operation::standard_stop, Types...>;
-    using stand_cond_start_t = modifiers<operation::conditional_standard_start, Types...>;
-    using stand_cond_stop_t  = modifiers<operation::conditional_standard_stop, Types...>;
-    using mark_begin_t       = modifiers<operation::mark_begin, Types...>;
-    using mark_end_t         = modifiers<operation::mark_end, Types...>;
+    // clang-format off
+    template <typename _Archive>
+    using serialize_t   = typename filtered<available_tuple<concat<Types...>>>::template serialize_t<_Archive>;
+    template <typename _Scope>
+    using insert_node_t = typename filtered<available_tuple<concat<Types...>>>::template insert_node_t<_Scope>;
+    using pop_node_t    = typename filtered<available_tuple<concat<Types...>>>::pop_node_t;
+    using measure_t     = typename filtered<available_tuple<concat<Types...>>>::measure_t;
+    using record_t      = typename filtered<available_tuple<concat<Types...>>>::record_t;
+    using reset_t       = typename filtered<available_tuple<concat<Types...>>>::reset_t;
+    using plus_t        = typename filtered<available_tuple<concat<Types...>>>::plus_t;
+    using minus_t       = typename filtered<available_tuple<concat<Types...>>>::minus_t;
+    using multiply_t    = typename filtered<available_tuple<concat<Types...>>>::multiply_t;
+    using divide_t      = typename filtered<available_tuple<concat<Types...>>>::divide_t;
+    using print_t       = typename filtered<available_tuple<concat<Types...>>>::print_t;
+    using prior_start_t = typename filtered<available_tuple<concat<Types...>>>::prior_start_t;
+    using prior_stop_t  = typename filtered<available_tuple<concat<Types...>>>::prior_stop_t;
+    using stand_start_t = typename filtered<available_tuple<concat<Types...>>>::stand_start_t;
+    using stand_stop_t  = typename filtered<available_tuple<concat<Types...>>>::stand_stop_t;
+    using mark_begin_t  = typename filtered<available_tuple<concat<Types...>>>::mark_begin_t;
+    using mark_end_t    = typename filtered<available_tuple<concat<Types...>>>::mark_end_t;
+    using customize_t   = typename filtered<available_tuple<concat<Types...>>>::customize_t;
+    using set_prefix_t  = typename filtered<available_tuple<concat<Types...>>>::set_prefix_t;
+    using get_data_t    = typename filtered<available_tuple<concat<Types...>>>::get_data_t;
+    // clang-format on
 
 public:
-    using auto_type = auto_tuple<Types...>;
-
-public:
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const language_t& lang = language_t::cxx(),
-                             int64_t ncount = 0, int64_t nhash = 0)
+                             const bool& flat = (_Flat || settings::flat_profile()))
     : m_store(store && settings::enabled())
+    , m_flat(flat)
     , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_lang(lang)
+    , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
     , m_key(key)
-    , m_identifier("")
     {
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
+        // if(settings::enabled())
+        {
+            compute_width(key);
+            // init_storage();
+        }
     }
 
     ~component_tuple() { pop(); }
@@ -154,11 +192,13 @@ public:
     component_tuple& operator=(const component_tuple& rhs) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple clone(const int64_t& nhash, bool store)
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
+    component_tuple clone(bool store, bool flat = _Flat)
     {
         component_tuple tmp(*this);
-        tmp.m_hash  = nhash;
         tmp.m_store = store;
+        tmp.m_flat  = flat;
         return tmp;
     }
 
@@ -166,7 +206,7 @@ public:
     //----------------------------------------------------------------------------------//
     // get the size
     //
-    static constexpr std::size_t size() { return num_elements; }
+    static constexpr std::size_t size() { return std::tuple_size<type_tuple>::value; }
     static constexpr std::size_t available_size()
     {
         return std::tuple_size<data_type>::value;
@@ -178,11 +218,15 @@ public:
     {
         if(m_store && !m_is_pushed)
         {
+            // reset the data
             apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
-            apply<void>::access<insert_node_t>(m_data, m_identifier, m_hash);
+            if(m_flat)
+                apply<void>::access<insert_node_t<scope::flat>>(m_data, m_hash);
+            else
+                apply<void>::access<insert_node_t<scope::process>>(m_data, m_hash);
         }
     }
 
@@ -224,23 +268,6 @@ public:
         pop();
     }
 
-    void conditional_start()
-    {
-        push();
-        // start, if not already started
-        apply<void>::access<prior_cond_start_t>(m_data);
-        apply<void>::access<stand_cond_start_t>(m_data);
-    }
-
-    void conditional_stop()
-    {
-        // stop, if not already stopped
-        apply<void>::access<prior_cond_stop_t>(m_data);
-        apply<void>::access<stand_cond_stop_t>(m_data);
-        // pop them off the running stack
-        pop();
-    }
-
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
@@ -262,6 +289,15 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // perform a customized operation (typically for GOTCHA)
+    //
+    template <typename... _Args>
+    void customize(_Args&&... _args)
+    {
+        apply<void>::access<customize_t>(m_data, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // recording
     //
     this_type& record()
@@ -272,10 +308,34 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // reset data
+    //
     void reset()
     {
         apply<void>::access<reset_t>(m_data);
         m_laps = 0;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get data
+    //
+    data_value_type get() const
+    {
+        const_cast<this_type&>(*this).stop();
+        data_value_type _ret_data;
+        apply<void>::access2<get_data_t>(m_data, _ret_data);
+        return _ret_data;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // reset data
+    //
+    data_label_type get_labeled() const
+    {
+        const_cast<this_type&>(*this).stop();
+        data_label_type _ret_data;
+        apply<void>::access2<get_data_t>(m_data, _ret_data);
+        return _ret_data;
     }
 
     //----------------------------------------------------------------------------------//
@@ -375,17 +435,17 @@ public:
         if(available_size() == 0)
             return os;
         // stop, if not already stopped
-        apply<void>::access<prior_cond_stop_t>(obj.m_data);
-        apply<void>::access<stand_cond_stop_t>(obj.m_data);
-        // apply<void>::access<cond_stop_t>(obj.m_data);
+        apply<void>::access<prior_stop_t>(obj.m_data);
+        apply<void>::access<stand_stop_t>(obj.m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
         apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);
         if(obj.m_print_prefix)
         {
-            obj.update_identifier();
-            ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
-                      << " : ";
+            obj.update_width();
+            std::stringstream ss_id;
+            ss_id << obj.get_prefix() << " " << std::left << obj.m_key;
+            ss_prefix << std::setw(output_width()) << std::left << ss_id.str() << " : ";
             os << ss_prefix.str();
         }
         os << ss_data.str();
@@ -398,12 +458,10 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using apply_types = std::tuple<operation::serialization<Types, Archive>...>;
-        ar(serializer::make_nvp("identifier", m_identifier),
-           serializer::make_nvp("laps", m_laps));
+        ar(serializer::make_nvp("key", m_key), serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
-        apply<void>::access<apply_types>(m_data, std::ref(ar), version);
+        apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
         ar.finishNode();
     }
 
@@ -434,13 +492,10 @@ public:
 
     int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
-    string_t& identifier() { return m_identifier; }
 
-    const int64_t&    hash() const { return m_hash; }
-    const string_t&   key() const { return m_key; }
-    const language_t& lang() const { return m_lang; }
-    const string_t&   identifier() const { return m_identifier; }
-    void rekey(const string_t& _key) { compute_identifier(m_key = _key, m_lang); }
+    const int64_t&  hash() const { return m_hash; }
+    const string_t& key() const { return m_key; }
+    void            rekey(const string_t& _key) { compute_width(m_key = _key); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
@@ -482,23 +537,21 @@ protected:
 protected:
     // objects
     bool              m_store        = false;
+    bool              m_flat         = false;
     bool              m_is_pushed    = false;
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
     int64_t           m_laps         = 0;
-    int64_t           m_count        = 0;
     int64_t           m_hash         = 0;
-    language_t        m_lang         = language_t::cxx();
     string_t          m_key          = "";
-    string_t          m_identifier   = "";
     mutable data_type m_data;
 
 protected:
-    string_t get_prefix()
+    string_t get_prefix() const
     {
         auto _get_prefix = []() {
             if(!mpi::is_initialized())
-                return string_t("> ");
+                return string_t(">>> ");
 
             // prefix spacing
             static uint16_t width = 1;
@@ -506,29 +559,21 @@ protected:
                 width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
             std::stringstream ss;
             ss.fill('0');
-            ss << "|" << std::setw(width) << mpi::rank() << "> ";
+            ss << "|" << std::setw(width) << mpi::rank() << ">>> ";
             return ss.str();
         };
         static string_t _prefix = _get_prefix();
         return _prefix;
     }
 
-    void compute_identifier(const string_t& key, const language_t& lang)
+    void compute_width(const string_t& key)
     {
-        static string_t   _prefix = get_prefix();
-        std::stringstream ss;
-        // designated as [cxx], [pyc], etc.
-        ss << _prefix << lang << " ";
-        ss << std::left << key;
-        m_identifier = ss.str();
-        output_width(m_identifier.length());
-        compute_identifier_extra(key, lang);
+        static string_t _prefix = get_prefix();
+        output_width(key.length() + _prefix.length() + 1);
+        set_object_prefix(key);
     }
 
-    void update_identifier() const
-    {
-        const_cast<this_type&>(*this).compute_identifier(m_key, m_lang);
-    }
+    void update_width() const { const_cast<this_type&>(*this).compute_width(m_key); }
 
     static int64_t output_width(int64_t width = 0)
     {
@@ -555,24 +600,22 @@ protected:
         return _instance.load();
     }
 
-    void compute_identifier_extra(const string_t& key, const language_t&)
+    void set_object_prefix(const string_t& key)
     {
-        using set_prefix_extra_t = modifiers<operation::set_prefix, Types...>;
-        apply<void>::access<set_prefix_extra_t>(m_data, key);
+        apply<void>::access<set_prefix_t>(m_data, key);
     }
 
 public:
-    static void init_manager();
     static void init_storage()
     {
         apply<void>::type_access<operation::init_storage, data_type>();
     }
 };
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/component_tuple.hpp"
+#include "timemory/variadic/bits/component_tuple.hpp"

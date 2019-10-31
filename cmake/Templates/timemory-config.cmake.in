@@ -1,11 +1,7 @@
 # use IN_LIST so this is required
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
-#if(CMAKE_VERSION VERSION_LESS 3.10)
-#    message(FATAL_ERROR "@PROJECT_NAME@ configuration file requires CMake 3.10+")
-#endif()
-
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-version.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config-version.cmake)
 
 @PACKAGE_INIT@
 
@@ -70,6 +66,9 @@ if(TIMEMORY_C_LIBRARY)
     list(APPEND TIMEMORY_LANGUAGES C)
 endif()
 
+set(TIMEMORY_C_COMPILER_ID @CMAKE_C_COMPILER_ID@)
+set(TIMEMORY_CXX_COMPILER_ID @CMAKE_CXX_COMPILER_ID@)
+
 #----------------------------------------------------------------------------------------#
 #   Determine install tree or build tree
 #----------------------------------------------------------------------------------------#
@@ -112,7 +111,7 @@ if(TIMEMORY_INSTALL_TREE)
         find_package(gotcha QUIET)
     endif()
 
-    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-library-depends.cmake)
     check_required_components(@PROJECT_NAME@)
 
 else() # build tree
@@ -152,10 +151,31 @@ endif()
 #   timemory link target
 #----------------------------------------------------------------------------------------#
 set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-headers)
-set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
-if(TIMEMORY_C_LIBRARY)
-    set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c)
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c)
+set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-headers)
+set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-headers)
+
+if(TARGET @LIBNAME@-cxx-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-shared)
+    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-shared)
+elseif(TARGET @LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-static)
+endif()
+
+if(TARGET @LIBNAME@-c-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-shared)
+    list(APPEND @PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-shared)
+elseif(TARGET @LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-static)
+endif()
+
+if(TARGET @LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES @LIBNAME@-cxx-static)
+endif()
+
+if(TARGET @LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES @LIBNAME@-c-static)
 endif()
 
 
@@ -360,11 +380,33 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
     message(STATUS
       "[${PROJECT_NAME}] @PROJECT_NAME@ : \"${_INTERFACE_LIB}\" components: ${_COMPONENT_LIST}")
 
+    function(TIMEMORY_CHECK_MISMATCHED_COMPILER _LANG _CURR)
+        if(NOT "${CMAKE_${_LANG}_COMPILER_ID}" STREQUAL "${_CURR}" AND NOT @PROJECT_NAME@_FIND_QUIETLY)
+            set(_MSG " Mismatched ${_LANG} compiler IDs!")
+            set(_MSG "${_MSG}\n \t@PROJECT_NAME@ : ${_CURR}")
+            set(_MSG "${_MSG}\n \t    vs.")
+            set(_MSG "${_MSG}\n \t${PROJECT_NAME} : ${CMAKE_${_LANG}_COMPILER_ID}")
+            set(_MSG "${_MSG}\n")
+            message(AUTHOR_WARNING "${_MSG}")
+        endif()
+    endfunction()
+
+    if("timemory-cxx-${_LINK}" IN_LIST @PROJECT_NAME@_FOUND_COMPONENTS)
+        timemory_check_mismatched_compiler(CXX "@CMAKE_CXX_COMPILER_ID@")
+    endif()
+
+    if("timemory-c-${_LINK}" IN_LIST @PROJECT_NAME@_FOUND_COMPONENTS)
+        timemory_check_mismatched_compiler(C "@CMAKE_C_COMPILER_ID@")
+    endif()
+
     unset(_COMPONENT_LIST)
     unset(_LINK)
     unset(_LANGUAGES)
 endif()
 
+set(TiMemory_INCLUDE_DIR ${@PROJECT_NAME@_INCLUDE_DIR})
+set(TiMemory_LIB_DIR ${@PROJECT_NAME@_LIB_DIR})
+set(TiMemory_LIBRARIES ${@PROJECT_NAME@_LIBRARIES})
 
 #----------------------------------------------------------------------------------------#
 #   find_package variables
@@ -378,3 +420,29 @@ find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_LIBRARIES)
 
 unset(TIMEMORY_INSTALL_TREE)
+
+if(TARGET timemory-cxx-shared OR TARGET timemory-cxx-static)
+    set(@PROJECT_NAME@_LIBRARY_FOUND ON)
+endif()
+
+if(TARGET timemory-cxx-shared)
+    set(@PROJECT_NAME@_SHARED_LIBRARY_FOUND ON)
+endif()
+
+if(TARGET timemory-cxx-static)
+    set(@PROJECT_NAME@_STATIC_LIBRARY_FOUND ON)
+endif()
+
+set(@PROJECT_NAME@_ENABLED_LINK_LANGUAGES )
+set(@PROJECT_NAME@_ENABLED_LINK_LIBRARIES )
+foreach(_LANG c cxx)
+    foreach(_LINK shared static)
+        if(TARGET timemory-${_LANG}-${_LINK})
+            string(TOUPPER "${_LANG}" _ENABLED_LANG)
+            string(TOUPPER "${_LINK}" _ENABLED_LINK)
+            list(APPEND @PROJECT_NAME@_ENABLED_LINK_LANGUAGES ${_ENABLED_LANG})
+            list(APPEND @PROJECT_NAME@_ENABLED_LINK_LIBRARIES ${_ENABLED_LINK})
+            unset(_ENABLED_LANG)
+        endif()
+    endforeach()
+endforeach()

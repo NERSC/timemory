@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 EXE=$(basename ${1})
 DIR=heap.prof.${EXE}
@@ -73,8 +73,10 @@ else
     fi
 fi
 
+set -e
 # run the application
 eval HEAPPROFILE=${GPERF_PROFILE} $@ | tee ${GPERF_PROFILE}.log
+set +e
 
 # generate the results
 shopt -s nullglob

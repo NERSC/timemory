@@ -9,17 +9,21 @@
 include(MacroUtilities)
 include(CMakeDependentOption)
 
+if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    return()
+endif()
+
 #----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_DOXYGEN_DOCS)
+if(TIMEMORY_BUILD_DOCS)
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
     # else, don't build quietly
-    CMAKE_DEPENDENT_OPTION(TIMEMORY_DOXYGEN_DOCS_QUIET
+    CMAKE_DEPENDENT_OPTION(TIMEMORY_BUILD_DOCS_QUIET
         "Suppress standard output when making the docs" ON
         "BUILD_DOXYGEN_DOCS" OFF)
-    mark_as_advanced(TIMEMORY_DOXYGEN_DOCS_QUIET)
+    mark_as_advanced(TIMEMORY_BUILD_DOCS_QUIET)
 
-    if(TIMEMORY_DOXYGEN_DOCS_QUIET)
+    if(TIMEMORY_BUILD_DOCS_QUIET)
         set(DOXYGEN_QUIET YES)
     else()
         set(DOXYGEN_QUIET NO)
@@ -72,13 +76,16 @@ if(TIMEMORY_DOXYGEN_DOCS)
 
 
     if(DOXYGEN_DOT_FOUND)
+        set(CLASS_GRAPH_DEFAULT     OFF)
+        set(CALL_GRAPH_DEFAULT      ON)
+        set(CALLER_GRAPH_DEFAULT    OFF)
         set(DOXYGEN_DOT_GRAPH_TYPES CLASS CALL CALLER)
         # options to turn generation of class, call, and caller graphs
         foreach(_graph_type ${DOXYGEN_DOT_GRAPH_TYPES})
             # create CMake doc string
             string(TOLOWER _graph_type_desc ${_graph_type})
             # add option
-            option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}" ON)
+            option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}" ${${_graph_type}_GRAPH_DEFAULT})
             mark_as_advanced(ENABLE_DOXYGEN_${_graph_type}_GRAPH)
             # set GENERATE_DOXYGEN_${_graph_type}_GRAPH to YES/NO
             # GENERATE_DOXYGEN_${_graph_type}_GRAPH is used in configure_file
@@ -128,34 +135,6 @@ if(TIMEMORY_DOXYGEN_DOCS)
 
     #-----------------------------------------------------------------------
 
-    if(NOT "${SUBPROJECT}" STREQUAL "")
-        string(TOUPPER ${SUBPROJECT} SUBPROJECT_U)
-        option(INCLUDE_${SUBPROJECT_U}_IN_DOCS "Include ${SUBPROJECT} source files in documentation" OFF)
-        mark_as_advanced(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
-
-        if(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
-            set(_${SUBPROJECT}_DIRS ${${SUBPROJECT}_ROOT_SOURCE_DIR})
-            set(_SUB_DIRS ${_${SUBPROJECT}_DIRS})
-            while(NOT "${_SUB_DIRS}" STREQUAL "")
-                set(_loop_sub_dirs )
-                foreach(_dir ${_SUB_DIRS})
-                    list_subdirectories(_sub ${_dir} FALSE)
-                    if(NOT "${_sub}" STREQUAL "")
-                        list(APPEND _${SUBPROJECT}_DIRS ${_sub})
-                        list(APPEND _loop_sub_dirs ${_sub})
-                    endif()
-                endforeach()
-                set(_SUB_DIRS ${_loop_sub_dirs})
-            endwhile()
-
-            list(REMOVE_DUPLICATES _${SUBPROJECT}_DIRS)
-            STRING(REPLACE ";" " " ${SUBPROJECT_U}_SOURCE_DIRS "${_${SUBPROJECT}_DIRS}")
-            set(BUILDTREE_DIRS "${BUILDTREE_DIRS} ${${SUBPROJECT}_SOURCE_DIRS}")
-
-        endif()
-    endif()
-    #-----------------------------------------------------------------------
-
     if(XCODE)
         set(GENERATE_DOCSET_IF_XCODE YES)
     else()
@@ -173,7 +152,7 @@ if(TIMEMORY_DOXYGEN_DOCS)
           "<meta http-equiv=\"refresh\" content=\"1;url=html/index.html\">")
     endif()
 
-endif() # TIMEMORY_DOXYGEN_DOCS
+endif() # TIMEMORY_BUILD_DOCS
 
 #----------------------------------------------------------------------------------------#
 # Macro to generate documentation
@@ -183,7 +162,7 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
 
     FIND_PACKAGE(Doxygen)
     if(NOT Doxygen_FOUND)
-     message(STATUS "Doxygen executable cannot be found. Disable TIMEMORY_DOXYGEN_DOCS")
+     message(STATUS "Doxygen executable cannot be found. Disable TIMEMORY_BUILD_DOCS")
 	 return()
     endif()
     SET(DOXYFILE_FOUND false)

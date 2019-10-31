@@ -15,6 +15,18 @@ if(WIN32)
     return()
 endif()
 
+add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ON)
+add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ON)
+
+# pmpi tool
+if(TARGET timemory-cxx-shared AND TIMEMORY_USE_GOTCHA)
+    add_subdirectory(mpip)
+endif()
+
+if(NOT TIMEMORY_BUILD_TIMEM)
+    return()
+endif()
+
 #----------------------------------------------------------------------------------------#
 # Embed the link path into the executable
 #
@@ -53,6 +65,6 @@ target_link_libraries(timem PRIVATE
     timemory-headers
     timemory-papi
     timem-libexplain)
-  
+
 # timem installation
 install(TARGETS timem DESTINATION bin)

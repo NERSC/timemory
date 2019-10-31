@@ -10,7 +10,6 @@ include_guard(DIRECTORY)
 
 include(CMakePackageConfigHelpers)
 
-set(PYTHON_INSTALL_DIR      ${TIMEMORY_CONFIG_PYTHONDIR})
 set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
 set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
 foreach(_LANG C CXX CUDA)
@@ -20,7 +19,7 @@ foreach(_LANG C CXX CUDA)
     endforeach()
 endforeach()
 
-set(_INSTALL_PREFIX ${TIMEMORY_INSTALL_PREFIX})
+set(_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 if(TIMEMORY_BUILD_PYTHON)
     execute_process(COMMAND
         ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.prefix))"
@@ -32,12 +31,11 @@ endif()
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config.cmake.in
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-    INSTALL_DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
+    INSTALL_DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
     INSTALL_PREFIX ${_INSTALL_PREFIX}
     PATH_VARS
         INCLUDE_INSTALL_DIR
-        LIB_INSTALL_DIR
-        PYTHON_INSTALL_DIR)
+        LIB_INSTALL_DIR)
 
 # for backwards-compatibility
 file(WRITE ${CMAKE_BINARY_DIR}/TiMemoryConfig.cmake
@@ -51,7 +49,7 @@ include(\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}-config.cmake)
 ")
 
 write_basic_package_version_file(
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-version.cmake
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
@@ -59,9 +57,9 @@ install(
     FILES
         ${CMAKE_BINARY_DIR}/TiMemoryConfig.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-version.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     DESTINATION
-        ${TIMEMORY_INSTALL_CMAKEDIR})
+        ${CMAKE_INSTALL_CONFIGDIR})
 
 # only if master project
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
@@ -72,8 +70,11 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
         ${PROJECT_SOURCE_DIR}/timemory
         ${PROJECT_SOURCE_DIR}/examples)
 
-    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/external/cereal
-        ${PROJECT_SOURCE_DIR}/external/pybind11)
+    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/external
+        ${PROJECT_SOURCE_DIR}/external/cereal
+        ${PROJECT_SOURCE_DIR}/external/pybind11
+        ${PROJECT_SOURCE_DIR}/external/gotcha
+        ${PROJECT_SOURCE_DIR}/external/google-test)
 
     add_feature(TIMEMORY_COMPILED_LIBRARIES "Compiled libraries")
     # add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")

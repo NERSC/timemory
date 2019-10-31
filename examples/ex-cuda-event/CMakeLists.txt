@@ -10,7 +10,7 @@ endif()
 
 project(timemory-CUDA-Event-Example LANGUAGES C CXX CUDA)
 
-set(EXE_NAME test_cuda_event)
+set(EXE_NAME ex_cuda_event)
 set(COMPONENTS cuda nvtx threading compile-options analysis-tools)
 
 option(USE_CUPTI "Enable CUPTI" OFF)
@@ -37,15 +37,8 @@ endif()
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-cuda-event-example)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
-
 add_executable(${EXE_NAME} ${EXE_NAME}.cu)
 target_link_libraries(${EXE_NAME} timemory-cuda-event-example logging)
 target_compile_options(${EXE_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
-
-if(USE_CUPTI AND TIMEMORY_USE_CUPTI)
-    add_executable(demo demo.cu)
-    target_link_libraries(demo timemory-headers timemory-cuda timemory-cupti logging)
-    target_include_directories(demo PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-endif()
 
 install(TARGETS ${EXE_NAME} DESTINATION bin)

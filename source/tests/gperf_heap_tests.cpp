@@ -35,7 +35,6 @@
 using namespace tim::component;
 using mutex_t        = std::mutex;
 using lock_t         = std::unique_lock<mutex_t>;
-using condvar_t      = std::condition_variable;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 using floating_t     = double;
@@ -136,6 +135,10 @@ main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
     tim::timemory_init(argc, argv);
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count()  = 1;
+    tim::settings::banner()      = false;
+
     return RUN_ALL_TESTS();
 }
 

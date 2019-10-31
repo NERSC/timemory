@@ -12,6 +12,7 @@ unset(CMAKE_CXX_CLANG_TIDY)
 add_library(timemory-python-compile-options INTERFACE)
 add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-compile-options)
 add_cxx_flag_if_avail("-Wno-deprecated-declarations" timemory-python-compile-options)
+add_cxx_flag_if_avail("-Wno-unused-but-set-parameter" timemory-python-compile-options)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
@@ -33,18 +34,9 @@ target_include_directories(libpytimemory SYSTEM PUBLIC
 target_link_libraries(libpytimemory PUBLIC
     timemory-headers
     timemory-cxx-shared
-    # timemory-extern-init
     timemory-compile-options
+    timemory-develop-options
     timemory-external-shared
-    # timemory-cuda
-    # timemory-papi
-    # timemory-cupti
-    # timemory-cudart
-    # timemory-nvtx
-    # timemory-cudart-device
-    # timemory-caliper
-    # timemory-gperftools-cpu
-    # timemory-gperftools-heap
     timemory-python-compile-options
     PRIVATE pybind11::module)
 
@@ -70,7 +62,7 @@ foreach(_SUBMODULE plotting mpi_support util ert roofline)
         configure_file(${SOURCE_DIR}/${_SUBMODULE}.py
             ${BINARY_DIR}/${_SUBMODULE}.py @ONLY)
         install(FILES ${BINARY_DIR}/${_SUBMODULE}.py
-            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
     endif()
 
     # copy over the init file
@@ -78,7 +70,7 @@ foreach(_SUBMODULE plotting mpi_support util ert roofline)
         configure_file(${SOURCE_DIR}/__init__.py
             ${BINARY_DIR}/__init__.py @ONLY)
         install(FILES ${BINARY_DIR}/__init__.py
-            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
     endif()
 
     # copy over the main file
@@ -86,7 +78,7 @@ foreach(_SUBMODULE plotting mpi_support util ert roofline)
         configure_file(${SOURCE_DIR}/__main__.py
             ${BINARY_DIR}/__main__.py @ONLY)
         install(FILES ${BINARY_DIR}/__main__.py
-            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
     endif()
 
 endforeach()
@@ -125,7 +117,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_cxx_info.txt "${MPI_CXX_
 
 foreach(_TYPE exe c cxx)
     install(FILES ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
-        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/mpi_support)
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/mpi_support)
 endforeach(_TYPE exe c cxx)
 
 
@@ -135,18 +127,18 @@ endforeach(_TYPE exe c cxx)
 configure_file(${PROJECT_SOURCE_DIR}/timemory/__init__.py.in
     ${CMAKE_BINARY_DIR}/timemory/__init__.py @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/timemory/__init__.py
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 
 foreach(PYLIB_SUBMODULE options units signals)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/${PYLIB_SUBMODULE}.py
         ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
-        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 endforeach()
 
-# Python library target (linked to static target)
+# Python library target
 install(TARGETS libpytimemory
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 
 #----------------------------------------------------------------------------
 # Python testing
@@ -162,12 +154,12 @@ set(TEST_FILES
 
 foreach(_FILE ${TEST_FILES})
     # only copy *_test.py files to binary directory
-    if("${_FILE}" MATCHES "_test.py")
-        if(${PROJECT_NAME}_MASTER_PROJECT)
-            configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-                ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
-        endif()
-    endif()
+    #if("${_FILE}" MATCHES "_test.py")
+    #    if(${PROJECT_NAME}_MASTER_PROJECT)
+    #        configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
+    #            ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
+    #    endif()
+    #endif()
 
     # copy to binary: timemory/tests/${_FILE}
     configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
@@ -175,9 +167,9 @@ foreach(_FILE ${TEST_FILES})
 
     # install them though
     install(FILES ${CMAKE_BINARY_DIR}/timemory/tests/${_FILE}
-        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/tests)
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/tests)
 
-endforeach(_FILE ${TEST_FILES})
+endforeach()
 
 #----------------------------------------------------------------------------
 # Python tools

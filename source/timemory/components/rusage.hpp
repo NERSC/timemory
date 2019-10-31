@@ -54,15 +54,8 @@ struct peak_rss : public base<peak_rss>
     using value_type = int64_t;
     using base_type  = base<peak_rss, value_type>;
 
-    static const short                   precision = 1;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "peak_rss"; }
     static std::string description() { return "max resident set size"; }
-    static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_peak_rss(); }
     double             get_display() const
     {
@@ -97,15 +90,8 @@ struct page_rss : public base<page_rss>
     using value_type = int64_t;
     using base_type  = base<page_rss, value_type>;
 
-    static const short                   precision = 1;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "page_rss"; }
     static std::string description() { return "resident set size of memory pages"; }
-    static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_page_rss(); }
     double             get_display() const
     {
@@ -143,15 +129,9 @@ struct stack_rss : public base<stack_rss>
     using value_type = int64_t;
     using base_type  = base<stack_rss, value_type>;
 
-    static const short                   precision = 1;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::kilobyte; }
+    static int64_t     units() { return units::kilobyte; }
     static std::string label() { return "stack_rss"; }
     static std::string description() { return "integral unshared stack size"; }
-    static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_stack_rss(); }
     double             get_display() const
     {
@@ -185,15 +165,9 @@ struct data_rss : public base<data_rss>
     using value_type = int64_t;
     using base_type  = base<data_rss, value_type>;
 
-    static const short                   precision = 1;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::kilobyte; }
+    static int64_t     units() { return units::kilobyte; }
     static std::string label() { return "data_rss"; }
     static std::string description() { return "integral unshared data size"; }
-    static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_data_rss(); }
     double             get_display() const
     {
@@ -230,10 +204,8 @@ struct num_swap : public base<num_swap>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "num_swap"; }
     static std::string description() { return "swaps out of main memory"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_swap(); }
     value_type         get_display() const
     {
@@ -269,10 +241,8 @@ struct num_io_in : public base<num_io_in>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "io_in"; }
     static std::string description() { return "block input operations"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_io_in(); }
     value_type         get_display() const
     {
@@ -308,10 +278,8 @@ struct num_io_out : public base<num_io_out>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "io_out"; }
     static std::string description() { return "block output operations"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_io_out(); }
     value_type         get_display() const
     {
@@ -348,10 +316,8 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "minor_page_flts"; }
     static std::string description() { return "page reclaims"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_minor_page_faults(); }
     value_type         get_display() const
     {
@@ -387,10 +353,8 @@ struct num_major_page_faults : public base<num_major_page_faults>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "major_page_flts"; }
     static std::string description() { return "page faults"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_major_page_faults(); }
     value_type         get_display() const
     {
@@ -426,10 +390,8 @@ struct num_msg_sent : public base<num_msg_sent>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "num_msg_sent"; }
     static std::string description() { return "messages sent"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_messages_sent(); }
     value_type         get_display() const
     {
@@ -465,10 +427,8 @@ struct num_msg_recv : public base<num_msg_recv>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "num_msg_recv"; }
     static std::string description() { return "messages received"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_messages_received(); }
     value_type         get_display() const
     {
@@ -504,10 +464,8 @@ struct num_signals : public base<num_signals>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "num_signals"; }
     static std::string description() { return "signals delievered"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_signals(); }
     value_type         get_display() const
     {
@@ -545,10 +503,8 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "vol_cxt_swch"; }
     static std::string description() { return "voluntary context switches"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_voluntary_context_switch(); }
     value_type         get_display() const
     {
@@ -588,10 +544,8 @@ struct priority_context_switch : public base<priority_context_switch>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "prio_cxt_swch"; }
     static std::string description() { return "priority context switches"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_priority_context_switch(); }
     value_type         get_display() const
     {
@@ -628,15 +582,9 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
     using timer_type  = real_clock;
     using result_type = std::tuple<int64_t, double>;
 
-    static const short                   precision = 1;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "read_bytes"; }
     static std::string description() { return "physical I/O reads"; }
-    static std::string display_unit() { return "kB"; }
 
     static value_type record()
     {
@@ -676,7 +624,10 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         auto delta = static_cast<double>(std::get<1>(val) /
                                          static_cast<double>(timer_type::ratio_t::den) *
                                          timer_type::get_unit());
-        return result_type(data, data / delta);
+        auto rate  = data / delta;
+        if(!std::isfinite(rate))
+            rate = 0.0;
+        return result_type(data, rate);
     }
 
     void start()
@@ -707,15 +658,9 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
     using timer_type  = real_clock;
     using result_type = std::tuple<int64_t, double>;
 
-    static const short                   precision = 1;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "written_bytes"; }
     static std::string description() { return "physical I/O writes"; }
-    static std::string display_unit() { return "kB"; }
 
     static value_type record()
     {
@@ -755,7 +700,10 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         auto delta = static_cast<double>(std::get<1>(val) /
                                          static_cast<double>(timer_type::ratio_t::den) *
                                          timer_type::get_unit());
-        return result_type(data, data / delta);
+        auto rate  = data / delta;
+        if(!std::isfinite(rate))
+            rate = 0.0;
+        return result_type(data, rate);
     }
 
     void start()
@@ -774,6 +722,39 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
     }
 };
 
+//--------------------------------------------------------------------------------------//
+/// \class virtual_memory
+/// \brief
+/// this struct extracts the virtual memory usage
+//
+struct virtual_memory : public base<virtual_memory>
+{
+    using value_type = int64_t;
+    using base_type  = base<virtual_memory, value_type>;
+
+    static std::string label() { return "virtual_memory"; }
+    static std::string description() { return "virtual memory usage"; }
+    static value_type  record() { return get_virt_mem(); }
+    double             get_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return val / static_cast<double>(base_type::get_unit());
+    }
+    double get() const { return get_display(); }
+    void   start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp   = record();
+        auto delta = tmp - value;
+        accum      = std::max(accum, delta);
+        value      = std::move(tmp);
+        set_stopped();
+    }
+};
 //--------------------------------------------------------------------------------------//
 }  // namespace component
 }  // namespace tim
