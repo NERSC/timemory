@@ -48,6 +48,36 @@
 
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
+
+namespace stl_overload
+{
+inline cupti::profiler::results_t&
+operator+=(cupti::profiler::results_t& lhs, const cupti::profiler::results_t& rhs)
+{
+    assert(lhs.size() == rhs.size());
+    const auto _N = ::std::min(lhs.size(), rhs.size());
+    for(size_t i = 0; i < _N; ++i)
+        lhs[i] += rhs[i];
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline cupti::profiler::results_t
+operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_t& rhs)
+{
+    assert(lhs.size() == rhs.size());
+    cupti::profiler::results_t tmp = lhs;
+    const auto                 _N  = ::std::min(lhs.size(), rhs.size());
+    for(size_t i = 0; i < _N; ++i)
+        tmp[i] -= rhs[i];
+    return tmp;
+}
+}
+
+//--------------------------------------------------------------------------------------//
+
 namespace component
 {
 //--------------------------------------------------------------------------------------//
@@ -69,10 +99,13 @@ struct cupti_counters
                            policy::global_finalize, policy::serialization>;
 
     // custom aliases
-    using size_type     = std::size_t;
-    using string_t      = std::string;
-    using kernel_data_t = cupti::result;
-    using entry_type    = typename value_type::value_type;
+    using size_type        = std::size_t;
+    using string_t         = std::string;
+    using kernel_data_t    = cupti::result;
+    using entry_type       = typename value_type::value_type;
+    using results_t        = cupti::profiler::results_t;
+    using kernel_results_t = cupti::profiler::kernel_results_t;
+
     // short-hand for vectors
     using strvec_t  = std::vector<string_t>;
     using profptr_t = std::shared_ptr<cupti::profiler>;
@@ -145,15 +178,15 @@ struct cupti_counters
     static void invoke_global_finalize(storage_type*) { clear(); }
 
     static const profptr_t& get_profiler() { return _get_profiler(); }
-    static const strvec_t&  get_events() { return _get_events(); }
-    static const strvec_t&  get_metrics() { return _get_metrics(); }
-    static const int&       get_device() { return _get_device(); }
-    static const strvec_t&  get_labels() { return _get_labels(); }
+    static const strvec_t&  get_events() { return *_get_events(); }
+    static const strvec_t&  get_metrics() { return *_get_metrics(); }
+    static const int&       get_device() { return *_get_device(); }
+    static const strvec_t&  get_labels() { return *_get_labels(); }
 
     explicit cupti_counters()
     {
         configure();
-        auto& _labels = _get_labels();
+        auto& _labels = *_get_labels();
         value.resize(_labels.size());
         accum.resize(_labels.size());
         for(size_type i = 0; i < _labels.size(); ++i)
@@ -169,7 +202,11 @@ struct cupti_counters
     cupti_counters& operator              =(const cupti_counters& rhs)
     {
         if(this != &rhs)
+        {
             base_type::operator=(rhs);
+            m_kernel_value     = rhs.m_kernel_value;
+            m_kernel_accum     = rhs.m_kernel_accum;
+        }
         return *this;
     }
     cupti_counters& operator=(cupti_counters&&) = default;
@@ -185,7 +222,7 @@ struct cupti_counters
         configure();
         value_type tmp;
         auto&      _profiler = _get_profiler();
-        auto&      _labels   = _get_labels();
+        auto&      _labels   = *_get_labels();
         _profiler->stop();
         if(tmp.size() == 0)
         {
@@ -202,6 +239,54 @@ struct cupti_counters
         }
 
         return tmp;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // start
+    //
+    void start()
+    {
+        set_started();
+        value           = record();
+        auto& _profiler = _get_profiler();
+        m_kernel_value  = _profiler->get_kernel_events_and_metrics(*_get_labels());
+        _profiler->start();
+    }
+
+    void stop()
+    {
+        using namespace stl_overload;
+
+        value_type       tmp       = record();
+        auto&            _profiler = _get_profiler();
+        kernel_results_t kernel_data =
+            _profiler->get_kernel_events_and_metrics(*_get_labels());
+        kernel_results_t kernel_tmp = kernel_data;
+
+        if(accum.size() == 0)
+        {
+            accum = tmp;
+            for(size_type i = 0; i < tmp.size(); ++i)
+                accum[i] -= value[i];
+        } else
+        {
+            for(size_type i = 0; i < tmp.size(); ++i)
+                accum[i] += (tmp[i] - value[i]);
+        }
+
+        for(size_t i = 0; i < m_kernel_value.size(); ++i)
+            kernel_tmp[i].second -= m_kernel_value[i].second;
+        for(size_t i = 0; i < kernel_tmp.size(); ++i)
+        {
+            if(i >= m_kernel_accum.size())
+                m_kernel_accum.resize(i + 1, kernel_tmp[i]);
+            else
+                m_kernel_accum[i].second += kernel_tmp[i].second;
+        }
+
+        value          = std::move(tmp);
+        m_kernel_value = std::move(kernel_data);
+        set_stopped();
     }
 
     string_t get_display() const
@@ -240,6 +325,16 @@ struct cupti_counters
         for(auto itr : _data)
             values.push_back(cupti::get<double>(itr.data));
         return values;
+    }
+
+    using secondary_type = std::unordered_multimap<std::string, value_type>;
+
+    secondary_type get_secondary() const
+    {
+        secondary_type _data;
+        for(const auto& itr : (is_transient) ? m_kernel_accum : m_kernel_value)
+            _data.insert({ itr.first, itr.second });
+        return _data;
     }
 
     template <typename _Tp>
@@ -287,38 +382,10 @@ struct cupti_counters
         return array_t<int64_t>(get_labels().size(), 1);
     }
 
-    //----------------------------------------------------------------------------------//
-    // start
-    //
-    void start()
-    {
-        set_started();
-        value           = record();
-        auto& _profiler = _get_profiler();
-        _profiler->start();
-    }
-
-    void stop()
-    {
-        value_type tmp = record();
-        if(accum.size() == 0)
-        {
-            accum = tmp;
-            for(size_type i = 0; i < tmp.size(); ++i)
-                accum[i] -= value[i];
-        } else
-        {
-            for(size_type i = 0; i < tmp.size(); ++i)
-                accum[i] += (tmp[i] - value[i]);
-        }
-        value = std::move(tmp);
-        set_stopped();
-    }
-
     this_type& operator+=(const this_type& rhs)
     {
         auto _combine = [](value_type& _data, const value_type& _other) {
-            auto& _labels = _get_labels();
+            auto& _labels = *_get_labels();
             if(_data.empty())
                 _data = _other;
             else
@@ -338,7 +405,7 @@ struct cupti_counters
     this_type& operator-=(const this_type& rhs)
     {
         auto _combine = [](value_type& _data, const value_type& _other) {
-            auto& _labels = _get_labels();
+            auto& _labels = *_get_labels();
             // set to other
             if(_data.empty())
                 _data = _other;
@@ -351,6 +418,24 @@ struct cupti_counters
         _combine(accum, rhs.accum);
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
+        return *this;
+    }
+
+    this_type& operator+=(const results_t& rhs)
+    {
+        auto _combine = [](value_type& _data, const value_type& _other) {
+            if(_data.empty())
+                _data = _other;
+            else
+            {
+                for(size_type i = 0; i < _other.size(); ++i)
+                    _data[i] += _other[i];
+            }
+        };
+
+        _combine(value, rhs);
+        _combine(accum, rhs);
+
         return *this;
     }
 
@@ -380,10 +465,10 @@ struct cupti_counters
     template <typename _Archive>
     static void invoke_serialize(_Archive& ar, const unsigned int /*version*/)
     {
-        auto& _devices = _get_device();
-        auto& _events  = _get_events();
-        auto& _metrics = _get_metrics();
-        auto& _labels  = _get_labels();
+        auto& _devices = *_get_device();
+        auto& _events  = *_get_events();
+        auto& _metrics = *_get_metrics();
+        auto& _labels  = *_get_labels();
 
         ar(serializer::make_nvp("devices", _devices),
            serializer::make_nvp("events", _events),
@@ -426,28 +511,28 @@ private:
         return _instance;
     }
 
-    static strvec_t& _get_events()
+    static strvec_t*& _get_events()
     {
         static strvec_t* _instance = new strvec_t();
-        return *_instance;
+        return _instance;
     }
 
-    static strvec_t& _get_metrics()
+    static strvec_t*& _get_metrics()
     {
         static strvec_t* _instance = new strvec_t();
-        return *_instance;
+        return _instance;
     }
 
-    static int& _get_device()
+    static int*& _get_device()
     {
         static int* _instance = new int(0);
-        return *_instance;
+        return _instance;
     }
 
-    static strvec_t& _get_labels()
+    static strvec_t*& _get_labels()
     {
         static strvec_t* _instance = new strvec_t();
-        return *_instance;
+        return _instance;
     }
 
     static strvec_t generate_labels()
@@ -487,10 +572,10 @@ private:
         clear();
 
         auto& _profiler = _get_profiler();
-        auto& _events   = _get_events();
-        auto& _metrics  = _get_metrics();
-        auto& _device   = _get_device();
-        auto& _labels   = _get_labels();
+        auto& _events   = *_get_events();
+        auto& _metrics  = *_get_metrics();
+        auto& _device   = *_get_device();
+        auto& _labels   = *_get_labels();
 
         auto _init = get_initializer()();
 
@@ -543,8 +628,10 @@ private:
 
     static void clear()
     {
-        _get_metrics().clear();
-        _get_events().clear();
+        if(_get_metrics())
+            _get_metrics()->clear();
+        if(_get_events())
+            _get_events()->clear();
         _get_profiler().reset();
     }
 
@@ -552,11 +639,19 @@ public:
     static void cleanup()
     {
         clear();
-        delete &_get_device();
-        delete &_get_events();
-        delete &_get_labels();
-        delete &_get_metrics();
+        delete _get_device();
+        delete _get_events();
+        delete _get_labels();
+        delete _get_metrics();
+        _get_device()  = nullptr;
+        _get_events()  = nullptr;
+        _get_labels()  = nullptr;
+        _get_metrics() = nullptr;
     }
+
+private:
+    kernel_results_t m_kernel_value;
+    kernel_results_t m_kernel_accum;
 };
 
 //--------------------------------------------------------------------------------------//

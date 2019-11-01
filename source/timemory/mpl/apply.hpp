@@ -219,6 +219,67 @@ struct function_traits<R(C::*)>
     using call_type                 = std::tuple<C&>;
 };
 
+#if __cplusplus >= 201703L
+
+template <typename R, typename... Args>
+struct function_traits<std::function<R(Args...) noexcept>>
+{
+    static constexpr bool   is_memfun = false;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = args_type;
+};
+
+template <typename R, typename... Args>
+struct function_traits<R (*)(Args...) noexcept>
+{
+    static constexpr bool   is_memfun = false;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = args_type;
+};
+
+template <typename R, typename... Args>
+struct function_traits<R(Args...) noexcept>
+{
+    static constexpr bool   is_memfun = false;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = args_type;
+};
+
+// member function pointer
+template <typename C, typename R, typename... Args>
+struct function_traits<R (C::*)(Args...) noexcept>
+{
+    static constexpr bool   is_memfun = true;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = std::tuple<C&, Args...>;
+};
+
+// const member function pointer
+template <typename C, typename R, typename... Args>
+struct function_traits<R (C::*)(Args...) const noexcept>
+{
+    static constexpr bool   is_memfun = true;
+    static constexpr bool   is_const  = true;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = std::tuple<C&, Args...>;
+};
+
+#endif
+
 //======================================================================================//
 //
 //  Pre-C++11 tuple expansion

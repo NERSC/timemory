@@ -594,7 +594,6 @@ public:
               enable_if_t<!(is_one_of<_Tp, reference_type>::value), int> = 0>
     _Tp* get() const
     {
-        PRINT_HERE("");
         return nullptr;
     }
 
