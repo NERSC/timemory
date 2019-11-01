@@ -425,13 +425,15 @@ static void CUPTIAPI
 
 struct profiler
 {
+    using ulong_t          = unsigned long long;
     using kernel_map_t     = map_t<uint64_t, impl::kernel_data_t>;
     using metric_id_vector = std::vector<CUpti_MetricID>;
     using event_id_vector  = std::vector<CUpti_EventID>;
     using event_val_t      = impl::kernel_data_t::event_val_t;
     using metric_val_t     = impl::kernel_data_t::metric_val_t;
     using results_t        = std::vector<result>;
-    using ulong_t          = unsigned long long;
+    using kernel_pair_t    = std::pair<std::string, results_t>;
+    using kernel_results_t = std::vector<kernel_pair_t>;
 
     profiler(const strvec_t& events, const strvec_t& metrics, const int device_num = 0)
     : m_device_num(device_num)
@@ -543,10 +545,14 @@ struct profiler
         static std::atomic<int> _once;
         if(_once++ == 0)
         {
+            // store the initial data so that warmup does not show up
+            kernel_map_t _initial = m_kernel_data;
             start();
             device::params<device::default_device> p(1, 1, 0, 0);
             device::launch(p, impl::warmup<int>);
             stop();
+            // revert to original
+            m_kernel_data = _initial;
         }
     }
 
@@ -832,10 +838,59 @@ public:
                     impl::get_metric(m_metric_ids[i], kitr.second.m_metric_values[i]);
                 result _result(met_name, ret, false);
                 kern_data[label_idx] += _result;
-                std::cout << "\nMETRIC: " << met_name << std::endl;
-                std::cout << "RESULT [indiv]: " << _result << std::endl;
-                std::cout << "RESULT [total]: " << kern_data[label_idx] << std::endl;
             }
+        }
+        return kern_data;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    kernel_results_t get_kernel_events_and_metrics(const std::vector<std::string>& labels)
+    {
+        if(settings::verbose() > 2 || settings::debug())
+            print_events_and_metrics(std::cout);
+
+        kernel_results_t kern_data;
+
+        auto get_label_index = [&](const std::string& key) -> int64_t {
+            for(int64_t i = 0; i < static_cast<int64_t>(labels.size()); ++i)
+            {
+                if(key == labels[i])
+                    return i;
+            }
+            return -1;
+        };
+
+        for(auto& kitr : m_kernel_data)
+        {
+            if(kitr.first == impl::dummy_kernel_id)
+                continue;
+            results_t _tmp_data(labels.size());
+            for(size_t i = 0; i < m_event_names.size(); ++i)
+            {
+                std::string evt_name  = m_event_names[i];
+                auto        label_idx = get_label_index(evt_name);
+                if(label_idx < 0)
+                    continue;
+                auto         value = static_cast<uint64_t>(kitr.second.m_event_values[i]);
+                data::metric ret;
+                data::unsigned_integer::set(ret, value);
+                _tmp_data[label_idx] += result(evt_name, ret, true);
+            }
+
+            for(size_t i = 0; i < m_metric_names.size(); ++i)
+            {
+                std::string met_name  = m_metric_names[i].c_str();
+                auto        label_idx = get_label_index(met_name);
+                if(label_idx < 0)
+                    continue;
+                auto ret =
+                    impl::get_metric(m_metric_ids[i], kitr.second.m_metric_values[i]);
+                result _result(met_name, ret, false);
+                _tmp_data[label_idx] += _result;
+            }
+
+            kern_data.push_back(kernel_pair_t{ kitr.second.m_name, _tmp_data });
         }
         return kern_data;
     }
@@ -847,7 +902,7 @@ public:
         {
             if(k.first == impl::dummy_kernel_id)
                 continue;
-            m_kernel_names.push_back(std::to_string(k.first));
+            m_kernel_names.push_back(k.second.m_name);
         }
         return m_kernel_names;
     }
@@ -857,7 +912,14 @@ public:
         if(m_kernel_data.count(atol(kernel_name)) != 0)
             return m_kernel_data[atol(kernel_name)].m_event_values;
         else
-            return event_val_t{};
+        {
+            for(auto& kitr : m_kernel_data)
+            {
+                if(kitr.second.m_name == std::string(kernel_name))
+                    return kitr.second.m_event_values;
+            }
+        }
+        return event_val_t{};
     }
 
     metric_val_t get_metric_values(const char* kernel_name)
@@ -865,7 +927,14 @@ public:
         if(m_kernel_data.count(atol(kernel_name)) != 0)
             return m_kernel_data[atol(kernel_name)].m_metric_values;
         else
-            return metric_val_t{};
+        {
+            for(auto& kitr : m_kernel_data)
+            {
+                if(kitr.second.m_name == std::string(kernel_name))
+                    return kitr.second.m_metric_values;
+            }
+        }
+        return metric_val_t{};
     }
 
     const strvec_t& get_event_names() const { return m_event_names; }

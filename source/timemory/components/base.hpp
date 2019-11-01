@@ -340,25 +340,25 @@ public:
     //----------------------------------------------------------------------------------//
     // value type operators (complex data)
     //
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value), int> = 0>
+    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator+=(rhs);
     }
 
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value), int> = 0>
+    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
     Type& operator-=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator-=(rhs);
     }
 
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value), int> = 0>
+    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
     Type& operator*=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator*=(rhs);
     }
 
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value), int> = 0>
+    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
     Type& operator/=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator/=(rhs);

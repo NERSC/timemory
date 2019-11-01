@@ -884,8 +884,10 @@ main(int argc, char** argv)
     tim::settings::json_output()  = true;
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
     tim::mpi::initialize(argc, argv);
+#if defined(TIMEMORY_USE_PAPI)
     cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
     cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
+#endif
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;

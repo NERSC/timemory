@@ -257,6 +257,13 @@ struct metric
     metric_u data  = {};
     uint64_t count = 1;
     uint64_t index = 0;
+
+    metric()              = default;
+    ~metric()             = default;
+    metric(const metric&) = default;
+    metric(metric&&)      = default;
+    metric& operator=(const metric&) = default;
+    metric& operator=(metric&&) = default;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -338,7 +345,10 @@ struct percent
         val /= obj.count;
         os << val << " %";
     }
-    static type get_data(const metric& obj) { return obj.data.percent_v / obj.count; }
+    static type get_data(const metric& obj)
+    {
+        return obj.data.percent_v / (obj.count + 1);
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -437,7 +447,9 @@ void
 _get(_Ret& val, const data_metric_t& lhs)
 {
     if(lhs.index == _Tp::index)
+    {
         val = static_cast<_Ret>(_Tp::get_data(lhs));
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -459,7 +471,10 @@ void
 _set(data_metric_t& lhs, const data_metric_t& rhs)
 {
     if(rhs.index == _Tp::index)
+    {
+        lhs.index = rhs.index;
         _Tp::set(lhs, rhs);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -502,8 +517,13 @@ template <typename _Tp, typename... _Types,
 void
 _plus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) += _Tp::cget(rhs);
+    if(rhs.index == _Tp::index)
+    {
+        if(lhs.index == 0 && rhs.index != 0)
+            lhs.index = rhs.index;
+        if(lhs.index == rhs.index)
+            _Tp::get(lhs) += _Tp::cget(rhs);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -524,8 +544,13 @@ template <typename _Tp, typename... _Types,
 void
 _minus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) -= _Tp::cget(rhs);
+    if(rhs.index == _Tp::index)
+    {
+        if(lhs.index == 0 && rhs.index != 0)
+            lhs.index = rhs.index;
+        if(lhs.index == rhs.index)
+            _Tp::get(lhs) -= _Tp::cget(rhs);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -793,10 +818,11 @@ struct kernel_data_t
 
 struct profiler
 {
-    using event_val_t  = impl::kernel_data_t::event_val_t;
-    using metric_val_t = impl::kernel_data_t::metric_val_t;
-    using results_t    = std::vector<result>;
-    using ulong_t      = unsigned long long;
+    using ulong_t          = unsigned long long;
+    using event_val_t      = impl::kernel_data_t::event_val_t;
+    using metric_val_t     = impl::kernel_data_t::metric_val_t;
+    using results_t        = std::vector<result>;
+    using kernel_results_t = std::unordered_map<std::string, results_t>;
 
     profiler(const strvec_t&, const strvec_t&, const int = 0) {}
 

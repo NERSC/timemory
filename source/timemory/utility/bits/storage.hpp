@@ -103,8 +103,12 @@ combine(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _ExtraArgs,
-          template <typename, typename...> class _Container>
+template <
+    typename _Tp, typename... _ExtraArgs,
+    template <typename, typename...> class _Container,
+    typename _TupleA = _Container<_Tp, _ExtraArgs...>,
+    typename _TupleB = std::tuple<_Tp, _ExtraArgs...>,
+    typename std::enable_if<!(std::is_same<_TupleA, _TupleB>::value), int>::type = 0>
 void
 combine(_Container<_Tp, _ExtraArgs...>& lhs, const _Container<_Tp, _ExtraArgs...>& rhs)
 {
@@ -155,8 +159,12 @@ compute_percentage(const std::tuple<_Types...>&, const std::tuple<_Types...>&)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _ExtraArgs,
-          template <typename, typename...> class _Container, typename _Ret = _Tp>
+template <
+    typename _Tp, typename... _ExtraArgs,
+    template <typename, typename...> class _Container, typename _Ret = _Tp,
+    typename _TupleA = _Container<_Tp, _ExtraArgs...>,
+    typename _TupleB = std::tuple<_Tp, _ExtraArgs...>,
+    typename std::enable_if<!(std::is_same<_TupleA, _TupleB>::value), int>::type = 0>
 _Container<_Ret>
 compute_percentage(const _Container<_Tp, _ExtraArgs...>& lhs,
                    const _Container<_Tp, _ExtraArgs...>& rhs)
@@ -207,8 +215,12 @@ compute_percentage(_Tp& lhs, const _Tp& rhs)
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _ExtraArgs,
-          template <typename, typename...> class _Container>
+template <
+    typename _Tp, typename... _ExtraArgs,
+    template <typename, typename...> class _Container,
+    typename _TupleA = _Container<_Tp, _ExtraArgs...>,
+    typename _TupleB = std::tuple<_Tp, _ExtraArgs...>,
+    typename std::enable_if<!(std::is_same<_TupleA, _TupleB>::value), int>::type = 0>
 void
 print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
 {

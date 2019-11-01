@@ -668,6 +668,11 @@ struct secondary_data<component::cupti_activity> : std::true_type
 {
 };
 
+template <>
+struct secondary_data<component::cupti_counters> : std::true_type
+{
+};
+
 #endif  // TIMEMORY_USE_CUPTI
 
 //--------------------------------------------------------------------------------------//

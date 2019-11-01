@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#if defined(DEBUG)
+#    undef DEBUG
+#endif
+
 #include "gtest/gtest.h"
 
 // #if !defined(DEBUG)
@@ -268,8 +272,8 @@ TEST_F(cupti_tests, activity)
     auto& rc = timer.get<real_clock>();
     auto& ca = timer.get<cupti_activity>();
 
-    double rc_msec = rc.get() * tim::units::msec;
-    double ca_msec = ca.get() * tim::units::msec;
+    double rc_msec = (rc.get() / cupti_activity::get_unit()) * tim::units::msec;
+    double ca_msec = (ca.get() / cupti_activity::get_unit()) * tim::units::msec;
 
     double expected_diff = sleep_msec;
     double expected_tol  = 0.05 * expected_diff;
@@ -347,6 +351,23 @@ TEST_F(cupti_tests, kernels)
     }
     timer.stop();
     std::cout << timer << std::endl;
+    int kwidth = 40;
+    // secondaries (individual kernels)
+    std::cout << "Individual kernels:\n";
+    for(const auto& itr : timer.get<cupti_counters>().get_secondary())
+    {
+        std::stringstream ss_beg, ss_data;
+        ss_beg << "    " << std::setw(kwidth) << itr.first;
+        for(const auto& sitr : itr.second)
+        {
+            ss_data << " : " << std::setw(12) << std::setprecision(8) << std::fixed
+                    << sitr << "\n";
+            ss_data << std::setw(ss_beg.str().length() + 3);
+        }
+        std::cout << ss_beg.str() << ss_data.str();
+    }
+    std::cout << "\n";
+
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
     tim::cuda::device_reset();
@@ -361,12 +382,12 @@ TEST_F(cupti_tests, kernels)
     double num_active = num_blck * num_grid;
     double ratio      = num_data / static_cast<double>(num_active);
 
-    auto A_glob_load     = (2.0 * num_grid) * ratio;
-    auto B_glob_load     = (1.0 * num_blck / num_grid) * ratio;
-    auto A_glob_store    = (2.0 * num_grid) * ratio;
-    auto B_glob_store    = (1.0 * num_blck / num_grid) * ratio;
-    auto A_warp_eff      = (num_blck % 32 == 0) ? 1.0 : ((num_blck % 32) / 32.0);
-    auto B_warp_eff      = (num_grid % 32 == 0) ? 1.0 : ((num_grid % 32) / 32.0);
+    auto A_glob_load  = (2.0 * num_grid) * ratio;
+    auto B_glob_load  = (1.0 * num_blck / num_grid) * ratio;
+    auto A_glob_store = (2.0 * num_grid) * ratio;
+    auto B_glob_store = (1.0 * num_blck / num_grid) * ratio;
+    // auto A_warp_eff      = (num_blck % 32 == 0) ? 1.0 : ((num_blck % 32) / 32.0);
+    // auto B_warp_eff      = (num_grid % 32 == 0) ? 1.0 : ((num_grid % 32) / 32.0);
     auto A_flop_count_sp = 2.00 * num_data;
     auto B_flop_count_sp = 0.75 * num_data;
     // these are inherent to kernel design
@@ -383,9 +404,9 @@ TEST_F(cupti_tests, kernels)
         cupti_map[cupti_labels[i]] = cupti_data[i];
     }
 
-    auto global_load      = num_iter * (A_glob_load + B_glob_load);
-    auto global_store     = num_iter * (A_glob_store + B_glob_store);
-    auto warp_eff         = 0.5 * (A_warp_eff + B_warp_eff) * 100.0;
+    auto global_load  = num_iter * (A_glob_load + B_glob_load);
+    auto global_store = num_iter * (A_glob_store + B_glob_store);
+    // auto warp_eff         = 0.5 * (A_warp_eff + B_warp_eff) * 100.0;
     auto global_load_eff  = 0.5 * (A_glob_load_eff + B_glob_load_eff);
     auto global_store_eff = 0.5 * (A_glob_store_eff + B_glob_store_eff);
     auto flop_count_sp    = num_iter * (A_flop_count_sp + B_flop_count_sp);
@@ -395,10 +416,10 @@ TEST_F(cupti_tests, kernels)
 
     ASSERT_NEAR(cupti_map["global_load"], global_load, epsilon);
     ASSERT_NEAR(cupti_map["global_store"], global_store, epsilon);
-    ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
+    ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
     ASSERT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
     ASSERT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
-    ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
+    // ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -459,12 +480,12 @@ TEST_F(cupti_tests, streams)
     double num_active = num_blck * num_grid;
     double ratio      = num_data / static_cast<double>(num_active);
 
-    auto A_glob_load     = (2.0 * num_grid) * ratio;
-    auto B_glob_load     = (1.0 * num_blck / num_grid) * ratio;
-    auto A_glob_store    = (2.0 * num_grid) * ratio;
-    auto B_glob_store    = (1.0 * num_blck / num_grid) * ratio;
-    auto A_warp_eff      = (num_blck % 32 == 0) ? 1.0 : ((num_blck % 32) / 32.0);
-    auto B_warp_eff      = (num_grid % 32 == 0) ? 1.0 : ((num_grid % 32) / 32.0);
+    auto A_glob_load  = (2.0 * num_grid) * ratio;
+    auto B_glob_load  = (1.0 * num_blck / num_grid) * ratio;
+    auto A_glob_store = (2.0 * num_grid) * ratio;
+    auto B_glob_store = (1.0 * num_blck / num_grid) * ratio;
+    // auto A_warp_eff      = (num_blck % 32 == 0) ? 1.0 : ((num_blck % 32) / 32.0);
+    // auto B_warp_eff      = (num_grid % 32 == 0) ? 1.0 : ((num_grid % 32) / 32.0);
     auto A_flop_count_sp = 2.00 * num_data;
     auto B_flop_count_sp = 0.75 * num_data;
     // these are inherent to kernel design
@@ -481,9 +502,9 @@ TEST_F(cupti_tests, streams)
         cupti_map[cupti_labels[i]] = cupti_data[i];
     }
 
-    auto global_load      = num_iter * (A_glob_load + B_glob_load);
-    auto global_store     = num_iter * (A_glob_store + B_glob_store);
-    auto warp_eff         = 0.5 * (A_warp_eff + B_warp_eff) * 100.0;
+    auto global_load  = num_iter * (A_glob_load + B_glob_load);
+    auto global_store = num_iter * (A_glob_store + B_glob_store);
+    // auto warp_eff         = 0.5 * (A_warp_eff + B_warp_eff) * 100.0;
     auto global_load_eff  = 0.5 * (A_glob_load_eff + B_glob_load_eff);
     auto global_store_eff = 0.5 * (A_glob_store_eff + B_glob_store_eff);
     auto flop_count_sp    = num_iter * (A_flop_count_sp + B_flop_count_sp);
@@ -493,10 +514,10 @@ TEST_F(cupti_tests, streams)
 
     ASSERT_NEAR(cupti_map["global_load"], global_load, epsilon);
     ASSERT_NEAR(cupti_map["global_store"], global_store, epsilon);
-    ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
+    ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
     ASSERT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
     ASSERT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
-    ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
+    // ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -614,14 +635,13 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::settings::scientific()   = true;
-    tim::settings::timing_units() = "sec";
-    tim::settings::precision()    = 3;
-    tim::settings::width()        = 8;
-    tim::settings::debug()        = true;
-    tim::settings::verbose()      = 4;
+    tim::settings::scientific()   = false;
+    tim::settings::timing_units() = "msec";
+    tim::settings::precision()    = 6;
+    tim::settings::width()        = 12;
+    tim::settings::debug()        = false;
+    tim::settings::verbose()      = 1;
     tim::timemory_init(argc, argv);
-    tim::settings::banner()      = false;
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;

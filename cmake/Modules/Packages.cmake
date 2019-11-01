@@ -576,11 +576,18 @@ if(TIMEMORY_USE_CUDA)
         target_link_libraries(timemory-cudart INTERFACE
             ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
 
+        target_compile_options(timemory-cudart INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
+
         target_link_libraries(timemory-cudart-device INTERFACE
             ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
 
         target_link_libraries(timemory-cudart-static INTERFACE
             ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
+
+        target_compile_options(timemory-cudart-static INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
+
     else()
         inform_empty_interface(timemory-cuda "CUDA")
         set(TIMEMORY_USE_CUDA OFF)
