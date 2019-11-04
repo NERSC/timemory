@@ -135,6 +135,9 @@ _default_img_size = {'w': 1600, 'h': 800}
 _default_img_type = 'jpeg'
 """ Default image type """
 
+_default_log_x = False
+"""Log scaled X axis"""
+
 plotted_files = []
 """ A list of all files that have been plotted """
 
@@ -156,18 +159,22 @@ class plot_parameters():
     """ Global image plotting params (these should be modified instead of _default_*) """
     img_type = copy.copy(_default_img_type)
     """ Global image plotting params (these should be modified instead of _default_*) """
+    log_xaxis = copy.copy(_default_log_x)
+    """ Global image plotting params (these should be modified instead of _default_*) """
 
     def __init__(self,
                  min_percent=min_percent,
                  img_dpi=img_dpi,
                  img_size=img_size,
-                 img_type=img_type):
+                 img_type=img_type,
+                 log_xaxis=log_xaxis):
         self.min_percent = min_percent
         self.img_dpi = img_dpi
         self.img_size = img_size
         self.img_type = img_type
         # max values
         self.max_value = 0.0
+        self.log_xaxis = log_xaxis
 
     def __str__(self):
         _c = 'Image: {} = {}%, {} = {}, {} = {}, {} = {}'.format(
@@ -511,7 +518,11 @@ def read(json_obj, plot_params=plot_parameters()):
             return _tag
 
         tfunc = timemory_data(tag, _data['entry'])
-
+        if tfunc.laps == 0:
+            continue
+        #if '_inst' in tfunc.func:
+        #    continue
+        
         if not tag in timemory_functions:
             # create timemory_data object if doesn't exist yet
             timemory_functions[tag] = tfunc
@@ -554,6 +565,12 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
         else:
             return _obj
 
+    font = {'family': 'serif',
+            'color':  'black',
+            'weight': 'bold',
+            'size': 22,
+            }
+
     filename = [get_obj_idx(_plot_data.filename, idx)]
     plot_params = _plot_data.plot_params
     nitem = len(_plot_data)
@@ -561,8 +578,11 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     ytics = []
     types = [get_obj_idx(_plot_data.ctype, idx)]
 
+    if len(types) == 0 or (len(types) == 1 and len(types[0]) == 0):
+        return False
+    
     print("Plot types: {}".format(types))
-
+    
     if ntics == 0:
         print('{} had no data less than the minimum time ({} {})'.format(
             filename, _type_min, _type_unit))
@@ -586,7 +606,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
                    dpi=plot_params.img_dpi)
     ax = f.add_subplot(111)
     ax.yaxis.tick_right()
-    f.subplots_adjust(left=0.05, right=0.75, bottom=0.05, top=0.90)
+    f.subplots_adjust(left=0.05, right=0.75, bottom=0.10, top=0.90)
 
     # put largest at top
     ytics.reverse()
@@ -596,7 +616,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     # construct the plots
     _colors = None
     if len(types) == 1:
-        _colors = ['darkred', 'green']
+        _colors = ['grey', 'darkblue']
     _plot = plt.barh(ind, avgs, thickness, xerr=stds,
                      alpha=1.0, antialiased=False, color=_colors)
 
@@ -605,8 +625,9 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
         if i % nitem == 0:
             grid_lines.append(i)
 
-    plt.yticks(ind, ytics, ha='left')
-    plt.setp(ax.get_yticklabels())
+    plt.yticks(ind, ytics, ha='left', **font)
+    plt.setp(ax.get_yticklabels(), **font)
+    plt.setp(ax.get_xticklabels(), **font)
     #plt.setp(ax.get_yticklabels(), fontsize='small')
 
     # Shrink current axis's height by 10% on the bottom
@@ -614,8 +635,10 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     ax.set_position([box.x0, box.y0, box.width * 0.95, box.height])
 
     # Add grid
-    ax.xaxis.grid()
+    ax.xaxis.grid(which='both')
     ax.yaxis.grid()
+    if plot_params.log_xaxis:
+        ax.set_xscale('log')
     return True
 
 
@@ -664,8 +687,13 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
         if _units:
             _xlabel = '{} [{}]'.format(_xlabel, _units)
 
-        plt.xlabel(_xlabel)
-        plt.title('"{}" Report for {}'.format(_desc.title(), title))
+        font = {'family': 'serif',
+                'color':  'black',
+                'weight': 'bold',
+                'size': 22,}
+
+        plt.xlabel(_xlabel, **font)
+        plt.title('"{}" Report for {}'.format(_desc.title(), title), **font)
         if disp:
             print('Displaying plot...')
             plt.show()
@@ -789,7 +817,7 @@ def plot(data=[], files=[], plot_params=plot_parameters(),
                 data_sum = _data
             else:
                 data_sum += _data
-        data_sum.update_params(plot_params)
+        data_sum.update_parameters(plot_params)
         data = [data_sum]
 
     for _data in data:

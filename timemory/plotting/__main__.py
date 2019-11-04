@@ -66,6 +66,8 @@ def plot():
         parser.add_argument('--plot-max',
                             help="Plot the maximums from a set of inputs to <filename>",
                             required=False, type=str, dest='plot_max')
+        parser.add_argument('--log-x', help="Plot X-axis in a log scale",
+                            action='store_true')
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
@@ -89,7 +91,8 @@ def plot():
                                            img_dpi=args.img_dpi,
                                            img_size={'w': args.img_size[0],
                                                      'h': args.img_size[1]},
-                                           img_type=args.img_type)
+                                           img_type=args.img_type,
+                                           log_xaxis=args.log_x)
 
         if do_plot_max:
             if len(args.titles) != 1:
