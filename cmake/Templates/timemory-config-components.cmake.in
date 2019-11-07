@@ -1,0 +1,179 @@
+# use IN_LIST so this is required
+cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
+
+#----------------------------------------------------------------------------------------#
+#   timemory component interface library
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_ENABLE_OPTIONS)
+    foreach(_TYPE CALIPER PAPI MPI GPERFTOOLS GPERFTOOLS_CPU GPERFTOOLS_HEAP VECTOR EXTERN_INIT EXTERN_TEMPLATES)
+        string(TOLOWER "${_TYPE}" _COMP)
+        string(REPLACE "_" "-" _COMP "${_COMP}")
+        if(USE_${_TYPE})
+            list(APPEND @PROJECT_NAME@_FIND_COMPONENTS ${_COMP})
+        elseif(DEFINED USE_${_TYPE} AND NOT USE_${_TYPE})
+            if("${_COMP}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS "${_COMP}")
+            endif()
+        endif()
+    endforeach()
+endif()
+
+set(_LINK )
+set(_LANGUAGES )
+set(_COMPONENT_LIST )
+
+# always add headers
+list(APPEND @PROJECT_NAME@_FIND_COMPONENTS headers)
+if(TIMEMORY_INSTALL_TREE)
+    target_link_libraries(${_INTERFACE_LIB} INTERFACE @PROJECT_NAME@::timemory-headers)
+endif()
+
+# determine link type
+if("shared" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+    set(_LINK shared)
+    list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS shared)
+    list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS shared)
+elseif("static" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+    set(_LINK static)
+    list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS static)
+    list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS static)
+else()
+    if(BUILD_SHARED_LIBS)
+        set(_LINK shared)
+    else()
+        set(_LINK static)
+    endif()
+endif()
+
+# find languages
+foreach(_LANGUAGE c cxx cuda)
+    if("${_LANGUAGE}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        list(APPEND _LANGUAGES ${_LANGUAGE})
+        list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_LANGUAGE})
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_LANGUAGE})
+    endif()
+endforeach()
+
+# helper macro
+macro(@PROJECT_NAME@_LINK_TARGET_IF_EXISTS _TARGET)
+
+    # namespaced name in install tree
+    if(TIMEMORY_INSTALL_TREE)
+        set(_TARGET_NAME @PROJECT_NAME@::${_TARGET})
+    else()
+        set(_TARGET_NAME ${_TARGET})
+    endif()
+
+    if("${_TARGET}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR TARGET ${_TARGET_NAME})
+
+        if(TARGET ${_TARGET_NAME})
+            target_link_libraries(${_INTERFACE_LIB} INTERFACE ${_TARGET_NAME})
+            list(APPEND @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+        else()
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+            list(APPEND _@PROJECT_NAME@_MISSING_COMPONENTS ${_TARGET})
+        endif()
+
+        if("${_TARGET}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_TARGET})
+        endif()
+
+        foreach(_ARG ${ARGN})
+            if("${_ARG}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_ARG})
+            endif()
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_ARG})
+        endforeach()
+    else()
+        message(WARNING "Target ${_TARGET_NAME} not found!")
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+        list(APPEND _@PROJECT_NAME@_MISSING_COMPONENTS ${_TARGET})
+    endif()
+endmacro()
+
+foreach(_LANGUAGE ${_LANGUAGES})
+    # handle special case of cuda
+    if("${_LANGUAGE}" STREQUAL "cuda")
+        # link to timemory-cuda
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE})
+
+        set(_CUDART_DEV OFF)
+        set(_CUDART     OFF)
+
+        # if cudart-device specified, only link to timemory-cudart-device
+        if("cudart-device" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+            set(_CUDART_DEV ON)
+            set(_CUDART OFF)
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart-device)
+        endif()
+
+        if("cudart" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR
+            "cudart-static" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                set(_CUDART ON)
+        endif()
+
+        if(_CUDART)
+            if("${_LINK}" STREQUAL "static")
+                @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart-static)
+            else()
+                @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart)
+            endif()
+        endif()
+
+        unset(_CUDART)
+        unset(_CUDART_DEV)
+    else()
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-${_LINK})
+    endif()
+endforeach()
+
+foreach(_COMPONENT ${@PROJECT_NAME@_FIND_COMPONENTS})
+    if(TARGET timemory-${_COMPONENT}-${_LINK})
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT}-${_LINK} ${_COMPONENT})
+    else()
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+    endif()
+endforeach()
+
+# remove duplicate interface libraries
+if(NOT "${@PROJECT_NAME@_FOUND_COMPONENTS}" STREQUAL "")
+    list(REMOVE_DUPLICATES @PROJECT_NAME@_FOUND_COMPONENTS)
+endif()
+
+# remove empty interface libraries
+if(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES)
+    list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS
+        ${@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES})
+endif()
+
+list(SORT @PROJECT_NAME@_FOUND_COMPONENTS)
+set(_COMPONENT_LIST ${@PROJECT_NAME@_FOUND_COMPONENTS})
+string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")
+string(REPLACE "timemory-" "" _COMPONENT_LIST "${_COMPONENT_LIST}")
+message(STATUS
+    "[${PROJECT_NAME}] @PROJECT_NAME@ : \"${_INTERFACE_LIB}\" components: ${_COMPONENT_LIST}")
+
+function(TIMEMORY_CHECK_MISMATCHED_COMPILER _LANG _CURR)
+    if(NOT "${CMAKE_${_LANG}_COMPILER_ID}" STREQUAL "${_CURR}" AND NOT @PROJECT_NAME@_FIND_QUIETLY)
+        set(_MSG " Mismatched ${_LANG} compiler IDs!")
+        set(_MSG "${_MSG}\n \t@PROJECT_NAME@ : ${_CURR}")
+        set(_MSG "${_MSG}\n \t    vs.")
+        set(_MSG "${_MSG}\n \t${PROJECT_NAME} : ${CMAKE_${_LANG}_COMPILER_ID}")
+        set(_MSG "${_MSG}\n")
+        message(AUTHOR_WARNING "${_MSG}")
+    endif()
+endfunction()
+
+if("timemory-cxx-${_LINK}" IN_LIST @PROJECT_NAME@_FOUND_COMPONENTS)
+    timemory_check_mismatched_compiler(CXX "@CMAKE_CXX_COMPILER_ID@")
+endif()
+
+if("timemory-c-${_LINK}" IN_LIST @PROJECT_NAME@_FOUND_COMPONENTS)
+    timemory_check_mismatched_compiler(C "@CMAKE_C_COMPILER_ID@")
+endif()
+
+unset(_COMPONENT_LIST)
+unset(_LINK)
+unset(_LANGUAGES)
+

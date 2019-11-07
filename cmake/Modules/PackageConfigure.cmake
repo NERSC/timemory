@@ -28,6 +28,11 @@ if(TIMEMORY_BUILD_PYTHON)
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 
+set(_PATH_VARS INCLUDE_INSTALL_DIR)
+if(NOT TIMEMORY_SKIP_BUILD)
+    list(APPEND _PATH_VARS LIB_INSTALL_DIR)
+endif()
+
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config.cmake.in
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
@@ -37,27 +42,21 @@ configure_package_config_file(
         INCLUDE_INSTALL_DIR
         LIB_INSTALL_DIR)
 
-# for backwards-compatibility
-file(WRITE ${CMAKE_BINARY_DIR}/TiMemoryConfig.cmake
-"
-#
-# This file exists for backwards-compatibility
-#
-
-include(\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}-config.cmake)
-
-")
-
 write_basic_package_version_file(
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
+configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config-components.cmake.in
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
+    @ONLY)
+
 install(
     FILES
-        ${CMAKE_BINARY_DIR}/TiMemoryConfig.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
     DESTINATION
         ${CMAKE_INSTALL_CONFIGDIR})
 
