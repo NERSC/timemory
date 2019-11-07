@@ -37,6 +37,28 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<peak_rss>;
+extern template struct base<page_rss>;
+extern template struct base<stack_rss>;
+extern template struct base<data_rss>;
+extern template struct base<num_swap>;
+extern template struct base<num_io_in>;
+extern template struct base<num_io_out>;
+extern template struct base<num_minor_page_faults>;
+extern template struct base<num_major_page_faults>;
+extern template struct base<num_msg_sent>;
+extern template struct base<num_msg_recv>;
+extern template struct base<num_signals>;
+extern template struct base<voluntary_context_switch>;
+extern template struct base<priority_context_switch>;
+extern template struct base<read_bytes, std::tuple<int64_t, int64_t>>;
+extern template struct base<written_bytes, std::tuple<int64_t, int64_t>>;
+extern template struct base<virtual_memory>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          Resource Usage types

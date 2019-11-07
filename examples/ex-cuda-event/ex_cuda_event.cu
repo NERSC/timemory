@@ -772,7 +772,7 @@ test_5_mt_saxpy_async()
     print_info(__FUNCTION__);
     warmup();
     TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
-    auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
+    auto lambda_op = tim::string::join("", "::", __TIMEMORY_FUNCTION__);
 
     comp_tuple_t _clock("Runtime");
     _clock.start();
@@ -909,7 +909,7 @@ test_6_mt_saxpy_async_pinned()
     print_info(__FUNCTION__);
     warmup();
     TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
-    auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
+    auto lambda_op = tim::string::join("", "::", __TIMEMORY_FUNCTION__);
 
     comp_tuple_t _clock("Runtime");
     _clock.start();

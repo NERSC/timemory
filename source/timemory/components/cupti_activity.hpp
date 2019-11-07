@@ -50,6 +50,10 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          CUPTI component

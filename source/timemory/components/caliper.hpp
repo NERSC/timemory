@@ -36,6 +36,12 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<caliper, void, policy::global_init>;
+
+#endif
+
 struct caliper : public base<caliper, void, policy::global_init>
 {
     // timemory component api

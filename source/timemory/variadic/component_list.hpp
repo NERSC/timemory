@@ -78,13 +78,12 @@ class component_list
     friend class auto_list;
 
 public:
-    template <typename... _Types>
-    struct filtered
-    {
-    };
+    // clang-format off
+    template <typename... _Types> struct filtered {};
+    // clang-format on
 
-    template <typename... _Types>
-    struct filtered<std::tuple<_Types...>>
+    template <template <typename...> class _TypeL, typename... _Types>
+    struct filtered<_TypeL<_Types...>>
     {
         using this_type      = component_list<_Types...>;
         using data_type      = std::tuple<_Types*...>;
@@ -93,45 +92,48 @@ public:
 
         // clang-format off
         template <typename _Archive>
-        using serialize_t        = std::tuple<operation::pointer_operator<_Types, operation::serialization<_Types, _Archive>>...>;
+        using serialize_t        = _TypeL<operation::pointer_operator<_Types, operation::serialization<_Types, _Archive>>...>;
         template <typename _Scope>
-        using insert_node_t      = std::tuple<operation::pointer_operator<_Types, operation::insert_node<_Types, _Scope>>...>;
-        using pop_node_t         = std::tuple<operation::pointer_operator<_Types, operation::pop_node<_Types>>...>;
-        using measure_t          = std::tuple<operation::pointer_operator<_Types, operation::measure<_Types>>...>;
-        using record_t           = std::tuple<operation::pointer_operator<_Types, operation::record<_Types>>...>;
-        using reset_t            = std::tuple<operation::pointer_operator<_Types, operation::reset<_Types>>...>;
-        using plus_t             = std::tuple<operation::pointer_operator<_Types, operation::plus<_Types>>...>;
-        using minus_t            = std::tuple<operation::pointer_operator<_Types, operation::minus<_Types>>...>;
-        using multiply_t         = std::tuple<operation::pointer_operator<_Types, operation::multiply<_Types>>...>;
-        using divide_t           = std::tuple<operation::pointer_operator<_Types, operation::divide<_Types>>...>;
-        using prior_start_t      = std::tuple<operation::pointer_operator<_Types, operation::priority_start<_Types>>...>;
-        using prior_stop_t       = std::tuple<operation::pointer_operator<_Types, operation::priority_stop<_Types>>...>;
-        using stand_start_t      = std::tuple<operation::pointer_operator<_Types, operation::standard_start<_Types>>...>;
-        using stand_stop_t       = std::tuple<operation::pointer_operator<_Types, operation::standard_stop<_Types>>...>;
-        using mark_begin_t       = std::tuple<operation::pointer_operator<_Types, operation::mark_begin<_Types>>...>;
-        using mark_end_t         = std::tuple<operation::pointer_operator<_Types, operation::mark_end<_Types>>...>;
-        using customize_t        = std::tuple<operation::pointer_operator<_Types, operation::customize<_Types>>...>;
-        using set_prefix_t       = std::tuple<operation::pointer_operator<_Types, operation::set_prefix<_Types>>...>;
-        using get_data_t         = std::tuple<operation::pointer_operator<_Types, operation::get_data<_Types>>...>;
-        using print_t            = std::tuple<operation::print<_Types>...>;
-        using pointer_count_t    = std::tuple<operation::pointer_counter<_Types>...>;
-        using deleter_t          = std::tuple<operation::pointer_deleter<_Types>...>;
-        using copy_t             = std::tuple<operation::copy<_Types>...>;
+        using insert_node_t      = _TypeL<operation::pointer_operator<_Types, operation::insert_node<_Types, _Scope>>...>;
+        using pop_node_t         = _TypeL<operation::pointer_operator<_Types, operation::pop_node<_Types>>...>;
+        using measure_t          = _TypeL<operation::pointer_operator<_Types, operation::measure<_Types>>...>;
+        using record_t           = _TypeL<operation::pointer_operator<_Types, operation::record<_Types>>...>;
+        using reset_t            = _TypeL<operation::pointer_operator<_Types, operation::reset<_Types>>...>;
+        using plus_t             = _TypeL<operation::pointer_operator<_Types, operation::plus<_Types>>...>;
+        using minus_t            = _TypeL<operation::pointer_operator<_Types, operation::minus<_Types>>...>;
+        using multiply_t         = _TypeL<operation::pointer_operator<_Types, operation::multiply<_Types>>...>;
+        using divide_t           = _TypeL<operation::pointer_operator<_Types, operation::divide<_Types>>...>;
+        using prior_start_t      = _TypeL<operation::pointer_operator<_Types, operation::priority_start<_Types>>...>;
+        using prior_stop_t       = _TypeL<operation::pointer_operator<_Types, operation::priority_stop<_Types>>...>;
+        using stand_start_t      = _TypeL<operation::pointer_operator<_Types, operation::standard_start<_Types>>...>;
+        using stand_stop_t       = _TypeL<operation::pointer_operator<_Types, operation::standard_stop<_Types>>...>;
+        using mark_begin_t       = _TypeL<operation::pointer_operator<_Types, operation::mark_begin<_Types>>...>;
+        using mark_end_t         = _TypeL<operation::pointer_operator<_Types, operation::mark_end<_Types>>...>;
+        using customize_t        = _TypeL<operation::pointer_operator<_Types, operation::customize<_Types>>...>;
+        using set_prefix_t       = _TypeL<operation::pointer_operator<_Types, operation::set_prefix<_Types>>...>;
+        using get_data_t         = _TypeL<operation::pointer_operator<_Types, operation::get_data<_Types>>...>;
+        using print_t            = _TypeL<operation::print<_Types>...>;
+        using pointer_count_t    = _TypeL<operation::pointer_counter<_Types>...>;
+        using deleter_t          = _TypeL<operation::pointer_deleter<_Types>...>;
+        using copy_t             = _TypeL<operation::copy<_Types>...>;
         using auto_type          = auto_list<_Types...>;
         // clang-format on
     };
 
+    using impl_unique_concat_type = available_tuple<remove_duplicates<concat<Types...>>>;
+
 public:
-    using string_t   = std::string;
-    using size_type  = int64_t;
-    using this_type  = component_list<Types...>;
-    using data_type  = typename filtered<available_tuple<concat<Types...>>>::data_type;
-    using type_tuple = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
-    using reference_type  = type_tuple;
-    using string_hash     = std::hash<string_t>;
-    using init_func_t     = std::function<void(this_type&)>;
-    using data_value_type = get_data_value_t<reference_type>;
-    using data_label_type = get_data_label_t<reference_type>;
+    using string_t            = std::string;
+    using size_type           = int64_t;
+    using this_type           = component_list<Types...>;
+    using data_type           = typename filtered<impl_unique_concat_type>::data_type;
+    using type_tuple          = typename filtered<impl_unique_concat_type>::type_tuple;
+    using reference_type      = type_tuple;
+    using string_hash         = std::hash<string_t>;
+    using init_func_t         = std::function<void(this_type&)>;
+    using data_value_type     = get_data_value_t<reference_type>;
+    using data_label_type     = get_data_label_t<reference_type>;
+    using captured_location_t = source_location::captured;
 
     // used by gotcha
     using component_type = this_type;
@@ -150,59 +152,42 @@ public:
     // modifier types
     // clang-format off
     template <typename _Archive>
-    using serialize_t     = typename filtered<available_tuple<concat<Types...>>>::template serialize_t<_Archive>;
+    using serialize_t     = typename filtered<impl_unique_concat_type>::template serialize_t<_Archive>;
     template <typename _Scope>
-    using insert_node_t   = typename filtered<available_tuple<concat<Types...>>>::template insert_node_t<_Scope>;
-    using pop_node_t      = typename filtered<available_tuple<concat<Types...>>>::pop_node_t;
-    using measure_t       = typename filtered<available_tuple<concat<Types...>>>::measure_t;
-    using record_t        = typename filtered<available_tuple<concat<Types...>>>::record_t;
-    using reset_t         = typename filtered<available_tuple<concat<Types...>>>::reset_t;
-    using plus_t          = typename filtered<available_tuple<concat<Types...>>>::plus_t;
-    using minus_t         = typename filtered<available_tuple<concat<Types...>>>::minus_t;
-    using multiply_t      = typename filtered<available_tuple<concat<Types...>>>::multiply_t;
-    using divide_t        = typename filtered<available_tuple<concat<Types...>>>::divide_t;
-    using print_t         = typename filtered<available_tuple<concat<Types...>>>::print_t;
-    using prior_start_t   = typename filtered<available_tuple<concat<Types...>>>::prior_start_t;
-    using prior_stop_t    = typename filtered<available_tuple<concat<Types...>>>::prior_stop_t;
-    using stand_start_t   = typename filtered<available_tuple<concat<Types...>>>::stand_start_t;
-    using stand_stop_t    = typename filtered<available_tuple<concat<Types...>>>::stand_stop_t;
-    using mark_begin_t    = typename filtered<available_tuple<concat<Types...>>>::mark_begin_t;
-    using mark_end_t      = typename filtered<available_tuple<concat<Types...>>>::mark_end_t;
-    using customize_t     = typename filtered<available_tuple<concat<Types...>>>::customize_t;
-    using set_prefix_t    = typename filtered<available_tuple<concat<Types...>>>::set_prefix_t;
-    using get_data_t      = typename filtered<available_tuple<concat<Types...>>>::get_data_t;
-    using pointer_count_t = typename filtered<available_tuple<concat<Types...>>>::pointer_count_t;
-    using deleter_t       = typename filtered<available_tuple<concat<Types...>>>::deleter_t;
-    using copy_t          = typename filtered<available_tuple<concat<Types...>>>::copy_t;
+    using insert_node_t   = typename filtered<impl_unique_concat_type>::template insert_node_t<_Scope>;
+    using pop_node_t      = typename filtered<impl_unique_concat_type>::pop_node_t;
+    using measure_t       = typename filtered<impl_unique_concat_type>::measure_t;
+    using record_t        = typename filtered<impl_unique_concat_type>::record_t;
+    using reset_t         = typename filtered<impl_unique_concat_type>::reset_t;
+    using plus_t          = typename filtered<impl_unique_concat_type>::plus_t;
+    using minus_t         = typename filtered<impl_unique_concat_type>::minus_t;
+    using multiply_t      = typename filtered<impl_unique_concat_type>::multiply_t;
+    using divide_t        = typename filtered<impl_unique_concat_type>::divide_t;
+    using print_t         = typename filtered<impl_unique_concat_type>::print_t;
+    using prior_start_t   = typename filtered<impl_unique_concat_type>::prior_start_t;
+    using prior_stop_t    = typename filtered<impl_unique_concat_type>::prior_stop_t;
+    using stand_start_t   = typename filtered<impl_unique_concat_type>::stand_start_t;
+    using stand_stop_t    = typename filtered<impl_unique_concat_type>::stand_stop_t;
+    using mark_begin_t    = typename filtered<impl_unique_concat_type>::mark_begin_t;
+    using mark_end_t      = typename filtered<impl_unique_concat_type>::mark_end_t;
+    using customize_t     = typename filtered<impl_unique_concat_type>::customize_t;
+    using set_prefix_t    = typename filtered<impl_unique_concat_type>::set_prefix_t;
+    using get_data_t      = typename filtered<impl_unique_concat_type>::get_data_t;
+    using pointer_count_t = typename filtered<impl_unique_concat_type>::pointer_count_t;
+    using deleter_t       = typename filtered<impl_unique_concat_type>::deleter_t;
+    using copy_t          = typename filtered<impl_unique_concat_type>::copy_t;
     // clang-format on
 
 public:
-    template <typename _Scope = scope::process,
-              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool& flat = (_Flat || settings::flat_profile()))
-    : m_store(store && settings::enabled())
-    , m_flat(flat)
-    , m_laps(0)
-    , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
-    , m_key(key)
-    {
-        apply<void>::set_value(m_data, nullptr);
-        // if(settings::enabled())
-        {
-            compute_width(key);
-            if(settings::enabled())
-            {
-                // init_storage();
-                get_initializer()(*this);
-            }
-        }
-    }
+                            const bool& flat = settings::flat_profile());
 
-    template <typename _Scope = scope::process, typename _Func = init_func_t,
-              bool _Flat = std::is_same<_Scope, scope::flat>::value>
+    explicit component_list(const captured_location_t& loc, const bool& store = false,
+                            const bool& flat = settings::flat_profile());
+
+    template <typename _Func = init_func_t>
     explicit component_list(_Func&& _func, const string_t& key, const bool& store = false,
-                            const bool& flat = (_Flat || settings::flat_profile()))
+                            const bool& flat = settings::flat_profile())
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_laps(0)
@@ -210,22 +195,32 @@ public:
     , m_key(key)
     {
         apply<void>::set_value(m_data, nullptr);
-        // if(settings::enabled())
         {
             compute_width(key);
             if(settings::enabled())
-            {
-                // init_storage();
                 _func(*this);
-            }
         }
     }
 
-    ~component_list()
+    template <typename _Func = init_func_t>
+    explicit component_list(_Func&& _func, const captured_location_t& loc,
+                            const bool& store = false,
+                            const bool& flat  = settings::flat_profile())
+    : m_store(store && settings::enabled())
+    , m_flat(flat)
+    , m_laps(0)
+    , m_hash(loc.get_hash())
+    , m_key(loc.get_id())
     {
-        pop();
-        apply<void>::access<deleter_t>(m_data);
+        apply<void>::set_value(m_data, nullptr);
+        {
+            compute_width(m_key);
+            if(settings::enabled())
+                _func(*this);
+        }
     }
+
+    ~component_list();
 
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
@@ -233,108 +228,39 @@ public:
     component_list(component_list&&) = default;
     component_list& operator=(component_list&&) = default;
 
-    component_list(const component_list& rhs)
-    : m_store(rhs.m_store)
-    , m_flat(rhs.m_flat)
-    , m_is_pushed(rhs.m_is_pushed)
-    , m_laps(rhs.m_laps)
-    , m_key(rhs.m_key)
-    {
-        apply<void>::set_value(m_data, nullptr);
-        apply<void>::access2<copy_t>(m_data, rhs.m_data);
-    }
+    component_list(const component_list& rhs);
+    component_list& operator=(const component_list& rhs);
 
-    component_list& operator=(const component_list& rhs)
-    {
-        if(this != &rhs)
-        {
-            m_store     = rhs.m_store;
-            m_flat      = rhs.m_flat;
-            m_is_pushed = rhs.m_is_pushed;
-            m_laps      = rhs.m_laps;
-            m_key       = rhs.m_key;
-            apply<void>::access<deleter_t>(m_data);
-            apply<void>::access2<copy_t>(m_data, rhs.m_data);
-        }
-        return *this;
-    }
-
-    template <typename _Scope = scope::process,
-              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
-    component_list clone(bool store, bool flat = _Flat)
-    {
-        component_list tmp(*this);
-        tmp.m_store = store;
-        tmp.m_flat  = flat;
-        return tmp;
-    }
+    component_list clone(bool store, bool flat = settings::flat_profile());
 
 public:
     //----------------------------------------------------------------------------------//
     // get the size
     //
     static constexpr std::size_t size() { return num_elements; }
-    static constexpr std::size_t available_size()
-    {
-        return std::tuple_size<type_tuple>::value;
-    }
+    static void                  print_storage();
+    static void                  init_storage();
+    static init_func_t&          get_initializer();
 
-    //----------------------------------------------------------------------------------//
-    // insert into graph
-    inline void push()
-    {
-        uint64_t count = 0;
-        apply<void>::access<pointer_count_t>(m_data, std::ref(count));
-        if(m_store && !m_is_pushed && count > 0)
-        {
-            // reset data
-            apply<void>::access<reset_t>(m_data);
-            // avoid pushing/popping when already pushed/popped
-            m_is_pushed = true;
-            // insert node or find existing node
-            if(m_flat)
-                apply<void>::access<insert_node_t<scope::flat>>(m_data, m_hash);
-            else
-                apply<void>::access<insert_node_t<scope::process>>(m_data, m_hash);
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-    // pop out of grapsh
-    inline void pop()
-    {
-        if(m_store && m_is_pushed)
-        {
-            // set the current node to the parent node
-            apply<void>::access<pop_node_t>(m_data);
-            // avoid pushing/popping when already pushed/popped
-            m_is_pushed = false;
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-    // measure functions
-    void measure() { apply<void>::access<measure_t>(m_data); }
-
-    //----------------------------------------------------------------------------------//
-    // start/stop functions
-    void start()
-    {
-        push();
-        ++m_laps;
-        // start components
-        apply<void>::access<prior_start_t>(m_data);
-        apply<void>::access<stand_start_t>(m_data);
-    }
-
-    void stop()
-    {
-        // stop components
-        apply<void>::access<prior_stop_t>(m_data);
-        apply<void>::access<stand_stop_t>(m_data);
-        // pop them off the running stack
-        pop();
-    }
+    inline void             push();
+    inline void             pop();
+    void                    measure();
+    void                    start();
+    void                    stop();
+    this_type&              record();
+    void                    reset();
+    data_value_type         get() const;
+    data_label_type         get_labeled() const;
+    inline data_type&       data();
+    inline const data_type& data() const;
+    inline int64_t          laps() const;
+    inline uint64_t&        hash();
+    inline string_t&        key();
+    inline const uint64_t&  hash() const;
+    inline const string_t&  key() const;
+    inline void             rekey(const string_t&);
+    inline bool&            store();
+    inline const bool&      store() const;
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
@@ -366,76 +292,12 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // recording
-    //
-    this_type& record()
-    {
-        ++m_laps;
-        apply<void>::access<record_t>(m_data);
-        return *this;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // reset to zero
-    //
-    void reset()
-    {
-        apply<void>::access<reset_t>(m_data);
-        m_laps = 0;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // get data
-    //
-    data_value_type get() const
-    {
-        const_cast<this_type&>(*this).stop();
-        data_value_type _ret_data;
-        apply<void>::access2<get_data_t>(m_data, _ret_data);
-        return _ret_data;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // reset data
-    //
-    data_label_type get_labeled() const
-    {
-        const_cast<this_type&>(*this).stop();
-        data_label_type _ret_data;
-        apply<void>::access2<get_data_t>(m_data, _ret_data);
-        return _ret_data;
-    }
-
-    //----------------------------------------------------------------------------------//
     // this_type operators
     //
-    this_type& operator-=(const this_type& rhs)
-    {
-        apply<void>::access2<minus_t>(m_data, rhs.m_data);
-        m_laps -= rhs.m_laps;
-        return *this;
-    }
-
-    this_type& operator-=(this_type& rhs)
-    {
-        apply<void>::access2<minus_t>(m_data, rhs.m_data);
-        m_laps -= rhs.m_laps;
-        return *this;
-    }
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        apply<void>::access2<plus_t>(m_data, rhs.m_data);
-        m_laps += rhs.m_laps;
-        return *this;
-    }
-
-    this_type& operator+=(this_type& rhs)
-    {
-        apply<void>::access2<plus_t>(m_data, rhs.m_data);
-        m_laps += rhs.m_laps;
-        return *this;
-    }
+    this_type& operator-=(const this_type& rhs);
+    this_type& operator-=(this_type& rhs);
+    this_type& operator+=(const this_type& rhs);
+    this_type& operator+=(this_type& rhs);
 
     //----------------------------------------------------------------------------------//
     // generic operators
@@ -538,41 +400,6 @@ public:
         apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
         ar.finishNode();
     }
-
-    //----------------------------------------------------------------------------------//
-    inline void report(std::ostream& os, bool endline, bool ign_cutoff) const
-    {
-        consume_parameters(std::move(ign_cutoff));
-        std::stringstream ss;
-        ss << *this;
-
-        if(endline)
-            ss << std::endl;
-
-        // ensure thread-safety
-        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        // output to ostream
-        os << ss.str();
-    }
-
-    //----------------------------------------------------------------------------------//
-    static void print_storage()
-    {
-        apply<void>::type_access<operation::print_storage, reference_type>();
-    }
-
-public:
-    inline data_type&       data() { return m_data; }
-    inline const data_type& data() const { return m_data; }
-    inline int64_t          laps() const { return m_laps; }
-
-    string_t& key() { return m_key; }
-
-    const string_t& key() const { return m_key; }
-    void            rekey(const string_t& _key) { compute_width(m_key = _key); }
-
-    bool&       store() { return m_store; }
-    const bool& store() const { return m_store; }
 
 public:
     // get member functions taking a type
@@ -708,80 +535,14 @@ public:
     }
 
 protected:
+    // protected static functions
+    static int64_t output_width(int64_t = 0);
+
     // protected member functions
-    data_type&       get_data() { return m_data; }
-    const data_type& get_data() const { return m_data; }
-
-protected:
-    // objects
-    bool              m_store        = false;
-    bool              m_flat         = false;
-    bool              m_is_pushed    = false;
-    bool              m_print_prefix = true;
-    bool              m_print_laps   = true;
-    int64_t           m_laps         = 0;
-    int64_t           m_hash         = 0;
-    string_t          m_key          = "";
-    mutable data_type m_data;
-
-protected:
-    string_t get_prefix() const
-    {
-        auto _get_prefix = []() {
-            if(!mpi::is_initialized())
-                return string_t(">>> ");
-
-            // prefix spacing
-            static uint16_t width = 1;
-            if(mpi::size() > 9)
-                width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
-            std::stringstream ss;
-            ss.fill('0');
-            ss << "|" << std::setw(width) << mpi::rank() << ">>> ";
-            return ss.str();
-        };
-        static string_t _prefix = _get_prefix();
-        return _prefix;
-    }
-
-    void compute_width(const string_t& key)
-    {
-        static string_t _prefix = get_prefix();
-        output_width(key.length() + _prefix.length() + 1);
-        set_object_prefix(key);
-    }
-
-    void update_width() const { const_cast<this_type&>(*this).compute_width(m_key); }
-
-    static int64_t output_width(int64_t width = 0)
-    {
-        static std::atomic<int64_t> _instance;
-        if(width > 0)
-        {
-            auto current_width = _instance.load(std::memory_order_relaxed);
-            auto compute       = [&]() {
-                current_width = _instance.load(std::memory_order_relaxed);
-                return std::max(_instance.load(), width);
-            };
-            int64_t propose_width = compute();
-            do
-            {
-                if(propose_width > current_width)
-                {
-                    auto ret = _instance.compare_exchange_strong(
-                        current_width, propose_width, std::memory_order_relaxed);
-                    if(!ret)
-                        compute();
-                }
-            } while(propose_width > current_width);
-        }
-        return _instance.load();
-    }
-
-    void set_object_prefix(const string_t& key)
-    {
-        apply<void>::access<set_prefix_t>(m_data, key);
-    }
+    string_t get_prefix() const;
+    void     compute_width(const string_t& key);
+    void     update_width() const;
+    void     set_object_prefix(const string_t& key);
 
     template <typename _Tp, enable_if_t<(trait::requires_prefix<_Tp>::value), int> = 0>
     void set_object_prefix(_Tp* obj)
@@ -796,64 +557,38 @@ protected:
     {
     }
 
-public:
-    static void init_storage()
-    {
-        apply<void>::type_access<operation::init_storage, reference_type>();
-    }
-
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
-        };
-        return _instance;
-    }
+protected:
+    // objects
+    bool              m_store        = false;
+    bool              m_flat         = false;
+    bool              m_is_pushed    = false;
+    bool              m_print_prefix = true;
+    bool              m_print_laps   = true;
+    int64_t           m_laps         = 0;
+    uint64_t          m_hash         = 0;
+    string_t          m_key          = "";
+    mutable data_type m_data;
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
-class component_list<std::tuple<Types...>> : component_list<Types...>
+template <typename... _Types>
+auto
+get(const component_list<_Types...>& _obj)
+    -> decltype(std::declval<component_list<_Types...>>().get())
 {
-    static const std::size_t num_elements = sizeof...(Types);
+    return _obj.get();
+}
 
-    // empty init for friends
-    explicit component_list() {}
+//--------------------------------------------------------------------------------------//
 
-    // manager is friend so can use above
-    friend class manager;
-
-    template <typename _TupleC, typename _ListC>
-    friend class component_hybrid;
-
-    template <typename... _Types>
-    friend class component_list;
-
-public:
-    using string_t        = std::string;
-    using size_type       = int64_t;
-    using this_type       = component_list<std::tuple<Types...>>;
-    using base_type       = component_list<Types...>;
-    using data_type       = typename base_type::data_type;
-    using type_tuple      = typename base_type::type_tuple;
-    using reference_type  = typename base_type::reference_type;
-    using init_func_t     = std::function<void(this_type&)>;
-    using data_value_type = get_data_value_t<reference_type>;
-    using data_label_type = get_data_label_t<reference_type>;
-
-public:
-    using auto_type = typename base_type::auto_type;
-
-public:
-    template <typename _Scope = scope::process,
-              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
-    explicit component_list(const string_t& key, const bool& store = false,
-                            const bool& flat = _Flat)
-    : base_type(key, store, flat)
-    {
-    }
-};
+template <typename... _Types>
+auto
+get_labeled(const component_list<_Types...>& _obj)
+    -> decltype(std::declval<component_list<_Types...>>().get_labeled())
+{
+    return _obj.get_labeled();
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -862,3 +597,41 @@ public:
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/variadic/bits/component_list.hpp"
+
+//======================================================================================//
+//
+//      std::get operator
+//
+namespace std
+{
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+typename std::tuple_element<N, std::tuple<Types...>>::type&
+get(tim::component_list<Types...>& obj)
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+const typename std::tuple_element<N, std::tuple<Types...>>::type&
+get(const tim::component_list<Types...>& obj)
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(tim::component_list<Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::component_list<Types...>>(obj).data()))
+{
+    using obj_type = tim::component_list<Types...>;
+    return get<N>(std::forward<obj_type>(obj).data());
+}
+
+//======================================================================================//
+}  // namespace std

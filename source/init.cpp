@@ -27,8 +27,6 @@
  *
  */
 
-#define TIMEMORY_BUILD_EXTERN_INIT
-
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/utility/macros.hpp"
@@ -133,70 +131,6 @@ manager::master_instance()
     return _pinst.first;
 }
 
-//======================================================================================//
-// implements:
-//      template <> get_storage_singleton<TYPE>();
-//      template <> get_noninit_storage_singleton<TYPE>();
-//
-#    if defined(TIMEMORY_USE_CALIPER)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(caliper)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_clock)
-#    if defined(TIMEMORY_USE_PAPI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_dp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_sp_flops)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_util)
-#    if defined(TIMEMORY_USE_CUDA)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cuda_event)
-#    endif
-#    if defined(TIMEMORY_USE_CUPTI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cupti_activity)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cupti_counters)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(data_rss)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_cpu_profiler)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_heap_profiler)
-#    if defined(TIMEMORY_USE_CUPTI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_dp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_hp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_sp_flops)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(monotonic_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(monotonic_raw_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_io_in)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_io_out)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_major_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_minor_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_msg_recv)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_msg_sent)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_signals)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_swap)
-#    if defined(TIMEMORY_USE_NVTX)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(nvtx_marker)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(page_rss)
-#    if defined(TIMEMORY_USE_PAPI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(papi_array_t)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(peak_rss)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(priority_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(process_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(process_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(read_bytes)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(real_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(stack_rss)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(system_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(thread_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(thread_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(trip_count)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(user_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(virtual_memory)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(voluntary_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(written_bytes)
-
 }  // namespace tim
 
 using string_t = std::string;
@@ -217,11 +151,6 @@ using string_t = std::string;
             static TYPE instance = get_env<TYPE>(ENV_VAR, INIT);                         \
             return instance;                                                             \
         }
-
-// namespace tim
-// {
-// namespace settings
-// {
 
 //======================================================================================//
 //
@@ -442,8 +371,5 @@ TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, node_count, "TIMEMORY_NODE_COUNT", 0)
 
 /// default setting for auto_{list,tuple,hybrid} "report_at_exit" member variable
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT", false)
-
-// }  // namespace settings
-// }  // namespace tim
 
 #endif  // defined(TIMEMORY_EXTERN_INIT)

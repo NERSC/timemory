@@ -30,6 +30,8 @@
  *
  */
 
+#define TIMEMORY_BUILD_EXTERN_INIT
+
 #include "timemory/timemory.hpp"
 
 #include <deque>

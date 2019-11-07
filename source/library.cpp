@@ -42,6 +42,8 @@ using namespace tim::component;
 #    define API tim_api
 #endif
 
+//======================================================================================//
+
 extern "C"
 {
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);

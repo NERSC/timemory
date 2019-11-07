@@ -90,6 +90,21 @@ generate(const int64_t& nsize)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+inline void
+generate(const int64_t& nsize, std::vector<_Tp>& sendbuf)
+{
+    sendbuf.resize(nsize, 0.0);
+    for(auto& itr : sendbuf)
+        itr = 0.0;
+    std::mt19937 rng;
+    rng.seed(54561434UL);
+    auto dist = [&]() { return std::generate_canonical<_Tp, 10>(rng); };
+    std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 inline vector_t<_Tp>
 allreduce(const vector_t<_Tp>& sendbuf)
 {
@@ -102,6 +117,24 @@ allreduce(const vector_t<_Tp>& sendbuf)
     std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
 #endif
     return recvbuf;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline void
+allreduce(const vector_t<_Tp>& sendbuf, vector_t<_Tp>& recvbuf)
+{
+    recvbuf.resize(sendbuf.size(), 0.0);
+    for(auto& itr : recvbuf)
+        itr = 0.0;
+#if defined(TIMEMORY_USE_MPI)
+    auto dtype = (std::is_same<_Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
+    MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), dtype, MPI_SUM,
+                  MPI_COMM_WORLD);
+#else
+    std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
@@ -320,13 +353,12 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using base_toolset_t       = tim::auto_tuple<real_clock, cpu_clock, peak_rss>;
-    using malloc_gotcha_spec_t = malloc_gotcha::gotcha_spec<base_toolset_t>;
-    using toolset_t            = typename malloc_gotcha_spec_t::component_type;
+    using malloc_gotcha_spec_t = malloc_gotcha::gotcha_spec<gotcha_tuple_t>;
     using malloc_gotcha_t      = typename malloc_gotcha_spec_t::gotcha_type;
+    // using malloc_toolset_t     = typename malloc_gotcha_spec_t::component_type;
+    using toolset_t = tim::auto_tuple<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
 
     malloc_gotcha_t::get_initializer() = []() {
-    // malloc_gotcha_spec_t::get_initializer();
 #if defined(TIMEMORY_USE_CUDA)
         TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
         TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
@@ -340,20 +372,35 @@ TEST_F(gotcha_tests, malloc_gotcha)
 #endif
     };
 
+    mpi_gotcha_t::get_initializer() = [=]() {
+#if defined(TIMEMORY_USE_MPI)
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Allreduce);
+#endif
+    };
+
     toolset_t tool(details::get_test_name());
 
     float  fsum = 0.0;
     double dsum = 0.0;
-    for(int i = 0; i < nitr; ++i)
     {
-        auto fsendbuf = details::generate<float>(1000);
-        auto frecvbuf = details::allreduce(fsendbuf);
-        fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
+        std::vector<float>  fsendbuf, frecvbuf;
+        std::vector<double> dsendbuf, drecvbuf;
+        for(int i = 0; i < nitr; ++i)
+        {
+            details::generate<float>(1000, fsendbuf);
+            details::allreduce(fsendbuf, frecvbuf);
+            fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
 
-        auto dsendbuf = details::generate<double>(1000);
-        auto drecvbuf = details::allreduce(dsendbuf);
-        dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+            details::generate<double>(1000, dsendbuf);
+            details::allreduce(dsendbuf, drecvbuf);
+            dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+        }
     }
+
+    tool.stop();
+
+    malloc_gotcha_t& mc = tool.get<malloc_gotcha_t>();
+    std::cout << mc << std::endl;
 
     auto rank = tim::mpi::rank();
     auto size = tim::mpi::size();
@@ -371,8 +418,6 @@ TEST_F(gotcha_tests, malloc_gotcha)
     tim::mpi::barrier();
     if(rank == 0)
         printf("\n");
-
-    tool.stop();
 
     ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
     ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
@@ -422,25 +467,20 @@ TEST_F(gotcha_tests, member_functions)
     // auto orig = tim::settings::verbose();
     for(int i = 0; i < nitr; ++i)
     {
-        if(i < 10)
+        if(i >= (nitr - 10))
         {
             dw.execute_fp4(1000);
             dw.execute_fp8(1000);
         }
         else
         {
-            // tim::settings::verbose() = orig;
             auto        _fp4 = [&]() { dw.execute_fp4(1000); };
             auto        _fp8 = [&]() { dw.execute_fp8(1000); };
             std::thread t4(_fp4);
             std::thread t8(_fp8);
 
-            // PRINT_HERE("joining t4");
             t4.join();
-            // PRINT_HERE("joining t8");
-            // tim::settings::verbose() = 6;
             t8.join();
-            // PRINT_HERE("destroying");
         }
 
         auto ret = dw.get();
@@ -875,7 +915,7 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::settings::width()        = 12;
+    tim::settings::width()        = 16;
     tim::settings::precision()    = 6;
     tim::settings::timing_units() = "sec";
     tim::settings::memory_units() = "kB";

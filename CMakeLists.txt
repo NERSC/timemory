@@ -177,7 +177,8 @@ add_subdirectory(source)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
+    NAMESPACE ${PROJECT_NAME}::)
 
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing

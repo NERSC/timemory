@@ -112,6 +112,10 @@ struct dummy
 // invoke member function on caliper reference or type within reference
 #    define TIMEMORY_CALIPER_APPLY(...)
 #    define TIMEMORY_CALIPER_TYPE_APPLY(...)
+#    define TIMEMORY_CALIPER_APPLY0(...)
+#    define TIMEMORY_CALIPER_TYPE_APPLY0(...)
+#    define TIMEMORY_CALIPER_LAMBDA(...)
+#    define TIMEMORY_CALIPER_TYPE_LAMBDA(...)
 
 // get an object
 #    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
@@ -119,9 +123,9 @@ struct dummy
 #    define TIMEMORY_HANDLE(...) tim::dummy()
 
 // get a pointer to an object
-#    define TIMEMORY_BLANK_POINTER_HANDLE(...) nullptr
-#    define TIMEMORY_BASIC_POINTER_HANDLE(...) nullptr
-#    define TIMEMORY_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_BLANK_RAW_POINTER(...) nullptr
+#    define TIMEMORY_BASIC_RAW_POINTER(...) nullptr
+#    define TIMEMORY_RAW_POINTER(...) nullptr
 
 // debug only
 #    define TIMEMORY_DEBUG_BLANK_MARKER(...)
@@ -163,7 +167,7 @@ struct dummy
 //======================================================================================//
 
 #    include "timemory/bits/init.hpp"
-#    include "timemory/templates/auto_timer_extern.hpp"
+#    include "timemory/extern/auto_timer.hpp"
 
 //======================================================================================//
 

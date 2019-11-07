@@ -140,19 +140,6 @@ struct init_storage
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
-struct live_count
-{
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-    using string_t   = std::string;
-
-    live_count(base_type& obj, int64_t& _counter) { _counter = obj.m_count; }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
 struct set_prefix
 {
     using Type       = _Tp;
@@ -187,7 +174,7 @@ struct insert_node
     //  has storage implementation
     //
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
-    explicit insert_node(base_type& obj, const int64_t& _hash)
+    explicit insert_node(base_type& obj, const uint64_t& _hash)
     {
         static thread_local auto _init = init_storage<_Tp>::get();
         consume_parameters(_init);
@@ -200,7 +187,7 @@ struct insert_node
     //
     template <typename _Up                                   = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
-    explicit insert_node(base_type&, const int64_t&)
+    explicit insert_node(base_type&, const uint64_t&)
     {
     }
 };
@@ -1040,27 +1027,19 @@ struct echo_measurement
     static string_t generate_name(const string_t& _prefix, string_t _unit,
                                   _Args&&... _args)
     {
-        auto _extra = join(" ", std::forward<_Args>(_args)...);
-        auto _label = join("", "((", uppercase(Type::label()), "))");
-        // _label      = replace(_label, "_", { "-" });
-        _unit = replace(_unit, "", { " " });
+        auto _extra = join("/", std::forward<_Args>(_args)...);
+        auto _label = uppercase(Type::label());
+        _unit       = replace(_unit, "", { " " });
         string_t _name =
-            (_extra.length() > 0) ? join(" ", _extra, _prefix) : join(" ", _prefix);
+            (_extra.length() > 0) ? join("//", _extra, _prefix) : join("//", _prefix);
 
-        auto _ret = join(" ", _label, _name);
-        _ret      = replace(_ret, "_", { "__" });
-        _ret      = replace(_ret, " ", { "  " });
+        auto _ret = join("//", _label, _name);
 
-        if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
+        if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '/')
             _ret.erase(_ret.length() - 1);
 
-        // _ret = replace(_ret, "_", { " " });
-        _ret = replace(_ret, "_", { "__" });
-        _ret = replace(_ret, " ", { "  " });
-        // _ret = replace(_ret, " ", { "_" });
-
         if(_unit.length() > 0 && _unit != "%")
-            _ret += " ((" + _unit + "))";
+            _ret += "//" + _unit;
 
         return _ret;
     }
@@ -1103,23 +1082,19 @@ struct echo_measurement
     ///
     static string_t generate_prefix(const strvec_t& hierarchy)
     {
-        string_t ret_prefix = "";
-        string_t add_prefix = "";
-        // static const strset_t repl_chars = { "[", "]", "(", ")", ".", "/", "\\",
-        //                                      "\t", "<", ">", "@", "'", ":" };
+        string_t              ret_prefix = "";
+        string_t              add_prefix = "";
         static const strset_t repl_chars = { "\t", "\n", "<", ">" };
         for(const auto& itr : hierarchy)
         {
             auto prefix = itr;
-            prefix      = replace(prefix, "[c]", { "[_c_]" });
-            prefix      = replace(prefix, "[", { "> [" });
+            prefix      = replace(prefix, "", { ">>>" });
             prefix      = replace(prefix, "", { "|_" });
             prefix      = replace(prefix, "_", repl_chars);
             prefix      = replace(prefix, "_", { "__" });
             if(prefix.length() > 0 && prefix.at(prefix.length() - 1) == '_')
                 prefix.erase(prefix.length() - 1);
             ret_prefix += add_prefix + prefix;
-            add_prefix = " ((>>)) ";
         }
         return ret_prefix;
     }

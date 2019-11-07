@@ -54,6 +54,43 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<
+    gpu_roofline<float, double>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    gpu_roofline<float>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    gpu_roofline<double>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+#    if defined(TIMEMORY_CUDA_FP16)
+
+extern template struct base<
+    gpu_roofline<cuda::fp16_t, float, double>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    gpu_roofline<cuda::fp16_t>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+#    endif
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 // this computes the numerator of the roofline for a given set of PAPI counters.
 // e.g. for FLOPS roofline (floating point operations / second:
@@ -751,6 +788,21 @@ public:
         ar.finishNode();
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct gpu_roofline<float, double>;
+extern template struct gpu_roofline<float>;
+extern template struct gpu_roofline<double>;
+
+#    if defined(TIMEMORY_CUDA_FP16)
+extern template struct gpu_roofline<cuda::fp16_t, float, double>;
+extern template struct gpu_roofline<cuda::fp16_t>;
+#    endif
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component

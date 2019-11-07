@@ -12,7 +12,7 @@ file(GLOB cxx_headers_details       ${CMAKE_CURRENT_LIST_DIR}/timemory/details/*
 file(GLOB cxx_headers_components    ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/timemory/components/derived/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
-file(GLOB cxx_headers_templates     ${CMAKE_CURRENT_LIST_DIR}/timemory/templates/*.hpp)
+file(GLOB cxx_headers_extern        ${CMAKE_CURRENT_LIST_DIR}/timemory/extern/*.hpp)
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
 file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
 file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
@@ -25,7 +25,8 @@ file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
                                     ${CMAKE_CURRENT_LIST_DIR}/library.cpp
                                     ${CMAKE_CURRENT_LIST_DIR}/init.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/auto_timer_extern.cpp)
+                                    ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
+
 # bits folder
 set(cxx_headers_category_bits)
 foreach(_CATEGORY backends components ert mpl variadic utility)
@@ -39,7 +40,7 @@ endforeach()
 set(timemory_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
     ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
-    ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_templates}
+    ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_extern}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
     ${cxx_headers_category_bits})
 
@@ -68,8 +69,15 @@ endif()
 # build the C++ libraries
 #
 set(_EXTERN_INIT TIMEMORY_EXTERN_INIT)
+set(_EXTERN_TEMP TIMEMORY_EXTERN_TEMPLATES)
 if(WIN32)
     set(_EXTERN_INIT )
+    set(_EXTERN_TEMP )
+endif()
+
+set(_LINKER_LANGUAGE CXX)
+if(TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUPTI)
+    set(_LINKER_LANGUAGE CUDA)
 endif()
 
 if(_BUILD_SHARED_CXX)
@@ -79,13 +87,11 @@ if(_BUILD_SHARED_CXX)
         TARGET_NAME         timemory-cxx-shared
         OUTPUT_NAME         timemory
         LANGUAGE            CXX
-        LINKER_LANGUAGE     CXX
+        LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        COMPILE_DEFINITIONS ${_EXTERN_INIT}
-                            PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
-                            TIMEMORY_EXTERN_NATIVE_TEMPLATES)
+        COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
 
     target_link_libraries(timemory-cxx-shared PUBLIC
         timemory-headers
@@ -114,13 +120,11 @@ if(_BUILD_STATIC_CXX)
         TARGET_NAME         timemory-cxx-static
         OUTPUT_NAME         timemory
         LANGUAGE            CXX
-        LINKER_LANGUAGE     CXX
+        LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        COMPILE_DEFINITIONS ${_EXTERN_INIT}
-                            PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
-                            TIMEMORY_EXTERN_NATIVE_TEMPLATES)
+        COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
 
     target_link_libraries(timemory-cxx-static PUBLIC
         timemory-headers
@@ -169,7 +173,7 @@ if(TIMEMORY_BUILD_C)
             TARGET_NAME         timemory-c-shared
             OUTPUT_NAME         ctimemory
             LANGUAGE            C
-            LINKER_LANGUAGE     CXX
+            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
             OUTPUT_DIR          ${PROJECT_BINARY_DIR}
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
@@ -193,7 +197,7 @@ if(TIMEMORY_BUILD_C)
             TARGET_NAME         timemory-c-static
             OUTPUT_NAME         ctimemory
             LANGUAGE            C
-            LINKER_LANGUAGE     CXX
+            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
             OUTPUT_DIR          ${PROJECT_BINARY_DIR}
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
@@ -243,13 +247,16 @@ install(FILES ${cxx_headers_backend}
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
+    NAMESPACE ${PROJECT_NAME}::)
 
 export(
     TARGETS
         ${TIMEMORY_COMPILED_LIBRARIES}
         ${TIMEMORY_INTERFACE_LIBRARIES}
         ${TIMEMORY_ADDITIONAL_EXPORT_TARGETS}
+    NAMESPACE
+        ${PROJECT_NAME}::
     FILE
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-build.cmake)
 

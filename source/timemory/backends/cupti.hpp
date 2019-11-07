@@ -1467,10 +1467,10 @@ static void CUPTIAPI
                         }
                         else if(_name_len == 0 && _time > 0)
                         {
-                            std::stringstream ss;
-                            ss << "CUPTI_ACTIVITY_KIND_ENUM_"
-                               << static_cast<int>(record->kind);
-                            _receiver += name_pair_t{ ss.str(), _time };
+                            std::stringstream _ss;
+                            _ss << "CUPTI_ACTIVITY_KIND_ENUM_"
+                                << static_cast<int>(record->kind);
+                            _receiver += name_pair_t{ _ss.str(), _time };
                             break;
                         }
                     }

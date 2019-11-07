@@ -132,7 +132,10 @@ public:
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
 
-    using graph_node_tuple = std::tuple<int64_t, ObjectType, int64_t>;
+    using graph_node_tuple = std::tuple<uint64_t, ObjectType, int64_t>;
+
+    class graph_node;
+    friend class graph_node;
 
     class graph_node : public graph_node_tuple
     {
@@ -143,13 +146,15 @@ public:
         using data_base_type  = typename ObjectType::base_type;
         using string_t        = std::string;
 
-        int64_t&    id() { return std::get<0>(*this); }
+        uint64_t&   id() { return std::get<0>(*this); }
         ObjectType& obj() { return std::get<1>(*this); }
         int64_t&    depth() { return std::get<2>(*this); }
 
-        const int64_t&    id() const { return std::get<0>(*this); }
+        const uint64_t&   id() const { return std::get<0>(*this); }
         const ObjectType& obj() const { return std::get<1>(*this); }
         const int64_t&    depth() const { return std::get<2>(*this); }
+
+        string_t get_prefix() const { return master_instance()->get_prefix(*this); }
 
         graph_node()
         : base_type(0, ObjectType(), 0)
@@ -161,7 +166,7 @@ public:
         {
         }
 
-        graph_node(const int64_t& _id, const ObjectType& _obj, int64_t _depth)
+        graph_node(const uint64_t& _id, const ObjectType& _obj, int64_t _depth)
         : base_type(_id, _obj, _depth)
         {
         }
@@ -183,12 +188,25 @@ public:
         {
             auto&       _obj = obj();
             const auto& _rhs = rhs.obj();
-            static_cast<data_base_type&>(_obj) +=
-                static_cast<const data_base_type&>(_rhs);
+            _obj += _rhs;
+            _obj.plus(_rhs);
             return *this;
         }
 
         size_t data_size() const { return sizeof(ObjectType) + 2 * sizeof(int64_t); }
+
+        friend std::ostream& operator<<(std::ostream& os, const graph_node& obj)
+        {
+            std::stringstream ss;
+            auto              _prefix = obj.get_prefix();
+            static auto       _w      = _prefix.length();
+            _w                        = std::max(_w, _prefix.length());
+            ss << "id = " << std::setw(24) << obj.id() << ", depth = " << std::setw(4)
+               << obj.depth() << ", label = " << std::setw(_w) << std::left
+               << obj.get_prefix();
+            os << ss.str();
+            return os;
+        }
     };
 
 public:
@@ -234,6 +252,22 @@ public:
 
         delete m_graph_data_instance;
         m_graph_data_instance = nullptr;
+        if(!singleton_t::is_master(this))
+        {
+            auto               _master       = singleton_t::master_instance();
+            graph_hash_map_t   _hash_ids     = *_master->get_hash_ids().get();
+            graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases().get();
+            for(const auto& itr : _hash_ids)
+            {
+                if(m_hash_ids->find(itr.first) == m_hash_ids->end())
+                    m_hash_ids->insert({ itr.first, itr.second });
+            }
+            for(const auto& itr : _hash_aliases)
+            {
+                if(m_hash_aliases->find(itr.first) == m_hash_aliases->end())
+                    m_hash_aliases->insert({ itr.first, itr.second });
+            }
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -389,7 +423,7 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
+    iterator insert(uint64_t hash_id, const ObjectType& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
@@ -400,25 +434,9 @@ public:
         if(!_has_head || (this == master_instance() && m_node_ids.size() == 0))
         {
             graph_node_t node(hash_id, obj, hash_depth);
-            if(this == master_instance())
-            {
-                _data()                        = graph_data_t(node);
-                m_graph_data_instance->depth() = 0;
-                if(m_node_ids.size() == 0)
-                    m_node_ids[0][0] = m_graph_data_instance->current();
-                m_node_ids[hash_depth][hash_id] = m_graph_data_instance->current();
-                return m_graph_data_instance->current();
-            }
-            else
-            {
-                _data() = graph_data_t(*master_instance()->current());
-                m_graph_data_instance->head()    = master_instance()->data().current();
-                m_graph_data_instance->current() = master_instance()->data().current();
-                m_graph_data_instance->depth()   = master_instance()->data().depth();
-                auto itr = m_graph_data_instance->append_child(node);
-                m_node_ids[hash_depth][hash_id] = itr;
-                return itr;
-            }
+            auto         itr                = _data().append_child(node);
+            m_node_ids[hash_depth][hash_id] = itr;
+            return itr;
         }
 
         // lambda for updating settings
@@ -496,7 +514,7 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
+    iterator insert(uint64_t hash_id, const ObjectType& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
@@ -507,25 +525,9 @@ public:
         if(!_has_head || (this == master_instance() && m_node_ids.size() == 0))
         {
             graph_node_t node(hash_id, obj, hash_depth);
-            if(this == master_instance())
-            {
-                _data()                        = graph_data_t(node);
-                m_graph_data_instance->depth() = 0;
-                if(m_node_ids.size() == 0)
-                    m_node_ids[0][0] = m_graph_data_instance->current();
-                m_node_ids[hash_depth][hash_id] = m_graph_data_instance->current();
-                return m_graph_data_instance->current();
-            }
-            else
-            {
-                _data() = graph_data_t(*master_instance()->current());
-                m_graph_data_instance->head()    = master_instance()->data().current();
-                m_graph_data_instance->current() = master_instance()->data().current();
-                m_graph_data_instance->depth()   = master_instance()->data().depth();
-                auto itr = m_graph_data_instance->append_child(node);
-                m_node_ids[hash_depth][hash_id] = itr;
-                return itr;
-            }
+            auto         itr                = _data().append_child(node);
+            m_node_ids[hash_depth][hash_id] = itr;
+            return itr;
         }
 
         // lambda for updating settings
@@ -595,7 +597,7 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(const ObjectType& obj, int64_t hash_id)
+    iterator insert(const ObjectType& obj, uint64_t hash_id)
     {
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
@@ -612,7 +614,7 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(const ObjectType& obj, int64_t hash_id)
+    iterator insert(const ObjectType& obj, uint64_t hash_id)
     {
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
@@ -681,7 +683,17 @@ private:
     {
         auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, node.id());
         if(_ret.find("unknown-hash=") == 0)
-            return get_hash_identifier(node.id());
+        {
+            if(!singleton_t::is_master(this))
+            {
+                auto _master = singleton_t::master_instance();
+                return _master->get_prefix(node);
+            }
+            else
+            {
+                return get_hash_identifier(node.id());
+            }
+        }
         return _ret;
     }
     string_t get_prefix(iterator _node) { return get_prefix(*_node); }
@@ -818,27 +830,26 @@ private:
 
     graph_data_t& _data()
     {
+        using base_type = typename ObjectType::base_type;
+
         if(m_graph_data_instance == nullptr && !singleton_t::is_master(this))
         {
             static bool _data_init = master_instance()->data_init();
             consume_parameters(_data_init);
 
-            m_graph_data_instance = new graph_data_t(*master_instance()->current());
-            m_graph_data_instance->head()    = master_instance()->current();
-            m_graph_data_instance->current() = master_instance()->current();
-            m_graph_data_instance->depth()   = master_instance()->depth();
+            auto         m = *master_instance()->current();
+            graph_node_t node(m.id(), base_type::dummy(), m.depth());
+            m_graph_data_instance          = new graph_data_t(node);
+            m_graph_data_instance->depth() = m.depth();
+            if(m_node_ids.size() == 0)
+                m_node_ids[0][0] = m_graph_data_instance->current();
         }
         else if(m_graph_data_instance == nullptr)
         {
             auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
             if(!lk.owns_lock())
                 lk.lock();
-            /*static std::recursive_mutex _init_mutex;
-            auto_lock_t lk(_init_mutex, std::defer_lock);
-            if(!lk.owns_lock())
-                lk.lock();*/
 
-            using base_type     = typename ObjectType::base_type;
             std::string _prefix = "> [tot] total";
             add_hash_id(m_hash_ids, _prefix);
             graph_node_t node(0, base_type::dummy(), 0);
@@ -1017,7 +1028,6 @@ public:
     //----------------------------------------------------------------------------------//
     //
     iterator insert(int64_t, const ObjectType&, const string_t&) { return nullptr; }
-    void     set_prefix(const string_t&) {}
     void     print()
     {
         if(m_initialized)

@@ -40,6 +40,19 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<papi_array<8>, std::array<long long, 8>, policy::thread_init,
+                            policy::thread_finalize>;
+
+extern template struct base<papi_array<16>, std::array<long long, 16>,
+                            policy::thread_init, policy::thread_finalize>;
+
+extern template struct base<papi_array<32>, std::array<long long, 32>,
+                            policy::thread_init, policy::thread_finalize>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //                          Array of PAPI counters

@@ -356,42 +356,97 @@ storage<ObjectType, true>::merge(this_type* itr)
         _copy_hash_ids();
     }
 
-    if(itr->size() == 0)
+    if(itr->size() == 0 || !itr->data().has_head())
         return;
 
-    auto _this_beg = graph().begin();
-    auto _this_end = graph().end();
+    using itr_t              = typename graph_t::sibling_iterator;
+    using pre_order_iterator = typename graph_t::pre_order_iterator;
+    using sibling_iterator   = typename graph_t::sibling_iterator;
+
+    auto _compare = [](itr_t lhs, itr_t rhs) {
+        std::cout << "comparing [" << *lhs << "] == [" << *rhs << "]" << std::endl;
+        return (*lhs == *rhs);
+    };
+    auto _reduce = [](itr_t lhs, itr_t rhs) {
+        std::cout << "operation [" << *lhs << "] += [" << *rhs << "]" << std::endl;
+        *lhs += *rhs;
+    };
+
+    std::set<sibling_iterator> _erase = {};
 
     bool _merged = false;
-    for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
+    for(auto _titr = graph().begin(); _titr != graph().end(); ++_titr)
     {
-        if(_this_itr == itr->data().head())
+        if(_titr && itr->data().has_head() && *_titr == *itr->data().head())
         {
-            auto _iter_beg = itr->graph().begin();
-            auto _iter_end = itr->graph().end();
-            graph().merge(_this_itr, _this_end, _iter_beg, _iter_end, false, true);
-            _merged = true;
-            break;
+            typename graph_t::pre_order_iterator _nitr(itr->data().head());
+            if(graph().is_valid(_nitr.begin()) && _nitr.begin())
+            {
+                pre_order_iterator _pos   = _titr;
+                pre_order_iterator _other = _nitr.begin();
+                auto               aitr   = graph().append_child(_pos, _other);
+
+                // print_graph_bracketed(graph(), std::cout);
+                // std::cout << "\nreducing [" << *aitr << "]..." << std::endl;
+                graph().reduce(aitr, graph().end(), _erase, _compare, _reduce);
+
+                // std::cout << "\nreducing [" << *_titr << "]..." << std::endl;
+                // graph().reduce(_titr, graph().end(), _erase, _compare, _reduce);
+
+                // pre_order_iterator paitr = graph().parent(aitr);
+                // std::cout << "\nreducing [" << *paitr << "]..." << std::endl;
+                // graph().reduce(paitr.begin(), graph().end(), _erase, _compare,
+                // _reduce);
+
+                _merged = true;
+                break;
+            }
+
+            if(!_merged)
+            {
+                ++_nitr;
+                if(graph().is_valid(_nitr) && _nitr)
+                {
+                    auto aitr = graph().insert_subgraph_after(_titr, _nitr);
+                    graph().reduce(aitr, graph().end(), _erase, _compare, _reduce);
+                    _merged = true;
+                    break;
+                }
+            }
         }
     }
 
     if(!_merged)
     {
-        auto_lock_t lerr(type_mutex<decltype(std::cerr)>(), std::defer_lock);
-        if(!lerr.owns_lock())
-            lerr.lock();
-        std::cerr << "Failure to merge graphs!" << std::endl;
-        auto g = graph();
-        graph().insert_subgraph_after(_data().current(), itr->data().head());
+        PRINT_HERE("");
+        pre_order_iterator _nitr(itr->data().head());
+        ++_nitr;
+        if(graph().is_valid(_nitr))
+        {
+            graph().insert_subgraph_after(_data().head(), _nitr);
+            graph().reduce(graph().begin(), graph().end(), _erase, _compare, _reduce);
+        }
+        else
+        {
+            _nitr = pre_order_iterator(itr->data().head());
+            graph().insert_subgraph_after(_data().head(), _nitr);
+            graph().reduce(graph().begin(), graph().end(), _erase, _compare, _reduce);
+        }
     }
 
-    using predicate_t = decltype(_this_beg);
-    auto _compare     = [](predicate_t lhs, predicate_t rhs) { return (*lhs == *rhs); };
-    auto _reduce      = [](predicate_t lhs, predicate_t rhs) { *lhs += *rhs; };
-
-    _this_beg = graph().begin();
-    _this_end = graph().end();
-    graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _compare, _reduce);
+    // std::set<sibling_iterator> _erase = {};
+    // graph().reduce(graph().begin(), graph().end(), _erase, _compare, _reduce);
+    /*
+    static const short max_iter = 10;
+    short nitr = 0;
+    while(nitr++ < max_iter)
+    {
+        auto before_size = graph().size();
+        graph().reduce(graph().begin(), graph().end(), _erase, _compare, _reduce);
+        auto after_size = graph().size();
+        if(before_size == after_size)
+            break;
+    }*/
 
     itr->data().clear();
 }
@@ -400,13 +455,13 @@ template <typename ObjectType>
 void
 storage<ObjectType, true>::mpi_reduce()
 {
-#if defined(TIMEMORY_USE_MPI)
-    using predicate_t = decltype(graph().begin());
-    auto _compare     = [](predicate_t lhs, predicate_t rhs) {
+#if defined(TIMEMORY_USE_MPI) || 0
+    using sibling_itr = typename graph_t::sibling_iterator;
+    auto _compare     = [](sibling_itr lhs, sibling_itr rhs) {
         // printf("comparing %li vs. %li\n", (long int) lhs->id(), (long int) rhs->id());
         return (*lhs == *rhs);
     };
-    auto _reduce = [](predicate_t lhs, predicate_t rhs) {
+    auto _reduce = [](sibling_itr lhs, sibling_itr rhs) {
         // printf("reducing...\n");
         *lhs += *rhs;
     };
@@ -443,25 +498,11 @@ storage<ObjectType, true>::mpi_reduce()
         {
             for(uint32_t i = 0; i < num_ranks; ++i)
             {
-                // PRINT_HERE("");
                 void* _data = malloc(_graph_data_size[i]);
                 MPI_Recv(_data, _graph_data_size[i], MPI_CHAR, i + 1, 0, MPI_COMM_WORLD,
                          NULL);
                 data = static_cast<graph_t*>(data);
-                // printf("[%i]> this storage size: %i\n", (int) mpi::rank(), (int)
-                // graph().size()); printf("[%i]> data storage size: %i\n", (int)
-                // mpi::rank(), (int) data->size());
-
-                using sibling_itr     = typename graph_t::sibling_iterator;
-                sibling_itr _this_beg = graph().begin();
-                sibling_itr _this_end = graph().end();
-
-                sibling_itr _iter_beg = data->begin();
-                sibling_itr _iter_end = data->end();
-
-                graph().merge(_this_beg, _this_end, _iter_beg, _iter_end, true, false);
-                graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _compare,
-                               _reduce);
+                // graph().reduce(graph().begin(), graph().begin(), _compare, _reduce);
 
                 using pre_iterator = typename graph_t::pre_order_iterator;
                 for(pre_iterator titr = graph().begin(); titr != graph().end(); ++titr)
@@ -478,7 +519,6 @@ storage<ObjectType, true>::mpi_reduce()
                     }
                 }
                 free(_data);
-                // PRINT_HERE("");
             }
         }
 
@@ -515,18 +555,14 @@ void storage<ObjectType, true>::external_print(std::false_type)
             //    mpi::barrier();
             // if(!mpi::is_initialized() || mpi::rank() == i)
             {
+                /*
                 if(is_initialized() && m_graph_data_instance)
                 {
-                    auto _iter_beg    = _data().graph().begin();
-                    auto _iter_end    = _data().graph().end();
-                    using predicate_t = decltype(_iter_beg);
-                    auto _compare     = [](predicate_t lhs, predicate_t rhs) {
-                        return (*lhs == *rhs);
-                    };
-                    auto _reduce = [](predicate_t lhs, predicate_t rhs) { *lhs += *rhs; };
-                    _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end,
-                                           _compare, _reduce);
-                }
+                    using itr_t = typename graph_t::sibling_iterator;
+                    auto _compare     = [](itr_t lhs, itr_t rhs) { return (*lhs == *rhs);
+                }; auto _reduce = [](itr_t lhs, itr_t rhs) { *lhs += *rhs; };
+                    graph().reduce(graph().begin(), graph().begin(), _compare, _reduce);
+                }*/
 
                 finalize();
 
@@ -875,7 +911,7 @@ void
 storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
                                         const unsigned int version)
 {
-    using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
+    using tuple_type = std::tuple<uint64_t, ObjectType, string_t, int64_t>;
     using array_type = std::vector<tuple_type>;
 
     // convert graph to a vector
@@ -920,7 +956,7 @@ void
 storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
                                         const unsigned int version)
 {
-    using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
+    using tuple_type = std::tuple<uint64_t, ObjectType, string_t, int64_t>;
     using array_type = std::vector<tuple_type>;
 
     // convert graph to a vector

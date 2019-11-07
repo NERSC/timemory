@@ -40,6 +40,15 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<trip_count>;
+extern template struct base<gperf_cpu_profiler, void, policy::thread_init,
+                            policy::global_finalize>;
+extern template struct base<gperf_heap_profiler, void, policy::global_finalize>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          General Components with no specific category
@@ -63,6 +72,7 @@ struct trip_count : public base<trip_count>
     static value_type  record() { return 1; }
 
     value_type get() const { return accum; }
+    value_type get_display() const { return get(); }
 
     void start()
     {

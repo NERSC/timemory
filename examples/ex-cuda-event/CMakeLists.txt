@@ -23,11 +23,6 @@ if(USE_PAPI)
     list(APPEND COMPONENTS papi)
 endif()
 
-option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
-if(USE_EXTERN_TEMPLATES)
-    list(APPEND COMPONENTS extern-templates)
-endif()
-
 option(USE_LOGGING "Enable logging in debug mode" OFF)
 add_library(logging INTERFACE)
 if(USE_LOGGING)

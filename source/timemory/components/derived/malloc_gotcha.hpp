@@ -162,6 +162,23 @@ public:
         }
     };
 
+    template <typename... _LhsTypes, typename... _RhsTypes,
+              template <typename...> class _Lhs, template <typename...> class _Rhs,
+              template <typename, typename> class _Hybrid>
+    struct gotcha_spec<_Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>>
+    {
+        using gotcha_component_type = _Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>;
+        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
+        using component_type =
+            _Hybrid<_Lhs<_LhsTypes..., gotcha_type>, _Rhs<_RhsTypes...>>;
+
+        static std::function<void()>& get_initializer()
+        {
+            static std::function<void()> _lambda = []() {};
+            return _lambda;
+        }
+    };
+
     //----------------------------------------------------------------------------------//
 
     static void invoke_global_init(storage_type*) {}

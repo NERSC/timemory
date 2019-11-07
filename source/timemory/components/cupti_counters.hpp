@@ -80,6 +80,10 @@ operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_
 
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          CUPTI component

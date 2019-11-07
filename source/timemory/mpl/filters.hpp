@@ -270,17 +270,94 @@ struct get_data_tuple
     using label_type = std::tuple<std::tuple<std::string, _ImplTypes>...>;
 };
 
-template <typename... _ImplTypes>
-struct get_data_tuple<std::tuple<_ImplTypes...>>
+template <typename... _ImplTypes, template <typename...> class _Tuple>
+struct get_data_tuple<_Tuple<_ImplTypes...>>
 {
-    using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
-    using label_type = std::tuple<
-        std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+    using value_type = _Tuple<decltype(std::declval<_ImplTypes>().get())...>;
+    using label_type =
+        _Tuple<_Tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+};
+
+//======================================================================================//
+// check if type is in expansion
+//
+template <typename...>
+struct is_one_of
+{
+    static constexpr bool value = false;
+};
+
+template <typename F, typename S, template <typename...> class _Tuple, typename... T>
+struct is_one_of<F, S, _Tuple<T...>>
+{
+    static constexpr bool value =
+        std::is_same<F, S>::value || is_one_of<F, _Tuple<T...>>::value;
+};
+
+template <typename F, typename S, template <typename...> class _Tuple, typename... T>
+struct is_one_of<F, _Tuple<S, T...>>
+{
+    static constexpr bool value = is_one_of<F, S, _Tuple<T...>>::value;
+};
+
+//======================================================================================//
+
+template <typename In, typename Out>
+struct remove_duplicates;
+
+template <typename Out>
+struct remove_duplicates<std::tuple<>, Out>
+{
+    using type = Out;
+};
+
+template <typename In, typename... InTail, typename... Out>
+struct remove_duplicates<std::tuple<In, InTail...>, std::tuple<Out...>>
+{
+    using type = typename std::conditional<
+        !(is_one_of<In, std::tuple<Out...>>::value),
+        typename remove_duplicates<std::tuple<InTail...>, std::tuple<Out..., In>>::type,
+        typename remove_duplicates<std::tuple<InTail...>,
+                                   std::tuple<Out...>>::type>::type;
 };
 
 //======================================================================================//
 
 }  // namespace impl
+
+//======================================================================================//
+
+///
+/// get the index of a type in expansion
+///
+template <typename _Tp, typename Type>
+struct index_of;
+
+template <typename _Tp, template <typename...> class _Tuple, typename... Types>
+struct index_of<_Tp, _Tuple<_Tp, Types...>>
+{
+    static constexpr std::size_t value = 0;
+};
+
+template <typename _Tp, typename Head, template <typename...> class _Tuple,
+          typename... Tail>
+struct index_of<_Tp, _Tuple<Head, Tail...>>
+{
+    static constexpr std::size_t value = 1 + index_of<_Tp, _Tuple<Tail...>>::value;
+};
+
+//======================================================================================//
+
+///
+/// check if type is in expansion
+///
+template <typename _Tp, typename _Types>
+using is_one_of = typename impl::is_one_of<_Tp, _Types>;
+
+//======================================================================================//
+
+template <typename T>
+using remove_duplicates = typename impl::remove_duplicates<std::tuple<>, T>::type;
 
 //======================================================================================//
 //

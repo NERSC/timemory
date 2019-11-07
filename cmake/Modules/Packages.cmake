@@ -15,8 +15,6 @@ enable_testing()
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
 add_interface_library(timemory-extern-init)
-add_interface_library(timemory-extern-templates)
-add_interface_library(timemory-extern-templates-static)
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
@@ -48,8 +46,6 @@ if(TIMEMORY_USE_MPI)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
-    # timemory-extern-templates
-    # timemory-extern-init
     timemory-mpi
     timemory-threading
     timemory-papi
@@ -163,17 +159,6 @@ if(NOT WIN32)
     if(TIMEMORY_USE_EXTERN_INIT)
         # target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
     endif()
-endif()
-
-
-#----------------------------------------------------------------------------------------#
-#
-#                               timemory extern templates
-#
-#----------------------------------------------------------------------------------------#
-
-if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(timemory-extern-templates INTERFACE TIMEMORY_EXTERN_TEMPLATES)
 endif()
 
 
@@ -573,11 +558,17 @@ if(TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-        target_link_libraries(timemory-cudart INTERFACE
-            ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
+        find_library(CUDA_dl_LIBRARY
+            NAMES dl)
 
         target_compile_options(timemory-cudart INTERFACE
             $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
+
+        target_compile_options(timemory-cudart-static INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
+
+        target_link_libraries(timemory-cudart INTERFACE
+            ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
 
         target_link_libraries(timemory-cudart-device INTERFACE
             ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
@@ -585,8 +576,16 @@ if(TIMEMORY_USE_CUDA)
         target_link_libraries(timemory-cudart-static INTERFACE
             ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
 
-        target_compile_options(timemory-cudart-static INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
+        if(CUDA_dl_LIBRARY)
+            target_link_libraries(timemory-cudart INTERFACE
+                ${CUDA_dl_LIBRARY})
+
+            target_link_libraries(timemory-cudart-device INTERFACE
+                ${CUDA_dl_LIBRARY})
+
+            target_link_libraries(timemory-cudart-static INTERFACE
+                ${CUDA_dl_LIBRARY})
+        endif()
 
     else()
         inform_empty_interface(timemory-cuda "CUDA")

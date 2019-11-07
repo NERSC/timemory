@@ -129,7 +129,10 @@ template <typename... _Types>
 struct cpu_roofline;
 
 // always defined
-using papi_array_t = papi_array<TIMEMORY_PAPI_ARRAY_SIZE>;
+using papi_array8_t  = papi_array<8>;
+using papi_array16_t = papi_array<16>;
+using papi_array32_t = papi_array<32>;
+using papi_array_t   = papi_array<TIMEMORY_PAPI_ARRAY_SIZE>;
 
 // cupti
 struct cupti_counters;

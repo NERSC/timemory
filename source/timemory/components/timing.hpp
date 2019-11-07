@@ -36,6 +36,22 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<real_clock>;
+extern template struct base<system_clock>;
+extern template struct base<user_clock>;
+extern template struct base<cpu_clock>;
+extern template struct base<monotonic_clock>;
+extern template struct base<monotonic_raw_clock>;
+extern template struct base<thread_cpu_clock>;
+extern template struct base<process_cpu_clock>;
+extern template struct base<cpu_util, std::pair<int64_t, int64_t>>;
+extern template struct base<process_cpu_util, std::pair<int64_t, int64_t>>;
+extern template struct base<thread_cpu_util, std::pair<int64_t, int64_t>>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          Timing types

@@ -102,17 +102,24 @@ public:
     static constexpr bool contains_gotcha =
         (tuple_type::contains_gotcha || list_type::contains_gotcha);
 
-    using size_type   = int64_t;
-    using string_hash = std::hash<string_t>;
+    using size_type           = int64_t;
+    using captured_location_t = source_location::captured;
 
 public:
-    template <typename _Scope = scope::process>
-    explicit component_hybrid(
-        const string_t& key, const bool& store = false,
-        const bool& flat = (settings::flat_profile() ||
-                            std::is_same<_Scope, scope::flat>::value))
+    explicit component_hybrid(const string_t& key, const bool& store = false,
+                              const bool& flat = settings::flat_profile())
     : m_tuple(key, store, flat)
     , m_list(key, store, flat)
+    {
+        m_tuple.m_print_laps  = false;
+        m_list.m_print_laps   = false;
+        m_list.m_print_prefix = false;
+    }
+
+    explicit component_hybrid(const captured_location_t& loc, const bool& store = false,
+                              const bool& flat = settings::flat_profile())
+    : m_tuple(loc, store, flat)
+    , m_list(loc, store, flat)
     {
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
@@ -409,13 +416,6 @@ public:
     {
         m_tuple.serialize(ar, version);
         m_list.serialize(ar, version);
-    }
-
-    //----------------------------------------------------------------------------------//
-    inline void report(std::ostream& os, bool endline, bool ign_cutoff) const
-    {
-        m_tuple.report(os, endline, ign_cutoff);
-        m_list.report(os, endline, ign_cutoff);
     }
 
     //----------------------------------------------------------------------------------//

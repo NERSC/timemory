@@ -174,11 +174,6 @@ public:
     value_type operator()() { return Type::record(); }
 
     //----------------------------------------------------------------------------------//
-    // set the graph node prefix
-    //
-    void set_prefix(const string_t& _prefix) { get_storage()->set_prefix(_prefix); }
-
-    //----------------------------------------------------------------------------------//
     // reset the values
     //
     void reset()
@@ -259,9 +254,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // default get_display
+    // default get and get_display
     //
-    value_type get_display() const { return static_cast<const Type&>(*this).get(); }
+    value_type get() const { return (is_transient) ? value : accum; }
 
     //----------------------------------------------------------------------------------//
     // comparison operators
@@ -731,11 +726,6 @@ public:
     // function operator
     //
     value_type operator()() { Type::record(); }
-
-    //----------------------------------------------------------------------------------//
-    // set the graph node prefix
-    //
-    void set_prefix(const string_t&) {}
 
     //----------------------------------------------------------------------------------//
     // reset the values

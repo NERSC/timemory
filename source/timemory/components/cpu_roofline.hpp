@@ -47,6 +47,23 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<cpu_roofline<float, double>,
+                            std::pair<std::vector<long long>, double>,
+                            policy::thread_init, policy::thread_finalize,
+                            policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    cpu_roofline<float>, std::pair<std::vector<long long>, double>, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    cpu_roofline<double>, std::pair<std::vector<long long>, double>, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 // this computes the numerator of the roofline for a given set of PAPI counters.
 // e.g. for FLOPS roofline (floating point operations / second:
@@ -705,6 +722,16 @@ private:
         return _instance;
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct cpu_roofline<float, double>;
+extern template struct cpu_roofline<float>;
+extern template struct cpu_roofline<double>;
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component
