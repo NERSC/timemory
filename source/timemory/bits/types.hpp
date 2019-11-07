@@ -195,16 +195,6 @@ get_hash_identifier(hash_result_type _hash_id)
 class source_location
 {
 public:
-    template <typename _Tp>
-    using remove_const_t = typename std::remove_const<_Tp>::type;
-    template <typename _Tp>
-    using remove_ref_t = typename std::remove_reference<_Tp>::type;
-
-    //==================================================================================//
-    //
-    template <typename _Tp, bool _Val = true, typename _Up = int,
-              typename _Cp = remove_const_t<decay_t<_Tp>>>
-    using if_const_char_t = enable_if_t<(std::is_same<_Cp, char*>::value) == _Val, _Up>;
     using join_type       = apply<std::string>;
     using result_type     = std::tuple<std::string, size_t>;
 
