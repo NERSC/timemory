@@ -90,12 +90,12 @@ using auto_timer = auto_hybrid<auto_timer_tuple_t, auto_timer_list_t>;
 //======================================================================================//
 
 #define TIMEMORY_BLANK_AUTO_TIMER(...)                                                   \
-    TIMEMORY_BLANK_MARKER(::tim::auto_timer, __VA_ARGS__)
+    TIMEMORY_BLANK_POINTER(::tim::auto_timer, __VA_ARGS__)
 
 #define TIMEMORY_BASIC_AUTO_TIMER(...)                                                   \
-    TIMEMORY_BASIC_MARKER(::tim::auto_timer, __VA_ARGS__)
+    TIMEMORY_BASIC_POINTER(::tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TIMER(...) TIMEMORY_MARKER(::tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_AUTO_TIMER(...) TIMEMORY_POINTER(::tim::auto_timer, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // instance versions

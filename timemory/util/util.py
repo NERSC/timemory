@@ -34,6 +34,7 @@ import os
 import sys
 import inspect
 from enum import Enum
+from functools import wraps
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2019, The Regents of the University of California"
@@ -176,9 +177,10 @@ class auto_timer(base_decorator):
     #------------------------------------------------------------------------------------#
     #
     def __call__(self, func):
-
+        """
+        Decorator
+        """
         import timemory
-        from functools import wraps
         _file = timemory.FILE(3)
         _line = timemory.LINE(2)
 
@@ -187,21 +189,19 @@ class auto_timer(base_decorator):
             self.parse_wrapped(func, args, kwargs)
             self.determine_signature(is_decorator=True, is_context_manager=False)
 
-            _key = '{}{}'.format(self.key, self.arg_string(args, kwargs))
-
             _func = func.__name__
             _key = ''
             _args = self.arg_string(args, kwargs)
             if self.signature == context.blank:
                 _key = '{}{}'.format(self.key, _args)
             elif self.signature == context.basic:
-                _key = '{}{}{}'.format(_func, _args, self.key)
+                _key = '{}/{}/{}'.format(_func, self.key, _args)
             elif self.signature == context.full:
-                _key = '{}{}{}@{}:{}'.format(
-                    _func, _args, self.key, _file, _line)
+                _key = '{}/{}:{}/{}{}'.format(
+                    _func, _file, _line, self.key, _args)
+            _key = _key.strip('/')
 
-            _dec = timemory.timer_decorator(
-                _key, int(_line), self.report_at_exit)
+            _dec = timemory.timer_decorator(_key, self.report_at_exit)
             _ret = func(*args, **kwargs)
             del _dec
             return _ret
@@ -226,13 +226,13 @@ class auto_timer(base_decorator):
         if self.signature == context.blank:
             _key = '{}{}'.format(self.key, _args)
         elif self.signature == context.basic:
-            _key = '{}{}{}'.format(_func, _args, self.key)
+            _key = '{}/{}/{}'.format(_func, self.key, _args)
         elif self.signature == context.full:
-            _key = '{}{}{}@{}:{}'.format(
-                _func, _args, self.key, _file, _line)
+            _key = '{}/{}:{}/{}{}'.format(
+                _func, _file, _line, self.key, _args)
+        _key = _key.strip('/')
 
-        self._self_obj = timemory.timer_decorator(
-            _key, int(_line), self.report_at_exit)
+        self._self_obj = timemory.timer_decorator(_key, self.report_at_exit)
 
 
     #------------------------------------------------------------------------------------#
@@ -270,9 +270,10 @@ class timer(base_decorator):
     #------------------------------------------------------------------------------------#
     #
     def __call__(self, func):
-
+        """
+        Decorator
+        """
         import timemory
-        from functools import wraps
         _file = timemory.FILE(3)
         _line = timemory.LINE(2)
 
@@ -287,12 +288,13 @@ class timer(base_decorator):
             if self.signature == context.blank:
                 _key = '{}{}'.format(self.key, _args)
             elif self.signature == context.basic:
-                _key = '{}{}{}'.format(_func, _args, self.key)
+                _key = '{}/{}/{}'.format(_func, self.key, _args)
             elif self.signature == context.full:
-                _key = '{}{}{}@{}:{}'.format(
-                    _func, _args, self.key, _file, _line)
+                _key = '{}/{}:{}/{}{}'.format(
+                    _func, _file, _line, self.key, _args)
+            _key = _key.strip('/')
 
-            t = timemory.timer(_key, int(_line), False)
+            t = timemory.timer(_key)
 
             t.start()
             ret = func(*args, **kwargs)
@@ -320,12 +322,13 @@ class timer(base_decorator):
         if self.signature == context.blank:
             _key = '{}{}'.format(self.key, _args)
         elif self.signature == context.basic:
-            _key = '{}{}{}'.format(_func, _args, self.key)
+            _key = '{}/{}/{}'.format(_func, self.key, _args)
         elif self.signature == context.full:
-            _key = '{}{}{}@{}:{}'.format(
-                _func, _args, self.key, _file, _line)
+            _key = '{}/{}:{}/{}{}'.format(
+                _func, _file, _line, self.key, _args)
+        _key = _key.strip('/')
 
-        self._self_obj = timemory.timer(_key, int(_line), False)
+        self._self_obj = timemory.timer(_key)
         self._self_obj.start()
 
 
@@ -367,9 +370,10 @@ class rss_usage(base_decorator):
     #------------------------------------------------------------------------------------#
     #
     def __call__(self, func):
-
+        """
+        Decorator
+        """
         import timemory
-        from functools import wraps
         _file = timemory.FILE(3)
         _line = timemory.LINE(2)
 
@@ -384,10 +388,11 @@ class rss_usage(base_decorator):
             if self.signature == context.blank:
                 _key = '{}{}'.format(self.key, _args)
             elif self.signature == context.basic:
-                _key = '{}{}{}'.format(_func, _args, self.key)
+                _key = '{}/{}/{}'.format(_func, self.key, _args)
             elif self.signature == context.full:
-                _key = '{}{}{}@{}:{}'.format(
-                    _func, _args, self.key, _file, _line)
+                _key = '{}/{}:{}/{}{}'.format(
+                    _func, _file, _line, self.key, _args)
+            _key = _key.strip('/')
 
             self._self_obj = timemory.rss_usage(_key)
             self._self_dif = timemory.rss_usage(_key)
@@ -421,10 +426,11 @@ class rss_usage(base_decorator):
         if self.signature == context.blank:
             _key = '{}{}'.format(self.key, _args)
         elif self.signature == context.basic:
-            _key = '{}{}{}'.format(_func, _args, self.key)
+            _key = '{}/{}/{}'.format(_func, self.key, _args)
         elif self.signature == context.full:
-            _key = '{}{}{}@{}:{}'.format(
-                _func, _args, self.key, _file, _line)
+            _key = '{}/{}:{}/{}{}'.format(
+                _func, _file, _line, self.key, _args)
+        _key = _key.strip('/')
 
         self._self_obj = timemory.rss_usage(_key)
         self._self_dif = timemory.rss_usage(_key)
@@ -476,9 +482,10 @@ class auto_tuple(base_decorator):
     #------------------------------------------------------------------------------------#
     #
     def __call__(self, func):
-
+        """
+        Decorator
+        """
         import timemory
-        from functools import wraps
         _file = timemory.FILE(3)
         _line = timemory.LINE(2)
 
@@ -493,13 +500,13 @@ class auto_tuple(base_decorator):
             if self.signature == context.blank:
                 _key = '{}{}'.format(self.key, _args)
             elif self.signature == context.basic:
-                _key = '{}{}{}'.format(_func, _args, self.key)
+                _key = '{}/{}/{}'.format(_func, self.key, _args)
             elif self.signature == context.full:
-                _key = '{}{}{}@{}:{}'.format(
-                    _func, _args, self.key, _file, _line)
+                _key = '{}/{}:{}/{}{}'.format(
+                    _func, _file, _line, self.key, _args)
+            _key = _key.strip('/')
 
-            t = timemory.component_decorator(self.components, _key, int(_line),
-                                             self.report_at_exit)
+            t = timemory.component_decorator(self.components, _key)
             ret = func(*args, **kwargs)
             del t
             return ret
@@ -524,13 +531,13 @@ class auto_tuple(base_decorator):
         if self.signature == context.blank:
             _key = '{}{}'.format(self.key, _args)
         elif self.signature == context.basic:
-            _key = '{}{}{}'.format(_func, _args, self.key)
+            _key = '{}/{}/{}'.format(_func, self.key, _args)
         elif self.signature == context.full:
-            _key = '{}{}{}@{}:{}'.format(
-                _func, _args, self.key, _file, _line)
+            _key = '{}/{}:{}/{}{}'.format(
+                _func, _file, _line, self.key, _args)
+        _key = _key.strip('/')
 
-        self._self_obj = timemory.component_decorator(self.components, _key, int(_line),
-                                                      self.report_at_exit)
+        self._self_obj = timemory.component_decorator(self.components, _key)
 
 
     #------------------------------------------------------------------------------------#

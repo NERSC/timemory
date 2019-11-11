@@ -85,8 +85,8 @@
 #endif
 
 // stringify the __LINE__ macro
-#if !defined(TIMEMORY_LINE_STRING)
-#    define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
+#if !defined(TIMEMORY_TIM_LINESTR)
+#    define TIMEMORY_TIM_LINESTR TIMEMORY_STRINGIZE(__LINE__)
 #endif
 
 //--------------------------------------------------------------------------------------//

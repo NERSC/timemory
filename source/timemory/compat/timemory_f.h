@@ -22,32 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <timemory/library.h>
-#include <timemory/variadic/macros.hpp>
-
-#define LABEL(...) TIMEMORY_LABEL(__VA_ARGS__)
-
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
-
-int main(int argc, char** argv)
-{
-    long nfib = (argc > 1) ? atol(argv[1]) : 43;
-
-    timemory_init_library(argc, argv);
-
-    uint64_t id0 = timemory_get_begin_record("main/total");
-    long     ans = fib(nfib);
-
-    uint64_t id1 = timemory_get_begin_record("nested");
-    ans += fib(nfib + 1);
-
-    timemory_end_record(id1);
-    timemory_end_record(id0);
-
-    printf("Answer = %li\n", ans);
-    timemory_finalize_library();
-    return EXIT_SUCCESS;
-}
+#pragma once

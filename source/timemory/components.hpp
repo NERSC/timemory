@@ -87,7 +87,7 @@
 //
 //======================================================================================//
 
-#include "timemory/ctimemory.h"
+#include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 
 #include <algorithm>

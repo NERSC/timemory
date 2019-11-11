@@ -65,9 +65,6 @@ class component_list
 {
     static const std::size_t num_elements = sizeof...(Types);
 
-    // empty init for friends
-    explicit component_list() {}
-
     // manager is friend so can use above
     friend class manager;
 
@@ -179,6 +176,8 @@ public:
     // clang-format on
 
 public:
+    component_list();
+
     explicit component_list(const string_t& key, const bool& store = false,
                             const bool& flat = settings::flat_profile());
 

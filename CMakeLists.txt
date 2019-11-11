@@ -32,6 +32,14 @@ string(REGEX REPLACE "(\n|\r)" "" FULL_VERSION_STRING "${FULL_VERSION_STRING}")
 string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${FULL_VERSION_STRING}")
 set(TIMEMORY_VERSION "${VERSION_STRING}")
 message(STATUS "timemory version ${TIMEMORY_VERSION} (${FULL_VERSION_STRING})")
+set(TIMEMORY_VERSION_STRING "${FULL_VERSION_STRING}")
+string(REPLACE "." ";" VERSION_LIST "${VERSION_STRING}")
+LIST(GET VERSION_LIST 0 TIMEMORY_VERSION_MAJOR)
+LIST(GET VERSION_LIST 1 TIMEMORY_VERSION_MINOR)
+LIST(GET VERSION_LIST 2 TIMEMORY_VERSION_PATCH)
+
+math(EXPR TIMEMORY_VERSION_CODE
+    "${TIMEMORY_VERSION_MAJOR} * 10000 + ${TIMEMORY_VERSION_MINOR} * 100 + ${TIMEMORY_VERSION_PATCH}")
 
 #----------------------------------------------------------------------------------------#
 #   setup.py
@@ -46,6 +54,9 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
+
+configure_file(${PROJECT_SOURCE_DIR}/source/timemory/version.h.in
+    ${PROJECT_SOURCE_DIR}/source/timemory/version.h)
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MASTER_PROJECT ON)

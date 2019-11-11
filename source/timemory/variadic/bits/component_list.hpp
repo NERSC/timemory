@@ -42,6 +42,17 @@
 namespace tim
 {
 template <typename... Types>
+component_list<Types...>::component_list()
+: m_store(false)
+, m_flat(false)
+, m_laps(0)
+, m_hash(0)
+, m_key("")
+{
+    apply<void>::set_value(m_data, nullptr);
+}
+
+template <typename... Types>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
                                          const bool& flat)
 : m_store(store && settings::enabled())

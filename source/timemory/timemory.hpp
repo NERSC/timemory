@@ -156,7 +156,7 @@ struct dummy
 #    include "timemory/variadic/auto_timer.hpp"
 #    include "timemory/variadic/macros.hpp"
 
-#    include "timemory/ctimemory.h"
+#    include "timemory/enum.h"
 
 // definitions of types
 #    include "timemory/bits/timemory.hpp"

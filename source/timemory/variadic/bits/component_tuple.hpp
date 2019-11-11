@@ -43,6 +43,18 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
+inline component_tuple<Types...>::component_tuple()
+: m_store(false)
+, m_flat(false)
+, m_laps(0)
+, m_hash(0)
+, m_key("")
+{
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
 inline component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
                                                   const bool& flat)
 : m_store(store && settings::enabled())

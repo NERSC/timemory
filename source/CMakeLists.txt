@@ -18,13 +18,13 @@ file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*
 file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.icpp)
+file(GLOB compat_headers            ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.h
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.hpp)
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
-file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
-file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/library.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/init.cpp
+file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp
                                     ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
 
 # bits folder
@@ -42,7 +42,7 @@ set(timemory_headers
     ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
     ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_extern}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
-    ${cxx_headers_category_bits})
+    ${cxx_headers_category_bits} ${compat_headers})
 
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
@@ -76,9 +76,9 @@ if(WIN32)
 endif()
 
 set(_LINKER_LANGUAGE CXX)
-if(TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUPTI)
-    set(_LINKER_LANGUAGE CUDA)
-endif()
+#if(TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUPTI)
+#    set(_LINKER_LANGUAGE CUDA)
+#endif()
 
 if(_BUILD_SHARED_CXX)
     build_library(

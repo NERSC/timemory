@@ -63,9 +63,6 @@ namespace tim
 template <typename... Types>
 class component_tuple
 {
-    // empty init for friends
-    explicit component_tuple() {}
-
     // manager is friend so can use above
     friend class manager;
 
@@ -167,6 +164,8 @@ public:
     // clang-format on
 
 public:
+    component_tuple();
+
     explicit component_tuple(const string_t& key, const bool& store = false,
                              const bool& flat = settings::flat_profile());
     explicit component_tuple(const captured_location_t& loc, const bool& store = false,

@@ -22,32 +22,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <timemory/library.h>
-#include <timemory/variadic/macros.hpp>
+#pragma once
 
-#define LABEL(...) TIMEMORY_LABEL(__VA_ARGS__)
+#define _TIM_STRINGIZE(X) _TIM_STRINGIZE2(X)
+#define _TIM_STRINGIZE2(X) #X
+#define _TIM_VAR_NAME_COMBINE(X, Y) X##Y
+#define _TIM_VARIABLE(Y) _TIM_VAR_NAME_COMBINE(timemory_variable_, Y)
+#define _TIM_TYPEDEF(Y) _TIM_VAR_NAME_COMBINE(timemory_typedef_, Y)
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+#define _TIM_LINESTR _TIM_STRINGIZE(__LINE__)
 
-int main(int argc, char** argv)
-{
-    long nfib = (argc > 1) ? atol(argv[1]) : 43;
+#if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
+#    define _TIM_FUNC __PRETTY_FUNCTION__
+#else
+#    define _TIM_FUNC __FUNCTION__
+#endif
 
-    timemory_init_library(argc, argv);
+#if defined(DISABLE_TIMEMORY)
 
-    uint64_t id0 = timemory_get_begin_record("main/total");
-    long     ans = fib(nfib);
+#    define TIMEMORY_SPRINTF(...)
 
-    uint64_t id1 = timemory_get_begin_record("nested");
-    ans += fib(nfib + 1);
+#else
+#    if defined(__cplusplus)
+#        define TIMEMORY_SPRINTF(VAR, LEN, FMT, ...)                                     \
+            std::unique_ptr<char> VAR_PTR = std::unique_ptr<char>(new char[LEN]);        \
+            char*                 VAR     = VAR_PTR.get();                               \
+            sprintf(VAR, FMT, __VA_ARGS__);
+#    else
+#        define TIMEMORY_SPRINTF(VAR, LEN, FMT, ...)                                     \
+            char VAR[LEN];                                                               \
+            sprintf(VAR, FMT, __VA_ARGS__);
+#    endif
 
-    timemory_end_record(id1);
-    timemory_end_record(id0);
-
-    printf("Answer = %li\n", ans);
-    timemory_finalize_library();
-    return EXIT_SUCCESS;
-}
+#endif

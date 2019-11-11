@@ -22,32 +22,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <timemory/library.h>
-#include <timemory/variadic/macros.hpp>
+#pragma once
 
-#define LABEL(...) TIMEMORY_LABEL(__VA_ARGS__)
+#if defined(__cplusplus)
+#    include "timemory/timemory.hpp"
+#else
+#    include "timemory/compat/timemory_c.h"
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+#    define TIMEMORY_SETTINGS_INIT TIMEMORY_C_SETTINGS_INIT
+#    define TIMEMORY_INIT(...) TIMEMORY_C_INIT(__VA_ARGS__)
 
-int main(int argc, char** argv)
-{
-    long nfib = (argc > 1) ? atol(argv[1]) : 43;
+#    define TIMEMORY_AUTO_LABEL(...) TIMEMORY_C_AUTO_LABEL(__VA_ARGS__)
 
-    timemory_init_library(argc, argv);
+#    define TIMEMORY_BLANK_AUTO_TIMER(...) TIMEMORY_C_BLANK_AUTO_TIMER(__VA_ARGS__)
+#    define TIMEMORY_BASIC_AUTO_TIMER(...) TIMEMORY_C_BASIC_AUTO_TIMER(__VA_ARGS__)
+#    define TIMEMORY_AUTO_TIMER(...) TIMEMORY_C_AUTO_TIMER(__VA_ARGS__)
+#    define FREE_TIMEMORY_AUTO_TIMER(...) FREE_TIMEMORY_C_AUTO_TIMER(__VA_ARGS__)
 
-    uint64_t id0 = timemory_get_begin_record("main/total");
-    long     ans = fib(nfib);
+#    define TIMEMORY_BLANK_MARKER(...) TIMEMORY_C_BLANK_MARKER(__VA_ARGS__)
+#    define TIMEMORY_BASIC_MARKER(...) TIMEMORY_C_BASIC_MARKER(__VA_ARGS__)
+#    define TIMEMORY_MARKER(...) TIMEMORY_C_MARKER(__VA_ARGS__)
+#    define FREE_TIMEMORY_MARKER(...) FREE_TIMEMORY_C_MARKER(__VA_ARGS__)
 
-    uint64_t id1 = timemory_get_begin_record("nested");
-    ans += fib(nfib + 1);
-
-    timemory_end_record(id1);
-    timemory_end_record(id0);
-
-    printf("Answer = %li\n", ans);
-    timemory_finalize_library();
-    return EXIT_SUCCESS;
-}
+#endif

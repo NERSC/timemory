@@ -59,7 +59,7 @@ extern template struct base<thread_cpu_util, std::pair<int64_t, int64_t>>;
 //--------------------------------------------------------------------------------------//
 // the system's real time (i.e. wall time) clock, expressed as the amount of time since
 // the epoch.
-struct real_clock : public base<real_clock>
+struct real_clock : public base<real_clock, int64_t>
 {
     using ratio_t    = std::nano;
     using value_type = int64_t;
@@ -69,14 +69,12 @@ struct real_clock : public base<real_clock>
     static std::string description() { return "wall time"; }
     static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
-    double get_display() const
+    double get_display() const { return get(); }
+    double get() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return static_cast<double>(val) / ratio_t::den * get_unit();
     }
-
-    double get() const { return get_display(); }
 
     void start()
     {

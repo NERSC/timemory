@@ -238,6 +238,23 @@ public:
         get_shared_manager();
         component::properties<ObjectType>::has_storage() = true;
         // check_consistency();
+        static std::atomic<int32_t> _skip_once;
+        if(_skip_once++ > 0)
+        {
+            auto               _master       = singleton_t::master_instance();
+            graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
+            graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
+            for(const auto& itr : _hash_ids)
+            {
+                if(m_hash_ids->find(itr.first) == m_hash_ids->end())
+                    m_hash_ids->insert({ itr.first, itr.second });
+            }
+            for(const auto& itr : _hash_aliases)
+            {
+                if(m_hash_aliases->find(itr.first) == m_hash_aliases->end())
+                    m_hash_aliases->insert({ itr.first, itr.second });
+            }
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -252,22 +269,6 @@ public:
 
         delete m_graph_data_instance;
         m_graph_data_instance = nullptr;
-        if(!singleton_t::is_master(this))
-        {
-            auto               _master       = singleton_t::master_instance();
-            graph_hash_map_t   _hash_ids     = *_master->get_hash_ids().get();
-            graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases().get();
-            for(const auto& itr : _hash_ids)
-            {
-                if(m_hash_ids->find(itr.first) == m_hash_ids->end())
-                    m_hash_ids->insert({ itr.first, itr.second });
-            }
-            for(const auto& itr : _hash_aliases)
-            {
-                if(m_hash_aliases->find(itr.first) == m_hash_aliases->end())
-                    m_hash_aliases->insert({ itr.first, itr.second });
-            }
-        }
     }
 
     //----------------------------------------------------------------------------------//

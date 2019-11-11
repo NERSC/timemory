@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <timemory/ctimemory.h>
+#include <timemory/timemory.h>
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
 
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
-    void* t0  = TIMEMORY_AUTO_TIMER("_total");
+    void* t0  = TIMEMORY_AUTO_TIMER("total");
     long  ans = fib(nfib);
 
     void* t1 = TIMEMORY_BLANK_AUTO_TIMER("nested");

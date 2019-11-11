@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "timemory/bits/ctimemory.h"
 #include "timemory/bits/settings.hpp"
+#include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 
 #include <array>
@@ -63,25 +63,77 @@ struct properties
 
 }  // namespace component
 
+//======================================================================================//
+// generate a master instance and a nullptr on the first pass
+// generate a worker instance on subsequent and return master and worker
+//
+template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
+          typename _Pair = std::pair<_Ptr, _Ptr>>
+_Pair&
+get_shared_ptr_pair()
+{
+    static auto              _master = std::make_shared<_Tp>();
+    static std::atomic<int>  _counter;
+    static thread_local auto _worker   = _Ptr((_counter++ == 0) ? nullptr : new _Tp());
+    static thread_local auto _instance = _Pair{ _master, _worker };
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
+          typename _Pair = std::pair<_Ptr, _Ptr>>
+_Ptr
+get_shared_ptr_pair_instance()
+{
+    static thread_local auto& _pinst = get_shared_ptr_pair<_Tp>();
+    static thread_local auto& _inst  = _pinst.second.get() ? _pinst.second : _pinst.first;
+    return _inst;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
+          typename _Pair = std::pair<_Ptr, _Ptr>>
+_Ptr
+get_shared_ptr_pair_master_instance()
+{
+    static auto& _pinst = get_shared_ptr_pair<_Tp>();
+    return _pinst.first;
+}
+
 //--------------------------------------------------------------------------------------//
 //
 //  hash storage and source_location
 //
 //--------------------------------------------------------------------------------------//
 
-using hash_result_type       = std::hash<std::string>::result_type;
-using graph_hash_map_t       = std::unordered_map<hash_result_type, std::string>;
-using graph_hash_alias_t     = std::unordered_map<hash_result_type, hash_result_type>;
-using graph_hash_map_ptr_t   = std::shared_ptr<graph_hash_map_t>;
-using graph_hash_alias_ptr_t = std::shared_ptr<graph_hash_alias_t>;
+using hash_result_type          = std::hash<std::string>::result_type;
+using graph_hash_map_t          = std::unordered_map<hash_result_type, std::string>;
+using graph_hash_alias_t        = std::unordered_map<hash_result_type, hash_result_type>;
+using graph_hash_map_ptr_t      = std::shared_ptr<graph_hash_map_t>;
+using graph_hash_map_ptr_pair_t = std::pair<graph_hash_map_ptr_t, graph_hash_map_ptr_t>;
+using graph_hash_alias_ptr_t    = std::shared_ptr<graph_hash_alias_t>;
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_EXTERN_INIT)
+
+extern graph_hash_map_ptr_t
+get_hash_ids();
+
+extern graph_hash_alias_ptr_t
+get_hash_aliases();
+
+#else
 
 //--------------------------------------------------------------------------------------//
 
 inline graph_hash_map_ptr_t
 get_hash_ids()
 {
-    static thread_local auto _pointer = std::make_shared<graph_hash_map_t>();
-    return _pointer;
+    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_map_t>();
+    return _inst;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -89,9 +141,11 @@ get_hash_ids()
 inline graph_hash_alias_ptr_t
 get_hash_aliases()
 {
-    static thread_local auto _pointer = std::make_shared<graph_hash_alias_t>();
-    return _pointer;
+    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_alias_t>();
+    return _inst;
 }
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -102,8 +156,8 @@ add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
         if(settings::debug())
-            printf("[%s@'%s':%i]> adding hash id: %s...\n", __FUNCTION__, __FILE__,
-                   __LINE__, prefix.c_str());
+            printf("[%s@'%s':%i]> adding hash id: %s = %llu...\n", __FUNCTION__, __FILE__,
+                   __LINE__, prefix.c_str(), (long long unsigned) _hash_id);
 
         (*_hash_map)[_hash_id] = prefix;
         if(_hash_map->bucket_count() < _hash_map->size())
@@ -195,8 +249,8 @@ get_hash_identifier(hash_result_type _hash_id)
 class source_location
 {
 public:
-    using join_type       = apply<std::string>;
-    using result_type     = std::tuple<std::string, size_t>;
+    using join_type   = apply<std::string>;
+    using result_type = std::tuple<std::string, size_t>;
 
 public:
     //
@@ -410,7 +464,7 @@ private:
         ::tim::source_location::get_captured_inline(                                     \
             TIMEMORY_CAPTURE_MODE(MODE), __FUNCTION__, __LINE__, __FILE__, __VA_ARGS__)
 
-#    define TIMEMORY_STATIC_SOURCE_LOCATION(MODE, ...)                                   \
+#    define _TIM_STATIC_SRC_LOCATION(MODE, ...)                                          \
         static thread_local auto _AUTO_LOCATION(__LINE__) =                              \
             TIMEMORY_SOURCE_LOCATION(TIMEMORY_CAPTURE_MODE(MODE), __VA_ARGS__)
 

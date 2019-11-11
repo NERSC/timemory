@@ -57,6 +57,7 @@ try:
     from . import options
     from . import units
     from . import signals
+    from .common import *
     from .libpytimemory import *
 
     __all__ = ['version_info',
@@ -109,6 +110,7 @@ except Exception as e:
 
     from . import mpi_support
     from . import roofline
+    from .common import *
 
     __all__ = ['version_info',
                'build_info',
@@ -116,6 +118,10 @@ except Exception as e:
                # --------------- modules ---------------#
                'mpi_support',
                'roofline',
+               # --------------- functions -------------#
+               'LINE',
+               'FUNC',
+               'FILE',
                ]
 
 sys.modules[__name__].__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@, @TIMEMORY_VERSION_MINOR@, @TIMEMORY_VERSION_PATCH@))

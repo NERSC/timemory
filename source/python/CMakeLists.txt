@@ -35,7 +35,6 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-headers
     timemory-cxx-shared
     timemory-compile-options
-    timemory-develop-options
     timemory-external-shared
     timemory-python-compile-options
     PRIVATE pybind11::module)
@@ -129,7 +128,7 @@ configure_file(${PROJECT_SOURCE_DIR}/timemory/__init__.py.in
 install(FILES ${CMAKE_BINARY_DIR}/timemory/__init__.py
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 
-foreach(PYLIB_SUBMODULE options units signals)
+foreach(PYLIB_SUBMODULE common options signals units)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/${PYLIB_SUBMODULE}.py
         ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py

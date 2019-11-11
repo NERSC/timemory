@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file bits/ctimemory.h
- * \headerfile bits/ctimemory.h "timemory/bits/ctimemory.h"
+/** \file enum.h
+ * \headerfile enum.h "timemory/enum.h"
  * This provides the core enumeration for components
  *
  */
@@ -79,6 +79,22 @@
 #        endif
 #    else
 #        define tim_api
+#    endif
+#endif
+
+//======================================================================================//
+//
+//      Windows DLL settings
+//
+//======================================================================================//
+
+#if !defined(_WINDOWS)
+#    if defined(__clang__) && defined(__APPLE__)
+#        define TIMEMORY_WEAK_PREFIX
+#        define TIMEMORY_WEAK_POSTFIX __attribute__((weak_import))
+#    else
+#        define TIMEMORY_WEAK_PREFIX __attribute__((weak))
+#        define TIMEMORY_WEAK_POSTFIX
 #    endif
 #endif
 

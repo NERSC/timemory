@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
-    TIMEMORY_AUTO_TIMER("_total");
+    TIMEMORY_AUTO_TIMER("total");
     long ans = fib(nfib);
 
     TIMEMORY_BLANK_AUTO_TIMER("nested");

@@ -62,9 +62,6 @@ class component_hybrid
 
     static const std::size_t num_elements = _CompTuple::size() + _CompList::size();
 
-    // empty init for friends
-    explicit component_hybrid() = default;
-
     // manager is friend so can use above
     friend class manager;
 
@@ -106,6 +103,12 @@ public:
     using captured_location_t = source_location::captured;
 
 public:
+    explicit component_hybrid()
+    : m_tuple()
+    , m_list()
+    {
+    }
+
     explicit component_hybrid(const string_t& key, const bool& store = false,
                               const bool& flat = settings::flat_profile())
     : m_tuple(key, store, flat)

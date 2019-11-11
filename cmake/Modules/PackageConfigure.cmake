@@ -28,6 +28,11 @@ if(TIMEMORY_BUILD_PYTHON)
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 
+set(_PATH_VARS INCLUDE_INSTALL_DIR)
+if(NOT TIMEMORY_SKIP_BUILD)
+    list(APPEND _PATH_VARS LIB_INSTALL_DIR)
+endif()
+
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config.cmake.in
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake

@@ -397,6 +397,14 @@ def run_pyctest():
                   "LABELS": pyctest.PROJECT_NAME,
                   "TIMEOUT": "300"})
 
+    pyctest.test(construct_name("test-caliper-python"),
+                 construct_command(
+                     [sys.executable, "./ex_python_caliper"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300",
+                  "ENVIRONMENT": "CALI_CONFIG_PROFILE=runtime-report"})
+
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
     pyctest.generate_test_file(os.path.join(pyctest.BINARY_DIRECTORY, "tests"))
     pyctest.run(pyctest.ARGUMENTS, pyctest.BINARY_DIRECTORY)

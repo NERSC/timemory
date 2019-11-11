@@ -109,8 +109,6 @@ public:
     static void exit_hook();
 
 private:
-    static pointer_pair_t& instance_pair();
-
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
@@ -317,31 +315,9 @@ private:
 
 private:
     /// num-threads based on number of managers created
-    static std::atomic<int32_t>& f_thread_counter()
-    {
-        static std::atomic<int32_t> _instance;
-        return _instance;
-    }
+    static std::atomic<int32_t>& f_thread_counter();
 };
 
-//======================================================================================//
-
-namespace details
-{
-//--------------------------------------------------------------------------------------//
-
-}  // namespace details
-/*
-template <typename... _Types>
-struct manager::initialize<std::tuple<_Types...>>
-{
-    static void storage()
-    {
-        manager* _manager = manager::instance();
-        _manager->initialize_storage<_Types...>();
-    }
-};
-*/
 //======================================================================================//
 
 }  // namespace tim
@@ -371,51 +347,3 @@ struct manager::initialize<std::tuple<_Types...>>
 #endif
 
 //--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_EXTERN_INIT)
-/*
-//--------------------------------------------------------------------------------------//
-
-#include "timemory/bits/timemory.hpp"
-
-//--------------------------------------------------------------------------------------//
-//
-static void
-timemory_library_constructor() __library_ctor__;
-
-//--------------------------------------------------------------------------------------//
-//
-void
-timemory_library_constructor()
-{
-#if defined(DEBUG)
-    auto _debug   = tim::settings::debug();
-    auto _verbose = tim::settings::verbose();
-#endif
-
-#if defined(DEBUG)
-    if(_debug || _verbose > 3)
-        printf("[%s]> initializing manager...\n", __FUNCTION__);
-#endif
-
-    // fully initialize manager
-    auto _master   = tim::manager::master_instance();
-    auto _instance = tim::manager::instance();
-
-    if(_instance != _master)
-        printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
-               (void*) _instance, (void*) _master);
-
-#if defined(DEBUG)
-    if(_debug || _verbose > 3)
-        printf("[%s]> initializing storage...\n", __FUNCTION__);
-#endif
-
-    // initialize storage
-    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    tim::manager::get_storage<tuple_type>::initialize(_instance);
-}
-
-//--------------------------------------------------------------------------------------//
-*/
-#endif

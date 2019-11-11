@@ -39,38 +39,38 @@ using namespace tim::component;
 #if defined(TIMEMORY_EXTERN_INIT)
 
 //======================================================================================//
-
-__library_ctor__ void
-timemory_library_constructor()
+extern "C"
 {
+    __library_ctor__ void timemory_library_constructor()
+    {
 #    if defined(DEBUG)
-    auto _debug   = tim::settings::debug();
-    auto _verbose = tim::settings::verbose();
+        auto _debug   = tim::settings::debug();
+        auto _verbose = tim::settings::verbose();
 #    endif
 
 #    if defined(DEBUG)
-    if(_debug || _verbose > 3)
-        printf("[%s]> initializing manager...\n", __FUNCTION__);
+        if(_debug || _verbose > 3)
+            printf("[%s]> initializing manager...\n", __FUNCTION__);
 #    endif
 
-    // fully initialize manager
-    static thread_local auto _instance = tim::manager::instance();
-    static auto              _master   = tim::manager::master_instance();
+        // fully initialize manager
+        static thread_local auto _instance = tim::manager::instance();
+        static auto              _master   = tim::manager::master_instance();
 
-    if(_instance != _master)
-        printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
-               (void*) _instance.get(), (void*) _master.get());
+        if(_instance != _master)
+            printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
+                   (void*) _instance.get(), (void*) _master.get());
 
 #    if defined(DEBUG)
-    if(_debug || _verbose > 3)
-        printf("[%s]> initializing storage...\n", __FUNCTION__);
+        if(_debug || _verbose > 3)
+            printf("[%s]> initializing storage...\n", __FUNCTION__);
 #    endif
 
-    // initialize storage
-    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    tim::manager::get_storage<tuple_type>::initialize(_master);
+        // initialize storage
+        using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+        tim::manager::get_storage<tuple_type>::initialize(_master);
+    }
 }
-
 //======================================================================================//
 
 namespace tim
@@ -89,23 +89,17 @@ env_settings::instance()
 std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
-    static std::atomic<int32_t> instance;
-    return instance;
+    static std::atomic<int32_t> _instance;
+    return _instance;
 }
 
 //======================================================================================//
-// generate a master instance and a nullptr on the first pass
-// generate a worker instance on subsequent and return master and worker
+// number of threads counter
 //
-manager::pointer_pair_t&
-manager::instance_pair()
+std::atomic<int32_t>&
+manager::f_thread_counter()
 {
-    static auto              _master_instance = std::make_shared<manager>();
-    static std::atomic<int>  _counter;
-    static thread_local auto _worker_instance =
-        pointer_t((_counter++ == 0) ? nullptr : new manager());
-    static thread_local auto _instance =
-        pointer_pair_t{ _master_instance, _worker_instance };
+    static std::atomic<int32_t> _instance;
     return _instance;
 }
 
@@ -115,10 +109,8 @@ manager::instance_pair()
 manager::pointer_t
 manager::instance()
 {
-    static thread_local auto& _pinst = manager::instance_pair();
-    static thread_local auto& _instance =
-        _pinst.second.get() ? _pinst.second : _pinst.first;
-    return _instance;
+    static thread_local auto _inst = get_shared_ptr_pair_instance<manager>();
+    return _inst;
 }
 
 //======================================================================================//
@@ -127,11 +119,37 @@ manager::instance()
 manager::pointer_t
 manager::master_instance()
 {
-    static auto& _pinst = manager::instance_pair();
-    return _pinst.first;
+    static auto _pinst = get_shared_ptr_pair_master_instance<manager>();
+    return _pinst;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+graph_hash_map_ptr_t
+get_hash_ids()
+{
+    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_map_t>();
+    return _inst;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+graph_hash_alias_ptr_t
+get_hash_aliases()
+{
+    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_alias_t>();
+    return _inst;
 }
 
 }  // namespace tim
+
+//======================================================================================//
+//
+//      Static accessors
+//
+//======================================================================================//
 
 using string_t = std::string;
 
