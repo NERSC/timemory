@@ -301,7 +301,7 @@ public:
                 case mode::blank:
                 {
                     auto&& _tmp = join_type::join("", std::forward<_Args>(_args)...);
-                    m_result    = { _tmp, add_hash_id(_tmp) };
+                    m_result    = result_type(_tmp, add_hash_id(_tmp));
                     break;
                 }
                 case mode::basic:
@@ -309,7 +309,7 @@ public:
                 {
                     auto&& _suffix = join_type::join("", std::forward<_Args>(_args)...);
                     auto   _tmp    = join_type::join("/", obj.m_prefix.c_str(), _suffix);
-                    m_result       = { _tmp, add_hash_id(_tmp) };
+                    m_result       = result_type(_tmp, add_hash_id(_tmp));
                     break;
                 }
             }

@@ -400,7 +400,8 @@ private:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope>
+    template <typename _Scope, typename _Up = this_type,
+              enable_if_t<(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
     {
         if(!is_on_stack)
@@ -415,9 +416,16 @@ private:
         }
     }
 
+    template <typename _Scope, typename _Up = this_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    void insert_node(const _Scope&, const int64_t&)
+    {
+    }
+
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
+    template <typename _Up = this_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     void pop_node()
     {
         if(is_on_stack)
@@ -437,6 +445,12 @@ private:
             auto _end_depth = _storage->depth();
             depth_change    = (_beg_depth > _end_depth);
         }
+    }
+
+    template <typename _Up = this_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    void pop_node()
+    {
     }
 
     //----------------------------------------------------------------------------------//

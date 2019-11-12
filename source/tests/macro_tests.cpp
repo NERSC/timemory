@@ -117,13 +117,13 @@ TEST_F(macro_tests, blank_marker)
 
 TEST_F(macro_tests, basic_marker)
 {
-    TIMEMORY_BASIC_MARKER(auto_tuple_t, "_", details::get_test_name());
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
     timemory_variable_120.stop();
     auto              key = timemory_variable_120.key();
     std::stringstream expected;
-    expected << __FUNCTION__ << "_" << details::get_test_name();
+    expected << __FUNCTION__ << "/" << details::get_test_name();
     if(key != expected.str())
     {
         std::cout << std::endl;
@@ -142,7 +142,7 @@ TEST_F(macro_tests, basic_marker)
 
 TEST_F(macro_tests, marker)
 {
-    TIMEMORY_MARKER(auto_tuple_t, "_", details::get_test_name());
+    TIMEMORY_MARKER(auto_tuple_t, details::get_test_name());
     auto line = __LINE__ - 1;
     details::do_sleep(25);
     details::consume(75);
@@ -151,8 +151,8 @@ TEST_F(macro_tests, marker)
     std::stringstream expected;
     std::string       file = __FILE__;
     file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
-    expected << __FUNCTION__ << "_" << details::get_test_name() << "@'" << file
-             << "':" << line;
+    expected << __FUNCTION__ << "/" << file << ":" << line << "/"
+             << details::get_test_name();
     if(key != expected.str())
     {
         std::cout << std::endl;
