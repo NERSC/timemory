@@ -2239,7 +2239,7 @@ graph<T, AllocatorT>::reduce(const sibling_iterator&     lhs, const sibling_iter
             if(_compare(litr, ritr))
             {
                 pre_order_iterator pritr(ritr);
-                printf("\n");
+                // printf("\n");
                 // pre_order_iterator critr = pritr.begin();
                 // auto aitr = append_child(litr, critr);
                 auto aitr = insert_subgraph_after(litr, pritr);
