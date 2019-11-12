@@ -1021,6 +1021,7 @@ public:
     // there is always a head node that should not be counted
     //
     inline size_t size() const { return 0; }
+    inline size_t depth() const { return 0; }
 
     //----------------------------------------------------------------------------------//
     //
