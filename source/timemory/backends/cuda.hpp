@@ -496,7 +496,11 @@ malloc(size_t n)
     void* arr;
     CUDA_RUNTIME_API_CALL(cudaMalloc(&arr, n * sizeof(_Tp)));
     if(!arr)
+    {
+        unsigned long long sz = n * sizeof(_Tp);
+        fprintf(stderr, "cudaMalloc unable to allocate %llu bytes\n", sz);
         throw std::bad_alloc();
+    }
     return static_cast<_Tp*>(arr);
 #else
     consume_parameters(n);
@@ -515,7 +519,11 @@ malloc_host(size_t n)
     void* arr;
     CUDA_RUNTIME_API_CALL(cudaMallocHost(&arr, n * sizeof(_Tp)));
     if(!arr)
+    {
+        unsigned long long sz = n * sizeof(_Tp);
+        fprintf(stderr, "cudaMallocHost unable to allocate %llu bytes\n", sz);
         throw std::bad_alloc();
+    }
     return static_cast<_Tp*>(arr);
 #else
     return new _Tp[n];

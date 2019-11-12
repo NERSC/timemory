@@ -1391,7 +1391,12 @@ static void CUPTIAPI
 {
     uint8_t* bfr = (uint8_t*) malloc(CUPTI_BUFFER_SIZE + CUPTI_ALIGN_SIZE);
     if(bfr == nullptr)
+    {
+        unsigned long long sz = CUPTI_BUFFER_SIZE + CUPTI_ALIGN_SIZE;
+        fprintf(stderr, "[%s:%s:%i]> malloc unable to allocate %llu bytes\n",
+                __FUNCTION__, __FILE__, __LINE__, sz);
         throw std::bad_alloc();
+    }
 
     *size          = CUPTI_BUFFER_SIZE;
     *buffer        = CUPTI_ALIGN_BUFFER(bfr, CUPTI_ALIGN_SIZE);
