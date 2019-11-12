@@ -31,9 +31,6 @@
 #    include "timemory/backends/cupti.hpp"
 #endif
 
-extern "C" void
-timemory_library_constructor();
-
 //======================================================================================//
 //  Python wrappers
 //======================================================================================//
@@ -314,7 +311,6 @@ PYBIND11_MODULE(libpytimemory, tim)
                 std::strcpy(_argv, _str.c_str());
                 tim::timemory_init(1, &_argv, _prefix, _suffix);
                 delete[] _argv;
-                timemory_library_constructor();
             },
             "Parse the environment and use argv[0] to set output path",
             py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
