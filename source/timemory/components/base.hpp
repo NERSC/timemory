@@ -469,6 +469,13 @@ private:
         return properties_t::has_storage();
     }
 
+    template <typename _Up = _Tp, typename _Vp = _Value,
+              enable_if_t<!(implements_storage<_Up, _Vp>::value), int> = 0>
+    bool init_storage()
+    {
+        return true;
+    }
+
     //----------------------------------------------------------------------------------//
     // create an instance without calling constructor
     //
