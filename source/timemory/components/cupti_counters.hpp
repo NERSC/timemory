@@ -550,10 +550,13 @@ private:
                 arr.push_back(entry);
         };
         auto profiler = get_profiler();
-        for(const auto& itr : profiler->get_event_names())
-            insert(itr);
-        for(const auto& itr : profiler->get_metric_names())
-            insert(itr);
+        if(profiler)
+        {
+            for(const auto& itr : profiler->get_event_names())
+                insert(itr);
+            for(const auto& itr : profiler->get_metric_names())
+                insert(itr);
+        }
         return arr;
     }
 
@@ -614,10 +617,13 @@ private:
                     _used_evts.insert(itr);
                 for(const auto& itr : _met)
                     _used_mets.insert(itr);
+                _labels = generate_labels();
             }
+        } else
+        {
+            fprintf(stderr, "[cupti_counters]> Warning! No devices available!");
         }
 
-        _labels = generate_labels();
         if(_used_devs.size() > 0)
         {
             if(settings::verbose() > 0 || settings::debug())
@@ -664,7 +670,10 @@ inline cupti_counters::tuple_type
 cupti_counters::get_available(const tuple_type& _init, int devid)
 {
     if(devid < 0 || devid >= cuda::device_count())
+    {
+        fprintf(stderr, "[cupti_counters]> Invalid device id: %i...\n", devid);
         return tuple_type(-1, strvec_t(), strvec_t());
+    }
 
     // handle events
     strvec_t    _events       = std::get<1>(_init);
@@ -705,8 +714,7 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
                    std::end(_metrics));
 
     // determine total
-    auto ntot = _events.size() + _metrics.size();
-    return tuple_type((ntot == 0) ? -1 : devid, _events, _metrics);
+    return tuple_type(devid, _events, _metrics);
 }
 
 //--------------------------------------------------------------------------------------//

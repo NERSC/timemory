@@ -57,6 +57,7 @@ def parse_args(add_run_args=False):
     parser.add_argument("-P", "--plot-dimensions", type=int,
                         help="Image dimensions: Width, Height, DPI",
                         default=[1600, 1200, 90], nargs=3)
+    parser.add_argument("-R", "--rank", type=int, help="MPI Rank", default=None)
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
@@ -180,16 +181,17 @@ def run(args, cmd):
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)
 
+    _rank = "" if args.rank is None else "_{}".format(args.rank)
     if "gpu_roofline" in args.rtype:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_activity.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_activity{}.json".format(output_prefix, args.rtype, _rank))
         args.operations = os.path.join(
-            output_path, "{}{}_counters.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_counters{}.json".format(output_prefix, args.rtype, _rank))
     else:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_ai{}.json".format(output_prefix, args.rtype, _rank))
         args.operations = os.path.join(
-            output_path, "{}{}_op.json".format(output_prefix, args.rtype))
+            output_path, "{}{}_op{}.json".format(output_prefix, args.rtype, _rank))
 
 
 if __name__ == "__main__":

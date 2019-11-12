@@ -364,11 +364,11 @@ storage<ObjectType, true>::merge(this_type* itr)
     using sibling_iterator   = typename graph_t::sibling_iterator;
 
     auto _compare = [](itr_t lhs, itr_t rhs) {
-        std::cout << "comparing [" << *lhs << "] == [" << *rhs << "]" << std::endl;
+        // std::cout << "comparing [" << *lhs << "] == [" << *rhs << "]" << std::endl;
         return (*lhs == *rhs);
     };
     auto _reduce = [](itr_t lhs, itr_t rhs) {
-        std::cout << "operation [" << *lhs << "] += [" << *rhs << "]" << std::endl;
+        // std::cout << "operation [" << *lhs << "] += [" << *rhs << "]" << std::endl;
         *lhs += *rhs;
     };
 
