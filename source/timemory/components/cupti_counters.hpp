@@ -190,13 +190,16 @@ struct cupti_counters
     explicit cupti_counters()
     {
         configure();
-        auto& _labels = *_get_labels();
-        value.resize(_labels.size());
-        accum.resize(_labels.size());
-        for(size_type i = 0; i < _labels.size(); ++i)
+        auto* _labels = _get_labels();
+        if(_labels)
         {
-            value[i].name = _labels[i];
-            accum[i].name = _labels[i];
+            value.resize(_labels->size());
+            accum.resize(_labels->size());
+            for(size_type i = 0; i < _labels->size(); ++i)
+            {
+                value[i].name = (*_labels)[i];
+                accum[i].name = (*_labels)[i];
+            }
         }
     }
 
