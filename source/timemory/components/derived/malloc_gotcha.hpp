@@ -491,7 +491,9 @@ private:
     uintmax_t   prefix_hash = string_hash()("");
     uintmax_t   prefix_idx  = std::numeric_limits<uintmax_t>::max();
     std::string prefix      = "";
-    void**      m_last_addr = nullptr;
+#if defined(TIMEMORY_USE_CUDA)
+    void** m_last_addr = nullptr;
+#endif
 };
 
 }  // namespace component

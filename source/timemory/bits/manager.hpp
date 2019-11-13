@@ -102,6 +102,7 @@ inline manager::manager()
     {
         settings::parse();
         papi::init();
+        std::atexit(manager::exit_hook);
     }
 
     if(m_instance_count == 0)
@@ -124,7 +125,6 @@ inline manager::~manager()
        m_instance_count == 0)
     {
         f_thread_counter().store(0, std::memory_order_relaxed);
-        exit_hook();
         if(settings::banner())
             printf(
                 "\n\n#---------------------- tim::manager destroyed [%i] "
@@ -182,8 +182,18 @@ manager::finalize()
 inline void
 manager::exit_hook()
 {
-    papi::shutdown();
-    mpi::finalize();
+    try
+    {
+        if(f_manager_instance_count() > 0)
+        {
+            auto master_manager = get_shared_ptr_pair_master_instance<manager>();
+            master_manager.reset();
+        }
+        papi::shutdown();
+        mpi::finalize();
+    }
+    catch(...)
+    {}
 }
 
 //======================================================================================//

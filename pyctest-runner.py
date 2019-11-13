@@ -12,15 +12,15 @@ import platform
 import traceback
 import warnings
 import multiprocessing as mp
-import pyctest.pyctest as pyctest
+import pyctest.pyctest as pyct
 import pyctest.helpers as helpers
 
 clobber_notes = True
 
 
 #------------------------------------------------------------------------------#
-def get_branch(wd=pyctest.SOURCE_DIRECTORY):
-    cmd = pyctest.command(["git", "show", "-s", "--pretty=%d", "HEAD"])
+def get_branch(wd=pyct.SOURCE_DIRECTORY):
+    cmd = pyct.command(["git", "show", "-s", "--pretty=%d", "HEAD"])
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.SetWorkingDirectory(wd)
     cmd.Execute()
@@ -30,7 +30,7 @@ def get_branch(wd=pyctest.SOURCE_DIRECTORY):
         branch = branch[len(branch)-1]
         branch = branch.strip(")")
     if not branch:
-        branch = pyctest.GetGitBranch(wd)
+        branch = pyct.GetGitBranch(wd)
     return branch
 
 
@@ -89,25 +89,25 @@ def configure():
     args = parser.parse_args()
 
     if os.environ.get("CTEST_SITE") is not None:
-        pyctest.set("CTEST_SITE", "{}".format(os.environ.get("CTEST_SITE")))
+        pyct.set("CTEST_SITE", "{}".format(os.environ.get("CTEST_SITE")))
 
-    if os.path.exists(os.path.join(pyctest.BINARY_DIRECTORY, "CMakeCache.txt")):
+    if os.path.exists(os.path.join(pyct.BINARY_DIRECTORY, "CMakeCache.txt")):
         from pyctest import cmake_executable as cm
         from pyctest import version_info as _pyctest_version
         if (_pyctest_version[0] == 0 and
                 _pyctest_version[1] == 0 and
                 _pyctest_version[2] < 11):
-            cmd = pyctest.command(
-                [cm, "--build", pyctest.BINARY_DIRECTORY, "--target", "clean"])
-            cmd.SetWorkingDirectory(pyctest.BINARY_DIRECTORY)
+            cmd = pyct.command(
+                [cm, "--build", pyct.BINARY_DIRECTORY, "--target", "clean"])
+            cmd.SetWorkingDirectory(pyct.BINARY_DIRECTORY)
             cmd.SetOutputQuiet(True)
             cmd.SetErrorQuiet(True)
             cmd.Execute()
         else:
             from pyctest.cmake import CMake
-            CMake("--build", pyctest.BINARY_DIRECTORY, "--target", "clean")
+            CMake("--build", pyct.BINARY_DIRECTORY, "--target", "clean")
         helpers.RemovePath(os.path.join(
-            pyctest.BINARY_DIRECTORY, "CMakeCache.txt"))
+            pyct.BINARY_DIRECTORY, "CMakeCache.txt"))
 
     if platform.system() != "Linux":
         args.no_papi = True
@@ -133,7 +133,7 @@ def run_pyctest():
     #
     if os.environ.get("CXX") is None:
         os.environ["CXX"] = helpers.FindExePath("c++")
-    cmd = pyctest.command([os.environ["CXX"], "-dumpversion"])
+    cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.Execute()
     compiler_version = cmd.Output()
@@ -141,14 +141,14 @@ def run_pyctest():
     #--------------------------------------------------------------------------#
     # Set the build name
     #
-    pyctest.BUILD_NAME = "{} {} {} {} {} {}".format(
-        get_branch(pyctest.SOURCE_DIRECTORY),
+    pyct.BUILD_NAME = "{} {} {} {} {} {}".format(
+        get_branch(pyct.SOURCE_DIRECTORY),
         platform.uname()[0],
         helpers.GetSystemVersionInfo(),
         platform.uname()[4],
         os.path.basename(os.path.realpath(os.environ["CXX"])),
         compiler_version)
-    pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.split())
+    pyct.BUILD_NAME = '-'.join(pyct.BUILD_NAME.split())
 
     #--------------------------------------------------------------------------#
     #   build specifications
@@ -180,67 +180,67 @@ def run_pyctest():
     }
 
     if not args.no_c:
-        pyctest.BUILD_NAME = "{} C".format(pyctest.BUILD_NAME)
+        pyct.BUILD_NAME = "{} C".format(pyct.BUILD_NAME)
 
     if not args.no_python:
         pyver = "{}.{}.{}".format(
             sys.version_info[0], sys.version_info[1], sys.version_info[2])
-        pyctest.BUILD_NAME = "{} PY-{}".format(pyctest.BUILD_NAME, pyver)
+        pyct.BUILD_NAME = "{} PY-{}".format(pyct.BUILD_NAME, pyver)
 
     if args.extra_optimizations:
-        pyctest.BUILD_NAME = "{} OPT".format(pyctest.BUILD_NAME)
+        pyct.BUILD_NAME = "{} OPT".format(pyct.BUILD_NAME)
 
     if not args.no_mpi:
-        pyctest.BUILD_NAME = "{} MPI".format(pyctest.BUILD_NAME)
+        pyct.BUILD_NAME = "{} MPI".format(pyct.BUILD_NAME)
 
     if not args.no_papi:
-        pyctest.BUILD_NAME = "{} PAPI".format(pyctest.BUILD_NAME)
+        pyct.BUILD_NAME = "{} PAPI".format(pyct.BUILD_NAME)
 
     if args.arch:
-        pyctest.BUILD_NAME = "{} ARCH".format(pyctest.BUILD_NAME)
+        pyct.BUILD_NAME = "{} ARCH".format(pyct.BUILD_NAME)
 
     if args.cuda:
-        pyctest.BUILD_NAME = "{} CUDA".format(pyctest.BUILD_NAME)
+        pyct.BUILD_NAME = "{} CUDA".format(pyct.BUILD_NAME)
 
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
         components = "profiler" if args.profile == "cpu" else "tcmalloc"
         build_opts["TIMEMORY_GPERF_COMPONENTS"] = components
-        if pyctest.BUILD_TYPE != "RelWithDebInfo":
+        if pyct.BUILD_TYPE != "RelWithDebInfo":
             warnings.warn(
                 "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
-            pyctest.BUILD_TYPE = "RelWithDebInfo"
-        pyctest.BUILD_NAME = "{} {}".format(
-            pyctest.BUILD_NAME, args.profile.upper())
+            pyct.BUILD_TYPE = "RelWithDebInfo"
+        pyct.BUILD_NAME = "{} {}".format(
+            pyct.BUILD_NAME, args.profile.upper())
 
     if args.sanitizer is not None:
-        pyctest.BUILD_NAME = "{} {}SAN".format(
-            pyctest.BUILD_NAME, args.sanitizer.upper()[0])
+        pyct.BUILD_NAME = "{} {}SAN".format(
+            pyct.BUILD_NAME, args.sanitizer.upper()[0])
         build_opts["SANITIZER_TYPE"] = args.sanitizer
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
 
     if args.coverage:
         gcov_exe = helpers.FindExePath("gcov")
         if gcov_exe is not None:
-            pyctest.COVERAGE_COMMAND = "{}".format(gcov_exe)
+            pyct.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
             build_opts["TIMEMORY_USE_CALIPER"] = "OFF"
             build_opts["TIMEMORY_BUILD_CALIPER"] = "OFF"
-            pyctest.BUILD_NAME = "{} COV".format(pyctest.BUILD_NAME)
-            if pyctest.BUILD_TYPE != "Debug":
+            pyct.BUILD_NAME = "{} COV".format(pyct.BUILD_NAME)
+            if pyct.BUILD_TYPE != "Debug":
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled")
-                pyctest.BUILD_TYPE = "Debug"
+                pyct.BUILD_TYPE = "Debug"
         else:
             build_opts["TIMEMORY_USE_COVERAGE"] = "OFF"
-        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;/usr/.*")
+        pyct.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;/usr/.*")
 
     # split and join with dashes
-    pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())
+    pyct.BUILD_NAME = '-'.join(pyct.BUILD_NAME.replace('/', '-').split())
 
     # default options
     cmake_args = "-DCMAKE_BUILD_TYPE={} -DTIMEMORY_BUILD_EXAMPLES=ON".format(
-        pyctest.BUILD_TYPE)
+        pyct.BUILD_TYPE)
 
     # customized from args
     for key, val in build_opts.items():
@@ -250,32 +250,32 @@ def run_pyctest():
     # how to build the code
     #
     ctest_cmake_cmd = "${CTEST_CMAKE_COMMAND}"
-    pyctest.CONFIGURE_COMMAND = "{} {} {}".format(
-        ctest_cmake_cmd, cmake_args, pyctest.SOURCE_DIRECTORY)
+    pyct.CONFIGURE_COMMAND = "{} {} {}".format(
+        ctest_cmake_cmd, cmake_args, pyct.SOURCE_DIRECTORY)
 
     #--------------------------------------------------------------------------#
     # how to build the code
     #
-    pyctest.BUILD_COMMAND = "{} --build {} --target all".format(
-        ctest_cmake_cmd, pyctest.BINARY_DIRECTORY)
+    pyct.BUILD_COMMAND = "{} --build {} --target all".format(
+        ctest_cmake_cmd, pyct.BINARY_DIRECTORY)
 
     #--------------------------------------------------------------------------#
     # parallel build
     #
     if platform.system() != "Windows":
-        pyctest.BUILD_COMMAND = "{} -- -j{} VERBOSE=1".format(
-            pyctest.BUILD_COMMAND, mp.cpu_count())
+        pyct.BUILD_COMMAND = "{} -- -j{} VERBOSE=1".format(
+            pyct.BUILD_COMMAND, mp.cpu_count())
     else:
-        pyctest.BUILD_COMMAND = "{} -- /MP -A x64".format(
-            pyctest.BUILD_COMMAND)
+        pyct.BUILD_COMMAND = "{} -- /MP -A x64".format(
+            pyct.BUILD_COMMAND)
 
     #--------------------------------------------------------------------------#
     # how to update the code
     #
     git_exe = helpers.FindExePath("git")
-    pyctest.UPDATE_COMMAND = "{}".format(git_exe)
-    pyctest.set("CTEST_UPDATE_TYPE", "git")
-    pyctest.set("CTEST_GIT_COMMAND", "{}".format(git_exe))
+    pyct.UPDATE_COMMAND = "{}".format(git_exe)
+    pyct.set("CTEST_UPDATE_TYPE", "git")
+    pyct.set("CTEST_GIT_COMMAND", "{}".format(git_exe))
 
     #--------------------------------------------------------------------------#
     # find the CTEST_TOKEN_FILE
@@ -286,7 +286,7 @@ def run_pyctest():
             token_path = os.path.join(
                 home, os.path.join(".tokens", "nersc-cdash"))
             if os.path.exists(token_path):
-                pyctest.set("CTEST_TOKEN_FILE", token_path)
+                pyct.set("CTEST_TOKEN_FILE", token_path)
 
     #--------------------------------------------------------------------------#
     # construct a command
@@ -303,114 +303,190 @@ def run_pyctest():
         if args.profile is not None:
             _exe = os.path.basename(cmd[0])
             if args.profile == "cpu":
-                _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
+                _cmd.append(os.path.join(pyct.BINARY_DIRECTORY,
                                          "gperf-cpu-profile.sh"))
-                pyctest.add_note(pyctest.BINARY_DIRECTORY,
-                                 "cpu.prof.{}/gperf.0.txt".format(_exe),
-                                 clobber=clobber_notes)
-                pyctest.add_note(pyctest.BINARY_DIRECTORY,
-                                 "cpu.prof.{}/gperf.0.cum.txt".format(_exe),
-                                 clobber=False)
+                pyct.add_note(pyct.BINARY_DIRECTORY,
+                              "cpu.prof.{}/gperf.0.txt".format(_exe),
+                              clobber=clobber_notes)
+                pyct.add_note(pyct.BINARY_DIRECTORY,
+                              "cpu.prof.{}/gperf.0.cum.txt".format(_exe),
+                              clobber=False)
                 clobber_notes = False
             elif args.profile == "heap":
-                _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
+                _cmd.append(os.path.join(pyct.BINARY_DIRECTORY,
                                          "gperf-heap-profile.sh"))
                 for itr in ["alloc_objects", "alloc_space", "inuse_objects", "inuse_space"]:
-                    pyctest.add_note(pyctest.BINARY_DIRECTORY,
-                                     "heap.prof.{}/gperf.0.0001.heap.{}.txt".format(
-                                         _exe, itr),
-                                     clobber=clobber_notes)
+                    pyct.add_note(pyct.BINARY_DIRECTORY,
+                                  "heap.prof.{}/gperf.0.0001.heap.{}.txt".format(
+                                      _exe, itr),
+                                  clobber=clobber_notes)
                     # make sure all subsequent iterations don't clobber
                     clobber_notes = False
         else:
-            _cmd.append("{}/timem".format(pyctest.BINARY_DIRECTORY))
+            _cmd.append("{}/timem".format(pyct.BINARY_DIRECTORY))
         _cmd.extend(cmd)
         return _cmd
 
     #--------------------------------------------------------------------------#
     # create tests
     #
-    pyctest.test(construct_name("test-c-timing"),
-                 construct_command(["./ex_c_timing"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                     "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test("test-optional-off", ["./ex_optional_off"],
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME})
+    test_env = "CPUPROFILE_FREQUENCY=1000;CPUPROFILE_REALTIME=1;CALI_CONFIG_PROFILE=runtime-report"
 
-    pyctest.test(construct_name("test-optional-on"),
-                 construct_command(["./ex_optional_on"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME})
+    pyct.test(construct_name("test-optional-off"),
+              construct_command(["./ex_optional_off"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-cxx-basic"),
-                 construct_command(["./ex_cxx_basic"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME})
+    pyct.test(construct_name("test-cpu-roofline"),
+              construct_command(["./ex_cpu_roofline"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-cxx-tuple"),
-                 construct_command(["./ex_cxx_tuple"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "ENVIRONMENT": "CPUPROFILE_FREQUENCY=2000"})
+    pyct.test(construct_name("test-cxx-overhead"),
+              construct_command(["./ex_cxx_overhead"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-cxx-overhead"),
-                 construct_command(["./ex_cxx_overhead"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME})
+    pyct.test(construct_name("test-cuda-event"),
+              construct_command(["./ex_cuda_event"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-cpu-roofline"),
-                 construct_command(["./ex_cpu_roofline"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300"})
+    pyct.test(construct_name("test-cxx-minimal"),
+              construct_command(["./ex_cxx_minimal"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-caliper"),
-                 construct_command(["./ex_caliper"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300"})
+    pyct.test(construct_name("test-c-minimal-library-overload"),
+              construct_command(["./ex_c_minimal_library_overload"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-gotcha"),
-                 construct_command(["./ex_gotcha"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300"})
+    pyct.test(construct_name("test-c-timing"),
+              construct_command(["./ex_c_timing"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-c-minimal"),
-                 construct_command(["./ex_c_minimal"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300"})
+    pyct.test(construct_name("test-cxx-minimal-library"),
+              construct_command(["./ex_cxx_minimal_library"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-cxx-minimal"),
-                 construct_command(["./ex_cxx_minimal"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300"})
+    pyct.test(construct_name("test-optional-on"),
+              construct_command(["./ex_optional_on"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-python-minimal"),
-                 construct_command(
-                     [sys.executable, "./ex_python_minimal"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300"})
+    pyct.test(construct_name("test-c-minimal-library"),
+              construct_command(["./ex_c_minimal_library"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.test(construct_name("test-caliper-python"),
-                 construct_command(
-                     [sys.executable, "./ex_python_caliper"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300",
-                  "ENVIRONMENT": "CALI_CONFIG_PROFILE=runtime-report"})
+    pyct.test(construct_name("test-cpu-roofline.sp"),
+              construct_command(["./ex_cpu_roofline.sp"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
-    pyctest.generate_config(pyctest.BINARY_DIRECTORY)
-    pyctest.generate_test_file(os.path.join(pyctest.BINARY_DIRECTORY, "tests"))
-    pyctest.run(pyctest.ARGUMENTS, pyctest.BINARY_DIRECTORY)
+    pyct.test(construct_name("test-ert"),
+              construct_command(["./ex_ert"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-cxx-tuple"),
+              construct_command(["./ex_cxx_tuple"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-gotcha-mpi"),
+              construct_command(["./ex_gotcha_mpi"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-python-caliper"),
+              construct_command(["./ex_python_caliper"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-caliper"),
+              construct_command(["./ex_caliper"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-c-minimal"),
+              construct_command(["./ex_c_minimal"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-cxx-minimal-library-overload"),
+              construct_command(["./ex_cxx_minimal_library_overload"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-cxx-basic"),
+              construct_command(["./ex_cxx_basic"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-python-minimal"),
+              construct_command(["./ex_python_minimal"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-gotcha"),
+              construct_command(["./ex_gotcha"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.generate_config(pyct.BINARY_DIRECTORY)
+    pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
+    pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
 
 
 #------------------------------------------------------------------------------#
+#
 if __name__ == "__main__":
 
     try:

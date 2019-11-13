@@ -99,7 +99,8 @@ _Ptr
 get_shared_ptr_pair_master_instance()
 {
     static auto& _pinst = get_shared_ptr_pair<_Tp>();
-    return _pinst.first;
+    static auto _inst = _pinst.first;
+    return _inst;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -415,7 +416,7 @@ protected:
         std::string _filename(_fname);
         if(_filename.find(delim) != std::string::npos)
             _filename = _filename.substr(_filename.find_last_of(delim) + 1).c_str();
-        m_prefix = join_type::join("", _func, "/", _filename, ":", _line);
+        m_prefix = join_type::join("", _func, "@", _filename, ":", _line);
     }
 
 public:

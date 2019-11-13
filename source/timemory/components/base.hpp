@@ -419,8 +419,7 @@ private:
     template <typename _Scope, typename _Up = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t&)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
@@ -447,11 +446,10 @@ private:
         }
     }
 
-    template <typename _Up = this_type,
+    template <typename _Up                                   = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void pop_node()
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     // initialize the storage

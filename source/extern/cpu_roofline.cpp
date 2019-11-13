@@ -57,11 +57,11 @@ template struct base<cpu_roofline<double>, std::pair<std::vector<long long>, dou
                      policy::thread_init, policy::thread_finalize,
                      policy::global_finalize, policy::serialization>;
 
-//template struct cpu_roofline<float, double>;
+// template struct cpu_roofline<float, double>;
 
-//template struct cpu_roofline<float>;
+// template struct cpu_roofline<float>;
 
-//template struct cpu_roofline<double>;
+// template struct cpu_roofline<double>;
 //
 //
 }  // namespace component

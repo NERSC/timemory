@@ -508,7 +508,7 @@ TEST_F(gotcha_tests, member_functions)
     ASSERT_NEAR(fsum, -2416347.50, tolerance);
     ASSERT_NEAR(dsum, 881550.95, tolerance);
     auto real_storage = tim::storage<real_clock>::instance();
-    ASSERT_EQ(real_storage->size(), 4);
+    ASSERT_EQ(real_storage->get().size(), 4);
 }
 
 //======================================================================================//
@@ -930,7 +930,7 @@ main(int argc, char** argv)
 #endif
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
+    // tim::settings::banner()      = false;
 
     return RUN_ALL_TESTS();
 }

@@ -192,6 +192,7 @@ private:
         static deleter_t _instance = [](Pointer& _master) {
             auto& del = _master.get_deleter();
             del(_master.get());
+            _master.reset(nullptr);
         };
         return _instance;
     }

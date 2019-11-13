@@ -170,7 +170,7 @@ matrix:
             - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared'"
-   # Clang 5.0
+    # Clang 5.0
     - os: linux
       dist: xenial
       python: "3.7"
@@ -232,6 +232,7 @@ install:
   - env
   - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
   - source activate pyctest
+  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DBUILD_STATIC_LIBS=OFF -DTIMEMORY_USE_CALIPER=ON -DTIMEMORY_USE_GOTCHA=ON -- -j2
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-mpi ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
@@ -240,7 +241,6 @@ install:
 
 script:
   - eval "${MATRIX_EVAL}"
-  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DBUILD_STATIC_LIBS=OFF -DTIMEMORY_USE_CALIPER=ON -DTIMEMORY_USE_GOTCHA=ON -- -j2
   - python -c "import timemory; print(timemory.__file__)"
   - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
 

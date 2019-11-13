@@ -109,6 +109,8 @@ public:
     static void exit_hook();
 
 private:
+    //----------------------------------------------------------------------------------//
+    //
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
@@ -129,6 +131,8 @@ private:
         _init_storage<_Tail...>();
     }
 
+    //----------------------------------------------------------------------------------//
+    //
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _print_storage()
@@ -150,6 +154,8 @@ private:
         _print_storage<_Tail...>();
     }
 
+    //----------------------------------------------------------------------------------//
+    //
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _clear()
@@ -159,7 +165,7 @@ private:
             using storage_type = typename _Tp::storage_type;
             auto ret           = storage_type::noninit_instance();
             if(ret)
-                ret->data().clear();
+                ret->data().reset();
         }
     }
 
@@ -171,6 +177,8 @@ private:
         _clear<_Tail...>();
     }
 
+    //----------------------------------------------------------------------------------//
+    //
     template <typename _Archive, typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _serialize(_Archive& ar)
@@ -192,7 +200,32 @@ private:
         _serialize<_Archive, _Tail...>(ar);
     }
 
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _size(uint64_t& _sz)
+    {
+        _size<_Tp>(_sz);
+        _size<_Tail...>(_sz);
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _size(uint64_t& _sz)
+    {
+        if(component::properties<_Tp>::has_storage())
+        {
+            using storage_type = typename _Tp::storage_type;
+            auto ret           = storage_type::noninit_instance();
+            if(ret && !ret->empty())
+                _sz += ret->size();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
     // used to expand a tuple in settings
+    //
     template <typename... _Types>
     struct filtered_get_storage
     {
@@ -246,8 +279,20 @@ private:
                 return;
             _manager->_print_storage<_Types...>();
         }
+
+        static uint64_t size(pointer_t _manager = pointer_t(nullptr))
+        {
+            uint64_t _sz = 0;
+            if(_manager.get() == nullptr)
+                _manager = manager::instance();
+            if(_manager)
+                _manager->_size<_Types...>(_sz);
+            return _sz;
+        }
     };
 
+    //----------------------------------------------------------------------------------//
+    //
     template <typename... _Types, template <typename...> class _Tuple>
     struct filtered_get_storage<_Tuple<_Types...>>
     : public filtered_get_storage<_Types...>
@@ -257,9 +302,12 @@ private:
         using base_type::initialize;
         using base_type::print;
         using base_type::serialize;
+        using base_type::size;
     };
 
 public:
+    //----------------------------------------------------------------------------------//
+    //
     template <typename... _Types>
     struct get_storage : public filtered_get_storage<implemented<_Types...>>
     {
@@ -268,8 +316,11 @@ public:
         using base_type::initialize;
         using base_type::print;
         using base_type::serialize;
+        using base_type::size;
     };
 
+    //----------------------------------------------------------------------------------//
+    //
     template <typename... _Types, template <typename...> class _Tuple>
     struct get_storage<_Tuple<_Types...>>
     : public filtered_get_storage<implemented<_Types...>>
@@ -279,6 +330,7 @@ public:
         using base_type::initialize;
         using base_type::print;
         using base_type::serialize;
+        using base_type::size;
     };
 
 private:

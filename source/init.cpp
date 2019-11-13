@@ -191,6 +191,7 @@ TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, debug, "TIMEMORY_DEBUG", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                              std::numeric_limits<uint16_t>::max())
 

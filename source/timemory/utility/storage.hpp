@@ -131,6 +131,9 @@ public:
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using result_type   = std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t,
+                                   std::vector<std::string>>;
+    using result_array_type = std::vector<result_type>;
 
     using graph_node_tuple = std::tuple<uint64_t, ObjectType, int64_t>;
 
@@ -712,6 +715,128 @@ public:
     iterator&     current() { return _data().current(); }
     graph_t&      graph() { return _data().graph(); }
 
+    //----------------------------------------------------------------------------------//
+    //
+    result_array_type get()
+    {
+        //------------------------------------------------------------------------------//
+        //
+        //  Compute the node prefix
+        //
+        //------------------------------------------------------------------------------//
+        auto _get_node_prefix = [&]() {
+            if(!m_node_init)
+                return std::string(">>> ");
+
+            // prefix spacing
+            static uint16_t width = 1;
+            if(m_node_size > 9)
+                width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
+            std::stringstream ss;
+            ss.fill('0');
+            ss << "|" << std::setw(width) << m_node_rank << ">>> ";
+            return ss.str();
+        };
+
+        //------------------------------------------------------------------------------//
+        //
+        //  Compute the indentation
+        //
+        //------------------------------------------------------------------------------//
+        // fix up the prefix based on the actual depth
+        auto _compute_modified_prefix = [&](const graph_node& itr) {
+            std::string _prefix      = get_prefix(itr);
+            std::string _indent      = "";
+            std::string _node_prefix = _get_node_prefix();
+
+            int64_t _depth = itr.depth() - 1;
+            if(_depth > 0)
+            {
+                for(int64_t ii = 0; ii < _depth - 1; ++ii)
+                    _indent += "  ";
+                _indent += "|_";
+            }
+
+            return _node_prefix + _indent + _prefix;
+        };
+
+        // convert graph to a vector
+        auto convert_graph = [&]() {
+            result_array_type _list;
+            {
+                // the head node should always be ignored
+                int64_t _min = std::numeric_limits<int64_t>::max();
+                for(const auto& itr : graph())
+                    _min = std::min<int64_t>(_min, itr.depth());
+
+                for(auto itr = graph().begin(); itr != graph().end(); ++itr)
+                {
+                    if(itr->depth() > _min)
+                    {
+                        auto                     _depth  = itr->depth() - (_min + 1);
+                        auto                     _prefix = _compute_modified_prefix(*itr);
+                        auto                     _rolling = itr->id();
+                        auto                     _parent  = graph_t::parent(itr);
+                        std::vector<std::string> _hierarchy;
+                        if(_parent && _parent->depth() > _min)
+                        {
+                            while(_parent)
+                            {
+                                _hierarchy.push_back(get_prefix(*_parent));
+                                _rolling += _parent->id();
+                                _parent = graph_t::parent(_parent);
+                                if(!_parent || !(_parent->depth() > _min))
+                                    break;
+                            }
+                        }
+                        if(_hierarchy.size() > 1)
+                            std::reverse(_hierarchy.begin(), _hierarchy.end());
+                        _hierarchy.push_back(get_prefix(*itr));
+                        result_type _entry(itr->id(), itr->obj(), _prefix, _depth,
+                                           _rolling, _hierarchy);
+                        _list.push_back(_entry);
+                    }
+                }
+            }
+
+            if(!settings::collapse_threads())
+                return _list;
+
+            result_array_type _combined;
+
+            auto _equiv = [&](const result_type& _lhs, const result_type& _rhs) {
+                return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
+                        std::get<2>(_lhs) == std::get<2>(_rhs) &&
+                        std::get<3>(_lhs) == std::get<3>(_rhs) &&
+                        std::get<4>(_lhs) == std::get<4>(_rhs));
+            };
+
+            auto _exists = [&](const result_type& _lhs) {
+                for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
+                {
+                    if(_equiv(_lhs, *itr))
+                        return itr;
+                }
+                return _combined.end();
+            };
+
+            for(const auto& itr : _list)
+            {
+                auto citr = _exists(itr);
+                if(citr == _combined.end())
+                {
+                    _combined.push_back(itr);
+                }
+                else
+                {
+                    std::get<1>(*citr) += std::get<1>(itr);
+                }
+            }
+            return _combined;
+        };
+        return convert_graph();
+    }
+
 protected:
     friend struct details::storage_deleter<this_type>;
 
@@ -1179,6 +1304,9 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
     using Pointer     = std::unique_ptr<StorageType, storage_deleter<StorageType>>;
     using singleton_t = tim::singleton<StorageType, Pointer>;
 
+    storage_deleter()  = default;
+    ~storage_deleter() = default;
+
     void operator()(StorageType* ptr)
     {
         StorageType*    master     = singleton_t::master_instance_ptr();
@@ -1197,8 +1325,12 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
             }
             else if(master)
             {
-                master->StorageType::print();
-                master->StorageType::cleanup();
+                if(!_printed_master)
+                {
+                    master->StorageType::print();
+                    master->StorageType::cleanup();
+                    _printed_master = true;
+                }
             }
         }
 
@@ -1214,7 +1346,15 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
             }
             delete ptr;
         }
+        if(_printed_master && !_deleted_master)
+        {
+            delete master;
+            _deleted_master = true;
+        }
     }
+
+    bool _printed_master = false;
+    bool _deleted_master = false;
 };
 
 //======================================================================================//

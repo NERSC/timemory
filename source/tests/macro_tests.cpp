@@ -151,7 +151,7 @@ TEST_F(macro_tests, marker)
     std::stringstream expected;
     std::string       file = __FILE__;
     file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
-    expected << __FUNCTION__ << "/" << file << ":" << line << "/"
+    expected << __FUNCTION__ << "@" << file << ":" << line << "/"
              << details::get_test_name();
     if(key != expected.str())
     {

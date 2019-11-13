@@ -727,9 +727,9 @@ private:
 
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-//extern template struct cpu_roofline<float, double>;
-//extern template struct cpu_roofline<float>;
-//extern template struct cpu_roofline<double>;
+// extern template struct cpu_roofline<float, double>;
+// extern template struct cpu_roofline<float>;
+// extern template struct cpu_roofline<double>;
 
 #endif
 
