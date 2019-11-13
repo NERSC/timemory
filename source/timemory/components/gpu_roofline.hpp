@@ -54,6 +54,43 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<
+    gpu_roofline<float, double>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    gpu_roofline<float>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    gpu_roofline<double>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+#    if defined(TIMEMORY_CUDA_FP16)
+
+extern template struct base<
+    gpu_roofline<cuda::fp16_t, float, double>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    gpu_roofline<cuda::fp16_t>,
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
+    policy::global_init, policy::global_finalize, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+#    endif
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 // this computes the numerator of the roofline for a given set of PAPI counters.
 // e.g. for FLOPS roofline (floating point operations / second:
@@ -115,10 +152,8 @@ struct gpu_roofline
                       std::tuple_size<types_tuple>::value,
                   "Error! ert_config_t size does not match types_tuple size!");
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 8;
 
     //----------------------------------------------------------------------------------//
     // collection mode, COUNTERS is the HW counting, ACTIVITY in the runtime measurements
@@ -186,7 +221,8 @@ public:
         if(event_mode() == MODE::ACTIVITY)
         {
             get_labels() = { std::string("runtime") };
-        } else
+        }
+        else
         {
             strvec_t events  = { "active_warps", "global_load", "global_store" };
             strvec_t metrics = { "ldst_executed",
@@ -354,7 +390,8 @@ public:
             while(ret.find("__") != std::string::npos)
                 ret.erase(ret.find("__"), 1);
             return ret;
-        } else
+        }
+        else
             return std::string("gpu_roofline_") + get_mode_string();
     }
 
@@ -751,6 +788,21 @@ public:
         ar.finishNode();
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct gpu_roofline<float, double>;
+extern template struct gpu_roofline<float>;
+extern template struct gpu_roofline<double>;
+
+#    if defined(TIMEMORY_CUDA_FP16)
+extern template struct gpu_roofline<cuda::fp16_t, float, double>;
+extern template struct gpu_roofline<cuda::fp16_t>;
+#    endif
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component

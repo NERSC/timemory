@@ -58,7 +58,7 @@
 
 #include "timemory/backends/mpi.hpp"
 #include "timemory/bits/settings.hpp"
-#include "timemory/ctimemory.h"
+#include "timemory/enum.h"
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
@@ -100,8 +100,7 @@ class manager_wrapper
 public:
     manager_wrapper()
     : m_manager(manager_t::instance().get())
-    {
-    }
+    {}
 
     ~manager_wrapper() {}
 
@@ -119,8 +118,7 @@ class auto_timer_decorator
 public:
     auto_timer_decorator(auto_timer_t* _ptr = nullptr)
     : m_ptr(_ptr)
-    {
-    }
+    {}
 
     ~auto_timer_decorator() { delete m_ptr; }
 
@@ -199,77 +197,6 @@ using string_t = std::string;
 //                          TiMemory (general)
 //
 //======================================================================================//
-
-int
-get_line(int nback = 1)
-{
-    auto locals = py::dict("back"_a = nback);
-    py::exec(R"(
-             import sys
-             result = int(sys._getframe(back).f_lineno)
-             )",
-             py::globals(), locals);
-    auto ret = locals["result"].cast<int>();
-    return ret;
-}
-
-//--------------------------------------------------------------------------------------//
-
-string_t
-get_func(int nback = 1)
-{
-    auto locals = py::dict("back"_a = nback);
-    py::exec(R"(
-             import sys
-             result = ("{}".format(sys._getframe(back).f_code.co_name))
-             )",
-             py::globals(), locals);
-    auto ret = locals["result"].cast<std::string>();
-    return ret;
-}
-
-//--------------------------------------------------------------------------------------//
-
-string_t
-get_file(int nback = 2, bool only_basename = true, bool use_dirname = false,
-         bool noquotes = false)
-{
-    auto locals = py::dict("back"_a = nback, "only_basename"_a = only_basename,
-                           "use_dirname"_a = use_dirname, "noquotes"_a = noquotes);
-    py::exec(R"(
-             import sys
-             import os
-             from os.path import dirname
-             from os.path import basename
-             from os.path import join
-
-             def get_fcode(back):
-                 fname = '<module'
-                 try:
-                     fname = sys._getframe(back).f_code.co_filename
-                 except:
-                     fname = '<module>'
-                 return fname
-
-             result = None
-             if only_basename:
-                 if use_dirname:
-                     result = ("{}".format(join(basename(dirname(get_fcode(back))),
-                       basename(get_fcode(back)))))
-                 else:
-                     result = ("{}".format(basename(get_fcode(back))))
-             else:
-                 result = ("{}".format(get_fcode(back)))
-
-             if noquotes is False:
-                 result = ("'{}'".format(result))
-             )",
-             py::globals(), locals);
-    auto ret = locals["result"].cast<std::string>();
-    return ret;
-}
-
-//--------------------------------------------------------------------------------------//
 
 component_enum_vec
 components_list_to_vec(py::list pystr_list)
@@ -660,170 +587,6 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 }  // namespace opt
 
 //======================================================================================//
-/*
-namespace decorators
-{
-class base_decorator
-{
-public:
-    base_decorator() {}
-
-    base_decorator(std::string key, bool add_args, bool is_class)
-    : m_add_args(add_args)
-    , m_is_class(is_class)
-    , m_key(key)
-    {
-    }
-
-    void parse_wrapped(py::function func, py::args args, py::kwargs kwargs)
-    {
-        auto locals = py::dict("func"_a = func, "args"_a = args, "kwargs"_a = kwargs);
-        py::exec(R"(
-                 is_class = False
-                 if len(args) > 0 and args[0] is not None and
-inspect.isclass(type(args[0])): is_class = True
-                 )",
-                 py::globals(), locals);
-        m_is_class = locals["is_class"].cast<bool>();
-    }
-
-    std::string class_string(py::args args, py::kwargs kwargs)
-    {
-        auto locals = py::dict("args"_a = args, "kwargs"_a = kwargs, "_key"_a = m_key,
-                               "_is_class"_a = m_is_class);
-        py::exec(R"(
-                 _str = ''
-                 if _is_class and len(args) > 0 and args[0] is not None:
-                     _str = '[{}]'.format(type(args[0]).__name__)
-
-                     # this check guards against class methods calling class methods
-                     if _str in _key:
-                         _str = ''
-                 )",
-                 py::globals(), locals);
-        return locals["_str"].cast<std::string>();
-    }
-
-    std::string arg_string(py::args args, py::kwargs kwargs)
-    {
-        auto _str   = class_string(args, kwargs);
-        auto locals = py::dict("_str"_a = _str, "args"_a = args, "kwargs"_a = kwargs,
-                               "_key"_a = m_key, "_is_class"_a = m_is_class,
-                               "_add_args"_a = m_add_args);
-        py::exec(R"(
-                 if _add_args:
-                     _str = '{}('.format(_str)
-                     for i in range(0, len(args)):
-                         if i == 0:
-                             _str = '{}{}'.format(_str, args[i])
-                         else:
-                             _str = '{}, {}'.format(_str, args[i])
-
-                     for key, val in kwargs:
-                         _str = '{}, {}={}'.format(_str, key, val)
-
-                     _str = '{})'.format(_str)
-                 )",
-                 py::globals(), locals);
-        return locals["_str"].cast<std::string>();
-    }
-
-protected:
-    bool        m_add_args = false;
-    bool        m_is_class = false;
-    std::string m_key      = "";
-};
-
-//======================================================================================//
-
-class auto_timer : public base_decorator
-{
-public:
-    auto_timer() {}
-
-    auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
-    : base_decorator(key, add_args, is_class)
-    , m_report_at_exit(report_at_exit)
-    {
-        auto _n = 2;
-        m_file  = get_file(_n);
-        m_line  = get_line(_n - 1);
-    }
-
-    py::object call(py::function func)
-    {
-        PRINT_HERE("");
-
-        auto locals =
-            py::dict("_func"_a = func, "_key"_a = m_key, "_file"_a = m_file,
-                     "_line"_a = m_line, "_is_class"_a = m_is_class,
-                     "_add_args"_a = m_add_args, "_report_at_exit"_a = m_report_at_exit);
-        py::exec(R"(
-                 import inspect
-                 import timemory
-                 from functools import wraps
-
-
-                 @wraps(_func)
-                 def _function_wrapper(func = _func, _key = _key, _is_class = _is_class,
-                                       _add_args = _add_args, _file = _file, _line =
-_line, _report_at_exit = _report_at_exit, *args, **kwargs):
-
-                     if len(args) > 0 and args[0] is not None and
-inspect.isclass(type(args[0])): _is_class = True else: _is_class = False
-
-                     _str = ''
-                     if _is_class and len(args) > 0 and args[0] is not None:
-                         _str = '[{}]'.format(type(args[0]).__name__)
-                         # this check guards against class methods calling class methods
-                         if _str in _key:
-                             _str = ''
-
-                     if _add_args:
-                         _str = '{}('.format(_str)
-                         for i in range(0, len(args)):
-                             if i == 0:
-                                 _str = '{}{}'.format(_str, args[i])
-                             else:
-                                 _str = '{}, {}'.format(_str, args[i])
-
-                         for key, val in kwargs:
-                             _str = '{}, {}={}'.format(_str, key, val)
-
-                         _str = '{})'.format(_str)
-
-
-                     _key = '{}{}'.format(_key, _str)
-
-                     t = timemory.timer_decorator(func.__name__, _file, _line,
-                         _key, _add_args or _is_class, _report_at_exit)
-
-                     results = func(*args, **kwargs)
-                     del t
-                     return results
-                 )",
-                 py::globals(), locals);
-
-        return locals["_function_wrapper"].cast<py::function>();
-    }
-
-private:
-    bool        m_report_at_exit = false;
-    int         m_line           = 0;
-    std::string m_file           = "";
-};
-
-namespace init
-{
-static ::pytim::decorators::auto_timer*
-auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
-{
-    return new ::pytim::decorators::auto_timer(key, add_args, is_class, report_at_exit);
-}
-}  // namespace init
-}  // namespace decorators
-*/
-//======================================================================================//
 
 template <typename _Tuple>
 struct construct_dict
@@ -847,8 +610,7 @@ struct construct_dict<std::tuple<std::string, void*>>
 
     template <typename... _Args>
     construct_dict(_Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -879,8 +641,7 @@ struct dict<std::tuple<_Types...>>
 //======================================================================================//
 
 struct settings
-{
-};
+{};
 
 //======================================================================================//
 

@@ -37,8 +37,7 @@
 
 // define this so avoid warnings about noexcept functions throwing
 #define CEREAL_RAPIDJSON_ASSERT(x)                                                       \
-    {                                                                                    \
-    }
+    {}
 
 // general
 #include <cereal/cereal.hpp>

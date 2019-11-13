@@ -35,6 +35,7 @@
 #include <string>
 
 #include "timemory/bits/types.hpp"
+#include "timemory/compat/macros.h"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -52,8 +53,8 @@ using apply = tim::apply<std::string>;
 
 namespace tim
 {
-// e.g. tim::str::join(...)
-using str = tim::apply<std::string>;
+// e.g. tim::string::join(...)
+using string = tim::apply<std::string>;
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
@@ -68,51 +69,42 @@ using str = tim::apply<std::string>;
 //
 //======================================================================================//
 
-//--------------------------------------------------------------------------------------//
-// allow encoding the parameters in signature
-//
-#    if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
-#        define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
-#    else
-#        define __TIMEMORY_FUNCTION__ __FUNCTION__
-#    endif
-
-//--------------------------------------------------------------------------------------//
-// helper macros for assembling unique variable name
-//
-#    define _LINE_STRING ::tim::str::join("", __LINE__)
-#    define _AUTO_NAME_COMBINE(X, Y) X##Y
-#    define _AUTO_NAME(Y) _AUTO_NAME_COMBINE(timemory_variable_, Y)
-#    define _AUTO_TYPEDEF(Y) _AUTO_NAME_COMBINE(timemory_variable_type_, Y)
-//
-// helper macro for "__FUNCTION__@'__FILE__':__LINE__" tagging
-//
 #    if !defined(_WINDOWS)
-#        define _AUTO_STR(A, B)                                                          \
-            ::tim::str::join(                                                            \
-                "", "@'", std::string(A).substr(std::string(A).find_last_of('/') + 1),   \
-                "':", B)
+#        define _TIM_FILENAME_DELIM '/'
 #    else
-#        define _AUTO_STR(A, B)                                                          \
-            ::tim::str::join(                                                            \
-                "", "@'", std::string(A).substr(std::string(A).find_last_of('\\') + 1),  \
-                "':", B)
+#        define _TIM_FILENAME_DELIM '\\'
 #    endif
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_JOIN(delim, ...) ::tim::str::join(delim, __VA_ARGS__)
+#    define _TIM_FILESTR                                                                 \
+        std::string(__FILE__).substr(                                                    \
+            std::string(__FILE__).find_last_of(_TIM_FILENAME_DELIM) + 1)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_BASIC_LABEL(...)                                                    \
-        ::tim::str::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
+#    define _TIM_FILELINE ::tim::string::join(":", _TIM_FILESTR, _TIM_LINESTR)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_JOIN(delim, ...) ::tim::string::join(delim, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_BLANK_LABEL(...) ::tim::string::join("", __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_BASIC_LABEL(...) ::tim::string::join("", _TIM_FUNC, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_FULL_LABEL ::tim::string::join("/", _TIM_FUNC, _TIM_FILELINE)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_LABEL(...)                                                          \
-        ::tim::str::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                         \
-                         _AUTO_STR(__FILE__, _LINE_STRING))
+        TIMEMORY_JOIN("_", TIMEMORY_FULL_LABEL, TIMEMORY_JOIN("", __VA_ARGS__))
 
 //======================================================================================//
 //
@@ -121,17 +113,20 @@ using str = tim::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_MARKER(type, ...)                                             \
-        type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
+        type _TIM_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_MARKER(type, ...)                                             \
-        type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
+        type _TIM_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_MARKER(type, ...)                                                   \
-        type _AUTO_NAME(__LINE__)(TIMEMORY_LABEL(__VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
+        type _TIM_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //======================================================================================//
 //
@@ -140,23 +135,25 @@ using str = tim::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_POINTER(type, ...)                                            \
-        std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
-            (::tim::settings::enabled()) ? new type(TIMEMORY_JOIN("", __VA_ARGS__))      \
+        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
+        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
+            (::tim::settings::enabled()) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))  \
                                          : nullptr)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_POINTER(type, ...)                                            \
-        std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
-            (::tim::settings::enabled())                                                 \
-                ? new type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))        \
-                : nullptr)
+        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
+        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
+            (::tim::settings::enabled()) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))  \
+                                         : nullptr)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_POINTER(type, ...)                                                  \
-        std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
-            (::tim::settings::enabled()) ? new type(TIMEMORY_LABEL(__VA_ARGS__))         \
+        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
+        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
+            (::tim::settings::enabled()) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))  \
                                          : nullptr)
 
 //======================================================================================//
@@ -166,54 +163,70 @@ using str = tim::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_CALIPER(id, type, ...)                                        \
-        type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
+        type _TIM_VARIABLE(id)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_CALIPER(id, type, ...)                                        \
-        type _AUTO_NAME(id)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
+        type _TIM_VARIABLE(id)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER(id, type, ...)                                              \
-        type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
+        type _TIM_VARIABLE(id)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_BLANK_CALIPER(id, type, ...)                                 \
-        static type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
+        static type _TIM_VARIABLE(id)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_BASIC_CALIPER(id, type, ...)                                 \
-        static type _AUTO_NAME(id)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
+        static type _TIM_VARIABLE(id)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_CALIPER(id, type, ...)                                       \
-        static type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__))
+        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
+        static type _TIM_VARIABLE(id)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_CALIPER_REFERENCE(id) std::ref(_AUTO_NAME(id)).get()
+#    define TIMEMORY_CALIPER_REFERENCE(id) std::ref(_TIM_VARIABLE(id)).get()
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_CALIPER_APPLY(id, func, ...) _AUTO_NAME(id).func(__VA_ARGS__)
+#    define TIMEMORY_CALIPER_APPLY(id, func, ...) _TIM_VARIABLE(id).func(__VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_TYPE_APPLY(id, type, func, ...)                             \
-        _AUTO_NAME(id).type_apply<type>(func, __VA_ARGS__)
+        _TIM_VARIABLE(id).type_apply<type>(func, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_CALIPER_APPLY0(id, func) _AUTO_NAME(id).func()
+#    define TIMEMORY_CALIPER_APPLY0(id, func) _TIM_VARIABLE(id).func()
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_TYPE_APPLY0(id, type, func)                                 \
-        _AUTO_NAME(id).type_apply<type>(func)
+        _TIM_VARIABLE(id).type_apply<type>(func)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_CALIPER_LAMBDA(id, lambda, ...)                                     \
+        lambda(_TIM_VARIABLE(id), __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_CALIPER_TYPE_LAMBDA(id, type, lambda, ...)                          \
+        lambda(_TIM_VARIABLE(id).get<type>(), __VA_ARGS__)
 
 //======================================================================================//
 //
@@ -221,33 +234,39 @@ using str = tim::apply<std::string>;
 //
 //======================================================================================//
 
-#    define TIMEMORY_BLANK_HANDLE(type, ...) type(TIMEMORY_JOIN("", __VA_ARGS__))
+#    define TIMEMORY_BLANK_HANDLE(type, ...)                                             \
+        type(TIMEMORY_INLINE_SOURCE_LOCATION(blank, __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_HANDLE(type, ...)                                             \
-        type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__))
+        type(TIMEMORY_INLINE_SOURCE_LOCATION(basic, __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_HANDLE(type, ...) type(TIMEMORY_LABEL(__VA_ARGS__))
+#    define TIMEMORY_HANDLE(type, ...)                                                   \
+        type(TIMEMORY_INLINE_SOURCE_LOCATION(full, __VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_BLANK_POINTER_HANDLE(type, ...)                                     \
-        (::tim::settings::enabled()) ? new TIMEMORY_BLANK_HANDLE(type, __VA_ARGS__)      \
-                                     : nullptr
+#    define TIMEMORY_BLANK_RAW_POINTER(type, ...)                                        \
+        (::tim::settings::enabled())                                                     \
+            ? new type(TIMEMORY_INLINE_SOURCE_LOCATION(blank, __VA_ARGS__))              \
+            : nullptr
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_BASIC_POINTER_HANDLE(type, ...)                                     \
-        (::tim::settings::enabled()) ? new TIMEMORY_BASIC_HANDLE(type, __VA_ARGS__)      \
-                                     : nullptr
+#    define TIMEMORY_BASIC_RAW_POINTER(type, ...)                                        \
+        (::tim::settings::enabled())                                                     \
+            ? new type(TIMEMORY_INLINE_SOURCE_LOCATION(basic, __VA_ARGS__))              \
+            : nullptr
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_POINTER_HANDLE(type, ...)                                           \
-        (::tim::settings::enabled()) ? new TIMEMORY_HANDLE(type, __VA_ARGS__) : nullptr
+#    define TIMEMORY_RAW_POINTER(type, ...)                                              \
+        (::tim::settings::enabled())                                                     \
+            ? new type(TIMEMORY_INLINE_SOURCE_LOCATION(full, __VA_ARGS__))               \
+            : nullptr
 
 //======================================================================================//
 //

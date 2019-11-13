@@ -78,8 +78,7 @@ namespace details
 template <typename... _Args>
 void
 consume_parameters(_Args&&...)
-{
-}
+{}
 }  // namespace details
 
 template <bool B, typename T = int>
@@ -198,8 +197,7 @@ public:
     aligned_allocator(aligned_allocator&&) {}
     template <typename U>
     aligned_allocator(const aligned_allocator<U, _Align_v>&)
-    {
-    }
+    {}
     ~aligned_allocator() {}
 
 public:

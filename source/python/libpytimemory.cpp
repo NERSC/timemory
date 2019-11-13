@@ -24,7 +24,7 @@
 //
 
 #include "libpytimemory.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/timemory.hpp"
 #include <pybind11/pybind11.h>
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -209,9 +209,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::class_<auto_timer_decorator>     timer_decorator(tim, "timer_decorator");
     py::class_<component_list_decorator> comp_decorator(tim, "component_decorator");
     py::class_<rss_usage_t>              rss_usage(tim, "rss_usage");
-    // py::class_<pytim::decorators::auto_timer> decorate_auto_timer(tim,
-    // "decorate_timer");
-    py::class_<pytim::settings> settings(tim, "settings");
+    py::class_<pytim::settings>          settings(tim, "settings");
 
     //==================================================================================//
     //
@@ -258,16 +256,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     tim.def("report", report, "Print the data", py::arg("filename") = "");
-    //----------------------------------------------------------------------------------//
-    tim.def("LINE", &pytim::get_line, "Function that emulates __LINE__ macro",
-            py::arg("nback") = 1);
-    //----------------------------------------------------------------------------------//
-    tim.def("FUNC", &pytim::get_func, "Function that emulates __FUNC__ macro",
-            py::arg("nback") = 1);
-    //----------------------------------------------------------------------------------//
-    tim.def("FILE", &pytim::get_file, "Function that emulates __FILE__ macro",
-            py::arg("nback") = 2, py::arg("basename_only") = true,
-            py::arg("use_dirname") = false, py::arg("noquotes") = false);
     //----------------------------------------------------------------------------------//
     tim.def("set_max_depth", [&](int32_t ndepth) { manager_t::max_depth(ndepth); },
             "Max depth of auto-timers");

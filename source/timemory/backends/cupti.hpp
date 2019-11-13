@@ -93,8 +93,7 @@ static uint64_t dummy_kernel_id = 0;
 template <typename _Tp>
 GLOBAL_CALLABLE void
 warmup()
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -1223,16 +1222,15 @@ print(CUpti_Activity* record)
         case CUPTI_ACTIVITY_KIND_DEVICE:
         {
             CUpti_ActivityDevice2* device = (CUpti_ActivityDevice2*) record;
-            printf(
-                "DEVICE %s (%u), capability %u.%u, global memory (bandwidth %u GB/s, "
-                "size %u MB), "
-                "multiprocessors %u, clock %u MHz\n",
-                device->name, device->id, device->computeCapabilityMajor,
-                device->computeCapabilityMinor,
-                (unsigned int) (device->globalMemoryBandwidth / 1024 / 1024),
-                (unsigned int) (device->globalMemorySize / 1024 / 1024),
-                device->numMultiprocessors,
-                (unsigned int) (device->coreClockRate / 1000));
+            printf("DEVICE %s (%u), capability %u.%u, global memory (bandwidth %u GB/s, "
+                   "size %u MB), "
+                   "multiprocessors %u, clock %u MHz\n",
+                   device->name, device->id, device->computeCapabilityMajor,
+                   device->computeCapabilityMinor,
+                   (unsigned int) (device->globalMemoryBandwidth / 1024 / 1024),
+                   (unsigned int) (device->globalMemorySize / 1024 / 1024),
+                   device->numMultiprocessors,
+                   (unsigned int) (device->coreClockRate / 1000));
             break;
         }
         case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
@@ -1291,12 +1289,11 @@ print(CUpti_Activity* record)
                 (unsigned long long) (kernel->start - start_timestamp()),
                 (unsigned long long) (kernel->end - start_timestamp()), kernel->deviceId,
                 kernel->contextId, kernel->streamId, kernel->correlationId);
-            printf(
-                "    grid [%u,%u,%u], block [%u,%u,%u], shared memory (static %u, "
-                "dynamic %u)\n",
-                kernel->gridX, kernel->gridY, kernel->gridZ, kernel->blockX,
-                kernel->blockY, kernel->blockZ, kernel->staticSharedMemory,
-                kernel->dynamicSharedMemory);
+            printf("    grid [%u,%u,%u], block [%u,%u,%u], shared memory (static %u, "
+                   "dynamic %u)\n",
+                   kernel->gridX, kernel->gridY, kernel->gridZ, kernel->blockX,
+                   kernel->blockY, kernel->blockZ, kernel->staticSharedMemory,
+                   kernel->dynamicSharedMemory);
             break;
         }
         case CUPTI_ACTIVITY_KIND_DRIVER:
@@ -1391,7 +1388,12 @@ static void CUPTIAPI
 {
     uint8_t* bfr = (uint8_t*) malloc(CUPTI_BUFFER_SIZE + CUPTI_ALIGN_SIZE);
     if(bfr == nullptr)
+    {
+        unsigned long long sz = CUPTI_BUFFER_SIZE + CUPTI_ALIGN_SIZE;
+        fprintf(stderr, "[%s:%s:%i]> malloc unable to allocate %llu bytes\n",
+                __FUNCTION__, __FILE__, __LINE__, sz);
         throw std::bad_alloc();
+    }
 
     *size          = CUPTI_BUFFER_SIZE;
     *buffer        = CUPTI_ALIGN_BUFFER(bfr, CUPTI_ALIGN_SIZE);
@@ -1467,10 +1469,10 @@ static void CUPTIAPI
                         }
                         else if(_name_len == 0 && _time > 0)
                         {
-                            std::stringstream ss;
-                            ss << "CUPTI_ACTIVITY_KIND_ENUM_"
-                               << static_cast<int>(record->kind);
-                            _receiver += name_pair_t{ ss.str(), _time };
+                            std::stringstream _ss;
+                            _ss << "CUPTI_ACTIVITY_KIND_ENUM_"
+                                << static_cast<int>(record->kind);
+                            _receiver += name_pair_t{ _ss.str(), _time };
                             break;
                         }
                     }
@@ -1646,10 +1648,9 @@ tim::cupti::available_metrics(CUdevice device)
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
             if(settings::verbose() > 0 || settings::debug())
-                printf(
-                    "Metric %s cannot be profiled as metric requires GPU"
-                    "time duration for kernel run.\n",
-                    metricName);
+                printf("Metric %s cannot be profiled as metric requires GPU"
+                       "time duration for kernel run.\n",
+                       metricName);
         }
         else
         {

@@ -72,16 +72,13 @@ public:
     static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
-    template <typename _Scope = scope::process,
-              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
-    inline explicit auto_tuple(const string_t&,
-                               bool flat           = (_Flat || settings::flat_profile()),
+    inline explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
                                bool report_at_exit = false);
-    template <typename _Scope = scope::process,
-              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
-    inline explicit auto_tuple(component_type& tmp,
-                               bool            flat = (_Flat || settings::flat_profile()),
-                               bool            report_at_exit = false);
+    inline explicit auto_tuple(const source_location::captured&,
+                               bool flat           = settings::flat_profile(),
+                               bool report_at_exit = false);
+    inline explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
+                               bool report_at_exit = false);
     inline ~auto_tuple();
 
     // copy and move
@@ -91,11 +88,6 @@ public:
     inline this_type& operator=(this_type&&) = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
-
-    static constexpr std::size_t available_size()
-    {
-        return component_type::available_size();
-    }
 
 public:
     // public member functions
@@ -197,12 +189,13 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename _Scope, bool _Flat>
 auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
                                  bool report_at_exit)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat || _Flat)
+, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {
@@ -213,11 +206,27 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename _Scope, bool _Flat>
+auto_tuple<Types...>::auto_tuple(const source_location::captured& captured, bool flat,
+                                 bool report_at_exit)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(captured, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, flat || _Flat))
+, m_temporary_object(component_type(tmp.clone(true, flat)))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
@@ -282,11 +291,11 @@ get_labeled(const auto_tuple<_Types...>& _obj)
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
-    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                      \
-    TIMEMORY_BASIC_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
+    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
+    TIMEMORY_BASIC_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
-    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                      \
-    TIMEMORY_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
+    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
+    TIMEMORY_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

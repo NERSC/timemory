@@ -294,8 +294,7 @@ namespace impl
 // extract the elements in a tuple.
 template <size_t... _Indexes>
 struct _Index_tuple
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 // Concatenates two _Index_tuples.
@@ -316,8 +315,7 @@ template <size_t _Num, size_t _Off = 0>
 struct _Build_index_tuple
 : _Itup_cat<typename _Build_index_tuple<_Num / 2, _Off>::__type,
             typename _Build_index_tuple<_Num - _Num / 2, _Off>::__type>
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 
@@ -388,53 +386,6 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 /// Alias template for decay
 template <typename T>
 using decay_t = typename std::decay<T>::type;
-
-//======================================================================================//
-// check if type is in expansion
-//
-namespace impl
-{
-template <typename...>
-struct is_one_of
-{
-    static constexpr bool value = false;
-};
-
-template <typename F, typename S, typename... T>
-struct is_one_of<F, S, std::tuple<T...>>
-{
-    static constexpr bool value =
-        std::is_same<F, S>::value || is_one_of<F, std::tuple<T...>>::value;
-};
-
-template <typename F, typename S, typename... T>
-struct is_one_of<F, std::tuple<S, T...>>
-{
-    static constexpr bool value = is_one_of<F, S, std::tuple<T...>>::value;
-};
-
-}  // namespace impl
-
-template <typename _Tp, typename _Types>
-using is_one_of = typename impl::is_one_of<_Tp, _Types>;
-
-//======================================================================================//
-// get the index of a type in expansion
-//
-template <typename _Tp, typename Type>
-struct index_of;
-
-template <typename _Tp, typename... Types>
-struct index_of<_Tp, std::tuple<_Tp, Types...>>
-{
-    static constexpr std::size_t value = 0;
-};
-
-template <typename _Tp, typename Head, typename... Tail>
-struct index_of<_Tp, std::tuple<Head, Tail...>>
-{
-    static constexpr std::size_t value = 1 + index_of<_Tp, std::tuple<Tail...>>::value;
-};
 
 //======================================================================================//
 
@@ -1122,8 +1073,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void set_value(_Tuple&&, _Value&&)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1131,8 +1081,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void access(_Tuple&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1140,8 +1089,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void access_with_indices(_Tuple&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1150,8 +1098,7 @@ struct apply<void>
               std::size_t _Nb             = std::tuple_size<decay_t<_TupleB>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void access2(_TupleA&&, _TupleB&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1159,8 +1106,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void unroll_access(_Tuple&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1168,8 +1114,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void type_access(_Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 };

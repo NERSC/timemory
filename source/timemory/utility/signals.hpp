@@ -422,8 +422,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     {
         signal_settings::disable(_sig);
         signal_settings::exit_action(sig);
-    }
-    catch(std::exception& e)
+    } catch(std::exception& e)
     {
         std::cerr << "signal_settings::exit_action(" << sig << ") threw an exception"
                   << std::endl;
@@ -528,8 +527,7 @@ inline bool enable_signal_detection(signal_settings::signal_set_t) { return fals
 
 inline void
 disable_signal_detection()
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

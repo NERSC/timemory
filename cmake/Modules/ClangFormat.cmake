@@ -10,6 +10,7 @@ include_guard(DIRECTORY)
 
 find_program(CLANG_FORMATTER
     NAMES
+        clang-format-9.0
         clang-format-8.0
         clang-format-7.0
         clang-format-6.0
@@ -17,24 +18,14 @@ find_program(CLANG_FORMATTER
 
 if(CLANG_FORMATTER)
     file(GLOB_RECURSE headers
+        ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/python/*.hpp
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
         ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp)
-    file(GLOB_RECURSE tests
-        ${PROJECT_SOURCE_DIR}/source/tests/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/tests/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/preload/tests/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/preload/tests/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/tests/external/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/tests/external/*.cpp)
-    file(GLOB sources
+    file(GLOB_RECURSE sources
         ${PROJECT_SOURCE_DIR}/source/*.c
-        ${PROJECT_SOURCE_DIR}/source/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/tools/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/python/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/python/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/preload/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/preload/*.cpp)
+        ${PROJECT_SOURCE_DIR}/source/*.cu
+        ${PROJECT_SOURCE_DIR}/source/*.cpp)
     if(TIMEMORY_BUILD_EXAMPLES)
         file(GLOB_RECURSE examples
             ${PROJECT_SOURCE_DIR}/examples/ex-*/*.h
@@ -54,7 +45,6 @@ if(CLANG_FORMATTER)
 
     # always have files
     set(_COMMAND
-        COMMAND ${CLANG_FORMATTER} -i ${tests}
         COMMAND ${CLANG_FORMATTER} -i ${headers}
         COMMAND ${CLANG_FORMATTER} -i ${sources})
 
@@ -68,5 +58,5 @@ if(CLANG_FORMATTER)
         ${_COMMAND}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running '${CLANG_FORMATTER}'..."
-        SOURCES ${headers} ${sources} ${examples} ${tests})
+        SOURCES ${headers} ${sources} ${examples})
 endif()

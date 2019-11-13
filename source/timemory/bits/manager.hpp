@@ -46,7 +46,9 @@
 namespace tim
 {
 //======================================================================================//
+//
 #if !defined(TIMEMORY_EXTERN_INIT)
+
 inline std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
@@ -55,18 +57,12 @@ manager::f_manager_instance_count()
 }
 
 //======================================================================================//
-// generate a master instance and a nullptr on the first pass
-// generate a worker instance on subsequent and return master and worker
+// number of threads counter
 //
-inline manager::pointer_pair_t&
-manager::instance_pair()
+inline std::atomic<int32_t>&
+manager::f_thread_counter()
 {
-    static auto              _master_instance = std::make_shared<manager>();
-    static std::atomic<int>  _counter;
-    static thread_local auto _worker_instance =
-        pointer_t((_counter++ == 0) ? nullptr : new manager());
-    static thread_local auto _instance =
-        pointer_pair_t{ _master_instance, _worker_instance };
+    static std::atomic<int32_t> _instance;
     return _instance;
 }
 
@@ -76,10 +72,8 @@ manager::instance_pair()
 inline manager::pointer_t
 manager::instance()
 {
-    static thread_local auto& _pinst = manager::instance_pair();
-    static thread_local auto& _instance =
-        _pinst.second.get() ? _pinst.second : _pinst.first;
-    return _instance;
+    static thread_local auto _inst = get_shared_ptr_pair_instance<manager>();
+    return _inst;
 }
 
 //======================================================================================//
@@ -88,11 +82,12 @@ manager::instance()
 inline manager::pointer_t
 manager::master_instance()
 {
-    static auto& _pinst = manager::instance_pair();
-    return _pinst.first;
+    static auto _pinst = get_shared_ptr_pair_master_instance<manager>();
+    return _pinst;
 }
 
 #endif
+//
 //======================================================================================//
 
 inline manager::manager()
@@ -106,17 +101,16 @@ inline manager::manager()
     if(_once++ == 0)
     {
         settings::parse();
-        // std::atexit(&exit_hook);
         papi::init();
+        std::atexit(manager::exit_hook);
     }
 
     if(m_instance_count == 0)
     {
         if(settings::banner())
-            printf(
-                "#--------------------- tim::manager initialized [%i] "
-                "---------------------#\n\n",
-                m_instance_count);
+            printf("#--------------------- tim::manager initialized [%i] "
+                   "---------------------#\n\n",
+                   m_instance_count);
     }
 }
 
@@ -124,17 +118,16 @@ inline manager::manager()
 
 inline manager::~manager()
 {
-    --f_manager_instance_count();
+    auto _remain = --f_manager_instance_count();
 
-    if(instance_pair().second == nullptr)
+    if(get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
+       m_instance_count == 0)
     {
         f_thread_counter().store(0, std::memory_order_relaxed);
-        exit_hook();
         if(settings::banner())
-            printf(
-                "\n\n#---------------------- tim::manager destroyed [%i] "
-                "----------------------#\n",
-                m_instance_count);
+            printf("\n\n#---------------------- tim::manager destroyed [%i] "
+                   "----------------------#\n",
+                   m_instance_count);
     }
 }
 
@@ -174,7 +167,7 @@ manager::finalize()
     };
 
     //
-    //  ideally, only of these will be populated
+    //  ideally, only one of these will be populated
     //
     // finalize workers first
     _finalize(m_worker_finalizers);
@@ -187,8 +180,17 @@ manager::finalize()
 inline void
 manager::exit_hook()
 {
-    papi::shutdown();
-    mpi::finalize();
+    try
+    {
+        if(f_manager_instance_count() > 0)
+        {
+            auto master_manager = get_shared_ptr_pair_master_instance<manager>();
+            master_manager.reset();
+        }
+        papi::shutdown();
+        mpi::finalize();
+    } catch(...)
+    {}
 }
 
 //======================================================================================//

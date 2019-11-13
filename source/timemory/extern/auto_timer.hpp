@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file cuda_extern.hpp
- * \headerfile cuda_extern.hpp "timemory/templates/cuda_extern.hpp"
+/** \file auto_timer.hpp
+ * \headerfile auto_timer.hpp "timemory/extern/auto_timer.hpp"
  * Extern template declarations that include CUDA
  *
  */
@@ -39,7 +39,7 @@
 //--------------------------------------------------------------------------------------//
 // auto_timer
 //
-#if defined(TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES) && !defined(EXTERN_TEMPLATE_BUILD)
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_EXTERN_TEMPLATE_BUILD)
 
 TIMEMORY_DECLARE_EXTERN_TUPLE(auto_timer_t, ::tim::component::real_clock,
                               ::tim::component::system_clock,

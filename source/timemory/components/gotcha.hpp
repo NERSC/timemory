@@ -135,8 +135,8 @@ struct gotcha
     static get_initializer_t& get_initializer()
     {
         static get_initializer_t _instance = []() {
-            for(const auto& itr : get_constructors())
-                itr();
+            for(const auto& itr : get_data())
+                itr.constructor();
         };
         return _instance;
     }
@@ -166,7 +166,7 @@ struct gotcha
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
-        auto& _fill_ids = get_filled();
+        auto& _data = get_data()[_N];
 
         if(_func.find("MPI_") != std::string::npos ||
            _func.find("mpi_") != std::string::npos)
@@ -208,15 +208,8 @@ struct gotcha
             }
         }
 
-        if(!_fill_ids[_N])
+        if(!_data.filled)
         {
-            auto& _bindings     = get_bindings();
-            auto& _wrap_ids     = get_wrap_ids();
-            auto& _tool_ids     = get_tool_ids();
-            auto& _constructors = get_constructors();
-            auto& _destructors  = get_destructors();
-            auto& _ready_flags  = get_ready_flags();
-
             // static int _incr = _priority;
             // _priority        = _incr++;
 
@@ -231,37 +224,37 @@ struct gotcha
             // ensure the hash to string pairing is stored
             storage_type::instance()->add_hash_id(_label);
 
-            _tool_ids[_N]    = _label;
-            _fill_ids[_N]    = true;
-            _wrap_ids[_N]    = _func;
-            _ready_flags[_N] = get_default_ready();
+            _data.tool_id = _label;
+            _data.filled  = true;
+            _data.wrap_id = _func;
+            _data.ready   = get_default_ready();
 
             error_t ret_prio = ::tim::gotcha::set_priority(_label, _priority);
             check_error<_N>(ret_prio, "set priority");
 
-            _bindings[_N] = std::move(construct_binder<_N, _Ret, _Args...>(_func));
+            _data.binding = std::move(construct_binder<_N, _Ret, _Args...>(_func));
 
-            error_t ret_wrap = ::tim::gotcha::wrap(_bindings[_N], _tool_ids[_N]);
+            error_t ret_wrap = ::tim::gotcha::wrap(_data.binding, _data.tool_id);
             check_error<_N>(ret_wrap, "binding");
 
             if(ret_wrap == GOTCHA_SUCCESS)
             {
-                _constructors[_N] = [=]() {
-                    this_type::configure<_N, _Ret, _Args...>(_wrap_ids[_N], _priority,
+                _data.constructor = [=]() {
+                    this_type::configure<_N, _Ret, _Args...>(_data.wrap_id, _priority,
                                                              _tool);
                 };
 
-                _destructors[_N] = [=]() {
-                    this_type::revert<_N, _Ret, _Args...>(_wrap_ids[_N]);
+                _data.destructor = [=]() {
+                    this_type::revert<_N, _Ret, _Args...>(_data.wrap_id);
                 };
 
                 if(settings::verbose() > 1 || settings::debug())
                 {
                     std::cout << "[gotcha::" << __FUNCTION__ << "]> "
-                              << "wrapped: " << get_wrap_ids()[_N]
-                              << ", wrapped pointer: " << _bindings[_N].wrapper_pointer
-                              << ", function_handle: " << _bindings[_N].function_handle
-                              << ", name: " << _bindings[_N].name << std::endl;
+                              << "wrapped: " << _data.wrap_id
+                              << ", wrapped pointer: " << _data.binding.wrapper_pointer
+                              << ", function_handle: " << _data.binding.function_handle
+                              << ", name: " << _data.binding.name << std::endl;
                 }
             }
         }
@@ -282,29 +275,25 @@ struct gotcha
     static void revert(std::string _func = "")
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
+        auto& _data = get_data()[_N];
 #if defined(TIMEMORY_USE_GOTCHA)
-        auto& _fill_ids = get_filled();
-        auto& _wrappids = get_wrap_ids();
 
-        if(_fill_ids[_N] && (_func.empty() || _wrappids[_N] == _func))
+        if(_data.filled && (_func.empty() || _data.wrap_id == _func))
         {
-            auto& _wrappees = get_wrappees();
-            auto& _bindings = get_bindings();
-
             if(_func.empty())
-                _func = _wrappids[_N];
+                _func = _data.wrap_id;
 
-            get_filled()[_N] = false;
-            auto      _orig  = gotcha_get_wrappee(_wrappees[_N]);
+            _data.filled     = false;
+            auto      _orig  = gotcha_get_wrappee(_data.wrappee);
             wrappee_t _dummy = 0x0;
-            _bindings[_N]    = { _func.c_str(), _orig, &_dummy };
-            error_t ret_wrap = ::tim::gotcha::wrap(_bindings[_N], _wrappids[_N]);
+            _data.binding    = { _func.c_str(), _orig, &_dummy };
+            error_t ret_wrap = ::tim::gotcha::wrap(_data.binding, _data.wrap_id);
             check_error<_N>(ret_wrap, "unwrap binding");
         }
 #else
         consume_parameters(_func);
 #endif
-        get_destructors()[_N] = []() {};
+        _data.destructor = []() {};
     }
 
     //----------------------------------------------------------------------------------//
@@ -347,14 +336,15 @@ struct gotcha
             --get_started();
         while(get_thread_started() > 0)
             --get_thread_started();
-        for(auto& itr : get_destructors())
-            itr();
+        for(auto& itr : get_data())
+            itr.destructor();
     }
 
     static void invoke_thread_init(storage_type*)
     {
+        auto& _data = get_data();
         for(size_type i = 0; i < _Nt; ++i)
-            get_ready_flags()[i] = (get_filled()[i] && get_default_ready());
+            _data[i].ready = (_data[i].filled && get_default_ready());
     }
 
     double get_display() const { return 0; }
@@ -373,8 +363,9 @@ struct gotcha
 
         if(_t == 0)
         {
+            auto& _data = get_data();
             for(size_type i = 0; i < _Nt; ++i)
-                get_ready_flags()[i] = get_filled()[i];
+                _data[i].ready = _data[i].filled;
         }
     }
 
@@ -385,14 +376,15 @@ struct gotcha
 
         if(_t == 0)
         {
+            auto& _data = get_data();
             for(size_type i = 0; i < _Nt; ++i)
-                get_ready_flags()[i] = false;
+                _data[i].ready = false;
         }
 
         if(_n == 0)
         {
-            for(auto& itr : get_destructors())
-                itr();
+            for(auto& itr : get_data())
+                itr.destructor();
         }
     }
 
@@ -426,6 +418,33 @@ public:
 
 private:
     //----------------------------------------------------------------------------------//
+    struct gotcha_data
+    {
+        gotcha_data() = default;
+
+        bool          ready       = get_default_ready();
+        bool          filled      = false;
+        binding_t     binding     = binding_t{};
+        wrappee_t     wrappee     = 0x0;
+        wrappid_t     wrap_id     = "";
+        wrappid_t     tool_id     = "";
+        constructor_t constructor = []() {};
+        destructor_t  destructor  = []() {};
+    };
+
+    //----------------------------------------------------------------------------------//
+
+    static array_t<gotcha_data>& get_data()
+    {
+        static auto _get = []() {
+            array_t<gotcha_data> _arr;
+            return _arr;
+        };
+        static array_t<gotcha_data> _instance = _get();
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
 
     static std::atomic<int64_t>& get_started()
     {
@@ -442,7 +461,7 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-
+    /*
     static array_t<bool>& get_filled()
     {
         static auto _get = []() {
@@ -517,9 +536,6 @@ private:
 
     //----------------------------------------------------------------------------------//
 
-private:
-    //----------------------------------------------------------------------------------//
-
     static array_t<bool>& get_ready_flags()
     {
         static auto _get = []() {
@@ -531,7 +547,7 @@ private:
         static thread_local array_t<bool> _instance = _get();
         return _instance;
     }
-
+    */
     //----------------------------------------------------------------------------------//
 
     template <size_t _N>
@@ -539,11 +555,11 @@ private:
     {
         if(_ret != GOTCHA_SUCCESS)
         {
+            auto&             _data = get_data()[_N];
             std::stringstream msg;
-            msg << _prefix << " at index '" << _N << "' for function '"
-                << get_wrap_ids()[_N] << "' returned error code "
-                << static_cast<int>(_ret) << ": " << ::tim::gotcha::get_error(_ret)
-                << "\n";
+            msg << _prefix << " at index '" << _N << "' for function '" << _data.wrap_id
+                << "' returned error code " << static_cast<int>(_ret) << ": "
+                << ::tim::gotcha::get_error(_ret) << "\n";
             std::cerr << msg.str() << std::endl;
         }
     }
@@ -554,9 +570,9 @@ private:
               typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
-        auto& _wrappees = get_wrappees();
+        auto& _data = get_data()[_N];
         return binding_t{ _func.c_str(), (void*) this_type::wrap<_N, _Ret, _Args...>,
-                          &_wrappees[_N] };
+                          &_data.wrappee };
     }
 
     //----------------------------------------------------------------------------------//
@@ -565,9 +581,9 @@ private:
               typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
-        auto& _wrappees = get_wrappees();
+        auto& _data = get_data()[_N];
         return binding_t{ _func.c_str(), (void*) this_type::wrap_void<_N, _Args...>,
-                          &_wrappees[_N] };
+                          &_data.wrappee };
     }
 
     //----------------------------------------------------------------------------------//
@@ -577,12 +593,14 @@ private:
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
+        auto& _data = get_data()[_N];
+
         typedef _Ret (*func_t)(_Args...);
-        func_t _orig = (func_t)(gotcha_get_wrappee(get_wrappees()[_N]));
+        func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
         auto& _global_suppress = gotcha_suppression::get();
 
-        if(!get_ready_flags()[_N] || _global_suppress)
+        if(!_data.ready || _global_suppress)
         {
             if(settings::debug())
             {
@@ -590,8 +608,8 @@ private:
                 static thread_local int64_t _tid = _tcount++;
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
-                   << get_ready_flags()[_N] << ") or is globally suppressed ("
-                   << _global_suppress << ")...\n";
+                   << _data.ready << ") or is globally suppressed (" << _global_suppress
+                   << ")...\n";
                 std::cout << ss.str().c_str() << std::flush;
             }
             return (_orig) ? (*_orig)(_args...) : _Ret{};
@@ -599,8 +617,8 @@ private:
 
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
-        get_ready_flags()[_N] = false;
-        _global_suppress      = true;
+        _data.ready      = false;
+        _global_suppress = true;
 
 #    if defined(DEBUG)
         /*
@@ -625,17 +643,17 @@ private:
         if(_orig)
         {
             // component_type is always: component_{tuple,list,hybrid}
-            component_type _obj(get_tool_ids()[_N], true, settings::flat_profile());
+            component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
-            _obj.customize(get_tool_ids()[_N], _args...);
+            _obj.customize(_data.tool_id, _args...);
 
-            get_ready_flags()[_N] = true;
-            _global_suppress      = false;
-            _Ret _ret             = (*_orig)(_args...);
-            _global_suppress      = true;
-            get_ready_flags()[_N] = false;
+            _data.ready      = true;
+            _global_suppress = false;
+            _Ret _ret        = (*_orig)(_args...);
+            _global_suppress = true;
+            _data.ready      = false;
 
-            _obj.customize(get_tool_ids()[_N], _ret);
+            _obj.customize(_data.tool_id, _ret);
             _obj.stop();
 
 #    if defined(DEBUG)
@@ -656,8 +674,8 @@ private:
 #    endif
 
             // allow re-entrance into wrapper
-            _global_suppress      = false;
-            get_ready_flags()[_N] = true;
+            _global_suppress = false;
+            _data.ready      = true;
 
             return _ret;
         }
@@ -665,8 +683,8 @@ private:
             PRINT_HERE("nullptr to original function!");
 
         // allow re-entrance into wrapper
-        _global_suppress      = false;
-        get_ready_flags()[_N] = true;
+        _global_suppress = false;
+        _data.ready      = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("should not be here!");
@@ -681,10 +699,12 @@ private:
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
-        auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(get_wrappees()[_N]);
+        auto& _data = get_data()[_N];
+
+        auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(_data.wrappee);
 
         auto& _global_suppress = gotcha_suppression::get();
-        if(!get_ready_flags()[_N] || _global_suppress)
+        if(!_data.ready || _global_suppress)
         {
             if(settings::debug())
             {
@@ -692,8 +712,8 @@ private:
                 static thread_local int64_t _tid = _tcount++;
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
-                   << get_ready_flags()[_N] << ") or is globally suppressed ("
-                   << _global_suppress << ")...\n";
+                   << _data.ready << ") or is globally suppressed (" << _global_suppress
+                   << ")...\n";
                 std::cout << ss.str().c_str() << std::flush;
             }
             if(_orig)
@@ -703,31 +723,32 @@ private:
 
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
-        get_ready_flags()[_N] = false;
-        _global_suppress      = true;
+        _data.ready      = false;
+        _global_suppress = true;
 
         if(_orig)
         {
-            component_type _obj(get_tool_ids()[_N], true, settings::flat_profile());
+            component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
-            _obj.customize(get_tool_ids()[_N], _args...);
+            _obj.customize(_data.tool_id, _args...);
 
-            get_ready_flags()[_N] = true;
-            _global_suppress      = false;
+            _data.ready      = true;
+            _global_suppress = false;
             (*_orig)(_args...);
-            _global_suppress      = true;
-            get_ready_flags()[_N] = false;
+            _global_suppress = true;
+            _data.ready      = false;
 
-            _obj.customize(get_tool_ids()[_N]);
+            _obj.customize(_data.tool_id);
             _obj.stop();
-        } else if(settings::debug())
+        }
+        else if(settings::debug())
         {
             PRINT_HERE("nullptr to original function!");
         }
 
         // allow re-entrance into wrapper
-        _global_suppress      = false;
-        get_ready_flags()[_N] = true;
+        _global_suppress = false;
+        _data.ready      = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("should not be here!");

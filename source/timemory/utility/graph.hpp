@@ -99,16 +99,14 @@ public:
 template <typename T>
 tgraph_node<T>::tgraph_node(const T& val)
 : data(val)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
 tgraph_node<T>::tgraph_node(T&& val)
 : data(std::move(val))
-{
-}
+{}
 
 //======================================================================================//
 //  graph allocator that counts the size of the allocation
@@ -138,7 +136,6 @@ public:
     graph_allocator(graph_allocator&&)      = default;
     ~graph_allocator()
     {
-        // PRINT_HERE("destroying graph_allocator...");
         for(auto& itr : m_allocations)
             free(itr);
     }
@@ -290,8 +287,7 @@ public:
 private:
     template <typename... _Args>
     void _consume(_Args&&...)
-    {
-    }
+    {}
 
     void add_pages(int npages = 1) const
     {
@@ -646,8 +642,7 @@ public:
         typename _ComparePred = std::function<bool(sibling_iterator, sibling_iterator)>,
         typename _ReducePred  = std::function<void(sibling_iterator, sibling_iterator)>>
     inline void reduce(
-        const sibling_iterator&, const sibling_iterator&, const sibling_iterator&,
-        const sibling_iterator&,
+        const sibling_iterator&, const sibling_iterator&, std::set<sibling_iterator>&,
         _ComparePred&& = [](sibling_iterator lhs,
                             sibling_iterator rhs) { return (*lhs == *rhs); },
         _ReducePred&& = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
@@ -788,8 +783,7 @@ private:
     public:
         explicit compare_nodes(StrictWeakOrdering comp)
         : m_comp(comp)
-        {
-        }
+        {}
 
         bool operator()(const graph_node* a, const graph_node* b)
         {
@@ -1212,7 +1206,7 @@ graph<T, AllocatorT>::append_child(iter position, T&& x)
 
     graph_node* tmp = m_alloc.allocate(1, 0);
     m_alloc.construct(tmp);  // Here is where the move semantics kick in
-    std::swap(tmp->data, std::move(x));
+    std::swap(tmp->data, x);
 
     tmp->first_child = 0;
     tmp->last_child  = 0;
@@ -2204,133 +2198,68 @@ graph<T, AllocatorT>::merge(const sibling_iterator& to1, const sibling_iterator&
 template <typename T, typename AllocatorT>
 template <typename _ComparePred, typename _ReducePred>
 void
-graph<T, AllocatorT>::reduce(const sibling_iterator& beg1, const sibling_iterator& end1,
-                             const sibling_iterator& beg2, const sibling_iterator& end2,
-                             _ComparePred&& _compare, _ReducePred&& _reduce)
+graph<T, AllocatorT>::reduce(const sibling_iterator&     lhs, const sibling_iterator&,
+                             std::set<sibling_iterator>& _erase, _ComparePred&& _compare,
+                             _ReducePred&& _reduce)
 {
-    // if(!is_valid(beg1) || !is_valid(beg2))
-    //     return;
+    if(!is_valid(lhs))
+        return;
 
-    /*int ncompare = 0;
-    int nitr1 = 0;
-    int nitr2 = 0;
-    if(beg1 && beg2)
+    for(pre_order_iterator litr = lhs; litr != feet; ++litr)
     {
-    auto nsib1 = number_of_siblings(beg1);
-    auto nsib2 = number_of_siblings(beg2);
-    printf("number of siblings: %li and %li\n", (long int) nsib1, (long int) nsib2);
-    auto nchild1 = number_of_children(beg1);
-    auto nchild2 = number_of_children(beg2);
-    printf("number of children: %li and %li\n", (long int) nchild1, (long int) nchild2);
-    }*/
-    for(sibling_iterator itr1 = beg1; itr1 != end1; ++itr1)
-    {
-        // nitr1++;
-        for(sibling_iterator itr2 = beg2; itr2 != end2; ++itr2)
+        if(!litr)
+            continue;
+
+        uint32_t nsiblings = number_of_siblings(litr);
+        if(nsiblings < 2)
+            continue;
+
+        uint32_t idx = index(litr);
+        for(uint32_t i = 0; i < nsiblings; ++i)
         {
-            // nitr2++;
-            // skip if same iterator
-            if(itr1 == itr2)
+            if(i == idx)
                 continue;
-            //++ncompare;
-            if(itr1 && itr2 && _compare(itr1, itr2))
+
+            sibling_iterator ritr = sibling(litr, i);
+
+            if(!ritr)
+                continue;
+
+            // skip if same iterator
+            if(litr.node == ritr.node)
+                continue;
+
+            if(_erase.find(ritr) != _erase.end())
+                continue;
+
+            if(_compare(litr, ritr))
             {
-                _reduce(itr1, itr2);
-                // recursive for children
-                auto ncitr1 = number_of_children(itr1);
-                auto ncitr2 = number_of_children(itr2);
-                if(ncitr1 > 0 && ncitr2 > 0)
-                {
-                    for(uint32_t i = 0; i < ncitr1; ++i)
-                        for(uint32_t j = 0; j < ncitr2; ++j)
-                        {
-                            auto citr1 = child(itr1, i);
-                            auto citr2 = child(itr2, j);
-                            reduce(citr1.begin(), citr1.end(), citr2.begin(), citr2.end(),
-                                   _compare, _reduce);
-                        }
-                }
-                this->erase(itr2);
+                pre_order_iterator pritr(ritr);
+                // printf("\n");
+                // pre_order_iterator critr = pritr.begin();
+                // auto aitr = append_child(litr, critr);
+                auto aitr = insert_subgraph_after(litr, pritr);
+                reduce(aitr.begin(), feet, _erase, _compare, _reduce);
+                // insert_subgraph_after(litr, pritr);
+                _erase.insert(ritr);
+                reduce(litr.begin(), feet, _erase, _compare, _reduce);
+                _reduce(litr, ritr);
+                // this->erase(ritr);
+
+                // break;
             }
         }
 
-        /*
-        // recursive for children
-        auto ncitr1 = number_of_children(itr1);
-        auto ncitr2 = number_of_children(beg2);
-        if(ncitr1 > 0 && ncitr2 > 0)
+        for(auto& itr : _erase)
+            this->erase(itr);
+
+        if(_erase.size() > 0)
         {
-            auto citr1 = child(itr1, 0);
-            auto citr2 = child(beg2, 0);
-            if(citr1 && citr2)
-                reduce(citr1.begin(), citr1.end(), citr2.begin(), citr2.end(), _compare,
-                       _reduce);
+            _erase.clear();
+            break;
         }
-        */
+        // reduce(litr.begin(), feet, _erase, _compare, _reduce);
     }
-
-    if(beg1 && beg2)
-    {
-        // recursive for children
-        auto ncitr1 = number_of_children(beg1);
-        auto ncitr2 = number_of_children(beg2);
-        // printf("number of children: %li and %li\n", (long int) ncitr1, (long int)
-        // ncitr2);
-        if(ncitr1 > 0 && ncitr2 > 0)
-        {
-            graph_node* pos1 = beg1.node->first_child;
-            while(pos1)
-            {
-                graph_node* pos2 = beg2.node->first_child;
-                while(pos2)
-                {
-                    if(pos1 != pos2 && _compare(pos1, pos2))
-                    {
-                        _reduce(pos1, pos2);
-                        auto tmp = pos2;
-                        pos2     = pos2->next_sibling;
-                        this->erase(sibling_iterator(tmp));
-                    }
-                    else
-                    {
-                        pos2 = pos2->next_sibling;
-                    }
-                }
-                pos1 = pos1->next_sibling;
-            }
-
-            auto citr1 = beg1.begin();
-            auto citr2 = beg2.begin();
-            if(citr1 && citr2)
-            {
-                reduce(citr1.begin(), citr1.end(), citr2.begin(), citr2.end(), _compare,
-                       _reduce);
-            }
-        }
-        reduce(beg1.begin(), beg1.end(), beg2.begin(), beg2.end(), _compare, _reduce);
-        graph_node* pos1 = beg1.node->next_sibling;
-        while(pos1)
-        {
-            graph_node* pos2 = beg2.node->next_sibling;
-            while(pos2)
-            {
-                if(pos1 != pos2 && _compare(pos1, pos2))
-                {
-                    _reduce(pos1, pos2);
-                    auto tmp = pos2;
-                    pos2     = pos2->next_sibling;
-                    this->erase(sibling_iterator(tmp));
-                }
-                else
-                {
-                    pos2 = pos2->next_sibling;
-                }
-            }
-            pos1 = pos1->next_sibling;
-        }
-    }
-
-    // printf("number of comparisons: %i, lhs: %i, rhs: %i\n", ncompare, nitr1, nitr2);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -2722,6 +2651,60 @@ graph<T, AllocatorT>::is_head(const iterator_base& it)
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
+inline unsigned int
+graph<T, AllocatorT>::index(sibling_iterator it) const
+{
+    graph_node* tmp = it.node;
+    if(!tmp)
+        return static_cast<unsigned int>(-1);
+
+    if(tmp->parent != nullptr)
+        tmp = tmp->parent->first_child;
+    else
+    {
+        while(tmp->prev_sibling != nullptr)
+            tmp = tmp->prev_sibling;
+    }
+
+    unsigned int ret = 0;
+    while(tmp != it.node)
+    {
+        ++ret;
+        tmp = tmp->next_sibling;
+    }
+
+    return ret;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
+typename graph<T, AllocatorT>::sibling_iterator
+graph<T, AllocatorT>::sibling(const iterator_base& it, unsigned int num) const
+{
+    graph_node* tmp = it.node;
+    if(!tmp)
+        return sibling_iterator(nullptr);
+
+    if(tmp->parent != nullptr)
+        tmp = tmp->parent->first_child;
+    else
+    {
+        while(tmp->prev_sibling != nullptr)
+            tmp = tmp->prev_sibling;
+    }
+
+    while(num--)
+    {
+        assert(tmp != nullptr);
+        tmp = tmp->next_sibling;
+    }
+    return tmp;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
 graph<T, AllocatorT>::child(const iterator_base& it, unsigned int num)
 {
@@ -2741,8 +2724,7 @@ template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::iterator_base::iterator_base()
 : node(nullptr)
 , m_skip_current_children(false)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -2750,8 +2732,7 @@ template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::iterator_base::iterator_base(graph_node* tn)
 : node(tn)
 , m_skip_current_children(false)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -2887,24 +2868,21 @@ graph<T, AllocatorT>::iterator_base::number_of_children() const
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::pre_order_iterator::pre_order_iterator()
 : iterator_base(nullptr)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::pre_order_iterator::pre_order_iterator(graph_node* tn)
 : iterator_base(tn)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::pre_order_iterator::pre_order_iterator(const iterator_base& other)
 : iterator_base(other.node)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -3237,16 +3215,23 @@ void
 print_subgraph_bracketed(const graph<T>& t, typename graph<T>::iterator root,
                          std::ostream& os)
 {
+    static int _depth = 0;
     if(t.empty())
         return;
+
+    auto        m_depth = _depth++;
+    std::string indent  = "";
+    for(int i = 0; i < m_depth; ++i)
+        indent += "  ";
+
     if(t.number_of_children(root) == 0)
     {
-        os << *root;
+        os << "\n" << indent << *root;
     }
     else
     {
         // parent
-        os << *root;
+        os << "\n" << indent << *root;
         os << "(";
         // child1, ..., childn
         int sibling_count = t.number_of_siblings(t.begin(root));
@@ -3265,6 +3250,7 @@ print_subgraph_bracketed(const graph<T>& t, typename graph<T>::iterator root,
         }
         os << ")";
     }
+    --_depth;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -3292,6 +3278,30 @@ print_graph(const tim::graph<T>& t, Formatter format, std::ostream& str)
         ++ritr, ++nhead)
     {
         print_subgraph(t, format, ritr, str);
+        if(nhead != head_count)
+        {
+            str << std::endl;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+void
+print_graph(const tim::graph<T>& t, std::ostream& str)
+{
+    auto _formatter = [](const T& obj) {
+        std::stringstream ss;
+        ss << obj;
+        return ss.str();
+    };
+    int head_count = t.number_of_siblings(t.begin());
+    int nhead      = 0;
+    for(typename tim::graph<T>::sibling_iterator ritr = t.begin(); ritr != t.end();
+        ++ritr, ++nhead)
+    {
+        print_subgraph(t, _formatter, ritr, str);
         if(nhead != head_count)
         {
             str << std::endl;

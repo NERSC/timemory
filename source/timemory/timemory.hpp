@@ -39,16 +39,13 @@ namespace tim
 template <typename... _Args>
 void
 timemory_init(_Args...)
-{
-}
+{}
 inline void
 timemory_finalize()
-{
-}
+{}
 inline void
 print_env()
-{
-}
+{}
 
 /// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
@@ -56,8 +53,7 @@ struct dummy
 {
     template <typename... _Args>
     dummy(_Args&&...)
-    {
-    }
+    {}
     ~dummy()            = default;
     dummy(const dummy&) = default;
     dummy(dummy&&)      = default;
@@ -69,12 +65,10 @@ struct dummy
     void report_at_exit(bool) {}
     template <typename... _Args>
     void mark_begin(_Args&&...)
-    {
-    }
+    {}
     template <typename... _Args>
     void mark_end(_Args&&...)
-    {
-    }
+    {}
     friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
 };
 }  // namespace tim
@@ -112,6 +106,10 @@ struct dummy
 // invoke member function on caliper reference or type within reference
 #    define TIMEMORY_CALIPER_APPLY(...)
 #    define TIMEMORY_CALIPER_TYPE_APPLY(...)
+#    define TIMEMORY_CALIPER_APPLY0(...)
+#    define TIMEMORY_CALIPER_TYPE_APPLY0(...)
+#    define TIMEMORY_CALIPER_LAMBDA(...)
+#    define TIMEMORY_CALIPER_TYPE_LAMBDA(...)
 
 // get an object
 #    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
@@ -119,9 +117,9 @@ struct dummy
 #    define TIMEMORY_HANDLE(...) tim::dummy()
 
 // get a pointer to an object
-#    define TIMEMORY_BLANK_POINTER_HANDLE(...) nullptr
-#    define TIMEMORY_BASIC_POINTER_HANDLE(...) nullptr
-#    define TIMEMORY_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_BLANK_RAW_POINTER(...) nullptr
+#    define TIMEMORY_BASIC_RAW_POINTER(...) nullptr
+#    define TIMEMORY_RAW_POINTER(...) nullptr
 
 // debug only
 #    define TIMEMORY_DEBUG_BLANK_MARKER(...)
@@ -152,7 +150,7 @@ struct dummy
 #    include "timemory/variadic/auto_timer.hpp"
 #    include "timemory/variadic/macros.hpp"
 
-#    include "timemory/ctimemory.h"
+#    include "timemory/enum.h"
 
 // definitions of types
 #    include "timemory/bits/timemory.hpp"
@@ -163,7 +161,7 @@ struct dummy
 //======================================================================================//
 
 #    include "timemory/bits/init.hpp"
-#    include "timemory/templates/auto_timer_extern.hpp"
+#    include "timemory/extern/auto_timer.hpp"
 
 //======================================================================================//
 

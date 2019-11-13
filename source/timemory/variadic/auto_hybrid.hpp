@@ -54,19 +54,19 @@ class auto_hybrid
                   "must be tim::component_list<...>");
 
 public:
-    using this_type       = auto_hybrid<_CompTuple, _CompList>;
-    using base_type       = component_hybrid<_CompTuple, _CompList>;
-    using tuple_type      = typename base_type::tuple_type;
-    using list_type       = typename base_type::list_type;
-    using component_type  = typename base_type::component_type;
-    using data_type       = typename component_type::data_type;
-    using type_tuple      = typename component_type::type_tuple;
-    using tuple_type_list = typename component_type::tuple_type_list;
-    using list_type_list  = typename component_type::list_type_list;
-    using data_value_type = typename component_type::data_value_type;
-    using data_label_type = typename component_type::data_label_type;
-    using string_t        = std::string;
-    using string_hash     = std::hash<string_t>;
+    using this_type           = auto_hybrid<_CompTuple, _CompList>;
+    using base_type           = component_hybrid<_CompTuple, _CompList>;
+    using tuple_type          = typename base_type::tuple_type;
+    using list_type           = typename base_type::list_type;
+    using component_type      = typename base_type::component_type;
+    using data_type           = typename component_type::data_type;
+    using type_tuple          = typename component_type::type_tuple;
+    using tuple_type_list     = typename component_type::tuple_type_list;
+    using list_type_list      = typename component_type::list_type_list;
+    using data_value_type     = typename component_type::data_value_type;
+    using data_label_type     = typename component_type::data_label_type;
+    using string_t            = std::string;
+    using captured_location_t = typename component_type::captured_location_t;
 
     // used by gotcha
     static constexpr bool is_component_list   = false;
@@ -78,15 +78,16 @@ public:
     inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
                                 bool report_at_exit = settings::destructor_report());
 
+    inline explicit auto_hybrid(const captured_location_t&,
+                                bool flat           = settings::flat_profile(),
+                                bool report_at_exit = settings::destructor_report());
+
     template <typename _Scope>
     inline auto_hybrid(const string_t&, _Scope = _Scope{},
                        bool report_at_exit = settings::destructor_report());
 
-    template <typename _Scope = scope::process>
-    inline explicit auto_hybrid(component_type& tmp,
-                                bool            flat = (settings::flat_profile() ||
-                                             std::is_same<_Scope, scope::flat>::value),
-                                bool report_at_exit  = settings::destructor_report());
+    inline explicit auto_hybrid(component_type& tmp, bool flat = settings::flat_profile(),
+                                bool report_at_exit = settings::destructor_report());
     inline ~auto_hybrid();
 
     // copy and move
@@ -213,7 +214,25 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
-                               : component_type())
+                               : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        m_temporary_object.start();
+    }
+}
+
+//======================================================================================//
+
+template <typename _CompTuple, typename _CompList>
+auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& object_loc,
+                                                bool flat, bool report_at_exit)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {
@@ -231,7 +250,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, _Sco
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_tag, m_enabled,
                                                 std::is_same<_Scope, scope::flat>::value)
-                               : component_type())
+                               : component_type{})
 {
     if(m_enabled)
     {
@@ -242,7 +261,6 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, _Sco
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
-template <typename _Scope>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp, bool flat,
                                                 bool report_at_exit)
 : m_enabled(true)

@@ -35,6 +35,8 @@
 
 //======================================================================================//
 
+namespace tim
+{
 inline void
 check_rusage_call(int ret, const char* _func)
 {
@@ -46,6 +48,8 @@ check_rusage_call(int ret, const char* _func)
     tim::consume_parameters(ret, _func);
 #endif
 }
+
+}  // namespace tim
 
 //======================================================================================//
 // Returns the peak (maximum so far) resident set size (physical
@@ -101,6 +105,10 @@ tim::get_page_rss()
 #if defined(_UNIX)
 #    if defined(_MACOS)
     // OSX
+    // kern_return_t kret;
+    // task_t task;
+    // kret = task_for_pid(mach_task_self(), get_rusage_pid(), &task);
+
     struct mach_task_basic_info info;
     mach_msg_type_number_t      infoCount = MACH_TASK_BASIC_INFO_COUNT;
     if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
@@ -115,8 +123,10 @@ tim::get_page_rss()
 
 #    else  // Linux
 
-    int64_t rss = 0;
-    FILE*   fp  = fopen("/proc/self/statm", "r");
+    int64_t           rss = 0;
+    std::stringstream fio;
+    fio << "/proc/" << get_rusage_pid() << "/statm";
+    FILE* fp = fopen(fio.str().c_str(), "r");
     if(fp && fscanf(fp, "%*s%ld", &rss) == 1)
     {
         fclose(fp);
@@ -174,11 +184,33 @@ inline int64_t
 tim::get_data_rss()
 {
 #if defined(_UNIX)
+#    if defined(_MACOS)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     const int64_t _units = units::kilobyte * units::clocks_per_sec;
     return static_cast<int64_t>(_units * _usage.ru_idrss);
+
+#    else  // Linux
+
+    static auto get_statm_file = [&]() {
+        std::stringstream fio;
+        fio << "/proc/" << get_rusage_pid() << "/statm";
+        return fio.str();
+    };
+
+    std::string   fstatm    = get_statm_file();
+    int64_t       drss_size = 0;
+    std::ifstream ifs;
+    ifs.open(fstatm.c_str());
+    if(ifs)
+    {
+        static int64_t dummy = 0;
+        ifs >> dummy >> dummy >> dummy >> dummy >> dummy >> drss_size;
+    }
+    ifs.close();
+    return static_cast<int64_t>(drss_size * units::get_page_size());
+#    endif
 #else
     return static_cast<int64_t>(0);
 #endif
@@ -402,6 +434,10 @@ tim::get_virt_mem()
 #if defined(_UNIX)
 #    if defined(_MACOS)
     // OSX
+    // kern_return_t kret;
+    // task_t task;
+    // kret = task_for_pid(mach_task_self(), get_rusage_pid(), &task);
+
     struct mach_task_basic_info info;
     mach_msg_type_number_t      infoCount = MACH_TASK_BASIC_INFO_COUNT;
     if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
@@ -422,9 +458,9 @@ tim::get_virt_mem()
         return fio.str();
     };
 
-    static std::string                fstatm  = get_statm_file();
-    int64_t                           vm_size = 0;
-    static thread_local std::ifstream ifs;
+    std::string   fstatm  = get_statm_file();
+    int64_t       vm_size = 0;
+    std::ifstream ifs;
     ifs.open(fstatm.c_str());
     if(ifs)
         ifs >> vm_size;

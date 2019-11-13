@@ -62,9 +62,6 @@ class component_hybrid
 
     static const std::size_t num_elements = _CompTuple::size() + _CompList::size();
 
-    // empty init for friends
-    explicit component_hybrid() = default;
-
     // manager is friend so can use above
     friend class manager;
 
@@ -102,17 +99,29 @@ public:
     static constexpr bool contains_gotcha =
         (tuple_type::contains_gotcha || list_type::contains_gotcha);
 
-    using size_type   = int64_t;
-    using string_hash = std::hash<string_t>;
+    using size_type           = int64_t;
+    using captured_location_t = source_location::captured;
 
 public:
-    template <typename _Scope = scope::process>
-    explicit component_hybrid(
-        const string_t& key, const bool& store = false,
-        const bool& flat = (settings::flat_profile() ||
-                            std::is_same<_Scope, scope::flat>::value))
+    explicit component_hybrid()
+    : m_tuple()
+    , m_list()
+    {}
+
+    explicit component_hybrid(const string_t& key, const bool& store = false,
+                              const bool& flat = settings::flat_profile())
     : m_tuple(key, store, flat)
     , m_list(key, store, flat)
+    {
+        m_tuple.m_print_laps  = false;
+        m_list.m_print_laps   = false;
+        m_list.m_print_prefix = false;
+    }
+
+    explicit component_hybrid(const captured_location_t& loc, const bool& store = false,
+                              const bool& flat = settings::flat_profile())
+    : m_tuple(loc, store, flat)
+    , m_list(loc, store, flat)
     {
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
@@ -127,8 +136,7 @@ public:
     component_hybrid(const tuple_type& _tuple, const list_type& _list)
     : m_tuple(_tuple)
     , m_list(_list)
-    {
-    }
+    {}
 
     component_hybrid(const component_hybrid&) = default;
     component_hybrid(component_hybrid&&)      = default;
@@ -412,13 +420,6 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    inline void report(std::ostream& os, bool endline, bool ign_cutoff) const
-    {
-        m_tuple.report(os, endline, ign_cutoff);
-        m_list.report(os, endline, ign_cutoff);
-    }
-
-    //----------------------------------------------------------------------------------//
     static void print_storage()
     {
         tuple_type::print_storage();
@@ -481,13 +482,12 @@ public:
               enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
               enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int>  = 0>
     void type_apply(_Func&&, _Args&&...)
-    {
-    }
+    {}
 
 protected:
     // objects
-    tuple_type m_tuple;
-    list_type  m_list;
+    tuple_type m_tuple = tuple_type();
+    list_type  m_list  = list_type();
 };
 
 //--------------------------------------------------------------------------------------//

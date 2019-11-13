@@ -40,6 +40,19 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<papi_array<8>, std::array<long long, 8>, policy::thread_init,
+                            policy::thread_finalize>;
+
+extern template struct base<papi_array<16>, std::array<long long, 16>,
+                            policy::thread_init, policy::thread_finalize>;
+
+extern template struct base<papi_array<32>, std::array<long long, 32>,
+                            policy::thread_init, policy::thread_finalize>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //                          Array of PAPI counters
@@ -61,10 +74,8 @@ struct papi_array
     using storage_type      = typename base_type::storage_type;
     using get_initializer_t = std::function<event_list()>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 12;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 8;
 
     template <typename _Tp>
     using array_t = std::array<_Tp, MaxNumEvents>;
@@ -135,13 +146,13 @@ struct papi_array
                         throw std::runtime_error(ss.str());
                     else
                         fprintf(stderr, "%s\n", ss.str().c_str());
-                } else
+                }
+                else
                 {
                     if(settings::debug())
-                        printf(
-                            "[papi_array] Successfully created event '%s' with code "
-                            "'%i'...\n",
-                            itr.c_str(), evt_code);
+                        printf("[papi_array] Successfully created event '%s' with code "
+                               "'%i'...\n",
+                               itr.c_str(), evt_code);
                     events_list.push_back(evt_code);
                 }
             }

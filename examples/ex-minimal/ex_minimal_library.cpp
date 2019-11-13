@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
     timemory_init_library(argc, argv);
 
-    uint64_t id0 = timemory_get_begin_record("main_total");
+    uint64_t id0 = timemory_get_begin_record("main/total");
     long     ans = fib(nfib);
 
     uint64_t id1 = timemory_get_begin_record("nested");

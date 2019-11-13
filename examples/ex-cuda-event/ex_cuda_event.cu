@@ -210,8 +210,7 @@ main(int argc, char** argv)
         RUN_TEST(8, test_8_cupti_subset, num_test, num_fail);
         RUN_TEST(9, test_9_cupti_counters, num_test, num_fail);
         RUN_TEST(10, test_10_cupti_metric, num_test, num_fail);
-    }
-    catch(std::exception& e)
+    } catch(std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }
@@ -772,7 +771,7 @@ test_5_mt_saxpy_async()
     print_info(__FUNCTION__);
     warmup();
     TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
-    auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
+    auto lambda_op = tim::string::join("", "::", _TIM_FUNC);
 
     comp_tuple_t _clock("Runtime");
     _clock.start();
@@ -909,7 +908,7 @@ test_6_mt_saxpy_async_pinned()
     print_info(__FUNCTION__);
     warmup();
     TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
-    auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
+    auto lambda_op = tim::string::join("", "::", _TIM_FUNC);
 
     comp_tuple_t _clock("Runtime");
     _clock.start();

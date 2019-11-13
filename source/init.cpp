@@ -27,8 +27,6 @@
  *
  */
 
-#define TIMEMORY_BUILD_EXTERN_INIT
-
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/utility/macros.hpp"
@@ -41,38 +39,38 @@ using namespace tim::component;
 #if defined(TIMEMORY_EXTERN_INIT)
 
 //======================================================================================//
-
-__library_ctor__ void
-timemory_library_constructor()
+extern "C"
 {
+    __library_ctor__ void timemory_library_constructor()
+    {
 #    if defined(DEBUG)
-    auto _debug   = tim::settings::debug();
-    auto _verbose = tim::settings::verbose();
+        auto _debug   = tim::settings::debug();
+        auto _verbose = tim::settings::verbose();
 #    endif
 
 #    if defined(DEBUG)
-    if(_debug || _verbose > 3)
-        printf("[%s]> initializing manager...\n", __FUNCTION__);
+        if(_debug || _verbose > 3)
+            printf("[%s]> initializing manager...\n", __FUNCTION__);
 #    endif
 
-    // fully initialize manager
-    static thread_local auto _instance = tim::manager::instance();
-    static auto              _master   = tim::manager::master_instance();
+        // fully initialize manager
+        static thread_local auto _instance = tim::manager::instance();
+        static auto              _master   = tim::manager::master_instance();
 
-    if(_instance != _master)
-        printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
-               (void*) _instance.get(), (void*) _master.get());
+        if(_instance != _master)
+            printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
+                   (void*) _instance.get(), (void*) _master.get());
 
 #    if defined(DEBUG)
-    if(_debug || _verbose > 3)
-        printf("[%s]> initializing storage...\n", __FUNCTION__);
+        if(_debug || _verbose > 3)
+            printf("[%s]> initializing storage...\n", __FUNCTION__);
 #    endif
 
-    // initialize storage
-    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    tim::manager::get_storage<tuple_type>::initialize(_master);
+        // initialize storage
+        using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+        tim::manager::get_storage<tuple_type>::initialize(_master);
+    }
 }
-
 //======================================================================================//
 
 namespace tim
@@ -91,23 +89,17 @@ env_settings::instance()
 std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
-    static std::atomic<int32_t> instance;
-    return instance;
+    static std::atomic<int32_t> _instance;
+    return _instance;
 }
 
 //======================================================================================//
-// generate a master instance and a nullptr on the first pass
-// generate a worker instance on subsequent and return master and worker
+// number of threads counter
 //
-manager::pointer_pair_t&
-manager::instance_pair()
+std::atomic<int32_t>&
+manager::f_thread_counter()
 {
-    static auto              _master_instance = std::make_shared<manager>();
-    static std::atomic<int>  _counter;
-    static thread_local auto _worker_instance =
-        pointer_t((_counter++ == 0) ? nullptr : new manager());
-    static thread_local auto _instance =
-        pointer_pair_t{ _master_instance, _worker_instance };
+    static std::atomic<int32_t> _instance;
     return _instance;
 }
 
@@ -117,10 +109,8 @@ manager::instance_pair()
 manager::pointer_t
 manager::instance()
 {
-    static thread_local auto& _pinst = manager::instance_pair();
-    static thread_local auto& _instance =
-        _pinst.second.get() ? _pinst.second : _pinst.first;
-    return _instance;
+    static thread_local auto _inst = get_shared_ptr_pair_instance<manager>();
+    return _inst;
 }
 
 //======================================================================================//
@@ -129,75 +119,37 @@ manager::instance()
 manager::pointer_t
 manager::master_instance()
 {
-    static auto& _pinst = manager::instance_pair();
-    return _pinst.first;
+    static auto _pinst = get_shared_ptr_pair_master_instance<manager>();
+    return _pinst;
 }
 
-//======================================================================================//
-// implements:
-//      template <> get_storage_singleton<TYPE>();
-//      template <> get_noninit_storage_singleton<TYPE>();
+//--------------------------------------------------------------------------------------//
 //
-#    if defined(TIMEMORY_USE_CALIPER)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(caliper)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_clock)
-#    if defined(TIMEMORY_USE_PAPI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_dp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_roofline_sp_flops)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cpu_util)
-#    if defined(TIMEMORY_USE_CUDA)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cuda_event)
-#    endif
-#    if defined(TIMEMORY_USE_CUPTI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cupti_activity)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cupti_counters)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(data_rss)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_cpu_profiler)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_heap_profiler)
-#    if defined(TIMEMORY_USE_CUPTI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_dp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_hp_flops)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gpu_roofline_sp_flops)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(monotonic_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(monotonic_raw_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_io_in)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_io_out)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_major_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_minor_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_msg_recv)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_msg_sent)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_signals)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(num_swap)
-#    if defined(TIMEMORY_USE_NVTX)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(nvtx_marker)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(page_rss)
-#    if defined(TIMEMORY_USE_PAPI)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(papi_array_t)
-#    endif
-TIMEMORY_INSTANTIATE_EXTERN_INIT(peak_rss)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(priority_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(process_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(process_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(read_bytes)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(real_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(stack_rss)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(system_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(thread_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(thread_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(trip_count)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(user_clock)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(virtual_memory)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(voluntary_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(written_bytes)
+//
+graph_hash_map_ptr_t
+get_hash_ids()
+{
+    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_map_t>();
+    return _inst;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+graph_hash_alias_ptr_t
+get_hash_aliases()
+{
+    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_alias_t>();
+    return _inst;
+}
 
 }  // namespace tim
+
+//======================================================================================//
+//
+//      Static accessors
+//
+//======================================================================================//
 
 using string_t = std::string;
 
@@ -217,11 +169,6 @@ using string_t = std::string;
             static TYPE instance = get_env<TYPE>(ENV_VAR, INIT);                         \
             return instance;                                                             \
         }
-
-// namespace tim
-// {
-// namespace settings
-// {
 
 //======================================================================================//
 //
@@ -244,6 +191,7 @@ TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, debug, "TIMEMORY_DEBUG", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                              std::numeric_limits<uint16_t>::max())
 
@@ -442,8 +390,5 @@ TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, node_count, "TIMEMORY_NODE_COUNT", 0)
 
 /// default setting for auto_{list,tuple,hybrid} "report_at_exit" member variable
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT", false)
-
-// }  // namespace settings
-// }  // namespace tim
 
 #endif  // defined(TIMEMORY_EXTERN_INIT)

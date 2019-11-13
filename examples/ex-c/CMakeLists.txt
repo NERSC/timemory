@@ -10,11 +10,6 @@ project(timemory-C-Example LANGUAGES C)
 set(EXE_NAME ex_c_timing)
 set(COMPONENTS c compile-options analysis-tools)
 
-option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
-if(USE_EXTERN_TEMPLATES)
-    list(APPEND COMPONENTS extern-templates)
-endif()
-
 set(timemory_FIND_COMPONENTS_INTERFACE timemory::c-example)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 

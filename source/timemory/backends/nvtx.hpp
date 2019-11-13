@@ -68,8 +68,7 @@ get_thread_id()
 template <typename... _Args>
 void
 consume_parameters(_Args&&...)
-{
-}
+{}
 //--------------------------------------------------------------------------------------//
 
 namespace color

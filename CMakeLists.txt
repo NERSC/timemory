@@ -32,6 +32,14 @@ string(REGEX REPLACE "(\n|\r)" "" FULL_VERSION_STRING "${FULL_VERSION_STRING}")
 string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${FULL_VERSION_STRING}")
 set(TIMEMORY_VERSION "${VERSION_STRING}")
 message(STATUS "timemory version ${TIMEMORY_VERSION} (${FULL_VERSION_STRING})")
+set(TIMEMORY_VERSION_STRING "${FULL_VERSION_STRING}")
+string(REPLACE "." ";" VERSION_LIST "${VERSION_STRING}")
+LIST(GET VERSION_LIST 0 TIMEMORY_VERSION_MAJOR)
+LIST(GET VERSION_LIST 1 TIMEMORY_VERSION_MINOR)
+LIST(GET VERSION_LIST 2 TIMEMORY_VERSION_PATCH)
+
+math(EXPR TIMEMORY_VERSION_CODE
+    "${TIMEMORY_VERSION_MAJOR} * 10000 + ${TIMEMORY_VERSION_MINOR} * 100 + ${TIMEMORY_VERSION_PATCH}")
 
 #----------------------------------------------------------------------------------------#
 #   setup.py
@@ -46,6 +54,9 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
+
+configure_file(${PROJECT_SOURCE_DIR}/source/timemory/version.h.in
+    ${PROJECT_SOURCE_DIR}/source/timemory/version.h)
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MASTER_PROJECT ON)
@@ -105,7 +116,7 @@ if(SKBUILD)
 else()
     if(TIMEMORY_BUILD_PYTHON AND NOT BUILD_SHARED_LIBS)
         if(NOT TIMEMORY_BUILD_QUIET)
-            message(AUTHOR_WARNING "BUILD_STATIC_LIBS=OFF --> disabling TIMEMORY_BUILD_TOOLS")
+            message(AUTHOR_WARNING "BUILD_SHARED_LIBS=OFF --> disabling TIMEMORY_BUILD_PYTHON...")
             set(TIMEMORY_BUILD_PYTHON OFF)
         endif()
     endif()
@@ -172,12 +183,15 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   timemory source
 #----------------------------------------------------------------------------------------#
+# activate clang-tidy if enabled
+_timemory_activate_clang_tidy()
 
 add_subdirectory(source)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${CMAKE_INSTALL_CONFIGDIR})
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
+    NAMESPACE ${PROJECT_NAME}::)
 
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing

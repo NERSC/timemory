@@ -112,10 +112,8 @@ struct malloc_gotcha
     // clang-format on
 
     // formatting
-    static const short                   precision = 3;
-    static const short                   width     = 12;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 12;
 
     // required static functions
     static std::string label() { return "malloc_gotcha"; }
@@ -158,6 +156,23 @@ public:
 #endif
                 */
             };
+            return _lambda;
+        }
+    };
+
+    template <typename... _LhsTypes, typename... _RhsTypes,
+              template <typename...> class _Lhs, template <typename...> class _Rhs,
+              template <typename, typename> class _Hybrid>
+    struct gotcha_spec<_Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>>
+    {
+        using gotcha_component_type = _Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>;
+        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
+        using component_type =
+            _Hybrid<_Lhs<_LhsTypes..., gotcha_type>, _Rhs<_RhsTypes...>>;
+
+        static std::function<void()>& get_initializer()
+        {
+            static std::function<void()> _lambda = []() {};
             return _lambda;
         }
     };
@@ -247,7 +262,8 @@ public:
             // malloc
             value = (nbytes);
             accum += (nbytes);
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -276,7 +292,8 @@ public:
             // calloc
             value = (nmemb * size);
             accum += (nmemb * size);
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -313,7 +330,8 @@ public:
                 value = itr->second;
                 accum += itr->second;
                 get_allocation_map().erase(itr);
-            } else
+            }
+            else
             {
                 if(settings::verbose() > 1 || settings::debug())
                     printf("[%s]> free of unknown pointer size: %p\n",
@@ -347,7 +365,8 @@ public:
             value = (size);
             accum += (size);
             m_last_addr = devPtr;
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -379,10 +398,12 @@ public:
                 void* ptr                 = (void*) ((char**) (m_last_addr)[0]);
                 get_allocation_map()[ptr] = value;
             }
-        } else if(_hash == prefix_hash && idx >= num_alloc)
+        }
+        else if(_hash == prefix_hash && idx >= num_alloc)
         {
             // cudaFree
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -474,7 +495,9 @@ private:
     uintmax_t   prefix_hash = string_hash()("");
     uintmax_t   prefix_idx  = std::numeric_limits<uintmax_t>::max();
     std::string prefix      = "";
-    void**      m_last_addr = nullptr;
+#if defined(TIMEMORY_USE_CUDA)
+    void** m_last_addr = nullptr;
+#endif
 };
 
 }  // namespace component

@@ -435,9 +435,7 @@ _DBG(const char* msg)
 
 #else
 #    define _LOG(...)                                                                    \
-        {                                                                                \
-        }
+        {}
 #    define _DBG(...)                                                                    \
-        {                                                                                \
-        }
+        {}
 #endif

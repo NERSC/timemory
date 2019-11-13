@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "timemory/bits/ctimemory.h"
 #include "timemory/components/types.hpp"
+#include "timemory/enum.h"
 
 namespace tim
 {

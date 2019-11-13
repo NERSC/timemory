@@ -74,12 +74,16 @@ operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_
         tmp[i] -= rhs[i];
     return tmp;
 }
-}
+}  // namespace stl_overload
 
 //--------------------------------------------------------------------------------------//
 
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          CUPTI component
@@ -118,10 +122,8 @@ struct cupti_counters
     /// function for setting all of device, metrics, and events
     using get_initializer_t = std::function<tuple_type()>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 8;
 
     static event_func_t& get_event_initializer()
     {
@@ -186,13 +188,16 @@ struct cupti_counters
     explicit cupti_counters()
     {
         configure();
-        auto& _labels = *_get_labels();
-        value.resize(_labels.size());
-        accum.resize(_labels.size());
-        for(size_type i = 0; i < _labels.size(); ++i)
+        auto* _labels = _get_labels();
+        if(_labels)
         {
-            value[i].name = _labels[i];
-            accum[i].name = _labels[i];
+            value.resize(_labels->size());
+            accum.resize(_labels->size());
+            for(size_type i = 0; i < _labels->size(); ++i)
+            {
+                value[i].name = (*_labels)[i];
+                accum[i].name = (*_labels)[i];
+            }
         }
     }
 
@@ -227,12 +232,14 @@ struct cupti_counters
         if(tmp.size() == 0)
         {
             tmp = _profiler->get_events_and_metrics(_labels);
-        } else if(tmp.size() == _labels.size())
+        }
+        else if(tmp.size() == _labels.size())
         {
             auto ret = _profiler->get_events_and_metrics(_labels);
             for(size_t j = 0; j < _labels.size(); ++j)
                 tmp[j] += ret[j];
-        } else
+        }
+        else
         {
             fprintf(stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
                     TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__);
@@ -268,7 +275,8 @@ struct cupti_counters
             accum = tmp;
             for(size_type i = 0; i < tmp.size(); ++i)
                 accum[i] -= value[i];
-        } else
+        }
+        else
         {
             for(size_type i = 0; i < tmp.size(); ++i)
                 accum[i] += (tmp[i] - value[i]);
@@ -546,10 +554,13 @@ private:
                 arr.push_back(entry);
         };
         auto profiler = get_profiler();
-        for(const auto& itr : profiler->get_event_names())
-            insert(itr);
-        for(const auto& itr : profiler->get_metric_names())
-            insert(itr);
+        if(profiler)
+        {
+            for(const auto& itr : profiler->get_event_names())
+                insert(itr);
+            for(const auto& itr : profiler->get_metric_names())
+                insert(itr);
+        }
         return arr;
     }
 
@@ -610,10 +621,14 @@ private:
                     _used_evts.insert(itr);
                 for(const auto& itr : _met)
                     _used_mets.insert(itr);
+                _labels = generate_labels();
             }
         }
+        else
+        {
+            fprintf(stderr, "[cupti_counters]> Warning! No devices available!");
+        }
 
-        _labels = generate_labels();
         if(_used_devs.size() > 0)
         {
             if(settings::verbose() > 0 || settings::debug())
@@ -660,7 +675,10 @@ inline cupti_counters::tuple_type
 cupti_counters::get_available(const tuple_type& _init, int devid)
 {
     if(devid < 0 || devid >= cuda::device_count())
+    {
+        fprintf(stderr, "[cupti_counters]> Invalid device id: %i...\n", devid);
         return tuple_type(-1, strvec_t(), strvec_t());
+    }
 
     // handle events
     strvec_t    _events       = std::get<1>(_init);
@@ -701,8 +719,7 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
                    std::end(_metrics));
 
     // determine total
-    auto ntot = _events.size() + _metrics.size();
-    return tuple_type((ntot == 0) ? -1 : devid, _events, _metrics);
+    return tuple_type(devid, _events, _metrics);
 }
 
 //--------------------------------------------------------------------------------------//

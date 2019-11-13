@@ -57,8 +57,7 @@ namespace device
 template <typename... _Args>
 inline void
 consume_parameters(_Args&&...)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -185,8 +184,7 @@ struct range
     : m_begin(_begin)
     , m_end(_end)
     , m_stride(_stride)
-    {
-    }
+    {}
 
     HOST_DEVICE_CALLABLE _Intp& begin() { return m_begin; }
     HOST_DEVICE_CALLABLE _Intp begin() const { return m_begin; }
@@ -229,8 +227,7 @@ struct params
     , shmem(_shmem)
     , stream(_stream)
     , dynamic((_grid > 0) ? false : true)
-    {
-    }
+    {}
 
     int compute(const int& size)
     {
@@ -405,16 +402,14 @@ struct grid_strided_range<_Device, 0, _Intp> : impl::range<_Intp>
               enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
     DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
     : base_type(blockIdx.x * blockDim.x + threadIdx.x, max_iter, blockDim.x * gridDim.x)
-    {
-    }
+    {}
 
     template <typename _Dev                                       = _Device,
               enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
 #endif
     explicit grid_strided_range(_Intp max_iter)
     : base_type(0, max_iter, 1)
-    {
-    }
+    {}
 
     using base_type::begin;
     using base_type::end;
@@ -434,16 +429,14 @@ struct grid_strided_range<_Device, 1, _Intp> : impl::range<_Intp>
               enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
     DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
     : base_type(blockIdx.y * blockDim.y + threadIdx.y, max_iter, blockDim.y * gridDim.y)
-    {
-    }
+    {}
 
     template <typename _Dev                                       = _Device,
               enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
 #endif
     explicit grid_strided_range(_Intp max_iter)
     : base_type(0, max_iter, 1)
-    {
-    }
+    {}
 
     using base_type::begin;
     using base_type::end;
@@ -463,16 +456,14 @@ struct grid_strided_range<_Device, 2, _Intp> : impl::range<_Intp>
               enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
     DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
     : base_type(blockIdx.z * blockDim.z + threadIdx.z, max_iter, blockDim.z * gridDim.z)
-    {
-    }
+    {}
 
     template <typename _Dev                                       = _Device,
               enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
 #endif
     explicit grid_strided_range(_Intp max_iter)
     : base_type(0, max_iter, 1)
-    {
-    }
+    {}
 
     using base_type::begin;
     using base_type::end;

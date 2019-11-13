@@ -68,8 +68,7 @@ struct exec_params
     , nstreams(_nstream)
     , grid_size(_grid_size)
     , block_size(_block_size)
-    {
-    }
+    {}
 
     ~exec_params()                  = default;
     exec_params(const exec_params&) = default;

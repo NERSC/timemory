@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <timemory/ctimemory.h>
+#include <timemory/timemory.h>
 
 static long nlaps = 0;
 

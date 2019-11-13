@@ -47,6 +47,23 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<cpu_roofline<float, double>,
+                            std::pair<std::vector<long long>, double>,
+                            policy::thread_init, policy::thread_finalize,
+                            policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    cpu_roofline<float>, std::pair<std::vector<long long>, double>, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+extern template struct base<
+    cpu_roofline<double>, std::pair<std::vector<long long>, double>, policy::thread_init,
+    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 // this computes the numerator of the roofline for a given set of PAPI counters.
 // e.g. for FLOPS roofline (floating point operations / second:
@@ -113,10 +130,8 @@ struct cpu_roofline
     using iterator       = typename array_type::iterator;
     using const_iterator = typename array_type::const_iterator;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 8;
 
     //----------------------------------------------------------------------------------//
 
@@ -230,8 +245,8 @@ struct cpu_roofline
                 if(is_one_of<double, types_tuple>::value)
                     _events.push_back(PAPI_DP_OPS);
             }
-
-        } else if(event_mode() == MODE::AI)
+        }
+        else if(event_mode() == MODE::AI)
         {
             //
             //  add the load/store hardware counter
@@ -252,7 +267,8 @@ struct cpu_roofline
         if(event_set() == PAPI_NULL)
         {
             fprintf(stderr, "[cpu_roofline]> event_set is PAPI_NULL!\n");
-        } else
+        }
+        else
         {
             for(auto itr : _events)
             {
@@ -262,7 +278,8 @@ struct cpu_roofline
                     if(settings::verbose() > 1 || settings::debug())
                         printf("[cpu_roofline]> Added event %s\n",
                                papi::get_event_code_name(itr).c_str());
-                } else
+                }
+                else
                     fprintf(stderr, "[cpu_roofline]> Failed to add event %s\n",
                             papi::get_event_code_name(itr).c_str());
             }
@@ -705,6 +722,16 @@ private:
         return _instance;
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+// extern template struct cpu_roofline<float, double>;
+// extern template struct cpu_roofline<float>;
+// extern template struct cpu_roofline<double>;
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component

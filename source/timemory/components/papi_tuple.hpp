@@ -270,10 +270,8 @@ public:
     //      data representation
     //
     //==================================================================================//
-    static const short                   precision = 3;
-    static const short                   width     = 12;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 12;
 
     // leave these empty
     static std::string label() { return "papi" + std::to_string(event_set()); }

@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/bits/ctimemory.h"
+#include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 
 #include <array>

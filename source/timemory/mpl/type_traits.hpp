@@ -43,8 +43,7 @@ namespace trait
 ///
 template <typename _Tp>
 struct is_available : std::true_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that updating w.r.t. another instance should
@@ -52,24 +51,21 @@ struct is_available : std::true_type
 //
 template <typename _Tp>
 struct record_max : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that data is an array type
 ///
 template <typename _Tp>
 struct array_serialization : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component uses the timemory output handling
 ///
 template <typename _Tp>
 struct external_output_handling : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component requires the prefix to be set right after
@@ -78,32 +74,28 @@ struct external_output_handling : std::false_type
 ///
 template <typename _Tp>
 struct requires_prefix : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component handles it's label when printing
 ///
 template <typename _Tp>
 struct custom_label_printing : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component includes it's units when printing
 ///
 template <typename _Tp>
 struct custom_unit_printing : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component includes it's laps when printing
 ///
 template <typename _Tp>
 struct custom_laps_printing : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates whether there is a priority when starting the type w.r.t.
@@ -111,8 +103,7 @@ struct custom_laps_printing : std::false_type
 ///
 template <typename _Tp>
 struct start_priority : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates whether there is a priority when stopping the type w.r.t.
@@ -120,8 +111,7 @@ struct start_priority : std::false_type
 ///
 template <typename _Tp>
 struct stop_priority : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the width and precision should follow env specified
@@ -129,8 +119,7 @@ struct stop_priority : std::false_type
 ///
 template <typename _Tp>
 struct is_timing_category : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the width and precision should follow env specified
@@ -138,48 +127,42 @@ struct is_timing_category : std::false_type
 ///
 template <typename _Tp>
 struct is_memory_category : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the units should follow env specified timing settings
 ///
 template <typename _Tp>
 struct uses_timing_units : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the units should follow env specified memory settings
 ///
 template <typename _Tp>
 struct uses_memory_units : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the units are a percentage
 ///
 template <typename _Tp>
 struct uses_percent_units : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates a type should always print a JSON output
 ///
 template <typename _Tp>
 struct requires_json : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the type is a gotcha... ONLY gotcha should set to TRUE!
 ///
 template <typename _Tp>
 struct is_gotcha : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the type supports calling a function with a certain
@@ -187,8 +170,7 @@ struct is_gotcha : std::false_type
 ///
 template <typename _Tp, typename _Tuple>
 struct supports_args : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the type supports changing the record() static function
@@ -196,16 +178,14 @@ struct supports_args : std::false_type
 ///
 template <typename _Tp>
 struct supports_custom_record : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that get() returns an iterable type
 ///
 template <typename _Tp>
 struct iterable_measurement : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that secondary data resembling the original data
@@ -217,8 +197,7 @@ struct iterable_measurement : std::false_type
 ///
 template <typename _Tp>
 struct secondary_data : std::false_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 
@@ -252,23 +231,23 @@ namespace trait
 
 template <>
 struct record_max<component::peak_rss> : std::true_type
-{
-};
+{};
 
 template <>
 struct record_max<component::page_rss> : std::true_type
-{
-};
+{};
 
 template <>
 struct record_max<component::stack_rss> : std::true_type
-{
-};
+{};
 
 template <>
 struct record_max<component::data_rss> : std::true_type
-{
-};
+{};
+
+template <>
+struct record_max<component::virtual_memory> : std::true_type
+{};
 
 //--------------------------------------------------------------------------------------//
 //
@@ -278,18 +257,15 @@ struct record_max<component::data_rss> : std::true_type
 #if defined(TIMEMORY_USE_PAPI)
 template <int... EventTypes>
 struct array_serialization<component::papi_tuple<EventTypes...>> : std::true_type
-{
-};
+{};
 
 template <std::size_t MaxNumEvents>
 struct array_serialization<component::papi_array<MaxNumEvents>> : std::true_type
-{
-};
+{};
 
 template <>
 struct array_serialization<component::cupti_counters> : std::true_type
-{
-};
+{};
 #endif
 //--------------------------------------------------------------------------------------//
 //
@@ -300,8 +276,7 @@ struct array_serialization<component::cupti_counters> : std::true_type
 /// component::cuda_event should be stopped before other types
 template <>
 struct start_priority<component::cupti_activity> : std::true_type
-{
-};
+{};
 #endif
 //--------------------------------------------------------------------------------------//
 //
@@ -312,16 +287,14 @@ struct start_priority<component::cupti_activity> : std::true_type
 /// component::cuda_event should be stopped before other types
 template <>
 struct stop_priority<component::cuda_event> : std::true_type
-{
-};
+{};
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
 /// component::cuda_event should be stopped before other types
 template <>
 struct stop_priority<component::cupti_activity> : std::true_type
-{
-};
+{};
 #endif
 //--------------------------------------------------------------------------------------//
 //
@@ -331,24 +304,20 @@ struct stop_priority<component::cupti_activity> : std::true_type
 
 template <>
 struct custom_unit_printing<component::read_bytes> : std::true_type
-{
-};
+{};
 
 template <>
 struct custom_unit_printing<component::written_bytes> : std::true_type
-{
-};
+{};
 
 #if defined(TIMEMORY_USE_CUPTI)
 template <>
 struct custom_unit_printing<component::cupti_counters> : std::true_type
-{
-};
+{};
 
 template <typename... _Types>
 struct custom_unit_printing<component::gpu_roofline<_Types...>> : std::true_type
-{
-};
+{};
 #endif
 
 /*
@@ -366,24 +335,20 @@ struct custom_unit_printing<component::cpu_roofline<_Types...>> : std::true_type
 
 template <>
 struct custom_label_printing<component::read_bytes> : std::true_type
-{
-};
+{};
 
 template <>
 struct custom_label_printing<component::written_bytes> : std::true_type
-{
-};
+{};
 
 #if defined(TIMEMORY_USE_CUPTI)
 template <>
 struct custom_laps_printing<component::cupti_counters> : std::true_type
-{
-};
+{};
 
 template <typename... _Types>
 struct custom_label_printing<component::gpu_roofline<_Types...>> : std::true_type
-{
-};
+{};
 #endif
 /*
 template <typename... _Types>
@@ -400,8 +365,7 @@ struct custom_label_printing<component::cpu_roofline<_Types...>> : std::true_typ
 
 template <>
 struct custom_laps_printing<component::trip_count> : std::true_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 //
@@ -414,68 +378,55 @@ struct custom_laps_printing<component::trip_count> : std::true_type
 
 template <>
 struct is_available<component::stack_rss> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::data_rss> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_io_in> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_io_out> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_major_page_faults> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_minor_page_faults> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_msg_recv> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_msg_sent> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_signals> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::num_swap> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::read_bytes> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::written_bytes> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::virtual_memory> : std::false_type
-{
-};
+{};
 
 #endif
 
@@ -490,60 +441,49 @@ struct is_available<component::virtual_memory> : std::false_type
 
 template <int... EventTypes>
 struct is_available<component::papi_tuple<EventTypes...>> : std::false_type
-{
-};
+{};
 
 template <std::size_t MaxNumEvents>
 struct is_available<component::papi_array<MaxNumEvents>> : std::false_type
-{
-};
+{};
 
 template <typename... _Types>
 struct is_available<component::cpu_roofline<_Types...>> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::cpu_roofline_sp_flops> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::cpu_roofline_dp_flops> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::cpu_roofline_flops> : std::false_type
-{
-};
+{};
 
 #else
 
 template <typename... _Types>
 struct requires_json<component::cpu_roofline<_Types...>> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_json<component::cpu_roofline_sp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_json<component::cpu_roofline_dp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_json<component::cpu_roofline_flops> : std::true_type
-{
-};
+{};
 
 template <typename... _Types>
 struct supports_custom_record<component::cpu_roofline<_Types...>> : std::true_type
-{
-};
+{};
 
 #endif  // TIMEMORY_USE_PAPI
 
@@ -558,8 +498,7 @@ struct supports_custom_record<component::cpu_roofline<_Types...>> : std::true_ty
 
 template <>
 struct is_available<component::cuda_event> : std::false_type
-{
-};
+{};
 
 #endif  // TIMEMORY_USE_CUDA
 
@@ -574,90 +513,73 @@ struct is_available<component::cuda_event> : std::false_type
 
 template <>
 struct is_available<component::cupti_counters> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::cupti_activity> : std::false_type
-{
-};
+{};
 
 template <typename... _Types>
 struct is_available<component::gpu_roofline<_Types...>> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::gpu_roofline_hp_flops> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::gpu_roofline_sp_flops> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::gpu_roofline_dp_flops> : std::false_type
-{
-};
+{};
 
 template <>
 struct is_available<component::gpu_roofline_flops> : std::false_type
-{
-};
+{};
 
 #else
 
 template <typename... _Types>
 struct requires_json<component::gpu_roofline<_Types...>> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_json<component::gpu_roofline_hp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_json<component::gpu_roofline_sp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_json<component::gpu_roofline_dp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct requires_json<component::gpu_roofline_flops> : std::true_type
-{
-};
+{};
 
 template <typename... _Types>
 struct iterable_measurement<component::gpu_roofline<_Types...>> : std::true_type
-{
-};
+{};
 
 template <>
 struct iterable_measurement<component::gpu_roofline_hp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct iterable_measurement<component::gpu_roofline_sp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct iterable_measurement<component::gpu_roofline_dp_flops> : std::true_type
-{
-};
+{};
 
 template <>
 struct iterable_measurement<component::gpu_roofline_flops> : std::true_type
-{
-};
+{};
 
 //
 //  secondary data
@@ -665,13 +587,11 @@ struct iterable_measurement<component::gpu_roofline_flops> : std::true_type
 
 template <>
 struct secondary_data<component::cupti_activity> : std::true_type
-{
-};
+{};
 
 template <>
 struct secondary_data<component::cupti_counters> : std::true_type
-{
-};
+{};
 
 #endif  // TIMEMORY_USE_CUPTI
 
@@ -682,20 +602,17 @@ struct secondary_data<component::cupti_counters> : std::true_type
 
 template <>
 struct is_available<component::nvtx_marker> : std::false_type
-{
-};
+{};
 
 #else
 
 template <>
 struct requires_prefix<component::nvtx_marker> : std::true_type
-{
-};
+{};
 
 template <>
 struct external_output_handling<component::nvtx_marker> : std::true_type
-{
-};
+{};
 
 #endif  // TIMEMORY_USE_NVTX
 
@@ -710,22 +627,19 @@ struct external_output_handling<component::nvtx_marker> : std::true_type
 
 template <>
 struct is_available<component::caliper> : std::false_type
-{
-};
+{};
 
 #else
 
 template <>
 struct requires_prefix<component::caliper> : std::true_type
-{
-};
+{};
 
 #endif  // TIMEMORY_USE_CALIPER
 
 template <>
 struct external_output_handling<component::caliper> : std::true_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 //
@@ -738,20 +652,17 @@ struct external_output_handling<component::caliper> : std::true_type
 
 template <size_t _N, typename _Comp, typename _Diff>
 struct is_available<component::gotcha<_N, _Comp, _Diff>> : std::false_type
-{
-};
+{};
 
 #else  // TIMEMORY_USE_GOTCHA
 
 template <size_t _N, typename _Comp, typename _Diff>
 struct external_output_handling<component::gotcha<_N, _Comp, _Diff>> : std::true_type
-{
-};
+{};
 
 template <size_t _N, typename _Comp, typename _Diff>
 struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : std::true_type
-{
-};
+{};
 
 #endif  // TIMEMORY_USE_GOTCHA
 
@@ -769,15 +680,13 @@ struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : std::true_type
 //
 template <>
 struct requires_prefix<component::gperf_heap_profiler> : std::true_type
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 //
 template <>
 struct external_output_handling<component::gperf_heap_profiler> : std::true_type
-{
-};
+{};
 
 #else
 
@@ -785,8 +694,7 @@ struct external_output_handling<component::gperf_heap_profiler> : std::true_type
 //
 template <>
 struct is_available<component::gperf_heap_profiler> : std::false_type
-{
-};
+{};
 
 #endif
 
@@ -801,8 +709,7 @@ struct is_available<component::gperf_heap_profiler> : std::false_type
 //
 template <>
 struct external_output_handling<component::gperf_cpu_profiler> : std::true_type
-{
-};
+{};
 
 #else
 
@@ -810,8 +717,7 @@ struct external_output_handling<component::gperf_cpu_profiler> : std::true_type
 //
 template <>
 struct is_available<component::gperf_cpu_profiler> : std::false_type
-{
-};
+{};
 
 #endif
 

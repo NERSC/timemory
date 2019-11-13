@@ -43,13 +43,15 @@ using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
-using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
-                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, page_rss, caliper, papi_tuple_t>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, page_rss, data_rss,
+                    virtual_memory, caliper, papi_tuple_t>;
+
 using full_measurement_t =
-    tim::component_tuple<peak_rss, page_rss, stack_rss, data_rss, num_swap, num_io_in,
-                         num_io_out, num_minor_page_faults, num_major_page_faults,
-                         num_msg_sent, num_msg_recv, num_signals,
+    tim::component_tuple<peak_rss, page_rss, virtual_memory, stack_rss, data_rss,
+                         num_swap, num_io_in, num_io_out, num_minor_page_faults,
+                         num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
                          voluntary_context_switch, priority_context_switch, papi_tuple_t>;
 
 using measurement_t =
@@ -60,11 +62,6 @@ using measurement_t =
 
 using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
                                        thread_cpu_clock, process_cpu_clock>;
-
-// measure multiple clock time + resident set sizes
-using full_set_t =
-    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                    process_cpu_util, peak_rss, page_rss, caliper, papi_tuple_t>;
 
 // measure wall-clock, thread cpu-clock + process cpu-utilization
 using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util,
@@ -128,8 +125,7 @@ main(int argc, char** argv)
         RUN_TEST(2, test_2_timing, num_test, num_fail);
         RUN_TEST(3, test_3_auto_tuple, num_test, num_fail);
         RUN_TEST(4, test_4_measure, num_test, num_fail);
-    }
-    catch(std::exception& e)
+    } catch(std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }
@@ -137,7 +133,7 @@ main(int argc, char** argv)
     m.stop();
     timing->stop();
 
-    // std::cout << "\n" << m << std::endl;
+    std::cout << "\n" << m << std::endl;
     std::cout << "\n" << *timing << std::endl;
 
     TEST_SUMMARY(argv[0], num_test, num_fail);
@@ -209,7 +205,7 @@ void
 test_1_usage()
 {
     print_info(__FUNCTION__);
-    TIMEMORY_MARKER(auto_tuple_t, "");
+    auto test_1_marker = TIMEMORY_HANDLE(auto_tuple_t, "");
 
     full_measurement_t _use_beg("test_1_usage_begin");
     full_measurement_t _use_delta("test_1_usage_delta");
@@ -232,6 +228,7 @@ test_1_usage()
         { "begin", _use_beg }, { "delta", _use_delta }, { "end", _use_end }
     };
     // serialize("rusage.json", "usage", measurements);
+    test_1_marker.stop();
 }
 
 //======================================================================================//
@@ -307,28 +304,41 @@ test_3_auto_tuple()
 
     std::atomic<int64_t> ret;
     // accumulate metrics on full run
-    TIMEMORY_BASIC_CALIPER(tot, full_set_t, "[total]");
+    TIMEMORY_BASIC_CALIPER(tot, auto_tuple_t, "[total]");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // run a fibonacci calculation and accumulate metric
     auto run_fibonacci = [&](long n) {
-        // TIMEMORY_MARKER(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, "run_fibonacci");
         ret += time_fibonacci(n);
     };
 
-    // run longer fibonacci calculations on two threads
-    TIMEMORY_BASIC_CALIPER(worker_thread, full_set_t, "[worker_thread]");
-    std::thread t(run_fibonacci, 43);
-    TIMEMORY_CALIPER_APPLY(worker_thread, stop);
+    {
+        // run longer fibonacci calculations on two threads
+        TIMEMORY_BASIC_CALIPER(master_thread_a, auto_tuple_t, "[master_thread]/0");
+        {
+            std::thread t1(run_fibonacci, 41);
+            t1.join();
+            std::thread t2(run_fibonacci, 42);
+            t2.join();
+        }
+        TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
+    }
 
-    // run shorter fibonacci calculation on main thread
-    TIMEMORY_BASIC_CALIPER(master_thread, full_set_t, "[master_thread]");
-    run_fibonacci(42);
-    TIMEMORY_CALIPER_APPLY(master_thread, stop);
+    {
+        // run longer fibonacci calculations on two threads
+        TIMEMORY_BASIC_CALIPER(master_thread_a, auto_tuple_t, "[master_thread]/1");
 
-    // wait to finish
-    t.join();
+        std::thread t1(run_fibonacci, 42);
+        std::thread t2(run_fibonacci, 41);
+        // run_fibonacci(42);
+
+        t1.join();
+        t2.join();
+
+        TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
+    }
 
     TIMEMORY_CALIPER_APPLY(tot, stop);
 
@@ -366,36 +376,4 @@ test_4_measure()
     std::cout << "  Current rss: " << prss << std::endl;
 }
 
-//======================================================================================//
-/*
-#define ENABLE_ROOFLINE
-int main()
-{
-#if defined(ENABLE_ROOFLINE)
-    tim::component::roofline global_roofline();
-    global_roofline.start();
-    using auto_roofline_t = tim::auto_tuple<tim::component::roofline>;
-#else
-    // does nothing
-    using auto_roofline_t = tim::auto_tuple<>;
-#endif
-
-    {
-        // uses C++ scoping for start/stop
-        TIMEMORY_MARKER(auto_roofline_t, "roofline_for_A");
-        func_A();
-    }
-
-    {
-        TIMEMORY_MARKER(auto_roofline_t, "roofline_for_B");
-        func_B();
-    }
-
-#if defined(ENABLE_ROOFLINE)
-    global_roofline.stop();
-    // serializes the graph of all roofline instances
-    tim::serialize("roofline.json", *tim::storage<tim::component::roofline>::instance());
-#endif
-}
-*/
 //======================================================================================//

@@ -25,8 +25,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <timemory/ctimemory.h>
 #include <timemory/library.h>
+#include <timemory/timemory.h>
 
 #define MAX_TIMERS 10
 void* timers[MAX_TIMERS];

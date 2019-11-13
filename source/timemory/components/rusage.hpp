@@ -37,6 +37,28 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<peak_rss>;
+extern template struct base<page_rss>;
+extern template struct base<stack_rss>;
+extern template struct base<data_rss>;
+extern template struct base<num_swap>;
+extern template struct base<num_io_in>;
+extern template struct base<num_io_out>;
+extern template struct base<num_minor_page_faults>;
+extern template struct base<num_major_page_faults>;
+extern template struct base<num_msg_sent>;
+extern template struct base<num_msg_recv>;
+extern template struct base<num_signals>;
+extern template struct base<voluntary_context_switch>;
+extern template struct base<priority_context_switch>;
+extern template struct base<read_bytes, std::tuple<int64_t, int64_t>>;
+extern template struct base<written_bytes, std::tuple<int64_t, int64_t>>;
+extern template struct base<virtual_memory>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          Resource Usage types
@@ -598,7 +620,6 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
         auto              _disp  = base_type::get_display_unit();
-        auto              _label = base_type::get_label();
 
         auto _val = get();
 
@@ -613,6 +634,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
             ssr << " " << _disp << "/" << timer_type::get_display_unit();
 
         ss << ssv.str() << ", " << ssr.str();
+        ss << " read";
         return ss.str();
     }
 
@@ -674,7 +696,6 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
         auto              _disp  = base_type::get_display_unit();
-        auto              _label = base_type::get_label();
 
         auto _val = get();
 
@@ -689,6 +710,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
             ssr << " " << _disp << "/" << timer_type::get_display_unit();
 
         ss << ssv.str() << ", " << ssr.str();
+        ss << " written";
         return ss.str();
     }
 

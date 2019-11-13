@@ -131,8 +131,14 @@ public:
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using result_type   = std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t,
+                                   std::vector<std::string>>;
+    using result_array_type = std::vector<result_type>;
 
-    using graph_node_tuple = std::tuple<int64_t, ObjectType, int64_t>;
+    using graph_node_tuple = std::tuple<uint64_t, ObjectType, int64_t>;
+
+    class graph_node;
+    friend class graph_node;
 
     class graph_node : public graph_node_tuple
     {
@@ -143,28 +149,27 @@ public:
         using data_base_type  = typename ObjectType::base_type;
         using string_t        = std::string;
 
-        int64_t&    id() { return std::get<0>(*this); }
+        uint64_t&   id() { return std::get<0>(*this); }
         ObjectType& obj() { return std::get<1>(*this); }
         int64_t&    depth() { return std::get<2>(*this); }
 
-        const int64_t&    id() const { return std::get<0>(*this); }
+        const uint64_t&   id() const { return std::get<0>(*this); }
         const ObjectType& obj() const { return std::get<1>(*this); }
         const int64_t&    depth() const { return std::get<2>(*this); }
 
+        string_t get_prefix() const { return master_instance()->get_prefix(*this); }
+
         graph_node()
         : base_type(0, ObjectType(), 0)
-        {
-        }
+        {}
 
         explicit graph_node(base_type&& _base)
         : base_type(std::forward<base_type>(_base))
-        {
-        }
+        {}
 
-        graph_node(const int64_t& _id, const ObjectType& _obj, int64_t _depth)
+        graph_node(const uint64_t& _id, const ObjectType& _obj, int64_t _depth)
         : base_type(_id, _obj, _depth)
-        {
-        }
+        {}
 
         ~graph_node() {}
         // explicit graph_node(const this_type&) = default;
@@ -183,12 +188,25 @@ public:
         {
             auto&       _obj = obj();
             const auto& _rhs = rhs.obj();
-            static_cast<data_base_type&>(_obj) +=
-                static_cast<const data_base_type&>(_rhs);
+            _obj += _rhs;
+            _obj.plus(_rhs);
             return *this;
         }
 
         size_t data_size() const { return sizeof(ObjectType) + 2 * sizeof(int64_t); }
+
+        friend std::ostream& operator<<(std::ostream& os, const graph_node& obj)
+        {
+            std::stringstream ss;
+            auto              _prefix = obj.get_prefix();
+            static auto       _w      = _prefix.length();
+            _w                        = std::max(_w, _prefix.length());
+            ss << "id = " << std::setw(24) << obj.id() << ", depth = " << std::setw(4)
+               << obj.depth() << ", label = " << std::setw(_w) << std::left
+               << obj.get_prefix();
+            os << ss.str();
+            return os;
+        }
     };
 
 public:
@@ -220,6 +238,23 @@ public:
         get_shared_manager();
         component::properties<ObjectType>::has_storage() = true;
         // check_consistency();
+        static std::atomic<int32_t> _skip_once;
+        if(_skip_once++ > 0)
+        {
+            auto               _master       = singleton_t::master_instance();
+            graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
+            graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
+            for(const auto& itr : _hash_ids)
+            {
+                if(m_hash_ids->find(itr.first) == m_hash_ids->end())
+                    m_hash_ids->insert({ itr.first, itr.second });
+            }
+            for(const auto& itr : _hash_aliases)
+            {
+                if(m_hash_aliases->find(itr.first) == m_hash_aliases->end())
+                    m_hash_aliases->insert({ itr.first, itr.second });
+            }
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -389,7 +424,7 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
+    iterator insert(uint64_t hash_id, const ObjectType& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
@@ -400,25 +435,9 @@ public:
         if(!_has_head || (this == master_instance() && m_node_ids.size() == 0))
         {
             graph_node_t node(hash_id, obj, hash_depth);
-            if(this == master_instance())
-            {
-                _data()                        = graph_data_t(node);
-                m_graph_data_instance->depth() = 0;
-                if(m_node_ids.size() == 0)
-                    m_node_ids[0][0] = m_graph_data_instance->current();
-                m_node_ids[hash_depth][hash_id] = m_graph_data_instance->current();
-                return m_graph_data_instance->current();
-            }
-            else
-            {
-                _data() = graph_data_t(*master_instance()->current());
-                m_graph_data_instance->head()    = master_instance()->data().current();
-                m_graph_data_instance->current() = master_instance()->data().current();
-                m_graph_data_instance->depth()   = master_instance()->data().depth();
-                auto itr = m_graph_data_instance->append_child(node);
-                m_node_ids[hash_depth][hash_id] = itr;
-                return itr;
-            }
+            auto         itr                = _data().append_child(node);
+            m_node_ids[hash_depth][hash_id] = itr;
+            return itr;
         }
 
         // lambda for updating settings
@@ -496,7 +515,7 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
+    iterator insert(uint64_t hash_id, const ObjectType& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
@@ -507,25 +526,9 @@ public:
         if(!_has_head || (this == master_instance() && m_node_ids.size() == 0))
         {
             graph_node_t node(hash_id, obj, hash_depth);
-            if(this == master_instance())
-            {
-                _data()                        = graph_data_t(node);
-                m_graph_data_instance->depth() = 0;
-                if(m_node_ids.size() == 0)
-                    m_node_ids[0][0] = m_graph_data_instance->current();
-                m_node_ids[hash_depth][hash_id] = m_graph_data_instance->current();
-                return m_graph_data_instance->current();
-            }
-            else
-            {
-                _data() = graph_data_t(*master_instance()->current());
-                m_graph_data_instance->head()    = master_instance()->data().current();
-                m_graph_data_instance->current() = master_instance()->data().current();
-                m_graph_data_instance->depth()   = master_instance()->data().depth();
-                auto itr = m_graph_data_instance->append_child(node);
-                m_node_ids[hash_depth][hash_id] = itr;
-                return itr;
-            }
+            auto         itr                = _data().append_child(node);
+            m_node_ids[hash_depth][hash_id] = itr;
+            return itr;
         }
 
         // lambda for updating settings
@@ -595,7 +598,7 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(const ObjectType& obj, int64_t hash_id)
+    iterator insert(const ObjectType& obj, uint64_t hash_id)
     {
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
@@ -612,7 +615,7 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(const ObjectType& obj, int64_t hash_id)
+    iterator insert(const ObjectType& obj, uint64_t hash_id)
     {
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
@@ -681,7 +684,17 @@ private:
     {
         auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, node.id());
         if(_ret.find("unknown-hash=") == 0)
-            return get_hash_identifier(node.id());
+        {
+            if(!singleton_t::is_master(this))
+            {
+                auto _master = singleton_t::master_instance();
+                return _master->get_prefix(node);
+            }
+            else
+            {
+                return get_hash_identifier(node.id());
+            }
+        }
         return _ret;
     }
     string_t get_prefix(iterator _node) { return get_prefix(*_node); }
@@ -698,6 +711,128 @@ public:
     graph_data_t& data() { return _data(); }
     iterator&     current() { return _data().current(); }
     graph_t&      graph() { return _data().graph(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    result_array_type get()
+    {
+        //------------------------------------------------------------------------------//
+        //
+        //  Compute the node prefix
+        //
+        //------------------------------------------------------------------------------//
+        auto _get_node_prefix = [&]() {
+            if(!m_node_init)
+                return std::string(">>> ");
+
+            // prefix spacing
+            static uint16_t width = 1;
+            if(m_node_size > 9)
+                width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
+            std::stringstream ss;
+            ss.fill('0');
+            ss << "|" << std::setw(width) << m_node_rank << ">>> ";
+            return ss.str();
+        };
+
+        //------------------------------------------------------------------------------//
+        //
+        //  Compute the indentation
+        //
+        //------------------------------------------------------------------------------//
+        // fix up the prefix based on the actual depth
+        auto _compute_modified_prefix = [&](const graph_node& itr) {
+            std::string _prefix      = get_prefix(itr);
+            std::string _indent      = "";
+            std::string _node_prefix = _get_node_prefix();
+
+            int64_t _depth = itr.depth() - 1;
+            if(_depth > 0)
+            {
+                for(int64_t ii = 0; ii < _depth - 1; ++ii)
+                    _indent += "  ";
+                _indent += "|_";
+            }
+
+            return _node_prefix + _indent + _prefix;
+        };
+
+        // convert graph to a vector
+        auto convert_graph = [&]() {
+            result_array_type _list;
+            {
+                // the head node should always be ignored
+                int64_t _min = std::numeric_limits<int64_t>::max();
+                for(const auto& itr : graph())
+                    _min = std::min<int64_t>(_min, itr.depth());
+
+                for(auto itr = graph().begin(); itr != graph().end(); ++itr)
+                {
+                    if(itr->depth() > _min)
+                    {
+                        auto                     _depth  = itr->depth() - (_min + 1);
+                        auto                     _prefix = _compute_modified_prefix(*itr);
+                        auto                     _rolling = itr->id();
+                        auto                     _parent  = graph_t::parent(itr);
+                        std::vector<std::string> _hierarchy;
+                        if(_parent && _parent->depth() > _min)
+                        {
+                            while(_parent)
+                            {
+                                _hierarchy.push_back(get_prefix(*_parent));
+                                _rolling += _parent->id();
+                                _parent = graph_t::parent(_parent);
+                                if(!_parent || !(_parent->depth() > _min))
+                                    break;
+                            }
+                        }
+                        if(_hierarchy.size() > 1)
+                            std::reverse(_hierarchy.begin(), _hierarchy.end());
+                        _hierarchy.push_back(get_prefix(*itr));
+                        result_type _entry(itr->id(), itr->obj(), _prefix, _depth,
+                                           _rolling, _hierarchy);
+                        _list.push_back(_entry);
+                    }
+                }
+            }
+
+            if(!settings::collapse_threads())
+                return _list;
+
+            result_array_type _combined;
+
+            auto _equiv = [&](const result_type& _lhs, const result_type& _rhs) {
+                return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
+                        std::get<2>(_lhs) == std::get<2>(_rhs) &&
+                        std::get<3>(_lhs) == std::get<3>(_rhs) &&
+                        std::get<4>(_lhs) == std::get<4>(_rhs));
+            };
+
+            auto _exists = [&](const result_type& _lhs) {
+                for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
+                {
+                    if(_equiv(_lhs, *itr))
+                        return itr;
+                }
+                return _combined.end();
+            };
+
+            for(const auto& itr : _list)
+            {
+                auto citr = _exists(itr);
+                if(citr == _combined.end())
+                {
+                    _combined.push_back(itr);
+                }
+                else
+                {
+                    std::get<1>(*citr) += std::get<1>(itr);
+                }
+            }
+            return _combined;
+        };
+        return convert_graph();
+    }
 
 protected:
     friend struct details::storage_deleter<this_type>;
@@ -758,8 +893,7 @@ protected:
         template <typename _Archive, typename _Type = ObjectType,
                   typename std::enable_if<!(is_enabled<_Type>::value), char>::type = 0>
         static void serialize(storage_t&, _Archive&, const unsigned int)
-        {
-        }
+        {}
     };
 
     friend struct write_serialization<this_type>;
@@ -818,27 +952,26 @@ private:
 
     graph_data_t& _data()
     {
+        using base_type = typename ObjectType::base_type;
+
         if(m_graph_data_instance == nullptr && !singleton_t::is_master(this))
         {
             static bool _data_init = master_instance()->data_init();
             consume_parameters(_data_init);
 
-            m_graph_data_instance = new graph_data_t(*master_instance()->current());
-            m_graph_data_instance->head()    = master_instance()->current();
-            m_graph_data_instance->current() = master_instance()->current();
-            m_graph_data_instance->depth()   = master_instance()->depth();
+            auto         m = *master_instance()->current();
+            graph_node_t node(m.id(), base_type::dummy(), m.depth());
+            m_graph_data_instance          = new graph_data_t(node);
+            m_graph_data_instance->depth() = m.depth();
+            if(m_node_ids.size() == 0)
+                m_node_ids[0][0] = m_graph_data_instance->current();
         }
         else if(m_graph_data_instance == nullptr)
         {
             auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
             if(!lk.owns_lock())
                 lk.lock();
-            /*static std::recursive_mutex _init_mutex;
-            auto_lock_t lk(_init_mutex, std::defer_lock);
-            if(!lk.owns_lock())
-                lk.lock();*/
 
-            using base_type     = typename ObjectType::base_type;
             std::string _prefix = "> [tot] total";
             add_hash_id(m_hash_ids, _prefix);
             graph_node_t node(0, base_type::dummy(), 0);
@@ -1009,6 +1142,7 @@ public:
     // there is always a head node that should not be counted
     //
     inline size_t size() const { return 0; }
+    inline size_t depth() const { return 0; }
 
     //----------------------------------------------------------------------------------//
     //
@@ -1017,7 +1151,6 @@ public:
     //----------------------------------------------------------------------------------//
     //
     iterator insert(int64_t, const ObjectType&, const string_t&) { return nullptr; }
-    void     set_prefix(const string_t&) {}
     void     print()
     {
         if(m_initialized)
@@ -1068,16 +1201,14 @@ protected:
 public:
     template <typename _Archive>
     void serialize(_Archive&, const unsigned int)
-    {
-    }
+    {}
 
 private:
     friend class tim::manager;
 
     template <typename _Archive>
     void _serialize(_Archive&)
-    {
-    }
+    {}
 
 private:
     static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
@@ -1167,6 +1298,9 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
     using Pointer     = std::unique_ptr<StorageType, storage_deleter<StorageType>>;
     using singleton_t = tim::singleton<StorageType, Pointer>;
 
+    storage_deleter()  = default;
+    ~storage_deleter() = default;
+
     void operator()(StorageType* ptr)
     {
         StorageType*    master     = singleton_t::master_instance_ptr();
@@ -1185,8 +1319,12 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
             }
             else if(master)
             {
-                master->StorageType::print();
-                master->StorageType::cleanup();
+                if(!_printed_master)
+                {
+                    master->StorageType::print();
+                    master->StorageType::cleanup();
+                    _printed_master = true;
+                }
             }
         }
 
@@ -1202,7 +1340,15 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
             }
             delete ptr;
         }
+        if(_printed_master && !_deleted_master)
+        {
+            delete master;
+            _deleted_master = true;
+        }
     }
+
+    bool _printed_master = false;
+    bool _deleted_master = false;
 };
 
 //======================================================================================//

@@ -43,6 +43,7 @@
 
 // TiMemory headers
 #include "timemory/backends/mpi.hpp"
+#include "timemory/utility/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -79,11 +80,6 @@
         std::cerr << ss.str() << std::endl;                                              \
         throw std::runtime_error(ss.str());                                              \
     }
-
-#if !defined(PRINT_HERE)
-#    define PRINT_HERE(extra)                                                            \
-        printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
-#endif
 
 inline std::string
 rank_prefix()
@@ -162,8 +158,7 @@ rank_prefix()
             {                                                                            \
                 ntest_counter += 1;                                                      \
                 func();                                                                  \
-            }                                                                            \
-            catch(std::exception & e)                                                    \
+            } catch(std::exception & e)                                                  \
             {                                                                            \
                 std::cerr << e.what() << std::endl;                                      \
                 nfail_counter += 1;                                                      \

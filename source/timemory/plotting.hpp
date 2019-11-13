@@ -51,8 +51,7 @@ template <typename... _Tail, typename... _Args,
           typename std::enable_if<(sizeof...(_Tail) == 0), int>::type = 0>
 void
 _plot(_Args&&...)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

@@ -40,6 +40,12 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<trip_count>;
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //          General Components with no specific category
@@ -53,16 +59,12 @@ struct trip_count : public base<trip_count>
     using this_type  = trip_count;
     using base_type  = base<this_type, value_type>;
 
-    static const short                   precision = 0;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
     static std::string label() { return "trip_count"; }
     static std::string description() { return "trip counts"; }
     static value_type  record() { return 1; }
 
     value_type get() const { return accum; }
+    value_type get_display() const { return get(); }
 
     void start()
     {

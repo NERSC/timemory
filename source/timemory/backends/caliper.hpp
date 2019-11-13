@@ -110,8 +110,7 @@ using id_t = int;
 template <typename... _Args>
 inline void
 cali_consume_parameters(_Args&&...)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

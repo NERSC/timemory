@@ -174,11 +174,6 @@ public:
     value_type operator()() { return Type::record(); }
 
     //----------------------------------------------------------------------------------//
-    // set the graph node prefix
-    //
-    void set_prefix(const string_t& _prefix) { get_storage()->set_prefix(_prefix); }
-
-    //----------------------------------------------------------------------------------//
     // reset the values
     //
     void reset()
@@ -259,9 +254,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // default get_display
+    // default get and get_display
     //
-    value_type get_display() const { return static_cast<const Type&>(*this).get(); }
+    value_type get() const { return (is_transient) ? value : accum; }
 
     //----------------------------------------------------------------------------------//
     // comparison operators
@@ -405,7 +400,8 @@ private:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope>
+    template <typename _Scope, typename _Up = this_type,
+              enable_if_t<(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
     {
         if(!is_on_stack)
@@ -420,9 +416,15 @@ private:
         }
     }
 
+    template <typename _Scope, typename _Up = this_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    void insert_node(const _Scope&, const int64_t&)
+    {}
+
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
+    template <typename _Up = this_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     void pop_node()
     {
         if(is_on_stack)
@@ -444,6 +446,11 @@ private:
         }
     }
 
+    template <typename _Up                                   = this_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    void pop_node()
+    {}
+
     //----------------------------------------------------------------------------------//
     // initialize the storage
     //
@@ -458,6 +465,13 @@ private:
             get_storage() = _instance;
         }
         return properties_t::has_storage();
+    }
+
+    template <typename _Up = _Tp, typename _Vp = _Value,
+              enable_if_t<!(implements_storage<_Up, _Vp>::value), int> = 0>
+    bool init_storage()
+    {
+        return true;
     }
 
     //----------------------------------------------------------------------------------//
@@ -733,11 +747,6 @@ public:
     value_type operator()() { Type::record(); }
 
     //----------------------------------------------------------------------------------//
-    // set the graph node prefix
-    //
-    void set_prefix(const string_t&) {}
-
-    //----------------------------------------------------------------------------------//
     // reset the values
     //
     void reset()
@@ -922,7 +931,7 @@ void
 base<_Tp, _Value, _Policies...>::append_impl(std::false_type, graph_iterator, const Type&)
 {}
 
-}  // component
-}  // tim
+}  // namespace component
+}  // namespace tim
 
 //======================================================================================//

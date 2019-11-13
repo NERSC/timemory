@@ -41,6 +41,10 @@ class component_tuple;
 
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+#endif
+
 //--------------------------------------------------------------------------------------//
 // adds NVTX markers
 //

@@ -52,8 +52,7 @@ public:
 public:
     explicit thread_barrier(const size_t& nthreads)
     : m_num_threads(nthreads)
-    {
-    }
+    {}
 
     thread_barrier(const thread_barrier&) = delete;
     thread_barrier(thread_barrier&&)      = delete;
