@@ -99,7 +99,7 @@ _Ptr
 get_shared_ptr_pair_master_instance()
 {
     static auto& _pinst = get_shared_ptr_pair<_Tp>();
-    static auto _inst = _pinst.first;
+    static auto  _inst  = _pinst.first;
     return _inst;
 }
 

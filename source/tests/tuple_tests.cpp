@@ -448,9 +448,9 @@ main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
 
-    tim::settings::verbose()      = 0;
-    tim::settings::debug()        = false;
-    tim::settings::json_output()  = true;
+    tim::settings::verbose()     = 0;
+    tim::settings::debug()       = false;
+    tim::settings::json_output() = true;
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
