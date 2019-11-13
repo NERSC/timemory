@@ -75,8 +75,7 @@ do_work(int64_t nitr, const std::pair<float, double>& p)
 DoWork::DoWork(const std::pair<float, double>& pair)
 : m_pair(pair)
 , m_tuple{ 0.0f, 0.0 }
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

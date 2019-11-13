@@ -93,8 +93,7 @@ static uint64_t dummy_kernel_id = 0;
 template <typename _Tp>
 GLOBAL_CALLABLE void
 warmup()
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -1223,16 +1222,15 @@ print(CUpti_Activity* record)
         case CUPTI_ACTIVITY_KIND_DEVICE:
         {
             CUpti_ActivityDevice2* device = (CUpti_ActivityDevice2*) record;
-            printf(
-                "DEVICE %s (%u), capability %u.%u, global memory (bandwidth %u GB/s, "
-                "size %u MB), "
-                "multiprocessors %u, clock %u MHz\n",
-                device->name, device->id, device->computeCapabilityMajor,
-                device->computeCapabilityMinor,
-                (unsigned int) (device->globalMemoryBandwidth / 1024 / 1024),
-                (unsigned int) (device->globalMemorySize / 1024 / 1024),
-                device->numMultiprocessors,
-                (unsigned int) (device->coreClockRate / 1000));
+            printf("DEVICE %s (%u), capability %u.%u, global memory (bandwidth %u GB/s, "
+                   "size %u MB), "
+                   "multiprocessors %u, clock %u MHz\n",
+                   device->name, device->id, device->computeCapabilityMajor,
+                   device->computeCapabilityMinor,
+                   (unsigned int) (device->globalMemoryBandwidth / 1024 / 1024),
+                   (unsigned int) (device->globalMemorySize / 1024 / 1024),
+                   device->numMultiprocessors,
+                   (unsigned int) (device->coreClockRate / 1000));
             break;
         }
         case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
@@ -1291,12 +1289,11 @@ print(CUpti_Activity* record)
                 (unsigned long long) (kernel->start - start_timestamp()),
                 (unsigned long long) (kernel->end - start_timestamp()), kernel->deviceId,
                 kernel->contextId, kernel->streamId, kernel->correlationId);
-            printf(
-                "    grid [%u,%u,%u], block [%u,%u,%u], shared memory (static %u, "
-                "dynamic %u)\n",
-                kernel->gridX, kernel->gridY, kernel->gridZ, kernel->blockX,
-                kernel->blockY, kernel->blockZ, kernel->staticSharedMemory,
-                kernel->dynamicSharedMemory);
+            printf("    grid [%u,%u,%u], block [%u,%u,%u], shared memory (static %u, "
+                   "dynamic %u)\n",
+                   kernel->gridX, kernel->gridY, kernel->gridZ, kernel->blockX,
+                   kernel->blockY, kernel->blockZ, kernel->staticSharedMemory,
+                   kernel->dynamicSharedMemory);
             break;
         }
         case CUPTI_ACTIVITY_KIND_DRIVER:
@@ -1651,10 +1648,9 @@ tim::cupti::available_metrics(CUdevice device)
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
             if(settings::verbose() > 0 || settings::debug())
-                printf(
-                    "Metric %s cannot be profiled as metric requires GPU"
-                    "time duration for kernel run.\n",
-                    metricName);
+                printf("Metric %s cannot be profiled as metric requires GPU"
+                       "time duration for kernel run.\n",
+                       metricName);
         }
         else
         {

@@ -13,7 +13,7 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterDefinitionReturnType: TopLevel
 AlwaysBreakAfterReturnType: TopLevel
-AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: true
 BasedOnStyle: Mozilla
 BinPackArguments: true
@@ -28,14 +28,15 @@ BraceWrapping:
     AfterUnion:             true
     AfterExternBlock:       true
     BeforeCatch:            false
-    BeforeElse:             false
+    BeforeElse:             true
     IndentBraces:           false
     SplitEmptyFunction:     false
     SplitEmptyRecord:       false
     SplitEmptyNamespace:    false
-BreakBeforeBraces: Allman
+BreakBeforeBraces: Custom
 BreakBeforeInheritanceComma: true
 ColumnLimit: 90
+CompactNamespaces: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0
 ContinuationIndentWidth: 4

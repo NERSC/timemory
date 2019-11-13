@@ -146,12 +146,10 @@ struct half2
 
     half2(float val)
     : value{ { val, val } }
-    {
-    }
+    {}
     half2(float lhs, float rhs)
     : value{ { lhs, rhs } }
-    {
-    }
+    {}
     half2& operator+=(const float& rhs)
     {
         value[0] += rhs;

@@ -220,8 +220,7 @@ get_max()
             auto sz = impl::cache_size(level);
             // if this succeeded, we can return the value
             return sz;
-        }
-        catch(...)
+        } catch(...)
         {
             continue;
         }

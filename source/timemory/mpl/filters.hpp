@@ -66,8 +66,7 @@ struct tuple_concat<std::tuple<Ts...>>
 template <typename... Ts0, typename... Ts1, typename... Rest>
 struct tuple_concat<std::tuple<Ts0...>, std::tuple<Ts1...>, Rest...>
 : tuple_concat<std::tuple<Ts0..., Ts1...>, Rest...>
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 

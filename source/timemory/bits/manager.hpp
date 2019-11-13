@@ -108,10 +108,9 @@ inline manager::manager()
     if(m_instance_count == 0)
     {
         if(settings::banner())
-            printf(
-                "#--------------------- tim::manager initialized [%i] "
-                "---------------------#\n\n",
-                m_instance_count);
+            printf("#--------------------- tim::manager initialized [%i] "
+                   "---------------------#\n\n",
+                   m_instance_count);
     }
 }
 
@@ -126,10 +125,9 @@ inline manager::~manager()
     {
         f_thread_counter().store(0, std::memory_order_relaxed);
         if(settings::banner())
-            printf(
-                "\n\n#---------------------- tim::manager destroyed [%i] "
-                "----------------------#\n",
-                m_instance_count);
+            printf("\n\n#---------------------- tim::manager destroyed [%i] "
+                   "----------------------#\n",
+                   m_instance_count);
     }
 }
 
@@ -191,10 +189,8 @@ manager::exit_hook()
         }
         papi::shutdown();
         mpi::finalize();
-    }
-    catch(...)
-    {
-    }
+    } catch(...)
+    {}
 }
 
 //======================================================================================//

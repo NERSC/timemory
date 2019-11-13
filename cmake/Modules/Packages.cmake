@@ -848,3 +848,9 @@ else()
     set(TIMEMORY_USE_GOTCHA OFF)
     inform_empty_interface(timemory-gotcha "GOTCHA")
 endif()
+
+
+#----------------------------------------------------------------------------------------#
+# activate clang-tidy if enabled
+#
+_timemory_activate_clang_tidy()

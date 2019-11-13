@@ -161,18 +161,15 @@ public:
 
         graph_node()
         : base_type(0, ObjectType(), 0)
-        {
-        }
+        {}
 
         explicit graph_node(base_type&& _base)
         : base_type(std::forward<base_type>(_base))
-        {
-        }
+        {}
 
         graph_node(const uint64_t& _id, const ObjectType& _obj, int64_t _depth)
         : base_type(_id, _obj, _depth)
-        {
-        }
+        {}
 
         ~graph_node() {}
         // explicit graph_node(const this_type&) = default;
@@ -896,8 +893,7 @@ protected:
         template <typename _Archive, typename _Type = ObjectType,
                   typename std::enable_if<!(is_enabled<_Type>::value), char>::type = 0>
         static void serialize(storage_t&, _Archive&, const unsigned int)
-        {
-        }
+        {}
     };
 
     friend struct write_serialization<this_type>;
@@ -1205,16 +1201,14 @@ protected:
 public:
     template <typename _Archive>
     void serialize(_Archive&, const unsigned int)
-    {
-    }
+    {}
 
 private:
     friend class tim::manager;
 
     template <typename _Archive>
     void _serialize(_Archive&)
-    {
-    }
+    {}
 
 private:
     static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }

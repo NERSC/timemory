@@ -75,8 +75,7 @@ class component_tuple
 public:
     template <typename... _Types>
     struct filtered
-    {
-    };
+    {};
 
     template <template <typename...> class _TypeL, typename... _Types>
     struct filtered<_TypeL<_Types...>>
@@ -269,8 +268,7 @@ public:
     template <typename _Tp, typename _Func, typename... _Args,
               enable_if_t<(is_one_of<_Tp, data_type>::value == false), int> = 0>
     inline void type_apply(_Func&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     // this_type operators
@@ -400,7 +398,7 @@ protected:
     int64_t           m_laps         = 0;
     uint64_t          m_hash         = 0;
     string_t          m_key          = "";
-    mutable data_type m_data;
+    mutable data_type m_data         = data_type();
 
 public:
 };

@@ -45,6 +45,9 @@ template <typename... Types>
 component_list<Types...>::component_list()
 : m_store(false)
 , m_flat(false)
+, m_is_pushed(false)
+, m_print_prefix(true)
+, m_print_laps(true)
 , m_laps(0)
 , m_hash(0)
 , m_key("")
@@ -57,6 +60,9 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
                                          const bool& flat)
 : m_store(store && settings::enabled())
 , m_flat(flat)
+, m_is_pushed(false)
+, m_print_prefix(true)
+, m_print_laps(true)
 , m_laps(0)
 , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
 , m_key(key)
@@ -76,6 +82,9 @@ component_list<Types...>::component_list(const captured_location_t& loc,
                                          const bool& store, const bool& flat)
 : m_store(store && settings::enabled())
 , m_flat(flat)
+, m_is_pushed(false)
+, m_print_prefix(true)
+, m_print_laps(true)
 , m_laps(0)
 , m_hash(loc.get_hash())
 , m_key(loc.get_id())
@@ -104,6 +113,8 @@ component_list<Types...>::component_list(const this_type& rhs)
 : m_store(rhs.m_store)
 , m_flat(rhs.m_flat)
 , m_is_pushed(rhs.m_is_pushed)
+, m_print_prefix(rhs.m_print_prefix)
+, m_print_laps(rhs.m_print_laps)
 , m_laps(rhs.m_laps)
 , m_key(rhs.m_key)
 {
@@ -119,11 +130,13 @@ component_list<Types...>::operator=(const this_type& rhs)
 {
     if(this != &rhs)
     {
-        m_store     = rhs.m_store;
-        m_flat      = rhs.m_flat;
-        m_is_pushed = rhs.m_is_pushed;
-        m_laps      = rhs.m_laps;
-        m_key       = rhs.m_key;
+        m_store        = rhs.m_store;
+        m_flat         = rhs.m_flat;
+        m_is_pushed    = rhs.m_is_pushed;
+        m_print_prefix = rhs.m_print_prefix;
+        m_print_laps   = rhs.m_print_laps;
+        m_laps         = rhs.m_laps;
+        m_key          = rhs.m_key;
         apply<void>::access<deleter_t>(m_data);
         apply<void>::access2<copy_t>(m_data, rhs.m_data);
     }

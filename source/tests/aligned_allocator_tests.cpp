@@ -47,8 +47,7 @@ static const double      depsilon = std::numeric_limits<double>::epsilon();
 //
 template <typename _Tp>
 struct is_intrinsic : std::false_type
-{
-};
+{};
 
 // overload for intrinsic type __m128 (four packed 32-bit floats)
 template <>
@@ -149,8 +148,7 @@ print(std::ostream& os, const std::string& label, const _Vec<_Tp, _ImplicitArgs.
 //--------------------------------------------------------------------------------------//
 
 class aligned_allocator_tests : public ::testing::Test
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 

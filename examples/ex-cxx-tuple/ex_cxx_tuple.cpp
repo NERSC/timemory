@@ -43,14 +43,15 @@ using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
-using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
-                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, page_rss, caliper, papi_tuple_t>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, page_rss, data_rss,
+                    virtual_memory, caliper, papi_tuple_t>;
 
 using full_measurement_t =
-    tim::component_tuple<peak_rss, page_rss, stack_rss, data_rss, num_swap, num_io_in,
-                         num_io_out, num_minor_page_faults, num_major_page_faults,
-                         num_msg_sent, num_msg_recv, num_signals,
+    tim::component_tuple<peak_rss, page_rss, virtual_memory, stack_rss, data_rss,
+                         num_swap, num_io_in, num_io_out, num_minor_page_faults,
+                         num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
                          voluntary_context_switch, priority_context_switch, papi_tuple_t>;
 
 using measurement_t =
@@ -124,8 +125,7 @@ main(int argc, char** argv)
         RUN_TEST(2, test_2_timing, num_test, num_fail);
         RUN_TEST(3, test_3_auto_tuple, num_test, num_fail);
         RUN_TEST(4, test_4_measure, num_test, num_fail);
-    }
-    catch(std::exception& e)
+    } catch(std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }

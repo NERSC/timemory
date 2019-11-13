@@ -46,11 +46,13 @@ template <typename... Types>
 inline component_tuple<Types...>::component_tuple()
 : m_store(false)
 , m_flat(false)
+, m_is_pushed(false)
+, m_print_prefix(true)
+, m_print_laps(true)
 , m_laps(0)
 , m_hash(0)
 , m_key("")
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -59,9 +61,13 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
                                                   const bool& flat)
 : m_store(store && settings::enabled())
 , m_flat(flat)
+, m_is_pushed(false)
+, m_print_prefix(true)
+, m_print_laps(true)
 , m_laps(0)
 , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
 , m_key(key)
+, m_data(data_type{})
 {
     compute_width(key);
 }
@@ -73,9 +79,13 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
                                                   const bool& store, const bool& flat)
 : m_store(store && settings::enabled())
 , m_flat(flat)
+, m_is_pushed(false)
+, m_print_prefix(true)
+, m_print_laps(true)
 , m_laps(0)
 , m_hash(loc.get_hash())
 , m_key(loc.get_id())
+, m_data(data_type())
 {
     compute_width(m_key);
 }

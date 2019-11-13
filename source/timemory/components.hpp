@@ -227,8 +227,7 @@ template <template <typename...> class _CompList, typename... _CompTypes,
           typename std::enable_if<(sizeof...(_CompTypes) == 0), int>::type = 0>
 inline void
 initialize(_CompList<_CompTypes...>&, const std::string&, const std::string&)
-{
-}
+{}
 
 }  // namespace env
 

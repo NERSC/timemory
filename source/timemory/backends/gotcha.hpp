@@ -55,8 +55,7 @@ typedef struct __gotcha_binding_timemory
     : name(_name)
     , wrapper_pointer(_wrap)
     , function_handle(_handle)
-    {
-    }
+    {}
 
     __gotcha_binding_timemory()                                 = default;
     ~__gotcha_binding_timemory()                                = default;

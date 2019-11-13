@@ -620,7 +620,6 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
         auto              _disp  = base_type::get_display_unit();
-        auto              _label = base_type::get_label();
 
         auto _val = get();
 
@@ -635,6 +634,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
             ssr << " " << _disp << "/" << timer_type::get_display_unit();
 
         ss << ssv.str() << ", " << ssr.str();
+        ss << " read";
         return ss.str();
     }
 
@@ -696,7 +696,6 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
         auto              _disp  = base_type::get_display_unit();
-        auto              _label = base_type::get_label();
 
         auto _val = get();
 
@@ -711,6 +710,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
             ssr << " " << _disp << "/" << timer_type::get_display_unit();
 
         ss << ssv.str() << ", " << ssr.str();
+        ss << " written";
         return ss.str();
     }
 

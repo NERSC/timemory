@@ -179,7 +179,8 @@ typedef enum
     CUPTI_METRIC_VALUE_UTILIZATION_FORCE_INT = 0x7fffffff
 } MetricValueUtilizationLevel;
 
-typedef union {
+typedef union
+{
     double                      metricValueDouble;
     uint64_t                    metricValueUint64;
     int64_t                     metricValueInt64;
@@ -189,12 +190,10 @@ typedef union {
 } metric_value_t;
 
 struct _CUcontext
-{
-};
+{};
 
 struct _CUdevice
-{
-};
+{};
 
 using context_t       = _CUcontext;
 using device_t        = _CUdevice;
@@ -241,7 +240,8 @@ namespace data
 {
 //--------------------------------------------------------------------------------------//
 
-union metric_u {
+union metric_u
+{
     int64_t  integer_v = 0;
     uint64_t unsigned_integer_v;
     double   percent_v;
@@ -596,8 +596,7 @@ namespace data
 
 template <typename... _Types>
 struct _operation
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 
@@ -705,8 +704,7 @@ struct result
     : is_event_value(rhs.is_event_value)
     , name(rhs.name)
     , data(rhs.data)
-    {
-    }
+    {}
 
     result& operator=(const result& rhs)
     {
@@ -725,8 +723,7 @@ struct result
     : is_event_value(_is)
     , name(_name)
     , data(_data)
-    {
-    }
+    {}
 
     friend std::ostream& operator<<(std::ostream& os, const result& obj)
     {
@@ -1240,45 +1237,39 @@ get_buffer_pool_limit()
 
 inline void
 initialize_trace(const std::vector<activity_kind_t>&)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 inline void
 finalize_trace(const std::vector<activity_kind_t>&)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 inline void
 start_trace(_Tp*, bool = false)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 inline void
 stop_trace(_Tp*)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 inline void
 request_buffer(uint8_t**, size_t*, size_t*)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 inline void
 buffer_completed(context_t, uint32_t, uint8_t*, size_t, size_t)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

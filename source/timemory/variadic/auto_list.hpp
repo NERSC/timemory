@@ -204,8 +204,7 @@ public:
     template <typename _Tp, typename... _Args,
               enable_if_t<(is_one_of<_Tp, type_tuple>::value == false), int> = 0>
     void init(_Args&&...)
-    {
-    }
+    {}
 
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
@@ -244,7 +243,9 @@ auto_list<Types...>::auto_list(const string_t& object_tag, bool flat, bool repor
                                const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {
@@ -261,7 +262,9 @@ auto_list<Types...>::auto_list(const captured_location_t& object_loc, bool flat,
                                bool report_at_exit, const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_loc, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {

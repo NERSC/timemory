@@ -49,23 +49,17 @@ using result_type       = std::tuple<timer_tuple_t, int64_t, int64_t>;
 namespace mode
 {
 struct basic
-{
-};
+{};
 struct blank
-{
-};
+{};
 struct none
-{
-};
+{};
 struct basic_pointer
-{
-};
+{};
 struct blank_pointer
-{
-};
+{};
 struct measure
-{
-};
+{};
 }  // namespace mode
 
 //======================================================================================//

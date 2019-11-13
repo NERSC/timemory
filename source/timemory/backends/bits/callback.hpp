@@ -42,8 +42,7 @@ struct callback_barrier_t
 
     callback_barrier_t(int _releaseCount)
     : releaseCount(_releaseCount)
-    {
-    }
+    {}
 
     callback_barrier_t(const callback_barrier_t&) = delete;
     callback_barrier_t(callback_barrier_t&&)      = default;

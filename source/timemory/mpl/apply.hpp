@@ -294,8 +294,7 @@ namespace impl
 // extract the elements in a tuple.
 template <size_t... _Indexes>
 struct _Index_tuple
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 // Concatenates two _Index_tuples.
@@ -316,8 +315,7 @@ template <size_t _Num, size_t _Off = 0>
 struct _Build_index_tuple
 : _Itup_cat<typename _Build_index_tuple<_Num / 2, _Off>::__type,
             typename _Build_index_tuple<_Num - _Num / 2, _Off>::__type>
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 
@@ -1075,8 +1073,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void set_value(_Tuple&&, _Value&&)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1084,8 +1081,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void access(_Tuple&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1093,8 +1089,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void access_with_indices(_Tuple&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1103,8 +1098,7 @@ struct apply<void>
               std::size_t _Nb             = std::tuple_size<decay_t<_TupleB>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void access2(_TupleA&&, _TupleB&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1112,8 +1106,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void unroll_access(_Tuple&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 
@@ -1121,8 +1114,7 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void type_access(_Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
 };

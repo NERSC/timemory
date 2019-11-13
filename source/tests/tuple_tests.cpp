@@ -147,8 +147,7 @@ time_fibonacci(int32_t n, int32_t cutoff)
 //--------------------------------------------------------------------------------------//
 
 class tuple_tests : public ::testing::Test
-{
-};
+{};
 
 //--------------------------------------------------------------------------------------//
 
@@ -209,7 +208,7 @@ TEST_F(tuple_tests, all_threads)
             ss << "fibonacci(" << n << ")";
 
             TIMEMORY_BLANK_MARKER(auto_tuple_t, "run_fib");
-            if(p)
+            if(p != nullptr)
                 p->set_value();
             measurement_t _tm("thread " + ss.str(), false);
             _tm.start();

@@ -43,13 +43,7 @@ namespace component
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<trip_count>;
-#    if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-extern template struct base<gperf_cpu_profiler, void, policy::thread_init,
-                            policy::global_finalize>;
-#    endif
-#    if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
-extern template struct base<gperf_heap_profiler, void, policy::global_finalize>;
-#    endif
+
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -64,11 +58,6 @@ struct trip_count : public base<trip_count>
     using value_type = int64_t;
     using this_type  = trip_count;
     using base_type  = base<this_type, value_type>;
-
-    static const short                   precision = 0;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static std::string label() { return "trip_count"; }
     static std::string description() { return "trip counts"; }

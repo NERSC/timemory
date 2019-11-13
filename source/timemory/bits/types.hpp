@@ -278,8 +278,7 @@ public:
 
         explicit captured(const result_type& _result)
         : m_result(_result)
-        {
-        }
+        {}
 
         captured()  = default;
         ~captured() = default;

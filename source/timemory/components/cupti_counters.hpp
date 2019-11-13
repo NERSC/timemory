@@ -74,7 +74,7 @@ operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_
         tmp[i] -= rhs[i];
     return tmp;
 }
-}
+}  // namespace stl_overload
 
 //--------------------------------------------------------------------------------------//
 
@@ -122,10 +122,8 @@ struct cupti_counters
     /// function for setting all of device, metrics, and events
     using get_initializer_t = std::function<tuple_type()>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 8;
 
     static event_func_t& get_event_initializer()
     {
@@ -234,12 +232,14 @@ struct cupti_counters
         if(tmp.size() == 0)
         {
             tmp = _profiler->get_events_and_metrics(_labels);
-        } else if(tmp.size() == _labels.size())
+        }
+        else if(tmp.size() == _labels.size())
         {
             auto ret = _profiler->get_events_and_metrics(_labels);
             for(size_t j = 0; j < _labels.size(); ++j)
                 tmp[j] += ret[j];
-        } else
+        }
+        else
         {
             fprintf(stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
                     TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__);
@@ -275,7 +275,8 @@ struct cupti_counters
             accum = tmp;
             for(size_type i = 0; i < tmp.size(); ++i)
                 accum[i] -= value[i];
-        } else
+        }
+        else
         {
             for(size_type i = 0; i < tmp.size(); ++i)
                 accum[i] += (tmp[i] - value[i]);
@@ -622,7 +623,8 @@ private:
                     _used_mets.insert(itr);
                 _labels = generate_labels();
             }
-        } else
+        }
+        else
         {
             fprintf(stderr, "[cupti_counters]> Warning! No devices available!");
         }

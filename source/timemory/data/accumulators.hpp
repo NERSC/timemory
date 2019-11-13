@@ -148,18 +148,15 @@ statistics<_Tp>::get_sum() const
 
 template <typename _Tp>
 struct statistics : public impl::statistics<_Tp>
-{
-};
+{};
 
 template <typename _Tp, size_t _N>
 struct statistics<std::array<_Tp, _N>> : public std::array<impl::statistics<_Tp>, _N>
-{
-};
+{};
 
 template <typename _Tp>
 struct statistics<std::vector<_Tp>> : public std::vector<impl::statistics<_Tp>>
-{
-};
+{};
 
 //======================================================================================//
 

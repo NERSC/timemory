@@ -108,27 +108,31 @@ struct cupti_activity
             if(!_kinds.empty())
             {
                 return _kinds;
-            } else if(lvl == 0)
+            }
+            else if(lvl == 0)
             {
                 // general settings for kernels, runtime, overhead
                 _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
                              CUPTI_ACTIVITY_KIND_RUNTIME,
                              CUPTI_ACTIVITY_KIND_OVERHEAD } };
-            } else if(lvl == 1)
+            }
+            else if(lvl == 1)
             {
                 // general settings for kernels, runtime, memory, overhead
                 _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
                              CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
                              CUPTI_ACTIVITY_KIND_RUNTIME,
                              CUPTI_ACTIVITY_KIND_OVERHEAD } };
-            } else if(lvl == 2)
+            }
+            else if(lvl == 2)
             {
                 // general settings for kernels, runtime, memory, overhead, and device
                 _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
                              CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
                              CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_DEVICE,
                              CUPTI_ACTIVITY_KIND_DRIVER, CUPTI_ACTIVITY_KIND_OVERHEAD } };
-            } else if(lvl > 2)
+            }
+            else if(lvl > 2)
             {
                 // general settings for kernels, runtime, memory, overhead, device,
                 // stream, CDP kernels

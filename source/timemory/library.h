@@ -39,20 +39,17 @@ struct timemory_scoped_record
 {
     timemory_scoped_record(const char* name)
     : m_nid(timemory_get_begin_record(name))
-    {
-    }
+    {}
 
     timemory_scoped_record(const char* name, const char* components)
     : m_nid(timemory_get_begin_record_types(name, components))
-    {
-    }
+    {}
 
     template <typename... _Ids,
               typename std::enable_if<(sizeof...(_Ids) > 0), int>::type = 0>
     timemory_scoped_record(const char* name, _Ids... _ids)
     : m_nid(timemory_get_begin_record_enum(name, _ids..., TIMEMORY_COMPONENTS_END))
-    {
-    }
+    {}
 
     ~timemory_scoped_record() { timemory_end_record(m_nid); }
 

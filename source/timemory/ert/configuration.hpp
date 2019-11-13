@@ -249,8 +249,7 @@ public:
         {
             auto _counter = config.executor(_data);
             callback(_counter);
-        }
-        catch(std::exception& e)
+        } catch(std::exception& e)
         {
             std::cerr << "\n\nEXCEPTION:\n";
             std::cerr << "\t" << e.what() << "\n\n" << std::endl;
@@ -269,8 +268,7 @@ public:
             auto _counter = config.executor(_data);
             _counter.set_callback(std::forward<_Func>(_counter_callback));
             callback(_counter);
-        }
-        catch(std::exception& e)
+        } catch(std::exception& e)
         {
             std::cerr << "\n\nEXCEPTION:\n";
             std::cerr << "\t" << e.what() << "\n\n" << std::endl;
@@ -358,8 +356,7 @@ public:
         {
             auto _counter = config.executor(_data);
             callback(_counter);
-        }
-        catch(std::exception& e)
+        } catch(std::exception& e)
         {
             std::cerr << "\n\nEXCEPTION:\n";
             std::cerr << "\t" << e.what() << "\n\n" << std::endl;
@@ -378,8 +375,7 @@ public:
             auto _counter = config.executor(_data);
             _counter.set_callback(std::forward<_Func>(_counter_callback));
             callback(_counter);
-        }
-        catch(std::exception& e)
+        } catch(std::exception& e)
         {
             std::cerr << "\n\nEXCEPTION:\n";
             std::cerr << "\t" << e.what() << "\n\n" << std::endl;

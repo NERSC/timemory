@@ -193,7 +193,9 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
                                  bool report_at_exit)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {
@@ -208,7 +210,9 @@ auto_tuple<Types...>::auto_tuple(const source_location::captured& captured, bool
                                  bool report_at_exit)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(captured, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(captured, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {
@@ -222,7 +226,7 @@ template <typename... Types>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, flat))
+, m_temporary_object(component_type(tmp.clone(true, flat)))
 , m_reference_object(&tmp)
 {
     if(m_enabled)

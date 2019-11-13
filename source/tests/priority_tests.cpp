@@ -101,28 +101,22 @@ namespace trait
 {
 template <>
 struct is_timing_category<priority_start_wc> : public std::true_type
-{
-};
+{};
 template <>
 struct is_timing_category<priority_stop_wc> : public std::true_type
-{
-};
+{};
 template <>
 struct uses_timing_units<priority_start_wc> : public std::true_type
-{
-};
+{};
 template <>
 struct uses_timing_units<priority_stop_wc> : public std::true_type
-{
-};
+{};
 template <>
 struct start_priority<priority_start_wc> : public std::true_type
-{
-};
+{};
 template <>
 struct stop_priority<priority_stop_wc> : public std::true_type
-{
-};
+{};
 }  // namespace trait
 }  // namespace tim
 

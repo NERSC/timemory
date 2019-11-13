@@ -49,14 +49,6 @@ namespace component
 //
 //
 template struct base<trip_count>;
-
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-template struct base<gperf_cpu_profiler, void, policy::thread_init,
-                     policy::global_finalize>;
-#endif
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
-template struct base<gperf_heap_profiler, void, policy::global_finalize>;
-#endif
 //
 //
 }  // namespace component

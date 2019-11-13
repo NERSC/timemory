@@ -61,11 +61,10 @@ tim::cuda::device_query()
             // Console log
             cudaDriverGetVersion(&driverVersion);
             cudaRuntimeGetVersion(&runtimeVersion);
-            printf(
-                "  CUDA Driver Version / Runtime Version          %d.%d / "
-                "%d.%d\n",
-                driverVersion / 1000, (driverVersion % 100) / 10, runtimeVersion / 1000,
-                (runtimeVersion % 100) / 10);
+            printf("  CUDA Driver Version / Runtime Version          %d.%d / "
+                   "%d.%d\n",
+                   driverVersion / 1000, (driverVersion % 100) / 10,
+                   runtimeVersion / 1000, (runtimeVersion % 100) / 10);
             printf("  CUDA Capability Major/Minor version number:    %d.%d\n",
                    deviceProp.major, deviceProp.minor);
         }
@@ -112,10 +111,9 @@ tim::cuda::device_query()
 #    endif
         printf("%s", msg);
 
-        printf(
-            "  GPU Max Clock rate:                            %.0f MHz (%0.2f "
-            "GHz)\n",
-            deviceProp.clockRate * 1e-3f, deviceProp.clockRate * 1e-6f);
+        printf("  GPU Max Clock rate:                            %.0f MHz (%0.2f "
+               "GHz)\n",
+               deviceProp.clockRate * 1e-3f, deviceProp.clockRate * 1e-6f);
 
 #    if CUDART_VERSION >= 5000
         // This is supported in CUDA 5.0 (runtime API device properties)
@@ -147,21 +145,18 @@ tim::cuda::device_query()
                    L2CacheSize);
 #    endif
 
-        printf(
-            "  Maximum Texture Dimension Size (x,y,z)         1D=(%d), 2D=(%d, "
-            "%d), 3D=(%d, %d, %d)\n",
-            deviceProp.maxTexture1D, deviceProp.maxTexture2D[0],
-            deviceProp.maxTexture2D[1], deviceProp.maxTexture3D[0],
-            deviceProp.maxTexture3D[1], deviceProp.maxTexture3D[2]);
-        printf(
-            "  Maximum Layered 1D Texture Size, (num) layers  1D=(%d), %d "
-            "layers\n",
-            deviceProp.maxTexture1DLayered[0], deviceProp.maxTexture1DLayered[1]);
-        printf(
-            "  Maximum Layered 2D Texture Size, (num) layers  2D=(%d, %d), %d "
-            "layers\n",
-            deviceProp.maxTexture2DLayered[0], deviceProp.maxTexture2DLayered[1],
-            deviceProp.maxTexture2DLayered[2]);
+        printf("  Maximum Texture Dimension Size (x,y,z)         1D=(%d), 2D=(%d, "
+               "%d), 3D=(%d, %d, %d)\n",
+               deviceProp.maxTexture1D, deviceProp.maxTexture2D[0],
+               deviceProp.maxTexture2D[1], deviceProp.maxTexture3D[0],
+               deviceProp.maxTexture3D[1], deviceProp.maxTexture3D[2]);
+        printf("  Maximum Layered 1D Texture Size, (num) layers  1D=(%d), %d "
+               "layers\n",
+               deviceProp.maxTexture1DLayered[0], deviceProp.maxTexture1DLayered[1]);
+        printf("  Maximum Layered 2D Texture Size, (num) layers  2D=(%d, %d), %d "
+               "layers\n",
+               deviceProp.maxTexture2DLayered[0], deviceProp.maxTexture2DLayered[1],
+               deviceProp.maxTexture2DLayered[2]);
 
         printf("  Total amount of constant memory:               %lu bytes\n",
                deviceProp.totalConstMem);
@@ -187,10 +182,9 @@ tim::cuda::device_query()
                deviceProp.memPitch);
         printf("  Texture alignment:                             %lu bytes\n",
                deviceProp.textureAlignment);
-        printf(
-            "  Concurrent copy and kernel execution:          %s with %d copy "
-            "engine(s)\n",
-            (deviceProp.deviceOverlap ? "Yes" : "No"), deviceProp.asyncEngineCount);
+        printf("  Concurrent copy and kernel execution:          %s with %d copy "
+               "engine(s)\n",
+               (deviceProp.deviceOverlap ? "Yes" : "No"), deviceProp.asyncEngineCount);
         printf("  Run time limit on kernels:                     %s\n",
                deviceProp.kernelExecTimeoutEnabled ? "Yes" : "No");
         printf("  Integrated GPU sharing Host Memory:            %s\n",

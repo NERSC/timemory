@@ -196,14 +196,14 @@ main(int argc, char** argv)
 
     auto usage = [&]() {
         using lli = long long int;
-        printf(
-            "\n%s [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = "
-            "%lli] "
-            "[%s = %lli] [%s = %lli]\n\n",
-            argv[0], "num_threads", (lli) num_threads, "num_streams", (lli) num_streams,
-            "working_size", (lli) working_size, "memory_factor", (lli) memory_factor,
-            "iterations", (lli) iterations, "block_size", (lli) block_size, "grid_size",
-            (lli) grid_size, "data_size", (lli) data_size);
+        printf("\n%s [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = "
+               "%lli] "
+               "[%s = %lli] [%s = %lli]\n\n",
+               argv[0], "num_threads", (lli) num_threads, "num_streams",
+               (lli) num_streams, "working_size", (lli) working_size, "memory_factor",
+               (lli) memory_factor, "iterations", (lli) iterations, "block_size",
+               (lli) block_size, "grid_size", (lli) grid_size, "data_size",
+               (lli) data_size);
     };
 
     for(auto i = 0; i < argc; ++i)

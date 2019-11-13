@@ -98,8 +98,7 @@ namespace tim
 template <typename... _Args>
 void
 consume_parameters(_Args&&...)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -299,8 +298,7 @@ delimit(const string_t& line, const string_t& delimiters = ",; ",
             // starting at the position of the new string, get the characters
             // between this position and the next delimiter
             _tmp = line.substr(_beginp, _delimp - _beginp);
-        }
-        catch(std::exception& e)
+        } catch(std::exception& e)
         {
             // print the exception but don't fail, unless maybe it should?
             std::stringstream ss;
@@ -562,20 +560,16 @@ public:
 public:
     path_t(const std::string& _path)
     : string_t(osrepr(_path))
-    {
-    }
+    {}
     path_t(char* _path)
     : string_t(osrepr(string_t(_path)))
-    {
-    }
+    {}
     path_t(const path_t& rhs)
     : string_t(osrepr(rhs))
-    {
-    }
+    {}
     path_t(const char* _path)
     : string_t(osrepr(string_t(const_cast<char*>(_path))))
-    {
-    }
+    {}
 
     path_t& operator=(const string_t& rhs)
     {
@@ -658,8 +652,7 @@ protected:
     static_counted_object()
     : m_thread(thread_number())
     , m_count(count()++)
-    {
-    }
+    {}
     ~static_counted_object()
     {
         if(m_decrement)
@@ -671,8 +664,7 @@ protected:
     : m_decrement(false)
     , m_thread(rhs.m_thread)
     , m_count(rhs.m_count)
-    {
-    }
+    {}
     this_type& operator=(const this_type& rhs)
     {
         if(this != &rhs)
@@ -687,8 +679,7 @@ protected:
     : m_decrement(false)
     , m_thread(std::move(rhs.m_thread))
     , m_count(std::move(rhs.m_count))
-    {
-    }
+    {}
 
 protected:
     bool    m_decrement = true;
@@ -771,8 +762,7 @@ protected:
     // default constructor
     counted_object()
     : m_count(count()++)
-    {
-    }
+    {}
     ~counted_object()
     {
         if(!is_noop)
@@ -780,8 +770,7 @@ protected:
     }
     explicit counted_object(const this_type&)
     : m_count(count()++)
-    {
-    }
+    {}
     explicit counted_object(this_type&&) = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&& rhs) = default;

@@ -158,8 +158,7 @@ rank_prefix()
             {                                                                            \
                 ntest_counter += 1;                                                      \
                 func();                                                                  \
-            }                                                                            \
-            catch(std::exception & e)                                                    \
+            } catch(std::exception & e)                                                  \
             {                                                                            \
                 std::cerr << e.what() << std::endl;                                      \
                 nfail_counter += 1;                                                      \

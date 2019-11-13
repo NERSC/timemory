@@ -740,7 +740,8 @@ private:
 
             _obj.customize(_data.tool_id);
             _obj.stop();
-        } else if(settings::debug())
+        }
+        else if(settings::debug())
         {
             PRINT_HERE("nullptr to original function!");
         }

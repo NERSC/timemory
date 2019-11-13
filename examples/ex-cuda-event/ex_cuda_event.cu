@@ -210,8 +210,7 @@ main(int argc, char** argv)
         RUN_TEST(8, test_8_cupti_subset, num_test, num_fail);
         RUN_TEST(9, test_9_cupti_counters, num_test, num_fail);
         RUN_TEST(10, test_10_cupti_metric, num_test, num_fail);
-    }
-    catch(std::exception& e)
+    } catch(std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }

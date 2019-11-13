@@ -931,7 +931,7 @@ void
 base<_Tp, _Value, _Policies...>::append_impl(std::false_type, graph_iterator, const Type&)
 {}
 
-}  // component
-}  // tim
+}  // namespace component
+}  // namespace tim
 
 //======================================================================================//

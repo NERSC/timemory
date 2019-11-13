@@ -39,16 +39,13 @@ namespace tim
 template <typename... _Args>
 void
 timemory_init(_Args...)
-{
-}
+{}
 inline void
 timemory_finalize()
-{
-}
+{}
 inline void
 print_env()
-{
-}
+{}
 
 /// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
@@ -56,8 +53,7 @@ struct dummy
 {
     template <typename... _Args>
     dummy(_Args&&...)
-    {
-    }
+    {}
     ~dummy()            = default;
     dummy(const dummy&) = default;
     dummy(dummy&&)      = default;
@@ -69,12 +65,10 @@ struct dummy
     void report_at_exit(bool) {}
     template <typename... _Args>
     void mark_begin(_Args&&...)
-    {
-    }
+    {}
     template <typename... _Args>
     void mark_end(_Args&&...)
-    {
-    }
+    {}
     friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
 };
 }  // namespace tim

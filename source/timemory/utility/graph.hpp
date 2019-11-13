@@ -99,16 +99,14 @@ public:
 template <typename T>
 tgraph_node<T>::tgraph_node(const T& val)
 : data(val)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
 tgraph_node<T>::tgraph_node(T&& val)
 : data(std::move(val))
-{
-}
+{}
 
 //======================================================================================//
 //  graph allocator that counts the size of the allocation
@@ -289,8 +287,7 @@ public:
 private:
     template <typename... _Args>
     void _consume(_Args&&...)
-    {
-    }
+    {}
 
     void add_pages(int npages = 1) const
     {
@@ -786,8 +783,7 @@ private:
     public:
         explicit compare_nodes(StrictWeakOrdering comp)
         : m_comp(comp)
-        {
-        }
+        {}
 
         bool operator()(const graph_node* a, const graph_node* b)
         {
@@ -2728,8 +2724,7 @@ template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::iterator_base::iterator_base()
 : node(nullptr)
 , m_skip_current_children(false)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -2737,8 +2732,7 @@ template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::iterator_base::iterator_base(graph_node* tn)
 : node(tn)
 , m_skip_current_children(false)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -2874,24 +2868,21 @@ graph<T, AllocatorT>::iterator_base::number_of_children() const
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::pre_order_iterator::pre_order_iterator()
 : iterator_base(nullptr)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::pre_order_iterator::pre_order_iterator(graph_node* tn)
 : iterator_base(tn)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::pre_order_iterator::pre_order_iterator(const iterator_base& other)
 : iterator_base(other.node)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

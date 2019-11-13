@@ -100,8 +100,7 @@ class manager_wrapper
 public:
     manager_wrapper()
     : m_manager(manager_t::instance().get())
-    {
-    }
+    {}
 
     ~manager_wrapper() {}
 
@@ -119,8 +118,7 @@ class auto_timer_decorator
 public:
     auto_timer_decorator(auto_timer_t* _ptr = nullptr)
     : m_ptr(_ptr)
-    {
-    }
+    {}
 
     ~auto_timer_decorator() { delete m_ptr; }
 
@@ -612,8 +610,7 @@ struct construct_dict<std::tuple<std::string, void*>>
 
     template <typename... _Args>
     construct_dict(_Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -644,8 +641,7 @@ struct dict<std::tuple<_Types...>>
 //======================================================================================//
 
 struct settings
-{
-};
+{};
 
 //======================================================================================//
 

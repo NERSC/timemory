@@ -19,9 +19,9 @@ modernize-*,\
 -modernize-use-noexcept,\
 -modernize-use-transparent-functors,\
 -modernize-use-using,\
+-modernize-use-trailing-return-type,\
 -modernize-avoid-c-arrays,\
 performance-*,\
--performance-inefficient-string-concatenation,\
 readability-*,\
 -readability-function-size,\
 -readability-identifier-naming,\
@@ -34,6 +34,7 @@ readability-*,\
 -readability-magic-numbers,\
 -readability-uppercase-literal-suffix,\
 -google-readability-casting,\
+-header-filter=.*/timemory/.*.\
 "
 HeaderFilterRegex: 'source/[^/]*\.(hh|cc|h|c|hpp|cpp|icpp)$'
 CheckOptions:

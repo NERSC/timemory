@@ -102,8 +102,7 @@ class custom_component_tuple : public component_tuple<Types...>
 public:
     custom_component_tuple(const string_t& key)
     : component_tuple<Types...>(key, true, true)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream&                           os,
@@ -118,7 +117,7 @@ public:
         apply<void>::access<apply_stop_t>(data);
         apply<void>::access_with_indices<apply_print_t>(data, std::ref(ssd), false);
 
-        ssp << std::setw(width) << std::left << key << " : ";
+        ssp << std::setw(width) << std::left << key;
         os << ssp.str() << ssd.str();
 
         return os;
@@ -130,11 +129,10 @@ public:
 //--------------------------------------------------------------------------------------//
 //
 //
-using comp_tuple_t =
-    tim::custom_component_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util,
-                                peak_rss, num_io_in, num_io_out, num_minor_page_faults,
-                                num_major_page_faults, num_signals,
-                                voluntary_context_switch, priority_context_switch>;
+using comp_tuple_t = tim::custom_component_tuple<
+    real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss, num_io_in,
+    num_io_out, num_minor_page_faults, num_major_page_faults, num_signals,
+    voluntary_context_switch, priority_context_switch, read_bytes, written_bytes>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -206,12 +204,12 @@ parent_process(pid_t pid)
             }
             else
             {
-                printf("program terminated with a non-zero status\n");
+                printf("program terminated with a non-zero status: %i\n", ret);
             }
         }
         else
         {
-            printf("program terminated annormally\n");
+            printf("program terminated abnormally.\n");
             ret = -1;
         }
     }
@@ -258,6 +256,8 @@ parent_process(pid_t pid)
     {
         std::cout << _oss.str() << std::endl;
     }
+
+    exit(ret);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -317,7 +317,8 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
             {
                 auto  len = strlen(argv_list[i]);
                 char* var = static_cast<char*>(malloc(sizeof(char) * (len + 1)));
-                strcpy(var, argv_list[i]);
+                strncpy(var, argv_list[i], len);
+                var[len]                        = '\0';
                 argv_shell_list[i + argc_extra] = var;
             }
             argv_shell_list[argc_shell] = nullptr;
@@ -392,17 +393,17 @@ main(int argc, char** argv)
 
     auto compose_prefix = [&]() {
         std::stringstream ss;
-        ss << "[" << command().c_str() << "] total execution time";
+        ss << "[" << command().c_str() << "] measurement totals:";
         return ss.str();
     };
 
     if(argc > 1)
     {
-        command() = "[" + std::string(const_cast<const char*>(argv[1])) + "]";
+        command() = std::string(const_cast<const char*>(argv[1]));
     }
     else
     {
-        command() = "[" + std::string(const_cast<const char*>(argv[0])) + "]";
+        command()              = std::string(const_cast<const char*>(argv[0]));
         tim::get_rusage_type() = RUSAGE_CHILDREN;
         get_measure()          = new comp_tuple_t(compose_prefix());
         get_measure()->start();

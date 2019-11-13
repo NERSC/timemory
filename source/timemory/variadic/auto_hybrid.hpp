@@ -215,6 +215,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
                                : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {
@@ -231,6 +232,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& objec
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
                                : component_type{})
+, m_reference_object(nullptr)
 {
     if(m_enabled)
     {

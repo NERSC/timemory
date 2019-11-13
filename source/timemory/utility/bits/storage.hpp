@@ -272,8 +272,7 @@ print_percentage(std::ostream& os, const std::map<_Key, _Mapped, _ExtraArgs...>&
 template <typename... _Types>
 void
 print_percentage(std::ostream&, const std::tuple<_Types...>&)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -407,8 +406,7 @@ storage<ObjectType, true>::merge(this_type* itr)
 template <typename ObjectType>
 void
 storage<ObjectType, true>::mpi_reduce()
-{
-}
+{}
 
 //======================================================================================//
 
@@ -459,8 +457,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         {
             if(details::storage_once_flag()++ == 0)
                 gperf::profiler_stop();
-        }
-        catch(std::exception& e)
+        } catch(std::exception& e)
         {
             std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
                       << ". Continuing..." << std::endl;

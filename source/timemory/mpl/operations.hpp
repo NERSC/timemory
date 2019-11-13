@@ -86,8 +86,7 @@ struct init_storage
     template <typename _Up                                                  = _Tp,
               enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
     init_storage()
-    {
-    }
+    {}
 
     using master_pointer_t = decltype(storage_type::master_instance());
     using pointer_t        = decltype(storage_type::instance());
@@ -157,8 +156,7 @@ struct set_prefix
     template <typename _Up                                                    = _Tp,
               enable_if_t<(trait::requires_prefix<_Up>::value == false), int> = 0>
     set_prefix(Type&, const string_t&)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -188,8 +186,7 @@ struct insert_node
     template <typename _Up                                   = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type&, const uint64_t&)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -216,8 +213,7 @@ struct pop_node
     template <typename _Up                                   = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     explicit pop_node(base_type&)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -253,8 +249,7 @@ struct record
     template <typename... _Args, typename _Up = _Tp,
               enable_if_t<!(is_enabled<_Up>::value), char> = 0>
     record(_Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -324,8 +319,7 @@ struct priority_start
     template <typename _Up                                                   = _Tp,
               enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
     explicit priority_start(base_type&)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -340,8 +334,7 @@ struct standard_start
     template <typename _Up                                          = _Tp,
               enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
     explicit standard_start(base_type&)
-    {
-    }
+    {}
 
     template <typename _Up                                                   = _Tp,
               enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
@@ -388,8 +381,7 @@ struct priority_stop
     template <typename _Up                                                  = _Tp,
               enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
     explicit priority_stop(base_type&)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -404,8 +396,7 @@ struct standard_stop
     template <typename _Up                                         = _Tp,
               enable_if_t<(trait::stop_priority<_Up>::value), int> = 0>
     explicit standard_stop(base_type&)
-    {
-    }
+    {}
 
     template <typename _Up                                                  = _Tp,
               enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
@@ -436,8 +427,7 @@ struct mark_begin
     template <typename _Up                                                        = _Tp,
               enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
     explicit mark_begin(Type&)
-    {
-    }
+    {}
 
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<(sizeof...(_Args) > 0), int>                     = 0,
@@ -453,8 +443,7 @@ struct mark_begin
               enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     mark_begin(Type&, _Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -476,8 +465,7 @@ struct mark_end
     template <typename _Up                                                        = _Tp,
               enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
     explicit mark_end(Type&)
-    {
-    }
+    {}
 
     // mark_end(Type& obj) { obj.mark_end(); }
 
@@ -493,8 +481,7 @@ struct mark_end
               enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     mark_end(Type&, _Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -528,8 +515,7 @@ struct customize
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     customize(Type&, _Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -696,8 +682,7 @@ struct get_data
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     get_data(const Type&, DataType&)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     // only if components are available
@@ -714,8 +699,7 @@ struct get_data
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     get_data(const Type&, LabeledDataType&)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -845,21 +829,18 @@ struct print
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type&, std::ostream&, bool = false)
-    {
-    }
+    {}
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(std::size_t, std::size_t, const Type&, std::ostream&, bool)
-    {
-    }
+    {}
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available -- pointers
@@ -867,21 +848,18 @@ struct print
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type*, std::ostream&, bool = false)
-    {
-    }
+    {}
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(std::size_t, std::size_t, const Type*, std::ostream&, bool)
-    {
-    }
+    {}
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -910,8 +888,7 @@ struct print_storage
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print_storage()
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -936,8 +913,7 @@ struct serialization
 
     template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
     serialization(const base_type&, _Archive&, const unsigned int)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1153,8 +1129,7 @@ struct echo_measurement
     template <typename... _Args, typename _Up = _Tp, typename _Vt = value_type,
               enable_if_t<!(is_enabled<_Up>::value), char> = 0>
     echo_measurement(_Up&, _Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1189,14 +1164,12 @@ struct copy
     template <typename _Up                                                  = _Tp,
               enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
     copy(_Up&, const _Up&)
-    {
-    }
+    {}
 
     template <typename _Up                                                  = _Tp,
               enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
     copy(_Up*&, const _Up*)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1257,8 +1230,7 @@ struct pointer_operator
     template <typename _Up = _Tp, typename... _Args,
               tim::enable_if_t<(trait::is_available<_Up>::value == false), int> = 0>
     pointer_operator(_Args&&...)
-    {
-    }
+    {}
 };
 
 //--------------------------------------------------------------------------------------//

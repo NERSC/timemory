@@ -112,10 +112,8 @@ struct malloc_gotcha
     // clang-format on
 
     // formatting
-    static const short                   precision = 3;
-    static const short                   width     = 12;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 12;
 
     // required static functions
     static std::string label() { return "malloc_gotcha"; }
@@ -264,7 +262,8 @@ public:
             // malloc
             value = (nbytes);
             accum += (nbytes);
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -293,7 +292,8 @@ public:
             // calloc
             value = (nmemb * size);
             accum += (nmemb * size);
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -330,7 +330,8 @@ public:
                 value = itr->second;
                 accum += itr->second;
                 get_allocation_map().erase(itr);
-            } else
+            }
+            else
             {
                 if(settings::verbose() > 1 || settings::debug())
                     printf("[%s]> free of unknown pointer size: %p\n",
@@ -364,7 +365,8 @@ public:
             value = (size);
             accum += (size);
             m_last_addr = devPtr;
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
@@ -396,10 +398,12 @@ public:
                 void* ptr                 = (void*) ((char**) (m_last_addr)[0]);
                 get_allocation_map()[ptr] = value;
             }
-        } else if(_hash == prefix_hash && idx >= num_alloc)
+        }
+        else if(_hash == prefix_hash && idx >= num_alloc)
         {
             // cudaFree
-        } else
+        }
+        else
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",

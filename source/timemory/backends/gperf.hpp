@@ -57,8 +57,7 @@ namespace gperf
 template <typename... _Types>
 void
 consume_parameters(_Types&&...)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

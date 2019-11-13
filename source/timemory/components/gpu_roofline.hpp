@@ -152,10 +152,8 @@ struct gpu_roofline
                       std::tuple_size<types_tuple>::value,
                   "Error! ert_config_t size does not match types_tuple size!");
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static const short precision = 3;
+    static const short width     = 8;
 
     //----------------------------------------------------------------------------------//
     // collection mode, COUNTERS is the HW counting, ACTIVITY in the runtime measurements
@@ -223,7 +221,8 @@ public:
         if(event_mode() == MODE::ACTIVITY)
         {
             get_labels() = { std::string("runtime") };
-        } else
+        }
+        else
         {
             strvec_t events  = { "active_warps", "global_load", "global_store" };
             strvec_t metrics = { "ldst_executed",
@@ -391,7 +390,8 @@ public:
             while(ret.find("__") != std::string::npos)
                 ret.erase(ret.find("__"), 1);
             return ret;
-        } else
+        }
+        else
             return std::string("gpu_roofline_") + get_mode_string();
     }
 

@@ -106,8 +106,7 @@ public:
     explicit component_hybrid()
     : m_tuple()
     , m_list()
-    {
-    }
+    {}
 
     explicit component_hybrid(const string_t& key, const bool& store = false,
                               const bool& flat = settings::flat_profile())
@@ -137,8 +136,7 @@ public:
     component_hybrid(const tuple_type& _tuple, const list_type& _list)
     : m_tuple(_tuple)
     , m_list(_list)
-    {
-    }
+    {}
 
     component_hybrid(const component_hybrid&) = default;
     component_hybrid(component_hybrid&&)      = default;
@@ -484,13 +482,12 @@ public:
               enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
               enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int>  = 0>
     void type_apply(_Func&&, _Args&&...)
-    {
-    }
+    {}
 
 protected:
     // objects
-    tuple_type m_tuple;
-    list_type  m_list;
+    tuple_type m_tuple = tuple_type();
+    list_type  m_list  = list_type();
 };
 
 //--------------------------------------------------------------------------------------//

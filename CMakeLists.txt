@@ -116,7 +116,7 @@ if(SKBUILD)
 else()
     if(TIMEMORY_BUILD_PYTHON AND NOT BUILD_SHARED_LIBS)
         if(NOT TIMEMORY_BUILD_QUIET)
-            message(AUTHOR_WARNING "BUILD_STATIC_LIBS=OFF --> disabling TIMEMORY_BUILD_TOOLS")
+            message(AUTHOR_WARNING "BUILD_SHARED_LIBS=OFF --> disabling TIMEMORY_BUILD_PYTHON...")
             set(TIMEMORY_BUILD_PYTHON OFF)
         endif()
     endif()
@@ -183,6 +183,8 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   timemory source
 #----------------------------------------------------------------------------------------#
+# activate clang-tidy if enabled
+_timemory_activate_clang_tidy()
 
 add_subdirectory(source)
 

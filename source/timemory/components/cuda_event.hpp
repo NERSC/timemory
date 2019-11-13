@@ -172,7 +172,8 @@ public:
                 accum += tmp;
                 value = std::move(tmp);
             }
-        } else if(m_current_marker > m_synced_markers)
+        }
+        else if(m_current_marker > m_synced_markers)
         {
             float tmp = 0.0;
             for(uint64_t i = m_synced_markers; i < m_num_markers; ++i, ++m_synced_markers)

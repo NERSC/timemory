@@ -189,9 +189,13 @@ public:
                             const bool& flat = settings::flat_profile())
     : m_store(store && settings::enabled())
     , m_flat(flat)
+    , m_is_pushed(false)
+    , m_print_prefix(true)
+    , m_print_laps(true)
     , m_laps(0)
     , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
     , m_key(key)
+    , m_data(data_type())
     {
         apply<void>::set_value(m_data, nullptr);
         {
@@ -207,9 +211,13 @@ public:
                             const bool& flat  = settings::flat_profile())
     : m_store(store && settings::enabled())
     , m_flat(flat)
+    , m_is_pushed(false)
+    , m_print_prefix(true)
+    , m_print_laps(true)
     , m_laps(0)
     , m_hash(loc.get_hash())
     , m_key(loc.get_id())
+    , m_data(data_type())
     {
         apply<void>::set_value(m_data, nullptr);
         {
@@ -450,10 +458,9 @@ public:
             if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = demangle(typeid(_Tp).name());
-                printf(
-                    "[component_list::init]> skipping re-initialization of type"
-                    " \"%s\"...\n",
-                    _id.c_str());
+                printf("[component_list::init]> skipping re-initialization of type"
+                       " \"%s\"...\n",
+                       _id.c_str());
             }
         }
     }
@@ -480,8 +487,7 @@ public:
     template <typename _Tp, typename... _Args,
               enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
     void init(_Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
@@ -521,8 +527,7 @@ public:
               enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0,
               enable_if_t<(trait::is_available<_Tp>::value == false), int>      = 0>
     void type_apply(_Func&&, _Args&&...)
-    {
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     /// invoked when a request to apply a member function to a type not in variadic list
@@ -530,8 +535,7 @@ public:
     template <typename _Tp, typename _Func, typename... _Args,
               enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
     void type_apply(_Func&&, _Args&&...)
-    {
-    }
+    {}
 
 protected:
     // protected static functions
@@ -553,8 +557,7 @@ protected:
     template <typename _Tp,
               enable_if_t<(trait::requires_prefix<_Tp>::value == false), int> = 0>
     void set_object_prefix(_Tp*)
-    {
-    }
+    {}
 
 protected:
     // objects
@@ -566,7 +569,7 @@ protected:
     int64_t           m_laps         = 0;
     uint64_t          m_hash         = 0;
     string_t          m_key          = "";
-    mutable data_type m_data;
+    mutable data_type m_data         = data_type();
 };
 
 //--------------------------------------------------------------------------------------//
