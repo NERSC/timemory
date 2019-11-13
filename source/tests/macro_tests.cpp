@@ -94,8 +94,8 @@ TEST_F(macro_tests, blank_marker)
     TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_95.stop();
-    auto              key = timemory_variable_95.key();
+    timemory_variable_94.stop();
+    auto              key = timemory_variable_94.key();
     std::stringstream expected;
     expected << details::get_test_name();
     if(key != expected.str())
@@ -119,8 +119,8 @@ TEST_F(macro_tests, basic_marker)
     TIMEMORY_BASIC_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_120.stop();
-    auto              key = timemory_variable_120.key();
+    timemory_variable_119.stop();
+    auto              key = timemory_variable_119.key();
     std::stringstream expected;
     expected << __FUNCTION__ << "/" << details::get_test_name();
     if(key != expected.str())
@@ -145,8 +145,8 @@ TEST_F(macro_tests, marker)
     auto line = __LINE__ - 1;
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_145.stop();
-    auto              key = timemory_variable_145.key();
+    timemory_variable_144.stop();
+    auto              key = timemory_variable_144.key();
     std::stringstream expected;
     std::string       file = __FILE__;
     file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
