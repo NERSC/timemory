@@ -22,8 +22,10 @@ class Timemory(CMakePackage):
     variant('papi', default=True, description='Enable PAPI support')
     variant('cuda', default=True, description='Enable CUDA support')
     variant('cupti', default=True, description='Enable CUPTI support')
+    variant('gotcha', default=True, description='Enable GOTCHA support')
     variant('caliper', default=True, description='Enable Caliper support')
-    variant('gperftools', default=True, description='Enable gperftools support')
+    variant('gperftools', default=True,
+            description='Enable gperftools support')
 
     depends_on('cmake@3.10:', type='build')
 
@@ -35,6 +37,7 @@ class Timemory(CMakePackage):
     depends_on('mpi', when='+mpi')
     depends_on('papi', when='+papi')
     depends_on('cuda', when='+cuda')
+    depends_on('gotcha', when='+gotcha')
     depends_on('caliper', when='+caliper')
     depends_on('gperftools', when='+gperftools')
 
@@ -43,10 +46,12 @@ class Timemory(CMakePackage):
 
         # Use spack install of Caliper instead of internal build
         args = [
+            '-DTIMEMORY_BUILD_GOTCHA=OFF',
             '-DTIMEMORY_BUILD_CALIPER=OFF',
             '-DTIMEMORY_BUILD_TOOLS=ON',
-            '-DTIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON',
             '-DTIMEMORY_BUILD_GTEST=OFF',
+            '-DTIMEMORY_BUILD_EXAMPLES=OFF',
+            '-DTIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON',
             '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON',
         ]
 
@@ -74,6 +79,16 @@ class Timemory(CMakePackage):
             args.append('-DMPI_CXX_COMPILER={0}'.format(spec['mpi'].mpicxx))
         else:
             args.append('-DTIMEMORY_USE_MPI=OFF')
+
+        if '+gotcha' in spec:
+            args.append('-DTIMEMORY_USE_GOTCHA=ON')
+        else:
+            args.append('-DTIMEMORY_USE_GOTCHA=OFF')
+
+        if '+cuda' in spec:
+            args.append('-DTIMEMORY_USE_CUDA=ON')
+        else:
+            args.append('-DTIMEMORY_USE_CUDA=OFF')
 
         if '+cupti' in spec:
             args.append('-DTIMEMORY_USE_CUPTI=ON')
