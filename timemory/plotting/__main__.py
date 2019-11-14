@@ -68,6 +68,7 @@ def plot():
                             required=False, type=str, dest='plot_max')
         parser.add_argument('--log-x', help="Plot X-axis in a log scale",
                             action='store_true')
+        parser.add_argument('--font-size', help="Font size of y-axis labels", type=int)
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
@@ -79,6 +80,7 @@ def plot():
                                       plot_parameters.img_size['h']])
         parser.set_defaults(img_type=plot_parameters.img_type)
         parser.set_defaults(plot_max="")
+        parser.set_defaults(font_size=plot_parameters.font_size)
 
         args = parser.parse_args()
 
@@ -92,7 +94,8 @@ def plot():
                                            img_size={'w': args.img_size[0],
                                                      'h': args.img_size[1]},
                                            img_type=args.img_type,
-                                           log_xaxis=args.log_x)
+                                           log_xaxis=args.log_x,
+                                           font_size=args.font_size)
 
         if do_plot_max:
             if len(args.titles) != 1:

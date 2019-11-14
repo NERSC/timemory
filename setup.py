@@ -43,7 +43,6 @@ def add_arg_bool_option(lc_name, disp_name):
 add_arg_bool_option("mpi", "TIMEMORY_USE_MPI")
 add_arg_bool_option("exceptions", "TIMEMORY_EXCEPTIONS")
 add_arg_bool_option("pybind-install", "PYBIND11_INSTALL")
-add_arg_bool_option("devel-install", "TIMEMORY_DEVELOPER_INSTALL")
 add_arg_bool_option("build-examples", "TIMEMORY_BUILD_EXAMPLES")
 parser.add_argument("--cxx-standard", default=11, type=int,
                     choices=[11, 14, 17, 20],
@@ -62,8 +61,6 @@ set_cmake_bool_option("TIMEMORY_EXCEPTIONS",
                       args.enable_exceptions, args.disable_exceptions)
 set_cmake_bool_option("PYBIND11_INSTALL",
                       args.enable_pybind_install, args.disable_pybind_install)
-set_cmake_bool_option("TIMEMORY_DEVELOPER_INSTALL",
-                      args.enable_devel_install, args.disable_devel_install)
 set_cmake_bool_option("TIMEMORY_BUILD_EXAMPLES",
                       args.enable_build_examples, args.disable_build_examples)
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
@@ -97,18 +94,19 @@ def get_long_description():
 # ---------------------------------------------------------------------------- #
 #
 def get_short_description():
-    return "{} {} {} {}".format(
-        "Lightweight cross-language pseudo-profiling for C, C++, and Python",
-        "reporting timing [wall, user, system, cpu, %cpu]",
-        "and resident set size (RSS) memory",
-        "[current page allocation and peak usage]")
+    return "{} {} {}".format(
+        "Lightweight cross-language instrumentation API for C, C++, Python,",
+        "Fortran, and CUDA which allows arbitrarily bundling tools together",
+        "into a single performance analysis handle")
 
 
 # ---------------------------------------------------------------------------- #
 def get_keywords():
     return ['timing', 'memory', 'auto-timers', 'signal', 'c++', 'cxx', 'rss',
-            'resident set size', 'cpu time', 'cpu utilization', 'wall clock',
-            'system clock', 'user clock', 'pybind11', 'profiling']
+            'memory', 'cpu time', 'cpu utilization', 'wall clock',
+            'system clock', 'user clock', 'pybind11', 'profiling',
+            'hardware counters', 'cupti', 'cuda', 'papi', 'caliper',
+            'gperftools']
 
 
 # ---------------------------------------------------------------------------- #
@@ -138,15 +136,7 @@ def get_classifiers():
         'Operating System :: POSIX :: BSD',
         # written in C++, available to Python via PyBind11
         'Programming Language :: C++',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.1',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
@@ -160,7 +150,7 @@ def get_name():
 
 # ---------------------------------------------------------------------------- #
 def get_email():
-    return 'jonrobm.programming@gmail.com'
+    return 'jrmadsen@lbl.gov'
 
 
 # ---------------------------------------------------------------------------- #

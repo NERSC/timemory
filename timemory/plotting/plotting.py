@@ -138,6 +138,9 @@ _default_img_type = 'jpeg'
 _default_log_x = False
 """Log scaled X axis"""
 
+_default_font_size = 16
+"""Font size for y-axis labels"""
+
 plotted_files = []
 """ A list of all files that have been plotted """
 
@@ -161,13 +164,16 @@ class plot_parameters():
     """ Global image plotting params (these should be modified instead of _default_*) """
     log_xaxis = copy.copy(_default_log_x)
     """ Global image plotting params (these should be modified instead of _default_*) """
+    font_size = copy.copy(_default_font_size)
+    """ Global image plotting params (these should be modified instead of _default_*) """
 
     def __init__(self,
                  min_percent=min_percent,
                  img_dpi=img_dpi,
                  img_size=img_size,
                  img_type=img_type,
-                 log_xaxis=log_xaxis):
+                 log_xaxis=log_xaxis,
+                 font_size=font_size):
         self.min_percent = min_percent
         self.img_dpi = img_dpi
         self.img_size = img_size
@@ -175,7 +181,8 @@ class plot_parameters():
         # max values
         self.max_value = 0.0
         self.log_xaxis = log_xaxis
-
+        self.font_size = font_size
+        
     def __str__(self):
         _c = 'Image: {} = {}%, {} = {}, {} = {}, {} = {}'.format(
             'min %', self.min_percent,
@@ -568,7 +575,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     font = {'family': 'serif',
             'color':  'black',
             'weight': 'bold',
-            'size': 22,
+            'size': _plot_data.plot_params.font_size,
             }
 
     filename = [get_obj_idx(_plot_data.filename, idx)]
@@ -632,7 +639,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
 
     # Shrink current axis's height by 10% on the bottom
     box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.95, box.height])
+    ax.set_position([box.x0, box.y0, box.width * 0.90, box.height])
 
     # Add grid
     ax.xaxis.grid(which='both')
