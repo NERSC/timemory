@@ -402,7 +402,7 @@ macro(BUILD_LIBRARY)
     endif()
     unset(COMPILED_TYPES)
 
-endmacro(BUILD_LIBRARY)
+endmacro()
 
 
 #-----------------------------------------------------------------------

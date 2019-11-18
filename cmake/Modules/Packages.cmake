@@ -593,8 +593,8 @@ if(TIMEMORY_USE_CUDA)
         endif()
 
     else()
-        inform_empty_interface(timemory-cuda "CUDA")
-        set(TIMEMORY_USE_CUDA OFF)
+        message(FATAL_ERROR
+            "TIMEMORY_USE_CUDA=${TIMEMORY_USE_CUDA} but CUDA is not supported!")
     endif()
 else()
     inform_empty_interface(timemory-cuda "CUDA")

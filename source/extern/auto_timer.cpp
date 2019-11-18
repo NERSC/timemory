@@ -51,21 +51,64 @@ namespace component = ::tim::component;
 //--------------------------------------------------------------------------------------//
 // auto-timer
 //
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(auto_timer_t, component::real_clock,
-                                  component::system_clock, component::user_clock,
-                                  component::cpu_util, component::page_rss,
-                                  component::peak_rss)
+// clang-format off
 
-TIMEMORY_INSTANTIATE_EXTERN_LIST(
-    auto_timer_t, component::caliper, component::papi_array_t, component::cuda_event,
-    component::nvtx_marker, component::cupti_activity, component::cupti_counters,
-    component::cpu_roofline_flops, component::cpu_roofline_sp_flops,
-    component::cpu_roofline_dp_flops, component::gpu_roofline_flops,
-    component::gpu_roofline_hp_flops, component::gpu_roofline_sp_flops,
-    component::gpu_roofline_dp_flops, component::gperf_cpu_profiler,
-    component::gperf_heap_profiler)
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(minimal_auto_timer_t,
+                                  ::tim::component::real_clock,
+                                  ::tim::component::cpu_clock,
+                                  ::tim::component::cpu_util,
+                                  ::tim::component::peak_rss)
 
-using _tuple_t = tim::auto_timer_tuple_t;
-using _list_t  = tim::auto_timer_list_t;
+TIMEMORY_INSTANTIATE_EXTERN_LIST(minimal_auto_timer_t,
+                                 ::tim::component::page_rss,
+                                 ::tim::component::virtual_memory,
+                                 ::tim::component::system_clock,
+                                 ::tim::component::user_clock,
+                                 ::tim::component::caliper,
+                                 ::tim::component::papi_array_t,
+                                 ::tim::component::cuda_event,
+                                 ::tim::component::nvtx_marker,
+                                 ::tim::component::cupti_activity,
+                                 ::tim::component::cupti_counters)
+
+TIMEMORY_INSTANTIATE_EXTERN_HYBRID(minimal_auto_timer_t)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(auto_timer_t,
+                                  ::tim::component::real_clock,
+                                  ::tim::component::system_clock,
+                                  ::tim::component::user_clock,
+                                  ::tim::component::cpu_util,
+                                  ::tim::component::peak_rss)
+
+TIMEMORY_INSTANTIATE_EXTERN_LIST(auto_timer_t,
+                                 ::tim::component::page_rss,
+                                 ::tim::component::virtual_memory,
+                                 ::tim::component::cpu_clock,
+                                 ::tim::component::thread_cpu_clock,
+                                 ::tim::component::thread_cpu_util,
+                                 ::tim::component::process_cpu_clock,
+                                 ::tim::component::process_cpu_util,
+                                 ::tim::component::priority_context_switch,
+                                 ::tim::component::voluntary_context_switch,
+                                 ::tim::component::num_major_page_faults,
+                                 ::tim::component::num_minor_page_faults,
+                                 ::tim::component::read_bytes,
+                                 ::tim::component::written_bytes,
+                                 ::tim::component::caliper,
+                                 ::tim::component::papi_array_t,
+                                 ::tim::component::cpu_roofline_sp_flops,
+                                 ::tim::component::cpu_roofline_dp_flops,
+                                 ::tim::component::gperf_cpu_profiler,
+                                 ::tim::component::gperf_heap_profiler,
+                                 ::tim::component::cuda_event,
+                                 ::tim::component::nvtx_marker,
+                                 ::tim::component::cupti_activity,
+                                 ::tim::component::cupti_counters,
+                                 ::tim::component::gpu_roofline_flops,
+                                 ::tim::component::gpu_roofline_hp_flops,
+                                 ::tim::component::gpu_roofline_sp_flops,
+                                 ::tim::component::gpu_roofline_dp_flops)
 
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(auto_timer_t)
+
+// clang-format on

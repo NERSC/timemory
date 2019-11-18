@@ -30,6 +30,7 @@
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/configuration.hpp"
+#include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/mpl/policy.hpp"
@@ -99,21 +100,21 @@ struct cpu_roofline
     using record_type  = std::function<value_type()>;
 
     using device_t    = device::cpu;
-    using clock_type  = real_clock;
-    using ratio_t     = typename clock_type::ratio_t;
+    using count_type  = real_clock;
+    using ratio_t     = typename count_type::ratio_t;
     using types_tuple = std::tuple<_Types...>;
 
-    using ert_data_t     = ert::exec_data;
+    using ert_data_t     = ert::exec_data<count_type>;
     using ert_params_t   = ert::exec_params;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
     template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_config_type = ert::configuration<device_t, _Tp, count_type, ert_data_t>;
     template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_counter_type = ert::counter<device_t, _Tp, count_type, ert_data_t>;
     template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_executor_type = ert::executor<device_t, _Tp, count_type, ert_data_t>;
     template <typename _Tp>
     using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
 
@@ -397,7 +398,7 @@ struct cpu_roofline
         }
         ss << ")";
         if(event_mode() == MODE::OP)
-            ss << " / " << clock_type::display_unit();
+            ss << " / " << count_type::display_unit();
         return ss.str();
     }
 
@@ -408,7 +409,7 @@ struct cpu_roofline
         array_type read_values(size(), 0);
         papi::read(event_set(), read_values.data());
         auto delta_duration =
-            clock_type::record() / static_cast<double>(ratio_t::den) * units::sec;
+            count_type::record() / static_cast<double>(ratio_t::den) * units::sec;
         return value_type(read_values, delta_duration);
     }
 
@@ -538,7 +539,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    double get_elapsed(const int64_t& _unit = clock_type::get_unit()) const
+    double get_elapsed(const int64_t& _unit = count_type::get_unit()) const
     {
         auto& obj = (accum.second > 0) ? accum : value;
         return static_cast<double>(obj.second) *
@@ -599,11 +600,11 @@ public:
         auto&             _obj = (obj.accum.second > 0) ? obj.accum : obj.value;
         std::stringstream sst;
         auto              t_value = _obj.second;
-        auto              t_label = clock_type::get_label();
-        auto              t_disp  = clock_type::get_display_unit();
-        auto              t_prec  = clock_type::get_precision();
-        auto              t_width = clock_type::get_width();
-        auto              t_flags = clock_type::get_format_flags();
+        auto              t_label = count_type::get_label();
+        auto              t_disp  = count_type::get_display_unit();
+        auto              t_prec  = count_type::get_precision();
+        auto              t_width = count_type::get_width();
+        auto              t_flags = count_type::get_format_flags();
 
         sst.setf(t_flags);
         sst << std::setw(t_width) << std::setprecision(t_prec) << t_value;
@@ -617,9 +618,9 @@ public:
         auto _value = obj.get_display();
         auto _label = this_type::get_label();
         auto _disp  = this_type::display_unit();
-        auto _prec  = clock_type::get_precision();
+        auto _prec  = count_type::get_precision();
         auto _width = this_type::get_width();
-        auto _flags = clock_type::get_format_flags();
+        auto _flags = count_type::get_format_flags();
 
         std::stringstream ss_value;
         std::stringstream ss_extra;

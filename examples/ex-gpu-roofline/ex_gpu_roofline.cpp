@@ -298,10 +298,10 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
 {
     using namespace tim;
     using counter_t         = component::real_clock;
-    using ert_data_t        = ert::exec_data;
+    using ert_data_t        = ert::exec_data<counter_t>;
     using ert_params_t      = ert::exec_params;
     using ert_data_ptr_t    = std::shared_ptr<ert_data_t>;
-    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, counter_t>;
+    using ert_executor_type = ert::executor<device_t, _Tp, counter_t, ert_data_t>;
     using ert_config_type   = typename ert_executor_type::configuration_type;
     using ert_counter_type  = typename ert_executor_type::counter_type;
 

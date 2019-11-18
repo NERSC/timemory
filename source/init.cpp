@@ -58,8 +58,10 @@ extern "C"
         static auto              _master   = tim::manager::master_instance();
 
         if(_instance != _master)
+        {
             printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
                    (void*) _instance.get(), (void*) _master.get());
+        }
 
 #    if defined(DEBUG)
         if(_debug || _verbose > 3)

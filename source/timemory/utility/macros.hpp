@@ -236,39 +236,39 @@
 //      extern declaration
 //
 #    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
-        extern template class tim::auto_tuple<__VA_ARGS__>;                              \
-        extern template class tim::component_tuple<__VA_ARGS__>;                         \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = tim::component_tuple<__VA_ARGS__>;
+        extern template class ::tim::component_tuple<__VA_ARGS__>;                       \
+        extern template class ::tim::auto_tuple<__VA_ARGS__>;                            \
+        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
 
 #    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
-        extern template class tim::auto_list<__VA_ARGS__>;                               \
-        extern template class tim::component_list<__VA_ARGS__>;                          \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = tim::component_list<__VA_ARGS__>;
+        extern template class ::tim::component_list<__VA_ARGS__>;                        \
+        extern template class ::tim::auto_list<__VA_ARGS__>;                             \
+        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
 
 #    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
-        extern template class tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),              \
-                                               _EXTERN_LIST_ALIAS(_ALIAS)>;              \
-        extern template class tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),         \
-                                                    _EXTERN_LIST_ALIAS(_ALIAS)>;
+        extern template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),       \
+                                                      _EXTERN_LIST_ALIAS(_ALIAS)>;       \
+        extern template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),            \
+                                                 _EXTERN_LIST_ALIAS(_ALIAS)>;
 
 //--------------------------------------------------------------------------------------//
 //      extern instantiation
 //
 #    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
-        template class tim::auto_tuple<__VA_ARGS__>;                                     \
-        template class tim::component_tuple<__VA_ARGS__>;                                \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = tim::component_tuple<__VA_ARGS__>;
+        template class ::tim::component_tuple<__VA_ARGS__>;                              \
+        template class ::tim::auto_tuple<__VA_ARGS__>;                                   \
+        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
-        template class tim::auto_list<__VA_ARGS__>;                                      \
-        template class tim::component_list<__VA_ARGS__>;                                 \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = tim::component_list<__VA_ARGS__>;
+        template class ::tim::component_list<__VA_ARGS__>;                               \
+        template class ::tim::auto_list<__VA_ARGS__>;                                    \
+        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
-        template class tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                     \
-                                        _EXTERN_LIST_ALIAS(_ALIAS)>;                     \
-        template class tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                \
-                                             _EXTERN_LIST_ALIAS(_ALIAS)>;
+        template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),              \
+                                               _EXTERN_LIST_ALIAS(_ALIAS)>;              \
+        template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                   \
+                                          _EXTERN_LIST_ALIAS(_ALIAS)>;
 
 //--------------------------------------------------------------------------------------//
 //      extern storage singleton

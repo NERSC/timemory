@@ -28,6 +28,7 @@
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/bits/settings.hpp"
+#include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
@@ -56,7 +57,7 @@ namespace ert
 template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
           typename _FuncStore, device::enable_if_cpu_t<_Device> = 0>
 void
-ops_kernel(const _Intp& ntrials, const _Intp& nsize, _Tp* A, _FuncOps&& ops_func,
+ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
            _FuncStore&& store_func)
 {
     // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
@@ -144,10 +145,10 @@ ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
 ///     This is the "main" function for ERT
 ///
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
-          typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
+          typename _Counter, typename _ExecData, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
 void
-ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_func,
+ops_main(counter<_Device, _Tp, _Counter, _ExecData>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
     using stream_list_t   = std::vector<cuda::stream_t>;
@@ -251,23 +252,17 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
                 auto nmodulo = n % nstreams;
                 for(uint64_t i = 0; i < nstreams; ++i)
                 {
-                    // calculate the buffer offset
-                    auto offset = i * nchunk;
                     // calculate the size of the subchunk
                     int32_t _n      = nchunk + ((i + 1 == nstreams) ? nmodulo : 0);
-                    auto    _buf    = buf + offset;
-                    auto    _stream = streams.at(i % streams.size());
                     auto    _params = dev_params;  // copy of the parameters
                     device::launch(
-                        _n, _stream, _params,
+                        _n, streams.at(i % streams.size()), _params,
                         ops_kernel<_Nops, _Device, _Intp, _Tp, _FuncOps, _FuncStore>,
-                        ntrials, _n, _buf, std::forward<_FuncOps>(ops_func),
+                        ntrials, _n, buf + (i * nchunk), std::forward<_FuncOps>(ops_func),
                         std::forward<_FuncStore>(store_func));
-                    if(i == 0)
-                        _itr_params.grid_size = _params.grid;
-                    else
-                        _itr_params.grid_size =
-                            std::max<int64_t>(_itr_params.grid_size, _params.grid);
+                    _itr_params.grid_size =
+                        (i == 0) ? _params.grid
+                                 : std::max<int64_t>(_itr_params.grid_size, _params.grid);
                 }
             }
             else
@@ -307,6 +302,7 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
 
         if(is_gpu)
             cuda::device_sync();
+
         _counter.destroy_buffer(buf);
     };
 
@@ -348,10 +344,10 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
 ///     are unrolled in the kernel
 ///
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
-          typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
+          typename _Counter, typename _ExecData, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
 void
-ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_func,
+ops_main(counter<_Device, _Tp, _Counter, _ExecData>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
     // execute a single parameter

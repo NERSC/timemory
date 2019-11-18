@@ -33,6 +33,7 @@
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/configuration.hpp"
+#include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/mpl/policy.hpp"
@@ -125,20 +126,20 @@ struct gpu_roofline
     using device_t      = device::gpu;
     using result_type   = std::vector<double>;
     using label_type    = std::vector<std::string>;
-    using clock_type    = real_clock;
+    using count_type    = real_clock;
     using types_tuple   = std::tuple<_Types...>;
 
-    using ert_data_t     = ert::exec_data;
+    using ert_data_t     = ert::exec_data<count_type>;
     using ert_params_t   = ert::exec_params;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
     template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_config_type = ert::configuration<device_t, _Tp, count_type, ert_data_t>;
     template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_counter_type = ert::counter<device_t, _Tp, count_type, ert_data_t>;
     template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_executor_type = ert::executor<device_t, _Tp, count_type, ert_data_t>;
     template <typename _Tp>
     using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
 

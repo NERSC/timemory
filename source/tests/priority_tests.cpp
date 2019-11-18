@@ -85,7 +85,7 @@ struct test_clock : public base<test_clock<Idx>>
     {
         auto tmp = record();
         accum += (tmp - value);
-        value = std::move(tmp);
+        value = tmp;
         set_stopped();
     }
 };

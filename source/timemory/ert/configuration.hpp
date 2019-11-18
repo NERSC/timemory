@@ -29,6 +29,7 @@
 #include "timemory/bits/settings.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
+#include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/ert/types.hpp"
@@ -47,15 +48,15 @@ namespace ert
 {
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
+template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
 struct configuration
 {
-    using this_type       = configuration<_Device, _Tp, _ExecData, _Counter>;
+    using this_type       = configuration<_Device, _Tp, _Counter, _ExecData>;
     using ert_data_t      = _ExecData;
     using ert_params_t    = exec_params;
     using device_t        = _Device;
     using counter_t       = _Counter;
-    using ert_counter_t   = counter<device_t, _Tp, ert_data_t, counter_t>;
+    using ert_counter_t   = counter<device_t, _Tp, counter_t, ert_data_t>;
     using ert_data_ptr_t  = std::shared_ptr<ert_data_t>;
     using executor_func_t = std::function<ert_counter_t(ert_data_ptr_t)>;
     using get_uint64_t    = std::function<uint64_t()>;
@@ -225,7 +226,7 @@ public:
 
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
+template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
 struct executor
 {
     static_assert(!std::is_same<_Device, device::gpu>::value,
@@ -234,9 +235,9 @@ struct executor
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _ExecData, _Counter>;
-    using counter_type       = counter<_Device, _Tp, _ExecData, _Counter>;
-    using this_type          = executor<_Device, _Tp, _ExecData, _Counter>;
+    using configuration_type = configuration<_Device, _Tp, _Counter, _ExecData>;
+    using counter_type       = counter<_Device, _Tp, _Counter, _ExecData>;
+    using this_type          = executor<_Device, _Tp, _Counter, _ExecData>;
     using callback_type      = std::function<void(counter_type&)>;
 
 public:
@@ -331,8 +332,8 @@ public:
 
 //======================================================================================//
 
-template <typename _Tp, typename _ExecData, typename _Counter>
-struct executor<device::gpu, _Tp, _ExecData, _Counter>
+template <typename _Tp, typename _Counter, typename _ExecData>
+struct executor<device::gpu, _Tp, _Counter, _ExecData>
 {
     using _Device = device::gpu;
     static_assert(std::is_same<_Device, device::gpu>::value,
@@ -341,9 +342,9 @@ struct executor<device::gpu, _Tp, _ExecData, _Counter>
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _ExecData, _Counter>;
-    using counter_type       = counter<_Device, _Tp, _ExecData, _Counter>;
-    using this_type          = executor<_Device, _Tp, _ExecData, _Counter>;
+    using configuration_type = configuration<_Device, _Tp, _Counter, _ExecData>;
+    using counter_type       = counter<_Device, _Tp, _Counter, _ExecData>;
+    using this_type          = executor<_Device, _Tp, _Counter, _ExecData>;
     using callback_type      = std::function<void(counter_type&)>;
 
 public:

@@ -41,22 +41,67 @@
 //
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_EXTERN_TEMPLATE_BUILD)
 
-TIMEMORY_DECLARE_EXTERN_TUPLE(auto_timer_t, ::tim::component::real_clock,
+// clang-format off
+
+TIMEMORY_DECLARE_EXTERN_TUPLE(minimal_auto_timer_t,
+                              ::tim::component::real_clock,
+                              ::tim::component::cpu_clock,
+                              ::tim::component::cpu_util,
+                              ::tim::component::peak_rss)
+
+TIMEMORY_DECLARE_EXTERN_LIST(minimal_auto_timer_t,
+                             ::tim::component::page_rss,
+                             ::tim::component::virtual_memory,
+                             ::tim::component::system_clock,
+                             ::tim::component::user_clock,
+                             ::tim::component::caliper,
+                             ::tim::component::papi_array_t,
+                             ::tim::component::cuda_event,
+                             ::tim::component::nvtx_marker,
+                             ::tim::component::cupti_activity,
+                             ::tim::component::cupti_counters)
+
+TIMEMORY_DECLARE_EXTERN_HYBRID(minimal_auto_timer_t)
+
+TIMEMORY_DECLARE_EXTERN_TUPLE(auto_timer_t,
+                              ::tim::component::real_clock,
                               ::tim::component::system_clock,
-                              ::tim::component::user_clock, ::tim::component::cpu_util,
-                              ::tim::component::page_rss, ::tim::component::peak_rss)
+                              ::tim::component::user_clock,
+                              ::tim::component::cpu_util,
+                              ::tim::component::peak_rss)
 
-TIMEMORY_DECLARE_EXTERN_LIST(
-    auto_timer_t, ::tim::component::caliper, ::tim::component::papi_array_t,
-    ::tim::component::cuda_event, ::tim::component::nvtx_marker,
-    ::tim::component::cupti_activity, ::tim::component::cupti_counters,
-    ::tim::component::cpu_roofline_flops, ::tim::component::cpu_roofline_sp_flops,
-    ::tim::component::cpu_roofline_dp_flops, ::tim::component::gpu_roofline_flops,
-    ::tim::component::gpu_roofline_hp_flops, ::tim::component::gpu_roofline_sp_flops,
-    ::tim::component::gpu_roofline_dp_flops, ::tim::component::gperf_cpu_profiler,
-    ::tim::component::gperf_heap_profiler)
+TIMEMORY_DECLARE_EXTERN_LIST(auto_timer_t,
+                             ::tim::component::page_rss,
+                             ::tim::component::virtual_memory,
+                             ::tim::component::cpu_clock,
+                             ::tim::component::thread_cpu_clock,
+                             ::tim::component::thread_cpu_util,
+                             ::tim::component::process_cpu_clock,
+                             ::tim::component::process_cpu_util,
+                             ::tim::component::priority_context_switch,
+                             ::tim::component::voluntary_context_switch,
+                             ::tim::component::num_major_page_faults,
+                             ::tim::component::num_minor_page_faults,
+                             ::tim::component::read_bytes,
+                             ::tim::component::written_bytes,
+                             ::tim::component::caliper,
+                             ::tim::component::papi_array_t,
+                             ::tim::component::cpu_roofline_sp_flops,
+                             ::tim::component::cpu_roofline_dp_flops,
+                             ::tim::component::gperf_cpu_profiler,
+                             ::tim::component::gperf_heap_profiler,
+                             ::tim::component::cuda_event,
+                             ::tim::component::nvtx_marker,
+                             ::tim::component::cupti_activity,
+                             ::tim::component::cupti_counters,
+                             ::tim::component::gpu_roofline_flops,
+                             ::tim::component::gpu_roofline_hp_flops,
+                             ::tim::component::gpu_roofline_sp_flops,
+                             ::tim::component::gpu_roofline_dp_flops)
 
-TIMEMORY_DECLARE_EXTERN_HYBRID(auto_timer_t);
+TIMEMORY_DECLARE_EXTERN_HYBRID(auto_timer_t)
+
+// clang-format on
 
 #endif
 

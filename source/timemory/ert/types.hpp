@@ -33,17 +33,19 @@ namespace tim
 namespace ert
 {
 class thread_barrier;
-class exec_data;
 struct exec_params;
 
-template <typename _Device, typename _Tp, typename _ExecData = exec_data,
-          typename _Counter = component::real_clock>
+template <typename _Tp = component::real_clock>
+class exec_data;
+
+template <typename _Device, typename _Tp, typename _Counter = component::real_clock,
+          typename _ExecData = exec_data<_Counter>>
 class counter;
 
-template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
+template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
 struct configuration;
 
-template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
+template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
 struct executor;
 
 template <typename _Executor>
