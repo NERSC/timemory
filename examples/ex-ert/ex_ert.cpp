@@ -87,14 +87,14 @@ main(int argc, char** argv)
     auto nproc = mpi::size();
 
     auto cpu_min_size = 64;
-    auto cpu_max_data = 2 * ert::cache_size::get_max();
+    auto cpu_max_data = ert::cache_size::get_max();
 
     init_list_t cpu_num_threads;
 
     if(argc > 1) cpu_min_size = atol(argv[1]);
     if(argc > 2) cpu_max_data = atol(argv[2]);
 
-    auto default_thread_init_list = init_list_t({ 1, 2, 4, 8 });
+    auto default_thread_init_list = init_list_t({ 1, 2 });
 
     if(argc > 3)
     {
