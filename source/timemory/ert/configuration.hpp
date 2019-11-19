@@ -48,15 +48,14 @@ namespace ert
 {
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
+template <typename _Device, typename _Tp, typename _Counter>
 struct configuration
 {
-    using this_type       = configuration<_Device, _Tp, _Counter, _ExecData>;
-    using ert_data_t      = _ExecData;
-    using ert_params_t    = exec_params;
+    using this_type       = configuration<_Device, _Tp, _Counter>;
+    using ert_data_t      = exec_data<_Counter>;
     using device_t        = _Device;
     using counter_t       = _Counter;
-    using ert_counter_t   = counter<device_t, _Tp, counter_t, ert_data_t>;
+    using ert_counter_t   = counter<device_t, _Tp, counter_t>;
     using ert_data_ptr_t  = std::shared_ptr<ert_data_t>;
     using executor_func_t = std::function<ert_counter_t(ert_data_ptr_t)>;
     using get_uint64_t    = std::function<uint64_t()>;
@@ -188,8 +187,8 @@ struct configuration
             auto _align_size = get_alignment()();
 
             // execution parameters
-            ert_params_t params(_mws_size, _max_size, _num_thread, _num_stream,
-                                _grid_size, _block_size);
+            exec_params params(_mws_size, _max_size, _num_thread, _num_stream, _grid_size,
+                               _block_size);
             // operation _counter instance
             ert_counter_t _counter(params, data, _align_size);
 
@@ -226,7 +225,7 @@ public:
 
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
+template <typename _Device, typename _Tp, typename _Counter>
 struct executor
 {
     static_assert(!std::is_same<_Device, device::gpu>::value,
@@ -235,16 +234,17 @@ struct executor
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _Counter, _ExecData>;
-    using counter_type       = counter<_Device, _Tp, _Counter, _ExecData>;
-    using this_type          = executor<_Device, _Tp, _Counter, _ExecData>;
+    using configuration_type = configuration<_Device, _Tp, _Counter>;
+    using counter_type       = counter<_Device, _Tp, _Counter>;
+    using this_type          = executor<_Device, _Tp, _Counter>;
     using callback_type      = std::function<void(counter_type&)>;
+    using ert_data_t         = exec_data<_Counter>;
 
 public:
     //----------------------------------------------------------------------------------//
     //  standard invocation with no callback specialization
     //
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data)
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data)
     {
         try
         {
@@ -261,7 +261,7 @@ public:
     //  specialize the counter callback
     //
     template <typename _Func>
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data,
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
              _Func&& _counter_callback)
     {
         try
@@ -332,8 +332,8 @@ public:
 
 //======================================================================================//
 
-template <typename _Tp, typename _Counter, typename _ExecData>
-struct executor<device::gpu, _Tp, _Counter, _ExecData>
+template <typename _Tp, typename _Counter>
+struct executor<device::gpu, _Tp, _Counter>
 {
     using _Device = device::gpu;
     static_assert(std::is_same<_Device, device::gpu>::value,
@@ -342,16 +342,17 @@ struct executor<device::gpu, _Tp, _Counter, _ExecData>
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _Counter, _ExecData>;
-    using counter_type       = counter<_Device, _Tp, _Counter, _ExecData>;
-    using this_type          = executor<_Device, _Tp, _Counter, _ExecData>;
+    using configuration_type = configuration<_Device, _Tp, _Counter>;
+    using counter_type       = counter<_Device, _Tp, _Counter>;
+    using this_type          = executor<_Device, _Tp, _Counter>;
     using callback_type      = std::function<void(counter_type&)>;
+    using ert_data_t         = exec_data<_Counter>;
 
 public:
     //----------------------------------------------------------------------------------//
     //  standard invocation with no callback specialization
     //
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data)
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data)
     {
         try
         {
@@ -368,7 +369,7 @@ public:
     //  specialize the counter callback
     //
     template <typename _Func>
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data,
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
              _Func&& _counter_callback)
     {
         try

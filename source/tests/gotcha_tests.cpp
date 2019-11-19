@@ -932,7 +932,10 @@ main(int argc, char** argv)
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    auto ret = RUN_ALL_TESTS();
+
+    tim::mpi::finalize();
+    return ret;
 }
 
 //======================================================================================//

@@ -102,4 +102,55 @@ TIMEMORY_DECLARE_EXTERN_INIT(written_bytes)
 
 }  // namespace tim
 
-#endif  // defined(TIMEMORY_EXTERN_INIT)
+//--------------------------------------------------------------------------------------//
+
+#endif  // defined(TIMEMORY_EXTERN_INIT) && !defined(TIMEMORY_BUILD_EXTERN_INIT)
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_MPI)
+
+#    include "timemory/backends/mpi.hpp"
+#    include "timemory/manager.hpp"
+
+extern "C" int
+MPI_Finalize();
+
+extern "C" int
+MPI_Init(int*, char***);
+
+#    if !defined(TIMEMORY_EXTERN_INIT)
+inline ::tim::manager*
+timemory_mpi_manager_master_instance()
+{
+    using manager_t     = tim::manager;
+    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+    return _pinst.first.get();
+}
+
+extern "C"
+{
+    int MPI_Init(int* argc, char*** argv)
+    {
+        static auto _manager = timemory_mpi_manager_master_instance();
+        tim::consume_parameters(_manager);
+        printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
+               __LINE__);
+        ::tim::timemory_init(*argc, *argv);
+        return PMPI_Init(argc, argv);
+    }
+
+    int MPI_Finalize()
+    {
+        printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__, __FILE__,
+               __LINE__);
+        auto manager = timemory_mpi_manager_master_instance();
+        if(manager)
+            manager->finalize();
+        ::tim::mpi::is_finalized() = true;
+        return PMPI_Finalize();
+    }
+}  // extern "C"
+
+#    endif  // !defined(TIMEMORY_EXTERN_INIT)
+#endif      // defined(TIMEMORY_USE_MPI)

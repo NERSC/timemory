@@ -105,16 +105,15 @@ struct cpu_roofline
     using types_tuple = std::tuple<_Types...>;
 
     using ert_data_t     = ert::exec_data<count_type>;
-    using ert_params_t   = ert::exec_params;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
     template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, count_type, ert_data_t>;
+    using ert_config_type = ert::configuration<device_t, _Tp, count_type>;
     template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, count_type, ert_data_t>;
+    using ert_counter_type = ert::counter<device_t, _Tp, count_type>;
     template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, count_type, ert_data_t>;
+    using ert_executor_type = ert::executor<device_t, _Tp, count_type>;
     template <typename _Tp>
     using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
 
@@ -175,7 +174,11 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static size_type size() { return events().size(); }
+    static size_type size()
+    {
+        static thread_local event_type*& _instance = _events_ptr();
+        return (_instance) ? _instance->size() : 0;
+    }
 
     //----------------------------------------------------------------------------------//
 
@@ -213,7 +216,7 @@ struct cpu_roofline
 
     static ert_data_ptr_t& get_ert_data()
     {
-        static ert_data_ptr_t _instance = ert_data_ptr_t(new ert_data_t);
+        static ert_data_ptr_t _instance = std::make_shared<ert_data_t>();
         return _instance;
     }
 
@@ -721,6 +724,17 @@ private:
     {
         static thread_local int* _instance = new int(PAPI_NULL);
         return _instance;
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+
+    static void cleanup()
+    {
+        delete _events_ptr();
+        delete _event_set_ptr();
+        _events_ptr()    = nullptr;
+        _event_set_ptr() = nullptr;
     }
 };
 

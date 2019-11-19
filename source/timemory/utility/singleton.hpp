@@ -145,7 +145,6 @@ public:
             {
                 auto& del = get_deleter();
                 del(_master_instance());
-                delete f_master_instance();
                 f_master_instance() = nullptr;
             }
         }
@@ -305,7 +304,7 @@ void
 singleton<Type, Pointer>::destroy()
 {
     //_local_instance().reset();
-    if(std::this_thread::get_id() == f_master_thread())
+    if(std::this_thread::get_id() == f_master_thread() && f_master_instance())
     {
         delete f_master_instance();
         f_master_instance() = nullptr;

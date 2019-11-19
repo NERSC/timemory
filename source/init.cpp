@@ -39,6 +39,16 @@ using namespace tim::component;
 #if defined(TIMEMORY_EXTERN_INIT)
 
 //======================================================================================//
+#    if defined(TIMEMORY_USE_MPI)
+::tim::manager*
+timemory_mpi_manager_master_instance()
+{
+    using manager_t     = tim::manager;
+    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+    return _pinst.first.get();
+}
+#    endif
+
 extern "C"
 {
     __library_ctor__ void timemory_library_constructor()
@@ -72,6 +82,29 @@ extern "C"
         using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
         tim::manager::get_storage<tuple_type>::initialize(_master);
     }
+
+#    if defined(TIMEMORY_USE_MPI)
+    int MPI_Init(int* argc, char*** argv)
+    {
+        static auto _manager = timemory_mpi_manager_master_instance();
+        tim::consume_parameters(_manager);
+        printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
+               __LINE__);
+        ::tim::timemory_init(*argc, *argv);
+        return PMPI_Init(argc, argv);
+    }
+
+    int MPI_Finalize()
+    {
+        printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__, __FILE__,
+               __LINE__);
+        auto manager = timemory_mpi_manager_master_instance();
+        if(manager)
+            manager->finalize();
+        ::tim::mpi::is_finalized() = true;
+        return PMPI_Finalize();
+    }
+#    endif
 }
 //======================================================================================//
 

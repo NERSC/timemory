@@ -145,10 +145,10 @@ ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
 ///     This is the "main" function for ERT
 ///
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
-          typename _Counter, typename _ExecData, typename _FuncOps, typename _FuncStore,
+          typename _Counter, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
 void
-ops_main(counter<_Device, _Tp, _Counter, _ExecData>& _counter, _FuncOps&& ops_func,
+ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
     using stream_list_t   = std::vector<cuda::stream_t>;
@@ -344,10 +344,10 @@ ops_main(counter<_Device, _Tp, _Counter, _ExecData>& _counter, _FuncOps&& ops_fu
 ///     are unrolled in the kernel
 ///
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
-          typename _Counter, typename _ExecData, typename _FuncOps, typename _FuncStore,
+          typename _Counter, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
 void
-ops_main(counter<_Device, _Tp, _Counter, _ExecData>& _counter, _FuncOps&& ops_func,
+ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
     // execute a single parameter

@@ -50,9 +50,128 @@ __all__ = ['smooth',
            'plot_parameters',
            'plot_roofline']
 
+#   labels_type m_labels = {{"label", "working-set", "trials", "total-bytes",
+#                            "total-ops", "ops-per-set", "counter", "device", "dtype",
+#                            "exec-params"}}
+#        ar(serializer:: make_nvp("working_set_min", working_set_min),
+#           serializer:: make_nvp("memory_max", memory_max),
+#           serializer:: make_nvp("nthreads", nthreads),
+#           serializer:: make_nvp("nrank", nrank), serializer: : make_nvp("nproc", nproc),
+#           serializer:: make_nvp("nstreams", nstreams),
+#           serializer:: make_nvp("grid_size", grid_size),
+#           serializer:: make_nvp("block_size", block_size),
+#           serializer: : make_nvp("shmem_size", shmem_size))
+
+
 #==============================================================================#
+#
+def get_json_entry(inp, key):
+    for _key in [key, key.replace("_", "-"), key.replace("-", "_")]:
+        if _key in inp:
+            return inp[_key]
+    return None
 
 
+#==============================================================================#
+#
+class ert_params():
+    """
+    ERT execution parameters
+    """
+
+    def __init__(self, inp):
+        self.working_set_min = get_json_entry(inp, "working_set_min")
+        self.memory_max = get_json_entry(inp, "memory_max")
+        self.nthreads = get_json_entry(inp, "nthreads")
+        self.nrank = get_json_entry(inp, "nrank")
+        self.nproc = get_json_entry(inp, "nproc")
+        self.nstreams = get_json_entry(inp, "nstreams")
+        self.grid_size = get_json_entry(inp, "grid_size")
+        self.block_size = get_json_entry(inp, "block_size")
+        self.shmem_size = get_json_entry(inp, "shmem_size")
+
+    def __str__(self):
+        ret = []
+        for itr in ("working_set_min", "memory_max", "nthreads", "nrank",
+                    "nproc", "nstreams", "grid_size", "block_size", "shmem_size"):
+            ret += ["=".join([itr, "{}".format(getattr(self, itr))])]
+        return ", ".join(ret)
+
+
+#==============================================================================#
+#
+class ert_counter():
+    """
+    ERT counter data
+    """
+
+    def __init__(self, inp):
+        _data = get_json_entry(inp, "repr_data")
+        self.units = get_json_entry(inp, "units")
+        self.display_units = get_json_entry(inp, "display_units")
+        if not isinstance(_data, list) and not isinstance(_data, tuple):
+            self.data = [_data]
+        else:
+            self.data = _data
+        for i in range(len(self.data)):
+            self.data[i] /= self.units
+
+    def __str__(self):
+        ret = []
+        for itr in ("data", "units", "display_units"):
+            ret += ["=".join([itr, "{}".format(getattr(self, itr))])]
+        return ", ".join(ret)
+
+    def get_peak(self, total, peak=[]):
+        _data = self.data
+        for i in range(len(_data)):
+            value = total / _data[i]
+            if i >= len(peak):
+                peak.append(value)
+            else:
+                peak[i] = max([peak[i], value])
+        return peak
+
+    def get(self, total):
+        _data = self.data
+        _list = []
+        for i in range(len(_data)):
+            _list.append(total / _data[i])
+        return _list
+
+
+#==============================================================================#
+#
+class ert_data():
+    """
+    ERT instance data
+    """
+
+    def __init__(self, inp):
+        self.label = get_json_entry(inp, "label")
+        self.working_set = get_json_entry(inp, "working-set")
+        self.trials = get_json_entry(inp, "trials")
+        self.total_bytes = get_json_entry(inp, "total-bytes")
+        self.total_ops = get_json_entry(inp, "total-ops")
+        self.ops_per_set = get_json_entry(inp, "ops-per-set")
+        self.device = get_json_entry(inp, "device")
+        self.dtype = get_json_entry(inp, "dtype")
+        self.counter = ert_counter(get_json_entry(inp, "counter"))
+        self.exec_params = ert_params(get_json_entry(inp, "exec-params"))
+
+    def __str__(self):
+        ret = []
+        for itr in ("label", "working_set", "trials", "total_bytes",
+                    "total_ops", "ops_per_set", "device", "dtype"):
+            ret += ["=".join([itr, "{}".format(getattr(self, itr))])]
+        for itr in ("counter", "exec_params"):
+            ret += ["".join(["\n    {:>12}".format(itr),
+                             ": ({})".format(getattr(self, itr))])]
+        return ", ".join(ret)
+
+
+#==============================================================================#
+#
 def smooth(x, y):
     """
     Smooth a curve
@@ -68,23 +187,54 @@ def smooth(x, y):
 
 
 #==============================================================================#
-def get_peak_flops(roof_data, flop_info):
-    """
-    Get the peak floating point operations / sec
-    """
-    flops_data = []
+#
+def read_ert(inp):
+    data = inp
 
-    for element in roof_data:
-        flops_data.append(element["ops-per-sec"]/GIGABYTE)
-    info_list = re.sub(r'[^\w]', ' ', flop_info).split()
-    info = "GFLOPs/sec"
-    if len(info_list) > 0:
-        info = info_list[0] + " GFLOPs/sec"
-    peak_flops = [max(flops_data), info]
-    return peak_flops
+    def _read_ert(_data):
+        if not "ert" in _data:
+            return None
+        else:
+            inst = []
+            for element in _data["ert"]:
+                inst.append(ert_data(element))
+            return inst
+
+    inst = _read_ert(data)
+    if inst is None:
+        if "roofline" in data:
+            data = data["roofline"]
+        inst = _read_ert(data)
+
+    for entry in inst:
+        print("{}\n".format(entry))
+
+    return inst
 
 
 #==============================================================================#
+#
+def get_peak_ops(roof_data, flop_info=None):
+    """
+    Get the peak operations / sec
+    """
+    peak = []
+
+    for element in roof_data:
+        total_ops = element.total_ops / GIGABYTE
+        peak = element.counter.get_peak(total_ops, peak)
+
+    info = "GFLOPs/sec"
+    if flop_info is not None:
+        info_list = re.sub(r'[^\w]', ' ', flop_info).split()
+        if len(info_list) > 0:
+            info = info_list[0] + " GFLOPs/sec"
+    peak_ops = [peak, info]
+    return peak_ops
+
+
+#==============================================================================#
+#
 def get_peak_bandwidth(roof_data):
     """
     Get multi-level bandwidth peaks - Implementation from ERT:
@@ -96,13 +246,15 @@ def get_peak_bandwidth(roof_data):
 
     # Read bandwidth raw data
     for element in roof_data:
-        intensity = element["ops-per-set"]
+        intensity = element.ops_per_set
         if ref_intensity == 0:
             ref_intensity = intensity
         if intensity != ref_intensity:
             continue
-        work_set.append(element["working-set"])
-        bandwidth_data.append(element["bytes-per-sec"]/GIGABYTE)
+        work_set.append(element.working_set)
+        total_bytes = element.total_bytes / GIGABYTE
+        bandwidth_data.append(element.counter.get(total_bytes))
+
     fraction = 1.05
     samples = 10000
 
@@ -162,6 +314,7 @@ def get_peak_bandwidth(roof_data):
 
 
 #==============================================================================#
+#
 def get_hotspots(op_data, ai_data):
     """
     Get the hotspots information
@@ -205,7 +358,8 @@ def get_hotspots(op_data, ai_data):
         return None
 
     def get_bandwidth(_data, extra=[]):
-        opts = ["bandwidth", "counted_ins", "ldst_executed", "L/S completed"] + extra
+        opts = ["bandwidth", "counted_ins",
+                "ldst_executed", "L/S completed"] + extra
         for opt in opts:
             if opt in _data:
                 return float(_data[opt])
@@ -214,7 +368,8 @@ def get_hotspots(op_data, ai_data):
     for i in range(0, max_length):
         ai_repr = ai_graph_data[i]["entry"]["repr_data"]
         op_repr = op_graph_data[i]["entry"]["repr_data"]
-        all_runtime += filter(None, [get_runtime(ai_repr), get_runtime(op_repr)])
+        all_runtime += filter(None,
+                              [get_runtime(ai_repr), get_runtime(op_repr)])
 
     for rt in all_runtime:
         avg_runtime += rt
@@ -274,6 +429,7 @@ def get_hotspots(op_data, ai_data):
 
 
 #==============================================================================#
+#
 def get_color(proportion):
     if proportion < 0.01:
         color = "lawngreen"
@@ -285,6 +441,7 @@ def get_color(proportion):
 
 
 #==============================================================================#
+#
 class plot_parameters():
     def __init__(self, peak_flops, hotspots):
         y_digits = int(math.log10(peak_flops[0]))+1
@@ -311,19 +468,24 @@ class plot_parameters():
 
 
 #==============================================================================#
-def plot_roofline(ai_data, op_data, display=False, fname="roofline",
+#
+def plot_roofline(ai, op, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
                   width=1600, height=1200, dpi=75):
     """
     Plot the roofline
     """
-    band_data = ai_data["rank"]["data"]["roofline"]["ert"]
-    flop_data = op_data["rank"]["data"]["roofline"]["ert"]
-    flop_info = op_data["rank"]["data"]["unit_repr"]
+    op_data = op["rank"]["data"]
+    ai_data = ai["rank"]["data"]
 
+    band_data = read_ert(ai_data)
+    peak_data = read_ert(op_data)
+
+    info = op_data["unit_repr"] if "unit_repr" in op_data else None
+
+    peak_flop = get_peak_ops(peak_data, info)
     peak_band = get_peak_bandwidth(band_data)
-    peak_flop = get_peak_flops(flop_data, flop_info)
-    hotspots = get_hotspots(op_data["rank"]["data"], ai_data["rank"]["data"])
+    hotspots = get_hotspots(op_data, ai_data)
 
     plot_params = plot_parameters(peak_flop, hotspots)
 

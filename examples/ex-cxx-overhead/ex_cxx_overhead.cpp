@@ -374,4 +374,8 @@ main(int argc, char** argv)
                (long) rc_unique);
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
+
+    tim::mpi::finalize();
+
+    return 0;
 }

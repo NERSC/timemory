@@ -63,7 +63,6 @@ using namespace tim::cuda;
 using counter_type   = tim::component::real_clock;
 using fp16_t         = tim::cuda::fp16_t;
 using ert_data_t     = ert::exec_data<counter_type>;
-using ert_params_t   = ert::exec_params;
 using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 using init_list_t    = std::set<uint64_t>;
 
@@ -80,7 +79,7 @@ run_ert(ert_data_ptr_t, int64_t num_threads, int64_t min_size, int64_t max_data,
 int
 main(int argc, char** argv)
 {
-    settings::verbose() = 1;
+    settings::verbose() = 0;
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
     mpi::initialize(argc, argv);
 
@@ -92,13 +91,25 @@ main(int argc, char** argv)
 
     init_list_t cpu_num_threads;
 
-    for(auto itr : init_list_t({ 1, 2, 4, 8 }))
+    if(argc > 1) cpu_min_size = atol(argv[1]);
+    if(argc > 2) cpu_max_data = atol(argv[2]);
+
+    auto default_thread_init_list = init_list_t({ 1, 2, 4, 8 });
+
+    if(argc > 3)
+    {
+        default_thread_init_list.clear();
+        for(int i = 3; i < argc; ++i) default_thread_init_list.insert(atoi(argv[i]));
+    }
+
+    for(auto itr : default_thread_init_list)
     {
         auto entry = itr / nproc;
         if(entry > 0) cpu_num_threads.insert(entry);
     }
 
-#if !defined(TIMEMORY_USE_CUDA)
+#if !defined(USE_CUDA)
+
     // execute the single-precision ERT calculations
     for(auto nthread : cpu_num_threads)
         run_ert<float, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
@@ -163,6 +174,10 @@ main(int argc, char** argv)
     if(argc > 1) fname = argv[1];
 
     ert::serialize(fname, *data);
+
+    mpi::finalize();
+
+    return 0;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -186,9 +201,9 @@ run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_
 
     printf("\n[ert-example]> Executing %s...\n", label.c_str());
 
-    using ert_executor_type = ert::executor<_Device, _Tp, counter_type, ert_data_t>;
+    using ert_executor_type = ert::executor<_Device, _Tp, counter_type>;
     using ert_config_type   = typename ert_executor_type::configuration_type;
-    using ert_counter_type  = ert::counter<_Device, _Tp, counter_type, ert_data_t>;
+    using ert_counter_type  = ert::counter<_Device, _Tp, counter_type>;
 
     //
     // simple modifications to override method number of threads, number of streams,

@@ -304,6 +304,29 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
+    static bool& master_is_finalizing()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static bool& worker_is_finalizing()
+    {
+        static thread_local bool _instance = master_is_finalizing();
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static bool is_finalizing()
+    {
+        return worker_is_finalizing() || master_is_finalizing();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
     void finalize()
     {
         if(m_finalized)
@@ -318,11 +341,14 @@ public:
         m_finalized = true;
         if(!singleton_t::is_master(this))
         {
+            worker_is_finalizing() = true;
             if(m_thread_init)
                 ObjectType::thread_finalize_policy(this);
         }
         else
         {
+            master_is_finalizing() = true;
+            worker_is_finalizing() = true;
             if(m_thread_init)
                 ObjectType::thread_finalize_policy(this);
             if(m_global_init)
@@ -907,6 +933,9 @@ public:
         write_serialization<this_type>::serialize(*this, ar, version);
     }
 
+    void get_shared_manager();
+    void free_shared_manager();
+
 private:
     //----------------------------------------------------------------------------------//
     //
@@ -947,8 +976,6 @@ private:
 
     // tim::trait::external_output_handling<ObjectType>::type == FALSE
     void external_print(std::false_type);
-
-    void get_shared_manager();
 
     graph_data_t& _data()
     {
@@ -1102,6 +1129,29 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
+    static bool& master_is_finalizing()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static bool& worker_is_finalizing()
+    {
+        static thread_local bool _instance = master_is_finalizing();
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static bool is_finalizing()
+    {
+        return worker_is_finalizing() || master_is_finalizing();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
     void finalize()
     {
         if(m_finalized)
@@ -1116,10 +1166,13 @@ public:
         m_finalized = true;
         if(!singleton_t::is_master(this))
         {
+            worker_is_finalizing() = true;
             ObjectType::thread_finalize_policy(this);
         }
         else
         {
+            master_is_finalizing() = true;
+            worker_is_finalizing() = true;
             ObjectType::thread_finalize_policy(this);
             ObjectType::global_finalize_policy(this);
         }
@@ -1151,17 +1204,13 @@ public:
     //----------------------------------------------------------------------------------//
     //
     iterator insert(int64_t, const ObjectType&, const string_t&) { return nullptr; }
-    void     print()
-    {
-        if(m_initialized)
-        {
-            ObjectType::thread_finalize_policy(this);
-            if(singleton_t::is_master(this))
-                ObjectType::global_finalize_policy(this);
-            finalize();
-        }
-    }
 
+    //----------------------------------------------------------------------------------//
+    //
+    void print() { finalize(); }
+
+    //----------------------------------------------------------------------------------//
+    //
     void add_hash_id(const std::string& _prefix)
     {
         ::tim::add_hash_id(m_hash_ids, _prefix);
@@ -1203,6 +1252,9 @@ public:
     void serialize(_Archive&, const unsigned int)
     {}
 
+    void get_shared_manager();
+    void free_shared_manager();
+
 private:
     friend class tim::manager;
 
@@ -1222,8 +1274,6 @@ private:
         static std::atomic<int64_t> _counter;
         return _counter;
     }
-
-    void get_shared_manager();
 
     bool                     m_initialized  = false;
     bool                     m_finalized    = false;
@@ -1330,6 +1380,8 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
 
         if(this_tid == master_tid)
         {
+            if(ptr)
+                ptr->StorageType::free_shared_manager();
             delete ptr;
         }
         else
@@ -1338,10 +1390,14 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
             {
                 singleton_t::remove(ptr);
             }
+            if(ptr)
+                ptr->StorageType::free_shared_manager();
             delete ptr;
         }
         if(_printed_master && !_deleted_master)
         {
+            if(master)
+                master->StorageType::free_shared_manager();
             delete master;
             _deleted_master = true;
         }

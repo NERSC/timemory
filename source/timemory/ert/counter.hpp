@@ -54,7 +54,7 @@ namespace ert
 //--------------------------------------------------------------------------------------//
 //  measure floating-point or integer operations
 //
-template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
+template <typename _Device, typename _Tp, typename _Counter>
 class counter
 {
 public:
@@ -62,11 +62,11 @@ public:
     using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
     using counter_type  = _Counter;
-    using exec_data_t   = _ExecData;
-    using this_type     = counter<_Device, _Tp, _Counter, _ExecData>;
+    using ert_data_t    = exec_data<_Counter>;
+    using this_type     = counter<_Device, _Tp, _Counter>;
     using callback_type = std::function<void(uint64_t, this_type&)>;
-    using data_type     = typename exec_data_t::value_type;
-    using data_ptr_t    = std::shared_ptr<exec_data_t>;
+    using data_type     = typename ert_data_t::value_type;
+    using data_ptr_t    = std::shared_ptr<ert_data_t>;
     using ull           = unsigned long long;
 
 public:
@@ -216,7 +216,7 @@ public:
     void serialize(Archive& ar, const unsigned int)
     {
         if(!data.get())  // for input
-            data = data_ptr_t(new _ExecData());
+            data = data_ptr_t(new ert_data_t());
         ar(serializer::make_nvp("params", params), serializer::make_nvp("data", *data));
     }
 

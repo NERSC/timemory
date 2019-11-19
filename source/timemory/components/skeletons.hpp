@@ -120,16 +120,15 @@ struct gpu_roofline
     using device_t       = device::cpu;
     using clock_type     = real_clock;
     using ert_data_t     = ert::exec_data<clock_type>;
-    using ert_params_t   = ert::exec_params;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
     template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, clock_type, ert_data_t>;
+    using ert_config_type = ert::configuration<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, clock_type, ert_data_t>;
+    using ert_counter_type = ert::counter<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, clock_type, ert_data_t>;
+    using ert_executor_type = ert::executor<device_t, _Tp, clock_type>;
     template <typename _Tp>
     using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
 
@@ -174,16 +173,15 @@ struct cpu_roofline
     using device_t       = device::cpu;
     using clock_type     = real_clock;
     using ert_data_t     = ert::exec_data<clock_type>;
-    using ert_params_t   = ert::exec_params;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
     template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, clock_type, ert_data_t>;
+    using ert_config_type = ert::configuration<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, clock_type, ert_data_t>;
+    using ert_counter_type = ert::counter<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, clock_type, ert_data_t>;
+    using ert_executor_type = ert::executor<device_t, _Tp, clock_type>;
     template <typename _Tp>
     using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
 

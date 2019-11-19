@@ -111,10 +111,10 @@ struct gotcha
     template <typename _Tp>
     using array_t = std::array<_Tp, _Nt>;
 
-    using binding_t     = ::tim::gotcha::binding_t;
-    using wrappee_t     = ::tim::gotcha::wrappee_t;
-    using wrappid_t     = ::tim::gotcha::string_t;
-    using error_t       = ::tim::gotcha::error_t;
+    using binding_t     = backend::gotcha::binding_t;
+    using wrappee_t     = backend::gotcha::wrappee_t;
+    using wrappid_t     = backend::gotcha::string_t;
+    using error_t       = backend::gotcha::error_t;
     using destructor_t  = std::function<void()>;
     using constructor_t = std::function<void()>;
     using atomic_bool_t = std::atomic<bool>;
@@ -229,12 +229,12 @@ struct gotcha
             _data.wrap_id = _func;
             _data.ready   = get_default_ready();
 
-            error_t ret_prio = ::tim::gotcha::set_priority(_label, _priority);
+            error_t ret_prio = backend::gotcha::set_priority(_label, _priority);
             check_error<_N>(ret_prio, "set priority");
 
             _data.binding = std::move(construct_binder<_N, _Ret, _Args...>(_func));
 
-            error_t ret_wrap = ::tim::gotcha::wrap(_data.binding, _data.tool_id);
+            error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.tool_id);
             check_error<_N>(ret_wrap, "binding");
 
             if(ret_wrap == GOTCHA_SUCCESS)
@@ -280,15 +280,21 @@ struct gotcha
 
         if(_data.filled && (_func.empty() || _data.wrap_id == _func))
         {
+            _data.filled = false;
             if(_func.empty())
                 _func = _data.wrap_id;
 
-            _data.filled     = false;
-            auto      _orig  = gotcha_get_wrappee(_data.wrappee);
-            wrappee_t _dummy = 0x0;
-            _data.binding    = { _func.c_str(), _orig, &_dummy };
-            error_t ret_wrap = ::tim::gotcha::wrap(_data.binding, _data.wrap_id);
-            check_error<_N>(ret_wrap, "unwrap binding");
+            if(_func.empty() || !_data.wrappee)
+                return;
+
+            auto _orig = gotcha_get_wrappee(_data.wrappee);
+            if(_orig)
+            {
+                wrappee_t _dummy = 0x0;
+                _data.binding    = { _func.c_str(), _orig, &_dummy };
+                error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.wrap_id);
+                check_error<_N>(ret_wrap, "unwrap binding");
+            }
         }
 #else
         consume_parameters(_func);
@@ -337,7 +343,10 @@ struct gotcha
         while(get_thread_started() > 0)
             --get_thread_started();
         for(auto& itr : get_data())
+        {
+            itr.is_finalized = true;
             itr.destructor();
+        }
     }
 
     static void invoke_thread_init(storage_type*)
@@ -381,10 +390,13 @@ struct gotcha
                 _data[i].ready = false;
         }
 
-        if(_n == 0)
+        if(_n == 0 && !storage_type::is_finalizing())
         {
             for(auto& itr : get_data())
-                itr.destructor();
+            {
+                if(!itr.is_finalized)
+                    itr.destructor();
+            }
         }
     }
 
@@ -422,14 +434,15 @@ private:
     {
         gotcha_data() = default;
 
-        bool          ready       = get_default_ready();
-        bool          filled      = false;
-        binding_t     binding     = binding_t{};
-        wrappee_t     wrappee     = 0x0;
-        wrappid_t     wrap_id     = "";
-        wrappid_t     tool_id     = "";
-        constructor_t constructor = []() {};
-        destructor_t  destructor  = []() {};
+        bool          ready        = get_default_ready();
+        bool          filled       = false;
+        bool          is_finalized = false;
+        binding_t     binding      = binding_t{};
+        wrappee_t     wrappee      = 0x0;
+        wrappid_t     wrap_id      = "";
+        wrappid_t     tool_id      = "";
+        constructor_t constructor  = []() {};
+        destructor_t  destructor   = []() {};
     };
 
     //----------------------------------------------------------------------------------//
@@ -461,94 +474,6 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-    /*
-    static array_t<bool>& get_filled()
-    {
-        static auto _get = []() {
-            array_t<bool> _arr;
-            apply<void>::set_value(_arr, false);
-            return _arr;
-        };
-
-        static array_t<bool> _instance = _get();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<binding_t>& get_bindings()
-    {
-        static array_t<binding_t> _instance;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<wrappee_t>& get_wrappees()
-    {
-        static array_t<wrappee_t> _instance;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<wrappid_t>& get_wrap_ids()
-    {
-        static array_t<wrappid_t> _instance;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<wrappid_t>& get_tool_ids()
-    {
-        static array_t<wrappid_t> _instance;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<destructor_t>& get_destructors()
-    {
-        static auto _get = []() {
-            array_t<destructor_t> _arr;
-            for(auto& itr : _arr)
-                itr = []() {};
-            return _arr;
-        };
-        static array_t<destructor_t> _instance = _get();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<constructor_t>& get_constructors()
-    {
-        static auto _get = []() {
-            array_t<constructor_t> _arr;
-            for(auto& itr : _arr)
-                itr = []() {};
-            return _arr;
-        };
-        static array_t<constructor_t> _instance = _get();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<bool>& get_ready_flags()
-    {
-        static auto _get = []() {
-            array_t<bool> _arr;
-            for(auto& itr : _arr)
-                itr = get_default_ready();
-            return _arr;
-        };
-        static thread_local array_t<bool> _instance = _get();
-        return _instance;
-    }
-    */
-    //----------------------------------------------------------------------------------//
 
     template <size_t _N>
     static void check_error(error_t _ret, const std::string& _prefix)
@@ -559,7 +484,7 @@ private:
             std::stringstream msg;
             msg << _prefix << " at index '" << _N << "' for function '" << _data.wrap_id
                 << "' returned error code " << static_cast<int>(_ret) << ": "
-                << ::tim::gotcha::get_error(_ret) << "\n";
+                << backend::gotcha::get_error(_ret) << "\n";
             std::cerr << msg.str() << std::endl;
         }
     }

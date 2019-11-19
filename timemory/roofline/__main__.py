@@ -53,18 +53,21 @@ def parse_args(add_run_args=False):
                         default=os.getcwd())
     parser.add_argument("--format", type=str,
                         help="Image format", default="png")
-    parser.add_argument("-T", "--title", type=str, help="Title for the plot", default="Roofline")
+    parser.add_argument("-T", "--title", type=str,
+                        help="Title for the plot", default="Roofline")
     parser.add_argument("-P", "--plot-dimensions", type=int,
                         help="Image dimensions: Width, Height, DPI",
                         default=[1600, 1200, 90], nargs=3)
-    parser.add_argument("-R", "--rank", type=int, help="MPI Rank", default=None)
+    parser.add_argument("-R", "--rank", type=int,
+                        help="MPI Rank", default=None)
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
         parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
-                            choices=["cpu_roofline", "gpu_roofline", "gpu_roofline_half",
-                                     "gpu_roofline_float", "gpu_roofline_double"],
-                            default="cpu_roofline")
+                            choices=["cpu_roofline", "cpu_roofline_sp",
+                                     "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
+                                     "gpu_roofline_sp", "gpu_roofline_dp"],
+                            default="cpu_roofline_dp")
         parser.add_argument("-k", "--keep-going", help="Continue despite execution errors",
                             action='store_true')
         parser.add_argument("-r", "--rerun", help="Re-run this mode and not the other", type=str,
@@ -221,8 +224,6 @@ if __name__ == "__main__":
         run(args, _cmd)
         plot(args)
 
-        if len(_cmd) != 0:
-            args = parse_ar
     except Exception as e:
         msg = "\nCommand line argument error:\n\t{}\n".format(e)
         warnings.warn(msg)

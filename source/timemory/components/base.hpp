@@ -98,8 +98,11 @@ public:
     , laps(0)
     , graph_itr(graph_iterator{ nullptr })
     {
-        static thread_local bool _inited = init_storage();
-        consume_parameters(_inited);
+        if(!storage_type::is_finalizing())
+        {
+            static thread_local auto _storage = get_storage();
+            consume_parameters(_storage);
+        }
     }
 
     ~base() = default;
@@ -458,20 +461,23 @@ private:
     //
     template <typename _Up = _Tp, typename _Vp = _Value,
               enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
-    bool init_storage()
+    static bool init_storage(storage_type*& _instance)
     {
-        if(!properties_t::has_storage())
+        if(!_instance)
         {
-            static thread_local auto _instance = storage_type::instance();
-            _instance->initialize();
-            get_storage() = _instance;
+            static thread_local int32_t _count = 0;
+            if(_count++ == 0)
+                _instance = storage_type::instance();
         }
+
+        if(!properties_t::has_storage() && _instance)
+            _instance->initialize();
         return properties_t::has_storage();
     }
 
     template <typename _Up = _Tp, typename _Vp = _Value,
               enable_if_t<!(implements_storage<_Up, _Vp>::value), int> = 0>
-    bool init_storage()
+    static bool init_storage(storage_type*&)
     {
         return true;
     }
@@ -517,6 +523,8 @@ protected:
     static storage_type*& get_storage()
     {
         static thread_local storage_type* _instance = nullptr;
+        static thread_local bool          _inited   = init_storage(_instance);
+        consume_parameters(_inited);
         return _instance;
     }
 

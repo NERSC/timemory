@@ -286,25 +286,39 @@ TEST_F(tuple_tests, all_threads)
     const size_t store_size = 13;
 
     if(tim::trait::is_available<wall_clock>::value)
+    {
         EXPECT_EQ(tim::storage<wall_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<thread_cpu_clock>::value)
+    {
         EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<thread_cpu_util>::value)
+    {
         EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<process_cpu_clock>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<process_cpu_util>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_util>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<peak_rss>::value)
+    {
         EXPECT_EQ(tim::storage<peak_rss>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<page_rss>::value)
+    {
         EXPECT_EQ(tim::storage<page_rss>::instance()->get().size(), store_size);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -391,25 +405,39 @@ TEST_F(tuple_tests, collapsed_threads)
     const size_t store_size = 15;
 
     if(tim::trait::is_available<wall_clock>::value)
+    {
         EXPECT_EQ(tim::storage<wall_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<thread_cpu_clock>::value)
+    {
         EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<thread_cpu_util>::value)
+    {
         EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<process_cpu_clock>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<process_cpu_util>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_util>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<peak_rss>::value)
+    {
         EXPECT_EQ(tim::storage<peak_rss>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<page_rss>::value)
+    {
         EXPECT_EQ(tim::storage<page_rss>::instance()->get().size(), store_size);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -450,12 +478,16 @@ main(int argc, char** argv)
     tim::settings::verbose()     = 0;
     tim::settings::debug()       = false;
     tim::settings::json_output() = true;
+    tim::mpi::initialize(argc, argv);
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    auto ret = RUN_ALL_TESTS();
+
+    tim::mpi::finalize();
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

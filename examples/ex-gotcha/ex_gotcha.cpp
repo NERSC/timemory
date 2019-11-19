@@ -36,24 +36,9 @@
 #include <string>
 #include <vector>
 
-//--------------------------------------------------------------------------------------//
-// make the namespace usage a little clearer
-//
-namespace settings
-{
-using namespace tim::settings;
-}
-namespace mpi
-{
-using namespace tim::mpi;
-}
-namespace trait
-{
-using namespace tim::trait;
-}
-
 //======================================================================================//
 
+using namespace tim;
 using namespace tim::component;
 
 using auto_timer_t = tim::component_tuple<real_clock, cpu_clock>;
@@ -67,14 +52,13 @@ constexpr size_t _Mn = 10;
 constexpr size_t _Sn = 8;
 constexpr size_t _Cn = 8;
 
-using put_gotcha_t = tim::component::gotcha<_Pn, auto_timer_t>;
+using put_gotcha_t = tim::component::gotcha<_Pn, auto_timer_t, char>;
 using std_gotcha_t = tim::component::gotcha<_Sn, auto_timer_t, int>;
-using cos_gotcha_t = tim::component::gotcha<_Cn, auto_tuple_t>;
-using mpi_gotcha_t = tim::component::gotcha<_Mn, auto_tuple_t>;
+using cos_gotcha_t = tim::component::gotcha<_Cn, auto_tuple_t, short>;
+using mpi_gotcha_t = tim::component::gotcha<_Mn, auto_tuple_t, double>;
 
 using gotcha_tuple_t =
-    typename tim::component_tuple<auto_timer_t, put_gotcha_t, std_gotcha_t, cos_gotcha_t,
-                                  mpi_gotcha_t>::auto_type;
+    tim::auto_tuple<auto_timer_t, put_gotcha_t, std_gotcha_t, cos_gotcha_t, mpi_gotcha_t>;
 
 using tim::mangle;
 
@@ -125,9 +109,9 @@ init()
     };
 
     std_gotcha_t::get_initializer() = [=]() {
-        // TIMEMORY_C_GOTCHA(std_gotcha_t, 2, expf);
         std_gotcha_t::configure<0, double, double>("exp", 1, "math");
         std_gotcha_t::configure<1, ext::tuple_t, int>(test_exp_mangle, 2, "math");
+        std_gotcha_t::configure<2, double, double>("cos", 0, "math");
     };
 
     cos_gotcha_t::get_initializer() = [=]() {
@@ -137,7 +121,6 @@ init()
                                                                     "math");
         cos_gotcha_t::configure<2, ext::tuple_t, int, ext::tuple_t>(test_cosRK_mangle, 0,
                                                                     "math");
-        std_gotcha_t::configure<4, double, double>("cos", 0, "math");
     };
 
     mpi_gotcha_t::get_initializer() = [=]() {
@@ -169,18 +152,17 @@ init()
 int
 main(int argc, char** argv)
 {
-    init();
-    TIMEMORY_BASIC_MARKER(gotcha_tuple_t, "");
-
     settings::width()        = 12;
     settings::precision()    = 6;
     settings::timing_units() = "msec";
     settings::memory_units() = "kB";
     settings::verbose()      = 1;
+    mpi::initialize(argc, argv);
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
 
+    init();
+    TIMEMORY_BASIC_MARKER(gotcha_tuple_t, "");
     puts("Testing...");
-    mpi::initialize(argc, argv);
 
 #if defined(TIMEMORY_USE_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
@@ -264,6 +246,10 @@ main(int argc, char** argv)
         }
         mpi::barrier();
     }
+
+    tim::mpi::finalize();
+
+    return 0;
 }
 
 //======================================================================================//

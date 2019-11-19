@@ -76,7 +76,8 @@ public:
     using mutex_t          = std::mutex;
     using auto_lock_t      = std::unique_lock<mutex_t>;
     using finalizer_func_t = std::function<void()>;
-    using finalizer_list_t = std::deque<finalizer_func_t>;
+    using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
+    using finalizer_list_t = std::deque<finalizer_pair_t>;
 
 public:
     // Constructor and Destructors
@@ -91,7 +92,9 @@ public:
 
     // storage-types add functors to destroy the instances
     template <typename _Func>
-    void add_finalizer(_Func&&, bool);
+    void add_finalizer(const std::string&, _Func&&, bool);
+
+    void remove_finalizer(const std::string&);
 
     void finalize();
 
@@ -355,6 +358,8 @@ protected:
 private:
     /// number of timing manager instances
     static std::atomic<int32_t>& f_manager_instance_count();
+    /// notifies that it is finalizing
+    bool m_is_finalizing = false;
     /// instance id
     int32_t m_instance_count;
     /// increment the shared_ptr count here to ensure these instances live
@@ -364,6 +369,7 @@ private:
     finalizer_list_t       m_master_finalizers;
     finalizer_list_t       m_worker_finalizers;
     mutex_t                m_mutex;
+    auto_lock_t*           m_lock = nullptr;
 
 private:
     /// num-threads based on number of managers created

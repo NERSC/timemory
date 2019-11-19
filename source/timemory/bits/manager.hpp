@@ -91,9 +91,11 @@ manager::master_instance()
 //======================================================================================//
 
 inline manager::manager()
-: m_instance_count(f_manager_instance_count()++)
+: m_is_finalizing(false)
+, m_instance_count(f_manager_instance_count()++)
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
+, m_lock(new auto_lock_t(m_mutex, std::defer_lock))
 {
     f_thread_counter()++;
     static std::atomic<int> _once(0);
@@ -123,28 +125,61 @@ inline manager::~manager()
     if(get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
        m_instance_count == 0)
     {
+        mpi::finalize();
         f_thread_counter().store(0, std::memory_order_relaxed);
         if(settings::banner())
             printf("\n\n#---------------------- tim::manager destroyed [%i] "
                    "----------------------#\n",
                    m_instance_count);
     }
+
+    delete m_lock;
 }
 
 //======================================================================================//
 
 template <typename _Func>
 inline void
-manager::add_finalizer(_Func&& _func, bool _is_master)
+manager::add_finalizer(const std::string& _key, _Func&& _func, bool _is_master)
 {
-    auto_lock_t lk(m_mutex, std::defer_lock);
-    if(!lk.owns_lock())
-        lk.lock();
+    // ensure there are no duplicates
+    remove_finalizer(_key);
+
+    if(m_lock && !m_lock->owns_lock())
+        m_lock->lock();
+
+    auto _entry = finalizer_pair_t{ _key, std::forward<_Func>(_func) };
 
     if(_is_master)
-        m_master_finalizers.push_back(std::forward<_Func>(_func));
+        m_master_finalizers.push_back(_entry);
     else
-        m_worker_finalizers.push_back(std::forward<_Func>(_func));
+        m_worker_finalizers.push_back(_entry);
+}
+
+//======================================================================================//
+
+inline void
+manager::remove_finalizer(const std::string& _key)
+{
+    // if(m_is_finalizing)
+    //    return;
+
+    if(m_lock && !m_lock->owns_lock())
+        m_lock->lock();
+
+    auto _remove_finalizer = [&](finalizer_list_t& _finalizers) {
+        for(auto itr = _finalizers.begin(); itr != _finalizers.end(); ++itr)
+        {
+            if(itr->first == _key)
+            {
+                _finalizers.erase(itr);
+                return;
+            }
+        }
+    };
+
+    _remove_finalizer(m_master_finalizers);
+    _remove_finalizer(m_worker_finalizers);
 }
 
 //======================================================================================//
@@ -152,16 +187,18 @@ manager::add_finalizer(_Func&& _func, bool _is_master)
 inline void
 manager::finalize()
 {
-    auto_lock_t lk(m_mutex, std::defer_lock);
-    if(!lk.owns_lock())
-        lk.lock();
+    if(m_lock && !m_lock->owns_lock())
+        m_lock->lock();
+
+    m_is_finalizing = true;
+    PRINT_HERE("finalizing...");
 
     auto _finalize = [](finalizer_list_t& _finalizers) {
         // reverse to delete the most recent additions first
         std::reverse(_finalizers.begin(), _finalizers.end());
         // invoke all the functions
         for(auto& itr : _finalizers)
-            itr();
+            itr.second();
         // remove all these finalizers
         _finalizers.clear();
     };
@@ -173,6 +210,8 @@ manager::finalize()
     _finalize(m_worker_finalizers);
     // finalize masters second
     _finalize(m_master_finalizers);
+
+    m_is_finalizing = false;
 }
 
 //======================================================================================//
@@ -182,13 +221,13 @@ manager::exit_hook()
 {
     try
     {
+        papi::shutdown();
+        mpi::finalize();
         if(f_manager_instance_count() > 0)
         {
             auto master_manager = get_shared_ptr_pair_master_instance<manager>();
             master_manager.reset();
         }
-        papi::shutdown();
-        mpi::finalize();
     } catch(...)
     {}
 }

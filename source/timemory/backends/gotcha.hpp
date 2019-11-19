@@ -85,6 +85,8 @@ typedef enum __gotcha_error_timemory
 
 namespace tim
 {
+namespace backend
+{
 namespace gotcha
 {
 using string_t = std::string;
@@ -184,6 +186,7 @@ wrap(std::array<binding_t, _N>& _arr, const std::array<bool, _N>& _filled,
 //--------------------------------------------------------------------------------------//
 
 }  // namespace gotcha
+}  // namespace backend
 }  // namespace tim
 
 //======================================================================================//

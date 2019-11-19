@@ -214,6 +214,7 @@ inline void
 tim::timemory_finalize()
 {
     tim::manager::instance()->finalize();
+    tim::mpi::finalize();
     tim::disable_signal_detection();
 }
 

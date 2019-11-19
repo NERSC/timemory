@@ -38,14 +38,13 @@ struct exec_params;
 template <typename _Tp = component::real_clock>
 class exec_data;
 
-template <typename _Device, typename _Tp, typename _Counter = component::real_clock,
-          typename _ExecData = exec_data<_Counter>>
+template <typename _Device, typename _Tp, typename _Counter = component::real_clock>
 class counter;
 
-template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
+template <typename _Device, typename _Tp, typename _Counter>
 struct configuration;
 
-template <typename _Device, typename _Tp, typename _Counter, typename _ExecData>
+template <typename _Device, typename _Tp, typename _Counter>
 struct executor;
 
 template <typename _Executor>

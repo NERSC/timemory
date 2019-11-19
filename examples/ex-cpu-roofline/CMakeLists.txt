@@ -8,7 +8,7 @@ endif()
 project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)
-set(COMPONENTS papi threading compile-options analysis-tools arch)
+set(COMPONENTS papi threading compile-options analysis-tools arch mpi)
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
