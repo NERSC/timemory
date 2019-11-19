@@ -879,7 +879,10 @@ struct print_storage
     {
         auto _storage = tim::storage<_Tp>::noninit_instance();
         if(_storage)
+        {
+            _storage->stack_clear();
             _storage->print();
+        }
     }
 
     //----------------------------------------------------------------------------------//

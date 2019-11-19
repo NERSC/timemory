@@ -418,13 +418,22 @@ private:
             is_on_stack      = true;
             auto _end_depth  = _storage->depth();
             depth_change     = (_beg_depth < _end_depth);
+            _storage->stack_push(&obj);
         }
     }
 
     template <typename _Scope, typename _Up = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t&)
-    {}
+    {
+        if(!is_on_stack)
+        {
+            auto  _storage = get_storage();
+            Type& obj      = static_cast<Type&>(*this);
+            is_on_stack    = true;
+            _storage->stack_push(&obj);
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
@@ -434,27 +443,50 @@ private:
     {
         if(is_on_stack)
         {
-            auto _storage   = get_storage();
-            auto _beg_depth = _storage->depth();
+            if(storage_type::is_finalizing())
+            {
+                Type& obj = graph_itr->obj();
+                Type& rhs = static_cast<Type&>(*this);
+                obj += rhs;
+                obj.plus(rhs);
+                Type::append(graph_itr, rhs);
+                obj.is_running = false;
+                is_on_stack    = false;
+            }
+            else
+            {
+                auto _storage   = get_storage();
+                auto _beg_depth = _storage->depth();
 
-            Type& obj = graph_itr->obj();
-            Type& rhs = static_cast<Type&>(*this);
-            obj += rhs;
-            obj.plus(rhs);
-            Type::append(graph_itr, rhs);
-            _storage->pop();
-            obj.is_running = false;
-            is_on_stack    = false;
+                Type& obj = graph_itr->obj();
+                Type& rhs = static_cast<Type&>(*this);
+                obj += rhs;
+                obj.plus(rhs);
+                Type::append(graph_itr, rhs);
+                _storage->pop();
+                _storage->stack_pop(&rhs);
+                obj.is_running = false;
+                is_on_stack    = false;
 
-            auto _end_depth = _storage->depth();
-            depth_change    = (_beg_depth > _end_depth);
+                auto _end_depth = _storage->depth();
+                depth_change    = (_beg_depth > _end_depth);
+            }
         }
     }
 
     template <typename _Up                                   = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void pop_node()
-    {}
+    {
+        if(is_on_stack)
+        {
+            auto  _storage = get_storage();
+            Type& rhs      = static_cast<Type&>(*this);
+            if(_storage)
+                _storage->stack_pop(&rhs);
+            is_on_stack = false;
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     // initialize the storage
@@ -864,13 +896,28 @@ private:
     template <typename _Scope = scope::process, typename... _Args>
     void insert_node(const _Scope&, _Args&&...)
     {
-        is_on_stack = true;
+        if(!is_on_stack)
+        {
+            // auto  _storage = get_storage();
+            // Type& obj      = static_cast<Type&>(*this);
+            is_on_stack = true;
+            // _storage->stack_push(&obj);
+        }
     }
 
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
-    void pop_node() { is_on_stack = false; }
+    void pop_node()
+    {
+        if(is_on_stack)
+        {
+            // auto  _storage = get_storage();
+            // Type& rhs      = static_cast<Type&>(*this);
+            is_on_stack = false;
+            // _storage->stack_pop(&rhs);
+        }
+    }
 
 protected:
     void plus(const this_type& rhs)

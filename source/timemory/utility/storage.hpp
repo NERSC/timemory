@@ -59,6 +59,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 //--------------------------------------------------------------------------------------//
@@ -730,7 +731,7 @@ public:
     //
     const graph_data_t& data() const { return _data(); }
     const graph_t&      graph() const { return _data().graph(); }
-    const int64_t&      depth() const { return _data().depth(); }
+    int64_t             depth() const { return (is_finalizing()) ? 0 : _data().depth(); }
 
     //----------------------------------------------------------------------------------//
     //
@@ -885,6 +886,8 @@ protected:
         for(auto& itr : m_children)
             if(itr != this)
                 itr->data().clear();
+
+        stack_clear();
     }
 
     void merge(this_type* itr);
@@ -1016,25 +1019,45 @@ private:
     using uomap_t             = std::unordered_map<_Key_t, _Mapped_t>;
     using iterator_hash_map_t = uomap_t<int64_t, uomap_t<int64_t, iterator>>;
 
-    bool                     m_initialized         = false;
-    bool                     m_finalized           = false;
-    bool                     m_global_init         = false;
-    bool                     m_thread_init         = false;
-    bool                     m_data_init           = false;
-    bool                     m_node_init           = mpi::is_initialized();
-    int32_t                  m_node_rank           = mpi::rank();
-    int32_t                  m_node_size           = mpi::size();
-    int64_t                  m_instance_id         = instance_count()++;
-    graph_hash_map_ptr_t     m_hash_ids            = ::tim::get_hash_ids();
-    graph_hash_alias_ptr_t   m_hash_aliases        = ::tim::get_hash_aliases();
-    mutable graph_data_t*    m_graph_data_instance = nullptr;
-    iterator_hash_map_t      m_node_ids;
-    std::shared_ptr<manager> m_manager;
+    bool                            m_initialized         = false;
+    bool                            m_finalized           = false;
+    bool                            m_global_init         = false;
+    bool                            m_thread_init         = false;
+    bool                            m_data_init           = false;
+    bool                            m_node_init           = mpi::is_initialized();
+    int32_t                         m_node_rank           = mpi::rank();
+    int32_t                         m_node_size           = mpi::size();
+    int64_t                         m_instance_id         = instance_count()++;
+    graph_hash_map_ptr_t            m_hash_ids            = ::tim::get_hash_ids();
+    graph_hash_alias_ptr_t          m_hash_aliases        = ::tim::get_hash_aliases();
+    mutable graph_data_t*           m_graph_data_instance = nullptr;
+    iterator_hash_map_t             m_node_ids;
+    std::shared_ptr<manager>        m_manager;
+    std::unordered_set<ObjectType*> m_stack;
 
 public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
     const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
     const iterator_hash_map_t     get_node_ids() const { return m_node_ids; }
+    void                          stack_push(ObjectType* obj) { m_stack.insert(obj); }
+    void                          stack_pop(ObjectType* obj)
+    {
+        auto itr = m_stack.find(obj);
+        if(itr != m_stack.end())
+        {
+            m_stack.erase(itr);
+        }
+    }
+    void stack_clear()
+    {
+        std::unordered_set<ObjectType*> _stack = m_stack;
+        for(auto& itr : _stack)
+        {
+             itr->stop();
+            itr->pop_node();
+        }
+        m_stack.clear();
+    }
 };
 
 //======================================================================================//
@@ -1227,10 +1250,14 @@ protected:
 
         for(auto& itr : m_children)
             merge(itr);
+
+        stack_clear();
     }
 
     void merge(this_type* itr)
     {
+        itr->stack_clear();
+
         // create lock but don't immediately lock
         // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
         auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
@@ -1275,16 +1302,36 @@ private:
         return _counter;
     }
 
-    bool                     m_initialized  = false;
-    bool                     m_finalized    = false;
-    int64_t                  m_instance_id  = instance_count()++;
-    graph_hash_map_ptr_t     m_hash_ids     = ::tim::get_hash_ids();
-    graph_hash_alias_ptr_t   m_hash_aliases = ::tim::get_hash_aliases();
-    std::shared_ptr<manager> m_manager;
+    bool                            m_initialized  = false;
+    bool                            m_finalized    = false;
+    int64_t                         m_instance_id  = instance_count()++;
+    graph_hash_map_ptr_t            m_hash_ids     = ::tim::get_hash_ids();
+    graph_hash_alias_ptr_t          m_hash_aliases = ::tim::get_hash_aliases();
+    std::shared_ptr<manager>        m_manager;
+    std::unordered_set<ObjectType*> m_stack;
 
 public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
     const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
+    void                          stack_push(ObjectType* obj) { m_stack.insert(obj); }
+    void                          stack_pop(ObjectType* obj)
+    {
+        auto itr = m_stack.find(obj);
+        if(itr != m_stack.end())
+        {
+            m_stack.erase(itr);
+        }
+    }
+    void stack_clear()
+    {
+        std::unordered_set<ObjectType*> _stack = m_stack;
+        for(auto& itr : _stack)
+        {
+            itr->stop();
+            itr->pop_node();
+        }
+        m_stack.clear();
+    }
 };
 
 //======================================================================================//
@@ -1359,6 +1406,7 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
 
         if(ptr && master && ptr != master)
         {
+            ptr->StorageType::stack_clear();
             master->StorageType::merge(ptr);
         }
         else
@@ -1371,6 +1419,7 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
             {
                 if(!_printed_master)
                 {
+                    master->StorageType::stack_clear();
                     master->StorageType::print();
                     master->StorageType::cleanup();
                     _printed_master = true;

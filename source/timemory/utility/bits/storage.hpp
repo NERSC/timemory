@@ -321,6 +321,8 @@ storage<ObjectType, true>::merge(this_type* itr)
     if(itr && !itr->is_initialized())
         return;
 
+    itr->stack_clear();
+
     // create lock but don't immediately lock
     // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
@@ -342,12 +344,6 @@ storage<ObjectType, true>::merge(this_type* itr)
     if(itr && itr->is_initialized() && !this->is_initialized())
     {
         graph().insert_subgraph_after(_data().head(), itr->data().head());
-        /*
-        pre_order_iterator _nitr = itr->data().head();
-        if(_nitr.begin())
-            _nitr = _nitr.begin();
-        graph().append_child(_data().head(), _nitr);
-        */
         m_initialized = itr->m_initialized;
         m_finalized   = itr->m_finalized;
         _copy_hash_ids();
@@ -858,7 +854,10 @@ storage<ObjectType, true>::get_shared_manager()
         m_manager         = ::tim::manager::instance();
         using func_t      = ::tim::manager::finalizer_func_t;
         bool   _is_master = singleton_t::is_master(this);
-        func_t _finalize  = [&]() { this_type::get_singleton().reset(this); };
+        func_t _finalize  = [&]() {
+            this->stack_clear();
+            this_type::get_singleton().reset(this);
+        };
         m_manager->add_finalizer(ObjectType::label(), std::move(_finalize), _is_master);
     }
 }
@@ -875,7 +874,10 @@ storage<ObjectType, false>::get_shared_manager()
         m_manager         = ::tim::manager::instance();
         using func_t      = ::tim::manager::finalizer_func_t;
         bool   _is_master = singleton_t::is_master(this);
-        func_t _finalize  = [&]() { this_type::get_singleton().reset(this); };
+        func_t _finalize  = [&]() {
+            this->stack_clear();
+            this_type::get_singleton().reset(this);
+        };
         m_manager->add_finalizer(ObjectType::label(), std::move(_finalize), _is_master);
     }
 }

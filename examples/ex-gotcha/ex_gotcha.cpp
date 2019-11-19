@@ -241,8 +241,8 @@ main(int argc, char** argv)
         {
             printf("[%i]> sum = %8.2f\n", rank, sum);
             printf("\n[%i]> printing storage...\n", rank);
-            tim::complete_list_t::print_storage();
-            tim::settings::auto_output() = false;
+            // tim::complete_list_t::print_storage();
+            // tim::settings::auto_output() = false;
         }
         mpi::barrier();
     }
