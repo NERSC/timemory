@@ -1053,7 +1053,7 @@ public:
         std::unordered_set<ObjectType*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-             itr->stop();
+            itr->stop();
             itr->pop_node();
         }
         m_stack.clear();

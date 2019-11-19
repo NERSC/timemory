@@ -676,7 +676,9 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
 {
     if(devid < 0 || devid >= cuda::device_count())
     {
-        fprintf(stderr, "[cupti_counters]> Invalid device id: %i...\n", devid);
+        int ndev = cuda::device_count();
+        fprintf(stderr, "[cupti_counters]> Invalid device id: %i. # devices: %i...\n",
+                devid, ndev);
         return tuple_type(-1, strvec_t(), strvec_t());
     }
 
