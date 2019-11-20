@@ -33,6 +33,7 @@ add_interface_library(timemory-cudart-static)
 add_interface_library(timemory-nvtx)
 add_interface_library(timemory-caliper)
 add_interface_library(timemory-gotcha)
+add_interface_library(timemory-likwid)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
@@ -60,7 +61,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-gperftools-heap
     timemory-santizier
     timemory-caliper
-    timemory-gotcha)
+    timemory-gotcha
+    timemory-likwid)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -73,6 +75,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-gperftools-cpu
     timemory-caliper
     timemory-gotcha
+    timemory-likwid
     ${_MPI_INTERFACE_LIBRARY})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -848,6 +851,26 @@ else()
     set(TIMEMORY_USE_GOTCHA OFF)
     inform_empty_interface(timemory-gotcha "GOTCHA")
 endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               LIKWID
+#
+#----------------------------------------------------------------------------------------#
+if(TIMEMORY_USE_LIKWID)
+    find_package(LIKWID)
+endif()
+
+if(LIKWID_FOUND)
+    target_link_libraries(timemory-likwid INTERFACE ${LIKWID_LIBRARIES})
+    target_include_directories(timemory-likwid INTERFACE ${LIKWID_INCLUDE_DIRS})
+    target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID)
+else()
+    set(TIMEMORY_USE_LIKWID OFF)
+    inform_empty_interface(timemory-likwid "LIKWID")
+endif()
+
 
 
 #----------------------------------------------------------------------------------------#

@@ -722,6 +722,41 @@ struct is_available<component::gperf_cpu_profiler> : std::false_type
 #endif
 
 //--------------------------------------------------------------------------------------//
+//
+//                              LIKWID
+//
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_LIKWID
+//
+#if !defined(TIMEMORY_USE_LIKWID)
+
+template <>
+struct is_available<component::likwid_perfmon> : std::false_type
+{};
+
+template <>
+struct is_available<component::likwid_nvmon> : std::false_type
+{};
+
+#else
+
+template <>
+struct requires_prefix<component::likwid_perfmon> : std::true_type
+{};
+
+template <>
+struct requires_prefix<component::likwid_nvmon> : std::true_type
+{};
+
+#    if !defined(TIMEMORY_USE_CUDA)
+template <>
+struct is_available<component::likwid_nvmon> : std::false_type
+{};
+#    endif
+
+#endif  // TIMEMORY_USE_LIKWID
+
+//--------------------------------------------------------------------------------------//
 }  // namespace trait
 }  // namespace tim
 

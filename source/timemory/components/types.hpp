@@ -105,8 +105,10 @@ struct virtual_memory;
 struct read_bytes;
 struct written_bytes;
 
-// caliper
+// marker-forwarding
 struct caliper;
+struct likwid_perfmon;
+struct likwid_nvmon;
 
 // cuda
 struct cuda_event;
@@ -136,7 +138,6 @@ using papi_array_t   = papi_array<TIMEMORY_PAPI_ARRAY_SIZE>;
 
 // cupti
 struct cupti_counters;
-
 struct cupti_activity;
 
 template <typename... _Types>

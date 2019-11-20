@@ -61,6 +61,8 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case GPU_ROOFLINE_FLOPS: obj.template init<gpu_roofline_flops>(); break;
         case GPU_ROOFLINE_HP_FLOPS: obj.template init<gpu_roofline_hp_flops>(); break;
         case GPU_ROOFLINE_SP_FLOPS: obj.template init<gpu_roofline_sp_flops>(); break;
+        case LIKWID_NVMON: obj.template init<likwid_nvmon>(); break;
+        case LIKWID_PERFMON: obj.template init<likwid_perfmon>(); break;
         case MONOTONIC_CLOCK: obj.template init<monotonic_clock>(); break;
         case MONOTONIC_RAW_CLOCK: obj.template init<monotonic_raw_clock>(); break;
         case NUM_IO_IN: obj.template init<num_io_in>(); break;
@@ -79,7 +81,6 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case PROCESS_CPU_CLOCK: obj.template init<process_cpu_clock>(); break;
         case PROCESS_CPU_UTIL: obj.template init<process_cpu_util>(); break;
         case READ_BYTES: obj.template init<read_bytes>(); break;
-        case WALL_CLOCK: obj.template init<real_clock>(); break;
         case STACK_RSS: obj.template init<stack_rss>(); break;
         case SYS_CLOCK: obj.template init<system_clock>(); break;
         case THREAD_CPU_CLOCK: obj.template init<thread_cpu_clock>(); break;
@@ -90,6 +91,7 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case VOLUNTARY_CONTEXT_SWITCH:
             obj.template init<voluntary_context_switch>();
             break;
+        case WALL_CLOCK: obj.template init<wall_clock>(); break;
         case WRITTEN_BYTES: obj.template init<written_bytes>(); break;
         case TIMEMORY_COMPONENTS_END:
         default: break;
@@ -201,6 +203,14 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(GPU_ROOFLINE_SP_FLOPS);
         }
+        else if(itr == "likwid_gpu" || itr == "likwid_nvmon")
+        {
+            vec.push_back(LIKWID_NVMON);
+        }
+        else if(itr == "likwid_cpu" || itr == "likwid_perfmon")
+        {
+            vec.push_back(LIKWID_PERFMON);
+        }
         else if(itr == "monotonic_clock")
         {
             vec.push_back(MONOTONIC_CLOCK);
@@ -273,10 +283,6 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(READ_BYTES);
         }
-        else if(itr == "real_clock" || itr == "wall_clock")
-        {
-            vec.push_back(WALL_CLOCK);
-        }
         else if(itr == "stack_rss")
         {
             vec.push_back(STACK_RSS);
@@ -309,6 +315,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(VOLUNTARY_CONTEXT_SWITCH);
         }
+        else if(itr == "real_clock" || itr == "virtual_clock" || itr == "wall_clock")
+        {
+            vec.push_back(WALL_CLOCK);
+        }
         else if(itr == "write_bytes" || itr == "written_bytes")
         {
             vec.push_back(WRITTEN_BYTES);
@@ -326,6 +336,7 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
                 "'gpu_roofline_dp', 'gpu_roofline_dp_flops', 'gpu_roofline_flops', "
                 "'gpu_roofline_half', 'gpu_roofline_hp', 'gpu_roofline_hp_flops', "
                 "'gpu_roofline_single', 'gpu_roofline_sp', 'gpu_roofline_sp_flops', "
+                "'likwid_cpu', 'likwid_gpu', 'likwid_nvmon', 'likwid_perfmon', "
                 "'monotonic_clock', 'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
                 "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
                 "'num_msg_sent', 'num_signals', 'num_swap', 'nvtx', 'nvtx_marker', "
@@ -333,8 +344,8 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
                 "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
                 "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
                 "'thread_cpu_clock', 'thread_cpu_util', 'trip_count', 'user_clock', "
-                "'virtual_memory', 'voluntary_context_switch', 'write_bytes', "
-                "'written_bytes']\n",
+                "'virtual_clock', 'virtual_memory', 'voluntary_context_switch', "
+                "'wall_clock', 'write_bytes', 'written_bytes']\n",
                 itr.c_str());
         }
     }

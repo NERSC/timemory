@@ -32,6 +32,11 @@ if(WIN32)
     set(_BUILD_CALIPER OFF)
 endif()
 
+set(_NON_APPLE_UNIX OFF)
+if(UNIX AND NOT APPLE)
+    set(_NON_APPLE_UNIX ON)
+endif()
+
 # Check if CUDA can be enabled
 if(NOT DEFINED TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUDA)
     set(_USE_CUDA ON)
@@ -167,7 +172,7 @@ add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_DEVELOPER
     "Enable building with developer flags" OFF)
-if(UNIX AND NOT APPLE)
+if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
 endif()
@@ -184,8 +189,8 @@ add_option(TIMEMORY_USE_EXCEPTIONS
     "Signal handler throws exceptions (default: exit)" OFF  ${_FEATURE})
 add_option(TIMEMORY_USE_EXTERN_INIT
     "Do initialization in library instead of headers" OFF)
-add_option(TIMEMORY_USE_MPI "Enable MPI usage"
-    ON ${_FEATURE})
+add_option(TIMEMORY_USE_MPI
+    "Enable MPI usage" ON ${_FEATURE})
 add_option(TIMEMORY_USE_SANITIZER
     "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_PAPI
@@ -206,7 +211,9 @@ add_option(TIMEMORY_USE_NVTX
     "Enable NVTX marking API" ${_USE_CUDA} ${_FEATURE})
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_BUILD_CALIPER} ${_FEATURE})
-if(UNIX AND NOT APPLE)
+if(_NON_APPLE_UNIX)
+    add_option(TIMEMORY_USE_LIKWID
+        "Enable LIKWID marker forwarding" ON ${_FEATURE})
     add_option(TIMEMORY_USE_GOTCHA
         "Enable GOTCHA" ON ${_FEATURE})
 endif()

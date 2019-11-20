@@ -49,6 +49,8 @@ components = [
     "gperf_cpu_profiler",
     "gperf_heap_profiler",
     "virtual_memory",
+    "likwid_perfmon",
+    "likwid_nvmon",
 ]
 
 #
@@ -80,6 +82,8 @@ mangled_strings = {
     "caliper": ["cali"],
     "written_bytes": ["write_bytes"],
     "nvtx_marker": ["nvtx"],
+    "likwid_perfmon": ["likwid_cpu"],
+    "likwid_nvmon": ["likwid_gpu"],
 }
 
 recommended_types = {

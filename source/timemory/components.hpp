@@ -62,6 +62,11 @@
 #    include "timemory/components/nvtx_marker.hpp"
 #endif
 
+// likwid
+#if defined(TIMEMORY_USE_LIKWID)
+#    include "timemory/components/likwid.hpp"
+#endif
+
 // GPU hardware counter components
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/components/cupti_activity.hpp"
