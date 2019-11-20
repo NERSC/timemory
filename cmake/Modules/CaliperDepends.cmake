@@ -16,12 +16,12 @@ set(WITH_CALLPATH   OFF                   CACHE BOOL "Enable libunwind in Calipe
 #    set(USE_EXTERNAL_GOTCHA ON)
 #endif()
 
-if(PAPI_pfm_LIBRARY)
-    set(WITH_LIBPFM     ON CACHE BOOL "Enable libpfm in Caliper")
-    set(LIBPFM_LIBRARY  ${PAPI_pfm_LIBRARY})
-else()
-    set(WITH_LIBPFM     OFF)
-endif()
+#if(PAPI_pfm_LIBRARY)
+#    set(WITH_LIBPFM     ON CACHE BOOL "Enable libpfm in Caliper")
+#    set(LIBPFM_LIBRARY  ${PAPI_pfm_LIBRARY})
+#else()
+#    set(WITH_LIBPFM     OFF)
+#endif()
 
 if(TIMEMORY_USE_CUPTI)
     set(CUPTI_PREFIX      ${CUPTI_ROOT_DIR}         CACHE PATH      "CUpti root directory")

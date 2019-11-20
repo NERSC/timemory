@@ -42,13 +42,19 @@ GIGABYTE = 1.0e9
 VERBOSE = int(os.environ.get("TIMEMORY_VERBOSE", "0"))
 
 
-__all__ = ['smooth',
-           'get_peak_flops',
+__all__ = ['get_json_entry',
+           'ert_params',
+           'ert_counter',
+           'ert_data',
+           'smooth',
+           'read_ert',
+           'get_peak_ops',
            'get_peak_bandwidth',
            'get_hotspots',
            'get_color',
            'plot_parameters',
-           'plot_roofline']
+           'plot_roofline',
+           ]
 
 #   labels_type m_labels = {{"label", "working-set", "trials", "total-bytes",
 #                            "total-ops", "ops-per-set", "counter", "device", "dtype",
