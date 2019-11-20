@@ -200,6 +200,14 @@ struct secondary_data : std::false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait that signifies the component only has relevant values if it is not collapsed
+/// into the master thread
+///
+template <typename _Tp>
+struct thread_scope_only : std::false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Trait>
 inline std::string
@@ -365,6 +373,20 @@ struct custom_label_printing<component::cpu_roofline<_Types...>> : std::true_typ
 
 template <>
 struct custom_laps_printing<component::trip_count> : std::true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+//
+//                              THREAD SCOPE ONLY
+//
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct thread_scope_only<component::thread_cpu_clock> : std::true_type
+{};
+
+template <>
+struct thread_scope_only<component::thread_cpu_util> : std::true_type
 {};
 
 //--------------------------------------------------------------------------------------//

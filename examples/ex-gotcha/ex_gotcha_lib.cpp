@@ -58,7 +58,7 @@ tuple_t
 do_exp_work(int nitr)
 {
     printf("\n");
-    PRINT_HERE("");
+    PRINT_HERE("%s", "");
     printf("\n");
 
     auto fsum = work<float>("expf", nitr, [](float val) -> float { return expf(val); },
@@ -79,7 +79,7 @@ tuple_t
 do_cos_work(int nitr, const std::pair<float, double>& pair)
 {
     printf("\n");
-    PRINT_HERE("");
+    PRINT_HERE("%s", "");
     printf("\n");
 
     auto fsum = work<float>("cosf", nitr, [](float val) -> float { return cosf(val); },
@@ -108,7 +108,7 @@ tuple_t
 do_cos_work_ref(int nitr, std::pair<float, double>& _pair)
 {
     printf("\n");
-    PRINT_HERE("");
+    PRINT_HERE("%s", "");
     printf("\n");
 
     auto fsum = work<float>("cosf", nitr, [](float val) -> float { return cosf(val); },
@@ -136,7 +136,7 @@ tuple_t
 do_cos_work_cref(int nitr, const std::pair<float, double>&)
 {
     printf("\n");
-    PRINT_HERE("");
+    PRINT_HERE("%s", "");
     printf("\n");
 
     auto fsum = work<float>("cosf", nitr, [](float val) -> float { return cosf(val); },

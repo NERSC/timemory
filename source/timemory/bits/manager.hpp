@@ -191,7 +191,11 @@ manager::finalize()
         m_lock->lock();
 
     m_is_finalizing = true;
-    PRINT_HERE("finalizing...");
+    if(settings::debug())
+    {
+        printf("\n");
+        PRINT_HERE("%s", "finalizing...");
+    }
 
     auto _finalize = [](finalizer_list_t& _finalizers) {
         // reverse to delete the most recent additions first

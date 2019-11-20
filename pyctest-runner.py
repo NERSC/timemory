@@ -115,6 +115,7 @@ def configure():
     # always echo dart measurements
     os.environ["TIMEMORY_DART_OUTPUT"] = "ON"
     os.environ["TIMEMORY_DART_COUNT"] = "1"
+    os.environ["PYCTEST_TESTING"] = "ON"
 
     return args
 
@@ -177,6 +178,9 @@ def run_pyctest():
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
         "USE_EXTERN_TEMPLATES": "ON" if args.extern_templates else "OFF",
+        "USE_PAPI": "OFF" if args.no_papi else "ON",
+        "USE_MPI": "OFF" if args.no_mpi else "ON",
+        "USE_CALIPER": "ON" if args.caliper else "OFF",
     }
 
     if not args.no_c:
@@ -331,7 +335,11 @@ def run_pyctest():
     # create tests
     #
 
-    test_env = "CPUPROFILE_FREQUENCY=1000;CPUPROFILE_REALTIME=1;CALI_CONFIG_PROFILE=runtime-report"
+    test_env = "CPUPROFILE_FREQUENCY=2000;CPUPROFILE_REALTIME=1;CALI_CONFIG_PROFILE=runtime-report"
+
+    os.environ["CPUPROFILE_FREQUENCY"] = "2000"
+    os.environ["CPUPROFILE_REALTIME"] = "1"
+    os.environ["CALI_CONFIG_PROFILE"] = "runtime-report"
 
     pyct.test(construct_name("test-optional-off"),
               construct_command(["./ex_optional_off"], args),
@@ -470,11 +478,25 @@ def run_pyctest():
               construct_command(["./ex_python_minimal"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "480",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-gotcha"),
               construct_command(["./ex_gotcha"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-likwid"),
+              construct_command(["./ex_likwid"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-python-likwid"),
+              construct_command(["./ex_python_likwid"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",

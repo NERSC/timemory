@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 include(CheckLanguage)
 
+# travis has limited resources so running ERT takes a while
+if("$ENV{USER}" STREQUAL "travis" AND "$ENV{CONTINUOUS_INTEGRATION}" STREQUAL "true")
+    return()
+endif()
+
 set(_USE_CUDA ON)
 # this is for internal use
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")

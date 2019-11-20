@@ -26,9 +26,12 @@
 /** \file storage.hpp
  * \headerfile storage.hpp "timemory/utility/storage.hpp"
  * Storage of the call-graph for each component. Each component has a thread-local
- * singleton that hold the call-graph. When a worker thread is deleted, it merges
+ * singleton that holds the call-graph. When a worker thread is deleted, it merges
  * itself back into the master thread storage. When the master thread is deleted,
- * it handles I/O (i.e. text file output, JSON output, stdout output).
+ * it handles I/O (i.e. text file output, JSON output, stdout output). This class
+ * needs some refactoring for clarity and probably some non-templated inheritance
+ * for common features because this is probably the most convoluted piece of
+ * development in the entire repository.
  *
  */
 
@@ -56,6 +59,7 @@
 
 #include <cstdint>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -125,27 +129,84 @@ class storage<ObjectType, true>
 {
 public:
     //----------------------------------------------------------------------------------//
+    //  forward decl of some internal types
     //
-    using this_type     = storage<ObjectType, true>;
-    using string_t      = std::string;
+    struct result_node;
+    struct graph_node;
+    friend struct result_node;
+    friend struct graph_node;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    using component_type = ObjectType;
+    using this_type      = storage<ObjectType, true>;
+    using string_t       = std::string;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
-    using result_type   = std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t,
-                                   std::vector<std::string>>;
-    using result_array_type = std::vector<result_type>;
+    using node_tuple_t  = std::tuple<uint64_t, ObjectType, int64_t>;
+    using result_array_t = std::vector<result_node>;
+    using mpi_result_t   = std::vector<result_array_t>;
+    using strvector_t    = std::vector<string_t>;
+    using result_tuple_t =
+        std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t, strvector_t>;
 
-    using graph_node_tuple = std::tuple<uint64_t, ObjectType, int64_t>;
-
-    class graph_node;
-    friend class graph_node;
-
-    class graph_node : public graph_node_tuple
+    //----------------------------------------------------------------------------------//
+    //
+    //      Result returned from get()
+    //
+    //----------------------------------------------------------------------------------//
+    struct result_node : public result_tuple_t
     {
-    public:
+        using base_type = result_tuple_t;
+
+        result_node() = default;
+        result_node(base_type&& _base)
+        : result_tuple_t(std::forward<base_type>(_base))
+        {}
+        ~result_node()                  = default;
+        result_node(const result_node&) = default;
+        result_node(result_node&&)      = default;
+        result_node& operator=(const result_node&) = default;
+        result_node& operator=(result_node&&) = default;
+
+        uint64_t&    hash() { return std::get<0>(*this); }
+        ObjectType&  obj() { return std::get<1>(*this); }
+        string_t&    prefix() { return std::get<2>(*this); }
+        int64_t&     depth() { return std::get<3>(*this); }
+        uint64_t&    rolling_hash() { return std::get<4>(*this); }
+        strvector_t& hierarchy() { return std::get<5>(*this); }
+
+        const uint64_t&    hash() const { return std::get<0>(*this); }
+        const ObjectType&  obj() const { return std::get<1>(*this); }
+        const string_t&    prefix() const { return std::get<2>(*this); }
+        const int64_t&     depth() const { return std::get<3>(*this); }
+        const uint64_t&    rolling_hash() const { return std::get<4>(*this); }
+        const strvector_t& hierarchy() const { return std::get<5>(*this); }
+
+        uint64_t data_size() const
+        {
+            auto prefix_size    = prefix().length() * sizeof(char);
+            auto hierarchy_size = sizeof(hierarchy());
+            for(const auto& itr : hierarchy())
+                hierarchy_size += itr.length() * sizeof(char);
+
+            return sizeof(hash()) + sizeof(obj()) + prefix_size + sizeof(depth()) +
+                   sizeof(rolling_hash()) + hierarchy_size;
+        }
+    };
+
+    //----------------------------------------------------------------------------------//
+    //
+    //      Storage type in graph
+    //
+    //----------------------------------------------------------------------------------//
+    struct graph_node : public node_tuple_t
+    {
         using this_type       = graph_node;
-        using base_type       = graph_node_tuple;
+        using base_type       = node_tuple_t;
         using data_value_type = typename ObjectType::value_type;
         using data_base_type  = typename ObjectType::base_type;
         using string_t        = std::string;
@@ -173,10 +234,6 @@ public:
         {}
 
         ~graph_node() {}
-        // explicit graph_node(const this_type&) = default;
-        // explicit graph_node(this_type&&)      = default;
-        // graph_node& operator=(const this_type&) = default;
-        // graph_node& operator=(this_type&&) = default;
 
         bool operator==(const graph_node& rhs) const
         {
@@ -242,6 +299,7 @@ public:
         static std::atomic<int32_t> _skip_once;
         if(_skip_once++ > 0)
         {
+            // make sure all worker instances have a copy of the hash id and aliases
             auto               _master       = singleton_t::master_instance();
             graph_hash_map_t   _hash_ids     = *_master->get_hash_ids();
             graph_hash_alias_t _hash_aliases = *_master->get_hash_aliases();
@@ -741,7 +799,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    result_array_type get()
+    result_array_t get()
     {
         //------------------------------------------------------------------------------//
         //
@@ -786,7 +844,7 @@ public:
 
         // convert graph to a vector
         auto convert_graph = [&]() {
-            result_array_type _list;
+            result_array_t _list;
             {
                 // the head node should always be ignored
                 int64_t _min = std::numeric_limits<int64_t>::max();
@@ -797,11 +855,11 @@ public:
                 {
                     if(itr->depth() > _min)
                     {
-                        auto                     _depth  = itr->depth() - (_min + 1);
-                        auto                     _prefix = _compute_modified_prefix(*itr);
-                        auto                     _rolling = itr->id();
-                        auto                     _parent  = graph_t::parent(itr);
-                        std::vector<std::string> _hierarchy;
+                        auto        _depth   = itr->depth() - (_min + 1);
+                        auto        _prefix  = _compute_modified_prefix(*itr);
+                        auto        _rolling = itr->id();
+                        auto        _parent  = graph_t::parent(itr);
+                        strvector_t _hierarchy;
                         if(_parent && _parent->depth() > _min)
                         {
                             while(_parent)
@@ -816,26 +874,31 @@ public:
                         if(_hierarchy.size() > 1)
                             std::reverse(_hierarchy.begin(), _hierarchy.end());
                         _hierarchy.push_back(get_prefix(*itr));
-                        result_type _entry(itr->id(), itr->obj(), _prefix, _depth,
-                                           _rolling, _hierarchy);
+                        result_node _entry({ itr->id(), itr->obj(), _prefix, _depth,
+                                             _rolling, _hierarchy });
                         _list.push_back(_entry);
                     }
                 }
             }
 
-            if(!settings::collapse_threads())
+            bool _thread_scope_only = trait::thread_scope_only<ObjectType>::value;
+            if(!settings::collapse_threads() || _thread_scope_only)
                 return _list;
 
-            result_array_type _combined;
+            result_array_t _combined;
 
-            auto _equiv = [&](const result_type& _lhs, const result_type& _rhs) {
+            //--------------------------------------------------------------------------//
+            //
+            auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
                 return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
                         std::get<2>(_lhs) == std::get<2>(_rhs) &&
                         std::get<3>(_lhs) == std::get<3>(_rhs) &&
                         std::get<4>(_lhs) == std::get<4>(_rhs));
             };
 
-            auto _exists = [&](const result_type& _lhs) {
+            //--------------------------------------------------------------------------//
+            //
+            auto _exists = [&](const result_node& _lhs) {
                 for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
                 {
                     if(_equiv(_lhs, *itr))
@@ -844,6 +907,9 @@ public:
                 return _combined.end();
             };
 
+            //--------------------------------------------------------------------------//
+            //  collapse duplicates
+            //
             for(const auto& itr : _list)
             {
                 auto citr = _exists(itr);
@@ -858,7 +924,84 @@ public:
             }
             return _combined;
         };
+
         return convert_graph();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    mpi_result_t mpi_get()
+    {
+#if !defined(TIMEMORY_USE_MPI)
+        return mpi_result_t(1, get());
+#else
+        mpi::barrier(mpi::comm_world_v);
+
+        int mpi_rank = mpi::rank();
+        int mpi_size = mpi::size();
+
+        //------------------------------------------------------------------------------//
+        //  Used to convert a result to a serialization
+        //
+        auto send_serialize = [&](const result_array_t& src) {
+            std::stringstream ss;
+            {
+                auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+                cereal::JSONOutputArchive::Options opt(16, space, 0);
+                cereal::JSONOutputArchive          oa(ss);
+                oa(serializer::make_nvp("data", src));
+            }
+            return ss.str();
+        };
+
+        //------------------------------------------------------------------------------//
+        //  Used to convert the serialization to a result
+        //
+        auto recv_serialize = [&](const std::string& src) {
+            result_array_t    ret;
+            std::stringstream ss;
+            ss << src;
+            {
+                cereal::JSONInputArchive ia(ss);
+                ia(serializer::make_nvp("data", ret));
+                if(settings::debug())
+                    printf("[RECV: %i]> data size: %lli\n", mpi_rank,
+                           (long long int) ret.size());
+            }
+            return ret;
+        };
+
+        mpi_result_t results(mpi_size);
+
+        auto ret     = get();
+        auto str_ret = send_serialize(ret);
+
+        if(mpi_rank == 0)
+        {
+            for(int i = 1; i < mpi_size; ++i)
+            {
+                std::string str;
+                if(settings::debug())
+                    printf("[RECV: %i]> starting %i\n", mpi_rank, i);
+                mpi::recv(str, i, 0, mpi::comm_world_v);
+                if(settings::debug())
+                    printf("[RECV: %i]> completed %i\n", mpi_rank, i);
+                results[i] = recv_serialize(str);
+            }
+            results[mpi_rank] = ret;
+        }
+        else
+        {
+            if(settings::debug())
+                printf("[SEND: %i]> starting\n", mpi_rank);
+            mpi::send(str_ret, 0, 0, mpi::comm_world_v);
+            if(settings::debug())
+                printf("[SEND: %i]> completed\n", mpi_rank);
+            return mpi_result_t(1, ret);
+        }
+
+        return results;
+#endif
     }
 
 protected:
@@ -913,15 +1056,17 @@ protected:
 
         template <typename _Archive, typename _Type = ObjectType,
                   typename std::enable_if<(is_enabled<_Type>::value), char>::type = 0>
-        static void serialize(storage_t& _obj, _Archive& ar, const unsigned int version)
+        static void serialize(storage_t& _obj, _Archive& ar, const unsigned int version,
+                              const result_array_t& result)
         {
             typename tim::trait::array_serialization<ObjectType>::type type;
-            _obj.serialize_me(type, ar, version);
+            _obj.serialize_me(type, ar, version, result);
         }
 
         template <typename _Archive, typename _Type = ObjectType,
                   typename std::enable_if<!(is_enabled<_Type>::value), char>::type = 0>
-        static void serialize(storage_t&, _Archive&, const unsigned int)
+        static void serialize(storage_t&, _Archive&, const unsigned int,
+                              const result_array_t&)
         {}
     };
 
@@ -933,7 +1078,21 @@ public:
     template <typename _Archive>
     void serialize(_Archive& ar, const unsigned int version)
     {
-        write_serialization<this_type>::serialize(*this, ar, version);
+        /*
+        auto&& _results = mpi_get();
+        for(uint64_t i = 0; i < _results.size(); ++i)
+        {
+            auto num_instances = instance_count().load();
+            ar.setNextName("rank");
+            ar.startNode();
+            ar.makeArray();
+            ar(cereal::make_nvp("rank_id", i));
+            ar(cereal::make_nvp("concurrency", num_instances));
+            write_serialization<this_type>::serialize(*this, ar, version, _results.at(i));
+            ar.finishNode();
+        }*/
+        consume_parameters(ar, version);
+        throw std::runtime_error("Should not be called!");
     }
 
     void get_shared_manager();
@@ -968,11 +1127,13 @@ private:
 
     // tim::trait::array_serialization<ObjectType>::type == TRUE
     template <typename Archive>
-    void serialize_me(std::true_type, Archive&, const unsigned int);
+    void serialize_me(std::true_type, Archive&, const unsigned int,
+                      const result_array_t&);
 
     // tim::trait::array_serialization<ObjectType>::type == FALSE
     template <typename Archive>
-    void serialize_me(std::false_type, Archive&, const unsigned int);
+    void serialize_me(std::false_type, Archive&, const unsigned int,
+                      const result_array_t&);
 
     // tim::trait::external_output_handling<ObjectType>::type == TRUE
     void external_print(std::true_type);
@@ -1381,7 +1542,7 @@ class storage : public impl::storage<_Tp, implements_storage<_Tp>::value>
 ///
 template <typename _Tp>
 void
-serialize_storage(const std::string&, const _Tp&, int64_t = 1, int64_t = mpi::rank());
+serialize_storage(const std::string&, const _Tp&);
 
 //--------------------------------------------------------------------------------------//
 
@@ -1403,6 +1564,8 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
         StorageType*    master     = singleton_t::master_instance_ptr();
         std::thread::id master_tid = singleton_t::master_thread_id();
         std::thread::id this_tid   = std::this_thread::get_id();
+
+        tim::mpi::barrier();
 
         if(ptr && master && ptr != master)
         {

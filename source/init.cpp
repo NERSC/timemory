@@ -27,6 +27,8 @@
  *
  */
 
+#define TIMEMORY_BUILD_EXTERN_INIT
+
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/utility/macros.hpp"
@@ -88,16 +90,40 @@ extern "C"
     {
         static auto _manager = timemory_mpi_manager_master_instance();
         tim::consume_parameters(_manager);
-        printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
-               __LINE__);
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
+                   __LINE__);
+        }
         ::tim::timemory_init(*argc, *argv);
         return PMPI_Init(argc, argv);
     }
 
+    int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
+    {
+        if(req != MPI_THREAD_MULTIPLE)
+            throw std::runtime_error(
+                "Error! Invalid call to MPI_Init_thread(...)! timemory requires "
+                "MPI_Init_thread(int*, char***, MPI_THREAD_MULTIPLE, int*)");
+
+        static auto _manager = timemory_mpi_manager_master_instance();
+        tim::consume_parameters(_manager);
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
+        ::tim::timemory_init(*argc, *argv);
+        return PMPI_Init_thread(argc, argv, req, prov);
+    }
+
     int MPI_Finalize()
     {
-        printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__, __FILE__,
-               __LINE__);
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
         auto manager = timemory_mpi_manager_master_instance();
         if(manager)
             manager->finalize();
@@ -220,6 +246,7 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, file_output, "TIMEMORY_FILE_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, text_output, "TIMEMORY_TEXT_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_output, "TIMEMORY_DART_OUTPUT", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, time_output, "TIMEMORY_TIME_OUTPUT", true)
 
 // general settings
 TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
@@ -229,6 +256,8 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                              std::numeric_limits<uint16_t>::max())
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, time_format, "TIMEMORY_TIME_FORMAT",
+                             "%F_%I.%M.%S_%p")
 
 // general formatting
 TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, precision, "TIMEMORY_PRECISION", -1)

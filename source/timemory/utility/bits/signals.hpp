@@ -57,24 +57,24 @@ dummy_func(int)
 
 inline signal_settings::signals_data_t::signals_data_t()
 : signals_active(false)
-, signals_default({
-      sys_signal::sHangup,       sys_signal::sInterrupt,    sys_signal::sQuit,
-      sys_signal::sIllegal,      sys_signal::sTrap,         sys_signal::sAbort,
-      sys_signal::sEmulate,      sys_signal::sKill,         sys_signal::sBus,
-      sys_signal::sSegFault,     sys_signal::sSystem,       sys_signal::sPipe,
-      sys_signal::sAlarm,        sys_signal::sTerminate,    sys_signal::sUrgent,
-      sys_signal::sStop,         sys_signal::sCPUtime,      sys_signal::sFileSize,
-      sys_signal::sVirtualAlarm, sys_signal::sProfileAlarm,
-  })
+, signals_default(
+      { sys_signal::Hangup,       sys_signal::Interrupt,    sys_signal::Quit,
+        sys_signal::Illegal,      sys_signal::Trap,         sys_signal::Abort,
+        sys_signal::Emulate,      sys_signal::Kill,         sys_signal::Bus,
+        sys_signal::SegFault,     sys_signal::System,       sys_signal::Pipe,
+        sys_signal::Alarm,        sys_signal::Terminate,    sys_signal::Urgent,
+        sys_signal::Stop,         sys_signal::CPUtime,      sys_signal::FileSize,
+        sys_signal::VirtualAlarm, sys_signal::ProfileAlarm, sys_signal::User1,
+        sys_signal::User2 })
 , signals_enabled(signals_default)
 , signals_disabled()
 , signals_exit_func(internal::dummy_func)
 {
 #if defined(DEBUG)
-    signals_default.insert(sys_signal::sFPE);
-    signals_enabled.insert(sys_signal::sFPE);
+    signals_default.insert(sys_signal::FPE);
+    signals_enabled.insert(sys_signal::FPE);
 #else
-    signals_disabled.insert(sys_signal::sFPE);
+    signals_disabled.insert(sys_signal::FPE);
 #endif
 }
 
@@ -116,27 +116,29 @@ signal_settings::check_environment()
     using match_t = std::pair<std::string, sys_signal>;
 
     auto _list = {
-        match_t("HANGUP", sys_signal::sHangup),
-        match_t("INTERRUPT", sys_signal::sInterrupt),
-        match_t("QUIT", sys_signal::sQuit),
-        match_t("ILLEGAL", sys_signal::sIllegal),
-        match_t("TRAP", sys_signal::sTrap),
-        match_t("ABORT", sys_signal::sAbort),
-        match_t("EMULATE", sys_signal::sEmulate),
-        match_t("FPE", sys_signal::sFPE),
-        match_t("KILL", sys_signal::sKill),
-        match_t("BUS", sys_signal::sBus),
-        match_t("SEGFAULT", sys_signal::sSegFault),
-        match_t("SYSTEM", sys_signal::sSystem),
-        match_t("PIPE", sys_signal::sPipe),
-        match_t("ALARM", sys_signal::sAlarm),
-        match_t("TERMINATE", sys_signal::sTerminate),
-        match_t("URGENT", sys_signal::sUrgent),
-        match_t("STOP", sys_signal::sStop),
-        match_t("CPUTIME", sys_signal::sCPUtime),
-        match_t("FILESIZE", sys_signal::sFileSize),
-        match_t("VIRTUALALARM", sys_signal::sVirtualAlarm),
-        match_t("PROFILEALARM", sys_signal::sProfileAlarm),
+        match_t("HANGUP", sys_signal::Hangup),
+        match_t("INTERRUPT", sys_signal::Interrupt),
+        match_t("QUIT", sys_signal::Quit),
+        match_t("ILLEGAL", sys_signal::Illegal),
+        match_t("TRAP", sys_signal::Trap),
+        match_t("ABORT", sys_signal::Abort),
+        match_t("EMULATE", sys_signal::Emulate),
+        match_t("FPE", sys_signal::FPE),
+        match_t("KILL", sys_signal::Kill),
+        match_t("BUS", sys_signal::Bus),
+        match_t("SEGFAULT", sys_signal::SegFault),
+        match_t("SYSTEM", sys_signal::System),
+        match_t("PIPE", sys_signal::Pipe),
+        match_t("ALARM", sys_signal::Alarm),
+        match_t("TERMINATE", sys_signal::Terminate),
+        match_t("URGENT", sys_signal::Urgent),
+        match_t("STOP", sys_signal::Stop),
+        match_t("CPUTIME", sys_signal::CPUtime),
+        match_t("FILESIZE", sys_signal::FileSize),
+        match_t("VIRTUALALARM", sys_signal::VirtualAlarm),
+        match_t("PROFILEALARM", sys_signal::ProfileAlarm),
+        match_t("USER1", sys_signal::User1),
+        match_t("USER2", sys_signal::User2),
     };
 
     for(auto itr : _list)

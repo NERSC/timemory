@@ -176,6 +176,7 @@ public:
     inline bool report_at_exit() const { return m_report_at_exit; }
 
     inline bool             store() const { return m_temporary_object.store(); }
+    inline data_type&       data() { return m_temporary_object.data(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
@@ -353,5 +354,44 @@ get_labeled(const auto_list<_Types...>& _obj)
 #define TIMEMORY_VARIADIC_AUTO_LIST(tag, ...)                                            \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \
     TIMEMORY_AUTO_LIST(_TIM_TYPEDEF(__LINE__), tag);
+
+//======================================================================================//
+//
+//      std::get operator
+//
+namespace std
+{
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(tim::auto_list<Types...>& obj) -> decltype(get<N>(obj.data()))
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(const tim::auto_list<Types...>& obj) -> decltype(get<N>(obj.data()))
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(tim::auto_list<Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::auto_list<Types...>>(obj).data()))
+{
+    using obj_type = tim::auto_list<Types...>;
+    return get<N>(std::forward<obj_type>(obj).data());
+}
+
+//======================================================================================//
+
+}  // namespace std
 
 //======================================================================================//

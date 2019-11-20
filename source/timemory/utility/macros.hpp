@@ -365,27 +365,30 @@
 //======================================================================================//
 
 #if !defined(PRINT_HERE)
-#    define PRINT_HERE(extra)                                                            \
-        printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#    define PRINT_HERE(fmt, ...)                                                         \
+        printf("> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__, __LINE__,          \
+               __VA_ARGS__)
 #endif
 
 #if !defined(DEBUG_PRINT_HERE)
 #    if defined(DEBUG)
-#        define DEBUG_PRINT_HERE(extra)                                                  \
-            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#        define DEBUG_PRINT_HERE(fmt, ...)                                               \
+            printf("> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__, __LINE__,      \
+                   __VA_ARGS__)
 #    else
-#        define DEBUG_PRINT_HERE(extra)
+#        define DEBUG_PRINT_HERE(fmt, ...)
 #    endif
 #endif
 
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
-#        define PRETTY_PRINT_HERE(extra)                                                 \
-            printf("> [%s@'%s':%i] %s...\n", __PRETTY_FUNCTION__, __FILE__, __LINE__,    \
-                   extra)
+#        define PRETTY_PRINT_HERE(fmt, ...)                                              \
+            printf("> [%s@'%s':%i] " fmt "...\n", __PRETTY_FUNCTION__, __FILE__,         \
+                   __LINE__, __VA_ARGS__)
 #    else
-#        define PRETTY_PRINT_HERE(extra)                                                 \
-            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#        define PRETTY_PRINT_HERE(fmt, ...)                                              \
+            printf("> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__, __LINE__,      \
+                   __VA_ARGS__)
 #    endif
 #endif
 

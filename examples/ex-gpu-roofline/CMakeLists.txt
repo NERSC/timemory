@@ -11,6 +11,8 @@ endif()
 
 project(timemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
 
+option(BUILD_COMBINED_ROOFLINE "Build a combined roofline example" ON)
+
 add_library(gpu-roofline-compile-options INTERFACE)
 target_compile_options(gpu-roofline-compile-options INTERFACE
     $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
@@ -53,18 +55,23 @@ add_executable(ex-gpu-roofline-double          ${EXE_NAME}.cpp)
 target_link_libraries(ex-gpu-roofline-double   timemory-gpu-roofline-example gpu-fp-double)
 set_target_properties(ex-gpu-roofline-double   PROPERTIES OUTPUT_NAME ${EXE_NAME}.dp)
 
-# using double-precision
-add_executable(ex-gpu-roofline                 ${EXE_NAME}.cpp)
-target_link_libraries(ex-gpu-roofline          timemory-gpu-roofline-example)
-set_target_properties(ex-gpu-roofline          PROPERTIES OUTPUT_NAME ${EXE_NAME})
+# using all-precision
+if(BUILD_COMBINED_ROOFLINE)
+    add_executable(ex-gpu-roofline                 ${EXE_NAME}.cpp)
+    target_link_libraries(ex-gpu-roofline          timemory-gpu-roofline-example)
+    set_target_properties(ex-gpu-roofline          PROPERTIES OUTPUT_NAME ${EXE_NAME})
+endif()
 
 install(
     TARGETS
-        ex-gpu-roofline
         ex-gpu-roofline-single
         ex-gpu-roofline-double
     DESTINATION
         bin)
+
+if(TARGET ex-gpu-roofline)
+    install(TARGETS ex-gpu-roofline DESTINATION bin)
+endif()
 
 if(TARGET ex-gpu-roofline-half)
     install(TARGETS ex-gpu-roofline-half DESTINATION bin)

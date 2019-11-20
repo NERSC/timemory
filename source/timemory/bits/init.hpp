@@ -117,7 +117,10 @@ extern "C" int
 MPI_Finalize();
 
 extern "C" int
-MPI_Init(int*, char***);
+MPI_Init(int* argc, char*** argv);
+
+extern "C" int
+MPI_Init_thread(int* argc, char*** argv, int required, int* provided);
 
 #    if !defined(TIMEMORY_EXTERN_INIT)
 inline ::tim::manager*
@@ -134,16 +137,40 @@ extern "C"
     {
         static auto _manager = timemory_mpi_manager_master_instance();
         tim::consume_parameters(_manager);
-        printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
-               __LINE__);
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
+                   __LINE__);
+        }
         ::tim::timemory_init(*argc, *argv);
         return PMPI_Init(argc, argv);
     }
 
+    int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
+    {
+        if(req != MPI_THREAD_MULTIPLE)
+            throw std::runtime_error(
+                "Error! Invalid call to MPI_Init_thread(...)! timemory requires "
+                "MPI_Init_thread(int*, char***, MPI_THREAD_MULTIPLE, int*)");
+
+        static auto _manager = timemory_mpi_manager_master_instance();
+        tim::consume_parameters(_manager);
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
+                   __LINE__);
+        }
+        ::tim::timemory_init(*argc, *argv);
+        return PMPI_Init_thread(argc, argv, req, prov);
+    }
+
     int MPI_Finalize()
     {
-        printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__, __FILE__,
-               __LINE__);
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
         auto manager = timemory_mpi_manager_master_instance();
         if(manager)
             manager->finalize();

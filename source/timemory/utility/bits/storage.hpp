@@ -412,9 +412,9 @@ void storage<ObjectType, true>::external_print(std::false_type)
     if(!m_initialized && !m_finalized)
         return;
 
-    auto num_instances = instance_count().load();
-    auto requires_json = trait::requires_json<ObjectType>::value;
-    auto label         = ObjectType::label();
+    auto                  requires_json = trait::requires_json<ObjectType>::value;
+    auto                  label         = ObjectType::label();
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
 
     if(!singleton_t::is_master(this))
     {
@@ -466,7 +466,25 @@ void storage<ObjectType, true>::external_print(std::false_type)
             return;
         }
 
-        auto _results = this->get();
+        auto _results     = this->get();
+        auto _mpi_results = this->mpi_get();
+
+        if(_mpi_results.size() > 0)
+        {
+            if(mpi::rank() != 0)
+                return;
+            else
+            {
+                _results.clear();
+                for(const auto& sitr : _mpi_results)
+                {
+                    for(const auto& ritr : sitr)
+                    {
+                        _results.push_back(ritr);
+                    }
+                }
+            }
+        }
 
 #if defined(DEBUG)
         if(tim::settings::debug() && tim::settings::verbose() > 3)
@@ -536,13 +554,44 @@ void storage<ObjectType, true>::external_print(std::false_type)
         if((_file_output && _json_output) || _json_forced)
         {
             printf("\n");
-            auto jname = settings::compose_output_filename(label, ".json", m_node_init,
-                                                           &m_node_rank);
+            auto jname = settings::compose_output_filename(label, ".json");
             if(jname.length() > 0)
             {
                 printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
                        jname.c_str());
-                serialize_storage(jname, *this, num_instances, m_node_rank);
+                {
+                    using serial_write_t        = write_serialization<this_type>;
+                    auto          num_instances = instance_count().load();
+                    std::ofstream ofs(jname.c_str());
+                    if(ofs)
+                    {
+                        // ensure json write final block during destruction
+                        // before the file is closed
+                        //  Option args: precision, spacing, indent size
+                        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
+                        cereal::JSONOutputArchive          oa(ofs, opts);
+                        oa.setNextName("timemory");
+                        oa.startNode();
+                        oa.setNextName("ranks");
+                        oa.startNode();
+                        oa.makeArray();
+                        for(uint64_t i = 0; i < _mpi_results.size(); ++i)
+                        {
+                            oa.startNode();
+                            oa(cereal::make_nvp("rank", i));
+                            oa(cereal::make_nvp("concurrency", num_instances));
+                            serial_write_t::serialize(*this, oa, 1, _mpi_results.at(i));
+                            oa.finishNode();
+                        }
+                        oa.finishNode();
+                        oa(cereal::make_nvp("environment", *env_settings::instance()));
+                        oa.finishNode();
+                    }
+                    if(ofs)
+                        ofs << std::endl;
+                    ofs.close();
+                }
+                // serialize_storage(jname, *this);
             }
         }
         else if(_file_output && _text_output)
@@ -736,9 +785,9 @@ template <typename ObjectType>
 template <typename Archive>
 void
 storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
-                                        const unsigned int version)
+                                        const unsigned int    version,
+                                        const result_array_t& graph_list)
 {
-    auto&& graph_list = get();
     if(graph_list.size() == 0)
         return;
 
@@ -768,9 +817,9 @@ template <typename ObjectType>
 template <typename Archive>
 void
 storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
-                                        const unsigned int version)
+                                        const unsigned int    version,
+                                        const result_array_t& graph_list)
 {
-    auto&& graph_list = get();
     if(graph_list.size() == 0)
         return;
 
@@ -811,23 +860,21 @@ storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
 
 template <typename _Tp>
 void
-tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency,
-                       int64_t rank)
+tim::serialize_storage(const std::string& fname, const _Tp& obj)
 {
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-    // std::stringstream     ss;
-    std::ofstream ofs(fname.c_str());
+    std::ofstream         ofs(fname.c_str());
     if(ofs)
     {
+        using component_type = typename _Tp::component_type;
+        auto label           = component_type::label().c_str();
         // ensure json write final block during destruction before the file is closed
         //                                  args: precision, spacing, indent size
         cereal::JSONOutputArchive::Options opts(12, spacing, 2);
         cereal::JSONOutputArchive          oa(ofs, opts);
-        oa.setNextName("rank");
+        oa.setNextName("timemory");
         oa.startNode();
-        oa(cereal::make_nvp("rank_id", rank));
-        oa(cereal::make_nvp("concurrency", concurrency));
-        oa(cereal::make_nvp("data", obj));
+        oa(cereal::make_nvp(label, obj));
         oa(cereal::make_nvp("environment", *env_settings::instance()));
         oa.finishNode();
     }

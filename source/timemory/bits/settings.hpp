@@ -30,7 +30,10 @@
 
 #include <cstdint>
 #include <cstring>
+#include <ctime>
+#include <iostream>
 #include <limits>
+#include <locale>
 #include <string>
 
 #if !defined(TIMEMORY_DEFAULT_ENABLED)
@@ -69,6 +72,19 @@ namespace settings
 
 using string_t = std::string;
 
+inline string_t
+get_local_datetime(const char* dt_format)
+{
+    std::stringstream ss;
+    std::time_t       t = std::time(nullptr);
+    char              mbstr[100];
+    if(std::strftime(mbstr, sizeof(mbstr), dt_format, std::localtime(&t)))
+    {
+        ss << mbstr;
+    }
+    return ss.str();
+}
+
 //======================================================================================//
 //
 //                  GENERAL SETTINGS THAT APPLY TO MULTIPLE COMPONENTS
@@ -84,6 +100,7 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, file_output, "TIMEMORY_FILE_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, text_output, "TIMEMORY_TEXT_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_output, "TIMEMORY_DART_OUTPUT", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, time_output, "TIMEMORY_TIME_OUTPUT", true)
 
 // general settings
 TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
@@ -93,6 +110,8 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                              std::numeric_limits<uint16_t>::max())
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, time_format, "TIMEMORY_TIME_FORMAT",
+                             "%F_%I.%M.%S_%p")
 
 // general formatting
 TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, precision, "TIMEMORY_PRECISION", -1)
@@ -323,6 +342,12 @@ inline string_t
 get_output_prefix()
 {
     auto dir = output_path();
+    if(time_output())
+    {
+        if(dir.length() > 0 && dir[dir.length() - 1] != '/')
+            dir += "/";
+        dir += get_local_datetime(time_format().c_str());
+    }
     auto ret = makedir(dir);
     return (ret == 0) ? path_t(dir + string_t("/") + output_prefix())
                       : path_t(string_t("./") + output_prefix());
@@ -340,11 +365,8 @@ compose_output_filename(const string_t& _tag, string_t _ext, bool _mpi_init = fa
     else
     {
         // fallback if not specified
-        if(mpi::is_initialized())
-        {
-            _mpi_init = true;
-            _rank     = mpi::rank();
-        }
+        if(mpi::is_initialized() && _mpi_init)
+            _rank = mpi::rank();
     }
 
     auto _prefix = get_output_prefix();

@@ -113,7 +113,7 @@ initialize(int& argc, char**& argv)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(!is_initialized())
-        MPI_Init(&argc, &argv);
+        MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, nullptr);
 #else
     consume_parameters(argc, argv);
 #endif
@@ -126,7 +126,7 @@ initialize(int* argc, char*** argv)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(!is_initialized())
-        MPI_Init(argc, argv);
+        MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, nullptr);
 #else
     consume_parameters(argc, argv);
 #endif
@@ -296,6 +296,86 @@ get_node_index()
     return rank() / get_num_ranks_per_node();
 }
 
+//--------------------------------------------------------------------------------------//
+
+inline void
+send(const std::string& str, int dest, int tag, comm_t comm)
+{
+#if defined(TIMEMORY_USE_MPI)
+    unsigned long long len = str.size();
+    MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm);
+    if(len != 0)
+        MPI_Send(str.data(), len, MPI_CHAR, dest, tag, comm);
+#else
+    consume_parameters(str, dest, tag, comm);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+recv(std::string& str, int src, int tag, comm_t comm)
+{
+#if defined(TIMEMORY_USE_MPI)
+    unsigned long long len;
+    MPI_Status         s;
+    MPI_Recv(&len, 1, MPI_UNSIGNED_LONG_LONG, src, tag, comm, &s);
+    if(len != 0)
+    {
+        std::vector<char> tmp(len);
+        MPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s);
+        str.assign(tmp.begin(), tmp.end());
+    }
+    else
+    {
+        str.clear();
+    }
+#else
+    consume_parameters(str, src, tag, comm);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+/*
+template <typename _Tp>
+void
+send(const std::vector<_Tp>& vec, int dest, int tag, comm_t comm)
+{
+#if defined(TIMEMORY_USE_MPI)
+    unsigned len = vec.size();
+    MPI_Send(&len, 1, MPI_UNSIGNED, dest, tag, comm);
+    if(len != 0)
+        MPI_Send(vec.data(), len, MPI_INT, dest, tag, comm);
+#else
+    consume_parameters(vec, dest, tag, comm);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline void
+recv(std::vector<_Tp>& vec, int src, int tag, comm_t comm)
+{
+#if defined(TIMEMORY_USE_MPI)
+    unsigned   len;
+    MPI_Status s;
+    MPI_Recv(&len, 1, MPI_UNSIGNED, src, tag, comm, &s);
+
+    if(len != 0)
+    {
+        vec.resize(len);
+        MPI_Recv(vec.data(), len, MPI_INT, src, tag, comm, &s);
+    }
+    else
+    {
+        vec.clear();
+    }
+#else
+    consume_parameters(vec, src, tag, comm);
+#endif
+}
+*/
 //--------------------------------------------------------------------------------------//
 
 }  // namespace mpi

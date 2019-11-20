@@ -24,8 +24,8 @@ file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
-file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
+file(GLOB cxx_extern_sources        ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 
 # bits folder
 set(cxx_headers_category_bits)
@@ -57,8 +57,17 @@ add_subdirectory(timemory)
 # build library setup
 #
 # directly compile sources
-set(C_LIBRARY_SOURCES    ${c_sources}   ${c_headers})
-set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
+set(C_LIBRARY_SOURCES        ${c_sources}   ${c_headers})
+# routinely have problems with OBJECT libraries on Windows
+if(WIN32)
+    set(CXX_EXTERN_SOURCES   )
+    set(CXX_EXTERN_TARGETS   "")
+    set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${cxx_extern_sources} ${timemory_headers} ${cereal_headers})
+else()
+    set(CXX_EXTERN_SOURCES   ${cxx_extern_sources})
+    set(CXX_EXTERN_TARGETS   "$<TARGET_OBJECTS:timemory-cxx-object>")
+    set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
+endif()
 
 set(_ARCH_LIBRARY )
 if(TIMEMORY_USE_ARCH)
@@ -80,6 +89,37 @@ set(_LINKER_LANGUAGE CXX)
 #    set(_LINKER_LANGUAGE CUDA)
 #endif()
 
+# routinely have problems with OBJECT libraries on Windows
+if(NOT WIN32 AND (_BUILD_SHARED_CXX OR _BUILD_STATIC_CXX))
+    build_library(
+        PIC
+        TYPE                OBJECT
+        TARGET_NAME         timemory-cxx-object
+        OUTPUT_NAME         timemory
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
+        SOURCES             ${CXX_EXTERN_SOURCES}
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
+
+    target_link_libraries(timemory-cxx-object PUBLIC
+        timemory-headers
+        timemory-vector
+        timemory-external-shared
+        timemory-external-static)
+
+    target_link_libraries(timemory-cxx-object PRIVATE
+        timemory-compile-options
+        timemory-develop-options
+        timemory-analysis-tools
+        ${_ARCH_LIBRARY})
+
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        target_compile_definitions(timemory-cxx-object PRIVATE DEBUG)
+    endif()
+
+endif()
+
 if(_BUILD_SHARED_CXX)
     build_library(
         PIC
@@ -90,6 +130,7 @@ if(_BUILD_SHARED_CXX)
         LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
+                            ${CXX_EXTERN_TARGETS}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
 
@@ -123,6 +164,7 @@ if(_BUILD_STATIC_CXX)
         LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
+                            ${CXX_EXTERN_TARGETS}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
 

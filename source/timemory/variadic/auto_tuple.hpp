@@ -151,6 +151,7 @@ public:
     inline bool report_at_exit() const { return m_report_at_exit; }
 
     inline bool             store() const { return m_temporary_object.store(); }
+    inline data_type&       data() { return m_temporary_object.data(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
@@ -297,5 +298,44 @@ get_labeled(const auto_tuple<_Types...>& _obj)
 #define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
     TIMEMORY_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
+
+//======================================================================================//
+//
+//      std::get operator
+//
+namespace std
+{
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+typename std::tuple_element<N, std::tuple<Types...>>::type&
+get(tim::auto_tuple<Types...>& obj)
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+const typename std::tuple_element<N, std::tuple<Types...>>::type&
+get(const tim::auto_tuple<Types...>& obj)
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(tim::auto_tuple<Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::auto_tuple<Types...>>(obj).data()))
+{
+    using obj_type = tim::auto_tuple<Types...>;
+    return get<N>(std::forward<obj_type>(obj).data());
+}
+
+//======================================================================================//
+
+}  // namespace std
 
 //======================================================================================//

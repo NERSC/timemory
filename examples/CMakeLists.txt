@@ -13,15 +13,21 @@ project(timemory-Examples C CXX)
 #
 
 add_subdirectory(ex-c)
+add_subdirectory(ex-minimal)
 add_subdirectory(ex-optional)
 add_subdirectory(ex-cxx-basic)
 add_subdirectory(ex-cxx-tuple)
 add_subdirectory(ex-cxx-overhead)
-add_subdirectory(ex-cpu-roofline)
-add_subdirectory(ex-gpu-roofline)
-add_subdirectory(ex-cuda-event)
+
+# external package related
 add_subdirectory(ex-caliper)
-add_subdirectory(ex-ert)
 add_subdirectory(ex-gotcha)
 add_subdirectory(ex-likwid)
-add_subdirectory(ex-minimal)
+
+# GPU related
+add_subdirectory(ex-cuda-event)
+
+# Roofline related
+add_subdirectory(ex-ert)
+add_subdirectory(ex-cpu-roofline)
+add_subdirectory(ex-gpu-roofline)

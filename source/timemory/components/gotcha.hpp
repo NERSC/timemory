@@ -605,14 +605,14 @@ private:
             return _ret;
         }
         if(settings::debug())
-            PRINT_HERE("nullptr to original function!");
+            PRINT_HERE("%s", "nullptr to original function!");
 
         // allow re-entrance into wrapper
         _global_suppress = false;
         _data.ready      = true;
 #else
         consume_parameters(_args...);
-        PRINT_HERE("should not be here!");
+        PRINT_HERE("%s", "should not be here!");
 #endif
         return _Ret{};
     }
@@ -668,7 +668,7 @@ private:
         }
         else if(settings::debug())
         {
-            PRINT_HERE("nullptr to original function!");
+            PRINT_HERE("%s", "nullptr to original function!");
         }
 
         // allow re-entrance into wrapper
@@ -676,7 +676,7 @@ private:
         _data.ready      = true;
 #else
         consume_parameters(_args...);
-        PRINT_HERE("should not be here!");
+        PRINT_HERE("%s", "should not be here!");
 #endif
     }
 

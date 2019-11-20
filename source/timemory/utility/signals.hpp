@@ -78,27 +78,29 @@ namespace tim
 
 enum class sys_signal : int
 {
-    sHangup       = SIGHUP,   // 1
-    sInterrupt    = SIGINT,   // 2
-    sQuit         = SIGQUIT,  // 3
-    sIllegal      = SIGILL,
-    sTrap         = SIGTRAP,
-    sAbort        = SIGABRT,
-    sEmulate      = SIGEMT,
-    sFPE          = SIGFPE,
-    sKill         = SIGKILL,
-    sBus          = SIGBUS,
-    sSegFault     = SIGSEGV,
-    sSystem       = SIGSYS,
-    sPipe         = SIGPIPE,
-    sAlarm        = SIGALRM,
-    sTerminate    = SIGTERM,
-    sUrgent       = SIGURG,
-    sStop         = SIGTSTP,
-    sCPUtime      = SIGXCPU,
-    sFileSize     = SIGXFSZ,
-    sVirtualAlarm = SIGVTALRM,
-    sProfileAlarm = SIGPROF
+    Hangup       = SIGHUP,   // 1
+    Interrupt    = SIGINT,   // 2
+    Quit         = SIGQUIT,  // 3
+    Illegal      = SIGILL,
+    Trap         = SIGTRAP,
+    Abort        = SIGABRT,
+    Emulate      = SIGEMT,
+    FPE          = SIGFPE,
+    Kill         = SIGKILL,
+    Bus          = SIGBUS,
+    SegFault     = SIGSEGV,
+    System       = SIGSYS,
+    Pipe         = SIGPIPE,
+    Alarm        = SIGALRM,
+    Terminate    = SIGTERM,
+    Urgent       = SIGURG,
+    Stop         = SIGTSTP,
+    CPUtime      = SIGXCPU,
+    FileSize     = SIGXFSZ,
+    VirtualAlarm = SIGVTALRM,
+    ProfileAlarm = SIGPROF,
+    User1        = SIGUSR1,
+    User2        = SIGUSR2
 };
 
 //--------------------------------------------------------------------------------------//
@@ -188,7 +190,7 @@ timemory_stack_backtrace(std::ostream& ss)
     using size_type = std::string::size_type;
 
     //   from http://linux.die.net/man/3/backtrace_symbols_fd
-#    define BSIZE 50
+#    define BSIZE 100
     void*     buffer[BSIZE];
     size_type nptrs   = backtrace(buffer, BSIZE);
     char**    strings = backtrace_symbols(buffer, nptrs);
@@ -211,37 +213,17 @@ timemory_stack_backtrace(std::ostream& ss)
             return _str;
     };
 
-    for(size_type j = 0; j < nptrs; ++j)
+    for(size_type j = 0; j < BSIZE; ++j)
     {
+        if(!strings[j])
+            continue;
         std::string _str = strings[j];
-        // if(_str.find("+") != std::string::npos)
-        //    _str.replace(_str.find_last_of("+"), 1, " +");
 
-        auto _delim = tim::delimit(_str, " \t\n\r()");
+        auto _delim = tim::delimit(_str, " \t\n\r");
+
         // found a GCC compiler bug when passing _transform to delimit
         for(auto& itr : _delim)
             itr = _transform(itr);
-
-        // find trailing " + ([0-9]+)"
-        // auto itr = _delim.begin();
-        // for(; itr != _delim.end(); ++itr)
-        //    if(*itr == "+")
-        //        break;
-
-        // get rid of trailing " + ([0-9]+)"
-        // if(itr != _delim.end())
-        //    _delim.erase(itr, _delim.end());
-
-        // get rid of hex strings if not last param
-        // for(itr = _delim.begin(); itr != _delim.end(); ++itr)
-        //    if(itr->substr(0, 2) == "0x" || itr->substr(0, 3) == "[0x" ||
-        //       itr->substr(0, 3) == "+0x")
-        //    {
-        //        if(itr + 1 == _delim.end())
-        //            continue;
-        //        _delim.erase(itr);
-        //        --itr;
-        //    }
 
         // accumulate the max lengths of the strings
         for(size_type i = 0; i < _delim.size(); ++i)
@@ -258,11 +240,12 @@ timemory_stack_backtrace(std::ostream& ss)
 
     ss << std::endl << "Call Stack:" << std::endl;
     int nwidth = std::max(2, static_cast<int32_t>(std::log10(nptrs)) + 1);
-    for(size_type j = 0; j < nptrs; ++j)
+    for(size_type j = 0; j < dmang_buf.size(); ++j)
     {
         // print the back-trace numver
         ss << "[" << std::setw(nwidth) << nptrs - j - 1 << "/" << std::setw(nwidth)
            << nptrs << "] : ";
+
         // loop over fields
         for(size_type i = 0; i < dmang_len.size(); ++i)
         {
@@ -299,10 +282,10 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
     tim::termination_signal_message(sig, sinfo, message);
 
 #    if !defined(TIMEMORY_EXCEPTIONS)
-    if(tim::signal_settings::enabled().find(tim::sys_signal::sAbort) !=
+    if(tim::signal_settings::enabled().find(tim::sys_signal::Abort) !=
        tim::signal_settings::enabled().end())
     {
-        tim::signal_settings::disable(tim::sys_signal::sAbort);
+        tim::signal_settings::disable(tim::sys_signal::Abort);
     }
 #    endif
 

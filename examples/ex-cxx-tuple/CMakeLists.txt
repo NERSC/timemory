@@ -3,16 +3,16 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(timemory-CXX-Tuple-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cxx_tuple)
-set(COMPONENTS compile-options papi threading analysis-tools)
+set(COMPONENTS compile-options threading analysis-tools)
 
 option(USE_MPI "Enable MPI" ON)
 if(USE_MPI)
     list(APPEND COMPONENTS mpi)
 endif()
 
-option(USE_CALIPER "Enable caliper" ON)
-if(USE_CALIPER)
-    list(APPEND COMPONENTS caliper)
+option(USE_PAPI "Enable PAPI" ON)
+if(USE_PAPI)
+    list(APPEND COMPONENTS papi)
 endif()
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-cxx-tuple-example)

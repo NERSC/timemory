@@ -144,18 +144,6 @@ struct pointer_deleter;
 template <typename _Tp>
 struct pointer_counter;
 
-template <typename _Tp>
-struct set_width;
-
-template <typename _Tp>
-struct set_precision;
-
-template <typename _Tp>
-struct set_format_flags;
-
-template <typename _Tp>
-struct set_units;
-
 }  // namespace operation
 
 namespace policy
@@ -232,6 +220,10 @@ struct iterable_measurement;
 
 template <typename _Tp>
 struct secondary_data;
+
+template <typename _Tp>
+struct thread_scope_only;
+
 }  // namespace trait
 
 }  // namespace tim
