@@ -173,29 +173,18 @@ public:
         result_node& operator=(result_node&&) = default;
 
         uint64_t&    hash() { return std::get<0>(*this); }
-        ObjectType&  obj() { return std::get<1>(*this); }
+        ObjectType&  data() { return std::get<1>(*this); }
         string_t&    prefix() { return std::get<2>(*this); }
         int64_t&     depth() { return std::get<3>(*this); }
         uint64_t&    rolling_hash() { return std::get<4>(*this); }
         strvector_t& hierarchy() { return std::get<5>(*this); }
 
         const uint64_t&    hash() const { return std::get<0>(*this); }
-        const ObjectType&  obj() const { return std::get<1>(*this); }
+        const ObjectType&  data() const { return std::get<1>(*this); }
         const string_t&    prefix() const { return std::get<2>(*this); }
         const int64_t&     depth() const { return std::get<3>(*this); }
         const uint64_t&    rolling_hash() const { return std::get<4>(*this); }
         const strvector_t& hierarchy() const { return std::get<5>(*this); }
-
-        uint64_t data_size() const
-        {
-            auto prefix_size    = prefix().length() * sizeof(char);
-            auto hierarchy_size = sizeof(hierarchy());
-            for(const auto& itr : hierarchy())
-                hierarchy_size += itr.length() * sizeof(char);
-
-            return sizeof(hash()) + sizeof(obj()) + prefix_size + sizeof(depth()) +
-                   sizeof(rolling_hash()) + hierarchy_size;
-        }
     };
 
     //----------------------------------------------------------------------------------//
@@ -395,24 +384,23 @@ public:
             return;
 
         if(settings::debug())
-            printf("[%s]> finalizing...\n", ObjectType::label().c_str());
+            PRINT_HERE("[%s]> finalizing...", ObjectType::label().c_str());
+
+        bool _is_master = singleton_t::is_master(this);
 
         m_finalized = true;
-        if(!singleton_t::is_master(this))
-        {
-            worker_is_finalizing() = true;
-            if(m_thread_init)
-                ObjectType::thread_finalize_policy(this);
-        }
-        else
-        {
+        worker_is_finalizing() = true;
+        if(_is_master)
             master_is_finalizing() = true;
-            worker_is_finalizing() = true;
-            if(m_thread_init)
-                ObjectType::thread_finalize_policy(this);
-            if(m_global_init)
+
+        if(m_thread_init)
+            ObjectType::thread_finalize_policy(this);
+
+        if(_is_master && m_global_init)
                 ObjectType::global_finalize_policy(this);
-        }
+
+        if(settings::debug())
+            PRINT_HERE("[%s]> finalizing...", ObjectType::label().c_str());
     }
 
     bool    is_initialized() const { return m_initialized; }
@@ -1536,13 +1524,11 @@ class storage : public impl::storage<_Tp, implements_storage<_Tp>::value>
 //--------------------------------------------------------------------------------------//
 /// args:
 ///     1) filename
-///     2) reference to storage object
-///     3) concurrency
-///     4) mpi rank
+///     2) reference an object
 ///
 template <typename _Tp>
 void
-serialize_storage(const std::string&, const _Tp&);
+generic_serialization(const std::string&, const _Tp&);
 
 //--------------------------------------------------------------------------------------//
 

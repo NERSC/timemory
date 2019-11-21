@@ -182,8 +182,14 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
     }
 
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
-        // execute the callback
-        _counter.configure(tid);
+        using opmutex_t = std::mutex;
+        using oplock_t = std::unique_lock<opmutex_t>;
+        static opmutex_t opmutex;
+        {
+            oplock_t _lock(opmutex);
+            // execute the callback
+            _counter.configure(tid);
+        }
         // allocate buffer
         auto     buf = _counter.get_buffer();
         uint64_t n   = _counter.params.working_set_min;
@@ -238,7 +244,9 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
 
             // wait master thread notifies to proceed
             if(fbarrier)
-                fbarrier->spin_wait();
+                fbarrier->notify_wait();
+            //if(lbarrier)
+            //    lbarrier->spin_wait();
 
             // get instance of object measuring something during the calculation
             _Counter ct = _counter.get_counter();
@@ -288,14 +296,21 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
 
             // wait master thread notifies to proceed
             if(lbarrier)
-                lbarrier->spin_wait();
+                lbarrier->notify_wait();
+            //if(fbarrier)
+            //    fbarrier->spin_wait();
 
             // stop the timer or anything else being recorded
             ct.stop();
 
             // store the result
             if(tid == 0)
+            {
+                // ensure there is not a data race if more than one thread somehow
+                // has a tid of 0
+                oplock_t _lock(opmutex);
                 _counter.record(ct, n, ntrials, _Nops, _itr_params);
+            }
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
@@ -305,6 +320,10 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
 
         _counter.destroy_buffer(buf);
     };
+
+    // guard against multiple threads trying to call ERT for some reason
+    static std::mutex _mtx;
+    std::unique_lock<std::mutex> _lock(_mtx);
 
     mpi::barrier();  // synchronize MPI processes
 
@@ -322,6 +341,18 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
         // create the threads
         for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
             threads.push_back(std::thread(_opfunc, i, &fbarrier, &lbarrier));
+
+        uint64_t n   = _counter.params.working_set_min;
+        while(n <= _counter.nsize)
+        {
+            // wait until all threads have also called notify_wait() then release
+            // barrier to start
+            fbarrier.notify_wait();
+            // wait until all threads have also called notify_wait() then release
+            // barrier to finish
+            lbarrier.notify_wait();
+            n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
+        }
 
         // wait for threads to finish
         for(auto& itr : threads)
@@ -351,9 +382,21 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
     // execute a single parameter
-    ops_main<_Nops>(_counter, ops_func, store_func);
+    ops_main<_Nops>(std::ref(_counter).get(), ops_func, store_func);
     // continue the recursive loop
-    ops_main<_Nextra...>(_counter, ops_func, store_func);
+    ops_main<_Nextra...>(std::ref(_counter).get(), ops_func, store_func);
+}
+
+//--------------------------------------------------------------------------------------//
+///
+///     This is invoked when TIMEMORY_USER_ERT_FLOPS is empty
+///
+template <size_t... _Nops, typename _Device, typename _Tp,
+          typename _Counter, typename _FuncOps, typename _FuncStore,
+          enable_if_t<(sizeof...(_Nops) == 0), int> = 0>
+void
+ops_main(counter<_Device, _Tp, _Counter>&, _FuncOps&&, _FuncStore&&)
+{
 }
 
 //--------------------------------------------------------------------------------------//

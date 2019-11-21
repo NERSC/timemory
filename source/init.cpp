@@ -246,7 +246,7 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, file_output, "TIMEMORY_FILE_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, text_output, "TIMEMORY_TEXT_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_output, "TIMEMORY_DART_OUTPUT", false)
-TIMEMORY_ENV_STATIC_ACCESSOR(bool, time_output, "TIMEMORY_TIME_OUTPUT", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, time_output, "TIMEMORY_TIME_OUTPUT", false)
 
 // general settings
 TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
@@ -303,6 +303,10 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, papi_multiplexing, "TIMEMORY_PAPI_MULTIPLEXIN
 
 /// errors with PAPI will throw
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, papi_fail_on_error, "TIMEMORY_PAPI_FAIL_ON_ERROR",
+                             false)
+
+/// errors with PAPI will be suppressed
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, papi_quiet, "TIMEMORY_PAPI_QUIET",
                              false)
 
 /// PAPI hardware counters

@@ -38,7 +38,7 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<real_clock>;
+extern template struct base<wall_clock>;
 extern template struct base<system_clock>;
 extern template struct base<user_clock>;
 extern template struct base<cpu_clock>;
@@ -59,13 +59,13 @@ extern template struct base<thread_cpu_util, std::pair<int64_t, int64_t>>;
 //--------------------------------------------------------------------------------------//
 // the system's real time (i.e. wall time) clock, expressed as the amount of time since
 // the epoch.
-struct real_clock : public base<real_clock, int64_t>
+struct wall_clock : public base<wall_clock, int64_t>
 {
     using ratio_t    = std::nano;
     using value_type = int64_t;
-    using base_type  = base<real_clock, value_type>;
+    using base_type  = base<wall_clock, value_type>;
 
-    static std::string label() { return "real"; }
+    static std::string label() { return "wall"; }
     static std::string description() { return "wall time"; }
     static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
@@ -92,10 +92,10 @@ struct real_clock : public base<real_clock, int64_t>
 };
 
 //--------------------------------------------------------------------------------------//
-// alias for "real_clock"
-using wall_clock = real_clock;
-// alias for "real_clock" since time is a construct of our consciousness
-using virtual_clock = real_clock;
+// alias for "wall_clock"
+using real_clock = wall_clock;
+// alias for "wall_clock" since time is a construct of our consciousness
+using virtual_clock = wall_clock;
 
 //--------------------------------------------------------------------------------------//
 // uses clock() -- only relevant as a time when a different is computed
@@ -366,7 +366,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     static std::string description() { return "cpu utilization"; }
     static value_type  record()
     {
-        return value_type(cpu_clock::record(), real_clock::record());
+        return value_type(cpu_clock::record(), wall_clock::record());
     }
     double get_display() const
     {
@@ -432,7 +432,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     static std::string description() { return "process cpu utilization"; }
     static value_type  record()
     {
-        return value_type(process_cpu_clock::record(), real_clock::record());
+        return value_type(process_cpu_clock::record(), wall_clock::record());
     }
     double get_display() const
     {
@@ -498,7 +498,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     static std::string description() { return "thread cpu utilization"; }
     static value_type  record()
     {
-        return value_type(thread_cpu_clock::record(), real_clock::record());
+        return value_type(thread_cpu_clock::record(), wall_clock::record());
     }
     double get_display() const
     {

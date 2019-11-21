@@ -100,7 +100,7 @@ struct cpu_roofline
     using record_type  = std::function<value_type()>;
 
     using device_t    = device::cpu;
-    using count_type  = real_clock;
+    using count_type  = wall_clock;
     using ratio_t     = typename count_type::ratio_t;
     using types_tuple = std::tuple<_Types...>;
 
@@ -267,6 +267,10 @@ struct cpu_roofline
                 _events.push_back(itr);
         }
 
+        // found that PAPI occassionally seg-faults during add_event...
+        static std::mutex _mutex;
+        std::unique_lock<std::mutex> _lock(_mutex);
+
         papi::create_event_set(_event_set_ptr(), settings::papi_multiplexing());
         if(event_set() == PAPI_NULL)
         {
@@ -284,8 +288,11 @@ struct cpu_roofline
                                papi::get_event_code_name(itr).c_str());
                 }
                 else
-                    fprintf(stderr, "[cpu_roofline]> Failed to add event %s\n",
-                            papi::get_event_code_name(itr).c_str());
+                {
+                    if(!settings::papi_quiet())
+                        fprintf(stderr, "[cpu_roofline]> Failed to add event %s\n",
+                                papi::get_event_code_name(itr).c_str());
+                }
             }
             if(_events_ptr()->size() > 0)
                 papi::start(event_set());
@@ -296,6 +303,10 @@ struct cpu_roofline
 
     static void invoke_thread_finalize(storage_type*)
     {
+        // found that PAPI occassionally seg-faults during add_event so adding here too...
+        static std::mutex _mutex;
+        std::unique_lock<std::mutex> _lock(_mutex);
+
         if(event_set() != PAPI_NULL && events().size() > 0)
         {
             // store these for later

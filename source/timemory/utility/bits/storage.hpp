@@ -591,7 +591,6 @@ void storage<ObjectType, true>::external_print(std::false_type)
                         ofs << std::endl;
                     ofs.close();
                 }
-                // serialize_storage(jname, *this);
             }
         }
         else if(_file_output && _text_output)
@@ -823,7 +822,10 @@ storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
     if(graph_list.size() == 0)
         return;
 
-    ObjectType& obj           = std::get<1>(graph_list.front());
+    // remove those const in case not marked const
+    auto& _graph_list = const_cast<result_array_t&>(graph_list);
+
+    ObjectType& obj           = _graph_list.front().data();
     auto        labels        = obj.label_array();
     auto        descripts     = obj.descript_array();
     auto        units         = obj.unit_array();
@@ -860,22 +862,19 @@ storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
 
 template <typename _Tp>
 void
-tim::serialize_storage(const std::string& fname, const _Tp& obj)
+tim::generic_serialization(const std::string& fname, const _Tp& obj)
 {
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     std::ofstream         ofs(fname.c_str());
     if(ofs)
     {
-        using component_type = typename _Tp::component_type;
-        auto label           = component_type::label().c_str();
         // ensure json write final block during destruction before the file is closed
         //                                  args: precision, spacing, indent size
         cereal::JSONOutputArchive::Options opts(12, spacing, 2);
         cereal::JSONOutputArchive          oa(ofs, opts);
         oa.setNextName("timemory");
         oa.startNode();
-        oa(cereal::make_nvp(label, obj));
-        oa(cereal::make_nvp("environment", *env_settings::instance()));
+        oa(cereal::make_nvp("data", obj));
         oa.finishNode();
     }
     if(ofs)

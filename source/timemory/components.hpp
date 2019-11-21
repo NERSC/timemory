@@ -110,7 +110,7 @@ namespace tim
 //
 ///  usage:
 ///      using namespace tim::component;
-///      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
+///      using optional_t = tim::auto_list<wall_clock, cpu_clock, cpu_util, cuda_event>;
 //
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
 ///      tim::initialize(*obj, { CPU_CLOCK, CPU_UTIL });
@@ -133,7 +133,7 @@ initialize(_CompList<_CompTypes...>&               obj,
 ///
 ///  usage:
 ///      using namespace tim::component;
-///      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
+///      using optional_t = tim::auto_list<wall_clock, cpu_clock, cpu_util, cuda_event>;
 ///
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
 ///      tim::initialize(*obj, tim::enumerate_components({ "cpu_clock", "cpu_util"}));

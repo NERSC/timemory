@@ -44,7 +44,7 @@
 // clang-format off
 
 TIMEMORY_DECLARE_EXTERN_TUPLE(minimal_auto_timer_t,
-                              ::tim::component::real_clock,
+                              ::tim::component::wall_clock,
                               ::tim::component::cpu_clock,
                               ::tim::component::cpu_util,
                               ::tim::component::peak_rss)
@@ -64,7 +64,7 @@ TIMEMORY_DECLARE_EXTERN_LIST(minimal_auto_timer_t,
 TIMEMORY_DECLARE_EXTERN_HYBRID(minimal_auto_timer_t)
 
 TIMEMORY_DECLARE_EXTERN_TUPLE(auto_timer_t,
-                              ::tim::component::real_clock,
+                              ::tim::component::wall_clock,
                               ::tim::component::system_clock,
                               ::tim::component::user_clock,
                               ::tim::component::cpu_util,

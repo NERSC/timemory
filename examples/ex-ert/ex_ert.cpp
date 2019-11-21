@@ -82,6 +82,7 @@ main(int argc, char** argv)
     settings::verbose() = 0;
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
     mpi::initialize(argc, argv);
+    tim::enable_signal_detection();
 
     auto data  = ert_data_ptr_t(new ert_data_t());
     auto nproc = mpi::size();
@@ -176,7 +177,6 @@ main(int argc, char** argv)
     ert::serialize(fname, *data);
 
     mpi::finalize();
-
     return 0;
 }
 
@@ -239,6 +239,8 @@ run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_
     //       the ERT execution
     //
     ert_executor_type(config, data, set_counter_device);
+    if(data && (settings::verbose() > 0 || settings::debug()))
+        std::cout << "\n" << *(data) << std::endl;
     printf("\n");
 }
 

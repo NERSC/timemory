@@ -42,6 +42,10 @@
 #    define TIMEMORY_VEC 256
 #endif
 
+#if !defined(TIMEMORY_USER_ERT_FLOPS)
+#    define TIMEMORY_USER_ERT_FLOPS
+#endif
+
 namespace tim
 {
 namespace ert
@@ -327,6 +331,7 @@ public:
         _counter.label = "vector_fma";
         // run the kernels
         ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, fma_func, store_func);
+        ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func);
     }
 };
 
@@ -436,6 +441,7 @@ public:
         _counter.label = "vector_fma";
         // run the kernels
         ops_main<4, 16, 64, 128, 256, 512>(_counter, fma_func, store_func);
+        ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func);
     }
 };
 

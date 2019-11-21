@@ -192,10 +192,7 @@ manager::finalize()
 
     m_is_finalizing = true;
     if(settings::debug())
-    {
-        printf("\n");
         PRINT_HERE("%s", "finalizing...");
-    }
 
     auto _finalize = [](finalizer_list_t& _finalizers) {
         // reverse to delete the most recent additions first
@@ -216,6 +213,9 @@ manager::finalize()
     _finalize(m_master_finalizers);
 
     m_is_finalizing = false;
+
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing...");
 }
 
 //======================================================================================//
@@ -223,6 +223,9 @@ manager::finalize()
 inline void
 manager::exit_hook()
 {
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing...");
+
     try
     {
         papi::shutdown();
@@ -234,6 +237,9 @@ manager::exit_hook()
         }
     } catch(...)
     {}
+
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing...");
 }
 
 //======================================================================================//

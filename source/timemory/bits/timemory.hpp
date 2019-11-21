@@ -54,7 +54,7 @@ using complete_tuple_t = std::tuple<
     component::num_swap, component::nvtx_marker, component::page_rss,
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
-    component::real_clock, component::stack_rss, component::system_clock,
+    component::wall_clock, component::stack_rss, component::system_clock,
     component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
     component::user_clock, component::virtual_memory, component::voluntary_context_switch,
     component::written_bytes>;
@@ -73,7 +73,7 @@ using complete_auto_list_t = auto_list<
     component::num_swap, component::nvtx_marker, component::page_rss,
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
-    component::real_clock, component::stack_rss, component::system_clock,
+    component::wall_clock, component::stack_rss, component::system_clock,
     component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
     component::user_clock, component::virtual_memory, component::voluntary_context_switch,
     component::written_bytes>;
@@ -91,21 +91,21 @@ using complete_list_t = component_list<
     component::num_signals, component::num_swap, component::nvtx_marker,
     component::page_rss, component::papi_array_t, component::peak_rss,
     component::priority_context_switch, component::process_cpu_clock,
-    component::process_cpu_util, component::read_bytes, component::real_clock,
+    component::process_cpu_util, component::read_bytes, component::wall_clock,
     component::stack_rss, component::system_clock, component::thread_cpu_clock,
     component::thread_cpu_util, component::trip_count, component::user_clock,
     component::virtual_memory, component::voluntary_context_switch,
     component::written_bytes>;
 
 using recommended_auto_tuple_t =
-    auto_tuple<component::real_clock, component::system_clock, component::user_clock,
+    auto_tuple<component::wall_clock, component::system_clock, component::user_clock,
                component::cpu_util, component::page_rss, component::peak_rss,
                component::read_bytes, component::written_bytes,
                component::num_minor_page_faults, component::num_major_page_faults,
                component::voluntary_context_switch, component::priority_context_switch>;
 
 using recommended_tuple_t =
-    component_tuple<component::real_clock, component::system_clock, component::user_clock,
+    component_tuple<component::wall_clock, component::system_clock, component::user_clock,
                     component::cpu_util, component::page_rss, component::peak_rss,
                     component::read_bytes, component::written_bytes,
                     component::num_minor_page_faults, component::num_major_page_faults,
@@ -141,7 +141,7 @@ using rusage_components_t = component_tuple<
     component::voluntary_context_switch, component::priority_context_switch>;
 
 using timing_components_t =
-    component_tuple<component::real_clock, component::system_clock, component::user_clock,
+    component_tuple<component::wall_clock, component::system_clock, component::user_clock,
                     component::cpu_clock, component::monotonic_clock,
                     component::monotonic_raw_clock, component::thread_cpu_clock,
                     component::process_cpu_clock, component::cpu_util,
@@ -157,7 +157,7 @@ using standard_rusage_t =
                     component::voluntary_context_switch>;
 
 using standard_timing_t =
-    component_tuple<component::real_clock, component::user_clock, component::system_clock,
+    component_tuple<component::wall_clock, component::user_clock, component::system_clock,
                     component::cpu_clock, component::cpu_util>;
 
 }  // namespace tim

@@ -355,7 +355,6 @@ TEST_F(gotcha_tests, malloc_gotcha)
 {
     using malloc_gotcha_spec_t = malloc_gotcha::gotcha_spec<gotcha_tuple_t>;
     using malloc_gotcha_t      = typename malloc_gotcha_spec_t::gotcha_type;
-    // using malloc_toolset_t     = typename malloc_gotcha_spec_t::component_type;
     using toolset_t = tim::auto_tuple<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
 
     malloc_gotcha_t::get_initializer() = []() {

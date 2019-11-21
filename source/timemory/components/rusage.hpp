@@ -601,7 +601,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 {
     using value_type  = std::tuple<int64_t, int64_t>;
     using base_type   = base<read_bytes, value_type>;
-    using timer_type  = real_clock;
+    using timer_type  = wall_clock;
     using result_type = std::tuple<int64_t, double>;
 
     static int64_t     unit() { return units::kilobyte; }
@@ -677,7 +677,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 {
     using value_type  = std::tuple<int64_t, int64_t>;
     using base_type   = base<written_bytes, value_type>;
-    using timer_type  = real_clock;
+    using timer_type  = wall_clock;
     using result_type = std::tuple<int64_t, double>;
 
     static int64_t     unit() { return units::kilobyte; }

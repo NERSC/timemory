@@ -25,7 +25,7 @@
 #pragma once
 
 // clang-format off
-namespace tim { namespace component { struct real_clock; } }
+namespace tim { namespace component { struct wall_clock; } }
 // clang-format on
 
 namespace tim
@@ -35,10 +35,10 @@ namespace ert
 class thread_barrier;
 struct exec_params;
 
-template <typename _Tp = component::real_clock>
+template <typename _Tp = component::wall_clock>
 class exec_data;
 
-template <typename _Device, typename _Tp, typename _Counter = component::real_clock>
+template <typename _Device, typename _Tp, typename _Counter = component::wall_clock>
 class counter;
 
 template <typename _Device, typename _Tp, typename _Counter>

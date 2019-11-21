@@ -307,8 +307,8 @@ print_mpi_storage()
         std::stringstream ss;
         for(const auto& itr : ret[j])
         {
-            ss << "\t" << std::setw(_w) << std::left << itr.prefix() << " : " << itr.obj()
-               << "\n";
+            ss << "\t" << std::setw(_w) << std::left << itr.prefix() << " : "
+               << itr.data() << "\n";
         }
         std::cout << ss.str();
     }

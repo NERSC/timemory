@@ -40,7 +40,9 @@ import numpy
 
 GIGABYTE = 1.0e9
 VERBOSE = int(os.environ.get("TIMEMORY_VERBOSE", "0"))
-
+FONT_SIZE = 16
+FONT_COLOR = 'black'
+FONT_WEIGHT = 'bold'
 
 __all__ = ['get_json_entry',
            'ert_params',
@@ -54,6 +56,7 @@ __all__ = ['get_json_entry',
            'get_color',
            'plot_parameters',
            'plot_roofline',
+           'FONT_SIZE'
            ]
 
 #   labels_type m_labels = {{"label", "working-set", "trials", "total-bytes",
@@ -76,6 +79,23 @@ def get_json_entry(inp, key):
         if _key in inp:
             return inp[_key]
     return None
+
+
+#==============================================================================#
+#
+def flatten_list(datalist):
+    return [item for sublist in datalist for item in sublist]
+
+
+#==============================================================================#
+#
+def get_font():
+    return {
+        'size': FONT_SIZE,
+        'color':  FONT_COLOR,
+        'weight': FONT_WEIGHT,
+        'family': 'serif',
+    }
 
 
 #==============================================================================#
@@ -187,7 +207,10 @@ def smooth(x, y):
     d = 0
     for i in range(0, len(ys)):
         num = min(len(ys), i+d+1) - max(0, i-d)
-        total = sum(ys[max(0, i-d):min(len(ys), i+d+1)])
+        _beg = max(0, i-d)
+        _end = min(len(ys), i+d+1)
+        _ys = ys[_beg:_end]
+        total = sum(_ys)
         ys[i] = total/float(num)
     return xs, ys
 
@@ -202,7 +225,8 @@ def read_ert(inp):
             return None
         else:
             inst = []
-            for element in _data["ert"]:
+            _ert = _data["ert"]
+            for element in _ert:
                 inst.append(ert_data(element))
             return inst
 
@@ -212,8 +236,8 @@ def read_ert(inp):
             data = data["roofline"]
         inst = _read_ert(data)
 
-    for entry in inst:
-        print("{}\n".format(entry))
+    # for entry in inst:
+    #    print("{}\n".format(entry))
 
     return inst
 
@@ -235,6 +259,7 @@ def get_peak_ops(roof_data, flop_info=None):
         info_list = re.sub(r'[^\w]', ' ', flop_info).split()
         if len(info_list) > 0:
             info = info_list[0] + " GFLOPs/sec"
+
     peak_ops = [peak, info]
     return peak_ops
 
@@ -263,6 +288,7 @@ def get_peak_bandwidth(roof_data):
 
     fraction = 1.05
     samples = 10000
+    bandwidth_data = flatten_list(bandwidth_data)
 
     max_bandwidth = max(bandwidth_data)
     begin = bandwidth_data.index(max_bandwidth)
@@ -325,6 +351,10 @@ def get_hotspots(op_data, ai_data):
     """
     Get the hotspots information
     """
+
+    if not "type" in op_data or not "type" in ai_data:
+        return []
+
     op_data_type = op_data["type"]
     ai_data_type = ai_data["type"]
 
@@ -414,7 +444,7 @@ def get_hotspots(op_data, ai_data):
             runtime += rt
         runtime /= len(runtimes)
 
-        intensity = flop / bandwidth
+        intensity = flop / bandwidth if bandwidth != 0.0 else 0.0
         flop = flop / GIGABYTE / runtime
         proportion = runtime / avg_runtime
         label = re.sub(r'^[|0-9]+', ' ', label).replace("> [cxx] ", "").replace(
@@ -450,7 +480,10 @@ def get_color(proportion):
 #
 class plot_parameters():
     def __init__(self, peak_flops, hotspots):
-        y_digits = int(math.log10(peak_flops[0]))+1
+        _peak = peak_flops[0]
+        if isinstance(_peak, list):
+            _peak = max(_peak)
+        y_digits = int(math.log10(_peak))+1
         self.xmin = 0.01
         self.xmax = 100
         self.ymin = 1
@@ -475,14 +508,19 @@ class plot_parameters():
 
 #==============================================================================#
 #
-def plot_roofline(ai, op, display=False, fname="roofline",
+def plot_roofline(ai_data, op_data, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
                   width=1600, height=1200, dpi=75):
     """
     Plot the roofline
     """
-    op_data = op["rank"]["data"]
-    ai_data = ai["rank"]["data"]
+
+    # if passed the entire JSON (i.e. not invoked using main),
+    # just plot the first rank
+    if "timemory" in ai_data:
+        ai_data = ai_data["timemory"]["ranks"][0]
+    if "timemory" in op_data:
+        op_data = op_data["timemory"]["ranks"][0]
 
     band_data = read_ert(ai_data)
     peak_data = read_ert(op_data)
@@ -493,23 +531,31 @@ def plot_roofline(ai, op, display=False, fname="roofline",
     peak_band = get_peak_bandwidth(band_data)
     hotspots = get_hotspots(op_data, ai_data)
 
+    print("peak_flop = {}, peak_band = {}".format(peak_flop, peak_band))
+
     plot_params = plot_parameters(peak_flop, hotspots)
 
     f = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
     ax = f.add_subplot(111)
 
-    plt.title(title)
+    _title_font = get_font()
+    _title_font['size'] += 8
+    plt.title(title.title(), **_title_font)
     plt.grid(True, which="major", ls="--", lw=1)
     plt.grid(True, which="minor", ls="--", lw=0.5)
     plt.yscale("log")
     plt.xscale("log")
 
-    plt.xlabel(plot_params.xlabel)
-    plt.ylabel(plot_params.ylabel)
+    plt.xlabel(plot_params.xlabel, **get_font())
+    plt.ylabel(plot_params.ylabel, **get_font())
 
     axes = plt.gca()
     axes.set_xlim([plot_params.xmin, plot_params.xmax])
     axes.set_ylim([plot_params.ymin, plot_params.ymax])
+
+    _peak_flop = peak_flop[0]
+    if isinstance(_peak_flop, list):
+        _peak_flop = max(_peak_flop)
 
     # plot bandwidth roof
     x0 = plot_params.xmax
@@ -519,8 +565,8 @@ def plot_roofline(ai, op, display=False, fname="roofline",
         if y1 < plot_params.ymin:
             x1 = plot_params.ymin / band[0]
             y1 = plot_params.ymin
-        x2 = peak_flop[0] / band[0]
-        y2 = peak_flop[0]
+        x2 = _peak_flop / band[0]
+        y2 = _peak_flop
         if x2 < x0:
             x0 = x2
 
@@ -544,13 +590,15 @@ def plot_roofline(ai, op, display=False, fname="roofline",
         angle = (180/pi)*numpy.arctan(Dy / Dx)
 
         text(x_text, y_text, "%.2f %s" %
-             (band[0], band[1]), rotation=angle, rotation_mode='anchor')
+             (band[0], band[1]), rotation=angle, rotation_mode='anchor', **get_font())
         plt.plot([x1, x2], [y1, y2], color='magenta')
 
     # plot computing roof
-    text(plot_params.xmax, peak_flop[0] + 2, "%.2f %s" % (peak_flop[0],
-                                                          peak_flop[1]), horizontalalignment='right')
-    plt.plot([x0, plot_params.xmax], [peak_flop[0], peak_flop[0]], color='b')
+    text(plot_params.xmax, _peak_flop + 2,
+         "%.2f %s" % (_peak_flop, peak_flop[1]),
+         horizontalalignment='right', **get_font())
+
+    plt.plot([x0, plot_params.xmax], [_peak_flop, _peak_flop], color='b')
 
     # plot hotspots
     for element in (hotspots):

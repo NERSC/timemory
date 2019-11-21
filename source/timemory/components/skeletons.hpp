@@ -118,7 +118,7 @@ template <typename... _Types>
 struct gpu_roofline
 {
     using device_t       = device::cpu;
-    using clock_type     = real_clock;
+    using clock_type     = wall_clock;
     using ert_data_t     = ert::exec_data<clock_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
@@ -171,7 +171,7 @@ template <typename... _Types>
 struct cpu_roofline
 {
     using device_t       = device::cpu;
-    using clock_type     = real_clock;
+    using clock_type     = wall_clock;
     using ert_data_t     = ert::exec_data<clock_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 

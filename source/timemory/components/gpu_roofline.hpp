@@ -126,7 +126,7 @@ struct gpu_roofline
     using device_t      = device::gpu;
     using result_type   = std::vector<double>;
     using label_type    = std::vector<std::string>;
-    using count_type    = real_clock;
+    using count_type    = wall_clock;
     using types_tuple   = std::tuple<_Types...>;
 
     using ert_data_t     = ert::exec_data<count_type>;

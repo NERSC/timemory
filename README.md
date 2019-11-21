@@ -27,25 +27,32 @@
 
 ## Why Use timemory?
 
+__*Timemory is arguably the most customizable performance analysis and tuning API available while maintaining a very low overhead.*__
+
 - __*Direct access*__ to performance analysis data in Python and C++
-- __*Header-only interface for majority of C++*__ components
 - Variadic interface to all the utilities from C code
 - Variadic interface to all the utilities from C++ code
 - Variadic interface to all the utilities from Python code
     - Includes context-managers and decorators
 - __*Create your own components*__: any one-time measurement or start/stop paradigm can be wrapped with timemory
-- Flexible and easily extensible interface: __*no data type restrictions in custom components*__
+    - Flexible and easily extensible interface: __*no data type restrictions in custom components*__
 - __*High-performance*__: template meta-programming and lambdas result in extensive inlining
-- Ability to __*arbitrarily switch and combine different measurement types*__ anywhere in application
+- Ability to arbitrarily switch and combine different measurement types anywhere in application
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
     - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 - Arbitrarily add support for:
-    - __*CPU hardware counters*__ via PAPI without an explicit PAPI dependency and zero `#ifdef`
-    - __*GPU hardware counters*__ via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
-    - Generating a __*Roofline*__ for performance-critical sections
-    - Extensive tools provided by [Caliper](https://github.com/LLNL/Caliper) including [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
-    - Colored CUDA NVTX markers
+    - __*CPU hardware counters*__ via PAPI
+    - __*NVIDIA GPU hardware counters*__ via CUPTI
+    - __*NVIDIA GPU tracing*__ via CUPTI
+    - Generating a __*Roofline*__ for performance-critical sections on the CPU and NVIDIA GPUs
+    - Marker forwarding to NVTX for Nsight-Systems and NVprof
+    - Marker forwarding to [LIKWID](https://github.com/RRZE-HPC/likwid)
+    - Marker forwarding to [Caliper](https://github.com/LLNL/Caliper)
+        - Includes marker forwarding to [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
+        - Includes marker forwarding to Intel VTune and Advisor
     - Memory usage
+    - Tool insertiong around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
+        - Many more possible!
     - Wall-clock, cpu-clock, system-clock timing
     - Number of bytes read/written to file-system (and rate)
     - Number of context switches
@@ -99,7 +106,7 @@ the environment:
 
 ```cpp
 using auto_tuple_t = tim::auto_tuple<tim::component::papi_array_t>;
-TIMEMORY_AUTO_TUPLE_CALIPER(roi, auto_tuple_t, "");
+TIMEMORY_CALIPER(roi, auto_tuple_t, "");
 //
 // do something in region of interest...
 //
@@ -125,32 +132,46 @@ region in the offending code, a full profiler should be launched for the fine-gr
 
 There are numerous instrumentation APIs available but very few provide the ability for _users_ to create
 tools/components that will fully integrate with the instrumentation API in their code. The
-simplicity of creating a custom component can be easily demonstrated in ~30 LOC with the
-`trip_count` component:
+simplicity of creating a custom component that inherits category-based formatting properties
+(`is_timing_category`) and timing unit conversion (`uses_timing_units`)
+can be easily demonstrated in ~50 LOC with the `wall_clock` component:
 
 ```cpp
-namespace tim {
-namespace component {
-
-struct trip_count : public base<trip_count, int64_t>
+namespace tim
 {
+namespace component { struct wall_clock; }
+
+namespace trait
+{
+template <> struct is_timing_category<component::wall_clock> : std::true_type {};
+template <> struct uses_timing_units<component::wall_clock> : std::true_type {};
+}  // namespace trait
+
+namespace component
+{
+//
+// the system's real time (i.e. wall time) clock, expressed as the
+// amount of time since the epoch.
+//
+struct wall_clock : public base<wall_clock, int64_t>
+{
+    using ratio_t    = std::nano;
     using value_type = int64_t;
-    using this_type  = trip_count;
-    using base_type  = base<this_type, value_type>;
+    using base_type  = base<wall_clock, value_type>;
 
-    static const short                   precision = 0;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static std::string label() { return "wall"; }
+    static std::string description() { return "wall time"; }
+    static value_type  record()
+    {
+        return tim::get_clock_real_now<int64_t, ratio_t>();
+    }
 
-    static int64_t     unit() { return 1; }
-    static std::string label() { return "trip_count"; }
-    static std::string description() { return "trip counts"; }
-    static std::string display_unit() { return ""; }
-    static value_type  record() { return 1; }
-
-    value_type get_display() const { return accum; }
-    value_type get() const { return accum; }
+    double get_display() const { return get(); }
+    double get() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return static_cast<double>(val) / ratio_t::den * get_unit();
+    }
 
     void start()
     {
@@ -160,15 +181,18 @@ struct trip_count : public base<trip_count, int64_t>
 
     void stop()
     {
-        accum += value;
+        auto tmp = record();
+        accum += (tmp - value);
+        value = std::move(tmp);
         set_stopped();
     }
 };
+
 }  // namespace component
 }  // namespace tim
 ```
 
-## [GOTCHA](https://github.com/LLNL/GOTCHA) and timemory
+## GOTCHA and timemory
 
 C++ codes running on the Linux operating system can take advantage of the built-in
 [GOTCHA](https://github.com/LLNL/GOTCHA) functionality to insert timemory markers __*around external function calls*__.

@@ -197,8 +197,15 @@ public:
         }
 
         auto  label = tim::demangle<_Tp>();
-        data->operator+=(data_type(ss.str(), working_set, trials, total_bytes, total_ops,
-                                   nops, _counter, _Device::name(), label, _itrp));
+        data_type _data(ss.str(), working_set, trials, total_bytes, total_ops,
+                        nops, _counter, _Device::name(), label, _itrp);
+
+        if(settings::verbose() > 1 || settings::debug())
+            std::cout << "[RECORD]> " << _data << std::endl;
+
+        static std::mutex _mutex;
+        std::unique_lock<std::mutex> _lock(_mutex);
+        *data += _data;
     }
 
     //----------------------------------------------------------------------------------//
@@ -277,30 +284,102 @@ private:
 
 template <typename _Counter>
 inline void
-serialize(std::string fname, const exec_data<_Counter>& obj)
+serialize(std::string fname, exec_data<_Counter>& obj)
 {
-    bool                  _init   = mpi::is_initialized();
-    auto                  _rank   = mpi::rank();
-    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-    std::stringstream     ss;
+    using exec_data_vec_t = std::vector<exec_data<_Counter>>;
+
+    mpi::barrier(mpi::comm_world_v);
+
+    int mpi_rank = mpi::rank();
+    int mpi_size = mpi::size();
+    auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert a result to a serialization
+    //
+    auto send_serialize = [&](const exec_data<_Counter>& src) {
+        std::stringstream ss;
+        {
+            cereal::JSONOutputArchive::Options opt(16, space, 0);
+            cereal::JSONOutputArchive          oa(ss, opt);
+            oa(serializer::make_nvp("data", src));
+        }
+        return ss.str();
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert the serialization to a result
+    //
+    auto recv_serialize = [&](const std::string& src) {
+        exec_data<_Counter>    ret;
+        std::stringstream ss;
+        ss << src;
+        {
+            cereal::JSONInputArchive ia(ss);
+            ia(serializer::make_nvp("data", ret));
+            if(settings::debug())
+                printf("[RECV: %i]> data size: %lli\n", mpi_rank,
+                       (long long int) ret.size());
+        }
+        return ret;
+    };
+
+    exec_data_vec_t results(mpi_size);
+    auto str_ret = send_serialize(obj);
+
+    if(mpi_rank == 0)
     {
-        // ensure json write final block during destruction before the file is closed
-        //                                  args: precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
-        cereal::JSONOutputArchive          oa(ss, opts);
-        oa.setNextName("rank");
-        oa.startNode();
-        oa(cereal::make_nvp("rank_id", _rank));
-        oa(cereal::make_nvp("data", obj));
-        oa.finishNode();
+        for(int i = 1; i < mpi_size; ++i)
+        {
+            if(settings::debug())
+                printf("[RECV: %i]> starting %i\n", mpi_rank, i);
+            std::string str;
+            mpi::recv(str, i, 0, mpi::comm_world_v);
+            results[i] = recv_serialize(str);
+            if(settings::debug())
+                printf("[RECV: %i]> completed %i\n", mpi_rank, i);
+        }
+        results[mpi_rank] = std::move(obj);
     }
-    fname = settings::compose_output_filename(fname, ".json", _init, &_rank);
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
-        ofs << ss.str() << std::endl;
     else
     {
-        throw std::runtime_error(std::string("Error opening output file: " + fname));
+        if(settings::debug())
+            printf("[SEND: %i]> starting\n", mpi_rank);
+        mpi::send(str_ret, 0, 0, mpi::comm_world_v);
+        if(settings::debug())
+            printf("[SEND: %i]> completed\n", mpi_rank);
+    }
+
+    if(mpi_rank == 0)
+    {
+        fname = settings::compose_output_filename(fname, ".json");
+        printf("[%i]> Outputting '%s'...\n", mpi_rank, fname.c_str());
+        std::ofstream ofs(fname.c_str());
+        if(ofs)
+        {
+            // ensure json write final block during destruction
+            // before the file is closed
+            //  Option args: precision, spacing, indent size
+            cereal::JSONOutputArchive::Options opts(12, space, 2);
+            cereal::JSONOutputArchive          oa(ofs, opts);
+            oa.setNextName("timemory");
+            oa.startNode();
+            oa.setNextName("ranks");
+            oa.startNode();
+            oa.makeArray();
+            for(uint64_t i = 0; i < results.size(); ++i)
+            {
+                oa.startNode();
+                oa(cereal::make_nvp("rank", i),
+                   cereal::make_nvp("roofline", results.at(i)));
+                oa.finishNode();
+            }
+            oa.finishNode();
+            oa.finishNode();
+        }
+        if(ofs)
+            ofs << std::endl;
+        ofs.close();
     }
 }
 

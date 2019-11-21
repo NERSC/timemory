@@ -46,10 +46,10 @@ namespace auto_timer_types
 {
 using namespace component;
 
-using minimal_tuple_t = component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
+using minimal_tuple_t = component_tuple<wall_clock, cpu_clock, cpu_util, peak_rss>;
 
 using full_tuple_t =
-    component_tuple<real_clock, system_clock, user_clock, cpu_util, peak_rss>;
+    component_tuple<wall_clock, system_clock, user_clock, cpu_util, peak_rss>;
 
 //--------------------------------------------------------------------------------------//
 

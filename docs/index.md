@@ -30,25 +30,32 @@
 
 ## Why Use timemory?
 
+__*Timemory is arguably the most customizable performance analysis and tuning API available while maintaining a very low overhead.*__
+
 - __*Direct access*__ to performance analysis data in Python and C++
-- __*Header-only interface for majority of C++*__ components
 - Variadic interface to all the utilities from C code
 - Variadic interface to all the utilities from C++ code
 - Variadic interface to all the utilities from Python code
     - Includes context-managers and decorators
 - __*Create your own components*__: any one-time measurement or start/stop paradigm can be wrapped with timemory
-- Flexible and easily extensible interface: __*no data type restrictions in custom components*__
+    - Flexible and easily extensible interface: __*no data type restrictions in custom components*__
 - __*High-performance*__: template meta-programming and lambdas result in extensive inlining
-- Ability to __*arbitrarily switch and combine different measurement types*__ anywhere in application
+- Ability to arbitrarily switch and combine different measurement types anywhere in application
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
     - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 - Arbitrarily add support for:
-    - __*CPU hardware counters*__ via PAPI without an explicit PAPI dependency and zero `#ifdef`
-    - __*GPU hardware counters*__ via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
-    - Generating a __*Roofline*__ for performance-critical sections
-    - Extensive tools provided by [Caliper](https://github.com/LLNL/Caliper) including [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
-    - Colored CUDA NVTX markers
+    - __*CPU hardware counters*__ via PAPI
+    - __*NVIDIA GPU hardware counters*__ via CUPTI
+    - __*NVIDIA GPU tracing*__ via CUPTI
+    - Generating a __*Roofline*__ for performance-critical sections on the CPU and NVIDIA GPUs
+    - Marker forwarding to NVTX for Nsight-Systems and NVprof
+    - Marker forwarding to [LIKWID](https://github.com/RRZE-HPC/likwid)
+    - Marker forwarding to [Caliper](https://github.com/LLNL/Caliper)
+        - Includes marker forwarding to [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
+        - Includes marker forwarding to Intel VTune and Advisor
     - Memory usage
+    - Tool insertiong around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
+        - Many more possible!
     - Wall-clock, cpu-clock, system-clock timing
     - Number of bytes read/written to file-system (and rate)
     - Number of context switches

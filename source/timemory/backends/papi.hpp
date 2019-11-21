@@ -178,7 +178,7 @@ check(int retval, const std::string& mesg, bool quiet = false)
             throw std::runtime_error(buf);
         else
         {
-            if(working())
+            if(working() && !settings::papi_quiet())
                 fprintf(stderr, "%s", buf);
         }
 #else

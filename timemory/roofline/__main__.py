@@ -90,10 +90,32 @@ def plot(args):
 
         fai = open(args.arithmetic_intensity, 'r')
         fop = open(args.operations, 'r')
-        _roofline.plot_roofline(json.load(fai), json.load(fop), args.display,
-                                fname, args.format, fdir, args.title,
-                                args.plot_dimensions[0], args.plot_dimensions[1],
-                                args.plot_dimensions[2])
+
+        ai_data = json.load(fai)
+        op_data = json.load(fop)
+
+        ai_ranks = ai_data["timemory"]["ranks"]
+        op_ranks = op_data["timemory"]["ranks"]
+
+        if len(ai_ranks) != len(op_ranks):
+            raise RuntimeError("Number of ranks in output files is different: {} vs. {}".format(
+                len(ai_ranks), len(op_ranks)))
+
+        if len(op_data) == 1:
+            _roofline.plot_roofline(ai_ranks[0], op_ranks[0], args.display,
+                                    fname, args.format, fdir, args.title,
+                                    args.plot_dimensions[0], args.plot_dimensions[1],
+                                    args.plot_dimensions[2])
+        else:
+            _rank = 0
+            for _ai, _op in zip(ai_ranks, op_ranks):
+                _fname = "{}_{}".format(fname, _rank)
+                _title = "{} (MPI rank: {})".format(args.title, _rank)
+                _roofline.plot_roofline(_ai, _op, args.display,
+                                        _fname, args.format, fdir, _title,
+                                        args.plot_dimensions[0], args.plot_dimensions[1],
+                                        args.plot_dimensions[2])
+                _rank += 1
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -187,14 +209,14 @@ def run(args, cmd):
     _rank = "" if args.rank is None else "_{}".format(args.rank)
     if "gpu_roofline" in args.rtype:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_activity{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_activity.json".format(output_prefix, args.rtype))
         args.operations = os.path.join(
-            output_path, "{}{}_counters{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_counters.json".format(output_prefix, args.rtype))
     else:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_ai{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
         args.operations = os.path.join(
-            output_path, "{}{}_op{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_op.json".format(output_prefix, args.rtype))
 
 
 if __name__ == "__main__":

@@ -99,6 +99,8 @@ class custom_component_tuple : public component_tuple<Types...>
     using apply_stop_t  = modifiers<operation::stop, Types...>;
     using apply_print_t = modifiers<custom_print, Types...>;
 
+    static std::string label();
+
 public:
     custom_component_tuple(const string_t& key)
     : component_tuple<Types...>(key, true, true)
@@ -159,6 +161,15 @@ command()
 {
     static std::string _instance;
     return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+std::string
+tim::custom_component_tuple<Types...>::label()
+{
+    return command();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -249,7 +260,7 @@ parent_process(pid_t pid)
             auto jname =
                 tim::settings::compose_output_filename(label, ".json", _init, &_rank);
             printf("[timem]> Outputting '%s'...\n", jname.c_str());
-            serialize_storage(jname, *get_measure());
+            tim::generic_serialization(jname, *get_measure());
         }
     }
     else

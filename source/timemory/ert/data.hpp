@@ -134,7 +134,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     exec_data() = default;
-    ~exec_data() { delete pmutex; }
+    ~exec_data() {}
     exec_data(const exec_data&) = delete;
     exec_data(exec_data&&)      = default;
     exec_data& operator=(const exec_data&) = delete;
@@ -156,12 +156,10 @@ public:
     //
     exec_data& operator+=(const value_type& entry)
     {
-        {
-            std::unique_lock<std::mutex> lk(*pmutex, std::defer_lock);
-            if(!lk.owns_lock())
-                lk.lock();
-            m_values.push_back(entry);
-        }
+        static std::mutex _mutex;
+        std::unique_lock<std::mutex> _lock(_mutex);
+
+        m_values.push_back(entry);
         return *this;
     }
 
@@ -169,22 +167,13 @@ public:
     //
     exec_data& operator+=(const exec_data& rhs)
     {
-        {
-            std::unique_lock<std::mutex> lk(*pmutex);
-            if(!lk.owns_lock())
-                lk.lock();
-            for(const auto& itr : rhs.m_values)
-                m_values.push_back(itr);
-        }
+        static std::mutex _mutex;
+        std::unique_lock<std::mutex> _lock(_mutex);
+
+        for(const auto& itr : rhs.m_values)
+            m_values.push_back(itr);
         return *this;
     }
-
-protected:
-    labels_type m_labels = { { "label", "working-set", "trials", "total-bytes",
-                               "total-ops", "ops-per-set", "counter", "device", "dtype",
-                               "exec-params" } };
-    value_array m_values;
-    std::mutex* pmutex = new std::mutex;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -210,20 +199,49 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
+    void save(Archive& ar, const unsigned int) const
     {
         constexpr auto sz = std::tuple_size<value_type>::value;
+        ar(cereal::make_nvp("entries", m_values.size()));
+
         ar.setNextName("ert");
         ar.startNode();
         ar.makeArray();
-        for(auto& itr : m_values)
+        for(const auto& itr : m_values)
         {
             ar.startNode();
-            _serialize(ar, itr, make_index_sequence<sz>{});
+            _save(ar, itr, make_index_sequence<sz>{});
             ar.finishNode();
         }
         ar.finishNode();
     }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int)
+    {
+        constexpr auto sz = std::tuple_size<value_type>::value;
+        auto _size = 0;
+        ar(cereal::make_nvp("entries", _size));
+        m_values.resize(_size);
+
+        ar.setNextName("ert");
+        ar.startNode();
+        for(auto& itr : m_values)
+        {
+            ar.startNode();
+            _load(ar, itr, make_index_sequence<sz>{});
+            ar.finishNode();
+        }
+        ar.finishNode();
+    }
+
+protected:
+    labels_type m_labels = { { "label", "working-set", "trials", "total-bytes",
+                               "total-ops", "ops-per-set", "counter", "device", "dtype",
+                               "exec-params" } };
+    value_array m_values;
 
 private:
     //----------------------------------------------------------------------------------//
@@ -239,10 +257,19 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename _Archive, size_t... _Idx>
-    void _serialize(_Archive& ar, value_type& _tuple, index_sequence<_Idx...>)
+    void _save(_Archive& ar, const value_type& _tuple, index_sequence<_Idx...>) const
     {
         ar(serializer::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
     }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Archive, size_t... _Idx>
+    void _load(_Archive& ar, value_type& _tuple, index_sequence<_Idx...>)
+    {
+        ar(serializer::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
+    }
+
 };
 
 //--------------------------------------------------------------------------------------//

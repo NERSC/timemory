@@ -68,7 +68,8 @@ def plot():
                             required=False, type=str, dest='plot_max')
         parser.add_argument('--log-x', help="Plot X-axis in a log scale",
                             action='store_true')
-        parser.add_argument('--font-size', help="Font size of y-axis labels", type=int)
+        parser.add_argument(
+            '--font-size', help="Font size of y-axis labels", type=int)
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
@@ -105,35 +106,48 @@ def plot():
                 raise Exception(
                     "Error must provide one title or a title for each file")
 
-        data = []
+        data = {}
         for i in range(len(args.files)):
             f = open(args.files[i], "r")
-            _data = _plotting.read(json.load(f))
-            _data.filename = args.files[i].replace('.json', '')
-            if len(args.titles) == 1:
-                _data.title = args.titles[0]
-            else:
-                _data.title = args.titles[i]
-            _data.plot_params = params
-            print('### --> Processing "{}" from "{}"...'.format(_data.title,
-                                                                args.files[i]))
-            data.append(_data)
+            _jdata = json.load(f)
+            _ranks = _jdata["timemory"]["ranks"]
+
+            nranks = len(_ranks)
+            for j in range(nranks):
+                _json = _ranks[j]
+                _data = _plotting.read(_json)
+                _rtag = '' if nranks == 1 else '_{}'.format(j)
+                _rtitle = '' if nranks == 1 else ' (MPI rank: {})'.format(j)
+
+                _data.filename = args.files[i].replace('.json', _rtag)
+                if len(args.titles) == 1:
+                    _data.title = args.titles[0] + _rtitle
+                else:
+                    _data.title = args.titles[i] + _rtitle
+                _data.plot_params = params
+                _data.mpi_size = nranks
+                print('### --> Processing "{}" from "{}"...'.format(_data.title,
+                                                                    args.files[i]))
+                if not j in data.keys():
+                    data[j] = [_data]
+                else:
+                    data[j] += [_data]
+
+        _pargs = {'plot_params': params,
+                  'display': args.display_plot,
+                  'output_dir': args.output_dir,
+                  'echo_dart': args.echo_dart}
 
         if do_plot_max:
-            _plotting.plot_maximums(args.plot_max,
-                                    args.titles[0],
-                                    data,
-                                    plot_params=params,
-                                    display=args.display_plot,
-                                    output_dir=args.output_dir,
-                                    echo_dart=args.echo_dart)
-        else:
-            _plotting.plot(data=data,
-                           plot_params=params,
-                           display=args.display_plot,
-                           combine=args.combine,
-                           output_dir=args.output_dir,
-                           echo_dart=args.echo_dart)
+            _pargs['combine'] = args.combine
+
+        for _rank, _data in data.items():
+            if do_plot_max:
+                _plotting.plot_maximums(args.plot_max,
+                                        args.titles[0],
+                                        _data, **_pargs)
+            else:
+                _plotting.plot(data=_data, **_pargs)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

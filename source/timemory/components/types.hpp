@@ -72,7 +72,7 @@ struct gperf_heap_profiler;
 struct gperf_cpu_profiler;
 
 // timing
-struct real_clock;
+struct wall_clock;
 struct system_clock;
 struct user_clock;
 struct cpu_clock;
