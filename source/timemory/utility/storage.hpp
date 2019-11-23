@@ -827,6 +827,7 @@ public:
                 else
                 {
                     std::get<1>(*citr) += std::get<1>(itr);
+                    std::get<1>(*citr).laps += std::get<1>(itr).laps;
                 }
             }
             return _combined;
