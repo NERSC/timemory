@@ -27,10 +27,10 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -183,7 +183,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
 
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
         using opmutex_t = std::mutex;
-        using oplock_t = std::unique_lock<opmutex_t>;
+        using oplock_t  = std::unique_lock<opmutex_t>;
         static opmutex_t opmutex;
         {
             oplock_t _lock(opmutex);
@@ -245,7 +245,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
             // wait master thread notifies to proceed
             if(fbarrier)
                 fbarrier->notify_wait();
-            //if(lbarrier)
+            // if(lbarrier)
             //    lbarrier->spin_wait();
 
             // get instance of object measuring something during the calculation
@@ -297,7 +297,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
             // wait master thread notifies to proceed
             if(lbarrier)
                 lbarrier->notify_wait();
-            //if(fbarrier)
+            // if(fbarrier)
             //    fbarrier->spin_wait();
 
             // stop the timer or anything else being recorded
@@ -322,7 +322,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
     };
 
     // guard against multiple threads trying to call ERT for some reason
-    static std::mutex _mtx;
+    static std::mutex            _mtx;
     std::unique_lock<std::mutex> _lock(_mtx);
 
     mpi::barrier();  // synchronize MPI processes
@@ -342,7 +342,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
         for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
             threads.push_back(std::thread(_opfunc, i, &fbarrier, &lbarrier));
 
-        uint64_t n   = _counter.params.working_set_min;
+        uint64_t n = _counter.params.working_set_min;
         while(n <= _counter.nsize)
         {
             // wait until all threads have also called notify_wait() then release
@@ -391,13 +391,12 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
 ///
 ///     This is invoked when TIMEMORY_USER_ERT_FLOPS is empty
 ///
-template <size_t... _Nops, typename _Device, typename _Tp,
-          typename _Counter, typename _FuncOps, typename _FuncStore,
+template <size_t... _Nops, typename _Device, typename _Tp, typename _Counter,
+          typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nops) == 0), int> = 0>
 void
 ops_main(counter<_Device, _Tp, _Counter>&, _FuncOps&&, _FuncStore&&)
-{
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 

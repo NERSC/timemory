@@ -26,10 +26,10 @@
 #pragma once
 
 #include "timemory/backends/gperf.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <cstdint>

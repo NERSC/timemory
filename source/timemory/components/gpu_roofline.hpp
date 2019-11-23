@@ -26,7 +26,6 @@
 
 #include "timemory/backends/bits/cupti.hpp"
 #include "timemory/backends/cuda.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/cupti_activity.hpp"
 #include "timemory/components/cupti_counters.hpp"
@@ -37,6 +36,7 @@
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/mpl/policy.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -368,7 +368,7 @@ public:
         auto& _ert_data = get_ert_data();
         if(!_ert_data.get())  // for input
             _ert_data.reset(new ert_data_t());
-        ar(serializer::make_nvp("roofline", *_ert_data.get()));
+        ar(cereal::make_nvp("roofline", *_ert_data.get()));
     }
 
     //----------------------------------------------------------------------------------//
@@ -750,23 +750,24 @@ public:
     //----------------------------------------------------------------------------------//
 
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
+    void save(Archive& ar, const unsigned int) const
     {
         auto _disp   = get_display();
         auto _data   = get();
         auto _labels = get_labels();
 
-        ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("display", _disp),
-           serializer::make_nvp("mode", get_mode_string()),
-           serializer::make_nvp("type", get_type_string()));
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("display", _disp),
+           cereal::make_nvp("mode", get_mode_string()),
+           cereal::make_nvp("type", get_type_string()),
+           cereal::make_nvp("labels", _labels));
 
         ar.setNextName("repr_data");
         ar.startNode();
         auto litr = _labels.begin();
         auto ditr = _data.begin();
         for(; litr != _labels.end() && ditr != _data.end(); ++litr, ++ditr)
-            ar(serializer::make_nvp(*litr, *ditr));
+            ar(cereal::make_nvp(*litr, *ditr));
         ar.finishNode();
 
         ar.setNextName("value");
@@ -781,6 +782,53 @@ public:
         ar.setNextName("accum");
         ar.startNode();
         ar.makeArray();
+        if(event_mode() == MODE::ACTIVITY)
+            ar(std::get<0>(accum));
+        else
+            ar(std::get<1>(accum));
+        ar.finishNode();
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename Archive>
+    void load(Archive& ar, const unsigned int)
+    {
+        std::string              _disp;
+        result_type              _data;
+        std::vector<std::string> _labels;
+        std::string              _mode_str;
+        std::string              _type_str;
+
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("display", _disp), cereal::make_nvp("mode", _mode_str),
+           cereal::make_nvp("type", _type_str), cereal::make_nvp("labels", _labels));
+
+        if(_mode_str == "counters")
+            event_mode() = MODE::COUNTERS;
+        else if(_mode_str == "activity")
+            event_mode() = MODE::ACTIVITY;
+
+        _data.resize(_labels.size());
+
+        ar.setNextName("repr_data");
+        ar.startNode();
+        auto litr = _labels.begin();
+        auto ditr = _data.begin();
+        for(; litr != _labels.end() && ditr != _data.end(); ++litr, ++ditr)
+            ar(cereal::make_nvp(*litr, *ditr));
+        ar.finishNode();
+
+        ar.setNextName("value");
+        ar.startNode();
+        if(event_mode() == MODE::ACTIVITY)
+            ar(std::get<0>(value));
+        else
+            ar(std::get<1>(value));
+        ar.finishNode();
+
+        ar.setNextName("accum");
+        ar.startNode();
         if(event_mode() == MODE::ACTIVITY)
             ar(std::get<0>(accum));
         else

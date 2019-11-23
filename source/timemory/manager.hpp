@@ -246,11 +246,15 @@ private:
                 // args: precision, spacing, indent size
                 cereal::JSONOutputArchive::Options opts(12, spacing, 4);
                 cereal::JSONOutputArchive          oa(ss, opts);
-                oa.setNextName("rank");
+                oa.setNextName("timemory");
                 oa.startNode();
-                auto rank = mpi::rank();
-                oa(cereal::make_nvp("rank_id", rank));
-                _manager->_serialize<decltype(oa), _Types...>(oa);
+                {
+                    oa.setNextName("ranks");
+                    oa.startNode();
+                    oa.makeArray();
+                    _manager->_serialize<decltype(oa), _Types...>(oa);
+                    oa.finishNode();
+                }
                 oa.finishNode();
             }
             return ss.str();

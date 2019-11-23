@@ -710,7 +710,9 @@ endif()
 
 set(_GPERF_COMPONENTS ${TIMEMORY_GPERF_COMPONENTS} profiler tcmalloc)
 list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
-find_package(gperftools QUIET COMPONENTS ${_GPERF_COMPONENTS})
+if(NOT "${TIMEMORY_GPERF_COMPONENTS}" STREQUAL "")
+    find_package(gperftools QUIET COMPONENTS ${_GPERF_COMPONENTS})
+endif()
 
 if(gperftools_FOUND)
     set(_HAS_PROFILER OFF)
@@ -761,6 +763,8 @@ if(gperftools_FOUND)
 else()
     set(TIMEMORY_USE_GPERF OFF)
     inform_empty_interface(timemory-gperftools "gperftools")
+    inform_empty_interface(timemory-gperftools-cpu "gperftools-cpu")
+    inform_empty_interface(timemory-gperftools-heap "gperftools-heap")
 endif()
 
 

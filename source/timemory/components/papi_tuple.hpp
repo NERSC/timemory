@@ -294,10 +294,11 @@ public:
             _value[i] = value[i];
             _accum[i] = accum[i];
         }
-        ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _disp),
-           serializer::make_nvp("value", _value), serializer::make_nvp("accum", _accum),
-           serializer::make_nvp("display", _disp));
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
+           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp),
+           cereal::make_nvp("units", unit_array()),
+           cereal::make_nvp("display_units", display_unit_array()));
     }
 
     entry_type get_display(int evt_type) const

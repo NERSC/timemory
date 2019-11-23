@@ -33,7 +33,7 @@
 #include "timemory/backends/bits/cupti.hpp"
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

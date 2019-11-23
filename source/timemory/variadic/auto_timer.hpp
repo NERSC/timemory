@@ -53,19 +53,14 @@ using full_tuple_t =
 
 //--------------------------------------------------------------------------------------//
 
-using minimal_list_t =
-    component_list<page_rss, virtual_memory, cpu_clock, caliper, papi_array_t, cuda_event,
-                   nvtx_marker, cupti_activity, cupti_counters>;
+using minimal_list_t = component_list<caliper, papi_array_t, cuda_event, nvtx_marker,
+                                      cupti_activity, cupti_counters>;
 
 using full_list_t =
-    component_list<page_rss, virtual_memory, cpu_clock, thread_cpu_clock, thread_cpu_util,
-                   process_cpu_clock, process_cpu_util, priority_context_switch,
-                   voluntary_context_switch, num_major_page_faults, num_minor_page_faults,
-                   read_bytes, written_bytes, caliper, papi_array_t,
-                   cpu_roofline_sp_flops, cpu_roofline_dp_flops, gperf_cpu_profiler,
-                   gperf_heap_profiler, cuda_event, nvtx_marker, cupti_activity,
-                   cupti_counters, gpu_roofline_flops, gpu_roofline_hp_flops,
-                   gpu_roofline_sp_flops, gpu_roofline_dp_flops>;
+    component_list<gperf_cpu_profiler, gperf_heap_profiler, caliper, papi_array_t,
+                   cpu_roofline_sp_flops, cpu_roofline_dp_flops, cuda_event, nvtx_marker,
+                   cupti_activity, cupti_counters, gpu_roofline_flops,
+                   gpu_roofline_hp_flops, gpu_roofline_sp_flops, gpu_roofline_dp_flops>;
 
 }  // namespace auto_timer_types
 

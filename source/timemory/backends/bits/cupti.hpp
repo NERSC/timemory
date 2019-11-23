@@ -26,7 +26,7 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -738,9 +738,8 @@ struct result
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        ar(serializer::make_nvp("is_event_value", is_event_value),
-           serializer::make_nvp("name", name),
-           serializer::make_nvp("data", get<double>(data)));
+        ar(cereal::make_nvp("is_event_value", is_event_value),
+           cereal::make_nvp("name", name), cereal::make_nvp("data", get<double>(data)));
     }
 
     bool operator==(const result& rhs) const { return (name == rhs.name); }

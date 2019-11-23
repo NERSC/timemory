@@ -27,12 +27,12 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
 #include "timemory/ert/types.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -89,14 +89,13 @@ struct exec_params
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        ar(serializer::make_nvp("working_set_min", working_set_min),
-           serializer::make_nvp("memory_max", memory_max),
-           serializer::make_nvp("nthreads", nthreads),
-           serializer::make_nvp("nrank", nrank), serializer::make_nvp("nproc", nproc),
-           serializer::make_nvp("nstreams", nstreams),
-           serializer::make_nvp("grid_size", grid_size),
-           serializer::make_nvp("block_size", block_size),
-           serializer::make_nvp("shmem_size", shmem_size));
+        ar(cereal::make_nvp("working_set_min", working_set_min),
+           cereal::make_nvp("memory_max", memory_max),
+           cereal::make_nvp("nthreads", nthreads), cereal::make_nvp("nrank", nrank),
+           cereal::make_nvp("nproc", nproc), cereal::make_nvp("nstreams", nstreams),
+           cereal::make_nvp("grid_size", grid_size),
+           cereal::make_nvp("block_size", block_size),
+           cereal::make_nvp("shmem_size", shmem_size));
     }
 
     friend std::ostream& operator<<(std::ostream& os, const exec_params& obj)
@@ -156,7 +155,7 @@ public:
     //
     exec_data& operator+=(const value_type& entry)
     {
-        static std::mutex _mutex;
+        static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);
 
         m_values.push_back(entry);
@@ -167,7 +166,7 @@ public:
     //
     exec_data& operator+=(const exec_data& rhs)
     {
-        static std::mutex _mutex;
+        static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);
 
         for(const auto& itr : rhs.m_values)
@@ -221,8 +220,8 @@ public:
     template <typename Archive>
     void load(Archive& ar, const unsigned int)
     {
-        constexpr auto sz = std::tuple_size<value_type>::value;
-        auto _size = 0;
+        constexpr auto sz    = std::tuple_size<value_type>::value;
+        auto           _size = 0;
         ar(cereal::make_nvp("entries", _size));
         m_values.resize(_size);
 
@@ -259,7 +258,7 @@ private:
     template <typename _Archive, size_t... _Idx>
     void _save(_Archive& ar, const value_type& _tuple, index_sequence<_Idx...>) const
     {
-        ar(serializer::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
+        ar(cereal::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -267,9 +266,8 @@ private:
     template <typename _Archive, size_t... _Idx>
     void _load(_Archive& ar, value_type& _tuple, index_sequence<_Idx...>)
     {
-        ar(serializer::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
+        ar(cereal::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
     }
-
 };
 
 //--------------------------------------------------------------------------------------//

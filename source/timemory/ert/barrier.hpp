@@ -27,10 +27,10 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <future>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
-#include <future>
 
 namespace tim
 {
@@ -52,8 +52,8 @@ public:
 
 public:
     explicit thread_barrier(const size_t& nthreads)
-    : m_master(std::this_thread::get_id()),
-      m_num_threads(nthreads)
+    : m_master(std::this_thread::get_id())
+    , m_num_threads(nthreads)
     , m_waiting(0)
     , m_counter(0)
     , m_notify(0)
@@ -122,8 +122,10 @@ public:
             while(m_notify.load() < m_num_threads)
                 m_cv.wait(lk);
             m_promise.set_value();
-            while(m_notify.load() > 0) {}
-            std::promise<void> _ptmp;
+            while(m_notify.load() > 0)
+            {
+            }
+            std::promise<void>       _ptmp;
             std::shared_future<void> _ftmp = _ptmp.get_future().share();
             std::swap(m_promise, _ptmp);
             std::swap(m_future, _ftmp);
@@ -152,8 +154,8 @@ private:
     std::atomic_flag spin_lock     = ATOMIC_FLAG_INIT;  // for spin lock
     mutex_t          m_mutex;
     condvar_t        m_cv;
-    std::atomic<size_type> m_notify;
-    std::promise<void> m_promise;
+    std::atomic<size_type>   m_notify;
+    std::promise<void>       m_promise;
     std::shared_future<void> m_future;
 };
 

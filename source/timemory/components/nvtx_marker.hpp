@@ -26,9 +26,9 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/nvtx.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/settings.hpp"
 
 //======================================================================================//
 

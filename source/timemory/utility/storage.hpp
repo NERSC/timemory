@@ -41,19 +41,18 @@
 
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/data/accumulators.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
+#include "timemory/settings.hpp"
+#include "timemory/utility/base_storage.hpp"
 #include "timemory/utility/graph.hpp"
 #include "timemory/utility/graph_data.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
-
-// this is deprecated mostly because it is not extensible
-#include "timemory/utility/type_id.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -70,28 +69,6 @@
 
 namespace tim
 {
-// clang-format off
-namespace details
-{
-template <typename StorageType> struct storage_deleter;
-template <typename ObjectType> class storage;
-template <typename _Tp>
-using storage_smart_pointer = std::unique_ptr<_Tp, details::storage_deleter<_Tp>>;
-template <typename _Tp>
-using storage_singleton_t = singleton<_Tp, storage_smart_pointer<_Tp>>;
-}  // namespace details
-namespace cupti { struct result; }
-namespace impl  { template <typename ObjectType, bool IsAvailable> class storage {}; }
-class manager;
-
-namespace scope
-{
-struct flat    {};  // flat-scope storage
-struct thread  {};  // thread-scoped storage
-struct process {};  // process-scoped storage
-} // namespace scope
-// clang-format on
-
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
@@ -125,7 +102,7 @@ namespace impl
 //======================================================================================//
 
 template <typename ObjectType>
-class storage<ObjectType, true>
+class storage<ObjectType, true> : public base::storage
 {
 public:
     //----------------------------------------------------------------------------------//
@@ -136,12 +113,16 @@ public:
     friend struct result_node;
     friend struct graph_node;
 
+protected:
+    template <typename _Tp>
+    struct write_serialization;
+
 public:
     //----------------------------------------------------------------------------------//
     //
+    using base_type      = base::storage;
     using component_type = ObjectType;
     using this_type      = storage<ObjectType, true>;
-    using string_t       = std::string;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
@@ -153,6 +134,53 @@ public:
     using result_tuple_t =
         std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t, strvector_t>;
 
+    friend struct details::storage_deleter<this_type>;
+    friend struct write_serialization<this_type>;
+    friend class tim::manager;
+
+public:
+    // static functions
+    static pointer instance() { return get_singleton().instance(); }
+    static pointer master_instance() { return get_singleton().master_instance(); }
+    static pointer noninit_instance() { return get_noninit_singleton().instance(); }
+    static pointer noninit_master_instance()
+    {
+        return get_noninit_singleton().master_instance();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static bool& master_is_finalizing()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    static bool& worker_is_finalizing()
+    {
+        static thread_local bool _instance = master_is_finalizing();
+        return _instance;
+    }
+
+    static bool is_finalizing()
+    {
+        return worker_is_finalizing() || master_is_finalizing();
+    }
+
+private:
+    static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
+    static singleton_t& get_noninit_singleton()
+    {
+        return get_noninit_storage_singleton<this_type>();
+    }
+
+    static std::atomic<int64_t>& instance_count()
+    {
+        static std::atomic<int64_t> _counter;
+        return _counter;
+    }
+
+public:
     //----------------------------------------------------------------------------------//
     //
     //      Result returned from get()
@@ -262,29 +290,23 @@ public:
     using graph_t        = typename graph_data_t::graph_t;
     using iterator       = typename graph_t::iterator;
     using const_iterator = typename graph_t::const_iterator;
-
-    static pointer instance() { return get_singleton().instance(); }
-    static pointer master_instance() { return get_singleton().master_instance(); }
-    static pointer noninit_instance() { return get_noninit_singleton().instance(); }
-    static pointer noninit_master_instance()
-    {
-        return get_noninit_singleton().master_instance();
-    }
-
     template <typename _Vp>
     using secondary_data_t = std::tuple<iterator, const std::string&, _Vp>;
+    template <typename _Key_t, typename _Mapped_t>
+    using uomap_t             = std::unordered_map<_Key_t, _Mapped_t>;
+    using iterator_hash_map_t = uomap_t<int64_t, uomap_t<int64_t, iterator>>;
 
 public:
     //----------------------------------------------------------------------------------//
     //
     storage()
+    : base_type(singleton_t::is_master_thread(), instance_count()++, ObjectType::label())
     {
         if(settings::debug())
-            printf("[%s]> constructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
+            printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
 
-        get_shared_manager();
         component::properties<ObjectType>::has_storage() = true;
-        // check_consistency();
+
         static std::atomic<int32_t> _skip_once;
         if(_skip_once++ > 0)
         {
@@ -310,9 +332,9 @@ public:
     ~storage()
     {
         if(settings::debug())
-            printf("[%s]> destructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
+            printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
 
-        if(!singleton_t::is_master(this))
+        if(!m_is_master)
             singleton_t::master_instance()->merge(this);
 
         delete m_graph_data_instance;
@@ -332,50 +354,28 @@ public:
     //----------------------------------------------------------------------------------//
     //  cleanup function for object
     //
-    void cleanup() { ObjectType::invoke_cleanup(); }
 
 public:
-    //----------------------------------------------------------------------------------//
-    //
-    void initialize()
+    virtual void print() final
+    {
+        typename trait::external_output_handling<ObjectType>::type type;
+        external_print(type);
+    }
+
+    virtual void cleanup() final { ObjectType::invoke_cleanup(); }
+
+    void get_shared_manager();
+
+    virtual void initialize()
     {
         if(m_initialized)
             return;
-
         if(settings::debug())
-            printf("[%s]> initializing...\n", ObjectType::label().c_str());
-
+            printf("[%s]> initializing...\n", m_label.c_str());
         m_initialized = true;
-
-        // global_init();
     }
 
-    //----------------------------------------------------------------------------------//
-    //
-    static bool& master_is_finalizing()
-    {
-        static bool _instance = false;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    static bool& worker_is_finalizing()
-    {
-        static thread_local bool _instance = master_is_finalizing();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    static bool is_finalizing()
-    {
-        return worker_is_finalizing() || master_is_finalizing();
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    void finalize()
+    virtual void finalize()
     {
         if(m_finalized)
             return;
@@ -384,36 +384,42 @@ public:
             return;
 
         if(settings::debug())
-            PRINT_HERE("[%s]> finalizing...", ObjectType::label().c_str());
+            PRINT_HERE("[%s]> finalizing...", m_label.c_str());
 
-        bool _is_master = singleton_t::is_master(this);
-
-        m_finalized = true;
+        m_finalized            = true;
         worker_is_finalizing() = true;
-        if(_is_master)
+        if(m_is_master)
             master_is_finalizing() = true;
 
         if(m_thread_init)
             ObjectType::thread_finalize_policy(this);
 
-        if(_is_master && m_global_init)
-                ObjectType::global_finalize_policy(this);
+        if(m_is_master && m_global_init)
+            ObjectType::global_finalize_policy(this);
 
         if(settings::debug())
-            PRINT_HERE("[%s]> finalizing...", ObjectType::label().c_str());
+            PRINT_HERE("[%s]> finalizing...", m_label.c_str());
     }
 
-    bool    is_initialized() const { return m_initialized; }
-    int64_t instance_id() const { return m_instance_id; }
+    void stack_clear()
+    {
+        std::unordered_set<ObjectType*> _stack = m_stack;
+        for(auto& itr : _stack)
+        {
+            itr->stop();
+            itr->pop_node();
+        }
+        m_stack.clear();
+    }
 
     //----------------------------------------------------------------------------------//
     //
-    bool global_init()
+    virtual bool global_init() final
     {
         static auto _lambda = [&]() {
-            if(!singleton_t::is_master(this))
+            if(!m_is_master)
                 master_instance()->global_init();
-            if(singleton_t::is_master(this))
+            if(m_is_master)
                 ObjectType::global_init_policy(this);
             m_global_init = true;
             return m_global_init;
@@ -425,10 +431,10 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    bool thread_init()
+    virtual bool thread_init() final
     {
         static auto _lambda = [&]() {
-            if(!singleton_t::is_master(this))
+            if(!m_is_master)
                 master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
@@ -443,10 +449,10 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    bool data_init()
+    virtual bool data_init() final
     {
         static auto _lambda = [&]() {
-            if(!singleton_t::is_master(this))
+            if(!m_is_master)
                 master_instance()->data_init();
             bool _global_init = global_init();
             bool _thread_init = thread_init();
@@ -460,37 +466,50 @@ public:
         return m_data_init;
     }
 
+    //----------------------------------------------------------------------------------//
+    //
+    const graph_data_t& data() const { return _data(); }
+    const graph_t&      graph() const { return _data().graph(); }
+    int64_t             depth() const { return (is_finalizing()) ? 0 : _data().depth(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    graph_data_t& data() { return _data(); }
+    iterator&     current() { return _data().current(); }
+    graph_t&      graph() { return _data().graph(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    inline bool     empty() const { return (_data().graph().size() <= 1); }
+    inline size_t   size() const { return _data().graph().size() - 1; }
+    inline iterator pop() { return _data().pop_graph(); }
+
+    result_array_t get();
+    mpi_result_t   mpi_get();
+
+    const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
+
+    void stack_push(ObjectType* obj) { m_stack.insert(obj); }
+    void stack_pop(ObjectType* obj)
+    {
+        auto itr = m_stack.find(obj);
+        if(itr != m_stack.end())
+            m_stack.erase(itr);
+    }
+
 private:
     void check_consistency()
     {
-        // auto_lock_t lk(type_mutex<this_type>(), std::defer_lock);
-        // if(!lk.owns_lock())
-        //    lk.lock();
-
         auto* ptr = &_data();
         if(ptr != m_graph_data_instance)
         {
             fprintf(stderr, "[%s]> mismatched graph data on master thread: %p vs. %p\n",
-                    ObjectType::label().c_str(), (void*) ptr,
+                    m_label.c_str(), (void*) ptr,
                     static_cast<void*>(m_graph_data_instance));
         }
     }
 
 public:
-    //----------------------------------------------------------------------------------//
-    // there is always a head node that should not be counted
-    //
-    bool empty() const { return (_data().graph().size() <= 1); }
-
-    //----------------------------------------------------------------------------------//
-    // there is always a head node that should not be counted
-    //
-    inline size_t size() const { return _data().graph().size() - 1; }
-
-    //----------------------------------------------------------------------------------//
-    //
-    iterator pop() { return _data().pop_graph(); }
-
     //----------------------------------------------------------------------------------//
     //
     template <typename _Scope  = scope::process,
@@ -680,7 +699,7 @@ public:
 
         auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
         auto itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
-        add_hash_id(m_hash_ids, m_hash_aliases, hash_id, hash_id * hash_depth);
+        add_hash_id(hash_id, hash_id * hash_depth);
         return itr;
     }
 
@@ -696,7 +715,7 @@ public:
         consume_parameters(_global_init, _thread_init, _data_init);
 
         auto itr = insert<_Scope>(hash_id, obj, 1);
-        add_hash_id(m_hash_ids, m_hash_aliases, hash_id, hash_id);
+        add_hash_id(hash_id, hash_id);
         return itr;
     }
 
@@ -716,12 +735,12 @@ public:
             return;
 
         // compute hash of prefix
-        auto _hash_id = add_hash_id(m_hash_ids, std::get<1>(_secondary));
+        auto _hash_id = add_hash_id(std::get<1>(_secondary));
         // compute hash w.r.t. parent iterator (so identical kernels from different
         // call-graph parents do not locate same iterator)
         auto _hash = _hash_id + _itr->id();
         // add the hash alias
-        add_hash_id(m_hash_ids, m_hash_aliases, _hash_id, _hash);
+        add_hash_id(_hash_id, _hash);
         // compute depth
         auto _depth = _itr->depth() + 1;
 
@@ -744,285 +763,11 @@ public:
         }
     }
 
-    //----------------------------------------------------------------------------------//
-    //
-    void print()
-    {
-        typename trait::external_output_handling<ObjectType>::type type;
-        external_print(type);
-    }
-
-private:
-    string_t get_prefix(const graph_node& node)
-    {
-        auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, node.id());
-        if(_ret.find("unknown-hash=") == 0)
-        {
-            if(!singleton_t::is_master(this))
-            {
-                auto _master = singleton_t::master_instance();
-                return _master->get_prefix(node);
-            }
-            else
-            {
-                return get_hash_identifier(node.id());
-            }
-        }
-        return _ret;
-    }
-    string_t get_prefix(iterator _node) { return get_prefix(*_node); }
-
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    const graph_data_t& data() const { return _data(); }
-    const graph_t&      graph() const { return _data().graph(); }
-    int64_t             depth() const { return (is_finalizing()) ? 0 : _data().depth(); }
-
-    //----------------------------------------------------------------------------------//
-    //
-    graph_data_t& data() { return _data(); }
-    iterator&     current() { return _data().current(); }
-    graph_t&      graph() { return _data().graph(); }
-
-    //----------------------------------------------------------------------------------//
-    //
-    result_array_t get()
-    {
-        //------------------------------------------------------------------------------//
-        //
-        //  Compute the node prefix
-        //
-        //------------------------------------------------------------------------------//
-        auto _get_node_prefix = [&]() {
-            if(!m_node_init)
-                return std::string(">>> ");
-
-            // prefix spacing
-            static uint16_t width = 1;
-            if(m_node_size > 9)
-                width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
-            std::stringstream ss;
-            ss.fill('0');
-            ss << "|" << std::setw(width) << m_node_rank << ">>> ";
-            return ss.str();
-        };
-
-        //------------------------------------------------------------------------------//
-        //
-        //  Compute the indentation
-        //
-        //------------------------------------------------------------------------------//
-        // fix up the prefix based on the actual depth
-        auto _compute_modified_prefix = [&](const graph_node& itr) {
-            std::string _prefix      = get_prefix(itr);
-            std::string _indent      = "";
-            std::string _node_prefix = _get_node_prefix();
-
-            int64_t _depth = itr.depth() - 1;
-            if(_depth > 0)
-            {
-                for(int64_t ii = 0; ii < _depth - 1; ++ii)
-                    _indent += "  ";
-                _indent += "|_";
-            }
-
-            return _node_prefix + _indent + _prefix;
-        };
-
-        // convert graph to a vector
-        auto convert_graph = [&]() {
-            result_array_t _list;
-            {
-                // the head node should always be ignored
-                int64_t _min = std::numeric_limits<int64_t>::max();
-                for(const auto& itr : graph())
-                    _min = std::min<int64_t>(_min, itr.depth());
-
-                for(auto itr = graph().begin(); itr != graph().end(); ++itr)
-                {
-                    if(itr->depth() > _min)
-                    {
-                        auto        _depth   = itr->depth() - (_min + 1);
-                        auto        _prefix  = _compute_modified_prefix(*itr);
-                        auto        _rolling = itr->id();
-                        auto        _parent  = graph_t::parent(itr);
-                        strvector_t _hierarchy;
-                        if(_parent && _parent->depth() > _min)
-                        {
-                            while(_parent)
-                            {
-                                _hierarchy.push_back(get_prefix(*_parent));
-                                _rolling += _parent->id();
-                                _parent = graph_t::parent(_parent);
-                                if(!_parent || !(_parent->depth() > _min))
-                                    break;
-                            }
-                        }
-                        if(_hierarchy.size() > 1)
-                            std::reverse(_hierarchy.begin(), _hierarchy.end());
-                        _hierarchy.push_back(get_prefix(*itr));
-                        result_node _entry({ itr->id(), itr->obj(), _prefix, _depth,
-                                             _rolling, _hierarchy });
-                        _list.push_back(_entry);
-                    }
-                }
-            }
-
-            bool _thread_scope_only = trait::thread_scope_only<ObjectType>::value;
-            if(!settings::collapse_threads() || _thread_scope_only)
-                return _list;
-
-            result_array_t _combined;
-
-            //--------------------------------------------------------------------------//
-            //
-            auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
-                return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
-                        std::get<2>(_lhs) == std::get<2>(_rhs) &&
-                        std::get<3>(_lhs) == std::get<3>(_rhs) &&
-                        std::get<4>(_lhs) == std::get<4>(_rhs));
-            };
-
-            //--------------------------------------------------------------------------//
-            //
-            auto _exists = [&](const result_node& _lhs) {
-                for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
-                {
-                    if(_equiv(_lhs, *itr))
-                        return itr;
-                }
-                return _combined.end();
-            };
-
-            //--------------------------------------------------------------------------//
-            //  collapse duplicates
-            //
-            for(const auto& itr : _list)
-            {
-                auto citr = _exists(itr);
-                if(citr == _combined.end())
-                {
-                    _combined.push_back(itr);
-                }
-                else
-                {
-                    std::get<1>(*citr) += std::get<1>(itr);
-                }
-            }
-            return _combined;
-        };
-
-        return convert_graph();
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    mpi_result_t mpi_get()
-    {
-#if !defined(TIMEMORY_USE_MPI)
-        return mpi_result_t(1, get());
-#else
-        mpi::barrier(mpi::comm_world_v);
-
-        int mpi_rank = mpi::rank();
-        int mpi_size = mpi::size();
-
-        //------------------------------------------------------------------------------//
-        //  Used to convert a result to a serialization
-        //
-        auto send_serialize = [&](const result_array_t& src) {
-            std::stringstream ss;
-            {
-                auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
-                cereal::JSONOutputArchive::Options opt(16, space, 0);
-                cereal::JSONOutputArchive          oa(ss);
-                oa(serializer::make_nvp("data", src));
-            }
-            return ss.str();
-        };
-
-        //------------------------------------------------------------------------------//
-        //  Used to convert the serialization to a result
-        //
-        auto recv_serialize = [&](const std::string& src) {
-            result_array_t    ret;
-            std::stringstream ss;
-            ss << src;
-            {
-                cereal::JSONInputArchive ia(ss);
-                ia(serializer::make_nvp("data", ret));
-                if(settings::debug())
-                    printf("[RECV: %i]> data size: %lli\n", mpi_rank,
-                           (long long int) ret.size());
-            }
-            return ret;
-        };
-
-        mpi_result_t results(mpi_size);
-
-        auto ret     = get();
-        auto str_ret = send_serialize(ret);
-
-        if(mpi_rank == 0)
-        {
-            for(int i = 1; i < mpi_size; ++i)
-            {
-                std::string str;
-                if(settings::debug())
-                    printf("[RECV: %i]> starting %i\n", mpi_rank, i);
-                mpi::recv(str, i, 0, mpi::comm_world_v);
-                if(settings::debug())
-                    printf("[RECV: %i]> completed %i\n", mpi_rank, i);
-                results[i] = recv_serialize(str);
-            }
-            results[mpi_rank] = ret;
-        }
-        else
-        {
-            if(settings::debug())
-                printf("[SEND: %i]> starting\n", mpi_rank);
-            mpi::send(str_ret, 0, 0, mpi::comm_world_v);
-            if(settings::debug())
-                printf("[SEND: %i]> completed\n", mpi_rank);
-            return mpi_result_t(1, ret);
-        }
-
-        return results;
-#endif
-    }
-
 protected:
-    friend struct details::storage_deleter<this_type>;
-
-    void merge()
-    {
-        if(!singleton_t::is_master(this) || !m_initialized)
-            return;
-
-        auto m_children = singleton_t::children();
-        if(m_children.size() == 0)
-            return;
-
-        for(auto& itr : m_children)
-            merge(itr);
-
-        // create lock but don't immediately lock
-        auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-        // lock if not already owned
-        if(!l.owns_lock())
-            l.lock();
-
-        for(auto& itr : m_children)
-            if(itr != this)
-                itr->data().clear();
-
-        stack_clear();
-    }
-
-    void merge(this_type* itr);
-    void mpi_reduce();
+    void     merge();
+    void     merge(this_type* itr);
+    string_t get_prefix(const graph_node&);
+    string_t get_prefix(iterator _node) { return get_prefix(*_node); }
 
 protected:
     //----------------------------------------------------------------------------------//
@@ -1058,61 +803,41 @@ protected:
         {}
     };
 
-    friend struct write_serialization<this_type>;
-
 public:
     //----------------------------------------------------------------------------------//
     //
     template <typename _Archive>
     void serialize(_Archive& ar, const unsigned int version)
     {
-        /*
-        auto&& _results = mpi_get();
+        using serial_write_t = write_serialization<this_type>;
+
+        auto   num_instances = instance_count().load();
+        auto&& _results      = mpi_get();
         for(uint64_t i = 0; i < _results.size(); ++i)
         {
-            auto num_instances = instance_count().load();
-            ar.setNextName("rank");
             ar.startNode();
-            ar.makeArray();
-            ar(cereal::make_nvp("rank_id", i));
+            ar(cereal::make_nvp("rank", i));
             ar(cereal::make_nvp("concurrency", num_instances));
-            write_serialization<this_type>::serialize(*this, ar, version, _results.at(i));
+            serial_write_t::serialize(*this, ar, 1, _results.at(i));
             ar.finishNode();
-        }*/
-        consume_parameters(ar, version);
-        throw std::runtime_error("Should not be called!");
+        }
+        consume_parameters(version);
+        // throw std::runtime_error("Should not be called!");
     }
-
-    void get_shared_manager();
-    void free_shared_manager();
 
 private:
     //----------------------------------------------------------------------------------//
     //
-    friend class tim::manager;
-
     template <typename _Archive>
     void _serialize(_Archive& ar)
     {
-        auto _label = ObjectType::label();
-        if(singleton_t::is_master(this))
+        auto _label = m_label;
+        if(m_is_master)
             merge();
         ar(cereal::make_nvp(_label, *this));
     }
 
 private:
-    static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
-    static singleton_t& get_noninit_singleton()
-    {
-        return get_noninit_storage_singleton<this_type>();
-    }
-
-    static std::atomic<int64_t>& instance_count()
-    {
-        static std::atomic<int64_t> _counter;
-        return _counter;
-    }
-
     // tim::trait::array_serialization<ObjectType>::type == TRUE
     template <typename Archive>
     void serialize_me(std::true_type, Archive&, const unsigned int,
@@ -1129,84 +854,13 @@ private:
     // tim::trait::external_output_handling<ObjectType>::type == FALSE
     void external_print(std::false_type);
 
-    graph_data_t& _data()
-    {
-        using base_type = typename ObjectType::base_type;
-
-        if(m_graph_data_instance == nullptr && !singleton_t::is_master(this))
-        {
-            static bool _data_init = master_instance()->data_init();
-            consume_parameters(_data_init);
-
-            auto         m = *master_instance()->current();
-            graph_node_t node(m.id(), base_type::dummy(), m.depth());
-            m_graph_data_instance          = new graph_data_t(node);
-            m_graph_data_instance->depth() = m.depth();
-            if(m_node_ids.size() == 0)
-                m_node_ids[0][0] = m_graph_data_instance->current();
-        }
-        else if(m_graph_data_instance == nullptr)
-        {
-            auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
-            if(!lk.owns_lock())
-                lk.lock();
-
-            std::string _prefix = "> [tot] total";
-            add_hash_id(m_hash_ids, _prefix);
-            graph_node_t node(0, base_type::dummy(), 0);
-            m_graph_data_instance          = new graph_data_t(node);
-            m_graph_data_instance->depth() = 0;
-            if(m_node_ids.size() == 0)
-                m_node_ids[0][0] = m_graph_data_instance->current();
-        }
-        return *m_graph_data_instance;
-    }
-
+    graph_data_t&       _data();
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
 
-    template <typename _Key_t, typename _Mapped_t>
-    using uomap_t             = std::unordered_map<_Key_t, _Mapped_t>;
-    using iterator_hash_map_t = uomap_t<int64_t, uomap_t<int64_t, iterator>>;
-
-    bool                            m_initialized         = false;
-    bool                            m_finalized           = false;
-    bool                            m_global_init         = false;
-    bool                            m_thread_init         = false;
-    bool                            m_data_init           = false;
-    bool                            m_node_init           = mpi::is_initialized();
-    int32_t                         m_node_rank           = mpi::rank();
-    int32_t                         m_node_size           = mpi::size();
-    int64_t                         m_instance_id         = instance_count()++;
-    graph_hash_map_ptr_t            m_hash_ids            = ::tim::get_hash_ids();
-    graph_hash_alias_ptr_t          m_hash_aliases        = ::tim::get_hash_aliases();
+private:
     mutable graph_data_t*           m_graph_data_instance = nullptr;
     iterator_hash_map_t             m_node_ids;
-    std::shared_ptr<manager>        m_manager;
     std::unordered_set<ObjectType*> m_stack;
-
-public:
-    const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
-    const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
-    const iterator_hash_map_t     get_node_ids() const { return m_node_ids; }
-    void                          stack_push(ObjectType* obj) { m_stack.insert(obj); }
-    void                          stack_pop(ObjectType* obj)
-    {
-        auto itr = m_stack.find(obj);
-        if(itr != m_stack.end())
-        {
-            m_stack.erase(itr);
-        }
-    }
-    void stack_clear()
-    {
-        std::unordered_set<ObjectType*> _stack = m_stack;
-        for(auto& itr : _stack)
-        {
-            itr->stop();
-            itr->pop_node();
-        }
-        m_stack.clear();
-    }
 };
 
 //======================================================================================//
@@ -1216,17 +870,21 @@ public:
 //======================================================================================//
 
 template <typename ObjectType>
-class storage<ObjectType, false>
+class storage<ObjectType, false> : public base::storage
 {
 public:
     //----------------------------------------------------------------------------------//
     //
+    using base_type     = base::storage;
     using this_type     = storage<ObjectType, false>;
     using string_t      = std::string;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
+
+    friend class tim::manager;
+    friend struct details::storage_deleter<this_type>;
 
 public:
     using iterator       = void*;
@@ -1241,13 +899,45 @@ public:
     }
 
 public:
+    static bool& master_is_finalizing()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    static bool& worker_is_finalizing()
+    {
+        static thread_local bool _instance = master_is_finalizing();
+        return _instance;
+    }
+
+    static bool is_finalizing()
+    {
+        return worker_is_finalizing() || master_is_finalizing();
+    }
+
+private:
+    static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
+
+    static singleton_t& get_noninit_singleton()
+    {
+        return get_noninit_storage_singleton<this_type>();
+    }
+
+    static std::atomic<int64_t>& instance_count()
+    {
+        static std::atomic<int64_t> _counter;
+        return _counter;
+    }
+
+public:
     //----------------------------------------------------------------------------------//
     //
     storage()
+    : base_type(singleton_t::is_master_thread(), instance_count()++, ObjectType::label())
     {
         if(settings::debug())
-            printf("[%s]> constructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
-
+            printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
         get_shared_manager();
         component::properties<ObjectType>::has_storage() = false;
     }
@@ -1257,7 +947,7 @@ public:
     ~storage()
     {
         if(settings::debug())
-            printf("[%s]> destructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
+            printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1270,25 +960,35 @@ public:
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = delete;
 
-    //----------------------------------------------------------------------------------//
-    //  cleanup function for object
-    //
-    void cleanup() { ObjectType::invoke_cleanup(); }
-
 public:
     //----------------------------------------------------------------------------------//
     //
+    virtual void print() final { finalize(); }
+
+    virtual void cleanup() final { ObjectType::invoke_cleanup(); }
+
+    virtual void stack_clear() final
+    {
+        std::unordered_set<ObjectType*> _stack = m_stack;
+        for(auto& itr : _stack)
+        {
+            itr->stop();
+            itr->pop_node();
+        }
+        m_stack.clear();
+    }
+
     void initialize()
     {
         if(m_initialized)
             return;
 
         if(settings::debug())
-            printf("[%s]> initializing...\n", ObjectType::label().c_str());
+            printf("[%s]> initializing...\n", m_label.c_str());
 
         m_initialized = true;
 
-        if(!singleton_t::is_master(this))
+        if(!m_is_master)
         {
             ObjectType::thread_init_policy(this);
         }
@@ -1299,32 +999,7 @@ public:
         }
     }
 
-    //----------------------------------------------------------------------------------//
-    //
-    static bool& master_is_finalizing()
-    {
-        static bool _instance = false;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    static bool& worker_is_finalizing()
-    {
-        static thread_local bool _instance = master_is_finalizing();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    static bool is_finalizing()
-    {
-        return worker_is_finalizing() || master_is_finalizing();
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    void finalize()
+    void finalize() final
     {
         if(m_finalized)
             return;
@@ -1333,10 +1008,10 @@ public:
             return;
 
         if(settings::debug())
-            printf("[%s]> finalizing...\n", ObjectType::label().c_str());
+            printf("[%s]> finalizing...\n", m_label.c_str());
 
         m_finalized = true;
-        if(!singleton_t::is_master(this))
+        if(!m_is_master)
         {
             worker_is_finalizing() = true;
             ObjectType::thread_finalize_policy(this);
@@ -1350,46 +1025,31 @@ public:
         }
     }
 
-    //----------------------------------------------------------------------------------//
-    //  query status properties
-    //
-    bool    is_initialized() const { return m_initialized; }
-    bool    is_finalized() const { return m_finalized; }
-    int64_t instance_id() const { return m_instance_id; }
-
 public:
-    //----------------------------------------------------------------------------------//
-    // there is always a head node that should not be counted
-    //
-    bool empty() const { return true; }
-
-    //----------------------------------------------------------------------------------//
-    // there is always a head node that should not be counted
-    //
+    bool          empty() const { return true; }
     inline size_t size() const { return 0; }
     inline size_t depth() const { return 0; }
 
-    //----------------------------------------------------------------------------------//
-    //
     iterator pop() { return nullptr; }
-
-    //----------------------------------------------------------------------------------//
-    //
     iterator insert(int64_t, const ObjectType&, const string_t&) { return nullptr; }
 
-    //----------------------------------------------------------------------------------//
-    //
-    void print() { finalize(); }
+    template <typename _Archive>
+    void serialize(_Archive&, const unsigned int)
+    {}
 
-    //----------------------------------------------------------------------------------//
-    //
-    void add_hash_id(const std::string& _prefix)
+    void stack_push(ObjectType* obj) { m_stack.insert(obj); }
+    void stack_pop(ObjectType* obj)
     {
-        ::tim::add_hash_id(m_hash_ids, _prefix);
+        auto itr = m_stack.find(obj);
+        if(itr != m_stack.end())
+        {
+            m_stack.erase(itr);
+        }
     }
 
+public:
 protected:
-    friend struct details::storage_deleter<this_type>;
+    void get_shared_manager();
 
     void merge()
     {
@@ -1423,64 +1083,13 @@ protected:
                 (*m_hash_aliases)[_itr.first] = _itr.second;
     }
 
-public:
-    template <typename _Archive>
-    void serialize(_Archive&, const unsigned int)
-    {}
-
-    void get_shared_manager();
-    void free_shared_manager();
-
 private:
-    friend class tim::manager;
-
     template <typename _Archive>
     void _serialize(_Archive&)
     {}
 
 private:
-    static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
-    static singleton_t& get_noninit_singleton()
-    {
-        return get_noninit_storage_singleton<this_type>();
-    }
-
-    static std::atomic<int64_t>& instance_count()
-    {
-        static std::atomic<int64_t> _counter;
-        return _counter;
-    }
-
-    bool                            m_initialized  = false;
-    bool                            m_finalized    = false;
-    int64_t                         m_instance_id  = instance_count()++;
-    graph_hash_map_ptr_t            m_hash_ids     = ::tim::get_hash_ids();
-    graph_hash_alias_ptr_t          m_hash_aliases = ::tim::get_hash_aliases();
-    std::shared_ptr<manager>        m_manager;
     std::unordered_set<ObjectType*> m_stack;
-
-public:
-    const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
-    const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
-    void                          stack_push(ObjectType* obj) { m_stack.insert(obj); }
-    void                          stack_pop(ObjectType* obj)
-    {
-        auto itr = m_stack.find(obj);
-        if(itr != m_stack.end())
-        {
-            m_stack.erase(itr);
-        }
-    }
-    void stack_clear()
-    {
-        std::unordered_set<ObjectType*> _stack = m_stack;
-        for(auto& itr : _stack)
-        {
-            itr->stop();
-            itr->pop_node();
-        }
-        m_stack.clear();
-    }
 };
 
 //======================================================================================//

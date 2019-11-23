@@ -907,11 +907,9 @@ struct serialization
     serialization(const base_type& obj, _Archive& ar, const unsigned int)
     {
         auto _data = static_cast<const Type&>(obj).get();
-        ar(serializer::make_nvp("is_transient", obj.is_transient),
-           serializer::make_nvp("laps", obj.laps),
-           serializer::make_nvp("repr_data", _data),
-           serializer::make_nvp("value", obj.value),
-           serializer::make_nvp("accum", obj.accum));
+        ar(cereal::make_nvp("is_transient", obj.is_transient),
+           cereal::make_nvp("laps", obj.laps), cereal::make_nvp("repr_data", _data),
+           cereal::make_nvp("value", obj.value), cereal::make_nvp("accum", obj.accum));
     }
 
     template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>

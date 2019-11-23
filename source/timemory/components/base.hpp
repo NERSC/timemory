@@ -384,16 +384,16 @@ public:
     //----------------------------------------------------------------------------------//
     // serialization
     //
-    template <typename Archive>
+    template <typename Archive, typename _Up = Type,
+              enable_if_t<!(trait::split_serialization<_Up>::value), int> = 0>
     void serialize(Archive& ar, const unsigned int)
     {
         // operation::serialization<Type, Archive>(*this, ar, version);
         auto _data = static_cast<const Type&>(*this).get();
-        ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _data),
-           serializer::make_nvp("value", value), serializer::make_nvp("accum", accum),
-           serializer::make_nvp("units", get_unit()),
-           serializer::make_nvp("display_units", get_display_unit()));
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("repr_data", _data), cereal::make_nvp("value", value),
+           cereal::make_nvp("accum", accum), cereal::make_nvp("units", get_unit()),
+           cereal::make_nvp("display_units", get_display_unit()));
     }
 
     const int64_t&    nlaps() const { return laps; }

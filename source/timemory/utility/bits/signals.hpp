@@ -33,7 +33,7 @@
 #include <sstream>
 #include <string>
 
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 
 namespace tim
 {

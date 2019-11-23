@@ -43,11 +43,11 @@
 #include <string>
 
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
@@ -369,7 +369,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        ar(serializer::make_nvp("key", m_key), serializer::make_nvp("laps", m_laps));
+        ar(cereal::make_nvp("key", m_key), cereal::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
         apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);

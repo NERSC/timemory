@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

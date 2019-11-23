@@ -18,7 +18,7 @@ WORKDIR /tmp
 
 # build and env args used by package-manager
 ARG COMPILER_TYPE=gcc
-ARG COMPILER_VERSION=8.0
+ARG COMPILER_VERSION=8
 ARG ENABLE_DISPLAY=1
 
 # package-manager configuration

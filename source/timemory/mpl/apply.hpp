@@ -36,8 +36,8 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <utility>
-#include <vector>
+
+#include "timemory/mpl/math.hpp"
 
 #if defined(__NVCC__)
 #    define TIMEMORY_LAMBDA __host__ __device__
@@ -468,14 +468,15 @@ struct _apply_impl<void>
     }
 
     //----------------------------------------------------------------------------------//
-    //  add two tuples
+    //  per-element addition of two tuples
     //
     template <typename _Tuple, size_t _Idx, size_t... _Nt,
               enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
     static void plus(_Tuple& _lhs, const _Tuple& _rhs)
     {
+        // using value_type = decay_t<decltype(std::get<_Idx>(_lhs))>;
+        // math::compute<value_type>::plus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
         using namespace stl_overload;
-        // assign argument
         std::get<_Idx>(_lhs) += std::get<_Idx>(_rhs);
     }
 
@@ -494,13 +495,15 @@ struct _apply_impl<void>
     }
 
     //----------------------------------------------------------------------------------//
-    //  subtract two tuples
+    //  per-element subtraction of two tuples
     //
     template <typename _Tuple, size_t _Idx, size_t... _Nt,
               enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
     static void minus(_Tuple& _lhs, const _Tuple& _rhs)
     {
-        // assign argument
+        // using value_type = decay_t<decltype(std::get<_Idx>(_lhs))>;
+        // math::compute<value_type>::minus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+        using namespace stl_overload;
         std::get<_Idx>(_lhs) -= std::get<_Idx>(_rhs);
     }
 
@@ -516,6 +519,33 @@ struct _apply_impl<void>
     static _Ret minus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
     {
         minus<_Tuple, _Idx...>(_lhs, _rhs);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  per-element percent difference calculation
+    //
+    template <typename _Tuple, size_t _Idx, size_t... _Nt,
+              enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+    static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+    {
+        using value_type = decay_t<decltype(std::get<_Idx>(_ret))>;
+        math::compute<value_type>::percent_diff(
+            std::get<_Idx>(_ret), std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+    }
+
+    template <typename _Tuple, size_t _Idx, size_t... _Nt,
+              enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+    static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+    {
+        percent_diff<_Tuple, _Idx>(_ret, _lhs, _rhs);
+        percent_diff<_Tuple, _Nt...>(_ret, _lhs, _rhs);
+    }
+
+    template <typename _Tuple, size_t... _Idx>
+    static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
+                             index_sequence<_Idx...>)
+    {
+        percent_diff<_Tuple, _Idx...>(_ret, _lhs, _rhs);
     }
 
     //----------------------------------------------------------------------------------//
@@ -945,7 +975,7 @@ struct apply<void>
     }
 
     //----------------------------------------------------------------------------------//
-    //  add two tuples
+    //  per-element addition of two tuples
     //
     template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
     static void plus(_Tuple& _lhs, const _Tuple& _rhs)
@@ -954,12 +984,22 @@ struct apply<void>
     }
 
     //----------------------------------------------------------------------------------//
-    //  subtract two tuples
+    //  per-element subtraction of two tuples
     //
     template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
     static void minus(_Tuple& _lhs, const _Tuple& _rhs)
     {
         _apply_impl<_Ret>::template minus<_Tuple>(_lhs, _rhs, make_index_sequence<_N>{});
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  per-element percent difference of two tuples
+    //
+    template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
+    static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+    {
+        _apply_impl<_Ret>::template percent_diff<_Tuple>(_ret, _lhs, _rhs,
+                                                         make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//

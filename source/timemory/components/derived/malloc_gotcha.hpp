@@ -24,11 +24,11 @@
 
 #pragma once
 
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/gotcha.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/settings.hpp"
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/backends/cuda.hpp"

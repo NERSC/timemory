@@ -25,7 +25,6 @@
 #pragma once
 
 #include "timemory/backends/papi.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
@@ -34,6 +33,7 @@
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/mpl/policy.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -268,7 +268,7 @@ struct cpu_roofline
         }
 
         // found that PAPI occassionally seg-faults during add_event...
-        static std::mutex _mutex;
+        static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);
 
         papi::create_event_set(_event_set_ptr(), settings::papi_multiplexing());
@@ -304,7 +304,7 @@ struct cpu_roofline
     static void invoke_thread_finalize(storage_type*)
     {
         // found that PAPI occassionally seg-faults during add_event so adding here too...
-        static std::mutex _mutex;
+        static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);
 
         if(event_set() != PAPI_NULL && events().size() > 0)
@@ -355,7 +355,7 @@ struct cpu_roofline
         auto& _ert_data = get_ert_data();
         if(!_ert_data.get())  // for input
             _ert_data.reset(new ert_data_t());
-        ar(serializer::make_nvp("roofline", *_ert_data.get()));
+        ar(cereal::make_nvp("roofline", *_ert_data.get()));
     }
 
     //----------------------------------------------------------------------------------//
@@ -656,10 +656,10 @@ public:
     {
         auto _disp = get_display();
 
-        ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("display", _disp),
-           serializer::make_nvp("mode", get_mode_string()),
-           serializer::make_nvp("type", get_type_string()));
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("display", _disp),
+           cereal::make_nvp("mode", get_mode_string()),
+           cereal::make_nvp("type", get_type_string()));
 
         const auto& labels  = get_labels();
         auto        data    = (is_transient) ? accum.first : value.first;
@@ -668,15 +668,16 @@ public:
         ar.startNode();
         auto litr = labels.begin();
         auto ditr = data.begin();
-        ar(serializer::make_nvp("runtime", runtime));
+        ar(cereal::make_nvp("runtime", runtime));
         for(; litr != labels.end() && ditr != data.end(); ++litr, ++ditr)
-            ar(serializer::make_nvp(*litr, double(*ditr)));
-        ar(serializer::make_nvp("counted", get_counted()),
-           serializer::make_nvp("elapsed", get_elapsed()),
-           serializer::make_nvp("fom", get()));
+            ar(cereal::make_nvp(*litr, double(*ditr)));
+        ar(cereal::make_nvp("counted", get_counted()),
+           cereal::make_nvp("elapsed", get_elapsed()), cereal::make_nvp("fom", get()));
         ar.finishNode();
 
-        ar(serializer::make_nvp("value", value), serializer::make_nvp("accum", accum));
+        ar(cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
+           cereal::make_nvp("units", count_type::get_unit()),
+           cereal::make_nvp("display_units", count_type::get_display_unit()));
     }
 
     //----------------------------------------------------------------------------------//

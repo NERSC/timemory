@@ -42,7 +42,7 @@
 #include "timemory/bits/types.hpp"
 
 #if !defined(TIMEMORY_PAPI_ARRAY_SIZE)
-#    define TIMEMORY_PAPI_ARRAY_SIZE 32
+#    define TIMEMORY_PAPI_ARRAY_SIZE 8
 #endif
 
 //======================================================================================//

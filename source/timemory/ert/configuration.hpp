@@ -26,13 +26,13 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/ert/types.hpp"
+#include "timemory/settings.hpp"
 
 #include <cstdint>
 #include <functional>

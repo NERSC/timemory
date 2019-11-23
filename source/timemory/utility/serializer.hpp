@@ -56,19 +56,32 @@
 // archives
 #include <cereal/archives/json.hpp>
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
-namespace serializer
+using setting_parse_callback_t     = std::function<void()>;
+using setting_parse_callback_vec_t = std::vector<setting_parse_callback_t>;
+
+//--------------------------------------------------------------------------------------//
+
+namespace tim
 {
-//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_EXTERN_INIT)
 
-using cereal::make_nvp;
+extern setting_parse_callback_vec_t&
+get_parse_callbacks();
 
-//--------------------------------------------------------------------------------------//
+#else
 
-}  // namespace serializer
+inline setting_parse_callback_vec_t&
+get_parse_callbacks()
+{
+    static setting_parse_callback_vec_t _instance;
+    return _instance;
+}
 
-//======================================================================================//
+#endif
+
+}  // namespace tim
 
 #if defined(__GNUC__) && (__GNUC__ > 7)
 #    pragma GCC diagnostic pop

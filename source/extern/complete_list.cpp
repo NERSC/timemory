@@ -58,6 +58,7 @@ TIMEMORY_INSTANTIATE_EXTERN_LIST(
     ::tim::component::gperf_cpu_profiler, ::tim::component::gperf_heap_profiler,
     ::tim::component::gpu_roofline_dp_flops, ::tim::component::gpu_roofline_flops,
     ::tim::component::gpu_roofline_hp_flops, ::tim::component::gpu_roofline_sp_flops,
+    ::tim::component::likwid_nvmon, ::tim::component::likwid_perfmon,
     ::tim::component::monotonic_clock, ::tim::component::monotonic_raw_clock,
     ::tim::component::num_io_in, ::tim::component::num_io_out,
     ::tim::component::num_major_page_faults, ::tim::component::num_minor_page_faults,

@@ -14,9 +14,9 @@ export CXX=$(which c++)
 export CUDACXX=$(which nvcc)
 
 ROOT_DIR=${PWD}
-: ${TIMEMORY_BRANCH:="CUPTI"}
+: ${TIMEMORY_BRANCH:="master"}
 
-run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/jrmadsen/TiMemory.git timemory-source
+run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/NERSC/timemory.git timemory-source
 run-verbose cd timemory-source
 
 SOURCE_DIR=${PWD}

@@ -293,12 +293,24 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
+#include "timemory/bits/timemory.hpp"
+#include "timemory/config.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/storage.hpp"
-#include "timemory/variadic/component_tuple.hpp"
 
 //======================================================================================//
+//  non-template version
+//
+inline void
+tim::settings::initialize_storage()
+{
+    using _Tuple = available_tuple<tim::complete_tuple_t>;
+    manager::get_storage<_Tuple>::initialize();
+}
 
+//--------------------------------------------------------------------------------------//
+//  template version
+//
 template <typename _Tuple>
 void
 tim::settings::initialize_storage()
@@ -306,21 +318,13 @@ tim::settings::initialize_storage()
     manager::get_storage<_Tuple>::initialize();
 }
 
-namespace tim
-{
 //--------------------------------------------------------------------------------------//
-// extra variadic initialization
-//
-template <typename... _Types>
+
 inline void
-timemory_init()
+tim::base::storage::free_shared_manager()
 {
-    using tuple_type = tuple_concat_t<_Types...>;
-    settings::initialize_storage<tuple_type>();
+    if(m_manager)
+        m_manager->remove_finalizer(m_label);
 }
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace tim
 
 //======================================================================================//

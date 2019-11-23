@@ -57,9 +57,9 @@
 #include "pybind11/stl.h"
 
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/enum.h"
 #include "timemory/manager.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/variadic/auto_list.hpp"

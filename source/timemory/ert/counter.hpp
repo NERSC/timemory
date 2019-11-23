@@ -27,13 +27,13 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/types.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -196,14 +196,14 @@ public:
                 ss << "scalar_op";
         }
 
-        auto  label = tim::demangle<_Tp>();
-        data_type _data(ss.str(), working_set, trials, total_bytes, total_ops,
-                        nops, _counter, _Device::name(), label, _itrp);
+        auto      label = tim::demangle<_Tp>();
+        data_type _data(ss.str(), working_set, trials, total_bytes, total_ops, nops,
+                        _counter, _Device::name(), label, _itrp);
 
         if(settings::verbose() > 1 || settings::debug())
             std::cout << "[RECORD]> " << _data << std::endl;
 
-        static std::mutex _mutex;
+        static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);
         *data += _data;
     }
@@ -224,7 +224,7 @@ public:
     {
         if(!data.get())  // for input
             data = data_ptr_t(new ert_data_t());
-        ar(serializer::make_nvp("params", params), serializer::make_nvp("data", *data));
+        ar(cereal::make_nvp("params", params), cereal::make_nvp("data", *data));
     }
 
     //----------------------------------------------------------------------------------//
@@ -290,9 +290,9 @@ serialize(std::string fname, exec_data<_Counter>& obj)
 
     mpi::barrier(mpi::comm_world_v);
 
-    int mpi_rank = mpi::rank();
-    int mpi_size = mpi::size();
-    auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+    int  mpi_rank = mpi::rank();
+    int  mpi_size = mpi::size();
+    auto space    = cereal::JSONOutputArchive::Options::IndentChar::space;
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -302,7 +302,7 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         {
             cereal::JSONOutputArchive::Options opt(16, space, 0);
             cereal::JSONOutputArchive          oa(ss, opt);
-            oa(serializer::make_nvp("data", src));
+            oa(cereal::make_nvp("data", src));
         }
         return ss.str();
     };
@@ -311,12 +311,12 @@ serialize(std::string fname, exec_data<_Counter>& obj)
     //  Used to convert the serialization to a result
     //
     auto recv_serialize = [&](const std::string& src) {
-        exec_data<_Counter>    ret;
-        std::stringstream ss;
+        exec_data<_Counter> ret;
+        std::stringstream   ss;
         ss << src;
         {
             cereal::JSONInputArchive ia(ss);
-            ia(serializer::make_nvp("data", ret));
+            ia(cereal::make_nvp("data", ret));
             if(settings::debug())
                 printf("[RECV: %i]> data size: %lli\n", mpi_rank,
                        (long long int) ret.size());
@@ -325,7 +325,7 @@ serialize(std::string fname, exec_data<_Counter>& obj)
     };
 
     exec_data_vec_t results(mpi_size);
-    auto str_ret = send_serialize(obj);
+    auto            str_ret = send_serialize(obj);
 
     if(mpi_rank == 0)
     {

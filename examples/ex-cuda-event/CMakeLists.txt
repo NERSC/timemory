@@ -18,7 +18,7 @@ if(USE_CUPTI)
     list(APPEND COMPONENTS cupti)
 endif()
 
-option(USE_PAPI "Enable PAPI" ON)
+option(USE_PAPI "Enable PAPI" OFF)
 if(USE_PAPI)
     list(APPEND COMPONENTS papi)
 endif()

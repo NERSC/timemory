@@ -42,9 +42,8 @@ using namespace tim::units;
 namespace device {
 using namespace tim::device;
 }
-namespace settings {
-using namespace tim::settings;
-}
+
+using settings = tim::settings;
 
 //--------------------------------------------------------------------------------------//
 // timemory has a backends that will not call MPI_Init, cudaDeviceCount, etc.

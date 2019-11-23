@@ -22,80 +22,77 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/utility/types.hpp
+ * \headerfile timemory/utility/types.hpp "timemory/utility/types.hpp"
+ * Declaration of types for utility directory
+ *
+ */
+
 #pragma once
 
-#include "timemory/mpl/apply.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/utility/type_id.hpp"
-#include "timemory/utility/utility.hpp"
-
-#include <string>
-#include <tuple>
+#include <memory>
 
 namespace tim
 {
+template <typename _Tp, typename _Deleter>
+class singleton;
+
+//--------------------------------------------------------------------------------------//
+
+namespace details
+{
+template <typename StorageType>
+struct storage_deleter;
+
+template <typename ObjectType>
+class storage;
+
+template <typename _Tp>
+using storage_singleton_t =
+    singleton<_Tp, std::unique_ptr<_Tp, details::storage_deleter<_Tp>>>;
+
+}  // namespace details
+
 //--------------------------------------------------------------------------------------//
 
 namespace impl
 {
-template <typename... _Args>
-struct mangler
-{
-    static std::string mangle(std::string func, bool is_memfun, bool is_const)
-    {
-        auto        nargs = sizeof...(_Args);
-        std::string ret   = "_Z";
-        if(func.length() > 0 && func[0] == '&')
-            func = func.substr(1);
-        auto delim = delimit(func, ":()<>");
-        if(delim.size() > 1)
-            ret += "N";
-        if(is_memfun && is_const)
-            ret += "K";
-        for(const auto& itr : delim)
-        {
-            ret += std::to_string(itr.length());
-            ret += itr;
-        }
-        ret += "E";
-
-        if(nargs == 0)
-            ret += "v";
-        else
-            ret += apply<std::string>::join("", type_id<_Args>::name()...);
-
-        if(settings::verbose() > 1 || settings::debug())
-            printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
-        return ret;
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Args>
-struct mangler<std::tuple<_Args...>>
-{
-    static std::string mangle(std::string func, bool is_memfun, bool is_const)
-    {
-        return mangler<_Args...>::mangle(func, is_memfun, is_const);
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
+template <typename ObjectType, bool IsAvailable>
+class storage
+{};
 }  // namespace impl
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Func, typename _Traits = function_traits<_Func>>
-std::string
-mangle(const std::string& func)
+namespace base
 {
-    using _Tuple             = typename _Traits::args_type;
-    constexpr bool is_memfun = _Traits::is_memfun;
-    constexpr bool is_const  = _Traits::is_const;
-    return impl::mangler<_Tuple>::mangle(func, is_memfun, is_const);
+class storage;
 }
+
+//--------------------------------------------------------------------------------------//
+
+namespace cupti
+{
+struct result;
+}
+
+//--------------------------------------------------------------------------------------//
+
+namespace scope
+{
+// flat-scope storage
+struct flat
+{};
+
+// thread-scoped storage
+struct thread
+{};
+
+// process-scoped storage
+struct process
+{};
+
+}  // namespace scope
 
 //--------------------------------------------------------------------------------------//
 

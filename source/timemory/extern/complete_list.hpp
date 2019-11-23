@@ -41,8 +41,6 @@
 //
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_EXTERN_TEMPLATE_BUILD)
 
-namespace tim
-{
 TIMEMORY_DECLARE_EXTERN_LIST(
     complete_list_t, ::tim::component::caliper, ::tim::component::cpu_clock,
     ::tim::component::cpu_roofline_dp_flops, ::tim::component::cpu_roofline_flops,
@@ -52,6 +50,7 @@ TIMEMORY_DECLARE_EXTERN_LIST(
     ::tim::component::gperf_cpu_profiler, ::tim::component::gperf_heap_profiler,
     ::tim::component::gpu_roofline_dp_flops, ::tim::component::gpu_roofline_flops,
     ::tim::component::gpu_roofline_hp_flops, ::tim::component::gpu_roofline_sp_flops,
+    ::tim::component::likwid_nvmon, ::tim::component::likwid_perfmon,
     ::tim::component::monotonic_clock, ::tim::component::monotonic_raw_clock,
     ::tim::component::num_io_in, ::tim::component::num_io_out,
     ::tim::component::num_major_page_faults, ::tim::component::num_minor_page_faults,
@@ -66,11 +65,6 @@ TIMEMORY_DECLARE_EXTERN_LIST(
     ::tim::component::thread_cpu_util, ::tim::component::trip_count,
     ::tim::component::user_clock, ::tim::component::virtual_memory,
     ::tim::component::voluntary_context_switch, ::tim::component::written_bytes)
-}
-
-namespace tim
-{
-using complete_list_t = extern_list_complete_list_t;
 }
 
 #endif

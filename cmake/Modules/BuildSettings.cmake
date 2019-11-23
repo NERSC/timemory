@@ -70,7 +70,7 @@ if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZAT
     # add_flag_if_avail("-fno-signed-zeros")
     # add_flag_if_avail("-mfast-fp")
 else()
-    add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
+    # add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 endif()
 
 #----------------------------------------------------------------------------------------#

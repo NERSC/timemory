@@ -208,6 +208,15 @@ struct thread_scope_only : std::false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait that signifies the component will be providing a separate split load(...) and
+/// store(...) for serialization so the base class should not provide a generic
+/// serialize(...) function
+///
+template <typename _Tp>
+struct split_serialization : std::false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Trait>
 inline std::string
@@ -529,6 +538,12 @@ struct is_available<component::cuda_event> : std::false_type
 //                              CUPTI / GPU ROOFLINE
 //
 //--------------------------------------------------------------------------------------//
+//  always specify split serialization so there is never an ambiguity
+//
+template <typename... _Types>
+struct split_serialization<component::gpu_roofline<_Types...>> : std::true_type
+{};
+
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUPTI
 //
 #if !defined(TIMEMORY_USE_CUPTI)

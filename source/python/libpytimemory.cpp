@@ -314,7 +314,9 @@ PYBIND11_MODULE(libpytimemory, tim)
                 auto  _str  = argv.begin()->cast<std::string>();
                 char* _argv = new char[_str.size()];
                 std::strcpy(_argv, _str.c_str());
-                tim::timemory_init(1, &_argv, _prefix, _suffix);
+                auto __argc = 1;
+                auto __argv = &_argv;
+                tim::timemory_init(__argc, __argv, _prefix, _suffix);
                 delete[] _argv;
             },
             "Parse the environment and use argv[0] to set output path",

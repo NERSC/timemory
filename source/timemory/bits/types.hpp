@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include "timemory/bits/settings.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/settings.hpp"
 
 #include <array>
 #include <ostream>

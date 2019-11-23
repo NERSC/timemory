@@ -31,9 +31,9 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/settings.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/backends/cupti.hpp"
@@ -462,10 +462,11 @@ struct cupti_counters
         array_t<double> _disp  = _get(accum);
         array_t<double> _value = _get(value);
         array_t<double> _accum = _get(accum);
-        ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _disp),
-           serializer::make_nvp("value", _value), serializer::make_nvp("accum", _accum),
-           serializer::make_nvp("display", _disp));
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
+           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp),
+           cereal::make_nvp("units", unit_array()),
+           cereal::make_nvp("display_units", display_unit_array()));
     }
 
     //----------------------------------------------------------------------------------//
@@ -478,10 +479,8 @@ struct cupti_counters
         auto& _metrics = *_get_metrics();
         auto& _labels  = *_get_labels();
 
-        ar(serializer::make_nvp("devices", _devices),
-           serializer::make_nvp("events", _events),
-           serializer::make_nvp("metrics", _metrics),
-           serializer::make_nvp("labels", _labels));
+        ar(cereal::make_nvp("devices", _devices), cereal::make_nvp("events", _events),
+           cereal::make_nvp("metrics", _metrics), cereal::make_nvp("labels", _labels));
     }
 
     //----------------------------------------------------------------------------------//

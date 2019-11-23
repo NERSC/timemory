@@ -25,10 +25,10 @@
 #pragma once
 
 #include "timemory/backends/gotcha.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/mangler.hpp"
 
