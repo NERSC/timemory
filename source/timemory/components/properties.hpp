@@ -22,38 +22,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_BUILD_EXTERN_INIT
-#define TIMEMORY_BUILD_EXTERN_TEMPLATE
+/** \file component/properties.hpp
+ * \headerfile component/properties.hpp "timemory/component/properties.hpp"
+ * Provides properties for components
+ *
+ */
 
-#include "timemory/components.hpp"
-#include "timemory/manager.hpp"
-#include "timemory/utility/bits/storage.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/singleton.hpp"
-#include "timemory/utility/utility.hpp"
+#pragma once
 
-#if defined(TIMEMORY_USE_PAPI)
+#include "timemory/enum.h"
 
 namespace tim
 {
-TIMEMORY_INSTANTIATE_EXTERN_INIT(papi_array_t)
-
 namespace component
 {
+//--------------------------------------------------------------------------------------//
 //
-//
-template struct base<papi_array<8>, std::array<long long, 8>, policy::thread_init,
-                     policy::thread_finalize>;
+template <typename _Tp>
+struct properties
+{
+    // eventually this should provide overloading to enum
+    static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
 
-template struct base<papi_array<16>, std::array<long long, 16>, policy::thread_init,
-                     policy::thread_finalize>;
-
-template struct base<papi_array<32>, std::array<long long, 32>, policy::thread_init,
-                     policy::thread_finalize>;
+    static bool& has_storage()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
+};
 //
-//
+//--------------------------------------------------------------------------------------//
 }  // namespace component
 }  // namespace tim
-
-#endif

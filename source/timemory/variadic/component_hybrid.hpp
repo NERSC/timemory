@@ -42,6 +42,7 @@
 #include <iostream>
 #include <string>
 
+#include "timemory/general/source_location.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/types.hpp"

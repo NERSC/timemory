@@ -34,8 +34,8 @@
 #include <cstdint>
 #include <string>
 
-#include "timemory/bits/types.hpp"
 #include "timemory/compat/macros.h"
+#include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"

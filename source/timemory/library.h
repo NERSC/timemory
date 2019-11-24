@@ -30,7 +30,7 @@
 //
 #if defined(__cplusplus)
 
-// for generating names
+#    include "timemory/utility/bits/storage.hpp"
 #    include "timemory/variadic/macros.hpp"
 
 //--------------------------------------------------------------------------------------//

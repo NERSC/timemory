@@ -29,6 +29,7 @@
  */
 
 #include "timemory/components.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/operations.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
@@ -571,6 +572,7 @@ storage<ObjectType, true>::get()
             else
             {
                 std::get<1>(*citr) += std::get<1>(itr);
+                std::get<1>(*citr).plus(std::get<1>(itr));
             }
         }
         return _combined;

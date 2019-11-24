@@ -30,6 +30,7 @@
 #define TIMEMORY_BUILD_EXTERN_INIT
 
 #include "timemory/components.hpp"
+#include "timemory/general/hash.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/macros.hpp"
@@ -42,15 +43,6 @@ using namespace tim::component;
 #if defined(TIMEMORY_EXTERN_INIT)
 
 //======================================================================================//
-#    if defined(TIMEMORY_USE_MPI)
-::tim::manager*
-timemory_mpi_manager_master_instance()
-{
-    using manager_t     = tim::manager;
-    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
-    return _pinst.first.get();
-}
-#    endif
 
 extern "C"
 {
@@ -85,104 +77,20 @@ extern "C"
         using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
         tim::manager::get_storage<tuple_type>::initialize(_master);
     }
-
-#    if defined(TIMEMORY_USE_MPI)
-    int MPI_Init(int* argc, char*** argv)
-    {
-        static auto _manager = timemory_mpi_manager_master_instance();
-        tim::consume_parameters(_manager);
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
-                   __LINE__);
-        }
-        ::tim::timemory_init(*argc, *argv);
-        return PMPI_Init(argc, argv);
-    }
-
-    int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
-    {
-        if(req != MPI_THREAD_MULTIPLE)
-            throw std::runtime_error(
-                "Error! Invalid call to MPI_Init_thread(...)! timemory requires "
-                "MPI_Init_thread(int*, char***, MPI_THREAD_MULTIPLE, int*)");
-
-        static auto _manager = timemory_mpi_manager_master_instance();
-        tim::consume_parameters(_manager);
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-        ::tim::timemory_init(*argc, *argv);
-        return PMPI_Init_thread(argc, argv, req, prov);
-    }
-
-    int MPI_Finalize()
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-        auto manager = timemory_mpi_manager_master_instance();
-        if(manager)
-            manager->finalize();
-        ::tim::mpi::is_finalized() = true;
-        return PMPI_Finalize();
-    }
-#    endif
 }
+
 //======================================================================================//
 
 namespace tim
 {
-//======================================================================================//
-
+//--------------------------------------------------------------------------------------//
+//
+//
 env_settings*
 env_settings::instance()
 {
     static env_settings* _instance = new env_settings();
     return _instance;
-}
-
-//======================================================================================//
-
-std::atomic<int32_t>&
-manager::f_manager_instance_count()
-{
-    static std::atomic<int32_t> _instance;
-    return _instance;
-}
-
-//======================================================================================//
-// number of threads counter
-//
-std::atomic<int32_t>&
-manager::f_thread_counter()
-{
-    static std::atomic<int32_t> _instance;
-    return _instance;
-}
-
-//======================================================================================//
-// get either master or thread-local instance
-//
-manager::pointer_t
-manager::instance()
-{
-    static thread_local auto _inst = get_shared_ptr_pair_instance<manager>();
-    return _inst;
-}
-
-//======================================================================================//
-// get master instance
-//
-manager::pointer_t
-manager::master_instance()
-{
-    static auto _pinst = get_shared_ptr_pair_master_instance<manager>();
-    return _pinst;
 }
 
 //--------------------------------------------------------------------------------------//

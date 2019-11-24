@@ -411,12 +411,14 @@ TEST_F(tuple_tests, collapsed_threads)
 
     if(tim::trait::is_available<thread_cpu_clock>::value)
     {
-        EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(), store_size + 4);
+        EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(),
+                  store_size + 4);
     }
 
     if(tim::trait::is_available<thread_cpu_util>::value)
     {
-        EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(), store_size + 4);
+        EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(),
+                  store_size + 4);
     }
 
     if(tim::trait::is_available<process_cpu_clock>::value)

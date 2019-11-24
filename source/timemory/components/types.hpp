@@ -39,7 +39,7 @@
 #include <type_traits>
 
 #include "timemory/backends/cuda.hpp"
-#include "timemory/bits/types.hpp"
+#include "timemory/components/properties.hpp"
 
 #if !defined(TIMEMORY_PAPI_ARRAY_SIZE)
 #    define TIMEMORY_PAPI_ARRAY_SIZE 8

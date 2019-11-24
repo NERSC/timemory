@@ -31,13 +31,55 @@
 
 #pragma once
 
-#include "timemory/bits/types.hpp"
-#include "timemory/components.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/serializer.hpp"
+
+// general components
+#include "timemory/components/general.hpp"
+#include "timemory/components/rusage.hpp"
+#include "timemory/components/timing.hpp"
+
+// caliper components
+#if defined(TIMEMORY_USE_CALIPER)
+#    include "timemory/components/caliper.hpp"
+#endif
+
+// gotcha components
+#if defined(TIMEMORY_USE_GOTCHA)
+#    include "timemory/components/gotcha.hpp"
+#endif
+
+// cuda event
+#if defined(TIMEMORY_USE_CUDA)
+#    include "timemory/components/cuda_event.hpp"
+#endif
+
+// nvtx marker
+#if defined(TIMEMORY_USE_NVTX)
+#    include "timemory/components/nvtx_marker.hpp"
+#endif
+
+// likwid
+#if defined(TIMEMORY_USE_LIKWID)
+#    include "timemory/components/likwid.hpp"
+#endif
+
+// GPU hardware counter components
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/components/cupti_activity.hpp"
+#    include "timemory/components/cupti_counters.hpp"
+#    include "timemory/components/gpu_roofline.hpp"
+#endif
+
+// CPU/GPU hardware counter components
+#if defined(TIMEMORY_USE_PAPI)
+#    include "timemory/components/cpu_roofline.hpp"
+#    include "timemory/components/papi_array.hpp"
+#    include "timemory/components/papi_tuple.hpp"
+#endif
 
 #include <iostream>
 #include <ostream>
@@ -505,6 +547,10 @@ struct customize
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    /*
+    //----------------------------------------------------------------------------------//
+    //  Explicit support provided
+    //
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     customize(Type& obj, _Args&&... _args)
@@ -512,10 +558,52 @@ struct customize
         obj.customize(std::forward<_Args>(_args)...);
     }
 
+    //----------------------------------------------------------------------------------//
+    //  Implicit support provided
+    //
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    customize(Type&, _Args&&...)
+    customize(Type& obj, _Args&&... _args)
+    {
+        customize_sfinae(obj, std::forward<_Args>(_args)...);
+    }
+    */
+
+    template <typename... _Args>
+    customize(Type& obj, _Args&&... _args)
+    {
+        customize_sfinae(obj, std::forward<_Args>(_args)...);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of supports args and an implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto customize_sfinae_impl(_Up& obj, int, _Args&&... _args)
+        -> decltype(obj.customize(std::forward<_Args>(_args)...), void())
+    {
+        obj.customize(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of !supports_args and no implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto customize_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
     {}
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename _Up, typename... _Args>
+    auto customize_sfinae(_Up& obj, _Args&&... _args)
+        -> decltype(customize_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    {
+        customize_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
 };
 
 //--------------------------------------------------------------------------------------//

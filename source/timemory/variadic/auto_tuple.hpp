@@ -41,6 +41,7 @@
 #include <cstdint>
 #include <string>
 
+#include "timemory/general/source_location.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"

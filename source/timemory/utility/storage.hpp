@@ -1215,5 +1215,3 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
 };
 
 //======================================================================================//
-
-// #include "timemory/utility/bits/storage.hpp"

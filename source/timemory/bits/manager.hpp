@@ -29,6 +29,8 @@
  *
  */
 
+#include "timemory/general/hash.hpp"
+#include "timemory/general/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/singleton.hpp"

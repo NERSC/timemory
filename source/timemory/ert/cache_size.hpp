@@ -131,7 +131,7 @@ cache_size(const int& _level)
     fpath << "/sys/devices/system/cpu/cpu0/cache/index" << level << "/";
 
     // files to read
-    static thread_local std::array<std::string, 3> files(
+    static const std::array<std::string, 3> files(
         { { "number_of_sets", "ways_of_associativity", "coherency_line_size" } });
 
     uint64_t product = 1;

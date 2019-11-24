@@ -22,15 +22,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file bits/types.hpp
- * \headerfile bits/types.hpp "timemory/bits/types.hpp"
- * Provides some additional info for timemory/components/types.hpp
+/** \file general/source_location.hpp
+ * \headerfile general/source_location.hpp "timemory/general/source_location.hpp"
+ * Provides source location information and variadic joining of source location
+ * tags
  *
  */
 
 #pragma once
 
-#include "timemory/enum.h"
+#include "timemory/general/hash.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/settings.hpp"
 
@@ -44,207 +45,6 @@
 
 namespace tim
 {
-namespace component
-{
-//--------------------------------------------------------------------------------------//
-//
-template <typename _Tp>
-struct properties
-{
-    static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
-    static bool&                        has_storage()
-    {
-        static thread_local bool _instance = false;
-        return _instance;
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace component
-
-//======================================================================================//
-// generate a master instance and a nullptr on the first pass
-// generate a worker instance on subsequent and return master and worker
-//
-template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
-          typename _Pair = std::pair<_Ptr, _Ptr>>
-_Pair&
-get_shared_ptr_pair()
-{
-    static auto              _master = std::make_shared<_Tp>();
-    static std::atomic<int>  _counter;
-    static thread_local auto _worker   = _Ptr((_counter++ == 0) ? nullptr : new _Tp());
-    static thread_local auto _instance = _Pair{ _master, _worker };
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
-          typename _Pair = std::pair<_Ptr, _Ptr>>
-_Ptr
-get_shared_ptr_pair_instance()
-{
-    static thread_local auto& _pinst = get_shared_ptr_pair<_Tp>();
-    static thread_local auto& _inst  = _pinst.second.get() ? _pinst.second : _pinst.first;
-    return _inst;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
-          typename _Pair = std::pair<_Ptr, _Ptr>>
-_Ptr
-get_shared_ptr_pair_master_instance()
-{
-    static auto& _pinst = get_shared_ptr_pair<_Tp>();
-    static auto  _inst  = _pinst.first;
-    return _inst;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-//  hash storage and source_location
-//
-//--------------------------------------------------------------------------------------//
-
-using hash_result_type          = std::hash<std::string>::result_type;
-using graph_hash_map_t          = std::unordered_map<hash_result_type, std::string>;
-using graph_hash_alias_t        = std::unordered_map<hash_result_type, hash_result_type>;
-using graph_hash_map_ptr_t      = std::shared_ptr<graph_hash_map_t>;
-using graph_hash_map_ptr_pair_t = std::pair<graph_hash_map_ptr_t, graph_hash_map_ptr_t>;
-using graph_hash_alias_ptr_t    = std::shared_ptr<graph_hash_alias_t>;
-
-//--------------------------------------------------------------------------------------//
-
-#if defined(TIMEMORY_EXTERN_INIT)
-
-extern graph_hash_map_ptr_t
-get_hash_ids();
-
-extern graph_hash_alias_ptr_t
-get_hash_aliases();
-
-#else
-
-//--------------------------------------------------------------------------------------//
-
-inline graph_hash_map_ptr_t
-get_hash_ids()
-{
-    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_map_t>();
-    return _inst;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline graph_hash_alias_ptr_t
-get_hash_aliases()
-{
-    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_alias_t>();
-    return _inst;
-}
-
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-inline hash_result_type
-add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
-{
-    hash_result_type _hash_id = std::hash<std::string>()(prefix.c_str());
-    if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
-    {
-        if(settings::debug())
-            printf("[%s@'%s':%i]> adding hash id: %s = %llu...\n", __FUNCTION__, __FILE__,
-                   __LINE__, prefix.c_str(), (long long unsigned) _hash_id);
-
-        (*_hash_map)[_hash_id] = prefix;
-        if(_hash_map->bucket_count() < _hash_map->size())
-            _hash_map->rehash(_hash_map->size() + 10);
-    }
-    return _hash_id;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline hash_result_type
-add_hash_id(const std::string& prefix)
-{
-    static thread_local auto _hash_map = get_hash_ids();
-    return add_hash_id(_hash_map, prefix);
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-add_hash_id(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
-            hash_result_type _hash_id, hash_result_type _alias_hash_id)
-{
-    if(_hash_alias->find(_alias_hash_id) == _hash_alias->end() &&
-       _hash_map->find(_hash_id) != _hash_map->end())
-    {
-        (*_hash_alias)[_alias_hash_id] = _hash_id;
-        if(_hash_alias->bucket_count() < _hash_alias->size())
-            _hash_alias->rehash(_hash_alias->size() + 10);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id)
-{
-    add_hash_id(get_hash_ids(), get_hash_aliases(), _hash_id, _alias_hash_id);
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline std::string
-get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
-                    hash_result_type _hash_id)
-{
-    auto _map_itr   = _hash_map->find(_hash_id);
-    auto _alias_itr = _hash_alias->find(_hash_id);
-
-    if(_map_itr != _hash_map->end())
-        return _map_itr->second;
-    else if(_alias_itr != _hash_alias->end())
-    {
-        _map_itr = _hash_map->find(_alias_itr->second);
-        if(_map_itr != _hash_map->end())
-            return _map_itr->second;
-    }
-
-    if(settings::verbose() > 0 || settings::debug())
-    {
-        std::stringstream ss;
-        ss << "Error! node with hash " << _hash_id
-           << " did not have an associated prefix!\n";
-        ss << "Hash map:\n";
-        auto _w = 30;
-        for(const auto& itr : *_hash_map)
-            ss << "    " << std::setw(_w) << itr.first << " : " << (itr.second) << "\n";
-        if(_hash_alias->size() > 0)
-        {
-            ss << "Alias hash map:\n";
-            for(const auto& itr : *_hash_alias)
-                ss << "    " << std::setw(_w) << itr.first << " : " << itr.second << "\n";
-        }
-        fprintf(stderr, "%s\n", ss.str().c_str());
-    }
-    return std::string("unknown-hash=") + std::to_string(_hash_id);
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline std::string
-get_hash_identifier(hash_result_type _hash_id)
-{
-    return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id);
-}
-
 //======================================================================================//
 
 class source_location

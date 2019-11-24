@@ -22,38 +22,48 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_BUILD_EXTERN_INIT
-#define TIMEMORY_BUILD_EXTERN_TEMPLATE
+#pragma once
 
-#include "timemory/components.hpp"
-#include "timemory/manager.hpp"
-#include "timemory/utility/bits/storage.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/singleton.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/backends/clocks.hpp"
+#include "timemory/backends/device.hpp"
+#include "timemory/backends/rusage.hpp"
+#include "timemory/backends/signals.hpp"
+
+#if defined(TIMEMORY_USE_CALIPER)
+#    include "timemory/backends/caliper.hpp"
+#endif
+
+#if defined(TIMEMORY_USE_GOTCHA)
+#    include "timemory/backends/gotcha.hpp"
+#endif
+
+#if defined(TIMEMORY_USE_MPI)
+#    include "timemory/backends/mpi.hpp"
+#endif
 
 #if defined(TIMEMORY_USE_PAPI)
+#    include "timemory/backends/papi.hpp"
+#endif
 
-namespace tim
-{
-TIMEMORY_INSTANTIATE_EXTERN_INIT(papi_array_t)
+#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||          \
+    defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#    include "timemory/backends/gperf.hpp"
+#endif
 
-namespace component
-{
+//--------------------------------------------------------------------------------------//
 //
+//      GPU backends
 //
-template struct base<papi_array<8>, std::array<long long, 8>, policy::thread_init,
-                     policy::thread_finalize>;
+//--------------------------------------------------------------------------------------//
 
-template struct base<papi_array<16>, std::array<long long, 16>, policy::thread_init,
-                     policy::thread_finalize>;
+#if defined(TIMEMORY_USE_CUDA)
+#    include "timemory/backends/cuda.hpp"
+#endif
 
-template struct base<papi_array<32>, std::array<long long, 32>, policy::thread_init,
-                     policy::thread_finalize>;
-//
-//
-}  // namespace component
-}  // namespace tim
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/backends/cupti.hpp"
+#endif
 
+#if defined(TIMEMORY_USE_NVTX)
+#    include "timemory/backends/nvtx.hpp"
 #endif

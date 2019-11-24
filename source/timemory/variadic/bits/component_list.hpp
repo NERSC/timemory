@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/general/hash.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/variadic/component_list.hpp"
 

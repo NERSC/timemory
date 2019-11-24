@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include "timemory/bits/types.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"

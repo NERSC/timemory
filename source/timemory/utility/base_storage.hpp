@@ -40,7 +40,7 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/types.hpp"
+#include "timemory/general/hash.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 

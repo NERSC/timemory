@@ -39,6 +39,13 @@ namespace tim
 namespace trait
 {
 //--------------------------------------------------------------------------------------//
+/// this is a helper trait
+///
+template <typename>
+struct sfinae_true : std::true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation (e.g. PAPI) is available
 ///
 template <typename _Tp>
@@ -227,6 +234,41 @@ as_string()
 }
 
 //--------------------------------------------------------------------------------------//
+}  // namespace trait
+}  // namespace tim
+
+//======================================================================================//
+//
+//                              Implicit testing for traits
+//
+//======================================================================================//
+
+namespace tim
+{
+namespace trait
+{
+//----------------------------------------------------------------------------------//
+//
+// https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check
+// -for-a-functions-existence
+namespace details
+{
+template <typename T, typename... Args>
+static auto
+test_customize_support(int)
+    -> sfinae_true<decltype(std::declval<T>().customize(std::declval<Args>()...))>;
+
+template <typename, typename... Args>
+static auto
+test_customize_support(long) -> std::false_type;
+}  // namespace details
+
+//----------------------------------------------------------------------------------//
+
+template <typename T, typename... Args>
+struct test_customize_support : decltype(details::test_customize_support<T, Args...>(0))
+{};
+
 }  // namespace trait
 }  // namespace tim
 

@@ -36,6 +36,7 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/papi.hpp"
+#include "timemory/general/hash.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
