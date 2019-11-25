@@ -81,7 +81,8 @@ extern "C"
     extern tim_api void        c_timemory_delete_auto_tuple(void*);
     extern tim_api const char* c_timemory_blank_label(const char*);
     extern tim_api const char* c_timemory_basic_label(const char*, const char*);
-    extern tim_api const char* c_timemory_label(const char*, const char*, int, const char*);
+    extern tim_api const char* c_timemory_label(const char*, const char*, int,
+                                                const char*);
 
     extern uint64_t timemory_get_unique_id(void);
     extern void timemory_create_record(const char* name, uint64_t* id, int n, int* ct);

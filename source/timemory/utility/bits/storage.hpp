@@ -526,8 +526,8 @@ storage<ObjectType, true>::get()
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());
                     _hierarchy.push_back(get_prefix(*itr));
-                    result_node _entry(
-                        { itr->id(), itr->obj(), _prefix, _depth, _rolling, _hierarchy });
+                    result_node _entry(result_tuple_t{ itr->id(), itr->obj(), _prefix,
+                                                       _depth, _rolling, _hierarchy });
                     _list.push_back(_entry);
                 }
             }
