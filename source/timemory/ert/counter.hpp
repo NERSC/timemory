@@ -200,8 +200,10 @@ public:
         data_type _data(ss.str(), working_set, trials, total_bytes, total_ops, nops,
                         _counter, _Device::name(), label, _itrp);
 
+#if !defined(_WINDOWS)
         if(settings::verbose() > 1 || settings::debug())
             std::cout << "[RECORD]> " << _data << std::endl;
+#endif
 
         static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);

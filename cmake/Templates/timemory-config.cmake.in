@@ -145,9 +145,11 @@ else() # build tree
     endforeach()
 
     if(WIN32)
-        target_compile_definitions(@LIBNAME@-cxx-static PUBLIC _TIMEMORY_ARCHIVE)
-        if(TIMEMORY_C_LIBRARY)
-            target_compile_definitions(@LIBNAME@-c-static PUBLIC _TIMEMORY_ARCHIVE)
+        if(TARGET @LIBNAME@-cxx-static)
+            target_compile_definitions(@LIBNAME@-cxx-static PUBLIC _TIMEMORY_ARCHIVE)
+            if(TARGET @LIBNAME@-c-static)
+                target_compile_definitions(@LIBNAME@-c-static PUBLIC _TIMEMORY_ARCHIVE)
+            endif()
         endif()
     endif()
 
