@@ -102,11 +102,14 @@ main(int argc, char** argv)
     printf("... \"%s\" : %s @ %i. Running fibonacci(%i, %i)...\n", __FILE__, __FUNCTION__,
            __LINE__, nfib, cutoff);
 
+	// not sure why this fails on Windows
+#if !defined(_WIN32) && !defined(_WIN64)
     timemory_settings settings = TIMEMORY_SETTINGS_INIT;
     settings.auto_output       = 1;
     settings.cout_output       = 1;
     settings.json_output       = 1;
     TIMEMORY_INIT(argc, argv, settings);
+#endif
 
     void*    timer0 = get_timer("[main (untimed)]", 1);
     intmax_t n0     = _fibonacci(nfib);
