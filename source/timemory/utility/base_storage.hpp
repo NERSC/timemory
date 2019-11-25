@@ -139,9 +139,9 @@ public:
         return ::tim::add_hash_id(m_hash_ids, _prefix);
     }
 
-    hash_result_type add_hash_id(uint64_t _lhs, uint64_t _rhs)
+    void add_hash_id(uint64_t _lhs, uint64_t _rhs)
     {
-        return ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
+        ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
     }
 
     bool is_initialized() const { return m_initialized; }
