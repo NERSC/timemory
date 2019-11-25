@@ -134,14 +134,14 @@ public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
     const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
 
-    void add_hash_id(const std::string& _prefix)
+    hash_result_type add_hash_id(const std::string& _prefix)
     {
-        ::tim::add_hash_id(m_hash_ids, _prefix);
+        return ::tim::add_hash_id(m_hash_ids, _prefix);
     }
 
-    void add_hash_id(uint64_t _lhs, uint64_t _rhs)
+    hash_result_type add_hash_id(uint64_t _lhs, uint64_t _rhs)
     {
-        ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
+        return ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
     }
 
     bool is_initialized() const { return m_initialized; }

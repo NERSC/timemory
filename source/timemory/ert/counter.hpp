@@ -33,6 +33,7 @@
 #include "timemory/ert/cache_size.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/types.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -46,6 +47,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <ostream>
 
 namespace tim
 {
