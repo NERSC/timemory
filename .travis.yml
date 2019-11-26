@@ -241,8 +241,8 @@ install:
 
 script:
   - eval "${MATRIX_EVAL}"
-  - python -c "import timemory; print(timemory.__file__)"
-  - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
+  # - python -c "import timemory; print(timemory.__file__)"
+  - echo "Testing is Done"
 
 after_success:
   - eval "${MATRIX_EVAL}"
