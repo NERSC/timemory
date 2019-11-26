@@ -54,12 +54,12 @@
 
 // cuda event
 #if defined(TIMEMORY_USE_CUDA)
-#    include "timemory/components/cuda_event.hpp"
+#    include "timemory/components/cuda/event.hpp"
 #endif
 
 // nvtx marker
 #if defined(TIMEMORY_USE_NVTX)
-#    include "timemory/components/nvtx_marker.hpp"
+#    include "timemory/components/cuda/nvtx_marker.hpp"
 #endif
 
 // likwid
@@ -69,16 +69,22 @@
 
 // GPU hardware counter components
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_activity.hpp"
-#    include "timemory/components/cupti_counters.hpp"
-#    include "timemory/components/gpu_roofline.hpp"
+#    include "timemory/components/cupti/activity.hpp"
+#    include "timemory/components/cupti/counters.hpp"
+#    include "timemory/components/roofline/gpu.hpp"
 #endif
 
 // CPU/GPU hardware counter components
 #if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/cpu_roofline.hpp"
-#    include "timemory/components/papi_array.hpp"
-#    include "timemory/components/papi_tuple.hpp"
+#    include "timemory/components/roofline/cpu.hpp"
+#    include "timemory/components/papi/array.hpp"
+#    include "timemory/components/papi/tuple.hpp"
+#endif
+
+// VTune components
+#if defined(TIMEMORY_USE_VTUNE)
+#    include "timemory/components/vtune/event.hpp"
+#    include "timemory/components/vtune/frame.hpp"
 #endif
 
 #include "timemory/backends/cuda.hpp"

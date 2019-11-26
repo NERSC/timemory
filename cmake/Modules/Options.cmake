@@ -193,6 +193,8 @@ add_option(TIMEMORY_USE_MPI
     "Enable MPI usage" ON ${_FEATURE})
 add_option(TIMEMORY_USE_SANITIZER
     "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF ${_FEATURE})
+add_option(TIMEMORY_USE_TAU
+    "Enable TAU marking API" ON ${_FEATURE})
 add_option(TIMEMORY_USE_PAPI
     "Enable PAPI" ${_USE_PAPI} ${_FEATURE})
 add_option(TIMEMORY_USE_CLANG_TIDY
@@ -203,6 +205,8 @@ add_option(TIMEMORY_USE_GPERF
     "Enable gperf-tools" OFF)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF ${_FEATURE})
+add_option(TIMEMORY_USE_VTUNE
+    "Enable VTune marking API" ON ${_FEATURE})
 add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_USE_CUDA} ${_FEATURE})
 add_option(TIMEMORY_USE_CUPTI

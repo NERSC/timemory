@@ -25,8 +25,9 @@ file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
-file(GLOB cxx_extern_sources        ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+file(GLOB_RECURSE
+    cxx_extern_sources              ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
 
 # bits folder
 set(cxx_headers_category_bits)

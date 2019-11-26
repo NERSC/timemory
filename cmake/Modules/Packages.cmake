@@ -34,6 +34,8 @@ add_interface_library(timemory-nvtx)
 add_interface_library(timemory-caliper)
 add_interface_library(timemory-gotcha)
 add_interface_library(timemory-likwid)
+add_interface_library(timemory-vtune)
+add_interface_library(timemory-tau)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
@@ -62,7 +64,9 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-santizier
     timemory-caliper
     timemory-gotcha
-    timemory-likwid)
+    timemory-likwid
+    timemory-vtune
+    timemory-tau)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -76,6 +80,8 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-caliper
     timemory-gotcha
     timemory-likwid
+    timemory-vtune
+    timemory-tau
     ${_MPI_INTERFACE_LIBRARY})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -88,6 +94,8 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-cudart-device
     timemory-gperftools-cpu
     timemory-caliper
+    timemory-vtune
+    timemory-tau
     ${_MPI_INTERFACE_LIBRARY})
 
 add_interface_library(timemory-extensions)
@@ -876,6 +884,44 @@ else()
 endif()
 
 
+#----------------------------------------------------------------------------------------#
+#
+#                               VTune
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_VTUNE)
+    find_package(ittnotify)
+endif()
+
+if(ittnotify_FOUND)
+    target_link_libraries(timemory-vtune INTERFACE ${ITTNOTIFY_LIBRARIES})
+    target_include_directories(timemory-vtune INTERFACE ${ITTNOTIFY_INCLUDE_DIRS})
+    target_compile_definitions(timemory-vtune INTERFACE TIMEMORY_USE_VTUNE)
+else()
+    set(TIMEMORY_USE_VTUNE OFF)
+    inform_empty_interface(timemory-vtune "VTune (ittnotify)")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               TAU
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_TAU)
+    find_package(TAU QUIET)
+endif()
+
+if(TAU_FOUND)
+    target_link_libraries(timemory-tau INTERFACE ${TAU_LIBRARIES})
+    target_include_directories(timemory-tau INTERFACE ${TAU_INCLUDE_DIRS})
+    target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
+else()
+    set(TIMEMORY_USE_TAU OFF)
+    inform_empty_interface(timemory-tau "TAU")
+endif()
 
 #----------------------------------------------------------------------------------------#
 # activate clang-tidy if enabled

@@ -110,6 +110,10 @@ struct caliper;
 struct likwid_perfmon;
 struct likwid_nvmon;
 
+// vtune
+struct vtune_frame;
+struct vtune_event;
+
 // cuda
 struct cuda_event;
 

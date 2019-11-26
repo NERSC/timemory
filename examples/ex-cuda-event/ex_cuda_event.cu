@@ -41,11 +41,11 @@
 #include <timemory/utility/testing.hpp>
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_counters.hpp"
+#    include "timemory/components/cupti/counters.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_counters.hpp"
+#    include "timemory/components/cupti/counters.hpp"
 #endif
 
 using namespace tim::component;

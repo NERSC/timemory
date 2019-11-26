@@ -16,6 +16,7 @@ foreach(_YEAR 2019 2018 2017)
             list(APPEND _ITTNOTIFY_PATH_HINTS "${${_VAR}}")
         endif()
         unset(_VAR)
+    endforeach()
 endforeach()
 
 #------------------------------------------------------------------------------#
@@ -57,4 +58,5 @@ find_package_handle_standard_args(ittnotify REQUIRED_VARS
 #------------------------------------------------------------------------------#
 
 unset(_ITTNOTIFY_PATH_HINTS)
+
 #------------------------------------------------------------------------------#
