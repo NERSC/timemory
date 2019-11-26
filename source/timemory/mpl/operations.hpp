@@ -81,6 +81,12 @@
 #    include "timemory/components/roofline/cpu.hpp"
 #endif
 
+// VTune components
+#if defined(TIMEMORY_USE_VTUNE)
+#    include "timemory/components/vtune/event.hpp"
+#    include "timemory/components/vtune/frame.hpp"
+#endif
+
 #include <iostream>
 #include <ostream>
 #include <sstream>

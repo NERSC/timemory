@@ -31,16 +31,6 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-// set the type traits
-//
-namespace trait
-{
-template <>
-struct requires_prefix<component::vtune_frame> : std::true_type
-{};
-}  // namespace trait
-
 namespace component
 {
 //--------------------------------------------------------------------------------------//

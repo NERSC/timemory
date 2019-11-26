@@ -31,16 +31,6 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-// set the type traits
-//
-namespace trait
-{
-template <>
-struct requires_prefix<component::vtune_event> : std::true_type
-{};
-}  // namespace trait
-
 namespace component
 {
 //--------------------------------------------------------------------------------------//
@@ -69,8 +59,8 @@ struct vtune_event
             ittnotify::resume();
         if(!m_created)
         {
-            m_event  = ittnotify::create_event(m_prefix);
-            m_create = true;
+            m_event   = ittnotify::create_event(m_prefix);
+            m_created = true;
         }
         ittnotify::start_event(m_event);
     }
@@ -87,7 +77,7 @@ struct vtune_event
     void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
 
 protected:
-    bool               m_create = false;
+    bool               m_created = false;
     std::string        m_prefix;
     int64_t            m_index = -1;
     ittnotify::event_t m_event;

@@ -48,6 +48,10 @@ using fp16_t = tim::cuda::fp16_t;
 
 //--------------------------------------------------------------------------------------//
 
+using inst_roofline_t = gpu_roofline<int32_t>;
+
+//--------------------------------------------------------------------------------------//
+
 #if ROOFLINE_FP_BYTES == 8
 
 using gpu_roofline_t = gpu_roofline_dp_flops;
@@ -72,8 +76,8 @@ using cpu_roofline_t = cpu_roofline_flops;
 
 //--------------------------------------------------------------------------------------//
 
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, gpu_roofline_t,
+                                     cpu_roofline_t, inst_roofline_t>;
 
 //--------------------------------------------------------------------------------------//
 // amypx calculation
@@ -351,8 +355,8 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
 
             // set the label
             _counter.label = "vector_fma";
-            tim::ert::ops_main<2, 4, 6, 8, 10, 12, 16, 32, 64, 96, 128, 192, 256, 512>(
-                _counter, fma_func, store_func);
+            tim::ert::ops_main<2, 4, 8, 16, 32, 64, 128, 256, 512>(_counter, fma_func,
+                                                                   store_func);
         };
 
         // set the callback

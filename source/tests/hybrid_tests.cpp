@@ -46,22 +46,22 @@ using stringstream_t = std::stringstream;
 
 using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
 using list_t  = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
-                                   papi_array_t, cuda_event, cupti_counters, caliper>;
+                                   papi_array_t, vtune_frame, vtune_event>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 using hybrid_t      = typename auto_hybrid_t::component_type;
 
 static const int64_t niter       = 20;
 static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
-// static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.first;
 
 // acceptable absolute error
 static const double util_tolerance  = 2.5;
-static const double timer_tolerance = 0.02125;
-// static const double peak_tolerance  = 5 * tim::units::MiB;
+static const double timer_tolerance = 0.075;
+
 // acceptable relative error
 static const double util_epsilon  = 0.5;
 static const double timer_epsilon = 0.02;
+
 // acceptable compose error
 static const double compose_tolerance = 1.0e-9;
 
@@ -166,7 +166,7 @@ protected:
 #endif
         list_t::get_initializer() = [](list_t& l) {
             l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
-                         papi_array_t, caliper>();
+                         papi_array_t>();
         };
     }
 };

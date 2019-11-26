@@ -837,6 +837,30 @@ struct is_available<component::likwid_nvmon> : std::false_type
 
 //--------------------------------------------------------------------------------------//
 //
+//                              VTune
+//
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct requires_prefix<component::vtune_event> : std::true_type
+{};
+
+template <>
+struct requires_prefix<component::vtune_frame> : std::true_type
+{};
+
+#if !defined(TIMEMORY_USE_VTUNE)
+template <>
+struct is_available<component::vtune_event> : std::false_type
+{};
+
+template <>
+struct is_available<component::vtune_frame> : std::false_type
+{};
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
 //                              User-bundle
 //
 //--------------------------------------------------------------------------------------//

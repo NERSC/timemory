@@ -39,6 +39,15 @@ find_library(ITTNOTIFY_LIBRARY
 
 #------------------------------------------------------------------------------#
 
+find_library(ITTNOTIFY_dl_LIBRARY
+    NAMES dl
+    PATH_SUFFIXES lib lib64 lib32
+    HINTS ${_ITTNOTIFY_PATH_HINTS}
+    PATHS ${_ITTNOTIFY_PATH_HINTS}
+)
+
+#------------------------------------------------------------------------------#
+
 if(ITTNOTIFY_INCLUDE_DIR)
     set(ITTNOTIFY_INCLUDE_DIRS ${ITTNOTIFY_INCLUDE_DIR})
 endif()
@@ -47,6 +56,9 @@ endif()
 
 if(ITTNOTIFY_LIBRARY)
     set(ITTNOTIFY_LIBRARIES ${ITTNOTIFY_LIBRARY})
+    if(ITTNOTIFY_dl_LIBRARY)
+        list(APPEND ITTNOTIFY_LIBRARIES ${ITTNOTIFY_dl_LIBRARY})
+    endif()
 endif()
 
 #------------------------------------------------------------------------------#

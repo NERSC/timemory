@@ -35,6 +35,7 @@
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
+#include "timemory/ert/types.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/units.hpp"
@@ -264,6 +265,29 @@ public:
                     metrics.push_back(itr);
             }
 
+            // integer
+            if(is_one_of<int16_t, types_tuple>::value ||
+               is_one_of<int32_t, types_tuple>::value ||
+               is_one_of<int64_t, types_tuple>::value ||
+               is_one_of<uint16_t, types_tuple>::value ||
+               is_one_of<uint32_t, types_tuple>::value ||
+               is_one_of<uint64_t, types_tuple>::value ||
+               is_one_of<size_t, types_tuple>::value || settings::instruction_roofline())
+            {
+                for(string_t itr :
+                    { "ipc", "inst_executed", "inst_integer", "inst_fp_64", "inst_fp_32",
+                      "inst_fp_16", "local_load_transactions_per_request",
+                      "local_store_transactions_per_request",
+                      "shared_load_transactions_per_request",
+                      "shared_store_transactions_per_request",
+                      "gld_transactions_per_request", "gst_transactions_per_request",
+                      "inst_executed_global_reductions", "inst_executed_global_stores",
+                      "inst_executed_global_loads", "inst_executed_local_loads",
+                      "inst_executed_local_stores", "inst_executed_shared_loads",
+                      "inst_executed_shared_stores" })
+                    metrics.push_back(itr);
+            }
+
             // add in extra events
             auto _extra_events = get_events_callback()();
             for(const auto& itr : _extra_events)
@@ -273,6 +297,19 @@ public:
             auto _extra_metrics = get_metrics_callback()();
             for(const auto& itr : _extra_metrics)
                 metrics.push_back(itr);
+
+            auto _get_unique = [](const strvec_t& _vec) {
+                std::set<std::string> _set;
+                for(const auto& itr : _vec)
+                    _set.insert(itr);
+                strvec_t _ret;
+                for(const auto& itr : _set)
+                    _ret.push_back(itr);
+                return _ret;
+            };
+
+            metrics = _get_unique(metrics);
+            events  = _get_unique(events);
 
             counters_type::configure(_device, events, metrics);
             get_labels() = counters_type::label_array();
@@ -651,10 +688,18 @@ private:
     }
 
 private:
-    static label_type& get_labels()
+    static label_type& get_labels() { return *_get_labels(); }
+
+    static label_type*& _get_labels()
     {
-        static label_type _instance;
+        static label_type* _instance = new label_type();
         return _instance;
+    }
+
+    static void cleanup()
+    {
+        delete _get_labels();
+        _get_labels() = nullptr;
     }
 
 private:

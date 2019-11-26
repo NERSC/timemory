@@ -255,6 +255,10 @@ struct settings
                                  "TIMEMORY_ROOFLINE_TYPE_LABELS_GPU",
                                  roofline_type_labels())
 
+    /// include the instruction roofline
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, instruction_roofline,
+                                 "TIMEMORY_INSTRUCTION_ROOFLINE", false)
+
     //----------------------------------------------------------------------------------//
     //      ERT
     //----------------------------------------------------------------------------------//
