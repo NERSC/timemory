@@ -28,6 +28,7 @@
 #include "timemory/backends/gperf.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/variadic/types.hpp"
@@ -211,6 +212,92 @@ private:
         static std::atomic<int64_t> _instance;
         return _instance;
     }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx = 0>
+struct user_bundle : public base<user_bundle<_Idx>, void>
+{
+    using value_type = void;
+    using this_type  = user_bundle<_Idx>;
+    using base_type  = base<user_bundle, value_type>;
+
+    using start_func_t = std::function<void*(const std::string&)>;
+    using stop_func_t  = std::function<void(void*)>;
+
+    static std::string label() { return "user_bundle"; }
+    static std::string description() { return "user-defined bundle of tools"; }
+    static value_type  record() {}
+
+    //----------------------------------------------------------------------------------//
+    //  Configure the tool for a specific set of tools
+    //
+    template <typename _Toolset>
+    static void configure()
+    {
+        get_start() = [&](const std::string& _prefix) {
+            _Toolset* _result = new _Toolset(_prefix);
+            _result->start();
+            return (void*) _result;
+        };
+
+        get_stop() = [&](void* v_result) {
+            _Toolset* _result = static_cast<_Toolset*>(v_result);
+            _result->stop();
+            delete _result;
+        };
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Configure the tool for a specific set of tools with an initializer
+    //
+    template <typename _Toolset, typename _InitFunc>
+    static void configure(_InitFunc&& _init)
+    {
+        get_start() = [&](const std::string& _prefix) {
+            _Toolset* _result = new _Toolset(_prefix);
+            std::forward<_InitFunc>(_init)(*_result);
+            _result->start();
+            return (void*) _result;
+        };
+
+        get_stop() = [&](void* v_result) {
+            _Toolset* _result = static_cast<_Toolset*>(v_result);
+            _result->stop();
+            delete _result;
+        };
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Explicitly configure the start function
+    //
+    static start_func_t& get_start()
+    {
+        static start_func_t _instance = [](const std::string&) {
+            return (void*) nullptr;
+        };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Explicitly configure the stop function
+    //
+    static stop_func_t& get_stop()
+    {
+        static stop_func_t _instance = [](void*) {};
+        return _instance;
+    }
+
+    void start() { m_bundle = (void*) get_start()(m_prefix); }
+
+    void stop() { get_stop()(m_bundle); }
+
+    void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
+
+protected:
+    std::string m_prefix;
+    void*       m_bundle;
 };
 
 //--------------------------------------------------------------------------------------//

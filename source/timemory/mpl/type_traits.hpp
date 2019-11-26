@@ -836,6 +836,16 @@ struct is_available<component::likwid_nvmon> : std::false_type
 #endif  // TIMEMORY_USE_LIKWID
 
 //--------------------------------------------------------------------------------------//
+//
+//                              User-bundle
+//
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx>
+struct requires_prefix<component::user_bundle<_Idx>> : std::true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 }  // namespace trait
 }  // namespace tim
 

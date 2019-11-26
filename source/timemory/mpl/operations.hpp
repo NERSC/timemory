@@ -76,9 +76,9 @@
 
 // CPU/GPU hardware counter components
 #if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/roofline/cpu.hpp"
 #    include "timemory/components/papi/array.hpp"
 #    include "timemory/components/papi/tuple.hpp"
+#    include "timemory/components/roofline/cpu.hpp"
 #endif
 
 #include <iostream>

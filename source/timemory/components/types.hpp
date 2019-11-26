@@ -159,6 +159,9 @@ using gpu_roofline_dp_flops = gpu_roofline<double>;
 using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
 using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
 
+template <size_t _Idx>
+struct user_bundle;
+
 }  // namespace component
 }  // namespace tim
 

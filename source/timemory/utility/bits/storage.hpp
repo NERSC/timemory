@@ -322,6 +322,8 @@ storage<ObjectType, true>::_data()
         if(m_node_ids.size() == 0)
             m_node_ids[0][0] = m_graph_data_instance->current();
     }
+
+    m_initialized = true;
     return *m_graph_data_instance;
 }
 
