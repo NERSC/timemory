@@ -326,8 +326,8 @@ def run_pyctest():
                                   clobber=clobber_notes)
                     # make sure all subsequent iterations don't clobber
                     clobber_notes = False
-        else:
-            _cmd.append("{}/timem".format(pyct.BINARY_DIRECTORY))
+        # else:
+        #    _cmd.append("{}/timem".format(pyct.BINARY_DIRECTORY))
         _cmd.extend(cmd)
         return _cmd
 
