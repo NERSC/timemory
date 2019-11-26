@@ -313,8 +313,8 @@ main(int argc, char** argv)
     tim::settings::memory_units() = "KiB";
     tim::settings::precision()    = 6;
     tim::timemory_init(argc, argv);
-    tim::settings::verbose() += 1;
-    tim::settings::debug()       = true;
+    tim::settings::verbose()     = 0;
+    tim::settings::debug()       = false;
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;

@@ -23,11 +23,13 @@
 //  IN THE SOFTWARE.
 //
 
-/** \file cuda.hpp
- * \headerfile cuda.hpp "timemory/details/cuda.hpp"
+/** \file backends/bits/cuda.hpp
+ * \headerfile backends/bits/cuda.hpp "timemory/backends/bits/cuda.hpp"
  * Header implementation for CUDA
  *
  */
+
+#pragma once
 
 //--------------------------------------------------------------------------------------//
 

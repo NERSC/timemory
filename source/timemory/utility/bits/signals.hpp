@@ -29,6 +29,8 @@
  *
  */
 
+#pragma once
+
 #include <cstdlib>
 #include <sstream>
 #include <string>

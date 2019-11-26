@@ -639,7 +639,7 @@ main(int argc, char** argv)
     tim::settings::precision()    = 6;
     tim::settings::width()        = 12;
     tim::settings::debug()        = false;
-    tim::settings::verbose()      = 1;
+    tim::settings::verbose()      = 0;
     tim::timemory_init(argc, argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;

@@ -22,11 +22,13 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file rusage.hpp
- * \headerfile rusage.hpp "timemory/details/rusage.hpp"
+/** \file backends/bits/rusage.hpp
+ * \headerfile backends/bits/rusage.hpp "timemory/backends/bits/rusage.hpp"
  * Provides inline implementation of rusage functions
  *
  */
+
+#pragma once
 
 #include "timemory/backends/rusage.hpp"
 #include "timemory/components/timing.hpp"

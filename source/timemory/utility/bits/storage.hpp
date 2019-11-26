@@ -28,6 +28,8 @@
  *
  */
 
+#pragma once
+
 #include "timemory/components.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/operations.hpp"
