@@ -232,7 +232,7 @@ install:
   - env
   - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow gperftools
   - source activate pyctest
-  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DBUILD_STATIC_LIBS=OFF -DTIMEMORY_USE_CALIPER=ON -DTIMEMORY_USE_GOTCHA=ON -- -j2
+  # - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DBUILD_STATIC_LIBS=OFF -DTIMEMORY_USE_CALIPER=ON -DTIMEMORY_USE_GOTCHA=ON -- -j2
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-mpi ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
