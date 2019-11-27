@@ -408,10 +408,16 @@ def get_hotspots(op_data, ai_data):
                 return float(_data[opt])
         return None
 
+    def check_ignore(_ai, _op):
+        if ("cuptiOverhead" in _ai or "cudaRuntime" in _ai or
+            "cuptiOverhead" in _op or "cudaRuntime" in _op):
+                return True
+        return False
+
     for i in range(0, max_length):
-        if ("cuptiOverhead" in ai_graph_data[i]["prefix"] or
-            "cuptiOverhead" in op_graph_data[i]["prefix"]):
+        if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
             continue
+
         ai_repr = ai_graph_data[i]["entry"]["repr_data"]
         op_repr = op_graph_data[i]["entry"]["repr_data"]
         all_runtime += filter(None,
@@ -426,8 +432,7 @@ def get_hotspots(op_data, ai_data):
         avg_runtime /= len(all_runtime) - 1.0
 
     for i in range(0, max_length):
-        if ("cuptiOverhead" in ai_graph_data[i]["prefix"] or
-            "cuptiOverhead" in op_graph_data[i]["prefix"]):
+        if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
             continue
 
         runtimes = []
@@ -511,7 +516,7 @@ class plot_parameters():
 
         y_digits = int(math.log10(_peak))+1
         self.xmin = 0.01
-        self.xmax = 100
+        self.xmax = 1000
         self.ymin = 1
         self.ymax = 10**y_digits
         self.xlabel = ('Arithmetic Intensity [FLOPs/Byte]')
@@ -525,7 +530,7 @@ class plot_parameters():
             if flop < self.ymin:
                 self.ymin = 10**int(log(flop)/log(10)-1)
             if intensity > self.xmax:
-                self.xmax = 10**int(log(intensity)/log(10)+1)
+                self.xmax = 100**int(log(intensity)/log(10)+1)
             if intensity < self.xmin:
                 self.xmin = 10**int(log(intensity)/log(10)-1)
 
@@ -537,7 +542,7 @@ class plot_parameters():
 #
 def plot_roofline(ai_data, op_data, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
-                  width=1600, height=1200, dpi=75):
+                  width=1600, height=1200, dpi=90):
     """
     Plot the roofline
     """
@@ -618,7 +623,7 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
             y_min, y_max = plt.ylim()
             Dx = dx * fig_x / (log(x_max) - log(x_min))
             Dy = dy * fig_y / (log(y_max) - log(y_min))
-            angle = (180/pi)*numpy.arctan(Dy / Dx)
+            angle = (180.0/pi)*numpy.arctan(Dy / Dx / 1.25)
 
             if _nitr == 0:
                 text(x_text, y_text, "%.2f %s" % (band[0], band[1]),

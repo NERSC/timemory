@@ -57,7 +57,7 @@ def parse_args(add_run_args=False):
                         help="Title for the plot", default="Roofline")
     parser.add_argument("-P", "--plot-dimensions", type=int,
                         help="Image dimensions: Width, Height, DPI",
-                        default=[1600, 1200, 90], nargs=3)
+                        default=[1600, 1200, 100], nargs=3)
     parser.add_argument("-R", "--rank", type=int,
                         help="MPI Rank", default=None)
     parser.add_argument("-v", "--verbose", type=int, help="Verbosity", default=None)
