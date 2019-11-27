@@ -179,6 +179,10 @@ endmacro()
 #----------------------------------------------------------------------------------------#
 macro(ADD_TARGET_CXX_FLAG _TARG)
     target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${ARGN}>)
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
+        target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${ARGN}>)
+    endif()
 endmacro()
 
 
