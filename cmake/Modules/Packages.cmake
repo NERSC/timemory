@@ -425,13 +425,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_target_flag_if_avail(timemory-coverage "-fprofile-arcs" "-ftest-coverage")
     add_target_flag(timemory-coverage "-O0" "-g" "--coverage")
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
-        target_link_options(timemory-coverage INTERFACE
-            $<$<COMPILE_LANGUAGE:C>:--coverage>
-            $<$<COMPILE_LANGUAGE:CXX>:--coverage>)
+        target_link_options(timemory-coverage INTERFACE --coverage)
     else()
-        target_link_libraries(timemory-coverage INTERFACE
-            $<$<COMPILE_LANGUAGE:C>:--coverage>
-            $<$<COMPILE_LANGUAGE:CXX>:--coverage>)
+        target_link_libraries(timemory-coverage INTERFACE --coverage)
     endif()
 
 else()

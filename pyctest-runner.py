@@ -502,6 +502,14 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
+    if args.cupti:
+        pyct.test(construct_name("test-gpu-roofline"),
+                  construct_command(["./ex_gpu_roofline"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
     pyct.generate_config(pyct.BINARY_DIRECTORY)
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
     pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
