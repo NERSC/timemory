@@ -384,7 +384,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
     {
         std::vector<float>  fsendbuf, frecvbuf;
         std::vector<double> dsendbuf, drecvbuf;
-        for(int i = 0; i < nitr; ++i)
+        for(int i = 0; i < nitr / 10; ++i)
         {
             details::generate<float>(1000, fsendbuf);
             details::allreduce(fsendbuf, frecvbuf);
@@ -418,73 +418,73 @@ TEST_F(gotcha_tests, malloc_gotcha)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+    ASSERT_NEAR(fsum, 4986708.50 * size, tolerance);
+    ASSERT_NEAR(dsum, 4986870.45 * size, tolerance);
 }
 
 //======================================================================================//
 
 TEST_F(gotcha_tests, member_functions)
 {
-    using pair_type = std::pair<float, double>;
+    using pair_type     = std::pair<float, double>;
+    auto real_storage   = tim::storage<real_clock>::instance();
+    auto real_init_size = real_storage->size();
+    printf("[initial]> wall-clock storage size: %li\n", (long int) real_init_size);
 
     memfun_gotcha_t::get_default_ready() = true;
     memfun_gotcha_t::get_initializer()   = [=]() {
         PRINT_HERE("%s", details::get_test_name().c_str());
 
         {
-            using func_t         = decltype(&DoWork::get);
-            constexpr size_t idx = 0;
+            using func_t = decltype(&DoWork::get);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::get));
 
-            // auto func_name = tim::mangle<func_t>("DoWork::get");
-            // memfun_gotcha_t::configure<idx, std::tuple<float, double>>(func_name);
-            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, idx, &DoWork::get);
+            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, 0, &DoWork::get);
         }
         {
-            using func_t         = decltype(&DoWork::execute_fp4);
-            constexpr size_t idx = 1;
+            using func_t = decltype(&DoWork::execute_fp4);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::execute_fp4));
 
-            TIMEMORY_CXX_MEMFUN_GOTCHA(memfun_gotcha_t, idx, DoWork::execute_fp4);
+            TIMEMORY_CXX_MEMFUN_GOTCHA(memfun_gotcha_t, 1, DoWork::execute_fp4);
         }
         {
-            using func_t         = decltype(&DoWork::execute_fp8);
-            constexpr size_t idx = 2;
+            using func_t = decltype(&DoWork::execute_fp8);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::execute_fp8));
 
-            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, idx, &DoWork::execute_fp8);
+            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, 2, &DoWork::execute_fp8);
         }
     };
 
-    TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
-
     float  fsum = 0.0;
     double dsum = 0.0;
-    DoWork dw(pair_type(0.25, 0.5));
-
-    // auto orig = tim::settings::verbose();
-    for(int i = 0; i < nitr; ++i)
     {
-        if(i >= (nitr - 10))
-        {
-            dw.execute_fp4(1000);
-            dw.execute_fp8(1000);
-        }
-        else
-        {
-            auto        _fp4 = [&]() { dw.execute_fp4(1000); };
-            auto        _fp8 = [&]() { dw.execute_fp8(1000); };
-            std::thread t4(_fp4);
-            std::thread t8(_fp8);
+        TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
 
-            t4.join();
-            t8.join();
-        }
+        DoWork dw(pair_type(0.25, 0.5));
 
-        auto ret = dw.get();
-        fsum += std::get<0>(ret);
-        dsum += std::get<1>(ret);
+        auto _nitr = nitr / 8;
+        for(int i = 0; i < _nitr; ++i)
+        {
+            if(i >= (_nitr - 10))
+            {
+                dw.execute_fp4(1000);
+                dw.execute_fp8(1000);
+            }
+            else
+            {
+                auto        _fp4 = [&]() { dw.execute_fp4(1000); };
+                auto        _fp8 = [&]() { dw.execute_fp8(1000); };
+                std::thread t4(_fp4);
+                std::thread t8(_fp8);
+
+                t4.join();
+                t8.join();
+            }
+
+            auto ret = dw.get();
+            fsum += std::get<0>(ret);
+            dsum += std::get<1>(ret);
+        }
     }
 
     auto rank = tim::mpi::rank();
@@ -504,10 +504,12 @@ TEST_F(gotcha_tests, member_functions)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum, 881550.95, tolerance);
-    auto real_storage = tim::storage<real_clock>::instance();
-    ASSERT_EQ(real_storage->get().size(), 4);
+    auto real_final_size = real_storage->get().size();
+    printf("[final]> wall-clock storage size: %li\n", (long int) real_final_size);
+
+    ASSERT_NEAR(fsum, -302122.44, tolerance);
+    ASSERT_NEAR(dsum, +110193.87, tolerance);
+    ASSERT_EQ(real_final_size, 4 + real_init_size);
 }
 
 //======================================================================================//

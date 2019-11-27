@@ -111,9 +111,13 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("thread_cpu_clock", THREAD_CPU_CLOCK)
         .value("thread_cpu_util", THREAD_CPU_UTIL)
         .value("trip_count", TRIP_COUNT)
+        .value("user_bundle_0", USER_BUNDLE_0)
+        .value("user_bundle_1", USER_BUNDLE_1)
         .value("user_clock", USER_CLOCK)
         .value("virtual_memory", VIRTUAL_MEMORY)
         .value("voluntary_context_switch", VOLUNTARY_CONTEXT_SWITCH)
+        .value("vtune_event", VTUNE_EVENT)
+        .value("vtune_frame", VTUNE_FRAME)
         .value("wall_clock", WALL_CLOCK)
         .value("written_bytes", WRITTEN_BYTES);
 

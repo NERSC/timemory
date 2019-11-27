@@ -147,10 +147,14 @@ enum TIMEMORY_COMPONENT
     THREAD_CPU_CLOCK         = 38,
     THREAD_CPU_UTIL          = 39,
     TRIP_COUNT               = 40,
-    USER_CLOCK               = 41,
-    VIRTUAL_MEMORY           = 42,
-    VOLUNTARY_CONTEXT_SWITCH = 43,
-    WALL_CLOCK               = 44,
-    WRITTEN_BYTES            = 45,
-    TIMEMORY_COMPONENTS_END  = 46
+    USER_BUNDLE_0            = 41,
+    USER_BUNDLE_1            = 42,
+    USER_CLOCK               = 43,
+    VIRTUAL_MEMORY           = 44,
+    VOLUNTARY_CONTEXT_SWITCH = 45,
+    VTUNE_EVENT              = 46,
+    VTUNE_FRAME              = 47,
+    WALL_CLOCK               = 48,
+    WRITTEN_BYTES            = 49,
+    TIMEMORY_COMPONENTS_END  = 50
 };

@@ -44,8 +44,6 @@ using lock_t         = std::unique_lock<mutex_t>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
-using user_bundle_0 = user_bundle<0>;
-using user_bundle_1 = user_bundle<1>;
 using user_bundle_t = tim::auto_tuple<user_bundle_0, user_bundle_1>;
 
 //--------------------------------------------------------------------------------------//

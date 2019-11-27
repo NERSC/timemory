@@ -36,6 +36,8 @@ endif()
 
 message(STATUS "[${PROJECT_NAME}] hybrid test components: ${HYBRID_COMPONENTS}")
 
+set(ENV{TIMEMORY_ENABLED} OFF)
+
 add_subdirectory(external)
 
 add_timemory_google_test(user_bundle_tests

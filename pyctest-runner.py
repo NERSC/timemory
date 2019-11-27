@@ -112,9 +112,6 @@ def configure():
     if platform.system() != "Linux":
         args.no_papi = True
 
-    # always echo dart measurements
-    os.environ["TIMEMORY_DART_OUTPUT"] = "ON"
-    os.environ["TIMEMORY_DART_COUNT"] = "1"
     os.environ["PYCTEST_TESTING"] = "ON"
 
     return args
@@ -335,11 +332,14 @@ def run_pyctest():
     # create tests
     #
 
-    test_env = "CPUPROFILE_FREQUENCY=2000;CPUPROFILE_REALTIME=1;CALI_CONFIG_PROFILE=runtime-report"
+    test_env = ";".join(["CPUPROFILE_FREQUENCY=2000",
+                         "CPUPROFILE_REALTIME=1",
+                         "CALI_CONFIG_PROFILE=runtime-report",
+                         "TIMEMORY_DART_OUTPUT=ON",
+                         "TIMEMORY_DART_COUNT=1"])
 
     os.environ["CPUPROFILE_FREQUENCY"] = "2000"
     os.environ["CPUPROFILE_REALTIME"] = "1"
-    os.environ["CALI_CONFIG_PROFILE"] = "runtime-report"
 
     pyct.test(construct_name("test-optional-off"),
               construct_command(["./ex_optional_off"], args),

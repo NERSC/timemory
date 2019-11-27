@@ -162,6 +162,10 @@ using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
 template <size_t _Idx>
 struct user_bundle;
 
+// reserved
+using user_bundle_0 = user_bundle<0>;
+using user_bundle_1 = user_bundle<1>;
+
 }  // namespace component
 }  // namespace tim
 

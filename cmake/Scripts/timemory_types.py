@@ -51,6 +51,10 @@ components = [
     "virtual_memory",
     "likwid_perfmon",
     "likwid_nvmon",
+    "vtune_frame",
+    "vtune_event",
+    "user_bundle_0",
+    "user_bundle_1"
 ]
 
 #

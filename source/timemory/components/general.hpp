@@ -250,6 +250,17 @@ struct user_bundle : public base<user_bundle<_Idx>, void>
     }
 
     //----------------------------------------------------------------------------------//
+    //  Capture the statically-defined start/stop so these can be changed without
+    //  affecting this instance
+    //
+    user_bundle()
+    : m_prefix("")
+    , m_bundle(nullptr)
+    , m_start(get_start())
+    , m_stop(get_stop())
+    {}
+
+    //----------------------------------------------------------------------------------//
     //  Configure the tool for a specific set of tools with an initializer
     //
     template <typename _Toolset, typename _InitFunc>
@@ -289,15 +300,17 @@ struct user_bundle : public base<user_bundle<_Idx>, void>
         return _instance;
     }
 
-    void start() { m_bundle = (void*) get_start()(m_prefix); }
+    void start() { m_bundle = (void*) m_start(m_prefix); }
 
-    void stop() { get_stop()(m_bundle); }
+    void stop() { m_stop(m_bundle); }
 
     void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
 
 protected:
-    std::string m_prefix;
-    void*       m_bundle;
+    std::string  m_prefix;
+    void*        m_bundle;
+    start_func_t m_start;
+    stop_func_t  m_stop;
 };
 
 //--------------------------------------------------------------------------------------//
