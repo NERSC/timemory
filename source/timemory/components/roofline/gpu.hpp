@@ -605,6 +605,64 @@ public:
 
     //----------------------------------------------------------------------------------//
 
+    this_type& operator+=(const value_type& rhs)
+    {
+        switch(event_mode())
+        {
+            case MODE::ACTIVITY:
+            {
+                *m_data.activity += std::get<0>(rhs);
+                std::get<0>(accum) = m_data.activity->get_accum();
+                std::get<0>(value) = m_data.activity->get_value();
+                break;
+            }
+            case MODE::COUNTERS:
+            {
+                *m_data.counters += std::get<1>(rhs);
+                std::get<1>(accum) = m_data.counters->get_accum();
+                std::get<1>(value) = m_data.counters->get_value();
+                break;
+            }
+        }
+        is_transient = true;
+        return *this;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    using activity_value_type = typename cupti_activity::value_type;
+    using counters_value_type = typename cupti_counters::value_type;
+    using secondary_type      = std::unordered_multimap<std::string, value_type>;
+
+    //----------------------------------------------------------------------------------//
+
+    secondary_type get_secondary() const
+    {
+        secondary_type ret;
+        switch(event_mode())
+        {
+            case MODE::ACTIVITY:
+            {
+                auto&& _tmp = m_data.activity->get_secondary();
+                for(auto&& itr : _tmp)
+                    ret.insert(
+                        { itr.first, value_type{ itr.second, counters_value_type{} } });
+                break;
+            }
+            case MODE::COUNTERS:
+            {
+                auto&& _tmp = m_data.counters->get_secondary();
+                for(auto&& itr : _tmp)
+                    ret.insert(
+                        { itr.first, value_type{ activity_value_type{}, itr.second } });
+                break;
+            }
+        }
+        return ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+
 protected:
     using base_type::accum;
     using base_type::is_transient;

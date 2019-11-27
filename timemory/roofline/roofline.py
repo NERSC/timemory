@@ -28,6 +28,7 @@
 import os
 import re
 import sys
+import copy
 import json
 import math
 import argparse
@@ -56,7 +57,8 @@ __all__ = ['get_json_entry',
            'get_color',
            'plot_parameters',
            'plot_roofline',
-           'FONT_SIZE'
+           'FONT_SIZE',
+           'VERBOSE',
            ]
 
 #   labels_type m_labels = {{"label", "working-set", "trials", "total-bytes",
@@ -148,16 +150,6 @@ class ert_counter():
             ret += ["=".join([itr, "{}".format(getattr(self, itr))])]
         return ", ".join(ret)
 
-    def get_peak(self, total, peak=[]):
-        _data = self.data
-        for i in range(len(_data)):
-            value = total / _data[i]
-            if i >= len(peak):
-                peak.append(value)
-            else:
-                peak[i] = max([peak[i], value])
-        return peak
-
     def get(self, total):
         _data = self.data
         _list = []
@@ -248,11 +240,23 @@ def get_peak_ops(roof_data, flop_info=None):
     """
     Get the peak operations / sec
     """
-    peak = []
+    peak = {}
 
     for element in roof_data:
         total_ops = element.total_ops / GIGABYTE
-        peak = element.counter.get_peak(total_ops, peak)
+        _label = element.label
+        _data = element.counter.get(total_ops)
+        if VERBOSE > 2:
+            print("LABEL: {}, DATA: {}".format(_label, _data))
+        if not _label in peak:
+            peak[_label] = _data
+        else:
+            _peak = peak[_label]
+            for i in range(len(_data)):
+                if i >= len(_peak):
+                    _peak += [_data[i]]
+                else:
+                    _peak[i] = max([_peak[i], _data[i]])
 
     info = "GFLOPs/sec"
     if flop_info is not None:
@@ -260,6 +264,7 @@ def get_peak_ops(roof_data, flop_info=None):
         if len(info_list) > 0:
             info = info_list[0] + " GFLOPs/sec"
 
+    print("PEAK: {}".format(peak))
     peak_ops = [peak, info]
     return peak_ops
 
@@ -390,7 +395,9 @@ def get_hotspots(op_data, ai_data):
                 "flop_count_hp", "DP operations", "SP operations"] + extra
         for opt in opts:
             if opt in _data:
-                return float(_data[opt])
+                value = float(_data[opt])
+                if value > 0.0:
+                    return value
         return None
 
     def get_bandwidth(_data, extra=[]):
@@ -402,6 +409,9 @@ def get_hotspots(op_data, ai_data):
         return None
 
     for i in range(0, max_length):
+        if ("cuptiOverhead" in ai_graph_data[i]["prefix"] or
+            "cuptiOverhead" in op_graph_data[i]["prefix"]):
+            continue
         ai_repr = ai_graph_data[i]["entry"]["repr_data"]
         op_repr = op_graph_data[i]["entry"]["repr_data"]
         all_runtime += filter(None,
@@ -416,6 +426,10 @@ def get_hotspots(op_data, ai_data):
         avg_runtime /= len(all_runtime) - 1.0
 
     for i in range(0, max_length):
+        if ("cuptiOverhead" in ai_graph_data[i]["prefix"] or
+            "cuptiOverhead" in op_graph_data[i]["prefix"]):
+            continue
+
         runtimes = []
         flop = None
         bandwidth = None
@@ -433,6 +447,9 @@ def get_hotspots(op_data, ai_data):
             flop = get_flops(op_repr)
             if flop is None:
                 flop = get_flops(op_repr, ["counted"])
+
+        if flop is None:
+            continue
 
         if ai_type == "cpu":
             bandwidth = get_bandwidth(ai_repr)
@@ -453,12 +470,14 @@ def get_hotspots(op_data, ai_data):
         if VERBOSE > 1:
             print("intensity: {}, flop: {}, proportion: {}, label: {}".format(
                 intensity, flop, proportion, label))
+
+        if VERBOSE > 0:
+            print("{} : runtime = {}, avg = {}, proportion = {}, flop = {}".format(
+                label, runtime, avg_runtime, proportion, flop))
+
         # this can arise from overflow
         if flop <= 1.0e-3 or bandwidth <= 0.0:
             continue
-        elif VERBOSE > 0:
-            print("{} : runtime = {}, avg = {}, proportion = {}".format(
-                label, runtime, avg_runtime, proportion))
 
         hotspots.append([intensity, flop, proportion, label])
     return hotspots
@@ -480,9 +499,16 @@ def get_color(proportion):
 #
 class plot_parameters():
     def __init__(self, peak_flops, hotspots):
+
         _peak = peak_flops[0]
         if isinstance(_peak, list):
             _peak = max(_peak)
+        elif isinstance(_peak, dict):
+            tmp = 0.0
+            for key, entry in _peak.items():
+                tmp = max([tmp] + entry)
+            _peak = tmp
+
         y_digits = int(math.log10(_peak))+1
         self.xmin = 0.01
         self.xmax = 100
@@ -502,6 +528,7 @@ class plot_parameters():
                 self.xmax = 10**int(log(intensity)/log(10)+1)
             if intensity < self.xmin:
                 self.xmin = 10**int(log(intensity)/log(10)-1)
+
         print("X (min, max) = {}, {}, Y (min, max) = {}, {}".format(
             self.xmin, self.xmax, self.ymin, self.ymax))
 
@@ -553,52 +580,60 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
     axes.set_xlim([plot_params.xmin, plot_params.xmax])
     axes.set_ylim([plot_params.ymin, plot_params.ymax])
 
-    _peak_flop = peak_flop[0]
-    if isinstance(_peak_flop, list):
-        _peak_flop = max(_peak_flop)
+    #_peak_flop = peak_flop[0]
+    #if isinstance(_peak_flop, list):
+    #    _peak_flop = max(_peak_flop)
 
     # plot bandwidth roof
-    x0 = plot_params.xmax
-    for band in (peak_band):
-        x1 = plot_params.xmin
-        y1 = band[0] * plot_params.xmin
-        if y1 < plot_params.ymin:
-            x1 = plot_params.ymin / band[0]
-            y1 = plot_params.ymin
-        x2 = _peak_flop / band[0]
-        y2 = _peak_flop
-        if x2 < x0:
-            x0 = x2
+    _nitr = 0
+    for _label, _peak_flop in peak_flop[0].items():
+        x0 = plot_params.xmax
+        print("Label: {}, Peak: {}".format(_label, _peak_flop))
+        _peakop = max(_peak_flop)
+        for band in (peak_band):
+            x1 = plot_params.xmin
+            y1 = band[0] * plot_params.xmin
+            if y1 < plot_params.ymin:
+                x1 = plot_params.ymin / band[0]
+                y1 = plot_params.ymin
+            x2 = _peakop / band[0]
+            y2 = _peakop
+            if x2 < x0:
+                x0 = x2
 
-        x1log = log(x1)/log(10)
-        x2log = log(x2)/log(10)
-        y1log = log(y1)/log(10)
-        y2log = log(y2)/log(10)
-        x_text = 10**((x1log + x2log)/2)
-        y_text = 10**((y1log + y2log)/2)
+            x1log = log(x1)/log(10)
+            x2log = log(x2)/log(10)
+            y1log = log(y1)/log(10)
+            y2log = log(y2)/log(10)
+            x_text = 10**((x1log + x2log)/2)
+            y_text = 10**((y1log + y2log)/2)
 
-        fig = plt.gcf()
-        size = fig.get_size_inches()*fig.dpi
-        fig_x, fig_y = size
+            fig = plt.gcf()
+            size = fig.get_size_inches()*fig.dpi
+            fig_x, fig_y = size
 
-        dx = log(x2) - log(x1)
-        dy = log(y2) - log(y1)
-        x_min, x_max = plt.xlim()
-        y_min, y_max = plt.ylim()
-        Dx = dx * fig_x / (log(x_max) - log(x_min))
-        Dy = dy * fig_y / (log(y_max) - log(y_min))
-        angle = (180/pi)*numpy.arctan(Dy / Dx)
+            dx = log(x2) - log(x1)
+            dy = log(y2) - log(y1)
+            x_min, x_max = plt.xlim()
+            y_min, y_max = plt.ylim()
+            Dx = dx * fig_x / (log(x_max) - log(x_min))
+            Dy = dy * fig_y / (log(y_max) - log(y_min))
+            angle = (180/pi)*numpy.arctan(Dy / Dx)
 
-        text(x_text, y_text, "%.2f %s" %
-             (band[0], band[1]), rotation=angle, rotation_mode='anchor', **get_font())
-        plt.plot([x1, x2], [y1, y2], color='magenta')
+            if _nitr == 0:
+                text(x_text, y_text, "%.2f %s" % (band[0], band[1]),
+                     rotation=angle, rotation_mode='anchor', **get_font())
+            plt.plot([x1, x2], [y1, y2], color='magenta')
 
-    # plot computing roof
-    text(plot_params.xmax, _peak_flop + 2,
-         "%.2f %s" % (_peak_flop, peak_flop[1]),
-         horizontalalignment='right', **get_font())
+            # plot computing roof
+            text(plot_params.xmax, _peakop + 2,
+                 "%.2f %s" % (_peakop, peak_flop[1]),
+                 horizontalalignment='right', **get_font())
 
-    plt.plot([x0, plot_params.xmax], [_peak_flop, _peak_flop], color='b')
+            plt.plot([x0, plot_params.xmax], [_peakop, _peakop], color='b')
+        # ensure bandwidth labels are not duplicated
+        _nitr += 1
+
 
     # plot hotspots
     for element in (hotspots):

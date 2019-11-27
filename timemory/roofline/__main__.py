@@ -60,6 +60,7 @@ def parse_args(add_run_args=False):
                         default=[1600, 1200, 90], nargs=3)
     parser.add_argument("-R", "--rank", type=int,
                         help="MPI Rank", default=None)
+    parser.add_argument("-v", "--verbose", type=int, help="Verbosity", default=None)
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
@@ -84,6 +85,7 @@ def parse_args(add_run_args=False):
 
 
 def plot(args):
+
     try:
         fname = os.path.basename(args.output_file)
         fdir = os.path.realpath(args.output_dir)
@@ -244,6 +246,8 @@ if __name__ == "__main__":
         sys.argv[1:] = _argv
         args = parse_args(len(_cmd) != 0)
         run(args, _cmd)
+        if args.verbose is not None:
+            _roofline.VERBOSE = args.verbose
         plot(args)
 
     except Exception as e:
