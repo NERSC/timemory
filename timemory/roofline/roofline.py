@@ -542,7 +542,7 @@ class plot_parameters():
 #
 def plot_roofline(ai_data, op_data, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
-                  width=1600, height=1200, dpi=90):
+                  width=1600, height=1200, dpi=100):
     """
     Plot the roofline
     """
