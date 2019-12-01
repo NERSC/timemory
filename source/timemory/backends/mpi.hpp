@@ -55,7 +55,7 @@ static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
 namespace threading
 {
-static bool&
+inline bool&
 use()
 {
     static bool _instance = true;
@@ -86,7 +86,7 @@ static const info_t  info_null_v        = 0;
 static const int32_t comm_type_shared_v = 0;
 namespace threading
 {
-static bool&
+inline bool&
 use()
 {
     static bool _instance = true;
