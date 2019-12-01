@@ -85,6 +85,8 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--build-libs", help="Build library type(s)", default=("shared"),
                         nargs='*', type=str, choices=("static", "shared"))
+    parser.add_argument(
+        "--generate", help="Generate the tests only", action='store_true')
 
     args = parser.parse_args()
 
@@ -512,7 +514,8 @@ def run_pyctest():
 
     pyct.generate_config(pyct.BINARY_DIRECTORY)
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
-    pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
+    if not args.generate:
+        pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
 
 
 #------------------------------------------------------------------------------#
