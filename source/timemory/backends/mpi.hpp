@@ -53,6 +53,24 @@ using info_t                            = MPI_Info;
 static const comm_t  comm_world_v       = MPI_COMM_WORLD;
 static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
+namespace threading
+{
+enum : int
+{
+    /// Only one thread will execute.
+    single = MPI_THREAD_SINGLE,
+    /// Only main thread will do MPI calls. The process may be multi-threaded, but only
+    /// the main thread will make MPI calls (all MPI calls are funneled to the main
+    /// thread)
+    funneled = MPI_THREAD_FUNNELED,
+    /// Only one thread at the time do MPI calls. The process may be multi-threaded, and
+    /// multiple threads may make MPI calls, but only one at a time: MPI calls are not
+    /// made concurrently from two distinct threads (all MPI calls are serialized).
+    serialized = MPI_THREAD_SERIALIZED,
+    /// Multiple thread may do MPI calls with no restrictions.
+    multiple = MPI_THREAD_MULTIPLE
+};
+}
 #else
 // dummy MPI types
 using comm_t                            = int32_t;
@@ -60,11 +78,54 @@ using info_t                            = int32_t;
 static const comm_t  comm_world_v       = 0;
 static const info_t  info_null_v        = 0;
 static const int32_t comm_type_shared_v = 0;
+namespace threading
+{
+enum : int
+{
+    /// Only one thread will execute.
+    single = 0,
+    /// Only main thread will do MPI calls. The process may be multi-threaded, but only
+    /// the main thread will make MPI calls (all MPI calls are funneled to the main
+    /// thread)
+    funneled = 1,
+    /// Only one thread at the time do MPI calls. The process may be multi-threaded, and
+    /// multiple threads may make MPI calls, but only one at a time: MPI calls are not
+    /// made concurrently from two distinct threads (all MPI calls are serialized).
+    serialized = 2,
+    /// Multiple thread may do MPI calls with no restrictions.
+    multiple = 3
+};
+}
 #endif
 
 template <typename _Tp>
 using communicator_map_t = std::unordered_map<comm_t, _Tp>;
 
+inline int32_t
+rank(comm_t comm = comm_world_v);
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+check_error(int err_code)
+{
+#if defined(TIMEMORY_USE_MPI)
+    if(err_code != MPI_SUCCESS)
+    {
+        int  len = 0;
+        char msg[1024];
+        MPI_Error_string(err_code, msg, &len);
+        int idx   = (len < 1023) ? len + 1 : 1023;
+        msg[idx]  = '\0';
+        int _rank = rank();
+        printf("[%i]> Error code (%i): %s\n", _rank, err_code, msg);
+    }
+    return (err_code == MPI_SUCCESS);
+#else
+    consume_parameters(err_code);
+    return false;
+#endif
+}
 //--------------------------------------------------------------------------------------//
 
 inline void
@@ -113,7 +174,19 @@ initialize(int& argc, char**& argv)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(!is_initialized())
-        MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, nullptr);
+    {
+        using namespace threading;
+        bool success_v = false;
+        for(auto itr : { multiple, serialized, funneled, single })
+        {
+            auto ret  = MPI_Init_thread(&argc, &argv, itr, nullptr);
+            success_v = check_error(ret);
+            if(success_v)
+                break;
+        }
+        if(success_v)
+            MPI_Init(&argc, &argv);
+    }
 #else
     consume_parameters(argc, argv);
 #endif
@@ -155,7 +228,7 @@ finalize()
 //--------------------------------------------------------------------------------------//
 
 inline int32_t
-rank(comm_t comm = comm_world_v)
+rank(comm_t comm)
 {
     int32_t _rank = 0;
 #if defined(TIMEMORY_USE_MPI)

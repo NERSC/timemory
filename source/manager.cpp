@@ -62,11 +62,6 @@ extern "C"
 
     int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
     {
-        if(req != MPI_THREAD_MULTIPLE)
-            throw std::runtime_error(
-                "Error! Invalid call to MPI_Init_thread(...)! timemory requires "
-                "MPI_Init_thread(int*, char***, MPI_THREAD_MULTIPLE, int*)");
-
         static auto _manager = timemory_mpi_manager_master_instance();
         tim::consume_parameters(_manager);
         if(tim::settings::debug())
