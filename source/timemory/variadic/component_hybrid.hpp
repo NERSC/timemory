@@ -222,6 +222,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // construct the objects that have constructors with matching arguments
+    //
+    template <typename... _Args>
+    void construct(_Args&&... _args)
+    {
+        m_tuple.construct(std::forward<_Args>(_args)...);
+        m_list.construct(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //

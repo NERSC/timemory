@@ -161,7 +161,7 @@ protected:
             tim::settings::verbose()      = 0;
             tim::settings::debug()        = false;
             tim::settings::json_output()  = true;
-            tim::mpi::threading::use()    = false;
+            tim::settings::mpi_thread()   = false;
             tim::mpi::initialize(_argc, _argv);
 #if defined(TIMEMORY_USE_PAPI)
             cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);

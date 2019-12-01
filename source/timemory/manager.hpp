@@ -49,6 +49,8 @@
 
 #include <atomic>
 #include <cstdint>
+#include <map>
+#include <set>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -79,6 +81,7 @@ public:
     using finalizer_func_t = std::function<void()>;
     using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t = std::deque<finalizer_pair_t>;
+    using strmap_t         = std::map<string_t, std::set<string_t>>;
 
 public:
     // Constructor and Destructors
@@ -94,10 +97,21 @@ public:
     // storage-types add functors to destroy the instances
     template <typename _Func>
     void add_finalizer(const std::string&, _Func&&, bool);
-
     void remove_finalizer(const std::string&);
-
     void finalize();
+
+    void add_text_output(const string_t& _label, const string_t& _file)
+    {
+        m_text_files[_label].insert(_file);
+    }
+
+    void add_json_output(const string_t& _label, const string_t& _file)
+    {
+        m_json_files[_label].insert(_file);
+    }
+
+    void    write_metadata(const char* = "");
+    int32_t get_rank() const { return m_rank; }
 
 public:
     // Public static functions
@@ -366,7 +380,9 @@ private:
     /// notifies that it is finalizing
     bool m_is_finalizing = false;
     /// instance id
-    int32_t m_instance_count;
+    int32_t  m_instance_count;
+    int32_t  m_rank;
+    string_t m_metadata_fname;
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
     graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
@@ -375,6 +391,8 @@ private:
     finalizer_list_t       m_worker_finalizers;
     mutex_t                m_mutex;
     auto_lock_t*           m_lock = nullptr;
+    strmap_t               m_text_files;
+    strmap_t               m_json_files;
 
 private:
     /// num-threads based on number of managers created

@@ -109,6 +109,7 @@ struct written_bytes;
 struct caliper;
 struct likwid_perfmon;
 struct likwid_nvmon;
+struct tau_marker;
 
 // vtune
 struct vtune_frame;

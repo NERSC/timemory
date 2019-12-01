@@ -44,9 +44,12 @@ struct base
 public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
     static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
+    static constexpr bool record_statistics_v  = trait::record_statistics<_Tp>::value;
 
-    using Type           = _Tp;
-    using value_type     = _Value;
+    using Type       = _Tp;
+    using value_type = _Value;
+    using accum_type =
+        typename std::conditional<record_statistics_v, statistics<_Value>, _Value>::type;
     using policy_type    = policy::wrapper<_Policies...>;
     using this_type      = base<_Tp, _Value, _Policies...>;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
@@ -58,7 +61,7 @@ private:
     friend class storage<_Tp>;
 
     friend struct operation::init_storage<_Tp>;
-    friend struct operation::live_count<_Tp>;
+    friend struct operation::construct<_Tp>;
     friend struct operation::set_prefix<_Tp>;
     friend struct operation::pop_node<_Tp>;
     friend struct operation::record<_Tp>;
@@ -547,7 +550,7 @@ protected:
     bool           is_transient = false;
     bool           depth_change = false;
     value_type     value        = value_type();
-    value_type     accum        = value_type();
+    accum_type     accum        = accum_type();
     int64_t        laps         = 0;
     graph_iterator graph_itr    = graph_iterator{ nullptr };
 
@@ -701,7 +704,7 @@ private:
     friend class impl::storage<_Tp, implements_storage_v>;
 
     friend struct operation::init_storage<_Tp>;
-    friend struct operation::live_count<_Tp>;
+    friend struct operation::construct<_Tp>;
     friend struct operation::set_prefix<_Tp>;
     friend struct operation::pop_node<_Tp>;
     friend struct operation::record<_Tp>;

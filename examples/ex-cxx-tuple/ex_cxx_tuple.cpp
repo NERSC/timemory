@@ -44,13 +44,13 @@ using namespace tim::component;
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
-                    process_cpu_clock, process_cpu_util, papi_tuple_t>;
+    tim::auto_tuple<wall_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, papi_tuple_t, tau_marker>;
 
 using measurement_t =
     tim::component_tuple<peak_rss, page_rss, virtual_memory, num_major_page_faults,
                          num_minor_page_faults, priority_context_switch,
-                         voluntary_context_switch>;
+                         voluntary_context_switch, tau_marker>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -88,6 +88,7 @@ print_mpi_storage();
 int
 main(int argc, char** argv)
 {
+    tim::settings::banner() = true;
     tim::enable_signal_detection({ tim::sys_signal::SegFault, tim::sys_signal::Abort,
                                    tim::sys_signal::User1, tim::sys_signal::User2 });
     tim::mpi::initialize(argc, argv);
@@ -289,7 +290,6 @@ test_3_measure()
 void
 print_mpi_storage()
 {
-    // tim::settings::auto_output() = false;
     auto ret = tim::storage<wall_clock>::instance()->mpi_get();
     if(tim::mpi::rank() != 0)
         return;
@@ -312,12 +312,6 @@ print_mpi_storage()
         }
         std::cout << ss.str();
     }
-
-    /*
-    std::cout << "CHECK: " << std::boolalpha
-              << std::is_standard_layout<typename wall_clock::base_type>::value
-              << std::endl;
-              */
 }
 
 //======================================================================================//

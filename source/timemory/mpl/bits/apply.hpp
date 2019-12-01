@@ -155,6 +155,37 @@ operator-=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
 }
 
 //--------------------------------------------------------------------------------------//
+//
+//      operator -
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, size_t _N>
+::std::array<_Tp, _N>&
+operator-(::std::array<_Tp, _N> lhs, const ::std::array<_Tp, _N>& rhs)
+{
+    return lhs -= rhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+::std::tuple<_Types...>&
+operator-(::std::tuple<_Types...> lhs, const ::std::tuple<_Types...>& rhs)
+{
+    return lhs -= rhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Lhs, typename _Rhs>
+::std::pair<_Lhs, _Rhs>
+operator-(::std::pair<_Lhs, _Rhs> lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
+{
+    return lhs -= rhs;
+}
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace stl_overload
 

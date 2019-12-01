@@ -70,7 +70,8 @@ TIMEMORY_INSTANTIATE_EXTERN_LIST(
     ::tim::component::priority_context_switch, ::tim::component::process_cpu_clock,
     ::tim::component::process_cpu_util, ::tim::component::read_bytes,
     ::tim::component::real_clock, ::tim::component::stack_rss,
-    ::tim::component::system_clock, ::tim::component::thread_cpu_clock,
-    ::tim::component::thread_cpu_util, ::tim::component::trip_count,
-    ::tim::component::user_clock, ::tim::component::virtual_memory,
-    ::tim::component::voluntary_context_switch, ::tim::component::written_bytes)
+    ::tim::component::system_clock, ::tim::component::tau_marker,
+    ::tim::component::thread_cpu_clock, ::tim::component::thread_cpu_util,
+    ::tim::component::trip_count, ::tim::component::user_clock,
+    ::tim::component::virtual_memory, ::tim::component::voluntary_context_switch,
+    ::tim::component::written_bytes)

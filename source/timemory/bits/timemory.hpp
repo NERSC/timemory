@@ -55,9 +55,9 @@ using complete_tuple_t = std::tuple<
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
     component::wall_clock, component::stack_rss, component::system_clock,
-    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_clock, component::virtual_memory, component::voluntary_context_switch,
-    component::written_bytes>;
+    component::tau_marker, component::thread_cpu_clock, component::thread_cpu_util,
+    component::trip_count, component::user_clock, component::virtual_memory,
+    component::voluntary_context_switch, component::written_bytes>;
 
 using complete_auto_list_t = auto_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
@@ -74,9 +74,9 @@ using complete_auto_list_t = auto_list<
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
     component::wall_clock, component::stack_rss, component::system_clock,
-    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_clock, component::virtual_memory, component::voluntary_context_switch,
-    component::written_bytes>;
+    component::tau_marker, component::thread_cpu_clock, component::thread_cpu_util,
+    component::trip_count, component::user_clock, component::virtual_memory,
+    component::voluntary_context_switch, component::written_bytes>;
 
 using complete_list_t = component_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
@@ -93,9 +93,9 @@ using complete_list_t = component_list<
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
     component::wall_clock, component::stack_rss, component::system_clock,
-    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_clock, component::virtual_memory, component::voluntary_context_switch,
-    component::written_bytes>;
+    component::tau_marker, component::thread_cpu_clock, component::thread_cpu_util,
+    component::trip_count, component::user_clock, component::virtual_memory,
+    component::voluntary_context_switch, component::written_bytes>;
 
 using recommended_auto_tuple_t =
     auto_tuple<component::wall_clock, component::system_clock, component::user_clock,

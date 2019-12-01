@@ -42,61 +42,143 @@
 #include <limits>
 
 #include "timemory/data/functional.hpp"
+#include "timemory/mpl/math.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
 
 namespace tim
 {
-namespace impl
-{
+//======================================================================================//
+
 template <typename _Tp>
 struct statistics
 {
 public:
-    using value_type = _Tp;
+    using value_type   = _Tp;
+    using compute_type = math::compute<_Tp>;
 
 public:
-    inline statistics();
+    inline statistics()                  = default;
     inline ~statistics()                 = default;
     inline statistics(const statistics&) = default;
     inline statistics(statistics&&)      = default;
 
+    inline statistics(const value_type& val)
+    : m_cnt(0)
+    , m_sum(val)
+    , m_min(val)
+    , m_max(val)
+    {}
+
+    inline statistics(value_type&& val)
+    : m_cnt(0)
+    , m_sum(std::move(val))
+    , m_min(m_sum)
+    , m_max(m_sum)
+    {}
+
     statistics& operator=(const statistics&) = default;
     statistics& operator=(statistics&&) = default;
 
+    statistics& operator=(const value_type& val)
+    {
+        m_sum = val;
+        if(m_cnt == 0)
+            m_min = val;
+        else
+            m_min = compute_type::min(m_min, val);
+        m_max = compute_type::max(m_max, val);
+        return *this;
+    }
+
 public:
     // Accumulated values
-    inline const value_type& get_min() const;
-    inline const value_type& get_max() const;
-    inline const value_type& get_sum() const;
+    inline const value_type& get_min() const { return m_min; }
+    inline const value_type& get_max() const { return m_max; }
+    inline const value_type& get_sum() const { return m_sum; }
 
     // Conversion
-    inline operator value_type() const { return m_sum; }
+    inline operator const value_type&() const { return m_sum; }
+    inline operator value_type&() { return m_sum; }
 
     // Modifications
     inline void reset();
 
-    // Operators
-    inline statistics& operator+=(const value_type& val)
+    inline statistics& get_min(const value_type& val)
     {
-        m_sum += val;
-        m_min = std::min(m_min, val);
-        m_max = std::max(m_max, val);
+        m_sum = compute_type::min(m_sum, val);
+        if(m_cnt == 0)
+            m_min = val;
+        else
+            m_min = compute_type::min(m_min, val);
         return *this;
     }
 
+    inline statistics& get_max(const value_type& val)
+    {
+        m_sum = compute_type::max(m_sum, val);
+        m_max = compute_type::max(m_max, val);
+        return *this;
+    }
+
+public:
+    // Operators (value_type)
+    inline statistics& operator+=(const value_type& val)
+    {
+        compute_type::plus(m_sum, val);
+        if(m_cnt == 0)
+            m_min = val;
+        else
+            m_min = compute_type::min(m_min, val);
+        m_max = compute_type::max(m_max, val);
+        ++m_cnt;
+        return *this;
+    }
+
+    inline statistics& operator-=(const value_type& val)
+    {
+        compute_type::minus(m_sum, val);
+        compute_type::minus(m_min, val);
+        compute_type::minus(m_max, val);
+        return *this;
+    }
+
+    inline statistics& operator*=(const value_type& val)
+    {
+        compute_type::multiply(m_sum, val);
+        compute_type::multiply(m_min, val);
+        compute_type::multiply(m_max, val);
+        return *this;
+    }
+
+    inline statistics& operator/=(const value_type& val)
+    {
+        compute_type::divide(m_sum, val);
+        compute_type::divide(m_min, val);
+        compute_type::divide(m_max, val);
+        return *this;
+    }
+
+public:
+    // Operators (this_type)
     inline statistics& operator+=(const statistics& rhs)
     {
         m_sum += rhs.m_sum;
-        m_min = std::min(m_min, rhs.m_min);
-        m_max = std::max(m_max, rhs.m_max);
+        if(m_cnt == 0)
+            m_min = rhs.m_min;
+        else
+            m_min = compute_type::min(m_min, rhs.m_min);
+        m_max = compute_type::max(m_max, rhs.m_max);
+        m_cnt += rhs.m_cnt;
         return *this;
     }
 
 private:
     // summation of each history^1
+    int64_t    m_cnt = 0;
+    value_type m_sum = value_type();
     value_type m_min = value_type();
     value_type m_max = value_type();
-    value_type m_sum = value_type();
 
 public:
     // friend operator for output
@@ -111,53 +193,43 @@ public:
     {
         return statistics(lhs) += rhs;
     }
+
+    friend const statistics operator-(const statistics& lhs, const statistics& rhs)
+    {
+        return statistics(lhs) -= rhs;
+    }
+
+    template <typename _Archive>
+    void serialize(_Archive& ar, const unsigned int)
+    {
+        ar(cereal::make_nvp("sum", m_sum), cereal::make_nvp("min", m_min),
+           cereal::make_nvp("max", m_max));
+    }
 };
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-inline const _Tp&
-statistics<_Tp>::get_min() const
-{
-    return m_min;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-inline const _Tp&
-statistics<_Tp>::get_max() const
-{
-    return m_max;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-inline const _Tp&
-statistics<_Tp>::get_sum() const
-{
-    return m_sum;
-}
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace impl
-
-//======================================================================================//
-
-template <typename _Tp>
-struct statistics : public impl::statistics<_Tp>
-{};
-
-template <typename _Tp, size_t _N>
-struct statistics<std::array<_Tp, _N>> : public std::array<impl::statistics<_Tp>, _N>
-{};
-
-template <typename _Tp>
-struct statistics<std::vector<_Tp>> : public std::vector<impl::statistics<_Tp>>
-{};
 
 //======================================================================================//
 
 }  // namespace tim
+
+namespace std
+{
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+::tim::statistics<_Tp>
+max(::tim::statistics<_Tp> lhs, const _Tp& rhs)
+{
+    return lhs.get_max(rhs);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+::tim::statistics<_Tp>
+min(::tim::statistics<_Tp> lhs, const _Tp& rhs)
+{
+    return lhs.get_min(rhs);
+}
+
+//--------------------------------------------------------------------------------------//
+}  // namespace std

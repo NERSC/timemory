@@ -52,7 +52,7 @@ template <typename _Tp>
 struct init_storage;
 
 template <typename _Tp>
-struct live_count;
+struct construct;
 
 template <typename _Tp>
 struct set_prefix;
@@ -98,6 +98,9 @@ struct mark_begin;
 
 template <typename _Tp>
 struct mark_end;
+
+template <typename _Tp>
+struct customize;
 
 template <typename RetType, typename LhsType, typename RhsType>
 struct compose;
@@ -223,6 +226,12 @@ struct secondary_data;
 
 template <typename _Tp>
 struct thread_scope_only;
+
+template <typename _Tp>
+struct split_serialization;
+
+template <typename _Tp>
+struct record_statistics;
 
 }  // namespace trait
 

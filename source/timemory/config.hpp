@@ -59,7 +59,6 @@ inline void
 tim::timemory_init(int argc, char** argv, const std::string& _prefix,
                    const std::string& _suffix)
 {
-    consume_parameters(argc);
     std::string exe_name = argv[0];
 
     while(exe_name.find("\\") != std::string::npos)
@@ -82,19 +81,22 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
             itr = '-';
     }
 
-    tim::settings::output_path() = exe_name;
+    settings::output_path() = exe_name;
     // allow environment overrides
-    tim::settings::parse();
+    settings::parse();
 
-    if(tim::settings::enable_signal_handler())
+    if(settings::enable_signal_handler())
     {
-        auto default_signals = tim::signal_settings::get_default();
+        auto default_signals = signal_settings::get_default();
         for(auto& itr : default_signals)
-            tim::signal_settings::enable(itr);
+            signal_settings::enable(itr);
         // should return default and any modifications from environment
-        auto enabled_signals = tim::signal_settings::get_enabled();
-        tim::enable_signal_detection(enabled_signals);
+        auto enabled_signals = signal_settings::get_enabled();
+        enable_signal_detection(enabled_signals);
     }
+
+    auto _manager = manager::instance();
+    consume_parameters(argc, _manager);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -106,7 +108,7 @@ tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
     auto cstr  = const_cast<char*>(exe_name.c_str());
     auto _argc = 1;
     auto _argv = &cstr;
-    tim::timemory_init(_argc, _argv, _prefix, _suffix);
+    timemory_init(_argc, _argv, _prefix, _suffix);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -116,7 +118,7 @@ tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
                    const std::string& _suffix)
 {
 #if defined(TIMEMORY_USE_MPI)
-    tim::mpi::initialize(argc, argv);
+    mpi::initialize(argc, argv);
 #endif
     timemory_init(*argc, *argv, _prefix, _suffix);
 }
@@ -126,9 +128,9 @@ tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
 inline void
 tim::timemory_finalize()
 {
-    tim::manager::instance()->finalize();
-    tim::mpi::finalize();
-    tim::disable_signal_detection();
+    manager::instance()->finalize();
+    mpi::finalize();
+    disable_signal_detection();
 }
 
 //--------------------------------------------------------------------------------------//

@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
 #include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
@@ -55,12 +56,6 @@ static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
 namespace threading
 {
-inline bool&
-use()
-{
-    static bool _instance = true;
-    return _instance;
-}
 enum : int
 {
     /// Only one thread will execute.
@@ -86,12 +81,6 @@ static const info_t  info_null_v        = 0;
 static const int32_t comm_type_shared_v = 0;
 namespace threading
 {
-inline bool&
-use()
-{
-    static bool _instance = true;
-    return _instance;
-}
 enum : int
 {
     /// Only one thread will execute.
@@ -189,15 +178,24 @@ initialize(int& argc, char**& argv)
     {
         using namespace threading;
         bool success_v = false;
-        if(use())
+        if(settings::mpi_thread())
         {
-            for(auto itr : { multiple, serialized, funneled, single })
-            {
-                auto ret  = MPI_Init_thread(&argc, &argv, itr, nullptr);
-                success_v = check_error(ret);
-                if(success_v)
-                    break;
-            }
+            auto _init = [&](int itr) {
+                auto ret = MPI_Init_thread(&argc, &argv, itr, nullptr);
+                return check_error(ret);
+            };
+
+            auto _mpi_type = settings::mpi_thread_type();
+            if(_mpi_type == "single")
+                success_v = _init(single);
+            else if(_mpi_type == "serialized")
+                success_v = _init(serialized);
+            else if(_mpi_type == "funneled")
+                success_v = _init(funneled);
+            else if(_mpi_type == "multiple")
+                success_v = _init(multiple);
+            else
+                success_v = _init(multiple);
         }
         if(!success_v)
             check_error(MPI_Init(&argc, &argv));

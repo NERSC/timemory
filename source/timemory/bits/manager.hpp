@@ -95,6 +95,8 @@ manager::master_instance()
 inline manager::manager()
 : m_is_finalizing(false)
 , m_instance_count(f_manager_instance_count()++)
+, m_rank(mpi::rank())
+, m_metadata_fname(settings::compose_output_filename("metadata", "json"))
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
 , m_lock(new auto_lock_t(m_mutex, std::defer_lock))
@@ -102,20 +104,20 @@ inline manager::manager()
     f_thread_counter()++;
     static std::atomic<int> _once(0);
 
-    if(_once++ == 0)
+    bool _first = (_once++ == 0);
+
+    if(_first)
     {
         settings::parse();
         papi::init();
         std::atexit(manager::exit_hook);
     }
 
-    if(m_instance_count == 0)
-    {
-        if(settings::banner())
-            printf("#--------------------- tim::manager initialized [%i] "
-                   "---------------------#\n\n",
-                   m_instance_count);
-    }
+    // if(settings::banner())
+    if(_first && settings::banner())
+        printf("#--------------------- tim::manager initialized [%i][%i] "
+               "---------------------#\n\n",
+               m_rank, m_instance_count);
 }
 
 //======================================================================================//
@@ -124,16 +126,24 @@ inline manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
 
-    if(get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
-       m_instance_count == 0)
+    bool _last = (get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
+                  m_instance_count == 0);
+
+    if(m_rank == 0 && _remain == 0)
+        write_metadata("manager::~manager");
+
+    if(_last)
     {
-        mpi::finalize();
+        // papi::shutdown();
+        // mpi::finalize();
         f_thread_counter().store(0, std::memory_order_relaxed);
-        if(settings::banner())
-            printf("\n\n#---------------------- tim::manager destroyed [%i] "
-                   "----------------------#\n",
-                   m_instance_count);
     }
+
+    // if(settings::banner())
+    if(_last && settings::banner())
+        printf("\n\n#---------------------- tim::manager destroyed [%i][%i] "
+               "----------------------#\n",
+               m_rank, m_instance_count);
 
     delete m_lock;
 }
@@ -194,7 +204,8 @@ manager::finalize()
 
     m_is_finalizing = true;
     if(settings::debug())
-        PRINT_HERE("%s", "finalizing...");
+        PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
+                   (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
 
     auto _finalize = [](finalizer_list_t& _finalizers) {
         // reverse to delete the most recent additions first
@@ -217,7 +228,8 @@ manager::finalize()
     m_is_finalizing = false;
 
     if(settings::debug())
-        PRINT_HERE("%s", "finalizing...");
+        PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
+                   (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
 }
 
 //======================================================================================//
@@ -230,13 +242,18 @@ manager::exit_hook()
 
     try
     {
-        papi::shutdown();
-        mpi::finalize();
-        if(f_manager_instance_count() > 0)
+        auto master_count = f_manager_instance_count().load();
+        if(master_count > 0)
         {
             auto master_manager = get_shared_ptr_pair_master_instance<manager>();
             master_manager.reset();
         }
+        else
+        {
+            // papi::shutdown();
+            // mpi::finalize();
+        }
+        // papi::shutdown();
     } catch(...)
     {}
 
@@ -245,7 +262,59 @@ manager::exit_hook()
 }
 
 //======================================================================================//
+// metadata
+//
+inline void
+manager::write_metadata(const char* context)
+{
+    if(m_rank != 0)
+        return;
+
+    auto fname = m_metadata_fname;
+    printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::ofstream         ofs(fname.c_str());
+    if(ofs)
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
+        cereal::JSONOutputArchive          oa(ofs, opts);
+        oa.setNextName("timemory");
+        oa.startNode();
+        {
+            oa.setNextName("metadata");
+            oa.startNode();
+            {
+                oa.setNextName("settings");
+                oa.startNode();
+                settings::serialize_settings(oa);
+                oa.finishNode();
+            }
+            {
+                oa.setNextName("output");
+                oa.startNode();
+                oa(cereal::make_nvp("text", m_text_files),
+                   cereal::make_nvp("json", m_json_files));
+                oa.finishNode();
+            }
+            auto _env = env_settings::instance()->get();
+            oa(cereal::make_nvp("environment", _env));
+            oa.finishNode();
+        }
+        oa.finishNode();
+    }
+    if(ofs)
+        ofs << std::endl;
+    else
+        printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
+
+    ofs.close();
+}
+
+//======================================================================================//
 // static function
+//
 inline manager::comm_group_t
 manager::get_communicator_group()
 {

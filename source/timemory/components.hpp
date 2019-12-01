@@ -81,6 +81,11 @@
 #    include "timemory/components/roofline/cpu.hpp"
 #endif
 
+// TAU component
+#if defined(TIMEMORY_USE_TAU)
+#    include "timemory/components/tau.hpp"
+#endif
+
 // VTune components
 #if defined(TIMEMORY_USE_VTUNE)
 #    include "timemory/components/vtune/event.hpp"

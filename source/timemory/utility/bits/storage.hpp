@@ -592,12 +592,18 @@ typename storage<ObjectType, true>::mpi_result_t
 storage<ObjectType, true>::mpi_get()
 {
 #if !defined(TIMEMORY_USE_MPI)
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory not using MPI");
+
     return mpi_result_t(1, get());
 #else
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory using MPI");
+
     mpi::barrier(mpi::comm_world_v);
 
-    int mpi_rank = mpi::rank();
-    int mpi_size = mpi::size();
+    int mpi_rank = m_node_rank;
+    int mpi_size = m_node_size;
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -716,9 +722,13 @@ void storage<ObjectType, true>::external_print(std::false_type)
         auto _results     = this->get();
         auto _mpi_results = this->mpi_get();
 
+        if(settings::debug())
+            printf("[%s]|%i> mpi results size: %i\n", label.c_str(), m_node_rank,
+                   (int) _mpi_results.size());
+
         if(_mpi_results.size() > 0)
         {
-            if(mpi::rank() != 0)
+            if(m_node_rank != 0)
                 return;
             else
             {
@@ -763,17 +773,20 @@ void storage<ObjectType, true>::external_print(std::false_type)
         int64_t _max_depth = 0;
         int64_t _max_laps  = 0;
         // find the max width
-        for(const auto& itr : _results)
+        for(const auto mitr : _mpi_results)
         {
-            const auto& itr_obj    = itr.data();
-            const auto& itr_prefix = itr.prefix();
-            const auto& itr_depth  = itr.depth();
-            if(itr_depth < 0 || itr_depth > settings::max_depth())
-                continue;
-            int64_t _len = itr_prefix.length();
-            _width       = std::max(_len, _width);
-            _max_depth   = std::max<int64_t>(_max_depth, itr_depth);
-            _max_laps    = std::max<int64_t>(_max_laps, itr_obj.nlaps());
+            for(const auto& itr : mitr)
+            {
+                const auto& itr_obj    = itr.data();
+                const auto& itr_prefix = itr.prefix();
+                const auto& itr_depth  = itr.depth();
+                if(itr_depth < 0 || itr_depth > settings::max_depth())
+                    continue;
+                int64_t _len = itr_prefix.length();
+                _width       = std::max(_len, _width);
+                _max_depth   = std::max<int64_t>(_max_depth, itr_depth);
+                _max_laps    = std::max<int64_t>(_max_laps, itr_obj.nlaps());
+            }
         }
 
         int64_t              _width_laps  = std::log10(_max_laps) + 1;
@@ -804,8 +817,9 @@ void storage<ObjectType, true>::external_print(std::false_type)
             auto jname = settings::compose_output_filename(label, ".json");
             if(jname.length() > 0)
             {
-                printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
+                printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), m_node_rank,
                        jname.c_str());
+                add_json_output(label, jname);
                 {
                     using serial_write_t        = write_serialization<this_type>;
                     auto          num_instances = instance_count().load();
@@ -831,7 +845,6 @@ void storage<ObjectType, true>::external_print(std::false_type)
                             oa.finishNode();
                         }
                         oa.finishNode();
-                        oa(cereal::make_nvp("environment", *env_settings::instance()));
                         oa.finishNode();
                     }
                     if(ofs)
@@ -856,15 +869,16 @@ void storage<ObjectType, true>::external_print(std::false_type)
                 fout = new std::ofstream(fname.c_str());
                 if(fout && *fout)
                 {
-                    printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
+                    printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), m_node_rank,
                            fname.c_str());
+                    add_text_output(label, fname);
                 }
                 else
                 {
                     delete fout;
                     fout = nullptr;
-                    fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
-                            ObjectType::label().c_str(), __FUNCTION__, __LINE__,
+                    fprintf(stderr, "[storage<%s>::%s @ %i]|%i> Error opening '%s'...\n",
+                            label.c_str(), __FUNCTION__, __LINE__, m_node_rank,
                             fname.c_str());
                 }
             }
@@ -879,7 +893,6 @@ void storage<ObjectType, true>::external_print(std::false_type)
             printf("\n");
         }
 
-        // std::stringstream _mss;
         for(auto itr = _results.begin(); itr != _results.end(); ++itr)
         {
             auto& itr_obj    = std::get<1>(*itr);
@@ -940,7 +953,6 @@ void storage<ObjectType, true>::external_print(std::false_type)
             std::stringstream _oss;
             operation::print<ObjectType>(itr_obj, _oss, itr_prefix, _laps, itr_depth,
                                          _widths, true, _pss.str());
-            // operation::print<ObjectType>(_obj, _mss, false);
             if(cout != nullptr)
                 *cout << _oss.str() << std::flush;
             if(fout != nullptr)
@@ -953,9 +965,6 @@ void storage<ObjectType, true>::external_print(std::false_type)
             delete fout;
             fout = nullptr;
         }
-
-        // if(cout != nullptr)
-        //    *cout << std::endl;
 
         bool _dart_output = settings::dart_output();
 
@@ -1132,6 +1141,26 @@ tim::generic_serialization(const std::string& fname, const _Tp& obj)
 
 //--------------------------------------------------------------------------------------//
 
+inline void
+tim::base::storage::add_text_output(const string_t& _label, const string_t& _file)
+{
+    m_manager = ::tim::manager::instance();
+    if(m_manager)
+        m_manager->add_text_output(_label, _file);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+tim::base::storage::add_json_output(const string_t& _label, const string_t& _file)
+{
+    m_manager = ::tim::manager::instance();
+    if(m_manager)
+        m_manager->add_json_output(_label, _file);
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename ObjectType>
 void
 tim::impl::storage<ObjectType, true>::get_shared_manager()
@@ -1139,6 +1168,8 @@ tim::impl::storage<ObjectType, true>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        if(settings::debug())
+            PRINT_HERE("%s", "getting shared manager");
         m_manager         = ::tim::manager::instance();
         using func_t      = ::tim::manager::finalizer_func_t;
         bool   _is_master = singleton_t::is_master(this);
@@ -1159,6 +1190,8 @@ tim::impl::storage<ObjectType, false>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        if(settings::debug())
+            PRINT_HERE("%s", "getting shared manager");
         m_manager         = ::tim::manager::instance();
         using func_t      = ::tim::manager::finalizer_func_t;
         bool   _is_master = singleton_t::is_master(this);

@@ -151,6 +151,9 @@ public:
     void free_shared_manager();
 
 protected:
+    void add_text_output(const string_t& _label, const string_t& _file);
+    void add_json_output(const string_t& _label, const string_t& _file);
+
     static std::atomic<int>& storage_once_flag()
     {
         static std::atomic<int> _instance;

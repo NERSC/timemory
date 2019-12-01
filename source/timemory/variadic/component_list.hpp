@@ -107,6 +107,7 @@ public:
         using stand_stop_t       = _TypeL<operation::pointer_operator<_Types, operation::standard_stop<_Types>>...>;
         using mark_begin_t       = _TypeL<operation::pointer_operator<_Types, operation::mark_begin<_Types>>...>;
         using mark_end_t         = _TypeL<operation::pointer_operator<_Types, operation::mark_end<_Types>>...>;
+        using construct_t        = _TypeL<operation::pointer_operator<_Types, operation::construct<_Types>>...>;
         using customize_t        = _TypeL<operation::pointer_operator<_Types, operation::customize<_Types>>...>;
         using set_prefix_t       = _TypeL<operation::pointer_operator<_Types, operation::set_prefix<_Types>>...>;
         using get_data_t         = _TypeL<operation::pointer_operator<_Types, operation::get_data<_Types>>...>;
@@ -168,6 +169,7 @@ public:
     using stand_stop_t    = typename filtered<impl_unique_concat_type>::stand_stop_t;
     using mark_begin_t    = typename filtered<impl_unique_concat_type>::mark_begin_t;
     using mark_end_t      = typename filtered<impl_unique_concat_type>::mark_end_t;
+    using construct_t     = typename filtered<impl_unique_concat_type>::construct_t;
     using customize_t     = typename filtered<impl_unique_concat_type>::customize_t;
     using set_prefix_t    = typename filtered<impl_unique_concat_type>::set_prefix_t;
     using get_data_t      = typename filtered<impl_unique_concat_type>::get_data_t;
@@ -269,6 +271,15 @@ public:
     inline void             rekey(const string_t&);
     inline bool&            store();
     inline const bool&      store() const;
+
+    //----------------------------------------------------------------------------------//
+    // construct the objects that have constructors with matching arguments
+    //
+    template <typename... _Args>
+    void construct(_Args&&... _args)
+    {
+        apply<void>::access<construct_t>(m_data, std::forward<_Args>(_args)...);
+    }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous

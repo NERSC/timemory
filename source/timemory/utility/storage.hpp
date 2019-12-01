@@ -325,6 +325,8 @@ public:
                     m_hash_aliases->insert({ itr.first, itr.second });
             }
         }
+
+        get_shared_manager();
     }
 
     //----------------------------------------------------------------------------------//
@@ -1047,7 +1049,6 @@ public:
         }
     }
 
-public:
 protected:
     void get_shared_manager();
 

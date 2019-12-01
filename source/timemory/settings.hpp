@@ -32,7 +32,6 @@
 
 //======================================================================================//
 
-#include "timemory/backends/mpi.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/environment.hpp"
 #include "timemory/utility/filepath.hpp"
@@ -46,6 +45,14 @@
 #include <limits>
 #include <locale>
 #include <string>
+
+#if defined(_UNIX)
+#    include <unistd.h>
+extern "C"
+{
+    extern char** environ;
+}
+#endif
 
 #if !defined(TIMEMORY_DEFAULT_ENABLED)
 #    define TIMEMORY_DEFAULT_ENABLED true
@@ -64,9 +71,17 @@
 
 #if defined(TIMEMORY_EXTERN_INIT)
 
+#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT) static TYPE& FUNC();
 #    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT) static TYPE& FUNC();
 
 #else
+
+#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
+        static TYPE& FUNC()                                                              \
+        {                                                                                \
+            static TYPE instance = INIT;                                                 \
+            return instance;                                                             \
+        }
 
 #    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                      \
         static TYPE& FUNC()                                                              \
@@ -99,7 +114,8 @@ get_local_datetime(const char* dt_format)
 
 struct settings
 {
-    using string_t = std::string;
+    using string_t    = std::string;
+    using strvector_t = std::vector<std::string>;
 
     //==================================================================================//
     //
@@ -170,6 +186,17 @@ struct settings
     //                          COMPONENTS SPECIFIC SETTINGS
     //
     //==================================================================================//
+
+    //----------------------------------------------------------------------------------//
+    //      MPI
+    //----------------------------------------------------------------------------------//
+
+    /// use MPI_Init and MPI_Init_thread
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_thread, "TIMEMORY_MPI_THREAD", true)
+
+    /// use MPI_Init_thread type
+    TIMEMORY_ENV_STATIC_ACCESSOR(string_t, mpi_thread_type, "TIMEMORY_MPI_THREAD_TYPE",
+                                 "")
 
     //----------------------------------------------------------------------------------//
     //      PAPI
@@ -353,6 +380,18 @@ struct settings
     TIMEMORY_ENV_STATIC_ACCESSOR(string_t, python_exe, "TIMEMORY_PYTHON_EXE", "python")
 
     //----------------------------------------------------------------------------------//
+    //     Command line
+    //----------------------------------------------------------------------------------//
+
+    TIMEMORY_STATIC_ACCESSOR(strvector_t, command_line, strvector_t())
+
+    //----------------------------------------------------------------------------------//
+    //     Command line
+    //----------------------------------------------------------------------------------//
+
+    TIMEMORY_STATIC_ACCESSOR(strvector_t, environment, get_environment())
+
+    //----------------------------------------------------------------------------------//
 
     static string_t tolower(string_t str)
     {
@@ -388,23 +427,24 @@ struct settings
 
     //----------------------------------------------------------------------------------//
 
-    static string_t compose_output_filename(const string_t& _tag, string_t _ext,
-                                            bool           _mpi_init = false,
-                                            const int32_t* _mpi_rank = nullptr)
+    static void store_command_line(int argc, char** argv)
     {
-        int32_t _rank = 0;
-        if(_mpi_rank)
-            _rank = *_mpi_rank;
-        else
-        {
-            // fallback if not specified
-            if(mpi::is_initialized() && _mpi_init)
-                _rank = mpi::rank();
-        }
+        auto& _cmdline = command_line();
+        _cmdline.clear();
+        for(int i = 0; i < argc; ++i)
+            _cmdline.push_back(argv[i]);
+    }
 
-        auto _prefix = get_output_prefix();
-        auto _rank_suffix =
-            (!_mpi_init) ? string_t("") : (string_t("_") + std::to_string(_rank));
+    //----------------------------------------------------------------------------------//
+
+    static string_t compose_output_filename(const string_t& _tag, string_t _ext,
+                                            bool          _mpi_init = false,
+                                            const int32_t _mpi_rank = -1)
+    {
+        auto _prefix      = get_output_prefix();
+        auto _rank_suffix = (_mpi_init && _mpi_rank >= 0)
+                                ? (string_t("_") + std::to_string(_mpi_rank))
+                                : string_t("");
         if(_ext.find('.') != 0)
             _ext = string_t(".") + _ext;
         auto plast = _prefix.length() - 1;
@@ -431,7 +471,7 @@ struct settings
     //----------------------------------------------------------------------------------//
 
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
+    static void serialize_settings(Archive& ar)
     {
 #define _TRY_CATCH_NVP(ENV_VAR, FUNC)                                                    \
     try                                                                                  \
@@ -468,6 +508,8 @@ struct settings
         _TRY_CATCH_NVP("TIMEMORY_MEMORY_WIDTH", memory_width)
         _TRY_CATCH_NVP("TIMEMORY_MEMORY_UNITS", memory_units)
         _TRY_CATCH_NVP("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific)
+        _TRY_CATCH_NVP("TIMEMORY_MPI_THREAD", mpi_thread)
+        _TRY_CATCH_NVP("TIMEMORY_MPI_THREAD_TYPE", mpi_thread_type)
         _TRY_CATCH_NVP("TIMEMORY_OUTPUT_PATH", output_path)
         _TRY_CATCH_NVP("TIMEMORY_OUTPUT_PREFIX", output_prefix)
         _TRY_CATCH_NVP("TIMEMORY_DART_TYPE", dart_type)
@@ -511,8 +553,25 @@ struct settings
         _TRY_CATCH_NVP("TIMEMORY_NODE_COUNT", node_count)
         _TRY_CATCH_NVP("TIMEMORY_DESTRUCTOR_REPORT", destructor_report)
         _TRY_CATCH_NVP("TIMEMORY_PYTHON_EXE", python_exe)
-
+        _TRY_CATCH_NVP("TIMEMORY_COMMAND_LINE", command_line)
+        _TRY_CATCH_NVP("TIMEMORY_ENVIRONMENT", environment)
 #undef _TRY_CATCH_NVP
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static std::vector<std::string> get_environment()
+    {
+        std::vector<std::string> _environ;
+#if defined(_UNIX)
+        if(environ != nullptr)
+        {
+            int idx = 0;
+            while(environ[idx] != nullptr)
+                _environ.push_back(environ[idx++]);
+        }
+#endif
+        return _environ;
     }
 
     //----------------------------------------------------------------------------------//

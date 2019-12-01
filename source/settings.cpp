@@ -37,9 +37,18 @@
 //
 //======================================================================================//
 
-using string_t = std::string;
+using string_t    = std::string;
+using strvector_t = ::tim::settings::strvector_t;
 
+#    undef TIMEMORY_STATIC_ACCESSOR
 #    undef TIMEMORY_ENV_STATIC_ACCESSOR
+
+#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
+        TYPE& tim::settings::FUNC()                                                      \
+        {                                                                                \
+            static TYPE instance = INIT;                                                 \
+            return instance;                                                             \
+        }
 
 #    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                      \
         TYPE& tim::settings::FUNC()                                                      \
@@ -111,6 +120,16 @@ TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 0)
 //                          COMPONENTS SPECIFIC SETTINGS
 //
 //======================================================================================//
+
+//----------------------------------------------------------------------------------//
+//      MPI
+//----------------------------------------------------------------------------------//
+
+/// use MPI_Init and MPI_Init_thread
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_thread, "TIMEMORY_MPI_THREAD", true)
+
+/// use MPI_Init_thread type
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, mpi_thread_type, "TIMEMORY_MPI_THREAD_TYPE", "")
 
 //--------------------------------------------------------------------------------------//
 //      PAPI
@@ -279,5 +298,24 @@ TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, node_count, "TIMEMORY_NODE_COUNT", 0)
 
 /// default setting for auto_{list,tuple,hybrid} "report_at_exit" member variable
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT", false)
+
+//----------------------------------------------------------------------------------//
+//     For plotting
+//----------------------------------------------------------------------------------//
+
+/// default setting for python invocation when plotting from C++ code
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, python_exe, "TIMEMORY_PYTHON_EXE", "python")
+
+//----------------------------------------------------------------------------------//
+//     Command line
+//----------------------------------------------------------------------------------//
+
+TIMEMORY_STATIC_ACCESSOR(strvector_t, command_line, strvector_t())
+
+//----------------------------------------------------------------------------------//
+//     Command line
+//----------------------------------------------------------------------------------//
+
+TIMEMORY_STATIC_ACCESSOR(strvector_t, environment, get_environment())
 
 #endif  // defined(TIMEMORY_EXTERN_INIT)

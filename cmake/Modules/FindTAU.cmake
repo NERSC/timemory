@@ -90,11 +90,16 @@ find_library(TAU_LIBRARY
         tau
         lib/tau
         lib64/tau
-        lib/tau/x86_64
-        lib64/tau/x86_64
-        lib/tau/x86_64/lib
-        lib64/tau/x86_64/lib64
-        lib64/tau/x86_64/lib
+        # system processor
+        lib/tau/${CMAKE_SYSTEM_PROCESSOR}
+        lib64/tau/${CMAKE_SYSTEM_PROCESSOR}
+        lib/tau/${CMAKE_SYSTEM_PROCESSOR}/lib
+        lib64/tau/${CMAKE_SYSTEM_PROCESSOR}/lib64
+        lib64/tau/${CMAKE_SYSTEM_PROCESSOR}/lib
+        ${CMAKE_SYSTEM_PROCESSOR}/lib
+        ${CMAKE_SYSTEM_PROCESSOR}/lib/tau
+        ${CMAKE_SYSTEM_PROCESSOR}/lib64
+        ${CMAKE_SYSTEM_PROCESSOR}/lib64/tau
     DOC
         "Path to the TAU library")
 

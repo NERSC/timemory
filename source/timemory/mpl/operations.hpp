@@ -81,6 +81,11 @@
 #    include "timemory/components/roofline/cpu.hpp"
 #endif
 
+// TAU component
+#if defined(TIMEMORY_USE_TAU)
+#    include "timemory/components/tau.hpp"
+#endif
+
 // VTune components
 #if defined(TIMEMORY_USE_VTUNE)
 #    include "timemory/components/vtune/event.hpp"
@@ -182,6 +187,56 @@ struct init_storage
         static thread_local auto _instance = _lambda();
         return _instance;
     }
+};
+
+//--------------------------------------------------------------------------------------//
+///
+/// \class operation::construct
+///
+/// \brief The purpose of this operation class is construct an object with specific args
+///
+template <typename _Tp>
+struct construct
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename... _Args>
+    construct(Type& obj, _Args&&... _args)
+    {
+        construct_sfinae(obj, std::forward<_Args>(_args)...);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of supports args and an implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto construct_sfinae_impl(_Up& obj, int, _Args&&... _args)
+        -> decltype(_Up(std::forward<_Args>(_args)...), void())
+    {
+        obj = _Up(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of !supports_args and no implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto construct_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
+    {}
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename _Up, typename... _Args>
+    auto construct_sfinae(_Up& obj, _Args&&... _args)
+        -> decltype(construct_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    {
+        construct_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
 };
 
 //--------------------------------------------------------------------------------------//

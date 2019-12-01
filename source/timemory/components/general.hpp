@@ -116,7 +116,7 @@ struct gperf_cpu_profiler
             bool        _mpi_init = std::get<0>(_mpi_info);
             int32_t     _mpi_rank = std::get<1>(_mpi_info);
             auto        fname     = settings::compose_output_filename(
-                label() + "_" + std::to_string(index), ".dat", _mpi_init, &_mpi_rank);
+                label() + "_" + std::to_string(index), ".dat", _mpi_init, _mpi_rank);
             auto ret = gperf::cpu::profiler_start(fname);
             if(ret == 0)
                 fprintf(stderr, "[gperf_cpu_profiler]> Error starting %s...",
@@ -301,9 +301,7 @@ struct user_bundle : public base<user_bundle<_Idx>, void>
     }
 
     void start() { m_bundle = (void*) m_start(m_prefix); }
-
     void stop() { m_stop(m_bundle); }
-
     void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
 
 protected:

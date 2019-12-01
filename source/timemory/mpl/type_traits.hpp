@@ -224,6 +224,13 @@ struct split_serialization : std::false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait that signifies the component will accumulate a min/max
+///
+template <typename _Tp>
+struct record_statistics : std::false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Trait>
 inline std::string
@@ -862,6 +869,31 @@ template <>
 struct is_available<component::vtune_frame> : std::false_type
 {};
 #endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              TAU
+//
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_TAU
+//
+#if !defined(TIMEMORY_USE_TAU)
+
+template <>
+struct is_available<component::tau_marker> : std::false_type
+{};
+
+#else
+
+template <>
+struct requires_prefix<component::tau_marker> : std::true_type
+{};
+
+#endif  // TIMEMORY_USE_TAU
+
+template <>
+struct external_output_handling<component::tau_marker> : std::true_type
+{};
 
 //--------------------------------------------------------------------------------------//
 //

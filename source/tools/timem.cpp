@@ -234,13 +234,10 @@ parent_process(pid_t pid)
 
     if(tim::settings::file_output())
     {
-        auto        _init = tim::mpi::is_initialized();
-        auto        _rank = tim::mpi::rank();
         std::string label = "timem";
         if(tim::settings::text_output())
         {
-            auto fname =
-                tim::settings::compose_output_filename(label, ".txt", _init, &_rank);
+            auto          fname = tim::settings::compose_output_filename(label, ".txt");
             std::ofstream ofs(fname.c_str());
             if(ofs)
             {
@@ -257,8 +254,7 @@ parent_process(pid_t pid)
 
         if(tim::settings::json_output())
         {
-            auto jname =
-                tim::settings::compose_output_filename(label, ".json", _init, &_rank);
+            auto jname = tim::settings::compose_output_filename(label, ".json");
             printf("[timem]> Outputting '%s'...\n", jname.c_str());
             tim::generic_serialization(jname, *get_measure());
         }
