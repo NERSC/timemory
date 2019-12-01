@@ -55,6 +55,12 @@ static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
 namespace threading
 {
+static bool&
+use()
+{
+    static bool _instance = true;
+    return _instance;
+}
 enum : int
 {
     /// Only one thread will execute.
@@ -70,7 +76,7 @@ enum : int
     /// Multiple thread may do MPI calls with no restrictions.
     multiple = MPI_THREAD_MULTIPLE
 };
-}
+}  // namespace threading
 #else
 // dummy MPI types
 using comm_t                            = int32_t;
@@ -80,6 +86,12 @@ static const info_t  info_null_v        = 0;
 static const int32_t comm_type_shared_v = 0;
 namespace threading
 {
+static bool&
+use()
+{
+    static bool _instance = true;
+    return _instance;
+}
 enum : int
 {
     /// Only one thread will execute.
@@ -95,7 +107,7 @@ enum : int
     /// Multiple thread may do MPI calls with no restrictions.
     multiple = 3
 };
-}
+}  // namespace threading
 #endif
 
 template <typename _Tp>
@@ -177,15 +189,18 @@ initialize(int& argc, char**& argv)
     {
         using namespace threading;
         bool success_v = false;
-        for(auto itr : { multiple, serialized, funneled, single })
+        if(use())
         {
-            auto ret  = MPI_Init_thread(&argc, &argv, itr, nullptr);
-            success_v = check_error(ret);
-            if(success_v)
-                break;
+            for(auto itr : { multiple, serialized, funneled, single })
+            {
+                auto ret  = MPI_Init_thread(&argc, &argv, itr, nullptr);
+                success_v = check_error(ret);
+                if(success_v)
+                    break;
+            }
         }
-        if(success_v)
-            MPI_Init(&argc, &argv);
+        if(!success_v)
+            check_error(MPI_Init(&argc, &argv));
     }
 #else
     consume_parameters(argc, argv);
@@ -197,12 +212,7 @@ initialize(int& argc, char**& argv)
 inline void
 initialize(int* argc, char*** argv)
 {
-#if defined(TIMEMORY_USE_MPI)
-    if(!is_initialized())
-        MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, nullptr);
-#else
-    consume_parameters(argc, argv);
-#endif
+    initialize(*argc, *argv);
 }
 
 //--------------------------------------------------------------------------------------//

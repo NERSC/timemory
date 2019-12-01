@@ -62,6 +62,8 @@ using vector_t = std::vector<_Tp>;
 static constexpr int64_t nitr      = 100000;
 static const double      tolerance = 1.0e-2;
 
+static int    _argc = 0;
+static char** _argv = nullptr;
 namespace details
 {
 //--------------------------------------------------------------------------------------//
@@ -146,7 +148,30 @@ allreduce(const vector_t<_Tp>& sendbuf, vector_t<_Tp>& recvbuf)
 class gotcha_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override {}
+    void SetUp() override
+    {
+        static bool configured = false;
+        if(!configured)
+        {
+            configured                    = true;
+            tim::settings::width()        = 16;
+            tim::settings::precision()    = 6;
+            tim::settings::timing_units() = "sec";
+            tim::settings::memory_units() = "kB";
+            tim::settings::verbose()      = 0;
+            tim::settings::debug()        = false;
+            tim::settings::json_output()  = true;
+            tim::mpi::threading::use()    = false;
+            tim::mpi::initialize(_argc, _argv);
+#if defined(TIMEMORY_USE_PAPI)
+            cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
+            cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
+#endif
+            tim::settings::dart_output() = true;
+            tim::settings::dart_count()  = 1;
+            tim::settings::banner()      = false;
+        }
+    }
 };
 
 //======================================================================================//
@@ -916,19 +941,8 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::settings::width()        = 16;
-    tim::settings::precision()    = 6;
-    tim::settings::timing_units() = "sec";
-    tim::settings::memory_units() = "kB";
-    tim::settings::verbose()      = 0;
-    tim::settings::debug()        = false;
-    tim::settings::json_output()  = true;
-    tim::timemory_init(argc, argv);  // parses environment, sets output paths
-    tim::mpi::initialize(argc, argv);
-#if defined(TIMEMORY_USE_PAPI)
-    cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
-    cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
-#endif
+    _argc                        = argc;
+    _argv                        = argv;
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
