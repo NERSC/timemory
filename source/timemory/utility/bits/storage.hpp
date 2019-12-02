@@ -713,9 +713,6 @@ storage<ObjectType, true>::upc_get()
         {
             cereal::JSONInputArchive ia(ss);
             ia(cereal::make_nvp("data", ret));
-            if(settings::debug())
-                printf("[RECV: %i]> data size: %lli\n", upc_rank,
-                       (long long int) ret.size());
         }
         return ret;
     };
