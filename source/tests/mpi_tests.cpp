@@ -150,7 +150,7 @@ TEST_F(mpi_tests, general)
     std::atomic<long> ret;
 
     // accumulate metrics on full run
-    TIMEMORY_BASIC_CALIPER(tot, auto_tuple_t, "[total]");
+    TIMEMORY_BLANK_CALIPER(tot, auto_tuple_t, details::get_test_name(), "/[total]");
 
     // run a fibonacci calculation and accumulate metric
     auto run_fibonacci = [&](long n) {
@@ -159,14 +159,16 @@ TEST_F(mpi_tests, general)
     };
 
     // run longer fibonacci calculations on two threads
-    TIMEMORY_BASIC_CALIPER(master_thread_a, auto_tuple_t, "[master_thread]/0");
+    TIMEMORY_BLANK_CALIPER(master_thread_a, auto_tuple_t, details::get_test_name(),
+                           "/[master_thread]/0");
     run_fibonacci(40);
     run_fibonacci(41);
     TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
 
     {
         // run longer fibonacci calculations on two threads
-        TIMEMORY_BASIC_MARKER(auto_tuple_t, "[master_thread]/1");
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name(),
+                              "/[master_thread]/1");
         run_fibonacci(40);
         run_fibonacci(41);
     }
