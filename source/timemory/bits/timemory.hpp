@@ -54,10 +54,12 @@ using complete_tuple_t = std::tuple<
     component::num_swap, component::nvtx_marker, component::page_rss,
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
-    component::wall_clock, component::stack_rss, component::system_clock,
-    component::tau_marker, component::thread_cpu_clock, component::thread_cpu_util,
-    component::trip_count, component::user_clock, component::virtual_memory,
-    component::voluntary_context_switch, component::written_bytes>;
+    component::stack_rss, component::system_clock, component::tau_marker,
+    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
+    component::user_bundle_0, component::user_bundle_1, component::user_clock,
+    component::virtual_memory, component::voluntary_context_switch,
+    component::vtune_event, component::vtune_frame, component::wall_clock,
+    component::written_bytes>;
 
 using complete_auto_list_t = auto_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
@@ -73,10 +75,12 @@ using complete_auto_list_t = auto_list<
     component::num_swap, component::nvtx_marker, component::page_rss,
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
-    component::wall_clock, component::stack_rss, component::system_clock,
-    component::tau_marker, component::thread_cpu_clock, component::thread_cpu_util,
-    component::trip_count, component::user_clock, component::virtual_memory,
-    component::voluntary_context_switch, component::written_bytes>;
+    component::stack_rss, component::system_clock, component::tau_marker,
+    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
+    component::user_bundle_0, component::user_bundle_1, component::user_clock,
+    component::virtual_memory, component::voluntary_context_switch,
+    component::vtune_event, component::vtune_frame, component::wall_clock,
+    component::written_bytes>;
 
 using complete_list_t = component_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
@@ -92,53 +96,23 @@ using complete_list_t = component_list<
     component::num_swap, component::nvtx_marker, component::page_rss,
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
-    component::wall_clock, component::stack_rss, component::system_clock,
-    component::tau_marker, component::thread_cpu_clock, component::thread_cpu_util,
-    component::trip_count, component::user_clock, component::virtual_memory,
-    component::voluntary_context_switch, component::written_bytes>;
-
-using recommended_auto_tuple_t =
-    auto_tuple<component::wall_clock, component::system_clock, component::user_clock,
-               component::cpu_util, component::page_rss, component::peak_rss,
-               component::read_bytes, component::written_bytes,
-               component::num_minor_page_faults, component::num_major_page_faults,
-               component::voluntary_context_switch, component::priority_context_switch>;
-
-using recommended_tuple_t =
-    component_tuple<component::wall_clock, component::system_clock, component::user_clock,
-                    component::cpu_util, component::page_rss, component::peak_rss,
-                    component::read_bytes, component::written_bytes,
-                    component::num_minor_page_faults, component::num_major_page_faults,
-                    component::voluntary_context_switch,
-                    component::priority_context_switch>;
-
-using recommended_auto_list_t =
-    auto_list<component::caliper, component::papi_array_t, component::cuda_event,
-              component::nvtx_marker, component::cupti_counters,
-              component::cupti_activity, component::cpu_roofline_flops,
-              component::gpu_roofline_flops, component::gperf_cpu_profiler,
-              component::gperf_heap_profiler>;
-
-using recommended_list_t =
-    component_list<component::caliper, component::papi_array_t, component::cuda_event,
-                   component::nvtx_marker, component::cupti_counters,
-                   component::cupti_activity, component::cpu_roofline_flops,
-                   component::gpu_roofline_flops, component::gperf_cpu_profiler,
-                   component::gperf_heap_profiler>;
-
-using recommended_auto_hybrid_t = auto_hybrid<recommended_tuple_t, recommended_list_t>;
-
-using recommended_hybrid_t = component_hybrid<recommended_tuple_t, recommended_list_t>;
+    component::stack_rss, component::system_clock, component::tau_marker,
+    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
+    component::user_bundle_0, component::user_bundle_1, component::user_clock,
+    component::virtual_memory, component::voluntary_context_switch,
+    component::vtune_event, component::vtune_frame, component::wall_clock,
+    component::written_bytes>;
 
 //--------------------------------------------------------------------------------------//
 //  category configurations
 //
-using rusage_components_t = component_tuple<
-    component::page_rss, component::peak_rss, component::stack_rss, component::data_rss,
-    component::num_swap, component::num_io_in, component::num_io_out,
-    component::num_minor_page_faults, component::num_major_page_faults,
-    component::num_msg_sent, component::num_msg_recv, component::num_signals,
-    component::voluntary_context_switch, component::priority_context_switch>;
+using rusage_components_t =
+    component_tuple<component::page_rss, component::peak_rss, component::stack_rss,
+                    component::data_rss, component::num_io_in, component::num_io_out,
+                    component::num_minor_page_faults, component::num_major_page_faults,
+                    component::voluntary_context_switch,
+                    component::priority_context_switch, component::read_bytes,
+                    component::written_bytes, component::virtual_memory>;
 
 using timing_components_t =
     component_tuple<component::wall_clock, component::system_clock, component::user_clock,

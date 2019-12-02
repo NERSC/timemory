@@ -101,9 +101,9 @@ time_fibonacci(intmax_t n, const std::string& scope_tag, const std::string& type
 void
 print_info(const std::string& func, const std::string& scope_tag)
 {
-    if(tim::mpi::rank() == 0)
+    if(tim::dmp::rank() == 0)
     {
-        std::cout << "[" << tim::mpi::rank() << "]\e[1;33m TESTING \e[0m["
+        std::cout << "[" << tim::dmp::rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << " ["
                   << "\e[1;37m"
                   << "scope: " << scope_tag << "\e[1;36m"

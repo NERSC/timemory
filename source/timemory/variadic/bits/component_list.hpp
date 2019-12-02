@@ -71,8 +71,9 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
     apply<void>::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        compute_width(m_key);
         get_initializer()(*this);
+        // compute_width(m_key);
+        set_object_prefix(m_key);
     }
 }
 
@@ -93,8 +94,9 @@ component_list<Types...>::component_list(const captured_location_t& loc,
     apply<void>::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        compute_width(m_key);
         get_initializer()(*this);
+        // compute_width(m_key);
+        set_object_prefix(m_key);
     }
 }
 
@@ -428,20 +430,20 @@ component_list<Types...>::store() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline std::string
+inline const std::string&
 component_list<Types...>::get_prefix() const
 {
     auto _get_prefix = []() {
-        if(!mpi::is_initialized())
+        if(!dmp::is_initialized())
             return string_t(">>> ");
 
         // prefix spacing
         static uint16_t width = 1;
-        if(mpi::size() > 9)
-            width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
+        if(dmp::size() > 9)
+            width = std::max(width, (uint16_t)(log10(dmp::size()) + 1));
         std::stringstream ss;
         ss.fill('0');
-        ss << "|" << std::setw(width) << mpi::rank() << ">>> ";
+        ss << "|" << std::setw(width) << dmp::rank() << ">>> ";
         return ss.str();
     };
     static string_t _prefix = _get_prefix();
@@ -452,11 +454,10 @@ component_list<Types...>::get_prefix() const
 //
 template <typename... Types>
 inline void
-component_list<Types...>::compute_width(const string_t& key)
+component_list<Types...>::compute_width(const string_t& _key) const
 {
-    static string_t _prefix = get_prefix();
-    output_width(key.length() + _prefix.length() + 1);
-    set_object_prefix(key);
+    static const string_t& _prefix = get_prefix();
+    output_width(_key.length() + _prefix.length() + 1);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -465,7 +466,7 @@ template <typename... Types>
 inline void
 component_list<Types...>::update_width() const
 {
-    const_cast<this_type&>(*this).compute_width(m_key);
+    compute_width(m_key);
 }
 
 //--------------------------------------------------------------------------------------//

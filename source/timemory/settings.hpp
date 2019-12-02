@@ -22,9 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file settings.hpp
- * \headerfile settings.hpp "timemory/settings.hpp"
- * Handles TiMemory settings, parses environment, provides initializer function
+/** \file timemory/settings.hpp
+ * \headerfile timemory/settings.hpp "timemory/settings.hpp"
+ * Handles TiMemory settings, parses environment
  *
  */
 

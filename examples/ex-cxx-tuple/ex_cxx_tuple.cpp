@@ -91,7 +91,7 @@ main(int argc, char** argv)
     tim::settings::banner() = true;
     tim::enable_signal_detection({ tim::sys_signal::SegFault, tim::sys_signal::Abort,
                                    tim::sys_signal::User1, tim::sys_signal::User2 });
-    tim::mpi::initialize(argc, argv);
+    tim::dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv);
     tim::settings::json_output() = true;
 
@@ -122,7 +122,7 @@ main(int argc, char** argv)
 
     print_mpi_storage();
 
-    tim::mpi::finalize();
+    tim::dmp::finalize();
 
     exit(num_fail);
 }
@@ -132,9 +132,9 @@ main(int argc, char** argv)
 void
 print_info(const std::string& func)
 {
-    if(tim::mpi::rank() == 0)
+    if(tim::dmp::rank() == 0)
     {
-        std::cout << "\n[" << tim::mpi::rank() << "]\e[1;33m TESTING \e[0m["
+        std::cout << "\n[" << tim::dmp::rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n"
                   << std::endl;
@@ -147,7 +147,7 @@ void
 print_string(const std::string& str)
 {
     std::stringstream _ss;
-    _ss << "[" << tim::mpi::rank() << "] " << str << std::endl;
+    _ss << "[" << tim::dmp::rank() << "] " << str << std::endl;
     std::cout << _ss.str();
 }
 
@@ -291,7 +291,7 @@ void
 print_mpi_storage()
 {
     auto ret = tim::storage<wall_clock>::instance()->mpi_get();
-    if(tim::mpi::rank() != 0)
+    if(tim::dmp::rank() != 0)
         return;
 
     uint64_t _w = 0;

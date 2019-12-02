@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file cupti.hpp
- * \headerfile cupti.hpp "timemory/cupti.hpp"
+/** \file backends/cupti.hpp
+ * \headerfile backends/cupti.hpp "timemory/backends/cupti.hpp"
  * Provides implementation of CUPTI routines.
  *
  */

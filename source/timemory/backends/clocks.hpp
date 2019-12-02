@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file clocks.hpp
- * \headerfile clocks.hpp "timemory/clocks.hpp"
+/** \file backends/clocks.hpp
+ * \headerfile backends/clocks.hpp "timemory/backends/clocks.hpp"
  * Implementation of the timing functions/utilities
  */
 

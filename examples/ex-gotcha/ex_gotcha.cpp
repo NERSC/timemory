@@ -157,7 +157,7 @@ main(int argc, char** argv)
     settings::timing_units() = "msec";
     settings::memory_units() = "kB";
     settings::verbose()      = 1;
-    mpi::initialize(argc, argv);
+    dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
 
     init();
@@ -176,10 +176,10 @@ main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    mpi::barrier();
+    dmp::barrier();
 
-    size = std::max<int>(size, mpi::size());
-    rank = std::max<int>(rank, mpi::rank());
+    size = std::max<int>(size, dmp::size());
+    rank = std::max<int>(rank, dmp::rank());
 
     auto rank_size = (rank + 1) * (size + 1);
 
@@ -236,7 +236,7 @@ main(int argc, char** argv)
     double sum = std::accumulate(recvbuf.begin(), recvbuf.end(), 0.0);
     for(int i = 0; i < size; ++i)
     {
-        mpi::barrier();
+        dmp::barrier();
         if(i == rank)
         {
             printf("[%i]> sum = %8.2f\n", rank, sum);
@@ -244,10 +244,10 @@ main(int argc, char** argv)
             // tim::complete_list_t::print_storage();
             // tim::settings::auto_output() = false;
         }
-        mpi::barrier();
+        dmp::barrier();
     }
 
-    tim::mpi::finalize();
+    tim::dmp::finalize();
 
     return 0;
 }

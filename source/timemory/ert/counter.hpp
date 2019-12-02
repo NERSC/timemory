@@ -22,11 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/counter.hpp
+ * \headerfile timemory/ert/counter.hpp "timemory/ert/counter.hpp"
+ * Provides counter (i.e. timer, hw counters) for when executing ERT
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
@@ -292,10 +298,9 @@ serialize(std::string fname, exec_data<_Counter>& obj)
 {
     using exec_data_vec_t = std::vector<exec_data<_Counter>>;
 
-    mpi::barrier(mpi::comm_world_v);
-
-    int  mpi_rank = mpi::rank();
-    int  mpi_size = mpi::size();
+    dmp::barrier();
+    int  dmp_rank = dmp::rank();
+    int  dmp_size = dmp::size();
     auto space    = cereal::JSONOutputArchive::Options::IndentChar::space;
 
     //------------------------------------------------------------------------------//
@@ -321,43 +326,61 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         {
             cereal::JSONInputArchive ia(ss);
             ia(cereal::make_nvp("data", ret));
-            if(settings::debug())
-                printf("[RECV: %i]> data size: %lli\n", mpi_rank,
-                       (long long int) ret.size());
         }
         return ret;
     };
 
-    exec_data_vec_t results(mpi_size);
-    auto            str_ret = send_serialize(obj);
+    exec_data_vec_t results(dmp_size);
 
-    if(mpi_rank == 0)
+#if defined(TIMEMORY_USE_MPI)
+    auto str_ret = send_serialize(obj);
+
+    if(dmp_rank == 0)
     {
-        for(int i = 1; i < mpi_size; ++i)
+        for(int i = 1; i < dmp_size; ++i)
         {
-            if(settings::debug())
-                printf("[RECV: %i]> starting %i\n", mpi_rank, i);
             std::string str;
             mpi::recv(str, i, 0, mpi::comm_world_v);
             results[i] = recv_serialize(str);
-            if(settings::debug())
-                printf("[RECV: %i]> completed %i\n", mpi_rank, i);
         }
-        results[mpi_rank] = std::move(obj);
+        results[dmp_rank] = std::move(obj);
     }
     else
     {
-        if(settings::debug())
-            printf("[SEND: %i]> starting\n", mpi_rank);
         mpi::send(str_ret, 0, 0, mpi::comm_world_v);
-        if(settings::debug())
-            printf("[SEND: %i]> completed\n", mpi_rank);
     }
 
-    if(mpi_rank == 0)
+#elif defined(TIMEMORY_USE_UPCXX)
+
+    //------------------------------------------------------------------------------//
+    //  Function executed on remote node
+    //
+    auto remote_serialize = [=]() {
+        return send_serialize(this_type::master_instance()->get());
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Combine on master rank
+    //
+    if(dmp_rank == 0)
+    {
+        proc_result_t results(dmp_size);
+        for(int i = 1; i < dmp_size; ++i)
+        {
+            upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
+            fut.wait();
+            results[i] = recv_serialize(fut.result());
+        }
+        results[dmp_rank] = get();
+    }
+
+#else
+#endif
+
+    if(dmp_rank == 0)
     {
         fname = settings::compose_output_filename(fname, ".json");
-        printf("[%i]> Outputting '%s'...\n", mpi_rank, fname.c_str());
+        printf("[%i]> Outputting '%s'...\n", dmp_rank, fname.c_str());
         std::ofstream ofs(fname.c_str());
         if(ofs)
         {

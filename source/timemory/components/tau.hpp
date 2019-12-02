@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/components/tau.hpp
+ * \headerfile timemory/components/tau.hpp "timemory/components/tau.hpp"
+ * Provides marker forwarding to TAU
+ *
+ */
+
 #pragma once
 
 #include "timemory/components/base.hpp"
@@ -57,7 +63,7 @@ struct tau_marker
     static void invoke_global_init(storage_type*)
     {
 #if defined(TIMEMORY_USE_TAU)
-        Tau_set_node(mpi::rank());
+        Tau_set_node(dmp::rank());
 #endif
     }
 

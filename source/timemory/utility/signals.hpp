@@ -24,7 +24,7 @@
 //
 
 /** \file timemory/utility/signals.hpp
- * \headerfile signals.hpp "timemory/utility/signals.hpp"
+ * \headerfile utility/signals.hpp "timemory/utility/signals.hpp"
  * Handles signals emitted by application
  *
  */
@@ -37,7 +37,7 @@
 
 #pragma once
 
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/backends/signals.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
@@ -45,6 +45,10 @@
 
 #include <cfenv>
 #include <csignal>
+
+#if defined(SIGNAL_AVAILABLE)
+#    include <dlfcn.h>
+#endif
 
 //======================================================================================//
 
@@ -182,16 +186,60 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message);
 
 #if defined(SIGNAL_AVAILABLE)
 
+inline std::string
+timemory_stack_demangle(const std::string& name)
+{
+    // PRINT_HERE("%s", "");
+    size_t found_end = name.find_first_of("+)", 0, 2);
+    if(found_end == std::string::npos)
+    {
+        found_end = name.size();
+    }
+    size_t found_parenthesis = name.find_first_of("(");
+    size_t start             = found_parenthesis + 1;
+    if(found_parenthesis == std::string::npos)
+        start = 0;
+
+    // PRINT_HERE("%s", "substr");
+    std::string s = name.substr(start, found_end - start);
+
+    if(s.length() != 0)
+    {
+        int    status        = 0;
+        char*  output_buffer = nullptr;
+        size_t length        = s.length();
+        char*  d = abi::__cxa_demangle(s.c_str(), output_buffer, &length, &status);
+        if(status == 0 && d != nullptr)
+        {
+            s = d;
+            free(d);
+        }
+    }
+    // PRINT_HERE("%s", "special-case");
+    // Special cases for "main" and "start" on Mac
+    if(s.length() == 0)
+    {
+        if(name == "main" || name == "start")
+        {
+            s = name;
+        }
+    }
+    // PRINT_HERE("%s", "returning");
+    return s;
+}
 //--------------------------------------------------------------------------------------//
 
-static void
-timemory_stack_backtrace(std::ostream& ss)
+inline void
+timemory_stack_backtrace(std::ostream& os)
 {
     using size_type = std::string::size_type;
+    // PRINT_HERE("%s", "");
 
     //   from http://linux.die.net/man/3/backtrace_symbols_fd
 #    define BSIZE 100
-    void*     buffer[BSIZE];
+    void* buffer[BSIZE];
+    for(size_type j = 0; j < BSIZE; ++j)
+        buffer[j] = nullptr;
     size_type nptrs   = backtrace(buffer, BSIZE);
     char**    strings = backtrace_symbols(buffer, nptrs);
     if(strings == NULL)
@@ -204,47 +252,122 @@ timemory_stack_backtrace(std::ostream& ss)
     std::vector<size_type>                dmang_len;
 
     // lambda for demangling a string when delimiting
-    auto _transform = [](std::string _str) {
-        int   _ret    = 0;
-        char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
-        if(_demang && _ret == 0)
-            return std::string(const_cast<const char*>(_demang));
-        else
-            return _str;
+    auto _transform = [](std::string s) {
+        int    status        = 0;
+        char*  output_buffer = nullptr;
+        size_t length        = s.length();
+        char*  d = abi::__cxa_demangle(s.c_str(), output_buffer, &length, &status);
+        if(status == 0 && d != nullptr)
+        {
+            s = d;
+            free(d);
+        }
+        return s;
     };
 
-    for(size_type j = 0; j < BSIZE; ++j)
+    dmang_buf.resize(nptrs, std::vector<std::string>(0, ""));
+
+    for(size_type j = 0; j < nptrs; ++j)
     {
-        if(!strings[j])
-            continue;
-        std::string _str = strings[j];
+        std::string _str = const_cast<const char*>(strings[j]);
 
-        auto _delim = tim::delimit(_str, " \t\n\r");
+        auto _delim = tim::delimit(_str, " ;\t\n\r()[]");
 
-        // found a GCC compiler bug when passing _transform to delimit
+        if(_delim.size() > 0)
+            _delim[0] = _transform(_delim[0]);
+
+        /*
+        if(_delim.size() > 1)
+        {
+            int _line = 0;
+            std::stringstream ss;
+            ss << std::hex << _delim[1];
+            ss >> _line;
+            _delim[1] = std::to_string(_line);
+        }
+
+        if(_delim.size() > 2)
+        {
+            std::string _file = "";
+            std::stringstream ss;
+            ss << std::hex << _delim[2];
+            ss >> _file;
+            _delim[2] = _file;
+        }
+        */
+
         for(auto& itr : _delim)
             itr = _transform(itr);
 
+        /*
+        std::vector<std::string> _dladdr;
+        for(const auto& itr : _delim)
+        {
+            auto idx = itr.find("(+");
+            if(idx == std::string::npos)
+            {
+                _dladdr.push_back(itr);
+            }
+            else
+            {
+                auto edx = itr.find_last_of(')');
+                if(edx == std::string::npos)
+                {
+                    _dladdr.push_back(itr);
+                }
+                else
+                {
+                    auto _funcn = itr.substr(0, idx);
+                    auto _remain = itr.substr(idx+2, edx);
+                    while(_remain.find(')') != std::string::npos)
+                        _remain.erase(_remain.find(')'), 1);
+
+                    _dladdr.push_back(_funcn);
+                    _dladdr.push_back(_remain);
+
+                    // PRINT_HERE("%s", "dlopen");
+                    auto _dlopen = dlopen(NULL, RTLD_NOW);
+                    if(_dlopen)
+                    {
+                        // PRINT_HERE("%s", "dlsym");
+                        auto _dlsym = dlsym(_dlopen, _remain.c_str());
+                        // PRINT_HERE("%s", "dladdr");
+                        Dl_info _info;
+                        auto _ret = dladdr(_dlsym, &_info);
+                        // PRINT_HERE("ret: %i", (int) _ret);
+                        if(_ret != 0 && _info.dli_fname != NULL)
+                        {
+                            // PRINT_HERE("%s", _info.dli_fname);
+                            _dladdr.push_back(std::string(_info.dli_fname));
+                        }
+                    }
+                }
+            }
+        }*/
+
+        // PRINT_HERE("iteration %i - accumulate", (int) j);
+        dmang_len.resize(std::max(dmang_len.size(), _delim.size()), 0);
+
         // accumulate the max lengths of the strings
         for(size_type i = 0; i < _delim.size(); ++i)
-        {
-            dmang_len.resize(std::max(dmang_len.size(), _delim.size()), 0);
             dmang_len[i] = std::max(dmang_len[i], _delim[i].length());
-        }
 
         // add
-        dmang_buf.push_back(_delim);
+        dmang_buf[j] = _delim;
     }
 
+    // PRINT_HERE("%s", "");
     free(strings);
 
-    ss << std::endl << "Call Stack:" << std::endl;
+    std::stringstream _oss;
+
+    _oss << std::endl << "Call Stack:" << std::endl;
     int nwidth = std::max(2, static_cast<int32_t>(std::log10(nptrs)) + 1);
-    for(size_type j = 0; j < dmang_buf.size(); ++j)
+    for(size_type j = 0; j < nptrs; ++j)
     {
         // print the back-trace numver
-        ss << "[" << std::setw(nwidth) << nptrs - j - 1 << "/" << std::setw(nwidth)
-           << nptrs << "] : ";
+        _oss << "[" << std::setw(nwidth) << nptrs - j - 1 << "/" << std::setw(nwidth)
+             << nptrs << "] : ";
 
         // loop over fields
         for(size_type i = 0; i < dmang_len.size(); ++i)
@@ -255,11 +378,15 @@ timemory_stack_backtrace(std::ostream& ss)
             _ss << std::setw(mwidth) << std::left
                 << ((i < dmang_buf.at(j).size()) ? dmang_buf.at(j).at(i)
                                                  : std::string(" "));
-            ss << _ss.str() << "  ";
+            _oss << _ss.str() << "  ";
+            // std::cout << _ss.str() << "  ";
         }
-        ss << std::endl;
+        _oss << std::endl;
+        // std::cout << std::endl;
     }
 
+    _oss << std::flush;
+    os << _oss.str() << std::flush;
     // c++filt can demangle:
     // http://gcc.gnu.org/onlinedocs/libstdc++/manual/ext_demangling.html
 }
@@ -269,6 +396,7 @@ timemory_stack_backtrace(std::ostream& ss)
 static void
 timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 {
+    // PRINT_HERE("%s", "");
     tim::sys_signal _sig = (tim::sys_signal)(sig);
 
     if(tim::signal_settings::get_enabled().find(_sig) ==
@@ -278,44 +406,31 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
         ss << "signal " << sig << " not caught";
         throw std::runtime_error(ss.str());
     }
-    std::stringstream message;
-    tim::termination_signal_message(sig, sinfo, message);
-
-#    if !defined(TIMEMORY_EXCEPTIONS)
-    if(tim::signal_settings::enabled().find(tim::sys_signal::Abort) !=
-       tim::signal_settings::enabled().end())
     {
-        tim::signal_settings::disable(tim::sys_signal::Abort);
+        std::stringstream message;
+        tim::termination_signal_message(sig, sinfo, message);
+        std::cerr << message.str() << std::flush;
     }
-#    endif
 
-    tim::signal_settings::disable(_sig);
-    tim::update_signal_detection(tim::signal_settings::enabled());
+    tim::disable_signal_detection();
 
+    std::stringstream message;
     message << "\n\n";
 
-#    if defined(TIMEMORY_EXCEPTIONS)
-    // throw an exception instead of ::abort() so it can be caught
-    // if the error can be ignored if desired
-    throw std::runtime_error(message.str());
-#    else
-#        if defined(PSIGINFO_AVAILABLE)
+#    if defined(PSIGINFO_AVAILABLE)
     if(sinfo)
     {
         psiginfo(sinfo, message.str().c_str());
     }
     else
     {
-        // std::cerr << message.str() << std::endl;
-        fprintf(stderr, "%s\n", message.str().c_str());
+        std::cerr << message.str() << std::endl;
     }
-#        else
-    // std::cerr << message.str() << std::endl;
-    fprintf(stderr, "%s\n", message.str().c_str());
-#        endif
-    std::raise(sig);
-    // exit(sig);
+#    else
+    std::cerr << message.str() << std::endl;
 #    endif
+    // std::raise(sig);
+    exit(sig);
 }
 
 //======================================================================================//
@@ -345,12 +460,13 @@ tim_signal_oldaction()
 static void
 termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 {
+    // PRINT_HERE("%s", "");
     std::stringstream message;
     sys_signal        _sig = (sys_signal)(sig);
 
     message << "\n### ERROR ### ";
-    if(mpi::is_initialized())
-        message << " [ MPI rank : " << mpi::rank() << " ] ";
+    if(dmp::is_initialized())
+        message << " [ rank : " << dmp::rank() << " ] ";
     message << "Error code : " << sig;
     if(sinfo)
         message << " @ " << sinfo->si_addr;
@@ -413,7 +529,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     }
 
     timemory_stack_backtrace(message);
-    os << message.str();
+    os << message.str() << std::flush;
 }
 
 //--------------------------------------------------------------------------------------//

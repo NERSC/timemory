@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file backends/nvtx.hpp
+ * \headerfile backends/nvtx.hpp "timemory/backends/nvtx.hpp"
+ * Defines NVTX markers
+ *
+ */
+
 #pragma once
 
 #include "timemory/settings.hpp"

@@ -22,10 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/backends.hpp
+ * \headerfile timemory/backends.hpp "timemory/backends.hpp"
+ * Generic header for backends
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/clocks.hpp"
 #include "timemory/backends/device.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/backends/rusage.hpp"
 #include "timemory/backends/signals.hpp"
 
@@ -39,6 +46,10 @@
 
 #if defined(TIMEMORY_USE_MPI)
 #    include "timemory/backends/mpi.hpp"
+#endif
+
+#if defined(TIMEMORY_USE_UPCXX)
+#    include "timemory/backends/upcxx.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_PAPI)

@@ -91,7 +91,7 @@ extern "C"
         auto manager = timemory_mpi_manager_master_instance();
         if(manager)
             manager->finalize();
-        ::tim::mpi::is_finalized() = true;
+        ::tim::dmp::is_finalized() = true;
         return PMPI_Finalize();
     }
 }

@@ -22,11 +22,18 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file timemory/components/rusage.hpp
+ * \headerfile timemory/components/rusage.hpp "timemory/components/rusage.hpp"
+ * Provides resource usage components
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/rusage.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/storage.hpp"

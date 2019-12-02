@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file components/caliper.hpp
+ * \headerfile components/caliper.hpp "timemory/components/caliper.hpp"
+ * Defines Caliper component
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/caliper.hpp"

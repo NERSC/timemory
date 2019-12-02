@@ -22,165 +22,174 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file backends/ittnotify.hpp
- * \headerfile backends/ittnotify.hpp "timemory/backends/ittnotify.hpp"
- * Defines ittnotify backend for VTune
+/** \file backends/upcxx.hpp
+ * \headerfile backends/upcxx.hpp "timemory/backends/upcxx.hpp"
+ * Defines UPC++ backend
  *
  */
 
 #pragma once
 
-#if defined(TIMEMORY_USE_VTUNE)
-#    include <ittnotify.h>
-#endif
+#include "timemory/settings.hpp"
+#include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
+#include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
-#include <string>
+#include <algorithm>
+#include <cstdint>
+#include <future>
+#include <unordered_map>
+
+#if defined(TIMEMORY_USE_UPCXX)
+#    include <upcxx/upcxx.hpp>
+#endif
 
 namespace tim
 {
-namespace ittnotify
+/// use upc as the namespace instead of upcxx to ensure there are no namespace ambiguities
+/// plus, 'upc' has same number of characters as 'mpi'
+namespace upc
 {
+#if defined(TIMEMORY_USE_UPCXX)
+using comm_t = ::upcxx::team;
+template <typename _Tp>
+using future_t = ::upcxx::future<_Tp>;
+template <typename _Tp>
+using promise_t = ::upcxx::promise<_Tp>;
+inline comm_t&
+world()
+{
+    return ::upcxx::world();
+}
+#else
+using comm_t = int32_t;
+template <typename _Tp>
+using future_t = ::std::future<_Tp>;
+template <typename _Tp>
+using promise_t = ::std::promise<_Tp>;
+inline comm_t&
+world()
+{
+    static comm_t _instance = 0;
+    return _instance;
+}
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+barrier(comm_t& comm = world());
+
+template <typename... _Args>
+inline int32_t
+rank(_Args&&...);
+
+template <typename... _Args>
+inline int32_t
+size(_Args&&...);
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+is_supported()
+{
+#if defined(TIMEMORY_USE_UPCXX)
+    return true;
+#else
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool&
+is_finalized()
+{
+#if defined(TIMEMORY_USE_UPCXX)
+    static bool _instance = false;
+#else
+    static bool _instance = true;
+#endif
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+is_initialized()
+{
+#if defined(TIMEMORY_USE_UPCXX)
+    if(!is_finalized())
+        return ::upcxx::initialized();
+#endif
+    return false;
+}
+
 //--------------------------------------------------------------------------------------//
 
 template <typename... _Args>
-void
-consume_parameters(_Args&&...)
-{}
-
-//--------------------------------------------------------------------------------------//
-
-#if defined(TIMEMORY_USE_VTUNE)
-using id_t            = __itt_id;
-using event_t         = __itt_event;
-using domain_t        = __itt_domain;
-using string_handle_t = __itt_string_handle;
-#else
-using id_t            = int;
-using event_t         = int;
-using domain_t        = int;
-using string_handle_t = std::string;
-#endif
-
-//--------------------------------------------------------------------------------------//
-
 inline void
-pause()
+initialize(_Args&&...)
 {
-#if defined(TIMEMORY_USE_VTUNE)
-    __itt_pause();
+#if defined(TIMEMORY_USE_UPCXX)
+    if(!is_initialized())
+        ::upcxx::init();
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
 inline void
-resume()
+finalize()
 {
-#if defined(TIMEMORY_USE_VTUNE)
-    __itt_resume();
+#if defined(TIMEMORY_USE_UPCXX)
+    if(is_initialized())
+    {
+        ::upcxx::finalize();
+        is_finalized() = true;
+    }
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
-detach()
+template <typename... _Args>
+inline int32_t
+rank(_Args&&...)
 {
-#if defined(TIMEMORY_USE_VTUNE)
-    __itt_detach();
+#if defined(TIMEMORY_USE_UPCXX)
+    if(is_initialized())
+        return ::upcxx::rank_me();
 #endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline domain_t*
-create_domain(const std::string& _name, bool _enable = true)
-{
-#if defined(TIMEMORY_USE_VTUNE)
-    auto _ret   = __itt_domain_create(_name.c_str());
-    _ret->flags = (_enable) ? 1 : 0;  // enable domain
-    return _ret;
-#else
-    consume_parameters(_name);
-    return nullptr;
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline string_handle_t*
-get_domain_handle(const std::string& _name)
-{
-#if defined(TIMEMORY_USE_VTUNE)
-    return __itt_string_handle_create(_name.c_str());
-#else
-    consume_parameters(_name);
-    return nullptr;
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline event_t
-create_event(const std::string& _name)
-{
-#if defined(TIMEMORY_USE_VTUNE)
-    return __itt_event_create(_name.c_str(), _name.length());
-#else
-    consume_parameters(_name);
     return 0;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Args>
+inline int32_t
+size(_Args&&...)
+{
+#if defined(TIMEMORY_USE_UPCXX)
+    if(is_initialized())
+        return ::upcxx::rank_n();
 #endif
+    return 1;
 }
 
 //--------------------------------------------------------------------------------------//
 
 inline void
-start_frame(const domain_t* _domain, id_t* _id = nullptr)
+barrier(comm_t& comm)
 {
-#if defined(TIMEMORY_USE_VTUNE)
-    __itt_frame_begin_v3(_domain, _id);
+#if defined(TIMEMORY_USE_UPCXX)
+    if(is_initialized())
+        ::upcxx::barrier(comm);
 #else
-    consume_parameters(_domain, _id);
+    consume_parameters(comm);
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
-end_frame(const domain_t* _domain, id_t* _id = nullptr)
-{
-#if defined(TIMEMORY_USE_VTUNE)
-    __itt_frame_end_v3(_domain, _id);
-#else
-    consume_parameters(_domain, _id);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-start_event(event_t _evt)
-{
-#if defined(TIMEMORY_USE_VTUNE)
-    __itt_event_start(_evt);
-#else
-    consume_parameters(_evt);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-end_event(event_t _evt)
-{
-#if defined(TIMEMORY_USE_VTUNE)
-    __itt_event_end(_evt);
-#else
-    consume_parameters(_evt);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace ittnotify
+}  // namespace upc
 }  // namespace tim

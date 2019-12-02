@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/aligned_allocator.hpp
+ * \headerfile timemory/ert/aligned_allocator.hpp "timemory/ert/aligned_allocator.hpp"
+ * Provides an aligned allocator
+ *
+ */
+
 #pragma once
 
 #if defined(_WIN32) || defined(_WIN64)

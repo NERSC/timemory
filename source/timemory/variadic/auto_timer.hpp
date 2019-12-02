@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file auto_tuple.hpp
- * \headerfile auto_tuple.hpp "timemory/variadic/auto_tuple.hpp"
+/** \file variadic/auto_timer.hpp
+ * \headerfile variadic/auto_timer.hpp "timemory/variadic/auto_timer.hpp"
  * Automatic timers. Exist for backwards compatibility. In C++, use auto_tuple.
  * Usage with macros (recommended):
  *    \param TIMEMORY_AUTO_TIMER("")

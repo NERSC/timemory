@@ -39,7 +39,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
@@ -90,9 +90,9 @@ public:
     , m_thread_init(false)
     , m_data_init(false)
     , m_is_master(_is_master)
-    , m_node_init(mpi::is_initialized())
-    , m_node_rank(mpi::rank())
-    , m_node_size(mpi::size())
+    , m_node_init(dmp::is_initialized())
+    , m_node_rank(dmp::rank())
+    , m_node_size(dmp::size())
     , m_instance_id(_instance_id)
     , m_label(_label)
     , m_hash_ids(::tim::get_hash_ids())
@@ -184,9 +184,9 @@ protected:
     bool                     m_thread_init  = false;
     bool                     m_data_init    = false;
     bool                     m_is_master    = false;
-    bool                     m_node_init    = mpi::is_initialized();
-    int32_t                  m_node_rank    = mpi::rank();
-    int32_t                  m_node_size    = mpi::size();
+    bool                     m_node_init    = dmp::is_initialized();
+    int32_t                  m_node_rank    = dmp::rank();
+    int32_t                  m_node_size    = dmp::size();
     int64_t                  m_instance_id  = -1;
     string_t                 m_label        = "";
     graph_hash_map_ptr_t     m_hash_ids     = ::tim::get_hash_ids();

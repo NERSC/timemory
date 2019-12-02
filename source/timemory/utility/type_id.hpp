@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file utility/type_id.hpp
+ * \headerfile utility/type_id.hpp "timemory/utility/type_id.hpp"
+ * Provides type ids for mangling
+ *
+ */
+
 #pragma once
 
 #include <string>

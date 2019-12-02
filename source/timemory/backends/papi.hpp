@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file papi.hpp
- * \headerfile papi.hpp "timemory/papi.hpp"
+/** \file backends/papi.hpp
+ * \headerfile backends/papi.hpp "timemory/backends/papi.hpp"
  * Provides implementation of PAPI routines.
  *
  */

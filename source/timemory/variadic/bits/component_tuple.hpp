@@ -381,20 +381,20 @@ component_tuple<Types...>::store() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline std::string
+inline const std::string&
 component_tuple<Types...>::get_prefix() const
 {
     auto _get_prefix = []() {
-        if(!mpi::is_initialized())
+        if(!dmp::is_initialized())
             return string_t(">>> ");
 
         // prefix spacing
         static uint16_t width = 1;
-        if(mpi::size() > 9)
-            width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
+        if(dmp::size() > 9)
+            width = std::max(width, (uint16_t)(log10(dmp::size()) + 1));
         std::stringstream ss;
         ss.fill('0');
-        ss << "|" << std::setw(width) << mpi::rank() << ">>> ";
+        ss << "|" << std::setw(width) << dmp::rank() << ">>> ";
         return ss.str();
     };
     static string_t _prefix = _get_prefix();
@@ -405,11 +405,11 @@ component_tuple<Types...>::get_prefix() const
 //
 template <typename... Types>
 inline void
-component_tuple<Types...>::compute_width(const string_t& key)
+component_tuple<Types...>::compute_width(const string_t& _key) const
 {
-    static string_t _prefix = get_prefix();
-    output_width(key.length() + _prefix.length() + 1);
-    set_object_prefix(key);
+    static const string_t& _prefix = get_prefix();
+    output_width(_key.length() + _prefix.length() + 1);
+    set_object_prefix(_key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -418,7 +418,7 @@ template <typename... Types>
 inline void
 component_tuple<Types...>::update_width() const
 {
-    const_cast<this_type&>(*this).compute_width(m_key);
+    compute_width(m_key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -427,36 +427,24 @@ template <typename... Types>
 inline int64_t
 component_tuple<Types...>::output_width(int64_t width)
 {
+    static auto                 memorder_v = std::memory_order_relaxed;
     static std::atomic<int64_t> _instance;
-    if(width > 0)
+    int64_t                     propose_width, current_width;
+    auto compute = [&]() { return std::max(_instance.load(memorder_v), width); };
+    while((propose_width = compute()) > (current_width = _instance.load(memorder_v)))
     {
-        auto current_width = _instance.load(std::memory_order_relaxed);
-        auto compute       = [&]() {
-            current_width = _instance.load(std::memory_order_relaxed);
-            return std::max(_instance.load(), width);
-        };
-        int64_t propose_width = compute();
-        do
-        {
-            if(propose_width > current_width)
-            {
-                auto ret = _instance.compare_exchange_strong(current_width, propose_width,
-                                                             std::memory_order_relaxed);
-                if(!ret)
-                    compute();
-            }
-        } while(propose_width > current_width);
+        _instance.compare_exchange_strong(current_width, propose_width, memorder_v);
     }
-    return _instance.load();
+    return _instance.load(memorder_v);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 inline void
-component_tuple<Types...>::set_object_prefix(const string_t& key)
+component_tuple<Types...>::set_object_prefix(const string_t& _key) const
 {
-    apply<void>::access<set_prefix_t>(m_data, key);
+    apply<void>::access<set_prefix_t>(m_data, _key);
 }
 
 //--------------------------------------------------------------------------------------//

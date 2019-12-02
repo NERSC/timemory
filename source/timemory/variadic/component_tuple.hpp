@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file component_tuple.hpp
- * \headerfile component_tuple.hpp "timemory/variadic/component_tuple.hpp"
+/** \file variadic/component_tuple.hpp
+ * \headerfile variadic/component_tuple.hpp "timemory/variadic/component_tuple.hpp"
  * This is the C++ class that bundles together components and enables
  * operation on the components as a single entity
  *
@@ -42,7 +42,7 @@
 #include <iostream>
 #include <string>
 
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
@@ -395,10 +395,10 @@ protected:
     // protected member functions
     inline data_type&       get_data();
     inline const data_type& get_data() const;
-    inline string_t         get_prefix() const;
-    inline void             compute_width(const string_t&);
+    inline const string_t&  get_prefix() const;
+    inline void             compute_width(const string_t&) const;
     inline void             update_width() const;
-    inline void             set_object_prefix(const string_t&);
+    inline void             set_object_prefix(const string_t&) const;
 
 protected:
     // objects

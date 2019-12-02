@@ -430,12 +430,11 @@ ENDFUNCTION()
 #          Add an option and add as a feature if NO_FEATURE is not provided
 #
 FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
-    SET(_FEATURE ${ARGN})
     OPTION(${_NAME} "${_MESSAGE}" ${_DEFAULT})
-    IF(NOT "${_FEATURE}" STREQUAL "NO_FEATURE")
-        ADD_FEATURE(${_NAME} "${_MESSAGE}")
-    ELSE()
+    IF("NO_FEATURE" IN_LIST ARGN)
         MARK_AS_ADVANCED(${_NAME})
+    ELSE()
+        ADD_FEATURE(${_NAME} "${_MESSAGE}")
     ENDIF()
 ENDFUNCTION()
 

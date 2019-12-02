@@ -22,11 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/kernels.hpp
+ * \headerfile timemory/ert/kernels.hpp "timemory/ert/kernels.hpp"
+ * Provides kernels for executing kernels in ERT
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/mpl/apply.hpp"
@@ -325,7 +331,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
     static std::mutex            _mtx;
     std::unique_lock<std::mutex> _lock(_mtx);
 
-    mpi::barrier();  // synchronize MPI processes
+    dmp::barrier();  // synchronize MPI processes
 
     if(is_gpu)
         cuda::device_sync();
@@ -366,7 +372,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
     if(is_gpu)
         cuda::device_sync();
 
-    mpi::barrier();  // synchronize MPI processes
+    dmp::barrier();  // synchronize MPI processes
 }
 
 //--------------------------------------------------------------------------------------//

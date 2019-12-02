@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file graph.hpp
- * \headerfile graph.hpp "timemory/utility/graph.hpp"
+/** \file utility/graph.hpp
+ * \headerfile utility/graph.hpp "timemory/utility/graph.hpp"
  * Arbitrary Graph / Tree (i.e. binary-tree but not binary)
  */
 

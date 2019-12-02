@@ -480,7 +480,7 @@ main(int argc, char** argv)
     tim::settings::verbose()     = 0;
     tim::settings::debug()       = false;
     tim::settings::json_output() = true;
-    tim::mpi::initialize(argc, argv);
+    tim::dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
@@ -488,7 +488,7 @@ main(int argc, char** argv)
 
     auto ret = RUN_ALL_TESTS();
 
-    tim::mpi::finalize();
+    tim::dmp::finalize();
     return ret;
 }
 

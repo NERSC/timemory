@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file component_list.hpp
- * \headerfile component_list.hpp "timemory/variadic/component_list.hpp"
+/** \file variadic/component_list.hpp
+ * \headerfile variadic/component_list.hpp "timemory/variadic/component_list.hpp"
  * This is similar to component_tuple but not as optimized.
  * This exists so that Python and C, which do not support templates,
  * can implement a subset of the tools
@@ -42,7 +42,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
@@ -201,10 +201,11 @@ public:
     , m_data(data_type())
     {
         apply<void>::set_value(m_data, nullptr);
+        if(settings::enabled())
         {
-            compute_width(key);
-            if(settings::enabled())
-                _func(*this);
+            _func(*this);
+            // compute_width(key);
+            set_object_prefix(m_key);
         }
     }
 
@@ -223,10 +224,11 @@ public:
     , m_data(data_type())
     {
         apply<void>::set_value(m_data, nullptr);
+        if(settings::enabled())
         {
-            compute_width(m_key);
-            if(settings::enabled())
-                _func(*this);
+            _func(*this);
+            // compute_width(key);
+            set_object_prefix(m_key);
         }
     }
 
@@ -381,6 +383,7 @@ public:
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        obj.compute_width(obj.key());
         uint64_t count = 0;
         apply<void>::access<pointer_count_t>(obj.m_data, std::ref(count));
         if(count < 1)
@@ -554,22 +557,17 @@ protected:
     static int64_t output_width(int64_t = 0);
 
     // protected member functions
-    string_t get_prefix() const;
-    void     compute_width(const string_t& key);
-    void     update_width() const;
-    void     set_object_prefix(const string_t& key);
+    const string_t& get_prefix() const;
+    void            compute_width(const string_t& key) const;
+    void            update_width() const;
+    void            set_object_prefix(const string_t& key);
 
-    template <typename _Tp, enable_if_t<(trait::requires_prefix<_Tp>::value), int> = 0>
-    void set_object_prefix(_Tp* obj)
+    template <typename _Tp>
+    void set_object_prefix(_Tp* obj) const
     {
-        if(obj)
-            obj->set_prefix(m_key);
+        using _PrefixOp = operation::pointer_operator<_Tp, operation::set_prefix<_Tp>>;
+        _PrefixOp(obj, m_key);
     }
-
-    template <typename _Tp,
-              enable_if_t<(trait::requires_prefix<_Tp>::value == false), int> = 0>
-    void set_object_prefix(_Tp*)
-    {}
 
 protected:
     // objects
@@ -578,7 +576,7 @@ protected:
     bool              m_is_pushed    = false;
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
-    int64_t           m_laps         = 0;
+    int32_t           m_laps         = 0;
     uint64_t          m_hash         = 0;
     string_t          m_key          = "";
     mutable data_type m_data         = data_type();

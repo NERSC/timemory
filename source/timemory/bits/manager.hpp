@@ -95,7 +95,7 @@ manager::master_instance()
 inline manager::manager()
 : m_is_finalizing(false)
 , m_instance_count(f_manager_instance_count()++)
-, m_rank(mpi::rank())
+, m_rank(dmp::rank())
 , m_metadata_fname(settings::compose_output_filename("metadata", "json"))
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
@@ -135,7 +135,7 @@ inline manager::~manager()
     if(_last)
     {
         // papi::shutdown();
-        // mpi::finalize();
+        // dmp::finalize();
         f_thread_counter().store(0, std::memory_order_relaxed);
     }
 
@@ -159,6 +159,8 @@ manager::add_finalizer(const std::string& _key, _Func&& _func, bool _is_master)
 
     if(m_lock && !m_lock->owns_lock())
         m_lock->lock();
+
+    m_metadata_fname = settings::compose_output_filename("metadata", "json");
 
     auto _entry = finalizer_pair_t{ _key, std::forward<_Func>(_func) };
 
@@ -251,7 +253,7 @@ manager::exit_hook()
         else
         {
             // papi::shutdown();
-            // mpi::finalize();
+            // dmp::finalize();
         }
         // papi::shutdown();
     } catch(...)

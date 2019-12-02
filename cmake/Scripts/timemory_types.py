@@ -54,7 +54,8 @@ components = [
     "vtune_frame",
     "vtune_event",
     "user_bundle_0",
-    "user_bundle_1"
+    "user_bundle_1",
+    "tau_marker"
 ]
 
 #
@@ -88,6 +89,7 @@ mangled_strings = {
     "nvtx_marker": ["nvtx"],
     "likwid_perfmon": ["likwid_cpu"],
     "likwid_nvmon": ["likwid_gpu"],
+    "tau_marker": ["tau"],
 }
 
 recommended_types = {

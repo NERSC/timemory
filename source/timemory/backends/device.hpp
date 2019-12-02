@@ -23,6 +23,12 @@
 // SOFTWARE.
 //
 
+/** \file backends/device.hpp
+ * \headerfile backends/device.hpp "timemory/backends/device.hpp"
+ * Defines device-generic structures and routines
+ *
+ */
+
 #pragma once
 
 #if defined(__NVCC__)

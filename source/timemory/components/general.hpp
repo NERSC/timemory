@@ -33,6 +33,7 @@
 #include "timemory/settings.hpp"
 #include "timemory/variadic/types.hpp"
 
+#include <cassert>
 #include <cstdint>
 
 //======================================================================================//
@@ -112,11 +113,11 @@ struct gperf_cpu_profiler
         if(!gperf::cpu::is_running())
         {
             index                 = this_type::get_index()++;
-            const auto& _mpi_info = get_mpi_info();
-            bool        _mpi_init = std::get<0>(_mpi_info);
-            int32_t     _mpi_rank = std::get<1>(_mpi_info);
+            const auto& _dmp_info = get_dmp_info();
+            bool        _dmp_init = std::get<0>(_dmp_info);
+            int32_t     _dmp_rank = std::get<1>(_dmp_info);
             auto        fname     = settings::compose_output_filename(
-                label() + "_" + std::to_string(index), ".dat", _mpi_init, _mpi_rank);
+                label() + "_" + std::to_string(index), ".dat", _dmp_init, _dmp_rank);
             auto ret = gperf::cpu::profiler_start(fname);
             if(ret == 0)
                 fprintf(stderr, "[gperf_cpu_profiler]> Error starting %s...",
@@ -144,11 +145,11 @@ private:
         return _instance;
     }
 
-    using mpi_info_t = std::tuple<bool, int32_t, int32_t>;
+    using dmp_info_t = std::tuple<bool, int32_t, int32_t>;
 
-    static const mpi_info_t& get_mpi_info()
+    static const dmp_info_t& get_dmp_info()
     {
-        static mpi_info_t _info{ mpi::is_initialized(), mpi::rank(), mpi::size() };
+        static dmp_info_t _info{ dmp::is_initialized(), dmp::rank(), dmp::size() };
         return _info;
     }
 };
@@ -226,39 +227,87 @@ struct user_bundle : public base<user_bundle<_Idx>, void>
     using start_func_t = std::function<void*(const std::string&)>;
     using stop_func_t  = std::function<void(void*)>;
 
+    using start_func_vec_t = std::vector<start_func_t>;
+    using stop_func_vec_t  = std::vector<stop_func_t>;
+    using void_vec_t       = std::vector<void*>;
+
     static std::string label() { return "user_bundle"; }
     static std::string description() { return "user-defined bundle of tools"; }
     static value_type  record() {}
 
+public:
+    //----------------------------------------------------------------------------------//
+    //  Capture the statically-defined start/stop so these can be changed without
+    //  affecting this instance
+    //
+    user_bundle(const std::string& _prefix = "")
+    : m_prefix(_prefix)
+    , m_bundle(void_vec_t{})
+    , m_start(get_start())
+    , m_stop(get_stop())
+    {
+        assert(m_start.size() == m_stop.size());
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Pass in the start and stop functions
+    //
+    user_bundle(const start_func_vec_t& _start, const stop_func_vec_t& _stop)
+    : m_prefix("")
+    , m_bundle(std::max(_start.size(), _stop.size()), nullptr)
+    , m_start(_start)
+    , m_stop(_stop)
+    {
+        assert(m_start.size() == m_stop.size());
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Pass in the prefix, start, and stop functions
+    //
+    user_bundle(const std::string& _prefix, const start_func_vec_t& _start,
+                const stop_func_vec_t& _stop)
+    : m_prefix(_prefix)
+    , m_bundle(std::max(_start.size(), _stop.size()), nullptr)
+    , m_start(_start)
+    , m_stop(_stop)
+    {
+        assert(m_start.size() == m_stop.size());
+    }
+
+public:
     //----------------------------------------------------------------------------------//
     //  Configure the tool for a specific set of tools
     //
-    template <typename _Toolset>
+    template <typename _Toolset, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     static void configure()
     {
-        get_start() = [&](const std::string& _prefix) {
+        auto _start = [&](const std::string& _prefix) {
             _Toolset* _result = new _Toolset(_prefix);
             _result->start();
             return (void*) _result;
         };
 
-        get_stop() = [&](void* v_result) {
+        auto _stop = [&](void* v_result) {
             _Toolset* _result = static_cast<_Toolset*>(v_result);
             _result->stop();
             delete _result;
         };
+
+        get_start().emplace_back(_start);
+        get_stop().emplace_back(_stop);
     }
 
     //----------------------------------------------------------------------------------//
-    //  Capture the statically-defined start/stop so these can be changed without
-    //  affecting this instance
+    //  Configure the tool for a variadic list of tools
     //
-    user_bundle()
-    : m_prefix("")
-    , m_bundle(nullptr)
-    , m_start(get_start())
-    , m_stop(get_stop())
-    {}
+    template <typename _Toolset, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    static void configure()
+    {
+        configure<_Toolset>();
+        configure<_Tail...>();
+    }
 
     //----------------------------------------------------------------------------------//
     //  Configure the tool for a specific set of tools with an initializer
@@ -266,49 +315,66 @@ struct user_bundle : public base<user_bundle<_Idx>, void>
     template <typename _Toolset, typename _InitFunc>
     static void configure(_InitFunc&& _init)
     {
-        get_start() = [&](const std::string& _prefix) {
+        auto _start = [&](const std::string& _prefix) {
             _Toolset* _result = new _Toolset(_prefix);
             std::forward<_InitFunc>(_init)(*_result);
             _result->start();
             return (void*) _result;
         };
 
-        get_stop() = [&](void* v_result) {
+        auto _stop = [&](void* v_result) {
             _Toolset* _result = static_cast<_Toolset*>(v_result);
             _result->stop();
             delete _result;
         };
+
+        get_start().emplace_back(_start);
+        get_stop().emplace_back(_stop);
     }
 
     //----------------------------------------------------------------------------------//
-    //  Explicitly configure the start function
+    //  Explicitly configure the start functions
     //
-    static start_func_t& get_start()
+    static start_func_vec_t& get_start()
     {
-        static start_func_t _instance = [](const std::string&) {
-            return (void*) nullptr;
-        };
+        static start_func_vec_t _instance{};
         return _instance;
     }
 
     //----------------------------------------------------------------------------------//
-    //  Explicitly configure the stop function
+    //  Explicitly configure the stop functions
     //
-    static stop_func_t& get_stop()
+    static stop_func_vec_t& get_stop()
     {
-        static stop_func_t _instance = [](void*) {};
+        static stop_func_vec_t _instance{};
         return _instance;
     }
 
-    void start() { m_bundle = (void*) m_start(m_prefix); }
-    void stop() { m_stop(m_bundle); }
+public:
+    //----------------------------------------------------------------------------------//
+    //  Member functions
+    //
+    void start()
+    {
+        m_bundle.resize(m_start.size(), nullptr);
+        for(int64_t i = 0; i < (int64_t) m_start.size(); ++i)
+            m_bundle[i] = m_start[i](m_prefix);
+    }
+
+    void stop()
+    {
+        assert(m_stop.size() == m_bundle.size());
+        for(int64_t i = 0; i < (int64_t) m_stop.size(); ++i)
+            m_stop[i](m_bundle[i]);
+    }
+
     void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
 
 protected:
-    std::string  m_prefix;
-    void*        m_bundle;
-    start_func_t m_start;
-    stop_func_t  m_stop;
+    std::string      m_prefix;
+    void_vec_t       m_bundle;
+    start_func_vec_t m_start;
+    stop_func_vec_t  m_stop;
 };
 
 //--------------------------------------------------------------------------------------//

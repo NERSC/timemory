@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file backends/gotcha.hpp
+ * \headerfile backends/gotcha.hpp "timemory/backends/gotcha.hpp"
+ * Defines GOTCHA backend
+ *
+ */
+
 #pragma once
 
 #include "timemory/settings.hpp"

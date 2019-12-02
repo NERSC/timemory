@@ -588,14 +588,14 @@ storage<ObjectType, true>::get()
 //======================================================================================//
 
 template <typename ObjectType>
-typename storage<ObjectType, true>::mpi_result_t
+typename storage<ObjectType, true>::proc_result_t
 storage<ObjectType, true>::mpi_get()
 {
 #if !defined(TIMEMORY_USE_MPI)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using MPI");
 
-    return mpi_result_t(1, get());
+    return proc_result_t(1, get());
 #else
     if(settings::debug())
         PRINT_HERE("%s", "timemory using MPI");
@@ -636,7 +636,7 @@ storage<ObjectType, true>::mpi_get()
         return ret;
     };
 
-    mpi_result_t results(mpi_size);
+    proc_result_t results(mpi_size);
 
     auto ret     = get();
     auto str_ret = send_serialize(ret);
@@ -662,10 +662,97 @@ storage<ObjectType, true>::mpi_get()
         mpi::send(str_ret, 0, 0, mpi::comm_world_v);
         if(settings::debug())
             printf("[SEND: %i]> completed\n", mpi_rank);
-        return mpi_result_t(1, ret);
+        return proc_result_t(1, ret);
     }
 
     return results;
+#endif
+}
+
+//======================================================================================//
+
+template <typename ObjectType>
+typename storage<ObjectType, true>::proc_result_t
+storage<ObjectType, true>::upc_get()
+{
+#if !defined(TIMEMORY_USE_UPCXX)
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory not using UPC++");
+
+    return proc_result_t(1, get());
+#else
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory using UPC++");
+
+    upc::barrier();
+
+    int upc_rank = upc::rank();
+    int upc_size = upc::size();
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert a result to a serialization
+    //
+    auto send_serialize = [=](const result_array_t& src) {
+        std::stringstream ss;
+        {
+            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+            cereal::JSONOutputArchive::Options opt(16, space, 0);
+            cereal::JSONOutputArchive          oa(ss);
+            oa(cereal::make_nvp("data", src));
+        }
+        return ss.str();
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert the serialization to a result
+    //
+    auto recv_serialize = [=](const std::string& src) {
+        result_array_t    ret;
+        std::stringstream ss;
+        ss << src;
+        {
+            cereal::JSONInputArchive ia(ss);
+            ia(cereal::make_nvp("data", ret));
+            if(settings::debug())
+                printf("[RECV: %i]> data size: %lli\n", upc_rank,
+                       (long long int) ret.size());
+        }
+        return ret;
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Function executed on remote node
+    //
+    auto remote_serialize = [=]() {
+        return send_serialize(this_type::master_instance()->get());
+    };
+
+    proc_result_t results(upc_size);
+
+    //------------------------------------------------------------------------------//
+    //  Combine on master rank
+    //
+    if(upc_rank == 0)
+    {
+        for(int i = 0; i < upc_size; ++i)
+        {
+            if(i == upc_rank)
+                continue;
+            upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
+            while(!fut.ready())
+                upcxx::progress();
+            fut.wait();
+            results[i] = recv_serialize(fut.result());
+        }
+        results[upc_rank] = get();
+    }
+
+    upcxx::barrier(upcxx::world());
+
+    if(upc_rank != 0)
+        return proc_result_t(1, get());
+    else
+        return results;
 #endif
 }
 
@@ -719,21 +806,23 @@ void storage<ObjectType, true>::external_print(std::false_type)
             return;
         }
 
+        dmp::barrier();
         auto _results     = this->get();
-        auto _mpi_results = this->mpi_get();
+        auto _dmp_results = this->dmp_get();
+        dmp::barrier();
 
         if(settings::debug())
-            printf("[%s]|%i> mpi results size: %i\n", label.c_str(), m_node_rank,
-                   (int) _mpi_results.size());
+            printf("[%s]|%i> dmp results size: %i\n", label.c_str(), m_node_rank,
+                   (int) _dmp_results.size());
 
-        if(_mpi_results.size() > 0)
+        if(_dmp_results.size() > 0)
         {
             if(m_node_rank != 0)
                 return;
             else
             {
                 _results.clear();
-                for(const auto& sitr : _mpi_results)
+                for(const auto& sitr : _dmp_results)
                 {
                     for(const auto& ritr : sitr)
                     {
@@ -773,7 +862,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         int64_t _max_depth = 0;
         int64_t _max_laps  = 0;
         // find the max width
-        for(const auto mitr : _mpi_results)
+        for(const auto mitr : _dmp_results)
         {
             for(const auto& itr : mitr)
             {
@@ -836,12 +925,12 @@ void storage<ObjectType, true>::external_print(std::false_type)
                         oa.setNextName("ranks");
                         oa.startNode();
                         oa.makeArray();
-                        for(uint64_t i = 0; i < _mpi_results.size(); ++i)
+                        for(uint64_t i = 0; i < _dmp_results.size(); ++i)
                         {
                             oa.startNode();
                             oa(cereal::make_nvp("rank", i));
                             oa(cereal::make_nvp("concurrency", num_instances));
-                            serial_write_t::serialize(*this, oa, 1, _mpi_results.at(i));
+                            serial_write_t::serialize(*this, oa, 1, _dmp_results.at(i));
                             oa.finishNode();
                         }
                         oa.finishNode();

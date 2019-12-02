@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/cache_size.hpp
+ * \headerfile timemory/ert/cache_size.hpp "timemory/ert/cache_size.hpp"
+ * Provides routines for getting cache information
+ *
+ */
+
 #pragma once
 
 #include <array>

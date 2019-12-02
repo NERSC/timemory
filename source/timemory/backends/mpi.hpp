@@ -23,8 +23,8 @@
 //  IN THE SOFTWARE.
 //
 
-/** \file mpi.hpp
- * \headerfile mpi.hpp "timemory/mpi.hpp"
+/** \file backends/mpi.hpp
+ * \headerfile backends/mpi.hpp "timemory/backends/mpi.hpp"
  * Defines mpi functions and dummy functions when compiled without MPI
  *
  */
@@ -416,47 +416,6 @@ recv(std::string& str, int src, int tag, comm_t comm)
 #endif
 }
 
-//--------------------------------------------------------------------------------------//
-/*
-template <typename _Tp>
-void
-send(const std::vector<_Tp>& vec, int dest, int tag, comm_t comm)
-{
-#if defined(TIMEMORY_USE_MPI)
-    unsigned len = vec.size();
-    MPI_Send(&len, 1, MPI_UNSIGNED, dest, tag, comm);
-    if(len != 0)
-        MPI_Send(vec.data(), len, MPI_INT, dest, tag, comm);
-#else
-    consume_parameters(vec, dest, tag, comm);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-inline void
-recv(std::vector<_Tp>& vec, int src, int tag, comm_t comm)
-{
-#if defined(TIMEMORY_USE_MPI)
-    unsigned   len;
-    MPI_Status s;
-    MPI_Recv(&len, 1, MPI_UNSIGNED, src, tag, comm, &s);
-
-    if(len != 0)
-    {
-        vec.resize(len);
-        MPI_Recv(vec.data(), len, MPI_INT, src, tag, comm, &s);
-    }
-    else
-    {
-        vec.clear();
-    }
-#else
-    consume_parameters(vec, src, tag, comm);
-#endif
-}
-*/
 //--------------------------------------------------------------------------------------//
 
 }  // namespace mpi

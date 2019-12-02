@@ -21,6 +21,7 @@ set(TIMEMORY_REQUIRED_INTERFACES
     timemory-cereal)
 
 add_interface_library(timemory-mpi)
+add_interface_library(timemory-upcxx)
 add_interface_library(timemory-threading)
 
 add_interface_library(timemory-papi)
@@ -43,13 +44,16 @@ add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
 
-set(_MPI_INTERFACE_LIBRARY)
+set(_PROCESS_INTERFACE_LIBRARY)
 if(TIMEMORY_USE_MPI)
-    set(_MPI_INTERFACE_LIBRARY timemory-mpi)
+    set(_PROCESS_INTERFACE_LIBRARY timemory-mpi)
+elseif(TIMEMORY_USE_UPCXX)
+    set(_PROCESS_INTERFACE_LIBRARY timemory-upcxx)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
     timemory-mpi
+    timemory-upcxx
     timemory-threading
     timemory-papi
     timemory-cuda
@@ -82,7 +86,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
-    ${_MPI_INTERFACE_LIBRARY})
+    ${_PROCESS_INTERFACE_LIBRARY})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-threading
@@ -96,7 +100,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
-    ${_MPI_INTERFACE_LIBRARY})
+    ${_PROCESS_INTERFACE_LIBRARY})
 
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
@@ -335,6 +339,39 @@ else()
 
     set(TIMEMORY_USE_MPI OFF)
     inform_empty_interface(timemory-mpi "MPI")
+
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               UPC++
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_UPCXX)
+    find_package(UPCXX QUIET)
+endif()
+
+if(UPCXX_FOUND)
+
+    target_link_libraries(timemory-upcxx INTERFACE ${UPCXX_LIBRARIES})
+    target_compile_options(timemory-upcxx INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_OPTIONS}>)
+    target_compile_features(timemory-upcxx INTERFACE cxx_std_${UPCXX_CXX_STANDARD})
+    target_include_directories(timemory-upcxx INTERFACE ${UPCXX_INCLUDE_DIRS})
+    target_compile_definitions(timemory-upcxx INTERFACE ${UPCXX_DEFINITIONS} TIMEMORY_USE_UPCXX)
+
+    if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+        target_link_options(timemory-upcxx INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
+    else()
+        set_target_properties(timemory-upcxx PROPERTIES INTERFACE_LINK_OPTIONS
+            $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_LINK_OPTIONS}>)
+    endif()
+
+else()
+
+    set(TIMEMORY_USE_UPCXX OFF)
+    inform_empty_interface(timemory-upcxx "UPC++")
 
 endif()
 

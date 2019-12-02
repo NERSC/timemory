@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/backends/caliper.hpp
+ * \headerfile timemory/backends/caliper.hpp "timemory/backends/caliper.hpp"
+ * Provides backend for Caliper
+ *
+ */
+
 #pragma once
 
 #include <cstddef>

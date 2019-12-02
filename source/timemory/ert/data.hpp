@@ -22,11 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/data.hpp
+ * \headerfile timemory/ert/data.hpp "timemory/ert/data.hpp"
+ * Provides execution data for ERT
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
@@ -79,8 +85,8 @@ struct exec_params
     uint64_t working_set_min = 16;
     uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
     uint64_t nthreads        = 1;
-    uint64_t nrank           = tim::mpi::rank();
-    uint64_t nproc           = tim::mpi::size();
+    uint64_t nrank           = tim::dmp::rank();
+    uint64_t nproc           = tim::dmp::size();
     uint64_t nstreams        = 1;
     uint64_t grid_size       = 0;
     uint64_t block_size      = 32;

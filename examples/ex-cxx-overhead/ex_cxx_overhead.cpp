@@ -262,7 +262,7 @@ main(int argc, char** argv)
     tim::settings::width()             = 10;
     tim::settings::timing_precision()  = 6;
     tim::timemory_init(argc, argv);
-    tim::mpi::initialize(argc, argv);
+    tim::dmp::initialize(argc, argv);
     tim::settings::cout_output() = tim::settings::flat_profile();
     tim::print_env();
 
@@ -375,7 +375,7 @@ main(int argc, char** argv)
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
-    tim::mpi::finalize();
+    tim::dmp::finalize();
 
     return 0;
 }

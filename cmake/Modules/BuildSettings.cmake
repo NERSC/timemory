@@ -12,65 +12,49 @@ include(GNUInstallDirs)
 include(Compilers)
 
 
+find_library(dl_LIBRARY NAMES dl)
+if(dl_LIBRARY)
+    # target_compile_definitions(timemory-compile-options INTERFACE TIMEMORY_USE_DL)
+    target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
+endif()
+
+if(WIN32)
+    set(OS_FLAG "/bigobj")
+else()
+    set(OS_FLAG "-Wall")
+endif()
+
 #----------------------------------------------------------------------------------------#
 # set the compiler flags
-add_c_flag_if_avail("-W")
-if(NOT WIN32)
-    add_c_flag_if_avail("-Wall")
-else()
-    add_c_flag_if_avail("/bigobj")
-endif()
-# add_c_flag_if_avail("-Wextra")
-# add_c_flag_if_avail("-Wshadow")
-# add_c_flag_if_avail("-Wno-unused-value")
-# add_c_flag_if_avail("-Wno-unused-function")
-add_c_flag_if_avail("-Wno-unknown-pragmas")
-add_c_flag_if_avail("-Wno-ignored-attributes")
-# add_c_flag_if_avail("-Wno-reserved-id-macro")
-# add_c_flag_if_avail("-Wno-deprecated-declarations")
+add_flag_if_avail(
+    "-W" "${OS_FLAG}" "-Wno-unknown-pragmas" "-Wno-ignored-attributes"
+    "-Wno-attributes" "-Wno-cast-function-type"
+    "-Wno-unused-command-line-argument")
 
-add_cxx_flag_if_avail("-W")
-if(NOT WIN32)
-    add_cxx_flag_if_avail("-Wall")
-else()
-    add_cxx_flag_if_avail("/bigobj")
+add_cxx_flag_if_avail("-Wno-class-memaccess")
+
+if(TIMEMORY_BUILD_QUIET)
+    add_flag_if_avail("-Wno-unused-value" "-Wno-unused-function"
+        "-Wno-unknown-pragmas" "-Wno-reserved-id-macro" "-Wno-deprecated-declarations"
+        "-Wno-implicit-fallthrough" "-Wno-deprecated-declarations")
 endif()
-# add_cxx_flag_if_avail("-Wextra")
-# add_cxx_flag_if_avail("-Wshadow")
-# add_cxx_flag_if_avail("-Wno-unused-value")
-# add_cxx_flag_if_avail("-Wno-unused-function")
-add_cxx_flag_if_avail("-Wno-unknown-pragmas")
-add_cxx_flag_if_avail("-Wno-c++17-extensions")
-add_cxx_flag_if_avail("-Wno-ignored-attributes")
-# add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
-# add_cxx_flag_if_avail("-Wno-deprecated-declarations")
-add_cxx_flag_if_avail("-Wno-attributes")
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)
     # add_cxx_flag_if_avail("-Wno-exceptions")
-    # add_cxx_flag_if_avail("-Wno-class-memaccess")
     # add_cxx_flag_if_avail("-Wno-reserved-id-macro")
     # add_cxx_flag_if_avail("-Wno-unused-private-field")
 else()
-    add_cxx_flag_if_avail("-Wno-class-memaccess")
-    add_cxx_flag_if_avail("-Wno-cast-function-type")
+    # add_cxx_flag_if_avail("-Wno-class-memaccess")
 endif()
 
 #----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
-    add_flag_if_avail("-finline-functions")
-    add_flag_if_avail("-funroll-loops")
-    add_flag_if_avail("-ftree-vectorize")
-    add_flag_if_avail("-ftree-loop-optimize")
-    add_flag_if_avail("-ftree-loop-vectorize")
-    # add_flag_if_avail("-freciprocal-math")
-    # add_flag_if_avail("-fno-signed-zeros")
-    # add_flag_if_avail("-mfast-fp")
-else()
-    # add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
+    add_flag_if_avail("-finline-functions" "-funroll-loops"
+        "-ftree-vectorize" "-ftree-loop-optimize" "-ftree-loop-vectorize")
+    # add_flag_if_avail("-freciprocal-math" "-fno-signed-zeros" "-mfast-fp")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -82,8 +66,7 @@ if(NOT TIMEMORY_USE_SANITIZER)
 endif()
 
 if(TIMEMORY_BUILD_LTO)
-    add_c_flag_if_avail("-flto")
-    add_cxx_flag_if_avail("-flto")
+    add_flag_if_avail("-flto")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -100,7 +83,17 @@ endif()
 #
 add_interface_library(timemory-develop-options)
 if(TIMEMORY_BUILD_DEVELOPER)
-    add_target_flag_if_avail(timemory-develop-options "-Wshadow")
+    add_target_flag_if_avail(timemory-develop-options "-Wshadow" "-Wextra")
+endif()
+
+#----------------------------------------------------------------------------------------#
+# developer build flags
+#
+if(dl_LIBRARY)
+    # This instructs the linker to add all symbols, not only used ones, to the dynamic
+    # symbol table. This option is needed for some uses of dlopen or to allow obtaining
+    # backtraces from within a program.
+    add_flag_if_avail("-rdynamic")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -110,9 +103,6 @@ add_interface_library(timemory-vector)
 add_interface_library(timemory-arch)
 add_interface_library(timemory-avx512)
 target_link_libraries(timemory-avx512 INTERFACE timemory-arch)
-if(TIMEMORY_USE_ARCH)
-    target_link_libraries(timemory-compile-options INTERFACE timemory-arch)
-endif()
 # always provide vectorization width
 target_link_libraries(timemory-compile-options INTERFACE timemory-vector)
 

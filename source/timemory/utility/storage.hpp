@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file storage.hpp
- * \headerfile storage.hpp "timemory/utility/storage.hpp"
+/** \file utility/storage.hpp
+ * \headerfile utility/storage.hpp "timemory/utility/storage.hpp"
  * Storage of the call-graph for each component. Each component has a thread-local
  * singleton that holds the call-graph. When a worker thread is deleted, it merges
  * itself back into the master thread storage. When the master thread is deleted,
@@ -39,8 +39,8 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/dmp.hpp"
 #include "timemory/backends/gperf.hpp"
-#include "timemory/backends/mpi.hpp"
 #include "timemory/data/accumulators.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -129,7 +129,7 @@ public:
     using auto_lock_t   = typename singleton_t::auto_lock_t;
     using node_tuple_t  = std::tuple<uint64_t, ObjectType, int64_t>;
     using result_array_t = std::vector<result_node>;
-    using mpi_result_t   = std::vector<result_array_t>;
+    using proc_result_t  = std::vector<result_array_t>;
     using strvector_t    = std::vector<string_t>;
     using result_tuple_t =
         std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t, strvector_t>;
@@ -487,7 +487,16 @@ public:
     inline iterator pop() { return _data().pop_graph(); }
 
     result_array_t get();
-    mpi_result_t   mpi_get();
+    proc_result_t  mpi_get();
+    proc_result_t  upc_get();
+    proc_result_t  dmp_get()
+    {
+#if defined(TIMEMORY_USE_UPCXX)
+        return upc_get();
+#else
+        return mpi_get();
+#endif
+    }
 
     const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
 
@@ -814,7 +823,7 @@ public:
         using serial_write_t = write_serialization<this_type>;
 
         auto   num_instances = instance_count().load();
-        auto&& _results      = mpi_get();
+        auto&& _results      = dmp_get();
         for(uint64_t i = 0; i < _results.size(); ++i)
         {
             ar.startNode();
@@ -824,7 +833,6 @@ public:
             ar.finishNode();
         }
         consume_parameters(version);
-        // throw std::runtime_error("Should not be called!");
     }
 
 private:
@@ -1161,7 +1169,7 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
         std::thread::id master_tid = singleton_t::master_thread_id();
         std::thread::id this_tid   = std::this_thread::get_id();
 
-        tim::mpi::barrier();
+        tim::dmp::barrier();
 
         if(ptr && master && ptr != master)
         {

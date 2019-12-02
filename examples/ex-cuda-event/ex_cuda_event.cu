@@ -229,9 +229,9 @@ main(int argc, char** argv)
 void
 print_info(const std::string& func)
 {
-    if(tim::mpi::rank() == 0)
+    if(tim::dmp::rank() == 0)
     {
-        std::cout << "\n[" << tim::mpi::rank() << "]\e[1;33m TESTING \e[0m["
+        std::cout << "\n[" << tim::dmp::rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n"
                   << std::endl;
@@ -244,7 +244,7 @@ void
 print_string(const std::string& str)
 {
     std::stringstream _ss;
-    _ss << "[" << tim::mpi::rank() << "] " << str << std::endl;
+    _ss << "[" << tim::dmp::rank() << "] " << str << std::endl;
     std::cout << _ss.str();
 }
 

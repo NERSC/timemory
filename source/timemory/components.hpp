@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file components.hpp
- * \headerfile components.hpp "timemory/components.hpp"
+/** \file timemory/components.hpp
+ * \headerfile timemory/components.hpp "timemory/components.hpp"
  * These are core tools provided by TiMemory. These tools can be used individually
  * or bundled together in a component_tuple (C++) or component_list (C, Python)
  *

@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file environment.hpp
- * \headerfile environment.hpp "timemory/utility/environment.hpp"
+/** \file utility/environment.hpp
+ * \headerfile utility/environment.hpp "timemory/utility/environment.hpp"
  * Functions for processing the environment
  *
  */

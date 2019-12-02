@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file auto_list.hpp
- * \headerfile auto_list.hpp "timemory/variadic/auto_list.hpp"
+/** \file variadic/auto_list.hpp
+ * \headerfile variadic/auto_list.hpp "timemory/variadic/auto_list.hpp"
  * Automatic starting and stopping of components. Accept unlimited number of
  * parameters. The constructor starts the components, the destructor stops the
  * components

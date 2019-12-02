@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file serializer.hpp
- * \headerfile serializer.hpp "timemory/utility/serializer.hpp"
+/** \file utility/serializer.hpp
+ * \headerfile utility/serializer.hpp "timemory/utility/serializer.hpp"
  * Headers for serialization
  */
 

@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/config.hpp
+ * \headerfile timemory/config.hpp "timemory/config.hpp"
+ * Configuration routines (initialization and finalization) for C++
+ *
+ */
+
 #pragma once
 
 #include "timemory/mpl/filters.hpp"
@@ -117,9 +123,8 @@ inline void
 tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
                    const std::string& _suffix)
 {
-#if defined(TIMEMORY_USE_MPI)
     mpi::initialize(argc, argv);
-#endif
+    upc::initialize();
     timemory_init(*argc, *argv, _prefix, _suffix);
 }
 
@@ -129,6 +134,7 @@ inline void
 tim::timemory_finalize()
 {
     manager::instance()->finalize();
+    upc::finalize();
     mpi::finalize();
     disable_signal_detection();
 }

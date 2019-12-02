@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/configuration.hpp
+ * \headerfile timemory/ert/configuration.hpp "timemory/ert/configuration.hpp"
+ * Provides configuration for executing empirical roofline toolkit (ERT)
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/cuda.hpp"

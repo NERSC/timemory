@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file utility.hpp
- * \headerfile utility.hpp "timemory/utility/utility.hpp"
+/** \file utility/utility.hpp
+ * \headerfile utility/utility.hpp "timemory/utility/utility.hpp"
  * General utility functions
  *
  */

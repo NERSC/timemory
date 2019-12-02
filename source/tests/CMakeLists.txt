@@ -176,3 +176,19 @@ add_timemory_google_test(priority_tests
     SOURCES         priority_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-analysis-tools)
+
+if(TIMEMORY_USE_MPI)
+    add_timemory_google_test(mpi_tests
+        DISCOVER_TESTS
+        SOURCES         mpi_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                        timemory-analysis-tools timemory-mpi)
+endif()
+
+#if(TIMEMORY_USE_UPCXX)
+    add_timemory_google_test(upcxx_tests
+        DISCOVER_TESTS
+        SOURCES         upcxx_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                        timemory-analysis-tools timemory-upcxx)
+#endif()

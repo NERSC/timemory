@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file backends/signals.hpp
+ * \headerfile backends/signals.hpp "timemory/backends/signals.hpp"
+ * Defines backend for the signals
+ *
+ */
+
 #pragma once
 
 #if defined(_UNIX)

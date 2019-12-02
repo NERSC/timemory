@@ -78,7 +78,7 @@ main(int argc, char** argv)
 {
     tim::settings::verbose()     = 1;
     tim::settings::json_output() = true;
-    tim::mpi::initialize(argc, argv);
+    tim::dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv);
     tim::print_env();
 
@@ -181,7 +181,7 @@ main(int argc, char** argv)
     check_const(l);
     std::cout << std::endl;
 
-    tim::mpi::finalize();
+    tim::dmp::finalize();
 
     return 0;
 }

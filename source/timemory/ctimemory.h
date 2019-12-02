@@ -22,9 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file ctimemory.h
- * \headerfile ctimemory.h "timemory/ctimemory.h"
- * This header file is deprecated in favor of \ref "timemory/timemory.h"
+/** \file timemory/ctimemory.h
+ * \headerfile timemory/ctimemory.h "timemory/ctimemory.h"
+ * Deprecated header file for C
  *
  */
 

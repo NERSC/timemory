@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/types.hpp
+ * \headerfile timemory/ert/types.hpp "timemory/ert/types.hpp"
+ * Provides pre-declaration of types for ERT
+ *
+ */
+
 #pragma once
 
 // clang-format off

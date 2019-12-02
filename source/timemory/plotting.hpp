@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/plotting.hpp
+ * \headerfile timemory/plotting.hpp "timemory/plotting.hpp"
+ * Routines for plotting via Python in C++
+ *
+ */
+
 #pragma once
 
 #include "timemory/bits/components.hpp"

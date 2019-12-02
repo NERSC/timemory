@@ -269,9 +269,11 @@ endmacro()
 #----------------------------------------------------------------------------------------#
 # check C and CXX flag
 #----------------------------------------------------------------------------------------#
-macro(ADD_FLAG_IF_AVAIL FLAG)
-    ADD_C_FLAG_IF_AVAIL("${FLAG}")
-    ADD_CXX_FLAG_IF_AVAIL("${FLAG}")
+macro(ADD_FLAG_IF_AVAIL)
+    foreach(_ARG ${ARGN})
+        ADD_C_FLAG_IF_AVAIL("${_ARG}")
+        ADD_CXX_FLAG_IF_AVAIL("${_ARG}")
+    endforeach()
 endmacro()
 
 

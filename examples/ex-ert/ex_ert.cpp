@@ -49,8 +49,8 @@ using settings = tim::settings;
 // timemory has a backends that will not call MPI_Init, cudaDeviceCount, etc.
 // when that library/package is not available
 //
-namespace mpi {
-using namespace tim::mpi;
+namespace dmp {
+using namespace tim::dmp;
 }
 namespace cuda {
 using namespace tim::cuda;
@@ -79,12 +79,12 @@ int
 main(int argc, char** argv)
 {
     settings::verbose() = 0;
-    tim::timemory_init(argc, argv);  // parses environment, sets output paths
-    mpi::initialize(argc, argv);
+    tim::timemory_init(argc, argv);
+    dmp::initialize(argc, argv);
     tim::enable_signal_detection();
 
     auto data  = ert_data_ptr_t(new ert_data_t());
-    auto nproc = mpi::size();
+    auto nproc = dmp::size();
 
     auto cpu_min_size = 64;
     auto cpu_max_data = ert::cache_size::get_max();
@@ -175,7 +175,7 @@ main(int argc, char** argv)
 
     ert::serialize(fname, *data);
 
-    mpi::finalize();
+    dmp::finalize();
     return 0;
 }
 

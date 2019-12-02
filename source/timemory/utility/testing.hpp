@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file testing.hpp
- * \headerfile testing.hpp "timemory/utility/testing.hpp"
+/** \file utility/testing.hpp
+ * \headerfile utility/testing.hpp "timemory/utility/testing.hpp"
  * This is used for C++ testing of the TiMemory package
  *
  */
@@ -42,7 +42,7 @@
 #include <stdexcept>
 
 // TiMemory headers
-#include "timemory/backends/mpi.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/utility/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -85,8 +85,8 @@ inline std::string
 rank_prefix()
 {
     std::stringstream ss;
-    if(tim::mpi::is_initialized())
-        ss << "[" << tim::mpi::rank() << "] ";
+    if(tim::dmp::is_initialized())
+        ss << "[" << tim::dmp::rank() << "] ";
     return ss.str();
 }
 

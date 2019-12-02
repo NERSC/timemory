@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file components/likwid.hpp
+ * \headerfile components/likwid.hpp "timemory/components/likwid.hpp"
+ * Defines LIKWID marker API components
+ *
+ */
+
 #pragma once
 
 #include "timemory/components/base.hpp"

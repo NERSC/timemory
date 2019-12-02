@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/barrier.hpp
+ * \headerfile timemory/ert/barrier.hpp "timemory/ert/barrier.hpp"
+ * Provides multi-threading barriers
+ *
+ */
+
 #pragma once
 
 #include <atomic>

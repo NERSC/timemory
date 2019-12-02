@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file filepath.hpp
- * \headerfile filepath.hpp "timemory/utility/filepath.hpp"
+/** \file utility/filepath.hpp
+ * \headerfile utility/filepath.hpp "timemory/utility/filepath.hpp"
  * Functions for converting OS filepaths
  *
  */

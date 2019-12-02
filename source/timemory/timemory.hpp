@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file timemory.hpp
- * \headerfile timemory.hpp "timemory/timemory.hpp"
+/** \file timemory/timemory.hpp
+ * \headerfile timemory/timemory.hpp "timemory/timemory.hpp"
  * All-inclusive timemory header
  *
  */

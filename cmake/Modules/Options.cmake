@@ -22,6 +22,11 @@ if(UNIX AND NOT APPLE)
     set(_USE_PAPI ON)
 endif()
 
+set(_BUILD_OPT OFF)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    set(_BUILD_OPT ON)
+endif()
+
 set(_USE_COVERAGE OFF)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(_USE_COVERAGE ON)
@@ -155,23 +160,25 @@ add_option(TIMEMORY_BUILD_DOCS
 add_option(TIMEMORY_BUILD_EXAMPLES
     "Build the examples"  OFF)
 add_option(TIMEMORY_BUILD_C
-    "Build the C compatible library"  ${${PROJECT_NAME}_MASTER_PROJECT})
+    "Build the C compatible library" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_PYTHON
     "Build Python binds for ${PROJECT_NAME}" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
-    "Enable building tools"  ${${PROJECT_NAME}_MASTER_PROJECT})
+    "Enable building tools" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
     "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
-    "Add extra optimization flags" OFF)
+    "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_GTEST
-    "Enable GoogleTest" OFF)
+    "Enable GoogleTest" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_DEVELOPER
-    "Enable building with developer flags" OFF)
+    "Enable building with developer flags" OFF ${_FEATURE})
+add_option(TIMEMORY_BUILD_QUIET
+    "Enable GoogleTest" OFF NO_FEATURE)
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
@@ -186,17 +193,19 @@ endif()
 
 # timemory options
 add_option(TIMEMORY_USE_EXCEPTIONS
-    "Signal handler throws exceptions (default: exit)" OFF  ${_FEATURE})
+    "Signal handler throws exceptions (default: exit)" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_EXTERN_INIT
     "Do initialization in library instead of headers" OFF)
 add_option(TIMEMORY_USE_MPI
-    "Enable MPI usage" ON ${_FEATURE})
+    "Enable MPI usage" ON)
+add_option(TIMEMORY_USE_UPCXX
+    "Enable UPCXX usage (MPI support takes precedence)" ON)
 add_option(TIMEMORY_USE_SANITIZER
     "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_TAU
-    "Enable TAU marking API" ON ${_FEATURE})
+    "Enable TAU marking API" ON)
 add_option(TIMEMORY_USE_PAPI
-    "Enable PAPI" ${_USE_PAPI} ${_FEATURE})
+    "Enable PAPI" ${_USE_PAPI})
 add_option(TIMEMORY_USE_CLANG_TIDY
     "Enable running clang-tidy" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_COVERAGE
@@ -206,20 +215,20 @@ add_option(TIMEMORY_USE_GPERF
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_VTUNE
-    "Enable VTune marking API" ON ${_FEATURE})
+    "Enable VTune marking API" ON)
 add_option(TIMEMORY_USE_CUDA
-    "Enable CUDA option for GPU measurements" ${_USE_CUDA} ${_FEATURE})
+    "Enable CUDA option for GPU measurements" ${_USE_CUDA})
 add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA} ${_FEATURE})
+    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
 add_option(TIMEMORY_USE_NVTX
-    "Enable NVTX marking API" ${_USE_CUDA} ${_FEATURE})
+    "Enable NVTX marking API" ${_USE_CUDA})
 add_option(TIMEMORY_USE_CALIPER
-    "Enable Caliper" ${_BUILD_CALIPER} ${_FEATURE})
+    "Enable Caliper" ${_BUILD_CALIPER})
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_USE_LIKWID
-        "Enable LIKWID marker forwarding" ON ${_FEATURE})
+        "Enable LIKWID marker forwarding" ON)
     add_option(TIMEMORY_USE_GOTCHA
-        "Enable GOTCHA" ON ${_FEATURE})
+        "Enable GOTCHA" ON)
 endif()
 add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF ${_FEATURE})

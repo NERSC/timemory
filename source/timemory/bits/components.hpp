@@ -83,6 +83,7 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case READ_BYTES: obj.template init<read_bytes>(); break;
         case STACK_RSS: obj.template init<stack_rss>(); break;
         case SYS_CLOCK: obj.template init<system_clock>(); break;
+        case TAU_MARKER: obj.template init<tau_marker>(); break;
         case THREAD_CPU_CLOCK: obj.template init<thread_cpu_clock>(); break;
         case THREAD_CPU_UTIL: obj.template init<thread_cpu_util>(); break;
         case TRIP_COUNT: obj.template init<trip_count>(); break;
@@ -295,6 +296,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(SYS_CLOCK);
         }
+        else if(itr == "tau" || itr == "tau_marker")
+        {
+            vec.push_back(TAU_MARKER);
+        }
         else if(itr == "thread_cpu_clock")
         {
             vec.push_back(THREAD_CPU_CLOCK);
@@ -363,10 +368,11 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
                 "'page_rss', 'papi', 'papi_array', 'papi_array_t', 'peak_rss', "
                 "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
                 "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
-                "'thread_cpu_clock', 'thread_cpu_util', 'trip_count', 'user_bundle_0', "
-                "'user_bundle_1', 'user_clock', 'virtual_clock', 'virtual_memory', "
-                "'voluntary_context_switch', 'vtune_event', 'vtune_frame', 'wall_clock', "
-                "'write_bytes', 'written_bytes']\n",
+                "'tau', 'tau_marker', 'thread_cpu_clock', 'thread_cpu_util', "
+                "'trip_count', 'user_bundle_0', 'user_bundle_1', 'user_clock', "
+                "'virtual_clock', 'virtual_memory', 'voluntary_context_switch', "
+                "'vtune_event', 'vtune_frame', 'wall_clock', 'write_bytes', "
+                "'written_bytes']\n",
                 itr.c_str());
         }
     }

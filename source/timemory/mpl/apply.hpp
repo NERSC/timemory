@@ -139,6 +139,24 @@ operator-=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra..
 
 //--------------------------------------------------------------------------------------//
 
+template <typename _Tp, size_t _N>
+::std::array<_Tp, _N>&
+operator-(::std::array<_Tp, _N>, const ::std::array<_Tp, _N>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+::std::tuple<_Types...>&
+operator-(::std::tuple<_Types...>, const ::std::tuple<_Types...>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Lhs, typename _Rhs>
+::std::pair<_Lhs, _Rhs>
+operator-(::std::pair<_Lhs, _Rhs>, const ::std::pair<_Lhs, _Rhs>&);
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace stl_overload
 
 //--------------------------------------------------------------------------------------//

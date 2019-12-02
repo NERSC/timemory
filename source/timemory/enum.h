@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file enum.h
- * \headerfile enum.h "timemory/enum.h"
+/** \file timemory/enum.h
+ * \headerfile timemory/enum.h "timemory/enum.h"
  * This provides the core enumeration for components
  *
  */
@@ -144,17 +144,18 @@ enum TIMEMORY_COMPONENT
     READ_BYTES               = 35,
     STACK_RSS                = 36,
     SYS_CLOCK                = 37,
-    THREAD_CPU_CLOCK         = 38,
-    THREAD_CPU_UTIL          = 39,
-    TRIP_COUNT               = 40,
-    USER_BUNDLE_0            = 41,
-    USER_BUNDLE_1            = 42,
-    USER_CLOCK               = 43,
-    VIRTUAL_MEMORY           = 44,
-    VOLUNTARY_CONTEXT_SWITCH = 45,
-    VTUNE_EVENT              = 46,
-    VTUNE_FRAME              = 47,
-    WALL_CLOCK               = 48,
-    WRITTEN_BYTES            = 49,
-    TIMEMORY_COMPONENTS_END  = 50
+    TAU_MARKER               = 38,
+    THREAD_CPU_CLOCK         = 39,
+    THREAD_CPU_UTIL          = 40,
+    TRIP_COUNT               = 41,
+    USER_BUNDLE_0            = 42,
+    USER_BUNDLE_1            = 43,
+    USER_CLOCK               = 44,
+    VIRTUAL_MEMORY           = 45,
+    VOLUNTARY_CONTEXT_SWITCH = 46,
+    VTUNE_EVENT              = 47,
+    VTUNE_FRAME              = 48,
+    WALL_CLOCK               = 49,
+    WRITTEN_BYTES            = 50,
+    TIMEMORY_COMPONENTS_END  = 51
 };
