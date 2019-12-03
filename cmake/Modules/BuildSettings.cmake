@@ -131,16 +131,18 @@ if(CpuArch_FOUND)
         target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=128)
     endif()
 
-    foreach(_ARCH ${CpuArch_FEATURES})
-        # intel compiler
-        if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
-            add_target_flag_if_avail(timemory-arch "-x${_ARCH}")
-        endif()
-        # non-intel compilers
-        if(NOT CMAKE_C_COMPILER_IS_INTEL OR NOT CMAKE_CXX_COMPILER_IS_INTEL)
-            add_target_flag_if_avail(timemory-arch "-m${_ARCH}")
-        endif()
-    endforeach()
+    if(TIMEMORY_USE_ARCH)
+        foreach(_ARCH ${CpuArch_FEATURES})
+            # intel compiler
+            if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
+                add_target_flag_if_avail(timemory-arch "-x${_ARCH}")
+            endif()
+            # non-intel compilers
+            if(NOT CMAKE_C_COMPILER_IS_INTEL OR NOT CMAKE_CXX_COMPILER_IS_INTEL)
+                add_target_flag_if_avail(timemory-arch "-m${_ARCH}")
+            endif()
+        endforeach()
+    endif()
 
 endif()
 
