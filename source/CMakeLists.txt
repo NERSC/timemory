@@ -310,6 +310,11 @@ export(
 #
 add_subdirectory(tools)
 
+add_library(timemory-mpip-library INTERFACE)
+if(TARGET timemory-mpip)
+    target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPI_P)
+    target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip)
+endif()
 
 #----------------------------------------------------------------------------------------#
 # Python bindings

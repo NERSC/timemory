@@ -2,6 +2,14 @@
 
 : ${MPI_HEADER:=@MPI_HEADER@}
 : ${OUT:=/dev/stdout}
+: ${SED:=$(which ssed)}
+
+# if no ssed, use sed
+if [ -z "${SED}" ]; then SED=$(which sed); fi
+
+if test $(echo "hello" | ${SED} -r 's/h/t/g' 2> /dev/null); then
+    SED="${SED} -r"
+fi
 
 tolower()
 {
@@ -15,11 +23,16 @@ tolower()
 get_mpi_functions()
 {
     local N=0
-    local funcs=$(grep '^int MPI_' ${MPI_HEADER} | grep '(' \
-        | sed 's/(/ /g' | awk '{print $2}' \
-        | egrep -v 'MPI_T_|MPI_Pcontrol')
+    local funcs=$(grep -E 'int[ \t].*MPI_' ${MPI_HEADER} \
+        | grep '(' \
+        | sed 's/OMPI_DECLSPEC//g' \
+        | ${SED} 's/[(].*//g' \
+        | awk '{print $2}' \
+        | grep -E -v 'PMPI_|typedef|OMPI_|MPI_T_|MPI_Pcontrol|MPI_Test|MPI_Type|MPI_Init|MPI_Finalize|MPI_Abort|MPI_DUP|MPI_Address|MPI_Attr|MPI_Errhandler|MPI_Keyval' | sort -u)
     for i in ${funcs}
     do
+        if [ -z "$(echo $i | grep MPI_)" ]; then continue; fi
+        if [ -n "$(echo $i | grep -E '_c2f|MPI_Fint')" ]; then continue; fi
     	echo "        TIMEMORY_C_GOTCHA(mpip_gotcha_t, ${N}, $i);"
 	    N=$((${N}+1))
     done
@@ -33,6 +46,7 @@ cat <<EOF>> ${OUT}
 
 #include <timemory/library.h>
 #include <timemory/timemory.hpp>
+#include <timemory/components/gotcha.hpp>
 
 #include <memory>
 #include <set>
@@ -69,6 +83,13 @@ delete_record(uint64_t nid)
 void
 init_timemory_mpip_tools()
 {
+    // provide environment variable for enabling/disabling using custom record types
+    if(tim::get_env<bool>("ENABLE_TIMEMORY_MPIP_RECORD_TYPES", false))
+    {
+        timemory_create_function = (timemory_create_func_t) &create_record;
+        timemory_delete_function = (timemory_delete_func_t) &delete_record;
+    }
+
     static bool is_initialized = false;
     if(is_initialized)
         return;
@@ -90,23 +111,33 @@ ${GOTCHA_SPEC}
     };
 
     // provide environment variable for suppressing wrappers
-    mpip_gotcha_t::get_blacklist() = []() {
-        auto blacklist     = tim::get_env<std::string>("TIMEMORY_MPIP_BLACKLIST", "");
-        auto blacklist_vec = tim::delimit(blacklist);
-        stringset_t blacklist_set;
-        for(const auto& itr : blacklist_vec)
-            blacklist_set.insert(itr);
-        return blacklist_set;
+    mpip_gotcha_t::get_reject_list() = []() {
+        auto reject_list     = tim::get_env<std::string>("TIMEMORY_MPIP_REJECT_LIST", "");
+        if(reject_list.length() == 0)
+            return stringset_t{};
+        auto reject_list_vec = tim::delimit(reject_list);
+        stringset_t reject_list_set;
+        for(const auto& itr : reject_list_vec)
+            reject_list_set.insert(itr);
+        return reject_list_set;
+    };
+
+    // provide environment variable for selecting wrappers
+    mpip_gotcha_t::get_permit_list() = []() {
+        auto permit_list     = tim::get_env<std::string>("TIMEMORY_MPIP_PERMIT_LIST", "");
+        if(permit_list.length() == 0)
+            return stringset_t{};
+        auto permit_list_vec = tim::delimit(permit_list);
+        stringset_t permit_list_set;
+        for(const auto& itr : permit_list_vec)
+            permit_list_set.insert(itr);
+        return permit_list_set;
     };
 
     // provide environment variable for enabling/disabling
     if(tim::get_env<bool>("ENABLE_TIMEMORY_MPIP", true))
     {
-        timemory_create_function = (timemory_create_func_t) &create_record;
-        timemory_delete_function = (timemory_delete_func_t) &delete_record;
         mpip_gotcha_t::get_initializer()();
-        // static auto hold = timemory_get_begin_record(__FUNCTION__);
-        // tim::consume_parameters(hold);
     }
 }
 

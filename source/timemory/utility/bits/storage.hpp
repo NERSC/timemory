@@ -588,14 +588,14 @@ storage<ObjectType, true>::get()
 //======================================================================================//
 
 template <typename ObjectType>
-typename storage<ObjectType, true>::proc_result_t
+typename storage<ObjectType, true>::dmp_result_t
 storage<ObjectType, true>::mpi_get()
 {
 #if !defined(TIMEMORY_USE_MPI)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using MPI");
 
-    return proc_result_t(1, get());
+    return dmp_result_t(1, get());
 #else
     if(settings::debug())
         PRINT_HERE("%s", "timemory using MPI");
@@ -636,7 +636,7 @@ storage<ObjectType, true>::mpi_get()
         return ret;
     };
 
-    proc_result_t results(mpi_size);
+    dmp_result_t results(mpi_size);
 
     auto ret     = get();
     auto str_ret = send_serialize(ret);
@@ -662,7 +662,7 @@ storage<ObjectType, true>::mpi_get()
         mpi::send(str_ret, 0, 0, mpi::comm_world_v);
         if(settings::debug())
             printf("[SEND: %i]> completed\n", mpi_rank);
-        return proc_result_t(1, ret);
+        return dmp_result_t(1, ret);
     }
 
     return results;
@@ -672,14 +672,14 @@ storage<ObjectType, true>::mpi_get()
 //======================================================================================//
 
 template <typename ObjectType>
-typename storage<ObjectType, true>::proc_result_t
+typename storage<ObjectType, true>::dmp_result_t
 storage<ObjectType, true>::upc_get()
 {
 #if !defined(TIMEMORY_USE_UPCXX)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using UPC++");
 
-    return proc_result_t(1, get());
+    return dmp_result_t(1, get());
 #else
     if(settings::debug())
         PRINT_HERE("%s", "timemory using UPC++");
@@ -724,17 +724,15 @@ storage<ObjectType, true>::upc_get()
         return send_serialize(this_type::master_instance()->get());
     };
 
-    proc_result_t results(upc_size);
+    dmp_result_t results(upc_size);
 
     //------------------------------------------------------------------------------//
     //  Combine on master rank
     //
     if(upc_rank == 0)
     {
-        for(int i = 0; i < upc_size; ++i)
+        for(int i = 1; i < upc_size; ++i)
         {
-            if(i == upc_rank)
-                continue;
             upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
             while(!fut.ready())
                 upcxx::progress();
@@ -747,7 +745,7 @@ storage<ObjectType, true>::upc_get()
     upcxx::barrier(upcxx::world());
 
     if(upc_rank != 0)
-        return proc_result_t(1, get());
+        return dmp_result_t(1, get());
     else
         return results;
 #endif

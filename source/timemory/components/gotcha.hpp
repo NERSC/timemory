@@ -125,12 +125,12 @@ struct gotcha
     using constructor_t = std::function<void()>;
     using atomic_bool_t = std::atomic<bool>;
 
-    using blacklist_t = std::set<std::string>;
+    using select_list_t = std::set<std::string>;
 
     // using config_t = std::tuple<binding_t, wrappee_t, wrappid_t>;
     using config_t          = void;
     using get_initializer_t = std::function<config_t()>;
-    using get_blacklist_t   = std::function<blacklist_t()>;
+    using get_select_list_t = std::function<select_list_t()>;
 
     static std::string label() { return "gotcha"; }
     static std::string description() { return "GOTCHA wrapper"; }
@@ -148,10 +148,18 @@ struct gotcha
     }
 
     //----------------------------------------------------------------------------------//
-
-    static get_blacklist_t& get_blacklist()
+    /// reject listed functions are never wrapped by GOTCHA
+    static get_select_list_t& get_reject_list()
     {
-        static get_blacklist_t _instance = []() { return blacklist_t{}; };
+        static get_select_list_t _instance = []() { return select_list_t{}; };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// when a permit list is provided, only these functions are wrapped by GOTCHA
+    static get_select_list_t& get_permit_list()
+    {
+        static get_select_list_t _instance = []() { return select_list_t{}; };
         return _instance;
     }
 
@@ -177,7 +185,7 @@ struct gotcha
         if(_func.find("MPI_") != std::string::npos ||
            _func.find("mpi_") != std::string::npos)
         {
-            static auto mpi_blacklist = {
+            static auto mpi_reject_list = {
                 "MPI_Init",        "MPI_Finalize",  "MPI_Pcontrol",  "MPI_Init_thread",
                 "MPI_Initialized", "MPI_Comm_rank", "MPI_Comm_size", "MPI_T_init_thread",
                 "MPI_Comm_split",  "MPI_Abort",     "MPI_Barrier",   "MPI_Comm_split_type"
@@ -191,8 +199,8 @@ struct gotcha
                 return _fort;
             };
 
-            // if function matches a blacklisted entry, do not construct wrapper
-            for(const auto& itr : mpi_blacklist)
+            // if function matches a reject_listed entry, do not construct wrapper
+            for(const auto& itr : mpi_reject_list)
                 if(_func == itr || _func == tofortran(itr))
                 {
                     if(settings::debug())
@@ -202,13 +210,28 @@ struct gotcha
                 }
         }
 
-        // if function matches a blacklisted entry, do not construct wrapper
-        for(const auto& itr : get_blacklist()())
+        const select_list_t& _permit_list = get_permit_list()();
+        const select_list_t& _reject_list = get_reject_list()();
+
+        // if function matches a reject_listed entry, do not construct wrapper
+        if(_reject_list.count(_func) > 0)
         {
-            if(_func == itr)
+            if(settings::debug())
+                printf(
+                    "[gotcha]> GOTCHA binding for function '%s' is in reject list...\n",
+                    _func.c_str());
+            return;
+        }
+
+        // if a permit_list was provided, then do not construct wrapper if not in permit
+        // list
+        if(_permit_list.size() > 0)
+        {
+            if(_permit_list.count(_func) == 0)
             {
                 if(settings::debug())
-                    printf("[gotcha]> Skipping gotcha binding for %s...\n",
+                    printf("[gotcha]> GOTCHA binding for function '%s' is not in permit "
+                           "list...\n",
                            _func.c_str());
                 return;
             }

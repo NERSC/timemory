@@ -298,84 +298,93 @@ serialize(std::string fname, exec_data<_Counter>& obj)
 {
     using exec_data_vec_t = std::vector<exec_data<_Counter>>;
 
-    dmp::barrier();
     int  dmp_rank = dmp::rank();
     int  dmp_size = dmp::size();
     auto space    = cereal::JSONOutputArchive::Options::IndentChar::space;
 
-    //------------------------------------------------------------------------------//
-    //  Used to convert a result to a serialization
-    //
-    auto send_serialize = [&](const exec_data<_Counter>& src) {
-        std::stringstream ss;
-        {
-            cereal::JSONOutputArchive::Options opt(16, space, 0);
-            cereal::JSONOutputArchive          oa(ss, opt);
-            oa(cereal::make_nvp("data", src));
-        }
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert the serialization to a result
-    //
-    auto recv_serialize = [&](const std::string& src) {
-        exec_data<_Counter> ret;
-        std::stringstream   ss;
-        ss << src;
-        {
-            cereal::JSONInputArchive ia(ss);
-            ia(cereal::make_nvp("data", ret));
-        }
-        return ret;
-    };
-
     exec_data_vec_t results(dmp_size);
+    if(dmp::is_initialized())
+    {
+        dmp::barrier();
+
+        //------------------------------------------------------------------------------//
+        //  Used to convert a result to a serialization
+        //
+        auto send_serialize = [&](const exec_data<_Counter>& src) {
+            std::stringstream ss;
+            {
+                cereal::JSONOutputArchive::Options opt(16, space, 0);
+                cereal::JSONOutputArchive          oa(ss, opt);
+                oa(cereal::make_nvp("data", src));
+            }
+            return ss.str();
+        };
+
+        //------------------------------------------------------------------------------//
+        //  Used to convert the serialization to a result
+        //
+        auto recv_serialize = [&](const std::string& src) {
+            exec_data<_Counter> ret;
+            std::stringstream   ss;
+            ss << src;
+            {
+                cereal::JSONInputArchive ia(ss);
+                ia(cereal::make_nvp("data", ret));
+            }
+            return ret;
+        };
 
 #if defined(TIMEMORY_USE_MPI)
-    auto str_ret = send_serialize(obj);
+        auto str_ret = send_serialize(obj);
 
-    if(dmp_rank == 0)
-    {
-        for(int i = 1; i < dmp_size; ++i)
+        if(dmp_rank == 0)
         {
-            std::string str;
-            mpi::recv(str, i, 0, mpi::comm_world_v);
-            results[i] = recv_serialize(str);
+            for(int i = 1; i < dmp_size; ++i)
+            {
+                std::string str;
+                mpi::recv(str, i, 0, mpi::comm_world_v);
+                results[i] = recv_serialize(str);
+            }
+            results[dmp_rank] = std::move(obj);
         }
-        results[dmp_rank] = std::move(obj);
-    }
-    else
-    {
-        mpi::send(str_ret, 0, 0, mpi::comm_world_v);
-    }
+        else
+        {
+            mpi::send(str_ret, 0, 0, mpi::comm_world_v);
+        }
 
 #elif defined(TIMEMORY_USE_UPCXX)
 
-    //------------------------------------------------------------------------------//
-    //  Function executed on remote node
-    //
-    auto remote_serialize = [=]() {
-        return send_serialize(this_type::master_instance()->get());
-    };
+        //------------------------------------------------------------------------------//
+        //  Function executed on remote node
+        //
+        auto remote_serialize = [=]() {
+            return send_serialize(this_type::master_instance()->get());
+        };
 
-    //------------------------------------------------------------------------------//
-    //  Combine on master rank
-    //
-    if(dmp_rank == 0)
-    {
-        proc_result_t results(dmp_size);
-        for(int i = 1; i < dmp_size; ++i)
+        //------------------------------------------------------------------------------//
+        //  Combine on master rank
+        //
+        if(dmp_rank == 0)
         {
-            upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
-            fut.wait();
-            results[i] = recv_serialize(fut.result());
+            for(int i = 1; i < dmp_size; ++i)
+            {
+                upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
+                while(!fut.ready())
+                    upcxx::progress();
+                fut.wait();
+                results[i] = recv_serialize(fut.result());
+            }
+            results[dmp_rank] = std::move(obj);
         }
-        results[dmp_rank] = get();
-    }
 
-#else
 #endif
+    }
+    else
+    {
+        results.clear();
+        results.resize(1);
+        results.at(0) = std::move(obj);
+    }
 
     if(dmp_rank == 0)
     {

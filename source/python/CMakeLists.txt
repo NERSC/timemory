@@ -37,6 +37,7 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-compile-options
     timemory-external-shared
     timemory-python-compile-options
+    timemory-mpip-library
     PRIVATE pybind11::module)
 
 if(TIMEMORY_USE_CUDA)

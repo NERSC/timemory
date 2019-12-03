@@ -44,11 +44,13 @@ add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
 
-set(_PROCESS_INTERFACE_LIBRARY)
+set(_DMP_LIBRARIES)
 if(TIMEMORY_USE_MPI)
-    set(_PROCESS_INTERFACE_LIBRARY timemory-mpi)
-elseif(TIMEMORY_USE_UPCXX)
-    set(_PROCESS_INTERFACE_LIBRARY timemory-upcxx)
+    list(APPEND _DMP_LIBRARIES timemory-mpi)
+endif()
+
+if(TIMEMORY_USE_UPCXX)
+    list(APPEND _DMP_LIBRARIES timemory-upcxx)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
@@ -86,7 +88,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
-    ${_PROCESS_INTERFACE_LIBRARY})
+    ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-threading
@@ -100,7 +102,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
-    ${_PROCESS_INTERFACE_LIBRARY})
+    ${_DMP_LIBRARIES})
 
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})

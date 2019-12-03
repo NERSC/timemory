@@ -129,7 +129,7 @@ public:
     using auto_lock_t   = typename singleton_t::auto_lock_t;
     using node_tuple_t  = std::tuple<uint64_t, ObjectType, int64_t>;
     using result_array_t = std::vector<result_node>;
-    using proc_result_t  = std::vector<result_array_t>;
+    using dmp_result_t   = std::vector<result_array_t>;
     using strvector_t    = std::vector<string_t>;
     using result_tuple_t =
         std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t, strvector_t>;
@@ -487,14 +487,22 @@ public:
     inline iterator pop() { return _data().pop_graph(); }
 
     result_array_t get();
-    proc_result_t  mpi_get();
-    proc_result_t  upc_get();
-    proc_result_t  dmp_get()
+    dmp_result_t   mpi_get();
+    dmp_result_t   upc_get();
+    dmp_result_t   dmp_get()
     {
-#if defined(TIMEMORY_USE_UPCXX)
-        return upc_get();
+        auto fallback_get = [&]() { return dmp_result_t(1, get()); };
+
+#if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)
+        return (mpi::is_initialized())
+                   ? mpi_get()
+                   : ((upc::is_initialized()) ? upc_get() : fallback_get());
+#elif defined(TIMEMORY_USE_UPCXX)
+        return (upc::is_initialized()) ? upc_get() : fallback_get();
+#elif defined(TIMEMORY_USE_MPI)
+        return (mpi::is_initialized()) ? mpi_get() : fallback_get();
 #else
-        return mpi_get();
+        return fallback_get();
 #endif
     }
 
