@@ -16,10 +16,12 @@ if(WIN32)
 endif()
 
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ON)
-add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ON)
+if(TIMEMORY_USE_MPI)
+    add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ON)
+endif()
 
 # pmpi tool
-if(TARGET timemory-cxx-shared)
+if(TARGET timemory-cxx-shared AND TIMEMORY_USE_MPI)
     add_subdirectory(mpip)
 endif()
 
