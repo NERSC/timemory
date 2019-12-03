@@ -358,7 +358,7 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         //  Function executed on remote node
         //
         auto remote_serialize = [=]() {
-            return send_serialize(this_type::master_instance()->get());
+            return send_serialize(obj);
         };
 
         //------------------------------------------------------------------------------//
