@@ -524,61 +524,14 @@ if(TIMEMORY_USE_CUDA)
                 endif()
             endif()
         endif()
-
-        option(TIMEMORY_DEPRECATED_CUDA_SUPPORT "Enable support for old CUDA flags" OFF)
-        mark_as_advanced(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
-
-        if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
-            add_interface_library(timemory-cuda-8)
-            target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-                $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-                -gencode=arch=compute_30,code=sm_30
-                -gencode=arch=compute_35,code=sm_35
-                -gencode=arch=compute_50,code=sm_50
-                -gencode=arch=compute_52,code=sm_52
-                -gencode=arch=compute_60,code=sm_60
-                -gencode=arch=compute_61,code=sm_61
-                -gencode=arch=compute_61,code=compute_61
-                >)
+	
+        if(NOT _ARCH_NUM)
+	    set(_ARCH_NUM 60)
         endif()
 
-        add_interface_library(timemory-cuda-9)
-        target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_60,code=sm_60
-            -gencode=arch=compute_61,code=sm_61
-            -gencode=arch=compute_70,code=sm_70
-            -gencode=arch=compute_70,code=compute_70
-            >)
-
-        add_interface_library(timemory-cuda-10)
-        target_compile_options(timemory-cuda-10 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_60,code=sm_60
-            -gencode=arch=compute_61,code=sm_61
-            -gencode=arch=compute_70,code=sm_70
-            -gencode=arch=compute_75,code=sm_75
-            -gencode=arch=compute_75,code=compute_75
-            >)
-
-        string(REPLACE "." ";" CUDA_MAJOR_VERSION "${CUDA_VERSION}")
-        list(GET CUDA_MAJOR_VERSION 0 CUDA_MAJOR_VERSION)
-
-        if(CUDA_MAJOR_VERSION VERSION_GREATER 10 OR CUDA_MAJOR_VERSION MATCHES 10)
-            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-10)
-        elseif(CUDA_MAJOR_VERSION MATCHES 9)
-            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-9)
-        else()
-            if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
-                if(CUDA_MAJOR_VERSION MATCHES 8)
-                    target_link_libraries(timemory-cuda INTERFACE timemory-cuda-8)
-                elseif(CUDA_MAJOR_VERSION MATCHES 7)
-                    target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
-                endif()
-            else()
-                message(WARNING "CUDA version < 9 detected. Enable TIMEMORY_DEPRECATED_CUDA_SUPPORT")
-            endif()
-        endif()
+        target_compile_options(timemory-cuda INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${_ARCH_NUM}
+            -gencode=arch=compute_${_ARCH_NUM},code=sm_${_ARCH_NUM}
+	    -gencode=arch=compute_${_ARCH_NUM},code=compute_${_ARCH_NUM}>)
 
         #   30, 32      + Kepler support
         #               + Unified memory programming
@@ -588,7 +541,7 @@ if(TIMEMORY_USE_CUDA)
         #   70, 72      + Volta support
         #   75          + Turing support
 
-        #target_compile_options(timemory-cuda INTERFACE
+        # target_compile_options(timemory-cuda INTERFACE
         #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
 
         add_user_flags(timemory-cuda "CUDA")
@@ -596,15 +549,15 @@ if(TIMEMORY_USE_CUDA)
         target_compile_options(timemory-cuda INTERFACE
             $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
 
-        if(TIMEMORY_DISABLE_CUDA_HALF2)
+        if(TIMEMORY_DISABLE_CUDA_HALF2 OR _ARCH_NUM LESS 60)
             target_compile_definitions(timemory-cuda INTERFACE
                 TIMEMORY_DISABLE_CUDA_HALF2)
         endif()
 
-        if(NOT WIN32)
-            # target_compile_options(timemory-cuda INTERFACE
-            #    $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
-        endif()
+        # if(NOT WIN32)
+        #    target_compile_options(timemory-cuda INTERFACE
+        #        $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
+        # endif()
 
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
@@ -856,6 +809,8 @@ if(caliper_FOUND)
         if(WITH_PAPI)
             target_link_libraries(timemory-caliper INTERFACE timemory-papi)
         endif()
+        set_target_properties(timemory-caliper PROPERTIES
+            INTERFACE_LINK_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
     else()
         target_include_directories(timemory-caliper INTERFACE ${caliper_INCLUDE_DIR})
         target_link_libraries(timemory-caliper INTERFACE caliper)
@@ -894,6 +849,8 @@ endif()
 if(gotcha_FOUND)
     target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
     target_link_libraries(timemory-gotcha INTERFACE gotcha)
+    set_target_properties(timemory-gotcha PROPERTIES
+        INTERFACE_LINK_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
 else()
     set(TIMEMORY_USE_GOTCHA OFF)
     inform_empty_interface(timemory-gotcha "GOTCHA")

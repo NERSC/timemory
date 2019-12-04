@@ -230,7 +230,20 @@ public:
     get_uint64_t    alignment        = this_type::get_alignment();
     get_uint64_t    grid_size        = this_type::get_grid_size();
     get_uint64_t    block_size       = this_type::get_block_size();
-    executor_func_t executor         = this_type::get_executor();
+    executor_func_t executor;
+
+public:
+    configuration()
+    : num_threads(this_type::get_num_threads())
+    , num_streams(this_type::get_num_streams())
+    , min_working_size(this_type::get_min_working_size())
+    , max_data_size(this_type::get_max_data_size())
+    , alignment(this_type::get_alignment())
+    , grid_size(this_type::get_grid_size())
+    , block_size(this_type::get_block_size())
+    , executor(this_type::get_executor())
+    {}
+    
 };
 
 //======================================================================================//
