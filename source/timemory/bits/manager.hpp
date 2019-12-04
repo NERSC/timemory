@@ -377,8 +377,8 @@ manager::get_communicator_group()
 inline void
 tim::settings::initialize_storage()
 {
-    using _Tuple = available_tuple<tim::complete_tuple_t>;
-    manager::get_storage<_Tuple>::initialize();
+    // using _Tuple = available_tuple<tim::complete_tuple_t>;
+    // manager::get_storage<_Tuple>::initialize();
 }
 
 //--------------------------------------------------------------------------------------//

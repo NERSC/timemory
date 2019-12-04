@@ -602,8 +602,8 @@ if(TIMEMORY_USE_CUDA)
         endif()
 
         if(NOT WIN32)
-            target_compile_options(timemory-cuda INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
+            # target_compile_options(timemory-cuda INTERFACE
+            #    $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
         endif()
 
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
