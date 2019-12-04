@@ -337,12 +337,19 @@ if(TIMEMORY_BUILD_PYTHON AND NOT SKBUILD)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/__main__.py
         ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
 
-    install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
-        DESTINATION ${CMAKE_INSTALL_BINDIR}
+    configure_file(${PROJECT_SOURCE_DIR}/timemory/roofline/__main__.py
+        ${PROJECT_BINARY_DIR}/timemory-roofline @ONLY)
+
+    install(
+        FILES
+            ${PROJECT_BINARY_DIR}/timemory-plotter
+            ${PROJECT_BINARY_DIR}/timemory-roofline
+        DESTINATION
+            ${CMAKE_INSTALL_BINDIR}
         PERMISSIONS
-        OWNER_EXECUTE OWNER_READ OWNER_WRITE
-        GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ)
+            OWNER_EXECUTE OWNER_READ OWNER_WRITE
+            GROUP_EXECUTE GROUP_READ
+            WORLD_EXECUTE WORLD_READ)
 endif()
 
 #----------------------------------------------------------------------------------------#

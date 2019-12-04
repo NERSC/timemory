@@ -215,9 +215,10 @@ with warnings.catch_warnings():
         setup_requires=[],
         keywords=get_keywords(),
         classifiers=get_classifiers(),
-        python_requires='>=2.6',
+        python_requires='>=2.7',
         cmdclass=dict(install=custom_install),
         entry_points={
-            'console_scripts': ['timemory-plotter=timemory.plotting.__main__:plot'],
+            'console_scripts': ['timemory-plotter=timemory.plotting.__main__:try_plot',
+                                'timemory-roofline=timemory.roofline.__main__:try_plot'],
         },
     )

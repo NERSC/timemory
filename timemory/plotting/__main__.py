@@ -40,7 +40,7 @@ import timemory.plotting as _plotting
 from timemory.plotting import plot_parameters
 
 
-def plot():
+def try_plot():
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument("-f", "--files", nargs='*',
@@ -160,4 +160,4 @@ def plot():
 
 
 if __name__ == "__main__":
-    plot()
+    try_plot()

@@ -60,7 +60,8 @@ def parse_args(add_run_args=False):
                         default=[1600, 1200, 100], nargs=3)
     parser.add_argument("-R", "--rank", type=int,
                         help="MPI Rank", default=None)
-    parser.add_argument("-v", "--verbose", type=int, help="Verbosity", default=None)
+    parser.add_argument("-v", "--verbose", type=int,
+                        help="Verbosity", default=None)
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
@@ -221,8 +222,7 @@ def run(args, cmd):
             output_path, "{}{}_op.json".format(output_prefix, args.rtype))
 
 
-if __name__ == "__main__":
-
+def try_plot():
     try:
         # look for "--" and interpret anything after that
         # to be a command to execute
@@ -253,3 +253,7 @@ if __name__ == "__main__":
     except Exception as e:
         msg = "\nCommand line argument error:\n\t{}\n".format(e)
         warnings.warn(msg)
+
+
+if __name__ == "__main__":
+    try_plot()
