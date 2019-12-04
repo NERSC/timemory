@@ -329,6 +329,8 @@ main(int argc, char** argv)
     total.stop();
 
     std::cout << "Total time: " << total << std::endl;
+
+    tim::timemory_finalize();
 }
 
 //--------------------------------------------------------------------------------------//

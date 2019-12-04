@@ -214,8 +214,10 @@ public:
 #endif
 
         static std::mutex            _mutex;
-        std::unique_lock<std::mutex> _lock(_mutex);
+        // std::unique_lock<std::mutex> _lock(_mutex);
+	_mutex.lock();
         *data += _data;
+	_mutex.unlock();
     }
 
     //----------------------------------------------------------------------------------//
@@ -269,7 +271,7 @@ public:
     int         memory_accesses_per_element = 0;
     uint64_t    align                       = sizeof(_Tp);
     uint64_t    nsize                       = 0;
-    data_ptr_t  data                        = data_ptr_t(new data_ptr_t);
+    data_ptr_t  data                        = std::make_shared<ert_data_t>();
     std::string label                       = "";
 
 protected:

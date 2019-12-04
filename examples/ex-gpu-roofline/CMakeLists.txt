@@ -11,6 +11,10 @@ endif()
 
 project(timemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+endif()
+
 option(BUILD_COMBINED_ROOFLINE "Build a combined roofline example" ON)
 
 add_library(gpu-roofline-compile-options INTERFACE)
