@@ -43,8 +43,8 @@
 
 // clang-format off
 
-TIMEMORY_DECLARE_EXTERN_TUPLE(auto_user_bundle_t, ::tim::component::user_bundle_0)
-TIMEMORY_DECLARE_EXTERN_LIST(auto_user_bundle_t, ::tim::component::user_bundle_1)
+TIMEMORY_DECLARE_EXTERN_TUPLE(auto_user_bundle_t, ::tim::component::user_tuple_bundle)
+TIMEMORY_DECLARE_EXTERN_LIST(auto_user_bundle_t, ::tim::component::user_list_bundle)
 TIMEMORY_DECLARE_EXTERN_HYBRID(auto_user_bundle_t)
 
 // clang-format on

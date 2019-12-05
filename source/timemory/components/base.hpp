@@ -51,9 +51,9 @@ public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
     static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
     static constexpr bool record_statistics_v  = trait::record_statistics<_Tp>::value;
-    static constexpr bool is_component_type   = false;
-    static constexpr bool is_auto_type        = false;
-    static constexpr bool is_component        = true;
+    static constexpr bool is_component_type    = false;
+    static constexpr bool is_auto_type         = false;
+    static constexpr bool is_component         = true;
 
     using Type       = _Tp;
     using value_type = _Value;
@@ -741,9 +741,9 @@ public:
     static constexpr bool implements_storage_v = false;
     static constexpr bool has_secondary_data   = false;
     static constexpr bool record_statistics_v  = false;
-    static constexpr bool is_component_type   = false;
-    static constexpr bool is_auto_type        = false;
-    static constexpr bool is_component        = true;
+    static constexpr bool is_component_type    = false;
+    static constexpr bool is_auto_type         = false;
+    static constexpr bool is_component         = true;
 
     using Type         = _Tp;
     using value_type   = void;

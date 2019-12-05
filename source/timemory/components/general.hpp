@@ -45,8 +45,8 @@ namespace component
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<trip_count>;
-extern template struct base<user_bundle<0>, void>;
-extern template struct base<user_bundle<1>, void>;
+extern template struct base<user_bundle<10101>, void>;
+extern template struct base<user_bundle<11011>, void>;
 
 #endif
 
@@ -281,12 +281,12 @@ public:
     //  Configure the tool for a specific set of tools
     //
     template <typename _Toolset, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0,
+              enable_if_t<(sizeof...(_Tail) == 0), int>   = 0,
               enable_if_t<(_Toolset::is_component), char> = 0>
     static void configure()
     {
         using _Toolset_t = auto_tuple<_Toolset>;
-        auto _start = [&](const std::string& _prefix) {
+        auto _start      = [&](const std::string& _prefix) {
             _Toolset_t* _result = new _Toolset_t(_prefix);
             _result->start();
             return (void*) _result;
@@ -306,14 +306,14 @@ public:
     //  Configure the tool for a specific set of tools
     //
     template <typename _Toolset, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0,
+              enable_if_t<(sizeof...(_Tail) == 0), int>    = 0,
               enable_if_t<!(_Toolset::is_component), char> = 0>
     static void configure()
     {
         auto _start = [&](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true)
-                                                    : new _Toolset(_prefix);
+            _Toolset*      _result =
+                (is_component_type) ? new _Toolset(_prefix, true) : new _Toolset(_prefix);
             _result->start();
             return (void*) _result;
         };
@@ -348,8 +348,8 @@ public:
     {
         auto _start = [&](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true)
-                                                    : new _Toolset(_prefix);
+            _Toolset*      _result =
+                (is_component_type) ? new _Toolset(_prefix, true) : new _Toolset(_prefix);
             std::forward<_InitFunc>(_init)(*_result);
             _result->start();
             return (void*) _result;

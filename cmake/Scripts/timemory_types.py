@@ -53,8 +53,8 @@ components = [
     "likwid_nvmon",
     "vtune_frame",
     "vtune_event",
-    "user_bundle_0",
-    "user_bundle_1",
+    "user_tuple_bundle",
+    "user_list_bundle",
     "tau_marker"
 ]
 

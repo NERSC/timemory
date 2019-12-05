@@ -56,10 +56,10 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(minimal_auto_timer_t,
                                   ::tim::component::cpu_clock,
                                   ::tim::component::cpu_util,
                                   ::tim::component::peak_rss,
-                                  ::tim::component::user_bundle_0)
+                                  ::tim::component::user_tuple_bundle)
 
 TIMEMORY_INSTANTIATE_EXTERN_LIST(minimal_auto_timer_t,
-                                 ::tim::component::user_bundle_1,
+                                 ::tim::component::user_list_bundle,
                                  ::tim::component::caliper,
                                  ::tim::component::tau_marker,
                                  ::tim::component::papi_array_t,
@@ -76,10 +76,10 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(full_auto_timer_t,
                                   ::tim::component::user_clock,
                                   ::tim::component::cpu_util,
                                   ::tim::component::peak_rss,
-                                  ::tim::component::user_bundle_0)
+                                  ::tim::component::user_tuple_bundle)
 
 TIMEMORY_INSTANTIATE_EXTERN_LIST(full_auto_timer_t,
-                                 ::tim::component::user_bundle_1,
+                                 ::tim::component::user_list_bundle,
                                  ::tim::component::gperf_cpu_profiler,
                                  ::tim::component::gperf_heap_profiler,
                                  ::tim::component::caliper,

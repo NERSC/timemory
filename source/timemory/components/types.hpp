@@ -164,8 +164,8 @@ template <size_t _Idx>
 struct user_bundle;
 
 // reserved
-using user_bundle_0 = user_bundle<0>;
-using user_bundle_1 = user_bundle<1>;
+using user_tuple_bundle = user_bundle<10101>;
+using user_list_bundle  = user_bundle<11011>;
 
 }  // namespace component
 }  // namespace tim

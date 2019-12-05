@@ -56,7 +56,7 @@ using complete_tuple_t = std::tuple<
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
     component::stack_rss, component::system_clock, component::tau_marker,
     component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_bundle_0, component::user_bundle_1, component::user_clock,
+    component::user_tuple_bundle, component::user_list_bundle, component::user_clock,
     component::virtual_memory, component::voluntary_context_switch,
     component::vtune_event, component::vtune_frame, component::wall_clock,
     component::written_bytes>;
@@ -77,7 +77,7 @@ using complete_auto_list_t = auto_list<
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
     component::stack_rss, component::system_clock, component::tau_marker,
     component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_bundle_0, component::user_bundle_1, component::user_clock,
+    component::user_tuple_bundle, component::user_list_bundle, component::user_clock,
     component::virtual_memory, component::voluntary_context_switch,
     component::vtune_event, component::vtune_frame, component::wall_clock,
     component::written_bytes>;
@@ -98,7 +98,7 @@ using complete_list_t = component_list<
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
     component::stack_rss, component::system_clock, component::tau_marker,
     component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_bundle_0, component::user_bundle_1, component::user_clock,
+    component::user_tuple_bundle, component::user_list_bundle, component::user_clock,
     component::virtual_memory, component::voluntary_context_switch,
     component::vtune_event, component::vtune_frame, component::wall_clock,
     component::written_bytes>;

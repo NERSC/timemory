@@ -45,16 +45,16 @@ TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_cpu_profiler)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_heap_profiler)
 #endif
 
-TIMEMORY_INSTANTIATE_EXTERN_INIT(user_bundle_0)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(user_bundle_1)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(user_tuple_bundle)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(user_list_bundle)
 
 namespace component
 {
 //
 //
 template struct base<trip_count>;
-template struct base<user_bundle<0>, void>;
-template struct base<user_bundle<1>, void>;
+template struct base<user_bundle<10101>, void>;
+template struct base<user_bundle<11011>, void>;
 //
 //
 }  // namespace component
