@@ -32,13 +32,12 @@
 
 #define TIMEMORY_EXTERN_TEMPLATE_BUILD
 
-#include "timemory/components.hpp"        // for papi_array_t
-#include "timemory/components/types.hpp"  // for cpu_roofline_dp_flops
+#include "timemory/components.hpp"
+#include "timemory/components/types.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"  // for TIMEMORY_INSTANTIATE_EXT...
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_timer.hpp"  // for auto_timer_list_t, auto_...
 #include "timemory/variadic/auto_tuple.hpp"
 
 //======================================================================================//
@@ -72,6 +71,7 @@ TIMEMORY_INSTANTIATE_EXTERN_LIST(
     ::tim::component::real_clock, ::tim::component::stack_rss,
     ::tim::component::system_clock, ::tim::component::tau_marker,
     ::tim::component::thread_cpu_clock, ::tim::component::thread_cpu_util,
-    ::tim::component::trip_count, ::tim::component::user_clock,
+    ::tim::component::trip_count, ::tim::component::user_bundle_0,
+    ::tim::component::user_bundle_1, ::tim::component::user_clock,
     ::tim::component::virtual_memory, ::tim::component::voluntary_context_switch,
     ::tim::component::written_bytes)

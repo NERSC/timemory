@@ -377,8 +377,16 @@ manager::get_communicator_group()
 inline void
 tim::settings::initialize_storage()
 {
+    //
+    // THIS CAUSES SUPER-LONG COMPILE TIMES BECAUSE IT ALWAYS GETS INSTANTIATED
+    //
+
     // using _Tuple = available_tuple<tim::complete_tuple_t>;
     // manager::get_storage<_Tuple>::initialize();
+
+    throw std::runtime_error(
+        "tim::settings::initialize_storage() without tuple of types has been disabled "
+        "because it causes extremely long compile times!");
 }
 
 //--------------------------------------------------------------------------------------//

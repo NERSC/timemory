@@ -96,6 +96,10 @@ public:
     static constexpr bool is_component_list   = false;
     static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = true;
+    static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = false;
+
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
         (tuple_type::contains_gotcha || list_type::contains_gotcha);

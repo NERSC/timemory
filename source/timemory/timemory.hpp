@@ -136,6 +136,16 @@ struct dummy
 #    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
 #    define TIMEMORY_DEBUG_AUTO_TIMER(...)
 
+// auto-bundle (user-bundles)
+#    define TIMEMORY_BLANK_AUTO_BUNDLE(...)
+#    define TIMEMORY_BASIC_AUTO_BUNDLE(...)
+#    define TIMEMORY_AUTO_BUNDLE(...)
+#    define TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE(...)
+#    define TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE(...)
+#    define TIMEMORY_AUTO_BUNDLE_HANDLE(...)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE(...)
+#    define TIMEMORY_DEBUG_AUTO_BUNDLE(...)
+
 #else
 
 #    include "timemory/components.hpp"
@@ -148,6 +158,7 @@ struct dummy
 #    include "timemory/variadic/auto_hybrid.hpp"
 #    include "timemory/variadic/auto_list.hpp"
 #    include "timemory/variadic/auto_timer.hpp"
+#    include "timemory/variadic/auto_user_bundle.hpp"
 #    include "timemory/variadic/macros.hpp"
 
 #    include "timemory/enum.h"

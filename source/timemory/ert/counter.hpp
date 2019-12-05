@@ -213,11 +213,11 @@ public:
             std::cout << "[RECORD]> " << _data << std::endl;
 #endif
 
-        static std::mutex            _mutex;
+        static std::mutex _mutex;
         // std::unique_lock<std::mutex> _lock(_mutex);
-	_mutex.lock();
+        _mutex.lock();
         *data += _data;
-	_mutex.unlock();
+        _mutex.unlock();
     }
 
     //----------------------------------------------------------------------------------//
@@ -359,9 +359,7 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         //------------------------------------------------------------------------------//
         //  Function executed on remote node
         //
-        auto remote_serialize = [=]() {
-            return send_serialize(obj);
-        };
+        auto remote_serialize = [=]() { return send_serialize(obj); };
 
         //------------------------------------------------------------------------------//
         //  Combine on master rank

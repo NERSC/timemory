@@ -3,17 +3,19 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(timemory-CXX-Overhead-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cxx_overhead)
-set(COMPONENTS compile-options analysis-tools)
+set(COMPONENTS cxx compile-options analysis-tools)
 
 option(USE_PAPI "Enable papi" OFF)
 option(USE_CALIPER "Enable caliper" OFF)
 option(USE_MPI "Enable MPI" OFF)
+option(USE_TAU "Enable TAU" OFFF)
 
 set(USE_PAPI_COMPONENTS papi)
 set(USE_CALIPER_COMPONENTS caliper)
 set(USE_MPI_COMPONENTS mpi)
+set(USE_TAU_COMPONENTS tau)
 
-foreach(_OPT PAPI CALIPER MPI)
+foreach(_OPT PAPI CALIPER MPI TAU)
     message(STATUS "${PROJECT_NAME}: USE_${_OPT} = ${USE_${_OPT}}")
     if(USE_${_OPT})
         list(APPEND COMPONENTS ${USE_${_OPT}_COMPONENTS})

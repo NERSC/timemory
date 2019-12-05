@@ -47,6 +47,12 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+extern template struct base<tau_marker, void, policy::global_init, policy::thread_init>;
+
+#endif
+
 struct tau_marker
 : public base<tau_marker, void, policy::global_init, policy::thread_init>
 {

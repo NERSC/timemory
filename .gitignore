@@ -26,6 +26,7 @@ __pycache__
 timing_report*
 /test_output*
 *timemory_output*
+*.autosave
 
 # macOS Finder files
 .DS_Store

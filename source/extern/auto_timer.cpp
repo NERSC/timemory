@@ -35,8 +35,7 @@
 #include "timemory/variadic/auto_timer.hpp"  // for auto_timer_list_t, auto_...
 #include "timemory/components.hpp"           // for papi_array_t
 #include "timemory/components/types.hpp"     // for cpu_roofline_dp_flops
-#include "timemory/utility/bits/storage.hpp"
-#include "timemory/utility/macros.hpp"  // for TIMEMORY_INSTANTIATE_EXT...
+#include "timemory/utility/macros.hpp"       // for TIMEMORY_INSTANTIATE_EXT...
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
@@ -47,8 +46,6 @@
 //
 //======================================================================================//
 
-namespace component = ::tim::component;
-
 //--------------------------------------------------------------------------------------//
 // auto-timer
 //
@@ -58,9 +55,11 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(minimal_auto_timer_t,
                                   ::tim::component::real_clock,
                                   ::tim::component::cpu_clock,
                                   ::tim::component::cpu_util,
-                                  ::tim::component::peak_rss)
+                                  ::tim::component::peak_rss,
+                                  ::tim::component::user_bundle_0)
 
 TIMEMORY_INSTANTIATE_EXTERN_LIST(minimal_auto_timer_t,
+                                 ::tim::component::user_bundle_1,
                                  ::tim::component::caliper,
                                  ::tim::component::tau_marker,
                                  ::tim::component::papi_array_t,
@@ -71,14 +70,16 @@ TIMEMORY_INSTANTIATE_EXTERN_LIST(minimal_auto_timer_t,
 
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(minimal_auto_timer_t)
 
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(auto_timer_t,
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(full_auto_timer_t,
                                   ::tim::component::real_clock,
                                   ::tim::component::system_clock,
                                   ::tim::component::user_clock,
                                   ::tim::component::cpu_util,
-                                  ::tim::component::peak_rss)
+                                  ::tim::component::peak_rss,
+                                  ::tim::component::user_bundle_0)
 
-TIMEMORY_INSTANTIATE_EXTERN_LIST(auto_timer_t,
+TIMEMORY_INSTANTIATE_EXTERN_LIST(full_auto_timer_t,
+                                 ::tim::component::user_bundle_1,
                                  ::tim::component::gperf_cpu_profiler,
                                  ::tim::component::gperf_heap_profiler,
                                  ::tim::component::caliper,
@@ -95,6 +96,6 @@ TIMEMORY_INSTANTIATE_EXTERN_LIST(auto_timer_t,
                                  ::tim::component::gpu_roofline_sp_flops,
                                  ::tim::component::gpu_roofline_dp_flops)
 
-TIMEMORY_INSTANTIATE_EXTERN_HYBRID(auto_timer_t)
+TIMEMORY_INSTANTIATE_EXTERN_HYBRID(full_auto_timer_t)
 
 // clang-format on

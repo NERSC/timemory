@@ -243,7 +243,6 @@ public:
     , block_size(this_type::get_block_size())
     , executor(this_type::get_executor())
     {}
-    
 };
 
 //======================================================================================//

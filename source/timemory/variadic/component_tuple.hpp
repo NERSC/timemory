@@ -132,6 +132,9 @@ public:
     static constexpr bool is_component_list   = false;
     static constexpr bool is_component_tuple  = true;
     static constexpr bool is_component_hybrid = false;
+    static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = false;
 
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =

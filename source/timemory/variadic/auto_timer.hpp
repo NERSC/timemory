@@ -29,8 +29,8 @@
  * Usage with macros (recommended):
  *    \param TIMEMORY_AUTO_TIMER("")
  *    \param TIMEMORY_BASIC_AUTO_TIMER("")
- *    \param auto t = TIMEMORY_AUTO_TIMER_HANDLE("")
- *    \param auto t = TIMEMORY_BASIC_AUTO_TIMER_HANDLE("")
+ *    auto t = \param TIMEMORY_AUTO_TIMER_HANDLE("")
+ *    auto t = \param TIMEMORY_BASIC_AUTO_TIMER_HANDLE("")
  */
 
 #pragma once
@@ -46,21 +46,24 @@ namespace auto_timer_types
 {
 using namespace component;
 
-using minimal_tuple_t = component_tuple<wall_clock, cpu_clock, cpu_util, peak_rss>;
+using minimal_tuple_t =
+    component_tuple<wall_clock, cpu_clock, cpu_util, peak_rss, user_bundle_0>;
 
-using full_tuple_t =
-    component_tuple<wall_clock, system_clock, user_clock, cpu_util, peak_rss>;
+using full_tuple_t = component_tuple<wall_clock, system_clock, user_clock, cpu_util,
+                                     peak_rss, user_bundle_0>;
 
 //--------------------------------------------------------------------------------------//
 
-using minimal_list_t = component_list<caliper, papi_array_t, cuda_event, nvtx_marker,
-                                      cupti_activity, cupti_counters>;
+using minimal_list_t =
+    component_list<user_bundle_1, caliper, tau_marker, papi_array_t, cuda_event,
+                   nvtx_marker, cupti_activity, cupti_counters>;
 
 using full_list_t =
-    component_list<gperf_cpu_profiler, gperf_heap_profiler, caliper, papi_array_t,
-                   cpu_roofline_sp_flops, cpu_roofline_dp_flops, cuda_event, nvtx_marker,
-                   cupti_activity, cupti_counters, gpu_roofline_flops,
-                   gpu_roofline_hp_flops, gpu_roofline_sp_flops, gpu_roofline_dp_flops>;
+    component_list<user_bundle_1, gperf_cpu_profiler, gperf_heap_profiler, caliper,
+                   tau_marker, papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops,
+                   cuda_event, nvtx_marker, cupti_activity, cupti_counters,
+                   gpu_roofline_flops, gpu_roofline_hp_flops, gpu_roofline_sp_flops,
+                   gpu_roofline_dp_flops>;
 
 }  // namespace auto_timer_types
 

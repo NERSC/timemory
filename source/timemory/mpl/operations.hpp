@@ -117,6 +117,17 @@ struct is_enabled
                                    !(std::is_same<_Vp, void>::value));
 };
 
+//----------------------------------------------------------------------------------//
+// shorthand for non-void, using internal output handling
+//
+template <typename _Up>
+struct has_data
+{
+    using _Vp                   = typename _Up::value_type;
+    static constexpr bool value = (!(trait::external_output_handling<_Up>::value) &&
+                                   !(std::is_same<_Vp, void>::value));
+};
+
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
@@ -733,7 +744,8 @@ struct plus
 
     plus(Type& obj, const int64_t& rhs) { obj += rhs; }
 
-    template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0>
+    template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0,
+              enable_if_t<(has_data<_Up>::value), char> = 0>
     plus(Type& obj, const Type& rhs)
     {
         obj.base_type::plus(rhs);
@@ -741,12 +753,18 @@ struct plus
     }
 
     template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::record_max<_Up>::value == false), int> = 0>
+              enable_if_t<(trait::record_max<_Up>::value == false), int> = 0,
+              enable_if_t<(has_data<_Up>::value), char>                  = 0>
     plus(Type& obj, const Type& rhs)
     {
         obj.base_type::plus(rhs);
         obj += rhs;
     }
+
+    template <typename _Vt, typename _Up = _Tp,
+              enable_if_t<!(has_data<_Up>::value), char> = 0>
+    plus(Type&, const _Vt&)
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -762,14 +780,24 @@ struct minus
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    minus(Type& obj, const int64_t& rhs) { obj -= rhs; }
+    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
+    minus(Type& obj, const int64_t& rhs)
+    {
+        obj -= rhs;
+    }
 
+    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     minus(Type& obj, const Type& rhs)
     {
         // ensures update to laps
         obj.base_type::minus(rhs);
         obj -= rhs;
     }
+
+    template <typename _Vt, typename _Up = _Tp,
+              enable_if_t<!(has_data<_Up>::value), char> = 0>
+    minus(Type&, const _Vt&)
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -781,8 +809,22 @@ struct multiply
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    multiply(base_type& obj, const int64_t& rhs) { obj *= rhs; }
-    multiply(base_type& obj, const base_type& rhs) { obj *= rhs; }
+    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
+    multiply(Type& obj, const int64_t& rhs)
+    {
+        obj *= rhs;
+    }
+
+    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
+    multiply(Type& obj, const Type& rhs)
+    {
+        obj *= rhs;
+    }
+
+    template <typename _Vt, typename _Up = _Tp,
+              enable_if_t<!(has_data<_Up>::value), char> = 0>
+    multiply(Type&, const _Vt&)
+    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -794,8 +836,22 @@ struct divide
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    divide(base_type& obj, const int64_t& rhs) { obj /= rhs; }
-    divide(base_type& obj, const base_type& rhs) { obj /= rhs; }
+    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
+    divide(Type& obj, const int64_t& rhs)
+    {
+        obj /= rhs;
+    }
+
+    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
+    divide(Type& obj, const Type& rhs)
+    {
+        obj /= rhs;
+    }
+
+    template <typename _Vt, typename _Up = _Tp,
+              enable_if_t<!(has_data<_Up>::value), char> = 0>
+    divide(Type&, const _Vt&)
+    {}
 };
 
 //--------------------------------------------------------------------------------------//

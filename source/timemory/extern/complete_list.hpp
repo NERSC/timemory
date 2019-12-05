@@ -63,7 +63,8 @@ TIMEMORY_DECLARE_EXTERN_LIST(
     ::tim::component::wall_clock, ::tim::component::stack_rss,
     ::tim::component::system_clock, ::tim::component::tau_marker,
     ::tim::component::thread_cpu_clock, ::tim::component::thread_cpu_util,
-    ::tim::component::trip_count, ::tim::component::user_clock,
+    ::tim::component::trip_count, ::tim::component::user_bundle_0,
+    ::tim::component::user_bundle_1, ::tim::component::user_clock,
     ::tim::component::virtual_memory, ::tim::component::voluntary_context_switch,
     ::tim::component::written_bytes)
 }

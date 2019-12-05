@@ -87,8 +87,8 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case THREAD_CPU_CLOCK: obj.template init<thread_cpu_clock>(); break;
         case THREAD_CPU_UTIL: obj.template init<thread_cpu_util>(); break;
         case TRIP_COUNT: obj.template init<trip_count>(); break;
-        case USER_BUNDLE_0: obj.template init<user_bundle_0>(); break;
-        case USER_BUNDLE_1: obj.template init<user_bundle_1>(); break;
+        case USER_TUPLE_BUNDLE: obj.template init<user_tuple_bundle>(); break;
+        case USER_LIST_BUNDLE: obj.template init<user_list_bundle>(); break;
         case USER_CLOCK: obj.template init<user_clock>(); break;
         case VIRTUAL_MEMORY: obj.template init<virtual_memory>(); break;
         case VOLUNTARY_CONTEXT_SWITCH:
@@ -312,13 +312,13 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(TRIP_COUNT);
         }
-        else if(itr == "user_bundle_0")
+        else if(itr == "user_tuple_bundle")
         {
-            vec.push_back(USER_BUNDLE_0);
+            vec.push_back(USER_TUPLE_BUNDLE);
         }
-        else if(itr == "user_bundle_1")
+        else if(itr == "user_list_bundle")
         {
-            vec.push_back(USER_BUNDLE_1);
+            vec.push_back(USER_LIST_BUNDLE);
         }
         else if(itr == "user_clock")
         {
@@ -369,7 +369,7 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
                 "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
                 "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
                 "'tau', 'tau_marker', 'thread_cpu_clock', 'thread_cpu_util', "
-                "'trip_count', 'user_bundle_0', 'user_bundle_1', 'user_clock', "
+                "'trip_count', 'user_tuple_bundle', 'user_list_bundle', 'user_clock', "
                 "'virtual_clock', 'virtual_memory', 'voluntary_context_switch', "
                 "'vtune_event', 'vtune_frame', 'wall_clock', 'write_bytes', "
                 "'written_bytes']\n",

@@ -31,17 +31,15 @@
 
 using namespace tim::component;
 
-// using auto_tuple_t = tim::auto_tuple<real_clock>;
-using namespace tim::component;
-
-using auto_tuple_t  = tim::auto_tuple<real_clock, cpu_clock, peak_rss, trip_count>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, cpu_clock, peak_rss, trip_count, tau_marker, caliper>;
 using timer_tuple_t = typename auto_tuple_t::component_type;
 
 using papi_tuple_t = papi_array<8>;
 using global_tuple_t =
     tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
                     page_rss, priority_context_switch, voluntary_context_switch, caliper,
-                    papi_tuple_t, trip_count>;
+                    tau_marker, papi_tuple_t, trip_count>;
 
 static int64_t nmeasure = 0;
 using result_type       = std::tuple<timer_tuple_t, int64_t, int64_t>;

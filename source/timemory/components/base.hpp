@@ -51,6 +51,9 @@ public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
     static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
     static constexpr bool record_statistics_v  = trait::record_statistics<_Tp>::value;
+    static constexpr bool is_component_type   = false;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = true;
 
     using Type       = _Tp;
     using value_type = _Value;
@@ -265,21 +268,21 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // default get and get_display
+    // default get
     //
     value_type get() const { return (is_transient) ? value : accum; }
 
     //----------------------------------------------------------------------------------//
     // comparison operators
     //
-    bool operator==(const this_type& rhs) const { return (value == rhs.value); }
-    bool operator<(const this_type& rhs) const { return (value < rhs.value); }
-    bool operator>(const this_type& rhs) const { return (value > rhs.value); }
+    bool operator==(const this_type& rhs) const { return (load() == rhs.load()); }
+    bool operator<(const this_type& rhs) const { return (load() < rhs.load()); }
+    bool operator>(const this_type& rhs) const { return (load() > rhs.load()); }
     bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
     bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
     bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
 
-    // this_type operators (plain-old data)
+    // this_type operators
     //
     Type& operator+=(const this_type& rhs)
     {
@@ -291,8 +294,18 @@ public:
         return operator-=(static_cast<const Type&>(rhs));
     }
 
+    Type& operator*=(const this_type& rhs)
+    {
+        return operator*=(static_cast<const Type&>(rhs));
+    }
+
+    Type& operator/=(const this_type& rhs)
+    {
+        return operator/=(static_cast<const Type&>(rhs));
+    }
+
     //----------------------------------------------------------------------------------//
-    // this_type operators (plain-old data)
+    // Type operators
     //
     Type& operator+=(const Type& rhs)
     {
@@ -308,8 +321,22 @@ public:
         return static_cast<Type&>(*this);
     }
 
+    Type& operator*=(const Type& rhs)
+    {
+        value *= rhs.value;
+        accum *= rhs.accum;
+        return static_cast<Type&>(*this);
+    }
+
+    Type& operator/=(const Type& rhs)
+    {
+        value /= rhs.value;
+        accum /= rhs.accum;
+        return static_cast<Type&>(*this);
+    }
+
     //----------------------------------------------------------------------------------//
-    // value type operators (plain-old data)
+    // value type operators
     //
     template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
@@ -344,7 +371,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // value type operators (complex data)
+    // value type operators
     //
     template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
@@ -383,6 +410,16 @@ public:
         return this_type(lhs) -= rhs;
     }
 
+    friend Type operator*(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) *= rhs;
+    }
+
+    friend Type operator/(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) /= rhs;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         operation::base_printer<Type>(os, obj);
@@ -408,6 +445,9 @@ public:
     const value_type& get_value() const { return value; }
     const value_type& get_accum() const { return accum; }
     const bool&       get_is_transient() const { return is_transient; }
+
+protected:
+    const value_type& load() const { return (is_transient) ? accum : value; }
 
 private:
     //----------------------------------------------------------------------------------//
@@ -699,6 +739,11 @@ struct base<_Tp, void, _Policies...>
 {
 public:
     static constexpr bool implements_storage_v = false;
+    static constexpr bool has_secondary_data   = false;
+    static constexpr bool record_statistics_v  = false;
+    static constexpr bool is_component_type   = false;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = true;
 
     using Type         = _Tp;
     using value_type   = void;

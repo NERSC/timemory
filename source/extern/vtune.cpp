@@ -33,29 +33,22 @@
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
 
+#if defined(TIMEMORY_USE_VTUNE)
+
 namespace tim
 {
-TIMEMORY_INSTANTIATE_EXTERN_INIT(trip_count)
-
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_cpu_profiler)
-#endif
-
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_heap_profiler)
-#endif
-
-TIMEMORY_INSTANTIATE_EXTERN_INIT(user_bundle_0)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(user_bundle_1)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(vtune_event)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(vtune_frame)
 
 namespace component
 {
 //
 //
-template struct base<trip_count>;
-template struct base<user_bundle<0>, void>;
-template struct base<user_bundle<1>, void>;
+template struct base<vtune_event, void, policy::global_init, policy::global_finalize>;
+template struct base<vtune_frame, void, policy::global_init, policy::global_finalize>;
 //
 //
 }  // namespace component
 }  // namespace tim
+
+#endif
