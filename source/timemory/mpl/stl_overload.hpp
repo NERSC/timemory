@@ -349,7 +349,7 @@ operator-(pair<_Lhs, _Rhs> lhs, const pair<_Lhs, _Rhs>& rhs)
 }
 
 template <typename... _Types>
-const tuple<_Lhs, _Rhs>
+const tuple<_Types...>
 operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
 {
     ::tim::stl_overload::mpl::minus(lhs, rhs);
