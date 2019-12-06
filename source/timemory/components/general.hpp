@@ -219,7 +219,7 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx = 0>
+template <size_t _Idx>
 struct user_bundle : public base<user_bundle<_Idx>, void>
 {
     using value_type = void;
