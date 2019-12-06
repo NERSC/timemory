@@ -168,8 +168,7 @@ if(TIMEMORY_USE_GOTCHA)
                         timemory-gotcha     timemory-mpi
                         timemory-papi       timemory-vector
                         timemory-arch       gotcha-tests-lib
-                        timemory-analysis-tools
-                        m)
+                        timemory-analysis-tools)
 endif()
 
 add_timemory_google_test(priority_tests

@@ -80,13 +80,13 @@ private:
                                    _Ret (*)(_Args...), _Args... _args)
         -> decltype(_obj(_args...), _Ret())
     {
-        //#if defined(DEBUG)
+#if defined(DEBUG)
         if(settings::debug())
         {
             auto typestr = demangle<_Tp>();
             PRINT_HERE("%s '%s::%s'", "invoking", typestr.c_str(), "operator()");
         }
-        //#endif
+#endif
         _ready    = false;
         _suppress = true;
         _Ret _ret = _obj(_args...);
@@ -103,13 +103,13 @@ private:
                                    _Ret (*_func)(_Args...), _Args... _args)
         -> decltype(_func(_args...), _Ret())
     {
-        //#if defined(DEBUG)
+#if defined(DEBUG)
         if(settings::debug())
         {
             auto typestr = demangle<_Tp>();
             PRINT_HERE("'%s::%s' not implemented", typestr.c_str(), "operator()");
         }
-        //#endif
+#endif
         _ready    = true;
         _suppress = false;
         _Ret _ret = _func(_args...);
@@ -540,7 +540,10 @@ struct gotcha
         for(auto& itr : get_data())
         {
             if(!itr.is_finalized)
+            {
+                itr.is_finalized = true;
                 itr.destructor();
+            }
         }
     }
 
@@ -560,8 +563,11 @@ struct gotcha
             --get_thread_started();
         for(auto& itr : get_data())
         {
-            itr.is_finalized = true;
-            itr.destructor();
+            if(!itr.is_finalized)
+            {
+                itr.is_finalized = true;
+                itr.destructor();
+            }
         }
     }
 
@@ -611,7 +617,10 @@ struct gotcha
             for(auto& itr : get_data())
             {
                 if(!itr.is_finalized)
+                {
+                    itr.is_finalized = true;
                     itr.destructor();
+                }
             }
         }
     }
@@ -797,8 +806,7 @@ private:
         func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
         auto& _global_suppress = gotcha_suppression::get();
-        auto  _finalizing      = storage_type::is_finalizing();
-        if(!_data.ready || _global_suppress || _finalizing)
+        if(!_data.ready || _global_suppress)
         {
             if(settings::debug())
             {
@@ -867,8 +875,7 @@ private:
         auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(_data.wrappee);
 
         auto& _global_suppress = gotcha_suppression::get();
-        auto  _finalizing      = storage_type::is_finalizing();
-        if(!_data.ready || _global_suppress || _finalizing)
+        if(!_data.ready || _global_suppress)
         {
             if(settings::debug())
             {
