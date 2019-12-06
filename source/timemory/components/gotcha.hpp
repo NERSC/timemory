@@ -62,9 +62,10 @@ struct gotcha_invoker
 
     template <typename... _Args>
     static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
-                       _Args... _args)
+                       _Args&&... _args)
     {
-        return invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func, _args...);
+        return invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func,
+                                       std::forward<_Args>(_args)...);
     }
 
 private:
@@ -77,8 +78,8 @@ private:
     //
     template <typename... _Args>
     static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _suppress, bool& _ready,
-                                   _Ret (*)(_Args...), _Args... _args)
-        -> decltype(_obj(_args...), _Ret())
+                                   _Ret (*)(_Args...), _Args&&... _args)
+        -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
     {
 #if defined(DEBUG)
         if(settings::debug())
@@ -89,7 +90,7 @@ private:
 #endif
         _ready    = false;
         _suppress = true;
-        _Ret _ret = _obj(_args...);
+        _Ret _ret = _obj(std::forward<_Args>(_args)...);
         _suppress = true;
         _ready    = false;
         return _ret;
@@ -100,8 +101,8 @@ private:
     //
     template <typename... _Args>
     static auto invoke_sfinae_impl(_Tp&, long, bool& _suppress, bool& _ready,
-                                   _Ret (*_func)(_Args...), _Args... _args)
-        -> decltype(_func(_args...), _Ret())
+                                   _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
     {
 #if defined(DEBUG)
         if(settings::debug())
@@ -112,7 +113,7 @@ private:
 #endif
         _ready    = true;
         _suppress = false;
-        _Ret _ret = _func(_args...);
+        _Ret _ret = _func(std::forward<_Args>(_args)...);
         _suppress = true;
         _ready    = false;
         return _ret;
@@ -123,11 +124,13 @@ private:
     //
     template <typename... _Args>
     static auto invoke_sfinae(_Tp& _obj, bool& _suppress, bool& _ready,
-                              _Ret (*_func)(_Args...), _Args... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...),
+                              _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+                                       std::forward<_Args>(_args)...),
                     _Ret())
     {
-        return invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...);
+        return invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+                                  std::forward<_Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -144,9 +147,10 @@ struct gotcha_invoker<_Tp, void>
 
     template <typename... _Args>
     static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
-                       _Args... _args)
+                       _Args&&... _args)
     {
-        invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func, _args...);
+        invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func,
+                                std::forward<_Args>(_args)...);
     }
 
 private:
@@ -159,8 +163,8 @@ private:
     //
     template <typename... _Args>
     static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _suppress, bool& _ready,
-                                   _Ret (*)(_Args...), _Args... _args)
-        -> decltype(_obj(_args...), _Ret())
+                                   _Ret (*)(_Args...), _Args&&... _args)
+        -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
     {
 #if defined(DEBUG)
         if(settings::debug())
@@ -171,7 +175,7 @@ private:
 #endif
         _ready    = false;
         _suppress = true;
-        _obj(_args...);
+        _obj(std::forward<_Args>(_args)...);
         _suppress = true;
         _ready    = false;
     }
@@ -181,8 +185,8 @@ private:
     //
     template <typename... _Args>
     static auto invoke_sfinae_impl(_Tp&, long, bool& _suppress, bool& _ready,
-                                   _Ret (*_func)(_Args...), _Args... _args)
-        -> decltype(_func(_args...), _Ret())
+                                   _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
     {
 #if defined(DEBUG)
         if(settings::debug())
@@ -193,7 +197,7 @@ private:
 #endif
         _ready    = true;
         _suppress = false;
-        _func(_args...);
+        _func(std::forward<_Args>(_args)...);
         _suppress = true;
         _ready    = false;
     }
@@ -203,11 +207,13 @@ private:
     //
     template <typename... _Args>
     static auto invoke_sfinae(_Tp& _obj, bool& _suppress, bool& _ready,
-                              _Ret (*_func)(_Args...), _Args... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...),
+                              _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+                                       std::forward<_Args>(_args)...),
                     _Ret())
     {
-        invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...);
+        invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+                           std::forward<_Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -742,12 +748,13 @@ private:
               typename _This                                         = this_type,
               enable_if_t<(_This::differentiator_is_component), int> = 0>
     static _Ret invoke(_Comp& _comp, bool& _suppress, bool& _ready,
-                       _Ret (*_func)(_Args...), _Args... _args)
+                       _Ret (*_func)(_Args...), _Args&&... _args)
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
         _Type& _obj    = _comp.template get<_Type>();
-        return _Invoker::template invoke(_obj, _suppress, _ready, _func, _args...);
+        return _Invoker::template invoke(_obj, _suppress, _ready, _func,
+                                         std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -756,11 +763,11 @@ private:
               typename _This                                          = this_type,
               enable_if_t<!(_This::differentiator_is_component), int> = 0>
     static _Ret invoke(_Comp&, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
-                       _Args... _args)
+                       _Args&&... _args)
     {
         _ready    = true;
         _suppress = false;
-        _Ret _ret = _func(_args...);
+        _Ret _ret = _func(std::forward<_Args>(_args)...);
         _suppress = true;
         _ready    = false;
         return _ret;
@@ -771,12 +778,13 @@ private:
     template <typename _Comp, typename... _Args, typename _This = this_type,
               enable_if_t<(_This::differentiator_is_component), int> = 0>
     static void invoke(_Comp& _comp, bool& _suppress, bool& _ready,
-                       void (*_func)(_Args...), _Args... _args)
+                       void (*_func)(_Args...), _Args&&... _args)
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, void>;
         _Type& _obj    = _comp.template get<_Type>();
-        _Invoker::template invoke(_obj, _suppress, _ready, _func, _args...);
+        _Invoker::template invoke(_obj, _suppress, _ready, _func,
+                                  std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -784,11 +792,11 @@ private:
     template <typename _Comp, typename... _Args, typename _This = this_type,
               enable_if_t<!(_This::differentiator_is_component), int> = 0>
     static void invoke(_Comp&, bool& _suppress, bool& _ready, void (*_func)(_Args...),
-                       _Args... _args)
+                       _Args&&... _args)
     {
         _ready    = true;
         _suppress = false;
-        _func(_args...);
+        _func(std::forward<_Args>(_args)...);
         _suppress = true;
         _ready    = false;
     }
@@ -836,7 +844,8 @@ private:
             // _data.ready      = true;
             // _global_suppress = false;
             _Ret _ret = invoke<component_type, _Ret, _Args...>(
-                _obj, _global_suppress, _data.ready, _orig, _args...);
+                _obj, _global_suppress, _data.ready, _orig,
+                std::forward<_Args>(_args)...);
             // _Ret _ret        = (*_orig)(_args...);
             // _global_suppress = true;
             // _data.ready      = false;
@@ -903,11 +912,13 @@ private:
             _obj.start();
             _obj.customize(_data.tool_id, _args...);
 
-            _data.ready      = true;
-            _global_suppress = false;
-            (*_orig)(_args...);
-            _global_suppress = true;
-            _data.ready      = false;
+            // _data.ready      = true;
+            // _global_suppress = false;
+            invoke<component_type, _Args...>(_obj, _global_suppress, _data.ready, _orig,
+                                             std::forward<_Args>(_args)...);
+            // (*_orig)(_args...);
+            // _global_suppress = true;
+            // _data.ready      = false;
 
             _obj.customize(_data.tool_id);
             _obj.stop();
