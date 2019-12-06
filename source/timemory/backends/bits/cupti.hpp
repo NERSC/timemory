@@ -765,6 +765,18 @@ struct result
         return *this;
     }
 
+    result& operator*=(const result&)
+    {
+        throw std::runtime_error("cupti::result does not support operator *=");
+        return *this;
+    }
+
+    result& operator/=(const result&)
+    {
+        throw std::runtime_error("cupti::result does not support operator /=");
+        return *this;
+    }
+
     friend result operator+(const result& lhs, const result& rhs)
     {
         return result(lhs) += rhs;
