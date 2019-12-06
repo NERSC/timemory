@@ -283,23 +283,26 @@ public:
     template <typename _Toolset, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int>   = 0,
               enable_if_t<(_Toolset::is_component), char> = 0>
-    static void configure()
+    static void configure(bool _flat = false)
     {
-        using _Toolset_t = auto_tuple<_Toolset>;
-        auto _start      = [&](const std::string& _prefix) {
-            _Toolset_t* _result = new _Toolset_t(_prefix);
-            _result->start();
-            return (void*) _result;
-        };
+        if(trait::is_available<_Toolset>::value)
+        {
+            using _Toolset_t = auto_tuple<_Toolset>;
+            auto _start      = [&](const std::string& _prefix) {
+                _Toolset_t* _result = new _Toolset_t(_prefix, _flat);
+                _result->start();
+                return (void*) _result;
+            };
 
-        auto _stop = [&](void* v_result) {
-            _Toolset_t* _result = static_cast<_Toolset_t*>(v_result);
-            _result->stop();
-            delete _result;
-        };
+            auto _stop = [&](void* v_result) {
+                _Toolset_t* _result = static_cast<_Toolset_t*>(v_result);
+                _result->stop();
+                delete _result;
+            };
 
-        get_start().emplace_back(_start);
-        get_stop().emplace_back(_stop);
+            get_start().emplace_back(_start);
+            get_stop().emplace_back(_stop);
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -308,12 +311,12 @@ public:
     template <typename _Toolset, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int>    = 0,
               enable_if_t<!(_Toolset::is_component), char> = 0>
-    static void configure()
+    static void configure(bool _flat = false)
     {
         auto _start = [&](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset*      _result =
-                (is_component_type) ? new _Toolset(_prefix, true) : new _Toolset(_prefix);
+            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
+                                                    : new _Toolset(_prefix, _flat);
             _result->start();
             return (void*) _result;
         };
@@ -333,10 +336,10 @@ public:
     //
     template <typename _Toolset, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    static void configure()
+    static void configure(bool _flat = false)
     {
-        configure<_Toolset>();
-        configure<_Tail...>();
+        configure<_Toolset>(_flat);
+        configure<_Tail...>(_flat);
     }
 
     //----------------------------------------------------------------------------------//
@@ -344,12 +347,12 @@ public:
     //
     template <typename _Toolset, typename _InitFunc,
               enable_if_t<!(_Toolset::is_component), char> = 0>
-    static void configure(_InitFunc&& _init)
+    static void configure(_InitFunc&& _init, bool _flat = false)
     {
         auto _start = [&](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset*      _result =
-                (is_component_type) ? new _Toolset(_prefix, true) : new _Toolset(_prefix);
+            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
+                                                    : new _Toolset(_prefix, _flat);
             std::forward<_InitFunc>(_init)(*_result);
             _result->start();
             return (void*) _result;

@@ -73,19 +73,26 @@ struct exp_intercept : public base<exp_intercept, void>
 using namespace tim;
 using namespace tim::component;
 
-using exp_timer_t  = tim::component_tuple<real_clock, cpu_clock, exp_intercept>;
-using auto_tuple_t = tim::component_tuple<real_clock, cpu_clock, peak_rss>;
+constexpr size_t _N  = 10;
+using exp_timer_t    = tim::component_tuple<real_clock, cpu_clock, exp_intercept>;
+using auto_tuple_t   = tim::component_tuple<real_clock, cpu_clock, peak_rss>;
+using put_gotcha_t   = tim::component::gotcha<_N, auto_tuple_t, char>;
+using mpi_gotcha_t   = tim::component::gotcha<_N, auto_tuple_t, double>;
+using exp_gotcha_t   = tim::component::gotcha<_N, exp_timer_t, exp_intercept>;
+using gotcha_tuple_t = tim::auto_tuple<auto_tuple_t, user_tuple_bundle>;
 
-constexpr size_t _N = 10;
-
-using put_gotcha_t = tim::component::gotcha<_N, auto_tuple_t, char>;
-using mpi_gotcha_t = tim::component::gotcha<_N, auto_tuple_t, double>;
-using exp_gotcha_t = tim::component::gotcha<_N, exp_timer_t, exp_intercept>;
-
-using gotcha_tuple_t =
-    tim::auto_tuple<auto_tuple_t, put_gotcha_t, exp_gotcha_t, mpi_gotcha_t>;
-
-using tim::mangle;
+#if !defined(TIMEMORY_USE_MPI)
+namespace tim
+{
+namespace trait
+{
+template <>
+struct is_available<mpi_gotcha_t> : std::false_type
+{
+};
+}  // namespace trait
+}  // namespace tim
+#endif
 
 //======================================================================================//
 
@@ -122,6 +129,8 @@ init()
     printf("mpi gotcha is available: %s\n",
            trait::as_string<trait::is_available<mpi_gotcha_t>>().c_str());
     printf("\n");
+
+    user_tuple_bundle::configure<put_gotcha_t, mpi_gotcha_t, exp_gotcha_t>();
 }
 
 //======================================================================================//
