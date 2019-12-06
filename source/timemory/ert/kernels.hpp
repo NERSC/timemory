@@ -157,6 +157,9 @@ void
 ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
+    if(_counter.skip(_Nops))
+        return;
+
     using stream_list_t   = std::vector<cuda::stream_t>;
     using thread_list_t   = std::vector<std::thread>;
     using device_params_t = device::params<_Device>;

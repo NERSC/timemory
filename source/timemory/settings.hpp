@@ -338,6 +338,9 @@ struct settings
     TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, ert_max_data_size_gpu,
                                  "TIMEMORY_ERT_MAX_DATA_SIZE_GPU", 500 * 1000 * 1000)
 
+    /// set the ops to skip at runtime
+    TIMEMORY_ENV_STATIC_ACCESSOR(string_t, ert_skip_ops, "TIMEMORY_ERT_SKIP_OPS", "")
+
     //----------------------------------------------------------------------------------//
     //      Signals (more specific signals checked in timemory/details/settings.hpp
     //----------------------------------------------------------------------------------//

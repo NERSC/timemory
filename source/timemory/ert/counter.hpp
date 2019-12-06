@@ -53,6 +53,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace tim
@@ -76,6 +77,7 @@ public:
     using data_type     = typename ert_data_t::value_type;
     using data_ptr_t    = std::shared_ptr<ert_data_t>;
     using ull           = unsigned long long;
+    using skip_ops_t    = std::unordered_set<size_t>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -262,6 +264,19 @@ public:
     data_ptr_t&       get_data() { return data; }
     const data_ptr_t& get_data() const { return data; }
 
+    //----------------------------------------------------------------------------------//
+    //  Skip the flop counts
+    //
+    void add_skip_ops(size_t _Nops) { skip_ops.insert(_Nops); }
+
+    void add_skip_ops(std::initializer_list<size_t> _args)
+    {
+        for(const auto& itr : _args)
+            skip_ops.insert(itr);
+    }
+
+    bool skip(size_t _Nops) { return (skip_ops.count(_Nops) > 0); }
+
 public:
     //----------------------------------------------------------------------------------//
     //  public data members, modify as needed
@@ -273,6 +288,7 @@ public:
     uint64_t    nsize                       = 0;
     data_ptr_t  data                        = std::make_shared<ert_data_t>();
     std::string label                       = "";
+    skip_ops_t  skip_ops                    = skip_ops_t();
 
 protected:
     callback_type configure_callback = [](uint64_t, this_type&) {};

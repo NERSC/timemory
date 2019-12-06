@@ -69,6 +69,8 @@ struct configuration
     using ert_data_ptr_t  = std::shared_ptr<ert_data_t>;
     using executor_func_t = std::function<ert_counter_t(ert_data_ptr_t)>;
     using get_uint64_t    = std::function<uint64_t()>;
+    using skip_ops_t      = std::unordered_set<size_t>;
+    using get_skip_ops_t  = std::function<skip_ops_t()>;
 
     //----------------------------------------------------------------------------------//
 
@@ -150,6 +152,24 @@ struct configuration
     }
 
     //----------------------------------------------------------------------------------//
+
+    static get_skip_ops_t& get_skip_ops()
+    {
+        static get_skip_ops_t _instance = []() {
+            auto       _skipstr    = settings::ert_skip_ops();
+            auto       _skipstrvec = delimit(_skipstr, ",; \t");
+            skip_ops_t _result;
+            for(const auto& itr : _skipstrvec)
+            {
+                if(itr.find_first_not_of("0123456789") == std::string::npos)
+                    _result.insert(atol(itr.c_str()));
+            }
+            return _result;
+        };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
     /// configure the number of threads, number of streams, block size, grid size, and
     /// alignment
     template <typename Dev                                            = _Device,
@@ -195,6 +215,7 @@ struct configuration
             auto _grid_size  = get_grid_size()();
             auto _block_size = get_block_size()();
             auto _align_size = get_alignment()();
+            auto _skip_ops   = get_skip_ops()();
 
             // execution parameters
             exec_params params(_mws_size, _max_size, _num_thread, _num_stream, _grid_size,
@@ -206,6 +227,9 @@ struct configuration
             _counter.bytes_per_element = sizeof(_Tp);
             // set number of memory accesses per element from two functions
             _counter.memory_accesses_per_element = 2;
+
+            for(const auto& itr : _skip_ops)
+                _counter.add_skip_ops(itr);
 
             auto dtype = demangle(typeid(_Tp).name());
 
