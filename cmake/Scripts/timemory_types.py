@@ -90,6 +90,8 @@ mangled_strings = {
     "likwid_perfmon": ["likwid_cpu"],
     "likwid_nvmon": ["likwid_gpu"],
     "tau_marker": ["tau"],
+    "gperf_cpu_profiler": ["gperf_cpu", "gperftools-cpu"],
+    "gperf_heap_profiler": ["gperf_heap", "gperftools-heap"],
 }
 
 recommended_types = {

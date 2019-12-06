@@ -34,6 +34,8 @@
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
 
+#include <unordered_map>
+
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
@@ -134,248 +136,134 @@ _Container<TIMEMORY_COMPONENT>
 enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
 {
     _Container<TIMEMORY_COMPONENT> vec;
+
+    using hash_type = std::hash<std::string>;
+    using component_hash_map_t =
+        std::unordered_map<std::string, TIMEMORY_COMPONENT, hash_type>;
+
+    static auto _generate = []() {
+        component_hash_map_t _instance;
+        _instance["cali"]                     = CALIPER;
+        _instance["caliper"]                  = CALIPER;
+        _instance["cpu_clock"]                = CPU_CLOCK;
+        _instance["cpu_roofline_double"]      = CPU_ROOFLINE_DP_FLOPS;
+        _instance["cpu_roofline_dp"]          = CPU_ROOFLINE_DP_FLOPS;
+        _instance["cpu_roofline_dp_flops"]    = CPU_ROOFLINE_DP_FLOPS;
+        _instance["cpu_roofline"]             = CPU_ROOFLINE_FLOPS;
+        _instance["cpu_roofline_flops"]       = CPU_ROOFLINE_FLOPS;
+        _instance["cpu_roofline_single"]      = CPU_ROOFLINE_SP_FLOPS;
+        _instance["cpu_roofline_sp"]          = CPU_ROOFLINE_SP_FLOPS;
+        _instance["cpu_roofline_sp_flops"]    = CPU_ROOFLINE_SP_FLOPS;
+        _instance["cpu_util"]                 = CPU_UTIL;
+        _instance["cuda_event"]               = CUDA_EVENT;
+        _instance["cupti_activity"]           = CUPTI_ACTIVITY;
+        _instance["cupti_counters"]           = CUPTI_COUNTERS;
+        _instance["data_rss"]                 = DATA_RSS;
+        _instance["gperf_cpu"]                = GPERF_CPU_PROFILER;
+        _instance["gperf_cpu_profiler"]       = GPERF_CPU_PROFILER;
+        _instance["gperftools-cpu"]           = GPERF_CPU_PROFILER;
+        _instance["gperf_heap"]               = GPERF_HEAP_PROFILER;
+        _instance["gperf_heap_profiler"]      = GPERF_HEAP_PROFILER;
+        _instance["gperftools-heap"]          = GPERF_HEAP_PROFILER;
+        _instance["gpu_roofline_double"]      = GPU_ROOFLINE_DP_FLOPS;
+        _instance["gpu_roofline_dp"]          = GPU_ROOFLINE_DP_FLOPS;
+        _instance["gpu_roofline_dp_flops"]    = GPU_ROOFLINE_DP_FLOPS;
+        _instance["gpu_roofline"]             = GPU_ROOFLINE_FLOPS;
+        _instance["gpu_roofline_flops"]       = GPU_ROOFLINE_FLOPS;
+        _instance["gpu_roofline_half"]        = GPU_ROOFLINE_HP_FLOPS;
+        _instance["gpu_roofline_hp"]          = GPU_ROOFLINE_HP_FLOPS;
+        _instance["gpu_roofline_hp_flops"]    = GPU_ROOFLINE_HP_FLOPS;
+        _instance["gpu_roofline_single"]      = GPU_ROOFLINE_SP_FLOPS;
+        _instance["gpu_roofline_sp"]          = GPU_ROOFLINE_SP_FLOPS;
+        _instance["gpu_roofline_sp_flops"]    = GPU_ROOFLINE_SP_FLOPS;
+        _instance["likwid_gpu"]               = LIKWID_NVMON;
+        _instance["likwid_nvmon"]             = LIKWID_NVMON;
+        _instance["likwid_cpu"]               = LIKWID_PERFMON;
+        _instance["likwid_perfmon"]           = LIKWID_PERFMON;
+        _instance["monotonic_clock"]          = MONOTONIC_CLOCK;
+        _instance["monotonic_raw_clock"]      = MONOTONIC_RAW_CLOCK;
+        _instance["num_io_in"]                = NUM_IO_IN;
+        _instance["num_io_out"]               = NUM_IO_OUT;
+        _instance["num_major_page_faults"]    = NUM_MAJOR_PAGE_FAULTS;
+        _instance["num_minor_page_faults"]    = NUM_MINOR_PAGE_FAULTS;
+        _instance["num_msg_recv"]             = NUM_MSG_RECV;
+        _instance["num_msg_sent"]             = NUM_MSG_SENT;
+        _instance["num_signals"]              = NUM_SIGNALS;
+        _instance["num_swap"]                 = NUM_SWAP;
+        _instance["nvtx"]                     = NVTX_MARKER;
+        _instance["nvtx_marker"]              = NVTX_MARKER;
+        _instance["page_rss"]                 = PAGE_RSS;
+        _instance["papi"]                     = PAPI_ARRAY;
+        _instance["papi_array"]               = PAPI_ARRAY;
+        _instance["papi_array_t"]             = PAPI_ARRAY;
+        _instance["peak_rss"]                 = PEAK_RSS;
+        _instance["priority_context_switch"]  = PRIORITY_CONTEXT_SWITCH;
+        _instance["process_cpu_clock"]        = PROCESS_CPU_CLOCK;
+        _instance["process_cpu_util"]         = PROCESS_CPU_UTIL;
+        _instance["read_bytes"]               = READ_BYTES;
+        _instance["stack_rss"]                = STACK_RSS;
+        _instance["sys_clock"]                = SYS_CLOCK;
+        _instance["system_clock"]             = SYS_CLOCK;
+        _instance["tau"]                      = TAU_MARKER;
+        _instance["tau_marker"]               = TAU_MARKER;
+        _instance["thread_cpu_clock"]         = THREAD_CPU_CLOCK;
+        _instance["thread_cpu_util"]          = THREAD_CPU_UTIL;
+        _instance["trip_count"]               = TRIP_COUNT;
+        _instance["user_clock"]               = USER_CLOCK;
+        _instance["user_list_bundle"]         = USER_LIST_BUNDLE;
+        _instance["user_tuple_bundle"]        = USER_TUPLE_BUNDLE;
+        _instance["virtual_memory"]           = VIRTUAL_MEMORY;
+        _instance["voluntary_context_switch"] = VOLUNTARY_CONTEXT_SWITCH;
+        _instance["vtune_event"]              = VTUNE_EVENT;
+        _instance["vtune_frame"]              = VTUNE_FRAME;
+        _instance["real_clock"]               = WALL_CLOCK;
+        _instance["virtual_clock"]            = WALL_CLOCK;
+        _instance["wall_clock"]               = WALL_CLOCK;
+        _instance["write_bytes"]              = WRITTEN_BYTES;
+        _instance["written_bytes"]            = WRITTEN_BYTES;
+        return _instance;
+    };
+
+    static auto errmsg = [](const std::string& itr) {
+        fprintf(
+            stderr,
+            "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
+            "'cpu_clock', 'cpu_roofline', 'cpu_roofline_double', 'cpu_roofline_dp', "
+            "'cpu_roofline_dp_flops', 'cpu_roofline_flops', 'cpu_roofline_single', "
+            "'cpu_roofline_sp', 'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', "
+            "'cupti_activity', 'cupti_counters', 'data_rss', 'gperf-cpu', 'gperf-heap', "
+            "'gperf_cpu_profiler', 'gperf_heap_profiler', 'gperftools-cpu', "
+            "'gperftools-heap', 'gpu_roofline', 'gpu_roofline_double', "
+            "'gpu_roofline_dp', 'gpu_roofline_dp_flops', 'gpu_roofline_flops', "
+            "'gpu_roofline_half', 'gpu_roofline_hp', 'gpu_roofline_hp_flops', "
+            "'gpu_roofline_single', 'gpu_roofline_sp', 'gpu_roofline_sp_flops', "
+            "'likwid_cpu', 'likwid_gpu', 'likwid_nvmon', 'likwid_perfmon', "
+            "'monotonic_clock', 'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
+            "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
+            "'num_msg_sent', 'num_signals', 'num_swap', 'nvtx', 'nvtx_marker', "
+            "'page_rss', 'papi', 'papi_array', 'papi_array_t', 'peak_rss', "
+            "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
+            "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
+            "'tau', 'tau_marker', 'thread_cpu_clock', 'thread_cpu_util', 'trip_count', "
+            "'user_clock', 'user_list_bundle', 'user_tuple_bundle', 'virtual_clock', "
+            "'virtual_memory', 'voluntary_context_switch', 'vtune_event', 'vtune_frame', "
+            "'wall_clock', 'write_bytes', 'written_bytes']\n",
+            itr.c_str());
+    };
+
+    static auto _hashmap = _generate();
     for(auto itr : component_names)
     {
         std::transform(itr.begin(), itr.end(), itr.begin(),
                        [](unsigned char c) -> unsigned char { return std::tolower(c); });
 
-        if(itr == "cali" || itr == "caliper")
-        {
-            vec.push_back(CALIPER);
-        }
-        else if(itr == "cpu_clock")
-        {
-            vec.push_back(CPU_CLOCK);
-        }
-        else if(itr == "cpu_roofline_double" || itr == "cpu_roofline_dp" ||
-                itr == "cpu_roofline_dp_flops")
-        {
-            vec.push_back(CPU_ROOFLINE_DP_FLOPS);
-        }
-        else if(itr == "cpu_roofline" || itr == "cpu_roofline_flops")
-        {
-            vec.push_back(CPU_ROOFLINE_FLOPS);
-        }
-        else if(itr == "cpu_roofline_single" || itr == "cpu_roofline_sp" ||
-                itr == "cpu_roofline_sp_flops")
-        {
-            vec.push_back(CPU_ROOFLINE_SP_FLOPS);
-        }
-        else if(itr == "cpu_util")
-        {
-            vec.push_back(CPU_UTIL);
-        }
-        else if(itr == "cuda_event")
-        {
-            vec.push_back(CUDA_EVENT);
-        }
-        else if(itr == "cupti_activity")
-        {
-            vec.push_back(CUPTI_ACTIVITY);
-        }
-        else if(itr == "cupti_counters")
-        {
-            vec.push_back(CUPTI_COUNTERS);
-        }
-        else if(itr == "data_rss")
-        {
-            vec.push_back(DATA_RSS);
-        }
-        else if(itr == "gperf_cpu_profiler")
-        {
-            vec.push_back(GPERF_CPU_PROFILER);
-        }
-        else if(itr == "gperf_heap_profiler")
-        {
-            vec.push_back(GPERF_HEAP_PROFILER);
-        }
-        else if(itr == "gpu_roofline_double" || itr == "gpu_roofline_dp" ||
-                itr == "gpu_roofline_dp_flops")
-        {
-            vec.push_back(GPU_ROOFLINE_DP_FLOPS);
-        }
-        else if(itr == "gpu_roofline" || itr == "gpu_roofline_flops")
-        {
-            vec.push_back(GPU_ROOFLINE_FLOPS);
-        }
-        else if(itr == "gpu_roofline_half" || itr == "gpu_roofline_hp" ||
-                itr == "gpu_roofline_hp_flops")
-        {
-            vec.push_back(GPU_ROOFLINE_HP_FLOPS);
-        }
-        else if(itr == "gpu_roofline_single" || itr == "gpu_roofline_sp" ||
-                itr == "gpu_roofline_sp_flops")
-        {
-            vec.push_back(GPU_ROOFLINE_SP_FLOPS);
-        }
-        else if(itr == "likwid_gpu" || itr == "likwid_nvmon")
-        {
-            vec.push_back(LIKWID_NVMON);
-        }
-        else if(itr == "likwid_cpu" || itr == "likwid_perfmon")
-        {
-            vec.push_back(LIKWID_PERFMON);
-        }
-        else if(itr == "monotonic_clock")
-        {
-            vec.push_back(MONOTONIC_CLOCK);
-        }
-        else if(itr == "monotonic_raw_clock")
-        {
-            vec.push_back(MONOTONIC_RAW_CLOCK);
-        }
-        else if(itr == "num_io_in")
-        {
-            vec.push_back(NUM_IO_IN);
-        }
-        else if(itr == "num_io_out")
-        {
-            vec.push_back(NUM_IO_OUT);
-        }
-        else if(itr == "num_major_page_faults")
-        {
-            vec.push_back(NUM_MAJOR_PAGE_FAULTS);
-        }
-        else if(itr == "num_minor_page_faults")
-        {
-            vec.push_back(NUM_MINOR_PAGE_FAULTS);
-        }
-        else if(itr == "num_msg_recv")
-        {
-            vec.push_back(NUM_MSG_RECV);
-        }
-        else if(itr == "num_msg_sent")
-        {
-            vec.push_back(NUM_MSG_SENT);
-        }
-        else if(itr == "num_signals")
-        {
-            vec.push_back(NUM_SIGNALS);
-        }
-        else if(itr == "num_swap")
-        {
-            vec.push_back(NUM_SWAP);
-        }
-        else if(itr == "nvtx" || itr == "nvtx_marker")
-        {
-            vec.push_back(NVTX_MARKER);
-        }
-        else if(itr == "page_rss")
-        {
-            vec.push_back(PAGE_RSS);
-        }
-        else if(itr == "papi" || itr == "papi_array" || itr == "papi_array_t")
-        {
-            vec.push_back(PAPI_ARRAY);
-        }
-        else if(itr == "peak_rss")
-        {
-            vec.push_back(PEAK_RSS);
-        }
-        else if(itr == "priority_context_switch")
-        {
-            vec.push_back(PRIORITY_CONTEXT_SWITCH);
-        }
-        else if(itr == "process_cpu_clock")
-        {
-            vec.push_back(PROCESS_CPU_CLOCK);
-        }
-        else if(itr == "process_cpu_util")
-        {
-            vec.push_back(PROCESS_CPU_UTIL);
-        }
-        else if(itr == "read_bytes")
-        {
-            vec.push_back(READ_BYTES);
-        }
-        else if(itr == "stack_rss")
-        {
-            vec.push_back(STACK_RSS);
-        }
-        else if(itr == "sys_clock" || itr == "system_clock")
-        {
-            vec.push_back(SYS_CLOCK);
-        }
-        else if(itr == "tau" || itr == "tau_marker")
-        {
-            vec.push_back(TAU_MARKER);
-        }
-        else if(itr == "thread_cpu_clock")
-        {
-            vec.push_back(THREAD_CPU_CLOCK);
-        }
-        else if(itr == "thread_cpu_util")
-        {
-            vec.push_back(THREAD_CPU_UTIL);
-        }
-        else if(itr == "trip_count")
-        {
-            vec.push_back(TRIP_COUNT);
-        }
-        else if(itr == "user_tuple_bundle")
-        {
-            vec.push_back(USER_TUPLE_BUNDLE);
-        }
-        else if(itr == "user_list_bundle")
-        {
-            vec.push_back(USER_LIST_BUNDLE);
-        }
-        else if(itr == "user_clock")
-        {
-            vec.push_back(USER_CLOCK);
-        }
-        else if(itr == "virtual_memory")
-        {
-            vec.push_back(VIRTUAL_MEMORY);
-        }
-        else if(itr == "voluntary_context_switch")
-        {
-            vec.push_back(VOLUNTARY_CONTEXT_SWITCH);
-        }
-        else if(itr == "vtune_event")
-        {
-            vec.push_back(VTUNE_EVENT);
-        }
-        else if(itr == "vtune_frame")
-        {
-            vec.push_back(VTUNE_FRAME);
-        }
-        else if(itr == "real_clock" || itr == "virtual_clock" || itr == "wall_clock")
-        {
-            vec.push_back(WALL_CLOCK);
-        }
-        else if(itr == "write_bytes" || itr == "written_bytes")
-        {
-            vec.push_back(WRITTEN_BYTES);
-        }
+        auto _eitr = _hashmap.find(itr);
+        if(_eitr != _hashmap.end())
+            vec.push_back(_eitr->second);
         else
-        {
-            fprintf(
-                stderr,
-                "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
-                "'cpu_clock', 'cpu_roofline', 'cpu_roofline_double', 'cpu_roofline_dp', "
-                "'cpu_roofline_dp_flops', 'cpu_roofline_flops', 'cpu_roofline_single', "
-                "'cpu_roofline_sp', 'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', "
-                "'cupti_activity', 'cupti_counters', 'data_rss', 'gperf_cpu_profiler', "
-                "'gperf_heap_profiler', 'gpu_roofline', 'gpu_roofline_double', "
-                "'gpu_roofline_dp', 'gpu_roofline_dp_flops', 'gpu_roofline_flops', "
-                "'gpu_roofline_half', 'gpu_roofline_hp', 'gpu_roofline_hp_flops', "
-                "'gpu_roofline_single', 'gpu_roofline_sp', 'gpu_roofline_sp_flops', "
-                "'likwid_cpu', 'likwid_gpu', 'likwid_nvmon', 'likwid_perfmon', "
-                "'monotonic_clock', 'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
-                "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
-                "'num_msg_sent', 'num_signals', 'num_swap', 'nvtx', 'nvtx_marker', "
-                "'page_rss', 'papi', 'papi_array', 'papi_array_t', 'peak_rss', "
-                "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
-                "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
-                "'tau', 'tau_marker', 'thread_cpu_clock', 'thread_cpu_util', "
-                "'trip_count', 'user_tuple_bundle', 'user_list_bundle', 'user_clock', "
-                "'virtual_clock', 'virtual_memory', 'voluntary_context_switch', "
-                "'vtune_event', 'vtune_frame', 'wall_clock', 'write_bytes', "
-                "'written_bytes']\n",
-                itr.c_str());
-        }
+            errmsg(itr);
     }
+
     return vec;
 }
 

@@ -65,10 +65,9 @@ set_cmake_bool_option("TIMEMORY_BUILD_EXAMPLES",
                       args.enable_build_examples, args.disable_build_examples)
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
 
+
 # ---------------------------------------------------------------------------- #
 #
-
-
 def get_project_version():
     # open "VERSION"
     with open(os.path.join(os.getcwd(), 'VERSION'), 'r') as f:
