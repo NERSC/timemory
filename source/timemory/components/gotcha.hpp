@@ -49,6 +49,171 @@ namespace component
 using size_type = std::size_t;
 
 //======================================================================================//
+///
+/// \class component::gotcha_invoker
+///
+///
+template <typename _Tp, typename _Ret>
+struct gotcha_invoker
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename... _Args>
+    static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
+                       _Args... _args)
+    {
+        return invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func, _args...);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  Call:
+    //
+    //      _Ret Type::operator()(_Args...)
+    //
+    //  instead of gotcha_wrappee
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _suppress, bool& _ready,
+                                   _Ret (*)(_Args...), _Args... _args)
+        -> decltype(_obj(_args...), _Ret())
+    {
+        //#if defined(DEBUG)
+        if(settings::debug())
+        {
+            auto typestr = demangle<_Tp>();
+            PRINT_HERE("%s '%s::%s'", "invoking", typestr.c_str(), "operator()");
+        }
+        //#endif
+        _ready    = false;
+        _suppress = true;
+        _Ret _ret = _obj(_args...);
+        _suppress = true;
+        _ready    = false;
+        return _ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Call the original gotcha_wrappee
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp&, long, bool& _suppress, bool& _ready,
+                                   _Ret (*_func)(_Args...), _Args... _args)
+        -> decltype(_func(_args...), _Ret())
+    {
+        //#if defined(DEBUG)
+        if(settings::debug())
+        {
+            auto typestr = demangle<_Tp>();
+            PRINT_HERE("'%s::%s' not implemented", typestr.c_str(), "operator()");
+        }
+        //#endif
+        _ready    = true;
+        _suppress = false;
+        _Ret _ret = _func(_args...);
+        _suppress = true;
+        _ready    = false;
+        return _ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae(_Tp& _obj, bool& _suppress, bool& _ready,
+                              _Ret (*_func)(_Args...), _Args... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...),
+                    _Ret())
+    {
+        return invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+};
+
+template <typename _Tp>
+struct gotcha_invoker<_Tp, void>
+{
+    using Type        = _Tp;
+    using _Ret        = void;
+    using return_type = void;
+    using value_type  = typename Type::value_type;
+    using base_type   = typename Type::base_type;
+
+    template <typename... _Args>
+    static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
+                       _Args... _args)
+    {
+        invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func, _args...);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  Call:
+    //
+    //      _Ret Type::operator()(_Args...)
+    //
+    //  instead of gotcha_wrappee
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _suppress, bool& _ready,
+                                   _Ret (*)(_Args...), _Args... _args)
+        -> decltype(_obj(_args...), _Ret())
+    {
+#if defined(DEBUG)
+        if(settings::debug())
+        {
+            auto typestr = demangle<_Tp>();
+            PRINT_HERE("%s '%s::%s'", "invoking", typestr.c_str(), "operator()");
+        }
+#endif
+        _ready    = false;
+        _suppress = true;
+        _obj(_args...);
+        _suppress = true;
+        _ready    = false;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Call the original gotcha_wrappee
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp&, long, bool& _suppress, bool& _ready,
+                                   _Ret (*_func)(_Args...), _Args... _args)
+        -> decltype(_func(_args...), _Ret())
+    {
+#if defined(DEBUG)
+        if(settings::debug())
+        {
+            auto typestr = demangle<_Tp>();
+            PRINT_HERE("'%s' not implemented", "invoking", typestr.c_str(), "operator()");
+        }
+#endif
+        _ready    = true;
+        _suppress = false;
+        _func(_args...);
+        _suppress = true;
+        _ready    = false;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae(_Tp& _obj, bool& _suppress, bool& _ready,
+                              _Ret (*_func)(_Args...), _Args... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...),
+                    _Ret())
+    {
+        invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func, _args...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+};
+
+//======================================================================================//
 //
 class gotcha_suppression
 {
@@ -88,6 +253,7 @@ class gotcha_suppression
     };
 };
 
+//======================================================================================//
 //
 // template params:
 //      _Nt             ==  max number of GOTCHA wrappers
@@ -112,6 +278,8 @@ struct gotcha
                                 policy::global_finalize, policy::thread_init>;
     using storage_type   = typename base_type::storage_type;
     using component_type = typename _Components::component_type;
+    using type_tuple = typename _Components::type_tuple;
+
     // clang-format on
 
     template <typename _Tp>
@@ -131,6 +299,9 @@ struct gotcha
     using config_t          = void;
     using get_initializer_t = std::function<config_t()>;
     using get_select_list_t = std::function<select_list_t()>;
+
+    static constexpr bool differentiator_is_component =
+        is_one_of<_Differentiator, type_tuple>::value;
 
     static std::string label() { return "gotcha"; }
     static std::string description() { return "GOTCHA wrapper"; }
@@ -185,11 +356,12 @@ struct gotcha
         if(_func.find("MPI_") != std::string::npos ||
            _func.find("mpi_") != std::string::npos)
         {
-            static auto mpi_reject_list = {
-                "MPI_Init",        "MPI_Finalize",  "MPI_Pcontrol",  "MPI_Init_thread",
-                "MPI_Initialized", "MPI_Comm_rank", "MPI_Comm_size", "MPI_T_init_thread",
-                "MPI_Comm_split",  "MPI_Abort",     "MPI_Barrier",   "MPI_Comm_split_type"
-            };
+            static auto mpi_reject_list = { "MPI_Init",           "MPI_Finalize",
+                                            "MPI_Pcontrol",       "MPI_Init_thread",
+                                            "MPI_Initialized",    "MPI_Comm_rank",
+                                            "MPI_Comm_size",      "MPI_T_init_thread",
+                                            "MPI_Comm_split",     "MPI_Abort",
+                                            "MPI_Comm_split_type" };
 
             auto tofortran = [](std::string _fort) {
                 for(auto& itr : _fort)
@@ -359,6 +531,21 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
+    static void enable() { configure(); }
+
+    //----------------------------------------------------------------------------------//
+
+    static void disable()
+    {
+        for(auto& itr : get_data())
+        {
+            if(!itr.is_finalized)
+                itr.destructor();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
     static void invoke_global_init(storage_type*)
     {
         // if(get_default_ready())
@@ -419,7 +606,7 @@ struct gotcha
                 _data[i].ready = false;
         }
 
-        if(_n == 0 && !storage_type::is_finalizing())
+        if(_n == 0)
         {
             for(auto& itr : get_data())
             {
@@ -542,6 +729,63 @@ private:
 
     //----------------------------------------------------------------------------------//
 
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                         = this_type,
+              enable_if_t<(_This::differentiator_is_component), int> = 0>
+    static _Ret invoke(_Comp& _comp, bool& _suppress, bool& _ready,
+                       _Ret (*_func)(_Args...), _Args... _args)
+    {
+        using _Type    = _Differentiator;
+        using _Invoker = gotcha_invoker<_Type, _Ret>;
+        _Type& _obj    = _comp.template get<_Type>();
+        return _Invoker::template invoke(_obj, _suppress, _ready, _func, _args...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                          = this_type,
+              enable_if_t<!(_This::differentiator_is_component), int> = 0>
+    static _Ret invoke(_Comp&, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
+                       _Args... _args)
+    {
+        _ready    = true;
+        _suppress = false;
+        _Ret _ret = _func(_args...);
+        _suppress = true;
+        _ready    = false;
+        return _ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Comp, typename... _Args, typename _This = this_type,
+              enable_if_t<(_This::differentiator_is_component), int> = 0>
+    static void invoke(_Comp& _comp, bool& _suppress, bool& _ready,
+                       void (*_func)(_Args...), _Args... _args)
+    {
+        using _Type    = _Differentiator;
+        using _Invoker = gotcha_invoker<_Type, void>;
+        _Type& _obj    = _comp.template get<_Type>();
+        _Invoker::template invoke(_obj, _suppress, _ready, _func, _args...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Comp, typename... _Args, typename _This = this_type,
+              enable_if_t<!(_This::differentiator_is_component), int> = 0>
+    static void invoke(_Comp&, bool& _suppress, bool& _ready, void (*_func)(_Args...),
+                       _Args... _args)
+    {
+        _ready    = true;
+        _suppress = false;
+        _func(_args...);
+        _suppress = true;
+        _ready    = false;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t _N, typename _Ret, typename... _Args>
     static _Ret wrap(_Args... _args)
     {
@@ -553,8 +797,8 @@ private:
         func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
         auto& _global_suppress = gotcha_suppression::get();
-
-        if(!_data.ready || _global_suppress)
+        auto  _finalizing      = storage_type::is_finalizing();
+        if(!_data.ready || _global_suppress || _finalizing)
         {
             if(settings::debug())
             {
@@ -574,26 +818,6 @@ private:
         _data.ready      = false;
         _global_suppress = true;
 
-#    if defined(DEBUG)
-        /*
-        if(settings::verbose() > 2 || settings::debug())
-        {
-            static std::atomic<int32_t> _count;
-            if(_count++ < 50)
-            {
-                auto _atype =
-                    apply<std::string>::join(", ", demangle(typeid(_args).name())...);
-                auto _rtype = demangle(typeid(_Ret).name());
-                printf("\n");
-                printf("[%s]>   wrappee: %s\n", __FUNCTION__,
-                       demangle(typeid(_orig).name()).c_str());
-                printf("[%s]> signature: %s (*)(%s)\n", __FUNCTION__, _rtype.c_str(),
-                       _atype.c_str());
-            }
-        }
-        */
-#    endif
-
         if(_orig)
         {
             // component_type is always: component_{tuple,list,hybrid}
@@ -601,31 +825,16 @@ private:
             _obj.start();
             _obj.customize(_data.tool_id, _args...);
 
-            _data.ready      = true;
-            _global_suppress = false;
-            _Ret _ret        = (*_orig)(_args...);
-            _global_suppress = true;
-            _data.ready      = false;
+            // _data.ready      = true;
+            // _global_suppress = false;
+            _Ret _ret = invoke<component_type, _Ret, _Args...>(
+                _obj, _global_suppress, _data.ready, _orig, _args...);
+            // _Ret _ret        = (*_orig)(_args...);
+            // _global_suppress = true;
+            // _data.ready      = false;
 
             _obj.customize(_data.tool_id, _ret);
             _obj.stop();
-
-#    if defined(DEBUG)
-            /*
-            if(settings::verbose() > 2 || settings::debug())
-            {
-                static std::atomic<int32_t> _count;
-                if(_count++ < 50)
-                {
-                    auto _sargs = apply<std::string>::join(", ", _args...);
-                    std::cout << "[" << __FUNCTION__ << "]>      args: (" << _sargs
-                              << ") "
-                              << "result: " << _ret << "\n"
-                              << std::endl;
-                }
-            }
-            */
-#    endif
 
             // allow re-entrance into wrapper
             _global_suppress = false;
@@ -658,7 +867,8 @@ private:
         auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(_data.wrappee);
 
         auto& _global_suppress = gotcha_suppression::get();
-        if(!_data.ready || _global_suppress)
+        auto  _finalizing      = storage_type::is_finalizing();
+        if(!_data.ready || _global_suppress || _finalizing)
         {
             if(settings::debug())
             {
