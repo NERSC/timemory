@@ -45,6 +45,7 @@
 #include <limits>
 #include <locale>
 #include <string>
+#include <vector>
 
 #if defined(_UNIX)
 #    include <unistd.h>
@@ -112,6 +113,7 @@ get_local_datetime(const char* dt_format)
 
 //--------------------------------------------------------------------------------------//
 
+tim_api
 struct settings
 {
     using string_t    = std::string;
@@ -563,18 +565,20 @@ struct settings
 
     //----------------------------------------------------------------------------------//
 
-    static std::vector<std::string> get_environment()
+    static tim_api std::vector<std::string> get_environment()
     {
-        std::vector<std::string> _environ;
 #if defined(_UNIX)
+        std::vector<std::string> _environ;
         if(environ != nullptr)
         {
             int idx = 0;
             while(environ[idx] != nullptr)
                 _environ.push_back(environ[idx++]);
         }
-#endif
         return _environ;
+#else
+        return std::vector<std::string>();
+#endif
     }
 
     //----------------------------------------------------------------------------------//

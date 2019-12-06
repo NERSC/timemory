@@ -48,6 +48,7 @@
 // clang-format off
 #    include <windows.h>
 #    include <sysinfoapi.h>
+#    include <time.h>
 // clang-format on
 #endif
 
