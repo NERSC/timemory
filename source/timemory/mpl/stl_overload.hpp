@@ -347,5 +347,13 @@ operator-(pair<_Lhs, _Rhs> lhs, const pair<_Lhs, _Rhs>& rhs)
     lhs.second -= rhs.second;
     return lhs;
 }
+
+template <typename... _Types>
+const tuple<_Lhs, _Rhs>
+operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
+{
+    ::tim::stl_overload::mpl::minus(lhs, rhs);
+    return lhs;
+}
 }  // namespace std
 #endif
