@@ -246,12 +246,11 @@ FUNCTION(CHECKOUT_GIT_SUBMODULE)
         set(CHECKOUT_REPO_BRANCH "master")
     endif()
 
+    find_package(Git)
     set(_DIR "${CHECKOUT_WORKING_DIRECTORY}/${CHECKOUT_RELATIVE_PATH}")
     # ensure the (possibly empty) directory exists
     if(NOT EXISTS "${_DIR}")
-        if(CHECKOUT_REPO_URL)
-            find_package(Git REQUIRED)
-        else()
+        if(NOT CHECKOUT_REPO_URL)
             message(FATAL_ERROR "submodule directory does not exist")
         endif()
     endif()
@@ -267,6 +266,12 @@ FUNCTION(CHECKOUT_GIT_SUBMODULE)
         set(_TEST_FILE_EXISTS ON)
     endif()
 
+    if(_TEST_FILE_EXISTS)
+        return()
+    endif()
+
+    find_package(Git REQUIRED)
+
     set(_SUBMODULE_EXISTS OFF)
     if(EXISTS "${_SUBMODULE}" AND NOT IS_DIRECTORY "${_SUBMODULE}")
         set(_SUBMODULE_EXISTS ON)
@@ -279,7 +284,6 @@ FUNCTION(CHECKOUT_GIT_SUBMODULE)
 
     # if the module has not been checked out
     if(NOT _TEST_FILE_EXISTS AND _SUBMODULE_EXISTS)
-
         # perform the checkout
         execute_process(
             COMMAND
