@@ -16,6 +16,7 @@ class Timemory(CMakePackage):
     maintainers = ['jrmadsen']
 
     version('master', branch='master', submodules=True)
+    version('develop', branch='develop', submodules=True)
 
     variant('python', default=True, description='Enable Python support')
     variant('mpi', default=False, description='Enable MPI support')
@@ -23,7 +24,7 @@ class Timemory(CMakePackage):
     variant('papi', default=True, description='Enable PAPI support')
     variant('cuda', default=True, description='Enable CUDA support')
     variant('cupti', default=True, description='Enable CUPTI support')
-    variant('upcxx', default=True, description='Enable UPC++ support')
+    variant('upcxx', default=False, description='Enable UPC++ support')
     variant('gotcha', default=True, description='Enable GOTCHA support')
     variant('likwid', default=True, description='Enable LIKWID support')
     variant('caliper', default=True, description='Enable Caliper support')
