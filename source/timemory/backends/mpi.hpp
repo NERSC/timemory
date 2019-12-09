@@ -185,6 +185,9 @@ initialize(int& argc, char**& argv)
                 return check_error(ret);
             };
 
+            int _provided = 0;
+            MPI_Query_thread(&_provided);
+
             auto _mpi_type = settings::mpi_thread_type();
             if(_mpi_type == "single")
                 success_v = _init(single);
@@ -195,8 +198,9 @@ initialize(int& argc, char**& argv)
             else if(_mpi_type == "multiple")
                 success_v = _init(multiple);
             else
-                success_v = _init(multiple);
+                success_v = _init(_provided);
         }
+
         if(!success_v)
             check_error(MPI_Init(&argc, &argv));
     }

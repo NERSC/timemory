@@ -254,7 +254,7 @@ main(int argc, char** argv)
     tim::settings::timing_scientific() = true;
     tim::settings::auto_output()       = true;
     tim::settings::json_output()       = false;
-    tim::settings::text_output()       = false;
+    tim::settings::text_output()       = true;
     tim::settings::memory_units()      = "kB";
     tim::settings::memory_precision()  = 3;
     tim::settings::width()             = 10;
@@ -262,6 +262,7 @@ main(int argc, char** argv)
     tim::timemory_init(argc, argv);
     tim::dmp::initialize(argc, argv);
     tim::settings::cout_output() = tim::settings::flat_profile();
+    tim::settings::cout_output() = false;
     tim::print_env();
 
     // default calc: fibonacci(43)

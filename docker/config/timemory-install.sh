@@ -52,6 +52,12 @@ run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -
 run-verbose ninja -j6
 run-verbose ninja install
 
+run-verbose git clone https://jrmadsen@bitbucket.org/berkeleylab/upcxx.git
+run-verbose cd upcxx
+export CFLAGS="-fPIC"
+export CPPFLAGS="-fPIC"
+run-verbose ./install /usr/local
+
 cd ${ROOT_DIR}
 
 run-verbose rm -rf ${ROOT_DIR}/*

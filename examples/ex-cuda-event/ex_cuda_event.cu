@@ -55,6 +55,8 @@ using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_ut
                                      nvtx_marker, papi_array_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using cuda_tuple_t = tim::auto_tuple<cuda_event, nvtx_marker>;
+using counter_t    = real_clock;
+using ert_data_t   = tim::ert::exec_data<counter_t>;
 
 //======================================================================================//
 
@@ -1284,9 +1286,9 @@ test_9_cupti_counters()
         a = a * b + c;
     };
 
-    tim::ert::exec_params                params(16, 64 * 64);
-    std::shared_ptr<tim::ert::exec_data> exec_data(new tim::ert::exec_data);
-    auto                                 _counter = new counter_t(params, exec_data, 64);
+    tim::ert::exec_params       params(16, 64 * 64);
+    std::shared_ptr<ert_data_t> exec_data(new ert_data_t);
+    auto                        _counter = new counter_t(params, exec_data, 64);
 
     std::vector<float> cpu_data(num_data, 0);
     float*             data;

@@ -185,10 +185,10 @@ if(TIMEMORY_USE_MPI)
                         timemory-analysis-tools timemory-mpi)
 endif()
 
-#if(TIMEMORY_USE_UPCXX)
+if(TIMEMORY_USE_UPCXX)
     add_timemory_google_test(upcxx_tests
         DISCOVER_TESTS
         SOURCES         upcxx_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                         timemory-analysis-tools timemory-upcxx)
-#endif()
+endif()

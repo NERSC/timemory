@@ -80,6 +80,16 @@ cmake_policy(PUSH)
 # ensure that IN_LIST operator is not ignored: https://cmake.org/cmake/help/v3.3/policy/CMP0057.html
 cmake_policy(SET CMP0057 NEW)
 
+# these are the variables set in the script
+# unset them in case multiple configurations are generated
+set(UPCXX_VARIABLES
+    UPCXX_FOUND UPCXX_META_EXECUTABLE UPCXX_INCLUDE_DIRS
+    UPCXX_LIBRARIES UPCXX_DEFINITIONS UPCXX_CXX_STANDARD
+    UPCXX_OPTIONS UPCXX_LINK_OPTIONS UPCXX_COMPATIBLE_COMPILER)
+
+foreach(_VAR ${UPCXX_VARIABLES})
+    unset(${_VAR})
+endforeach()
 
 # option for verbosity
 option(UPCXX_VERBOSE "Verbose UPC++ detection" OFF)
@@ -130,7 +140,7 @@ if((UPCXX_THREADMODE STREQUAL "" OR NOT DEFINED UPCXX_THREADMODE) AND "$ENV{UPCX
         set(UPCXX_THREADMODE "seq")
     endif()
 elseif(UPCXX_THREADMODE)
-    upcxx_check_property_string(THREADMODE)
+    UPCXX_CHECK_PROPERTY_STRING(THREADMODE)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -141,13 +151,13 @@ endif()
 
 if((UPCXX_CODEMODE STREQUAL "" OR NOT DEFINED UPCXX_CODEMODE) AND "$ENV{UPCXX_CODEMODE}" STREQUAL "")
     # use CMAKE_BUILD_TYPE to provide a default choice
-    if("${CMAKE_BUILD_TYPE}" MATCHES "Debug|MinSizeRel")
+    if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
         set(UPCXX_CODEMODE "debug")
-    elseif("${CMAKE_BUILD_TYPE}" MATCHES "Release|RelWithDebInfo")
+    elseif("${CMAKE_BUILD_TYPE}" MATCHES "Release|RelWithDebInfo|MinSizeRel")
         set(UPCXX_CODEMODE "O3")
     endif()
 elseif(UPCXX_CODEMODE)
-    upcxx_check_property_string(CODEMODE)
+    UPCXX_CHECK_PROPERTY_STRING(CODEMODE)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -157,13 +167,9 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if((UPCXX_NETWORK STREQUAL "" OR NOT DEFINED UPCXX_NETWORK) AND "$ENV{UPCXX_NETWORK}" STREQUAL "")
-    # if find_package(MPI) set MPI_FOUND previously, this suggests
-    # MPI would be a good default but otherwise, leave blank
-    if(MPI_FOUND)
-        set(UPCXX_NETWORK "mpi")
-    endif()
+    # no defaults provided -- let upcxx-meta choose
 elseif(UPCXX_NETWORK)
-    upcxx_check_property_string(NETWORK)
+    UPCXX_CHECK_PROPERTY_STRING(NETWORK)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -205,7 +211,6 @@ foreach(_VAR THREADMODE CODEMODE NETWORK)
     endif()
 endforeach()
 
-
 # Set up some auxillary vars if hints have been set
 if(DEFINED ENV{UPCXX_INSTALL} )
   find_program( UPCXX_META_EXECUTABLE upcxx-meta HINTS "$ENV{UPCXX_INSTALL}/bin" NO_DEFAULT_PATH )
@@ -216,27 +221,12 @@ else()
         ENV UPCXX_ROOT_DIR
     PATH_SUFFIXES bin)
 endif()
-if (NOT EXISTS "${UPCXX_META_EXECUTABLE}" AND NOT UPCXX_FIND_QUIETLY)
+if (NOT EXISTS "${UPCXX_META_EXECUTABLE}")
   message(WARNING "Failed to find UPC++ command interface 'upcxx-meta'. Please set UPCXX_INSTALL=/path/to/upcxx or add /path/to/upcxx/bin to $PATH")
 endif()
 
 
 if( UPCXX_META_EXECUTABLE )
-  message(STATUS "Found UPCXX: ${UPCXX_META_EXECUTABLE}")
-
-  if ((NOT DEFINED ENV{UPCXX_CODEMODE}) OR ("$ENV{UPCXX_CODEMODE}" STREQUAL "unset"))
-    string(TOUPPER "${CMAKE_BUILD_TYPE}" uc_CMAKE_BUILD_TYPE)
-    if (uc_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-      set(ENV{UPCXX_CODEMODE} "debug" )
-    else()
-      set(ENV{UPCXX_CODEMODE} "O3" )
-    endif()
-    unset(uc_CMAKE_BUILD_TYPE)
-  endif()
-  if (NOT DEFINED ENV{UPCXX_THREADMODE} )
-    set(ENV{UPCXX_THREADMODE} "seq" )
-  endif()
-
   execute_process( COMMAND ${UPCXX_META_EXECUTABLE} CXXFLAGS OUTPUT_VARIABLE UPCXX_CXXFLAGS
                    OUTPUT_STRIP_TRAILING_WHITESPACE)
   execute_process( COMMAND ${UPCXX_META_EXECUTABLE} CPPFLAGS OUTPUT_VARIABLE UPCXX_CPPFLAGS
@@ -306,7 +296,7 @@ if( UPCXX_META_EXECUTABLE )
     endif()
   endif()
 
-  if( NOT UPCXX_COMPATIBLE_COMPILER AND NOT UPCXX_FIND_QUIETLY)
+  if( NOT UPCXX_COMPATIBLE_COMPILER )
     message(WARNING "Compiler compatibility check failed!\nUPCXX compiler provided by upcxx-meta CXX:\n    ${UPCXX_CXX_COMPILER} ->\n    ${ABS_UPCXX_CXX_PATH}\nis different from CMAKE_CXX_COMPILER:\n    ${CMAKE_CXX_COMPILER} ->\n    ${ABS_CMAKE_CXX_PATH}\n\nPlease either pass cmake: -DCMAKE_CXX_COMPILER=${UPCXX_CXX_COMPILER}\nor re-install UPC++ with: CXX=${CMAKE_CXX_COMPILER}\n")
   endif()
 
@@ -390,10 +380,6 @@ foreach( dir ${UPCXX_INCLUDE_DIRS} )
     unset( version_pattern )
   endif()
 endforeach()
-
-if(UPCXX_VERSION_STRING AND NOT UPCXX_FIND_QUIETLY)
-  message( STATUS "UPCXX VERSION: " ${UPCXX_VERSION_STRING} )
-endif()
 
 # CMake bug #15826: CMake's ill-advised deduplication mis-feature breaks certain types
 # of compiler arguments, see: https://gitlab.kitware.com/cmake/cmake/issues/15826

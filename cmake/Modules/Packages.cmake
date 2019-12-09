@@ -44,13 +44,16 @@ add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
 
-set(_DMP_LIBRARIES)
+set(_DMP_SHARED_LIBRARIES)
+set(_DMP_STATIC_LIBRARIES)
+
 if(TIMEMORY_USE_MPI)
-    list(APPEND _DMP_LIBRARIES timemory-mpi)
+    list(APPEND _DMP_SHARED_LIBRARIES timemory-mpi)
+    list(APPEND _DMP_STATIC_LIBRARIES timemory-mpi)
 endif()
 
 if(TIMEMORY_USE_UPCXX)
-    list(APPEND _DMP_LIBRARIES timemory-upcxx)
+    list(APPEND _DMP_STATIC_LIBRARIES timemory-upcxx)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
@@ -88,7 +91,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
-    ${_DMP_LIBRARIES})
+    ${_DMP_SHARED_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-threading
@@ -102,7 +105,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
-    ${_DMP_LIBRARIES})
+    ${_DMP_STATIC_LIBRARIES})
 
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
@@ -189,7 +192,9 @@ endif()
 
 checkout_git_submodule(RECURSIVE
     RELATIVE_PATH external/cereal
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    REPO_URL https://github.com/jrmadsen/cereal.git
+    REPO_BRANCH timemory)
 
 # add cereal
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/cereal)
@@ -211,7 +216,9 @@ target_link_libraries(timemory-headers INTERFACE timemory-cereal)
 if(TIMEMORY_BUILD_GTEST)
     checkout_git_submodule(RECURSIVE
         RELATIVE_PATH external/google-test
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/google/googletest.git
+        REPO_BRANCH master)
 
     # add google-test
     set(INSTALL_GTEST OFF CACHE BOOL "Install gtest")
@@ -389,13 +396,9 @@ if(TIMEMORY_BUILD_PYTHON)
     # checkout PyBind11 if not checked out
     checkout_git_submodule(RECURSIVE
         RELATIVE_PATH external/pybind11
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-
-    # C++ standard
-    if(NOT "${PYBIND11_CPP_STANDARD}" STREQUAL "${CMAKE_CXX_STANDARD}")
-        set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
-            CACHE STRING "PyBind11 CXX standard" FORCE)
-    endif()
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/pybind11.git
+        REPO_BRANCH master)
 
     set(PYBIND11_INSTALL OFF)
     # add PyBind11 to project
@@ -412,6 +415,7 @@ if(TIMEMORY_BUILD_PYTHON)
         set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}" CACHE STRING "Python version")
     endif()
 
+    add_feature(PYBIND11_CPP_STANDARD "PyBind11 C++ standard")
     add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
 
     execute_process(COMMAND ${PYTHON_EXECUTABLE}
@@ -781,7 +785,9 @@ if(TIMEMORY_BUILD_CALIPER)
     set(caliper_FOUND ON)
     checkout_git_submodule(RECURSIVE
         RELATIVE_PATH external/caliper
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/Caliper.git
+        REPO_BRANCH master)
     include(CaliperDepends)
     set(_ORIG_CEXT ${CMAKE_C_EXTENSIONS})
     set(_ORIG_TESTING ${BUILD_TESTING})
@@ -801,7 +807,7 @@ endif()
 if(caliper_FOUND)
     target_compile_definitions(timemory-caliper INTERFACE TIMEMORY_USE_CALIPER)
     if(TIMEMORY_BUILD_CALIPER)
-        target_include_directories(timemory-caliper INTERFACE
+        target_include_directories(timemory-caliper SYSTEM INTERFACE
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/caliper/include>
             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/caliper/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
@@ -815,7 +821,7 @@ if(caliper_FOUND)
         set_target_properties(timemory-caliper PROPERTIES
             INTERFACE_LINK_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
     else()
-        target_include_directories(timemory-caliper INTERFACE ${caliper_INCLUDE_DIR})
+        target_include_directories(timemory-caliper SYSTEM INTERFACE ${caliper_INCLUDE_DIR})
         target_link_libraries(timemory-caliper INTERFACE caliper)
     endif()
 else()
@@ -835,7 +841,9 @@ if(UNIX AND NOT APPLE)
         set(gotcha_FOUND ON)
         checkout_git_submodule(RECURSIVE
             RELATIVE_PATH external/gotcha
-            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            REPO_URL https://github.com/jrmadsen/GOTCHA.git
+            REPO_BRANCH cmake-updates)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
         list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha gotcha-include)
     elseif(TIMEMORY_USE_GOTCHA)
@@ -852,6 +860,7 @@ endif()
 if(gotcha_FOUND)
     target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
     target_link_libraries(timemory-gotcha INTERFACE gotcha)
+    add_target_flag_if_avail(timemory-gotcha "-rdynamic")
     set_target_properties(timemory-gotcha PROPERTIES
         INTERFACE_LINK_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
 else()
@@ -865,13 +874,14 @@ endif()
 #                               LIKWID
 #
 #----------------------------------------------------------------------------------------#
+
 if(TIMEMORY_USE_LIKWID)
     find_package(LIKWID)
 endif()
 
 if(LIKWID_FOUND)
     target_link_libraries(timemory-likwid INTERFACE ${LIKWID_LIBRARIES})
-    target_include_directories(timemory-likwid INTERFACE ${LIKWID_INCLUDE_DIRS})
+    target_include_directories(timemory-likwid SYSTEM INTERFACE ${LIKWID_INCLUDE_DIRS})
     target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID)
 else()
     set(TIMEMORY_USE_LIKWID OFF)
@@ -891,7 +901,7 @@ endif()
 
 if(ittnotify_FOUND)
     target_link_libraries(timemory-vtune INTERFACE ${ITTNOTIFY_LIBRARIES})
-    target_include_directories(timemory-vtune INTERFACE ${ITTNOTIFY_INCLUDE_DIRS})
+    target_include_directories(timemory-vtune SYSTEM INTERFACE ${ITTNOTIFY_INCLUDE_DIRS})
     target_compile_definitions(timemory-vtune INTERFACE TIMEMORY_USE_VTUNE)
 else()
     set(TIMEMORY_USE_VTUNE OFF)
@@ -911,7 +921,7 @@ endif()
 
 if(TAU_FOUND)
     target_link_libraries(timemory-tau INTERFACE ${TAU_LIBRARIES})
-    target_include_directories(timemory-tau INTERFACE ${TAU_INCLUDE_DIRS})
+    target_include_directories(timemory-tau SYSTEM INTERFACE ${TAU_INCLUDE_DIRS})
     target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
 else()
     set(TIMEMORY_USE_TAU OFF)

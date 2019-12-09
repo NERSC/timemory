@@ -229,36 +229,38 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
     cmake_parse_arguments(
         CHECKOUT
         "RECURSIVE"
-        "RELATIVE_PATH;WORKING_DIRECTORY;TEST_FILE"
+        "RELATIVE_PATH;WORKING_DIRECTORY;TEST_FILE;REPO_URL;REPO_BRANCH"
         "ADDITIONAL_CMDS"
         ${ARGN})
 
     if(NOT CHECKOUT_WORKING_DIRECTORY)
         set(CHECKOUT_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-    endif(NOT CHECKOUT_WORKING_DIRECTORY)
+    endif()
 
     if(NOT CHECKOUT_TEST_FILE)
         set(CHECKOUT_TEST_FILE "CMakeLists.txt")
-    endif(NOT CHECKOUT_TEST_FILE)
+    endif()
+
+    # default assumption
+    if(NOT CHECKOUT_REPO_BRANCH)
+        set(CHECKOUT_REPO_BRANCH "master")
+    endif()
 
     set(_DIR "${CHECKOUT_WORKING_DIRECTORY}/${CHECKOUT_RELATIVE_PATH}")
     # ensure the (possibly empty) directory exists
     if(NOT EXISTS "${_DIR}")
         message(FATAL_ERROR "submodule directory does not exist")
-    endif(NOT EXISTS "${_DIR}")
+    endif()
 
     # if this file exists --> project has been checked out
     # if not exists --> not been checked out
     set(_TEST_FILE "${_DIR}/${CHECKOUT_TEST_FILE}")
+    # assuming a .gitmodules file exists
+    set(_SUBMODULE "${PROJECT_SOURCE_DIR}/.gitmodules")
 
     # if the module has not been checked out
-    if(NOT EXISTS "${_TEST_FILE}")
+    if(NOT EXISTS "${_TEST_FILE}" AND EXISTS "${_SUBMODULE}")
         find_package(Git REQUIRED)
-
-        set(_RECURSE )
-        if(CHECKOUT_RECURSIVE)
-            set(_RECURSE --recursive)
-        endif(CHECKOUT_RECURSIVE)
 
         # perform the checkout
         execute_process(
@@ -273,10 +275,45 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
         if(RET GREATER 0)
             set(_CMD "${GIT_EXECUTABLE} submodule update --init ${_RECURSE}
                 ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}")
-            message(STATUS "macro(CHECKOUT_SUBMODULE) failed.")
+            message(STATUS "function(CHECKOUT_GIT_SUBMODULE) failed.")
+            message(FATAL_ERROR "Command: \"${_CMD}\"")
+        endif()
+    elseif(NOT EXISTS "${_TEST_FILE}" AND NOT "${CHECKOUT_REPO_URL}" STREQUAL "")
+        # remove the existing directory
+        if(EXISTS "${_DIR}")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory ${_DIR})
+        endif()
+
+        # perform the checkout
+        execute_process(
+            COMMAND
+                ${GIT_EXECUTABLE} clone -b ${CHECKOUT_REPO_BRANCH}
+                    ${CHECKOUT_ADDITIONAL_CMDS}
+                    ${CHECKOUT_REPO_URL} ${CHECKOUT_RELATIVE_PATH}
+            WORKING_DIRECTORY
+                ${CHECKOUT_WORKING_DIRECTORY}
+            RESULT_VARIABLE RET)
+
+        # perform the submodule update
+        if(CHECKOUT_RECURSIVE AND EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}")
+            execute_process(
+                COMMAND
+                    ${GIT_EXECUTABLE} submodule update --init ${_RECURSE}
+                WORKING_DIRECTORY
+                    ${_DIR}
+                RESULT_VARIABLE RET)
+        endif()
+
+        # check the return code
+        if(RET GREATER 0)
+            set(_CMD "${GIT_EXECUTABLE} clone -b ${CHECKOUT_REPO_BRANCH}
+                ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_REPO_URL} ${CHECKOUT_RELATIVE_PATH}")
+            message(STATUS "function(CHECKOUT_GIT_SUBMODULE) failed.")
             message(FATAL_ERROR "Command: \"${_CMD}\"")
         endif()
 
+    elseif(NOT EXISTS "${_TEST_FILE}")
+        message(FATAL_ERROR "Error checking out submodule: '${CHECKOUT_RELATIVE_PATH}' to '${_DIR}'")
     endif()
 
 ENDMACRO()
