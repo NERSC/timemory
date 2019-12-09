@@ -181,12 +181,21 @@ initialize(int& argc, char**& argv)
         if(settings::mpi_thread())
         {
             auto _init = [&](int itr) {
-                auto ret = MPI_Init_thread(&argc, &argv, itr, nullptr);
+                int  _actual = -1;
+                auto ret     = MPI_Init_thread(&argc, &argv, itr, &_actual);
+                if(_actual != itr)
+                {
+                    std::stringstream ss;
+                    ss << "Warning! MPI_Init_thread does not support " << itr;
+                    std::cerr << ss.str() << std::flush;
+                    throw std::runtime_error(ss.str().c_str());
+                }
                 return check_error(ret);
             };
 
-            int _provided = 0;
-            MPI_Query_thread(&_provided);
+            // check_error(MPI_Init(&argc, &argv));
+            // int _provided = 0;
+            // MPI_Query_thread(&_provided);
 
             auto _mpi_type = settings::mpi_thread_type();
             if(_mpi_type == "single")
@@ -198,7 +207,7 @@ initialize(int& argc, char**& argv)
             else if(_mpi_type == "multiple")
                 success_v = _init(multiple);
             else
-                success_v = _init(_provided);
+                success_v = _init(multiple);
         }
 
         if(!success_v)
@@ -390,7 +399,7 @@ send(const std::string& str, int dest, int tag, comm_t comm)
     unsigned long long len = str.size();
     MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm);
     if(len != 0)
-        MPI_Send(str.data(), len, MPI_CHAR, dest, tag, comm);
+        MPI_Send(const_cast<char*>(str.data()), len, MPI_CHAR, dest, tag, comm);
 #else
     consume_parameters(str, dest, tag, comm);
 #endif

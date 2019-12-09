@@ -31,8 +31,7 @@
 
 using namespace tim::component;
 
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, peak_rss, trip_count, tau_marker, caliper>;
+using auto_tuple_t  = tim::auto_tuple<real_clock, cpu_clock, peak_rss, trip_count>;
 using timer_tuple_t = typename auto_tuple_t::component_type;
 
 using papi_tuple_t = papi_array<8>;
@@ -41,8 +40,9 @@ using global_tuple_t =
                     page_rss, priority_context_switch, voluntary_context_switch, caliper,
                     tau_marker, papi_tuple_t, trip_count>;
 
-static int64_t nmeasure = 0;
-using result_type       = std::tuple<timer_tuple_t, int64_t, int64_t>;
+static int64_t       nmeasure        = 0;
+static const int64_t auto_tuple_size = auto_tuple_t::size();
+using result_type                    = std::tuple<timer_tuple_t, int64_t, int64_t>;
 
 namespace mode
 {
@@ -106,7 +106,7 @@ fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        nmeasure += auto_tuple_t::size();
+        nmeasure += auto_tuple_size;
         return (n < 2) ? n
                        : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
     }
@@ -201,7 +201,7 @@ run(int64_t n, int64_t cutoff, bool store = true)
     timer.stop();
 
     int64_t nuniq =
-        (is_blank) ? ((n - cutoff) * auto_tuple_t::size()) : (is_basic) ? nmeasure : 0;
+        (is_blank) ? ((n - cutoff) * auto_tuple_size) : (is_basic) ? nmeasure : 0;
 
     auto _alt = timer;
     if(do_print_result())
@@ -259,8 +259,7 @@ main(int argc, char** argv)
     tim::settings::memory_precision()  = 3;
     tim::settings::width()             = 10;
     tim::settings::timing_precision()  = 6;
-    tim::timemory_init(argc, argv);
-    tim::dmp::initialize(argc, argv);
+    tim::dmp::initialize(&argc, &argv);
     tim::settings::cout_output() = false;
     tim::print_env();
 
@@ -357,9 +356,9 @@ main(int argc, char** argv)
     }
     else if(tim::settings::flat_profile())
     {
-        ex_unique = ((nfib - cutoff) + 1) * auto_tuple_t::size();
+        ex_unique = ((nfib - cutoff) + 1) * auto_tuple_size;
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_t::size();
+            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_size;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -367,7 +366,7 @@ main(int argc, char** argv)
     else
     {
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 5) * auto_tuple_t::size() - 4;
+            (tim::storage<real_clock>::instance()->size() - 5) * auto_tuple_size - 4;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;

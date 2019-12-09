@@ -209,10 +209,6 @@ def run_pyctest():
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
         components = "profiler" if args.profile == "cpu" else "tcmalloc"
         build_opts["TIMEMORY_GPERF_COMPONENTS"] = components
-        if pyct.BUILD_TYPE != "RelWithDebInfo":
-            warnings.warn(
-                "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
-            pyct.BUILD_TYPE = "RelWithDebInfo"
         pyct.BUILD_NAME = "{} {}".format(
             pyct.BUILD_NAME, args.profile.upper())
 
@@ -339,9 +335,6 @@ def run_pyctest():
                          "CALI_CONFIG_PROFILE=runtime-report",
                          "TIMEMORY_DART_OUTPUT=ON",
                          "TIMEMORY_DART_COUNT=1"])
-
-    os.environ["CPUPROFILE_FREQUENCY"] = "2000"
-    os.environ["CPUPROFILE_REALTIME"] = "1"
 
     pyct.test(construct_name("test-optional-off"),
               construct_command(["./ex_optional_off"], args),
