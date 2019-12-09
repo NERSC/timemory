@@ -49,7 +49,8 @@ namespace tim
 template <typename _CompTuple, typename _CompList>
 class auto_hybrid
 {
-    static_assert(_CompTuple::is_component_tuple && _CompList::is_component_list,
+    static_assert((_CompTuple::is_component_tuple || _CompTuple::is_auto_tuple) &&
+                      (_CompList::is_component_list || _CompList::is_auto_list),
                   "Error! _CompTuple must be tim::component_tuple<...> and _CompList "
                   "must be tim::component_list<...>");
 
@@ -73,6 +74,9 @@ public:
     static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = false;
     static constexpr bool is_component_type   = false;
+    static constexpr bool is_auto_list        = false;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = true;
     static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
     static constexpr bool contains_gotcha     = component_type::contains_gotcha;

@@ -133,6 +133,9 @@ public:
     static constexpr bool is_component_tuple  = true;
     static constexpr bool is_component_hybrid = false;
     static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_list        = false;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = false;
     static constexpr bool is_auto_type        = false;
     static constexpr bool is_component        = false;
 

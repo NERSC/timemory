@@ -57,7 +57,8 @@ namespace tim
 template <typename _CompTuple, typename _CompList>
 class component_hybrid
 {
-    static_assert(_CompTuple::is_component_tuple && _CompList::is_component_list,
+    static_assert((_CompTuple::is_component_tuple || _CompTuple::is_auto_tuple) &&
+                      (_CompList::is_component_list || _CompList::is_auto_list),
                   "Error! _CompTuple must be tim::component_tuple<...> and _CompList "
                   "must be tim::component_list<...>");
 
@@ -71,8 +72,8 @@ class component_hybrid
 
 public:
     using this_type       = component_hybrid<_CompTuple, _CompList>;
-    using tuple_type      = _CompTuple;
-    using list_type       = _CompList;
+    using tuple_type      = typename _CompTuple::component_type;
+    using list_type       = typename _CompList::component_type;
     using tuple_data_type = typename tuple_type::data_type;
     using list_data_type  = typename list_type::data_type;
     using data_type       = decltype(std::tuple_cat(std::declval<tuple_type>().data(),
@@ -97,6 +98,9 @@ public:
     static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = true;
     static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_list        = false;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = false;
     static constexpr bool is_auto_type        = false;
     static constexpr bool is_component        = false;
 
