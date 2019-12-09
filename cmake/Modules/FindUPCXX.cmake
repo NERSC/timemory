@@ -221,8 +221,9 @@ else()
         ENV UPCXX_ROOT_DIR
     PATH_SUFFIXES bin)
 endif()
-if (NOT EXISTS "${UPCXX_META_EXECUTABLE}")
-  message(WARNING "Failed to find UPC++ command interface 'upcxx-meta'. Please set UPCXX_INSTALL=/path/to/upcxx or add /path/to/upcxx/bin to $PATH")
+
+if (NOT EXISTS "${UPCXX_META_EXECUTABLE}" AND NOT UPCXX_FIND_QUIETLY)
+    message(WARNING "Failed to find UPC++ command interface 'upcxx-meta'. Please set UPCXX_INSTALL=/path/to/upcxx or add /path/to/upcxx/bin to $PATH")
 endif()
 
 
@@ -259,7 +260,7 @@ if( UPCXX_META_EXECUTABLE )
   UPCXX_VERB("CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
   # get absolute path, resolving symbolic links, of UPCXX_CXX_COMPILER
   get_filename_component(ABS_UPCXX_CXX_PATH ${UPCXX_CXX_COMPILER} REALPATH CACHE)
-  if (NOT EXISTS "${ABS_UPCXX_CXX_PATH}")
+  if (NOT EXISTS "${ABS_UPCXX_CXX_PATH}" AND NOT UPCXX_FIND_QUIETLY)
     message(WARNING "CANNOT FIND ABSOLUTE PATH TO UPCXX_CXX_COMPILER (${UPCXX_CXX_COMPILER})")
     set(ABS_UPCXX_CXX_PATH "${UPCXX_CXX_COMPILER}")
   endif()
@@ -296,7 +297,7 @@ if( UPCXX_META_EXECUTABLE )
     endif()
   endif()
 
-  if( NOT UPCXX_COMPATIBLE_COMPILER )
+  if( NOT UPCXX_COMPATIBLE_COMPILER AND NOT UPCXX_FIND_QUIETLY)
     message(WARNING "Compiler compatibility check failed!\nUPCXX compiler provided by upcxx-meta CXX:\n    ${UPCXX_CXX_COMPILER} ->\n    ${ABS_UPCXX_CXX_PATH}\nis different from CMAKE_CXX_COMPILER:\n    ${CMAKE_CXX_COMPILER} ->\n    ${ABS_CMAKE_CXX_PATH}\n\nPlease either pass cmake: -DCMAKE_CXX_COMPILER=${UPCXX_CXX_COMPILER}\nor re-install UPC++ with: CXX=${CMAKE_CXX_COMPILER}\n")
   endif()
 

@@ -224,7 +224,7 @@ ENDFUNCTION()
 #       TEST_FILE (one value) -- file to check for (default: CMakeLists.txt)
 #       ADDITIONAL_CMDS (many value) -- any addition commands to pass
 #
-MACRO(CHECKOUT_GIT_SUBMODULE)
+FUNCTION(CHECKOUT_GIT_SUBMODULE)
     # parse args
     cmake_parse_arguments(
         CHECKOUT
@@ -262,8 +262,23 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
     # assuming a .gitmodules file exists
     set(_SUBMODULE "${PROJECT_SOURCE_DIR}/.gitmodules")
 
+    set(_TEST_FILE_EXISTS OFF)
+    if(EXISTS "${_TEST_FILE}" AND NOT IS_DIRECTORY "${_TEST_FILE}")
+        set(_TEST_FILE_EXISTS ON)
+    endif()
+
+    set(_SUBMODULE_EXISTS OFF)
+    if(EXISTS "${_SUBMODULE}" AND NOT IS_DIRECTORY "${_SUBMODULE}")
+        set(_SUBMODULE_EXISTS ON)
+    endif()
+
+    set(_HAS_REPO_URL OFF)
+    if(NOT "${CHECKOUT_REPO_URL}" STREQUAL "")
+        set(_HAS_REPO_URL ON)
+    endif()
+
     # if the module has not been checked out
-    if(NOT EXISTS "${_TEST_FILE}" AND EXISTS "${_SUBMODULE}")
+    if(NOT _TEST_FILE_EXISTS AND _SUBMODULE_EXISTS)
 
         # perform the checkout
         execute_process(
@@ -280,8 +295,12 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
                 ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}")
             message(STATUS "function(CHECKOUT_GIT_SUBMODULE) failed.")
             message(FATAL_ERROR "Command: \"${_CMD}\"")
+        else()
+            set(_TEST_FILE_EXISTS ON)
         endif()
-    elseif(NOT EXISTS "${_TEST_FILE}" AND NOT "${CHECKOUT_REPO_URL}" STREQUAL "")
+    endif()
+
+    if(NOT _TEST_FILE_EXISTS AND _HAS_REPO_URL)
         message(STATUS "Checking out '${CHECKOUT_REPO_URL}' @ '${CHECKOUT_REPO_BRANCH}'...")
 
         # remove the existing directory
@@ -315,13 +334,16 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
                 ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_REPO_URL} ${CHECKOUT_RELATIVE_PATH}")
             message(STATUS "function(CHECKOUT_GIT_SUBMODULE) failed.")
             message(FATAL_ERROR "Command: \"${_CMD}\"")
+        else()
+            set(_TEST_FILE_EXISTS ON)
         endif()
+    endif()
 
-    elseif(NOT EXISTS "${_TEST_FILE}")
+    if(NOT EXISTS "${_TEST_FILE}" OR NOT _TEST_FILE_EXISTS)
         message(FATAL_ERROR "Error checking out submodule: '${CHECKOUT_RELATIVE_PATH}' to '${_DIR}'")
     endif()
 
-ENDMACRO()
+ENDFUNCTION()
 
 
 #----------------------------------------------------------------------------------------#
