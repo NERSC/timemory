@@ -56,7 +56,9 @@
 
 // archives
 #include <cereal/archives/json.hpp>
-#include <cereal/archives/xml.hpp>
+#if defined(TIMEMORY_INCLUDE_XML_ARCHIVE)
+#    include <cereal/archives/xml.hpp>
+#endif
 
 //--------------------------------------------------------------------------------------//
 
