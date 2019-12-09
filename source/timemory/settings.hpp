@@ -113,8 +113,7 @@ get_local_datetime(const char* dt_format)
 
 //--------------------------------------------------------------------------------------//
 
-tim_api
-struct settings
+tim_api struct settings
 {
     using string_t    = std::string;
     using strvector_t = std::vector<std::string>;

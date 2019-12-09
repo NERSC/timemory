@@ -183,11 +183,6 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
-    // function operator
-    //
-    value_type operator()() { return Type::record(); }
-
-    //----------------------------------------------------------------------------------//
     // reset the values
     //
     void reset()
@@ -781,7 +776,12 @@ private:
     friend struct operation::compose;
 
 public:
-    base()                          = default;
+    base()
+    : is_running(false)
+    , is_on_stack(false)
+    , is_transient(false)
+    {}
+
     ~base()                         = default;
     explicit base(const this_type&) = default;
     explicit base(this_type&&)      = default;
@@ -836,11 +836,6 @@ public:
     {}
 
 public:
-    //----------------------------------------------------------------------------------//
-    // function operator
-    //
-    value_type operator()() { Type::record(); }
-
     //----------------------------------------------------------------------------------//
     // reset the values
     //

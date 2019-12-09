@@ -206,9 +206,9 @@ public:
                 ss << "scalar_op";
         }
 
-        auto      label = tim::demangle<_Tp>();
+        auto      _label = tim::demangle<_Tp>();
         data_type _data(ss.str(), working_set, trials, total_bytes, total_ops, nops,
-                        _counter, _Device::name(), label, _itrp);
+                        _counter, _Device::name(), _label, _itrp);
 
 #if !defined(_WINDOWS)
         if(settings::verbose() > 1 || settings::debug())

@@ -27,6 +27,7 @@ timing_report*
 /test_output*
 *timemory_output*
 *.autosave
+/coverage.info
 
 # macOS Finder files
 .DS_Store

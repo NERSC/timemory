@@ -64,8 +64,8 @@ struct gotcha_invoker
     static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
-        return invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func,
-                                       std::forward<_Args>(_args)...);
+        return invoke_sfinae(_obj, _suppress, _ready, _func,
+                             std::forward<_Args>(_args)...);
     }
 
 private:
@@ -149,8 +149,7 @@ struct gotcha_invoker<_Tp, void>
     static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
-        invoke_sfinae<_Args...>(_obj, _suppress, _ready, _func,
-                                std::forward<_Args>(_args)...);
+        invoke_sfinae(_obj, _suppress, _ready, _func, std::forward<_Args>(_args)...);
     }
 
 private:
@@ -170,7 +169,7 @@ private:
         if(settings::debug())
         {
             auto typestr = demangle<_Tp>();
-            PRINT_HERE("%s '%s::%s'", "invoking", typestr.c_str(), "operator()");
+            PRINT_HERE("invoking '%s::%s'", typestr.c_str(), "operator()");
         }
 #endif
         _ready    = false;
@@ -192,7 +191,7 @@ private:
         if(settings::debug())
         {
             auto typestr = demangle<_Tp>();
-            PRINT_HERE("'%s' not implemented", "invoking", typestr.c_str(), "operator()");
+            PRINT_HERE("'%s::operator()' not implemented", typestr.c_str());
         }
 #endif
         _ready    = true;
@@ -746,22 +745,24 @@ private:
 
     template <typename _Comp, typename _Ret, typename... _Args,
               typename _This                                         = this_type,
-              enable_if_t<(_This::differentiator_is_component), int> = 0>
+              enable_if_t<(_This::differentiator_is_component), int> = 0,
+              enable_if_t<!(std::is_same<_Ret, void>::value), int>   = 0>
     static _Ret invoke(_Comp& _comp, bool& _suppress, bool& _ready,
                        _Ret (*_func)(_Args...), _Args&&... _args)
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
         _Type& _obj    = _comp.template get<_Type>();
-        return _Invoker::template invoke(_obj, _suppress, _ready, _func,
-                                         std::forward<_Args>(_args)...);
+        return _Invoker::invoke(_obj, _suppress, _ready, _func,
+                                std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
 
     template <typename _Comp, typename _Ret, typename... _Args,
               typename _This                                          = this_type,
-              enable_if_t<!(_This::differentiator_is_component), int> = 0>
+              enable_if_t<!(_This::differentiator_is_component), int> = 0,
+              enable_if_t<!(std::is_same<_Ret, void>::value), int>    = 0>
     static _Ret invoke(_Comp&, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
@@ -775,23 +776,26 @@ private:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Comp, typename... _Args, typename _This = this_type,
-              enable_if_t<(_This::differentiator_is_component), int> = 0>
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                         = this_type,
+              enable_if_t<(_This::differentiator_is_component), int> = 0,
+              enable_if_t<(std::is_same<_Ret, void>::value), int>    = 0>
     static void invoke(_Comp& _comp, bool& _suppress, bool& _ready,
-                       void (*_func)(_Args...), _Args&&... _args)
+                       _Ret (*_func)(_Args...), _Args&&... _args)
     {
         using _Type    = _Differentiator;
-        using _Invoker = gotcha_invoker<_Type, void>;
+        using _Invoker = gotcha_invoker<_Type, _Ret>;
         _Type& _obj    = _comp.template get<_Type>();
-        _Invoker::template invoke(_obj, _suppress, _ready, _func,
-                                  std::forward<_Args>(_args)...);
+        _Invoker::invoke(_obj, _suppress, _ready, _func, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Comp, typename... _Args, typename _This = this_type,
-              enable_if_t<!(_This::differentiator_is_component), int> = 0>
-    static void invoke(_Comp&, bool& _suppress, bool& _ready, void (*_func)(_Args...),
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                          = this_type,
+              enable_if_t<!(_This::differentiator_is_component), int> = 0,
+              enable_if_t<(std::is_same<_Ret, void>::value), int>     = 0>
+    static void invoke(_Comp&, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
         _ready    = true;
@@ -840,16 +844,8 @@ private:
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
             _obj.customize(_data.tool_id, _args...);
-
-            // _data.ready      = true;
-            // _global_suppress = false;
-            _Ret _ret = invoke<component_type, _Ret, _Args...>(
-                _obj, _global_suppress, _data.ready, _orig,
-                std::forward<_Args>(_args)...);
-            // _Ret _ret        = (*_orig)(_args...);
-            // _global_suppress = true;
-            // _data.ready      = false;
-
+            _Ret _ret = invoke<component_type>(_obj, _global_suppress, _data.ready, _orig,
+                                               std::forward<_Args>(_args)...);
             _obj.customize(_data.tool_id, _ret);
             _obj.stop();
 
@@ -911,15 +907,8 @@ private:
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
             _obj.customize(_data.tool_id, _args...);
-
-            // _data.ready      = true;
-            // _global_suppress = false;
-            invoke<component_type, _Args...>(_obj, _global_suppress, _data.ready, _orig,
-                                             std::forward<_Args>(_args)...);
-            // (*_orig)(_args...);
-            // _global_suppress = true;
-            // _data.ready      = false;
-
+            invoke<component_type>(_obj, _global_suppress, _data.ready, _orig,
+                                   std::forward<_Args>(_args)...);
             _obj.customize(_data.tool_id);
             _obj.stop();
         }

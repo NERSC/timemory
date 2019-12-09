@@ -1046,7 +1046,7 @@ public:
         return m_elapsed;
     }
 
-    named_elapsed_t get_named(uint64_t idx, bool remove = false)
+    named_elapsed_t get_named(uint64_t idx, bool remove_itr = false)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
@@ -1056,7 +1056,7 @@ public:
         if(itr != m_named_elapsed.end())
         {
             ret = itr->second;
-            if(remove)
+            if(remove_itr)
                 m_named_elapsed.erase(itr);
         }
         return ret;
