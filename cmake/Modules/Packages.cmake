@@ -398,6 +398,12 @@ if(TIMEMORY_BUILD_PYTHON)
         REPO_URL https://github.com/jrmadsen/pybind11.git
         REPO_BRANCH master)
 
+    # C++ standard
+    if(NOT WIN32 AND NOT "${PYBIND11_CPP_STANDARD}" STREQUAL "-std=c++${CMAKE_CXX_STANDARD}")
+        set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
+            CACHE STRING "PyBind11 CXX standard" FORCE)
+    endif()
+
     set(PYBIND11_INSTALL OFF)
     # add PyBind11 to project
     if(NOT TARGET pybind11)
