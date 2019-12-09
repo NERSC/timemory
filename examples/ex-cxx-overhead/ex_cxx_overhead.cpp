@@ -261,7 +261,6 @@ main(int argc, char** argv)
     tim::settings::timing_precision()  = 6;
     tim::timemory_init(argc, argv);
     tim::dmp::initialize(argc, argv);
-    tim::settings::cout_output() = tim::settings::flat_profile();
     tim::settings::cout_output() = false;
     tim::print_env();
 
