@@ -249,7 +249,11 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
     set(_DIR "${CHECKOUT_WORKING_DIRECTORY}/${CHECKOUT_RELATIVE_PATH}")
     # ensure the (possibly empty) directory exists
     if(NOT EXISTS "${_DIR}")
-        message(FATAL_ERROR "submodule directory does not exist")
+        if(CHECKOUT_REPO_URL)
+            find_package(Git REQUIRED)
+        else()
+            message(FATAL_ERROR "submodule directory does not exist")
+        endif()
     endif()
 
     # if this file exists --> project has been checked out
@@ -260,7 +264,6 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
 
     # if the module has not been checked out
     if(NOT EXISTS "${_TEST_FILE}" AND EXISTS "${_SUBMODULE}")
-        find_package(Git REQUIRED)
 
         # perform the checkout
         execute_process(
@@ -279,6 +282,8 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
             message(FATAL_ERROR "Command: \"${_CMD}\"")
         endif()
     elseif(NOT EXISTS "${_TEST_FILE}" AND NOT "${CHECKOUT_REPO_URL}" STREQUAL "")
+        message(STATUS "Checking out '${CHECKOUT_REPO_URL}' @ '${CHECKOUT_REPO_BRANCH}'...")
+
         # remove the existing directory
         if(EXISTS "${_DIR}")
             execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory ${_DIR})

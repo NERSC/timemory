@@ -44,16 +44,14 @@ add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
 
-set(_DMP_SHARED_LIBRARIES)
-set(_DMP_STATIC_LIBRARIES)
+set(_DMP_LIBRARIES)
 
 if(TIMEMORY_USE_MPI)
-    list(APPEND _DMP_SHARED_LIBRARIES timemory-mpi)
-    list(APPEND _DMP_STATIC_LIBRARIES timemory-mpi)
+    list(APPEND _DMP_LIBRARIES timemory-mpi)
 endif()
 
 if(TIMEMORY_USE_UPCXX)
-    list(APPEND _DMP_STATIC_LIBRARIES timemory-upcxx)
+    list(APPEND _DMP_LIBRARIES timemory-upcxx)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
@@ -91,7 +89,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
-    ${_DMP_SHARED_LIBRARIES})
+    ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-threading
@@ -105,7 +103,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
-    ${_DMP_STATIC_LIBRARIES})
+    ${_DMP_LIBRARIES})
 
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
@@ -199,7 +197,7 @@ checkout_git_submodule(RECURSIVE
 # add cereal
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/cereal)
 
-target_include_directories(timemory-cereal INTERFACE
+target_include_directories(timemory-cereal SYSTEM INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/cereal/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
@@ -229,7 +227,7 @@ if(TIMEMORY_BUILD_GTEST)
     endif()
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
     target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
-    target_include_directories(timemory-google-test INTERFACE
+    target_include_directories(timemory-google-test SYSTEM INTERFACE
         ${PROJECT_SOURCE_DIR}/google-test/googletest/include
         ${PROJECT_SOURCE_DIR}/google-test/googlemock/include)
 endif()
