@@ -192,3 +192,9 @@ if(TIMEMORY_USE_UPCXX)
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                         timemory-analysis-tools timemory-upcxx)
 endif()
+
+add_timemory_google_test(variadic_tests
+    DISCOVER_TESTS
+    SOURCES         variadic_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools timemory-mpi)

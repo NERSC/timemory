@@ -353,6 +353,10 @@ get_labeled(const auto_list<_Types...>& _obj)
 //--------------------------------------------------------------------------------------//
 // variadic versions
 
+#define TIMEMORY_VARIADIC_BLANK_AUTO_LIST(tag, ...)                                      \
+    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \
+    TIMEMORY_BLANK_AUTO_LIST(_TIM_TYPEDEF(__LINE__), tag);
+
 #define TIMEMORY_VARIADIC_BASIC_AUTO_LIST(tag, ...)                                      \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \
     TIMEMORY_BASIC_AUTO_LIST(_TIM_TYPEDEF(__LINE__), tag);

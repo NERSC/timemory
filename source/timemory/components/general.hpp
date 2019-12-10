@@ -234,6 +234,9 @@ struct user_bundle : public base<user_bundle<_Idx, _Tag>, void>
     using stop_func_vec_t  = std::vector<stop_func_t>;
     using void_vec_t       = std::vector<void*>;
 
+    using mutex_t = std::mutex;
+    using lock_t  = std::unique_lock<mutex_t>;
+
     static std::string label() { return "user_bundle"; }
     static std::string description() { return "user-defined bundle of tools"; }
     static value_type  record() {}
@@ -284,6 +287,7 @@ public:
     static void configure(start_func_t&& _start, stop_func_t&& _stop)
     {
         internal_init();
+        lock_t lk(get_lock());
         get_start().emplace_back(std::forward<start_func_t>(_start));
         get_stop().emplace_back(std::forward<stop_func_t>(_stop));
     }
@@ -313,6 +317,7 @@ public:
                 delete _result;
             };
 
+            lock_t lk(get_lock());
             get_start().emplace_back(_start);
             get_stop().emplace_back(_stop);
         }
@@ -326,7 +331,7 @@ public:
               enable_if_t<!(_Toolset::is_component), char> = 0>
     static void configure(bool _flat = false)
     {
-        internal_init<_Toolset>();
+        internal_init();
 
         auto _start = [=](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
@@ -342,19 +347,9 @@ public:
             delete _result;
         };
 
+        lock_t lk(get_lock());
         get_start().emplace_back(_start);
         get_stop().emplace_back(_stop);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Configure the tool for a variadic list of tools
-    //
-    template <typename _Toolset, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    static void configure(bool _flat = false)
-    {
-        configure<_Toolset>(_flat);
-        configure<_Tail...>(_flat);
     }
 
     //----------------------------------------------------------------------------------//
@@ -364,13 +359,13 @@ public:
               enable_if_t<!(_Toolset::is_component), char> = 0>
     static void configure(_InitFunc&& _init, bool _flat = false)
     {
-        internal_init<_Toolset>();
+        internal_init();
 
         auto _start = [=](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
             _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
                                                     : new _Toolset(_prefix, _flat);
-            std::forward<_InitFunc>(_init)(*_result);
+            _init(*_result);
             _result->start();
             return (void*) _result;
         };
@@ -381,8 +376,20 @@ public:
             delete _result;
         };
 
+        lock_t lk(get_lock());
         get_start().emplace_back(_start);
         get_stop().emplace_back(_stop);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Configure the tool for a variadic list of tools
+    //
+    template <typename _Head, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    static void configure(bool _flat = false)
+    {
+        configure<_Head>(_flat);
+        configure<_Tail...>(_flat);
     }
 
     //----------------------------------------------------------------------------------//
@@ -401,6 +408,16 @@ public:
     {
         static stop_func_vec_t _instance{};
         return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Explicitly clear the previous configurations
+    //
+    static void reset()
+    {
+        lock_t lk(get_lock());
+        get_start().clear();
+        get_stop().clear();
     }
 
 public:
@@ -431,6 +448,15 @@ protected:
 
 private:
     //----------------------------------------------------------------------------------//
+    //  Get lock
+    //
+    static mutex_t& get_lock()
+    {
+        static mutex_t _instance;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
     //  Initialize the storage
     //
     static void internal_init()
@@ -453,18 +479,6 @@ private:
             using tool_storage_type = typename _Tool::storage_type;
             auto ret                = tool_storage_type::instance();
             ret->initialize();
-            return true;
-        };
-        static bool _inited = _instance();
-        consume_parameters(_inited);
-    }
-
-    template <typename _Tool, enable_if_t<!(_Tool::is_component), char> = 0>
-    static void internal_init()
-    {
-        internal_init();
-        static auto _instance = []() {
-            _Tool::initialize_storage();
             return true;
         };
         static bool _inited = _instance();

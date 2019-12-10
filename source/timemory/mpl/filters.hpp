@@ -262,6 +262,13 @@ using operation_filter_true =
 //
 //======================================================================================//
 
+template <typename _Tp>
+struct get_data_tuple_type
+{
+    using type = typename std::conditional<(std::is_fundamental<_Tp>::value), _Tp,
+                                           decltype(std::declval<_Tp>().get())>::type;
+};
+
 template <typename... _ImplTypes>
 struct get_data_tuple
 {
@@ -272,9 +279,9 @@ struct get_data_tuple
 template <typename... _ImplTypes, template <typename...> class _Tuple>
 struct get_data_tuple<_Tuple<_ImplTypes...>>
 {
-    using value_type = _Tuple<decltype(std::declval<_ImplTypes>().get())...>;
+    using value_type = _Tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
     using label_type =
-        _Tuple<_Tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+        _Tuple<_Tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
 };
 
 //======================================================================================//

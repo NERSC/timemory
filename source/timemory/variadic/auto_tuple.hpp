@@ -298,6 +298,10 @@ get_labeled(const auto_tuple<_Types...>& _obj)
 //--------------------------------------------------------------------------------------//
 // variadic versions
 
+#define TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE(tag, ...)                                     \
+    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
+    TIMEMORY_BLANK_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
+
 #define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
     TIMEMORY_BASIC_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);

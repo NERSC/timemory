@@ -253,20 +253,16 @@ main(int argc, char** argv)
 
     details::allocate();
 
-    // tim::component_tuple<read_bytes, written_bytes> io("io_rw_bytes");
-    // io.start();
-    // details::read_write();
-    // io.stop();
-
-#if !defined(_WINDOWS)
-    // rb = io.get<read_bytes>();
-    // wb = io.get<written_bytes>();
-#endif
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

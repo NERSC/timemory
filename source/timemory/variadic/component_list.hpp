@@ -193,9 +193,10 @@ public:
     explicit component_list(const captured_location_t& loc, const bool& store = false,
                             const bool& flat = settings::flat_profile());
 
-    template <typename _Func = init_func_t>
-    explicit component_list(_Func&& _func, const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile())
+    template <typename _Func>
+    explicit component_list(const _Func& _func, const string_t& key,
+                            const bool& store = false,
+                            const bool& flat  = settings::flat_profile())
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_is_pushed(false)
@@ -215,8 +216,8 @@ public:
         }
     }
 
-    template <typename _Func = init_func_t>
-    explicit component_list(_Func&& _func, const captured_location_t& loc,
+    template <typename _Func>
+    explicit component_list(const _Func& _func, const captured_location_t& loc,
                             const bool& store = false,
                             const bool& flat  = settings::flat_profile())
     : m_store(store && settings::enabled())

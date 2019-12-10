@@ -149,7 +149,7 @@ endfunction()
 
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 if(TIMEMORY_LINK_RT)
     target_link_libraries(timemory-headers INTERFACE rt)

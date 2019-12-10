@@ -1,6 +1,12 @@
 # use IN_LIST so this is required
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
+foreach(_VAR ROOT_DIR INCLUDE_DIR LIB_DIR PYTHON_DIR INCLUDE_DIRS MISSING_COMPONENTS
+    FOUND_COMPONENTS LIBRARIES LIBRARY_FOUND SHARED_LIBRARY_FOUND STATIC_LIBRARY_FOUND
+    ENABLED_LINK_LANGUAGES ENABLED_LINK_LIBRARIES)
+    unset(@PROJECT_NAME@_${_VAR})
+endforeach()
+
 include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config-version.cmake)
 
 @PACKAGE_INIT@
@@ -124,7 +130,7 @@ if(TIMEMORY_INSTALL_TREE)
 else() # build tree
 
     set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
-
+    set(@PROJECT_NAME@_INCLUDE_DIRS "@PROJECT_SOURCE_DIR@/source")
     set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
 
     if(@TIMEMORY_BUILD_PYTHON@)
@@ -159,32 +165,37 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   timemory link target
 #----------------------------------------------------------------------------------------#
-set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-headers)
-set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-headers)
-set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-headers)
-
-if(TARGET @LIBNAME@-cxx-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-shared)
-    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-shared)
-elseif(TARGET @LIBNAME@-cxx-static)
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-static)
-    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-static)
+set(_PREFIX )
+if(TIMEMORY_INSTALL_TREE)
+    set(_PREFIX @PROJECT_NAME@::)
 endif()
 
-if(TARGET @LIBNAME@-c-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-shared)
-    list(APPEND @PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-shared)
-elseif(TARGET @LIBNAME@-c-static)
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-static)
-    list(APPEND @PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-static)
+set(@PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-headers)
+set(@PROJECT_NAME@_C_LIBRARIES ${_PREFIX}@LIBNAME@-headers)
+set(@PROJECT_NAME@_CXX_LIBRARIES ${_PREFIX}@LIBNAME@-headers)
+
+if(TARGET ${_PREFIX}@LIBNAME@-cxx-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-shared)
+    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-shared)
+elseif(TARGET ${_PREFIX}@LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-static)
 endif()
 
-if(TARGET @LIBNAME@-cxx-static)
-    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES @LIBNAME@-cxx-static)
+if(TARGET ${_PREFIX}@LIBNAME@-c-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-c-shared)
+    list(APPEND @PROJECT_NAME@_C_LIBRARIES ${_PREFIX}@LIBNAME@-c-shared)
+elseif(TARGET ${_PREFIX}@LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_LIBRARIES ${_PREFIX}@LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_C_LIBRARIES ${_PREFIX}@LIBNAME@-c-static)
 endif()
 
-if(TARGET @LIBNAME@-c-static)
-    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES @LIBNAME@-c-static)
+if(TARGET ${_PREFIX}@LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES ${_PREFIX}@LIBNAME@-cxx-static)
+endif()
+
+if(TARGET ${_PREFIX}@LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES ${_PREFIX}@LIBNAME@-c-static)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -216,6 +227,7 @@ if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
     if(CMAKE_VERSION VERSION_LESS 3.11)
         if(NOT TARGET ${_INTERFACE_LIB})
             add_library(${_INTERFACE_LIB} INTERFACE)
+            target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
         else()
             set(_MSG "CMake 3.10 does not fully support IMPORTED INTERFACE libraries")
             set(_MSG "${_MSG}. The \"${_INTERFACE_LIB}\" target is being modified globally...")
@@ -225,6 +237,7 @@ if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
         endif()
     else()
         add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
+        target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
     endif()
 endif()
 
@@ -245,6 +258,7 @@ include(FindPackageHandleStandardArgs)
 # if all listed variables are TRUE
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR
+    @PROJECT_NAME@_INCLUDE_DIRS
     ${_@PROJECT_NAME@_MISSING_COMPONENTS}
     @PROJECT_NAME@_LIBRARIES)
 
