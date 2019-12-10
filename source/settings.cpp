@@ -83,8 +83,7 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                              std::numeric_limits<uint16_t>::max())
-TIMEMORY_ENV_STATIC_ACCESSOR(string_t, time_format, "TIMEMORY_TIME_FORMAT",
-                             "%F_%I.%M.%S_%p")
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, time_format, "TIMEMORY_TIME_FORMAT", "%F_%I.%M_%p")
 
 // general formatting
 TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, precision, "TIMEMORY_PRECISION", -1)

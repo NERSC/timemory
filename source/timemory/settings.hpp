@@ -147,7 +147,7 @@ tim_api struct settings
     TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                                  std::numeric_limits<uint16_t>::max())
     TIMEMORY_ENV_STATIC_ACCESSOR(string_t, time_format, "TIMEMORY_TIME_FORMAT",
-                                 "%F_%I.%M.%S_%p")
+                                 "%F_%I.%M_%p")
 
     // general formatting
     TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, precision, "TIMEMORY_PRECISION", -1)
@@ -422,7 +422,9 @@ tim_api struct settings
         {
             if(dir.length() > 0 && dir[dir.length() - 1] != '/')
                 dir += "/";
-            dir += get_local_datetime(time_format().c_str());
+            // ensure that all output files use same local datetime
+            static auto _local_datetime = get_local_datetime(time_format().c_str());
+            dir += _local_datetime;
         }
         auto ret = makedir(dir);
         return (ret == 0) ? filepath::osrepr(dir + string_t("/") + output_prefix())
