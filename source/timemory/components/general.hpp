@@ -45,8 +45,8 @@ namespace component
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<trip_count>;
-extern template struct base<user_bundle<10101>, void>;
-extern template struct base<user_bundle<11011>, void>;
+extern template struct base<user_bundle<10101, native_tag>, void>;
+extern template struct base<user_bundle<11011, native_tag>, void>;
 
 #endif
 
@@ -219,12 +219,13 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx>
-struct user_bundle : public base<user_bundle<_Idx>, void>
+template <size_t _Idx, typename _Tag>
+struct user_bundle : public base<user_bundle<_Idx, _Tag>, void>
 {
-    using value_type = void;
-    using this_type  = user_bundle<_Idx>;
-    using base_type  = base<user_bundle, value_type>;
+    using value_type   = void;
+    using this_type    = user_bundle<_Idx, _Tag>;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
 
     using start_func_t = std::function<void*(const std::string&)>;
     using stop_func_t  = std::function<void(void*)>;
@@ -278,6 +279,16 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
+    //  Configure the tool with a specific start and stop
+    //
+    static void configure(start_func_t&& _start, stop_func_t&& _stop)
+    {
+        internal_init();
+        get_start().emplace_back(std::forward<start_func_t>(_start));
+        get_stop().emplace_back(std::forward<stop_func_t>(_stop));
+    }
+
+    //----------------------------------------------------------------------------------//
     //  Configure the tool for a specific set of tools
     //
     template <typename _Toolset, typename... _Tail,
@@ -285,16 +296,18 @@ public:
               enable_if_t<(_Toolset::is_component), char> = 0>
     static void configure(bool _flat = false)
     {
+        internal_init<_Toolset>();
+
         if(trait::is_available<_Toolset>::value)
         {
             using _Toolset_t = auto_tuple<_Toolset>;
-            auto _start      = [&](const std::string& _prefix) {
+            auto _start      = [=](const std::string& _prefix) {
                 _Toolset_t* _result = new _Toolset_t(_prefix, _flat);
                 _result->start();
                 return (void*) _result;
             };
 
-            auto _stop = [&](void* v_result) {
+            auto _stop = [=](void* v_result) {
                 _Toolset_t* _result = static_cast<_Toolset_t*>(v_result);
                 _result->stop();
                 delete _result;
@@ -313,7 +326,9 @@ public:
               enable_if_t<!(_Toolset::is_component), char> = 0>
     static void configure(bool _flat = false)
     {
-        auto _start = [&](const std::string& _prefix) {
+        internal_init<_Toolset>();
+
+        auto _start = [=](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
             _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
                                                     : new _Toolset(_prefix, _flat);
@@ -321,7 +336,7 @@ public:
             return (void*) _result;
         };
 
-        auto _stop = [&](void* v_result) {
+        auto _stop = [=](void* v_result) {
             _Toolset* _result = static_cast<_Toolset*>(v_result);
             _result->stop();
             delete _result;
@@ -349,7 +364,9 @@ public:
               enable_if_t<!(_Toolset::is_component), char> = 0>
     static void configure(_InitFunc&& _init, bool _flat = false)
     {
-        auto _start = [&](const std::string& _prefix) {
+        internal_init<_Toolset>();
+
+        auto _start = [=](const std::string& _prefix) {
             constexpr bool is_component_type = _Toolset::is_component_type;
             _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
                                                     : new _Toolset(_prefix, _flat);
@@ -358,7 +375,7 @@ public:
             return (void*) _result;
         };
 
-        auto _stop = [&](void* v_result) {
+        auto _stop = [=](void* v_result) {
             _Toolset* _result = static_cast<_Toolset*>(v_result);
             _result->stop();
             delete _result;
@@ -411,6 +428,48 @@ protected:
     void_vec_t       m_bundle;
     start_func_vec_t m_start;
     stop_func_vec_t  m_stop;
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  Initialize the storage
+    //
+    static void internal_init()
+    {
+        static auto _instance = []() {
+            auto ret = storage_type::instance();
+            ret->initialize();
+            return true;
+        };
+        static bool _inited = _instance();
+        consume_parameters(_inited);
+    }
+
+    //
+    template <typename _Tool, enable_if_t<(_Tool::is_component), char> = 0>
+    static void internal_init()
+    {
+        internal_init();
+        static auto _instance = []() {
+            using tool_storage_type = typename _Tool::storage_type;
+            auto ret                = tool_storage_type::instance();
+            ret->initialize();
+            return true;
+        };
+        static bool _inited = _instance();
+        consume_parameters(_inited);
+    }
+
+    template <typename _Tool, enable_if_t<!(_Tool::is_component), char> = 0>
+    static void internal_init()
+    {
+        internal_init();
+        static auto _instance = []() {
+            _Tool::initialize_storage();
+            return true;
+        };
+        static bool _inited = _instance();
+        consume_parameters(_inited);
+    }
 };
 
 //--------------------------------------------------------------------------------------//

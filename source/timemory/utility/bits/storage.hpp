@@ -397,6 +397,8 @@ storage<ObjectType, true>::merge(this_type* itr)
     // if self is not initialized but itr is, copy data
     if(itr && itr->is_initialized() && !this->is_initialized())
     {
+        PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
+                   ObjectType::label().c_str());
         graph().insert_subgraph_after(_data().head(), itr->data().head());
         m_initialized = itr->m_initialized;
         m_finalized   = itr->m_finalized;
@@ -419,6 +421,8 @@ storage<ObjectType, true>::merge(this_type* itr)
             typename graph_t::pre_order_iterator _nitr(itr->data().head());
             if(graph().is_valid(_nitr.begin()) && _nitr.begin())
             {
+                if(settings::debug())
+                    PRINT_HERE("[%s]> worker is merging", ObjectType::label().c_str());
                 pre_order_iterator _pos   = _titr;
                 pre_order_iterator _other = _nitr.begin();
                 graph().append_child(_pos, _other);
@@ -428,6 +432,9 @@ storage<ObjectType, true>::merge(this_type* itr)
 
             if(!_merged)
             {
+                if(settings::debug())
+                    PRINT_HERE("[%s]> worker is not merged!",
+                               ObjectType::label().c_str());
                 ++_nitr;
                 if(graph().is_valid(_nitr) && _nitr)
                 {
@@ -441,6 +448,8 @@ storage<ObjectType, true>::merge(this_type* itr)
 
     if(!_merged)
     {
+        if(settings::debug())
+            PRINT_HERE("[%s]> worker is not merged!", ObjectType::label().c_str());
         pre_order_iterator _nitr(itr->data().head());
         ++_nitr;
         if(!graph().is_valid(_nitr))
@@ -999,36 +1008,38 @@ void storage<ObjectType, true>::external_print(std::false_type)
                 get_return_type exclusive_values;
                 // continue while not at end of graph until first sibling is
                 // encountered
-                if(eitr == _results.end())
-                    continue;
-                auto eitr_depth = std::get<3>(*eitr);
-                while(eitr_depth != itr_depth)
+                if(eitr != _results.end())
                 {
-                    auto& eitr_obj = std::get<1>(*eitr);
-
-                    // if one level down, this is an exclusive value
-                    if(eitr_depth == itr_depth + 1)
+                    auto eitr_depth = std::get<3>(*eitr);
+                    while(eitr_depth != itr_depth)
                     {
-                        // if first exclusive value encountered: assign; else:
-                        // combine
-                        if(nexclusive == 0)
-                            exclusive_values = eitr_obj.get();
-                        else
-                            math::combine(exclusive_values, eitr_obj.get());
-                        // increment. beyond 0 vs. 1, this value plays no role
-                        ++nexclusive;
+                        auto& eitr_obj = std::get<1>(*eitr);
+
+                        // if one level down, this is an exclusive value
+                        if(eitr_depth == itr_depth + 1)
+                        {
+                            // if first exclusive value encountered: assign; else:
+                            // combine
+                            if(nexclusive == 0)
+                                exclusive_values = eitr_obj.get();
+                            else
+                                math::combine(exclusive_values, eitr_obj.get());
+                            // increment. beyond 0 vs. 1, this value plays no role
+                            ++nexclusive;
+                        }
+                        // increment iterator for next while check
+                        ++eitr;
+                        if(eitr == _results.end())
+                            break;
+                        eitr_depth = std::get<3>(*eitr);
                     }
-                    // increment iterator for next while check
-                    ++eitr;
-                    if(eitr == _results.end())
-                        break;
-                    eitr_depth = std::get<3>(*eitr);
-                }
-                // if there were exclusive values encountered
-                if(nexclusive > 0 && trait::is_available<ObjectType>::value)
-                {
-                    math::print_percentage(
-                        _pss, math::compute_percentage(exclusive_values, itr_obj.get()));
+                    // if there were exclusive values encountered
+                    if(nexclusive > 0 && trait::is_available<ObjectType>::value)
+                    {
+                        math::print_percentage(
+                            _pss,
+                            math::compute_percentage(exclusive_values, itr_obj.get()));
+                    }
                 }
             }
 
@@ -1037,6 +1048,10 @@ void storage<ObjectType, true>::external_print(std::false_type)
             std::stringstream _oss;
             operation::print<ObjectType>(itr_obj, _oss, itr_prefix, _laps, itr_depth,
                                          _widths, true, _pss.str());
+            // for(const auto& itr : itr->hierarchy())
+            //    _oss << itr << "//";
+            // _oss << "\n";
+
             if(cout != nullptr)
                 *cout << _oss.str() << std::flush;
             if(fout != nullptr)

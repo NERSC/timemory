@@ -179,6 +179,7 @@ struct dummy
 
 #    include "timemory/config.hpp"
 #    include "timemory/plotting.hpp"
+#    include "timemory/utility/conditional.hpp"
 #    include "timemory/utility/storage.hpp"
 
 //--------------------------------------------------------------------------------------//

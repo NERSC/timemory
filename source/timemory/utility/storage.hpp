@@ -631,76 +631,32 @@ public:
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
             initialize();
-        bool _has_head = _data().has_head();
 
-        // if first instance
-        if(!_has_head || (this == master_instance() && m_node_ids.size() == 0))
+        static thread_local auto _current = _data().head();
+        static thread_local bool _first   = true;
+        if(_first)
         {
-            graph_node_t node(hash_id, obj, hash_depth);
-            auto         itr                = _data().append_child(node);
-            m_node_ids[hash_depth][hash_id] = itr;
-            return itr;
-        }
-
-        // lambda for updating settings
-        auto _update = [&](iterator itr) { return itr; };
-
-        if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-           m_node_ids[hash_depth].find(hash_id)->second->depth() ==
-               m_graph_data_instance->depth())
-        {
-            return _update(m_node_ids[hash_depth].find(hash_id)->second);
-        }
-
-        using sibling_itr = typename graph_t::sibling_iterator;
-        graph_node_t node(hash_id, obj, hash_depth);
-
-        // lambda for inserting child
-        auto _insert_head = [&]() {
-            node.depth()                    = hash_depth;
-            auto itr                        = m_graph_data_instance->append_head(node);
-            m_node_ids[hash_depth][hash_id] = itr;
-            // if(m_node_ids[hash_depth].bucket_count() < m_node_ids[hash_depth].size())
-            //    m_node_ids[hash_depth].rehash(m_node_ids[hash_depth].size() + 10);
-            return itr;
-        };
-
-        auto current   = m_graph_data_instance->head();
-        auto nchildren = graph_t::number_of_children(current);
-
-        if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-            return _insert_head();
-        else if(m_graph_data_instance->graph().is_valid(current))
-        {
-            // check siblings
-            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-            {
-                // skip if current
-                if(itr == current)
-                    continue;
-                // check hash id's
-                if((hash_id) == itr->id())
-                    return _update(itr);
-            }
-
-            // check children
-            if(nchildren == 0)
-                return _insert_head();
+            _first = false;
+            if(_current.begin())
+                _current = _current.begin();
             else
             {
-                // check child
-                auto fchild = graph_t::child(current, 0);
-                if(m_graph_data_instance->graph().is_valid(fchild))
-                {
-                    for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-                    {
-                        if((hash_id) == itr->id())
-                            return _update(itr);
-                    }
-                }
+                graph_node_t node(hash_id, obj, hash_depth);
+                auto         itr                = _data().emplace_child(_current, node);
+                m_node_ids[hash_depth][hash_id] = itr;
+                _current                        = itr;
+                return itr;
             }
         }
-        return _insert_head();
+
+        auto _existing = m_node_ids[hash_depth].find(hash_id);
+        if(_existing != m_node_ids[hash_depth].end())
+            return m_node_ids[hash_depth].find(hash_id)->second;
+
+        graph_node_t node(hash_id, obj, hash_depth);
+        auto         itr                = _data().emplace_child(_current, node);
+        m_node_ids[hash_depth][hash_id] = itr;
+        return itr;
     }
 
     //----------------------------------------------------------------------------------//
@@ -733,8 +689,10 @@ public:
         static bool _data_init   = data_init();
         consume_parameters(_global_init, _thread_init, _data_init);
 
-        auto itr = insert<_Scope>(hash_id, obj, 1);
-        add_hash_id(hash_id, hash_id);
+        // auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
+        uint64_t hash_depth = 1;
+        auto     itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
+        add_hash_id(hash_id, hash_id * hash_depth);
         return itr;
     }
 

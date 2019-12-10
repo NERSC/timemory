@@ -103,6 +103,7 @@ public:
     : is_running(false)
     , is_on_stack(false)
     , is_transient(false)
+    , is_flat(false)
     , depth_change(false)
     , value(value_type())
     , accum(value_type())
@@ -190,6 +191,7 @@ public:
         is_running   = false;
         is_on_stack  = false;
         is_transient = false;
+        is_flat      = false;
         laps         = 0;
         value        = value_type();
         accum        = value_type();
@@ -449,11 +451,13 @@ private:
     // insert the node into the graph
     //
     template <typename _Scope, typename _Up = this_type,
-              enable_if_t<(_Up::implements_storage_v), int> = 0>
+              enable_if_t<(_Up::implements_storage_v), int>                 = 0,
+              enable_if_t<!(std::is_same<_Scope, scope::flat>::value), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
     {
         if(!is_on_stack)
         {
+            is_flat          = false;
             auto  _storage   = get_storage();
             auto  _beg_depth = _storage->depth();
             Type& obj        = static_cast<Type&>(*this);
@@ -466,11 +470,29 @@ private:
     }
 
     template <typename _Scope, typename _Up = this_type,
+              enable_if_t<(_Up::implements_storage_v), int>                = 0,
+              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
+    void insert_node(const _Scope&, const int64_t& _hash)
+    {
+        if(!is_on_stack)
+        {
+            is_flat        = true;
+            auto  _storage = get_storage();
+            Type& obj      = static_cast<Type&>(*this);
+            graph_itr      = _storage->template insert<_Scope>(obj, _hash);
+            is_on_stack    = true;
+            depth_change   = false;
+            _storage->stack_push(&obj);
+        }
+    }
+
+    template <typename _Scope, typename _Up = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t&)
     {
         if(!is_on_stack)
         {
+            is_flat        = true;
             auto  _storage = get_storage();
             Type& obj      = static_cast<Type&>(*this);
             is_on_stack    = true;
@@ -486,34 +508,41 @@ private:
     {
         if(is_on_stack)
         {
+            Type& obj    = graph_itr->obj();
+            Type& rhs    = static_cast<Type&>(*this);
+            depth_change = false;
+
             if(storage_type::is_finalizing())
             {
-                Type& obj = graph_itr->obj();
-                Type& rhs = static_cast<Type&>(*this);
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                obj.is_running = false;
-                is_on_stack    = false;
+            }
+            else if(is_flat)
+            {
+                auto _storage = get_storage();
+
+                obj += rhs;
+                obj.plus(rhs);
+                Type::append(graph_itr, rhs);
+                _storage->stack_pop(&rhs);
             }
             else
             {
                 auto _storage   = get_storage();
                 auto _beg_depth = _storage->depth();
 
-                Type& obj = graph_itr->obj();
-                Type& rhs = static_cast<Type&>(*this);
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
                 _storage->pop();
                 _storage->stack_pop(&rhs);
-                obj.is_running = false;
-                is_on_stack    = false;
 
                 auto _end_depth = _storage->depth();
                 depth_change    = (_beg_depth > _end_depth);
             }
+            obj.is_running = false;
+            is_on_stack    = false;
         }
     }
 
@@ -589,6 +618,7 @@ protected:
     bool           is_running   = false;
     bool           is_on_stack  = false;
     bool           is_transient = false;
+    bool           is_flat      = false;
     bool           depth_change = false;
     value_type     value        = value_type();
     accum_type     accum        = accum_type();
