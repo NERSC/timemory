@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file components/vtune/event.hpp
+ * \headerfile components/vtune/event.hpp "timemory/components/vtune/event.hpp"
+ * This component provides VTune event markers
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/ittnotify.hpp"

@@ -121,9 +121,9 @@ struct vtune_event;
 
 // cuda
 struct cuda_event;
-
-// nvtx
+struct cuda_profiler;
 struct nvtx_marker;
+using cuda_nvtx = nvtx_marker;
 
 template <size_t _N, typename _Components, typename _Differentiator = void>
 struct gotcha;

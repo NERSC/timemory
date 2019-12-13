@@ -6,53 +6,56 @@ version: "3.3"
 #
 
 services:
-    #--------------------------------------------------------------------------#
-    # TiMemory development container
-    timemory-dev:
-      image: jrmadsen/timemory:dev
-      stdin_open: true
-      tty: true
-      build:
-        context: .
-        dockerfile: Dockerfile
-        args:
-          BASE_IMG: "nvidia/cuda"
-          BASE_TAG: "10.0-devel-ubuntu18.04"
-          COMPILER_TYPE: "gcc"
-          COMPILER_VERSION: "7"
-          REQUIRE_CUDA_VERSION: "10.0"
-          ENABLE_DISPLAY: "1"
+  #--------------------------------------------------------------------------#
+  # TiMemory development container
+  timemory-dev:
+    image: jrmadsen/timemory:dev
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMG: "nvidia/cuda"
+        BASE_TAG: "10.0-devel-ubuntu18.04"
+        COMPILER_TYPE: "gcc"
+        GCC_VERSION: "7"
+        CLANG_VERSION: "9"
+        REQUIRE_CUDA_VERSION: "10.0"
+        ENABLE_DISPLAY: "1"
 
-    #--------------------------------------------------------------------------#
-    # TiMemory development container
-    timemory-dev-edge:
-      image: jrmadsen/timemory:dev-edge
-      stdin_open: true
-      tty: true
-      build:
-        context: .
-        dockerfile: Dockerfile
-        args:
-          BASE_IMG: "nvidia/cuda"
-          BASE_TAG: "10.1-devel-ubuntu18.04"
-          COMPILER_TYPE: "gcc"
-          COMPILER_VERSION: "8"
-          REQUIRE_CUDA_VERSION: "10.1"
-          ENABLE_DISPLAY: "1"
+  #--------------------------------------------------------------------------#
+  # TiMemory development container
+  timemory-dev-edge:
+    image: jrmadsen/timemory:dev-edge
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMG: "nvidia/cuda"
+        BASE_TAG: "10.1-devel-ubuntu18.04"
+        COMPILER_TYPE: "gcc"
+        GCC_VERSION: "8"
+        CLANG_VERSION: "9"
+        REQUIRE_CUDA_VERSION: "10.1"
+        ENABLE_DISPLAY: "1"
 
-    #--------------------------------------------------------------------------#
-    # TiMemory development container
-    timemory-latest:
-      image: jrmadsen/timemory:latest
-      stdin_open: true
-      tty: true
-      build:
-        context: .
-        dockerfile: Dockerfile
-        args:
-          BASE_IMG: "nvidia/cuda"
-          BASE_TAG: "latest"
-          COMPILER_TYPE: "gcc"
-          COMPILER_VERSION: "8"
-          REQUIRE_CUDA_VERSION: "10.1"
-          ENABLE_DISPLAY: "1"
+  #--------------------------------------------------------------------------#
+  # TiMemory development container
+  timemory-latest:
+    image: jrmadsen/timemory:latest
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_IMG: "nvidia/cuda"
+        BASE_TAG: "latest"
+        COMPILER_TYPE: "gcc"
+        GCC_VERSION: "9"
+        CLANG_VERSION: "9"
+        REQUIRE_CUDA_VERSION: "10.1"
+        ENABLE_DISPLAY: "1"

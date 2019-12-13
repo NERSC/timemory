@@ -329,17 +329,26 @@ PYBIND11_MODULE(libpytimemory, tim)
             [&](py::list argv, std::string _prefix, std::string _suffix) {
                 if(argv.size() < 1)
                     return;
-                auto  _str  = argv.begin()->cast<std::string>();
-                char* _argv = new char[_str.size()];
-                std::strcpy(_argv, _str.c_str());
-                auto tmp_argc = 1;
-                auto tmp_argv = &_argv;
-                tim::timemory_init(tmp_argc, tmp_argv, _prefix, _suffix);
+                int    _argc = argv.size();
+                char** _argv = new char*[argv.size()];
+                for(int i = 0; i < _argc; ++i)
+                {
+                    auto  _str    = argv[i].cast<std::string>();
+                    char* _argv_i = new char[_str.size()];
+                    std::strcpy(_argv_i, _str.c_str());
+                    _argv[i] = _argv_i;
+                }
+                tim::timemory_init(&_argc, &_argv, _prefix, _suffix);
+                for(int i = 0; i < _argc; ++i)
+                    delete[] _argv[i];
                 delete[] _argv;
             },
-            "Parse the environment and use argv[0] to set output path",
+            "Parse the environment and use argv to set output path",
             py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
             py::arg("suffix") = "-output");
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_finalize", [&]() { tim::timemory_finalize(); },
+            "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
     //----------------------------------------------------------------------------------//

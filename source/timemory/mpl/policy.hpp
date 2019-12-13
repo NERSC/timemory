@@ -137,5 +137,67 @@ struct wrapper
     {}
 };
 
+//======================================================================================//
+
+template <typename _Tp>
+struct instance_tracker
+{
+    using type     = _Tp;
+    using int_type = int64_t;
+
+    instance_tracker()                        = default;
+    ~instance_tracker()                       = default;
+    instance_tracker(const instance_tracker&) = default;
+    instance_tracker(instance_tracker&&)      = default;
+    instance_tracker& operator=(const instance_tracker&) = default;
+    instance_tracker& operator=(instance_tracker&&) = default;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    static int_type get_started_count() { return get_started().load(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static int_type get_thread_started_count() { return get_thread_started(); }
+
+protected:
+    //----------------------------------------------------------------------------------//
+    //
+    static std::atomic<int_type>& get_started()
+    {
+        static std::atomic<int_type> _instance;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static int_type& get_thread_started()
+    {
+        static thread_local int_type _instance = 0;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void start()
+    {
+        m_tot = get_started()++;
+        m_thr = get_thread_started()++;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void stop()
+    {
+        m_tot = --get_started();
+        m_thr = --get_thread_started();
+    }
+
+protected:
+    int_type m_tot = 0;
+    int_type m_thr = 0;
+};
+
 }  // namespace policy
 }  // namespace tim

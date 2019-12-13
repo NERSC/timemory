@@ -55,6 +55,7 @@
 // cuda event
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/components/cuda/event.hpp"
+#    include "timemory/components/cuda/profiler.hpp"
 #endif
 
 // nvtx marker

@@ -36,6 +36,8 @@
 #include <unordered_map>
 #include <vector>
 
+#define TIMEMORY_STRICT_VARIADIC_CONCAT
+
 #include <timemory/timemory.hpp>
 #include <timemory/utility/signals.hpp>
 
@@ -70,7 +72,7 @@ class variadic_tests : public ::testing::Test
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(variadic_tests, dummy)
+TEST_F(variadic_tests, variadic)
 {
     static constexpr size_t nz = 7;
     std::array<size_t, nz>  sizes;
@@ -169,6 +171,44 @@ TEST_F(variadic_tests, dummy)
     EXPECT_EQ(hsize, 4);
     EXPECT_EQ(tsize, 2);
     EXPECT_EQ(lsize, 2);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(variadic_tests, concat)
+{
+    using lhs_t = tim::component_tuple<real_clock, system_clock>;
+    using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
+
+    using comp_t0 = typename tim::component_tuple<lhs_t, rhs_t>::component_type;
+    using comp_t1 = typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type;
+    using comp_t2 =
+        typename tim::auto_tuple<lhs_t,
+                                 tim::component_list<rhs_t, user_clock>>::component_type;
+
+    using data_t0 = typename tim::component_list<lhs_t, rhs_t>::data_type;
+    using data_t1 = typename tim::auto_list<lhs_t, rhs_t, user_clock>::data_type;
+    using data_t2 =
+        typename tim::auto_list<lhs_t, tim::auto_tuple<rhs_t, user_clock>>::data_type;
+
+    std::cout << "\n" << std::flush;
+    std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
+    std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
+    std::cout << "comp_t2 = " << tim::demangle<comp_t2>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
+    std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
+    std::cout << "data_t2 = " << tim::demangle<data_t2>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    EXPECT_EQ(comp_t0::size(), 3);
+    EXPECT_EQ(comp_t1::size(), 4);
+    EXPECT_EQ(comp_t2::size(), 4);
+
+    EXPECT_EQ(std::tuple_size<data_t0>::value, 3);
+    EXPECT_EQ(std::tuple_size<data_t1>::value, 4);
+    EXPECT_EQ(std::tuple_size<data_t2>::value, 4);
 }
 
 //--------------------------------------------------------------------------------------//

@@ -580,6 +580,16 @@ template <>
 struct is_available<component::cuda_event> : std::false_type
 {};
 
+template <>
+struct is_available<component::cuda_profiler> : std::false_type
+{};
+
+#else
+
+template <>
+struct external_output_handling<component::cuda_profiler> : std::true_type
+{};
+
 #endif  // TIMEMORY_USE_CUDA
 
 //--------------------------------------------------------------------------------------//

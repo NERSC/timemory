@@ -63,10 +63,6 @@ using measurement_t =
 using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
                                        thread_cpu_clock, process_cpu_clock>;
 
-// measure wall-clock, thread cpu-clock + process cpu-utilization
-using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util,
-                                    caliper, papi_tuple_t>;
-
 //--------------------------------------------------------------------------------------//
 
 namespace details
@@ -468,6 +464,35 @@ TEST_F(tuple_tests, measure)
     // prss.reset();
     prss.measure();
     std::cout << "  Current rss: " << prss << std::endl;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(tuple_tests, concat)
+{
+    using lhs_t = tim::component_tuple<real_clock, system_clock>;
+    using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
+
+    using comp_t0 = typename tim::component_tuple<lhs_t, rhs_t>::component_type;
+    using comp_t1 = typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type;
+
+    using data_t0 = typename tim::component_list<lhs_t, rhs_t>::data_type;
+    using data_t1 = typename tim::auto_list<lhs_t, rhs_t, user_clock>::data_type;
+
+    std::cout << "\n" << std::flush;
+    std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
+    std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
+    std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    EXPECT_EQ(comp_t0::size(), 3);
+    EXPECT_EQ(comp_t1::size(), 4);
+
+    EXPECT_EQ(std::tuple_size<data_t0>::value, 3);
+    EXPECT_EQ(std::tuple_size<data_t1>::value, 4);
 }
 
 //--------------------------------------------------------------------------------------//

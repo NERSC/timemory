@@ -35,13 +35,13 @@
 #include "timemory/settings.hpp"
 
 #include <array>
+#include <cstddef>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <cstddef>
 
 namespace tim
 {

@@ -46,6 +46,8 @@ set(timemory_headers
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
     ${cxx_headers_category_bits} ${cxx_headers_general} ${compat_headers})
 
+source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_headers})
+
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
