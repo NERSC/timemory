@@ -271,6 +271,10 @@ public:
     //
     const captured& get_captured(const char*) { return m_captured; }
 
+    //----------------------------------------------------------------------------------//
+    //
+    const captured& get_captured(const char*, const char*) { return m_captured; }
+
 private:
     mode        m_mode;
     std::string m_prefix = "";
