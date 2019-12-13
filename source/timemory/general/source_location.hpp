@@ -190,6 +190,44 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    //  if a const char* is passed, assume it is constant
+    //
+    source_location(const mode& _mode, const char* _func, int _line, const char* _fname,
+                    const char* _arg1, const char* _arg2)
+    : m_mode(_mode)
+    {
+        const char* _arg = join_type::join("", _arg1, _arg2).c_str();
+        switch(m_mode)
+        {
+            case mode::blank:
+            {
+                // label and hash
+                auto&& _label = std::string(_arg);
+                auto&& _hash  = add_hash_id(_label);
+                m_captured    = captured(result_type{ _label, _hash });
+                break;
+            }
+            case mode::basic:
+            {
+                compute_data(_func);
+                auto&& _label = _join(_arg);
+                auto&& _hash  = add_hash_id(_label);
+                m_captured    = captured(result_type{ _label, _hash });
+                break;
+            }
+            case mode::full:
+            {
+                compute_data(_func, _line, _fname);
+                // label and hash
+                auto&& _label = _join(_arg);
+                auto&& _hash  = add_hash_id(_label);
+                m_captured    = captured(result_type{ _label, _hash });
+                break;
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
     //
     source_location()                       = delete;
     ~source_location()                      = default;

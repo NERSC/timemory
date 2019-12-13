@@ -61,6 +61,7 @@ public:
         typename std::conditional<record_statistics_v, statistics<_Value>, _Value>::type;
     using policy_type    = policy::wrapper<_Policies...>;
     using this_type      = base<_Tp, _Value, _Policies...>;
+    using base_type      = this_type;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
     using graph_iterator = typename storage_type::iterator;
     using properties_t   = properties<this_type>;
@@ -774,6 +775,7 @@ public:
     using value_type   = void;
     using policy_type  = policy::wrapper<_Policies...>;
     using this_type    = base<_Tp, value_type, _Policies...>;
+    using base_type    = this_type;
     using storage_type = impl::storage<_Tp, implements_storage_v>;
 
 private:
