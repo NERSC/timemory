@@ -87,7 +87,8 @@ if(TIMEMORY_USE_PAPI)
         DISCOVER_TESTS
         SOURCES         papi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options
-                        timemory-develop-options timemory-analysis-tools)
+                        timemory-develop-options timemory-analysis-tools
+                        timemory-arch)
 endif()
 
 add_timemory_google_test(apply_tests
@@ -136,7 +137,8 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
         SOURCES         cupti_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options timemory-develop-options
                         timemory-cuda    timemory-cupti  # timemory-cudart-device
-                        cupti-compile-options timemory-analysis-tools)
+                        cupti-compile-options timemory-analysis-tools
+                        timemory-arch)
 endif()
 
 if(_HAS_PROFILER)
