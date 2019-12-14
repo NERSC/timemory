@@ -447,7 +447,7 @@ public:
 protected:
     const value_type& load() const { return (is_transient) ? accum : value; }
 
-private:
+protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //

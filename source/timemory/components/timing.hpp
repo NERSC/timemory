@@ -68,7 +68,9 @@ extern template struct base<thread_cpu_util, std::pair<int64_t, int64_t>>;
 // the epoch.
 struct wall_clock : public base<wall_clock, int64_t>
 {
-    using ratio_t = std::nano;
+    using ratio_t    = std::nano;
+    using value_type = int64_t;
+    using base_type  = base<wall_clock, value_type>;
 
     static std::string label() { return "wall"; }
     static std::string description() { return "wall time"; }

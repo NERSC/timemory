@@ -74,13 +74,13 @@ using namespace tim;
 using namespace tim::component;
 
 constexpr size_t _N    = 10;
-using exp_bundle_t     = user_bundle<0>;
-using general_bundle_t = user_bundle<1>;
-using exp_timer_t      = tim::component_tuple<exp_bundle_t, exp_intercept>;
+using general_bundle_t = user_bundle<0>;
+using exp_timer_t      = tim::component_tuple<>;
 using auto_tuple_t     = tim::component_tuple<general_bundle_t>;
 using put_gotcha_t     = tim::component::gotcha<_N, auto_tuple_t, char>;
 using mpi_gotcha_t     = tim::component::gotcha<_N, auto_tuple_t, double>;
 using exp_gotcha_t     = tim::component::gotcha<_N, exp_timer_t, exp_intercept>;
+using fake_gotcha_t    = tim::component::gotcha<_N, tim::component_tuple<>, float>;
 using gotcha_tuple_t   = tim::auto_tuple<auto_tuple_t, user_tuple_bundle>;
 
 #if !defined(TIMEMORY_USE_MPI)
@@ -135,7 +135,6 @@ init()
     // configure the bundles
     user_tuple_bundle::configure<put_gotcha_t, mpi_gotcha_t, exp_gotcha_t>();
     general_bundle_t::configure<wall_clock, cpu_clock, peak_rss>();
-    exp_bundle_t::configure<wall_clock, cpu_clock>();
 }
 
 //======================================================================================//

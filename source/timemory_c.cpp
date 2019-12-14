@@ -30,6 +30,10 @@
  *
  */
 
+#if !defined(TIMEMORY_EXTERN_TEMPLATES)
+#    define TIMEMORY_EXTERN_TEMPLATES
+#endif
+
 #define TIMEMORY_BUILD_EXTERN_INIT
 
 #include "timemory/compat/library.h"

@@ -111,7 +111,7 @@ public:
         using auto_type     = auto_tuple<_Types...>;
     };
 
-    using impl_unique_concat_type = available_tuple<remove_duplicates<concat<Types...>>>;
+    using impl_unique_concat_type = available_tuple<concat<Types...>>;
 
 public:
     using string_t            = std::string;

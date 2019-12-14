@@ -37,6 +37,7 @@
 #include "timemory/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/mangler.hpp"
+#include "timemory/variadic/types.hpp"
 
 #include <cassert>
 
@@ -132,6 +133,44 @@ private:
         return invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
                                   std::forward<_Args>(_args)...);
     }
+
+    //==================================================================================//
+public:
+    template <typename... _Args>
+    static _Ret invoke(_Tp& _obj, _Ret (*_func)(_Args...), _Args&&... _args)
+    {
+        return invoke_sfinae(_obj, _func, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+private:
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp& _obj, int, _Ret (*)(_Args...), _Args&&... _args)
+        -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
+    {
+        return _obj(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Call the original gotcha_wrappee
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp&, long, _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
+    {
+        return _func(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae(_Tp& _obj, _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _func, std::forward<_Args>(_args)...),
+                    _Ret())
+    {
+        return invoke_sfinae_impl(_obj, 0, _func, std::forward<_Args>(_args)...);
+    }
     //
     //----------------------------------------------------------------------------------//
 };
@@ -216,6 +255,46 @@ private:
     }
     //
     //----------------------------------------------------------------------------------//
+
+    //==================================================================================//
+public:
+    template <typename... _Args>
+    static _Ret invoke(_Tp& _obj, _Ret (*_func)(_Args...), _Args&&... _args)
+    {
+        invoke_sfinae(_obj, _func, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+private:
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp& _obj, int, _Ret (*)(_Args...), _Args&&... _args)
+        -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
+    {
+        _obj(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Call the original gotcha_wrappee
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae_impl(_Tp&, long, _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
+    {
+        _func(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename... _Args>
+    static auto invoke_sfinae(_Tp& _obj, _Ret (*_func)(_Args...), _Args&&... _args)
+        -> decltype(invoke_sfinae_impl(_obj, 0, _func, std::forward<_Args>(_args)...),
+                    _Ret())
+    {
+        invoke_sfinae_impl(_obj, 0, _func, std::forward<_Args>(_args)...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
 };
 
 //======================================================================================//
@@ -259,6 +338,43 @@ class gotcha_suppression
 };
 
 //======================================================================================//
+
+template <typename _Tp>
+struct gotcha_differentiator
+{
+    template <typename _Up>
+    static constexpr decltype(_Up::is_component, bool()) test_is_component(int)
+    {
+        return true;
+    }
+
+    template <typename _Up>
+    static constexpr bool test_is_component(...)
+    {
+        return false;
+    }
+
+    static constexpr bool value        = test_is_component<_Tp>(int());
+    static constexpr bool is_component = test_is_component<_Tp>(int());
+};
+
+//======================================================================================//
+
+template <typename... _Types>
+struct gotcha_components_size
+{
+    static constexpr size_t value = sizeof...(_Types);
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types, template <typename...> class _Tuple>
+struct gotcha_components_size<_Tuple<_Types...>>
+{
+    static constexpr size_t value = sizeof...(_Types);
+};
+
+//======================================================================================//
 //
 // template params:
 //      _Nt             ==  max number of GOTCHA wrappers
@@ -276,16 +392,13 @@ struct gotcha
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
-    // clang-format off
     using value_type     = void;
     using this_type      = gotcha<_Nt, _Components, _Differentiator>;
     using base_type      = base<this_type, value_type, policy::global_init,
-                                policy::global_finalize, policy::thread_init>;
+                           policy::global_finalize, policy::thread_init>;
     using storage_type   = typename base_type::storage_type;
     using component_type = typename _Components::component_type;
-    using type_tuple = typename _Components::type_tuple;
-
-    // clang-format on
+    using type_tuple     = typename _Components::type_tuple;
 
     template <typename _Tp>
     using array_t = std::array<_Tp, _Nt>;
@@ -305,8 +418,13 @@ struct gotcha
     using get_initializer_t = std::function<config_t()>;
     using get_select_list_t = std::function<select_list_t()>;
 
-    static constexpr bool differentiator_is_component =
-        is_one_of<_Differentiator, type_tuple>::value;
+    static constexpr size_t components_size = component_type::size();
+    static constexpr bool   differentiator_is_component =
+        (is_one_of<_Differentiator, type_tuple>::value ||
+         (components_size == 0 && gotcha_differentiator<_Differentiator>::is_component));
+
+    using operator_type = typename std::conditional<(differentiator_is_component),
+                                                    _Differentiator, void>::type;
 
     static std::string label() { return "gotcha"; }
     static std::string description() { return "GOTCHA wrapper"; }
@@ -721,7 +839,8 @@ private:
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t _N, typename _Ret, typename... _Args,
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size != 0), int>::type      = 0,
               typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
@@ -732,12 +851,37 @@ private:
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t _N, typename _Ret, typename... _Args,
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size != 0), int>::type     = 0,
               typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
         auto& _data = get_data()[_N];
         return binding_t{ _func.c_str(), (void*) this_type::wrap_void<_N, _Args...>,
+                          &_data.wrappee };
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size == 0), int>::type      = 0,
+              typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
+    static binding_t construct_binder(const std::string& _func)
+    {
+        auto& _data = get_data()[_N];
+        return binding_t{ _func.c_str(), (void*) this_type::wrap_op<_N, _Ret, _Args...>,
+                          &_data.wrappee };
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size == 0), int>::type     = 0,
+              typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
+    static binding_t construct_binder(const std::string& _func)
+    {
+        auto& _data = get_data()[_N];
+        return binding_t{ _func.c_str(), (void*) this_type::wrap_void_op<_N, _Args...>,
                           &_data.wrappee };
     }
 
@@ -803,6 +947,56 @@ private:
         _func(std::forward<_Args>(_args)...);
         _suppress = true;
         _ready    = false;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                         = this_type,
+              enable_if_t<(_This::differentiator_is_component), int> = 0,
+              enable_if_t<!(std::is_same<_Ret, void>::value), int>   = 0>
+    static _Ret invoke(_Comp& _comp, _Ret (*_func)(_Args...), _Args&&... _args)
+    {
+        using _Type    = _Differentiator;
+        using _Invoker = gotcha_invoker<_Type, _Ret>;
+        _Type& _obj    = _comp.template get<_Type>();
+        return _Invoker::invoke(_obj, _func, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                          = this_type,
+              enable_if_t<!(_This::differentiator_is_component), int> = 0,
+              enable_if_t<!(std::is_same<_Ret, void>::value), int>    = 0>
+    static _Ret invoke(_Comp&, _Ret (*_func)(_Args...), _Args&&... _args)
+    {
+        return _func(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                         = this_type,
+              enable_if_t<(_This::differentiator_is_component), int> = 0,
+              enable_if_t<(std::is_same<_Ret, void>::value), int>    = 0>
+    static void invoke(_Comp& _comp, _Ret (*_func)(_Args...), _Args&&... _args)
+    {
+        using _Type    = _Differentiator;
+        using _Invoker = gotcha_invoker<_Type, _Ret>;
+        _Type& _obj    = _comp.template get<_Type>();
+        _Invoker::invoke(_obj, _func, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Comp, typename _Ret, typename... _Args,
+              typename _This                                          = this_type,
+              enable_if_t<!(_This::differentiator_is_component), int> = 0,
+              enable_if_t<(std::is_same<_Ret, void>::value), int>     = 0>
+    static void invoke(_Comp&, _Ret (*_func)(_Args...), _Args&&... _args)
+    {
+        _func(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -927,7 +1121,63 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-};
+
+    template <size_t _N, typename _Ret, typename... _Args>
+    static _Ret wrap_op(_Args... _args)
+    {
+        static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
+        static_assert(components_size == 0, "Error! Number of components must be zero!");
+
+#if defined(TIMEMORY_USE_GOTCHA)
+        static auto& _data = get_data()[_N];
+        typedef _Ret (*func_t)(_Args...);
+        using wrap_type = tim::component_tuple<operator_type>;
+
+        auto _orig = (func_t) gotcha_get_wrappee(_data.wrappee);
+        if(!_data.ready)
+            return (*_orig)(_args...);
+
+        _data.ready = false;
+        wrap_type _obj(_data.tool_id, false);
+        _Ret      _ret = invoke(_obj, _orig, std::forward<_Args>(_args)...);
+        _data.ready    = true;
+        return _ret;
+#else
+        consume_parameters(_args...);
+        PRINT_HERE("%s", "should not be here!");
+        return _Ret{};
+#endif
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename... _Args>
+    static void wrap_void_op(_Args... _args)
+    {
+        static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
+#if defined(TIMEMORY_USE_GOTCHA)
+        static auto& _data = get_data()[_N];
+        typedef void (*func_t)(_Args...);
+        auto _orig      = (func_t) gotcha_get_wrappee(_data.wrappee);
+        using wrap_type = tim::component_tuple<operator_type>;
+
+        if(!_data.ready)
+            (*_orig)(_args...);
+        else
+        {
+            _data.ready = false;
+            wrap_type _obj(_data.tool_id, false);
+            invoke(_obj, _orig, std::forward<_Args>(_args)...);
+            _data.ready = true;
+        }
+#else
+        consume_parameters(_args...);
+        PRINT_HERE("%s", "should not be here!");
+#endif
+    }
+
+    //----------------------------------------------------------------------------------//
+};  // namespace tim
 
 }  // namespace component
 
