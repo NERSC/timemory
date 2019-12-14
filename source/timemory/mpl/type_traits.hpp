@@ -262,18 +262,18 @@ namespace details
 {
 template <typename T, typename... Args>
 static auto
-test_customize_support(int)
-    -> sfinae_true<decltype(std::declval<T>().customize(std::declval<Args>()...))>;
+test_audit_support(int)
+    -> sfinae_true<decltype(std::declval<T>().audit(std::declval<Args>()...))>;
 
 template <typename, typename... Args>
 static auto
-test_customize_support(long) -> std::false_type;
+test_audit_support(long) -> std::false_type;
 }  // namespace details
 
 //----------------------------------------------------------------------------------//
 
 template <typename T, typename... Args>
-struct test_customize_support : decltype(details::test_customize_support<T, Args...>(0))
+struct test_audit_support : decltype(details::test_audit_support<T, Args...>(0))
 {};
 
 }  // namespace trait

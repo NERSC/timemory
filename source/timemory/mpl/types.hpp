@@ -100,7 +100,7 @@ template <typename _Tp>
 struct mark_end;
 
 template <typename _Tp>
-struct customize;
+struct audit;
 
 template <typename RetType, typename LhsType, typename RhsType>
 struct compose;

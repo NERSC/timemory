@@ -1,5 +1,5 @@
-# use IN_LIST so this is required
-cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
+# Don't allow cmake older than 3.11 to use this configuration
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 foreach(_VAR ROOT_DIR INCLUDE_DIR LIB_DIR PYTHON_DIR INCLUDE_DIRS MISSING_COMPONENTS
     FOUND_COMPONENTS LIBRARIES LIBRARY_FOUND SHARED_LIBRARY_FOUND STATIC_LIBRARY_FOUND
@@ -31,6 +31,17 @@ set(@PROJECT_NAME@_COMPILED_LIBRARIES @TIMEMORY_COMPILED_LIBRARIES@)
 set(@PROJECT_NAME@_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
 set(@PROJECT_NAME@_EXTERN_LIBRARIES @TIMEMORY_EXTERN_LIBRARIES@)
 set(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
+
+if(TIMEMORY_PYTHON_BINDINGS)
+    set(@PROJECT_NAME@_PYTHON_MODULE_PREFIX "@PYTHON_MODULE_PREFIX@" CACHE STRING
+        "@PROJECT_NAME@ Python module prefix")
+    set(@PROJECT_NAME@_PYTHON_MODULE_EXTENSION "@PYTHON_MODULE_EXTENSION@" CACHE STRING
+        "@PROJECT_NAME@ Python module extension")
+    set(@PROJECT_NAME@_PYTHON_VERSION_MAJOR "@PYTHON_VERSION_MAJOR@" CACHE STRING
+        "@PROJECT_NAME@ Python major version")
+    set(@PROJECT_NAME@_PYTHON_VERSION_MINOR "@PYTHON_VERSION_MINOR@" CACHE STRING
+        "@PROJECT_NAME@ Python minor version")
+endif()
 
 if(@PROJECT_NAME@_LANGUAGE_STANDARDS)
     # language standards
@@ -224,21 +235,8 @@ if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
         set(_INTERFACE_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARY})
     endif()
 
-    if(CMAKE_VERSION VERSION_LESS 3.11)
-        if(NOT TARGET ${_INTERFACE_LIB})
-            add_library(${_INTERFACE_LIB} INTERFACE)
-            target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
-        else()
-            set(_MSG "CMake 3.10 does not fully support IMPORTED INTERFACE libraries")
-            set(_MSG "${_MSG}. The \"${_INTERFACE_LIB}\" target is being modified globally...")
-            set(_MSG "${_MSG} Consider upgrading CMake or setting")
-            set(_MSG "${_MSG} \"@PROJECT_NAME@_INTERFACE_LIBRARY\".")
-            message(WARNING "${_MSG}")
-        endif()
-    else()
-        add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
-        target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
-    endif()
+    add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
+    target_include_directories(${_INTERFACE_LIB} INTERFACE ${@PROJECT_NAME@_INCLUDE_DIRS})
 endif()
 
 # if build interface library is enabled and COMPONENTS were specified

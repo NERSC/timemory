@@ -140,10 +140,10 @@ public:
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
     template <typename... _Args>
-    inline void customize(_Args&&... _args)
+    inline void audit(_Args&&... _args)
     {
         if(m_enabled)
-            m_temporary_object.customize(std::forward<_Args>(_args)...);
+            m_temporary_object.audit(std::forward<_Args>(_args)...);
     }
 
     inline data_value_type get() const { return m_temporary_object.get(); }

@@ -600,7 +600,7 @@ struct mark_end
 
 //--------------------------------------------------------------------------------------//
 ///
-/// \class operation::customize
+/// \class operation::audit
 ///
 /// \brief The purpose of this operation class is for a component to provide some extra
 /// customization within a GOTCHA function.
@@ -613,7 +613,7 @@ struct mark_end
 /// size.
 ///
 template <typename _Tp>
-struct customize
+struct audit
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
@@ -625,9 +625,9 @@ struct customize
     //
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    customize(Type& obj, _Args&&... _args)
+    audit(Type& obj, _Args&&... _args)
     {
-        obj.customize(std::forward<_Args>(_args)...);
+        obj.audit(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -635,16 +635,16 @@ struct customize
     //
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    customize(Type& obj, _Args&&... _args)
+    audit(Type& obj, _Args&&... _args)
     {
-        customize_sfinae(obj, std::forward<_Args>(_args)...);
+        audit_sfinae(obj, std::forward<_Args>(_args)...);
     }
     */
 
     template <typename... _Args>
-    customize(Type& obj, _Args&&... _args)
+    audit(Type& obj, _Args&&... _args)
     {
-        customize_sfinae(obj, std::forward<_Args>(_args)...);
+        audit_sfinae(obj, std::forward<_Args>(_args)...);
     }
 
 private:
@@ -652,27 +652,27 @@ private:
     //  The equivalent of supports args and an implementation provided
     //
     template <typename _Up, typename... _Args>
-    auto customize_sfinae_impl(_Up& obj, int, _Args&&... _args)
-        -> decltype(obj.customize(std::forward<_Args>(_args)...), void())
+    auto audit_sfinae_impl(_Up& obj, int, _Args&&... _args)
+        -> decltype(obj.audit(std::forward<_Args>(_args)...), void())
     {
-        obj.customize(std::forward<_Args>(_args)...);
+        obj.audit(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  The equivalent of !supports_args and no implementation provided
     //
     template <typename _Up, typename... _Args>
-    auto customize_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
+    auto audit_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
     {}
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
     template <typename _Up, typename... _Args>
-    auto customize_sfinae(_Up& obj, _Args&&... _args)
-        -> decltype(customize_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    auto audit_sfinae(_Up& obj, _Args&&... _args)
+        -> decltype(audit_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
     {
-        customize_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+        audit_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//

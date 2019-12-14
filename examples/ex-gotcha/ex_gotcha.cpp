@@ -56,7 +56,7 @@ struct exp_intercept : public base<exp_intercept, void>
 
     void start() {}
     void stop() {}
-    void customize(const std::string&, double) {}
+    void audit(const std::string&, double) {}
 
     double operator()(double val)
     {

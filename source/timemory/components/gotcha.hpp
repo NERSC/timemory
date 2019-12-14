@@ -1037,10 +1037,10 @@ private:
             // component_type is always: component_{tuple,list,hybrid}
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
-            _obj.customize(_data.tool_id, _args...);
+            _obj.audit(_data.tool_id, _args...);
             _Ret _ret = invoke<component_type>(_obj, _global_suppress, _data.ready, _orig,
                                                std::forward<_Args>(_args)...);
-            _obj.customize(_data.tool_id, _ret);
+            _obj.audit(_data.tool_id, _ret);
             _obj.stop();
 
             // allow re-entrance into wrapper
@@ -1100,10 +1100,10 @@ private:
         {
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
-            _obj.customize(_data.tool_id, _args...);
+            _obj.audit(_data.tool_id, _args...);
             invoke<component_type>(_obj, _global_suppress, _data.ready, _orig,
                                    std::forward<_Args>(_args)...);
-            _obj.customize(_data.tool_id);
+            _obj.audit(_data.tool_id);
             _obj.stop();
         }
         else if(settings::debug())

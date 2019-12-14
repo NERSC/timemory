@@ -37,6 +37,7 @@ add_interface_library(timemory-gotcha)
 add_interface_library(timemory-likwid)
 add_interface_library(timemory-vtune)
 add_interface_library(timemory-tau)
+add_interface_library(timemory-python)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
@@ -404,7 +405,7 @@ if(TIMEMORY_BUILD_PYTHON)
             CACHE STRING "PyBind11 CXX standard" FORCE)
     endif()
 
-    set(PYBIND11_INSTALL OFF)
+    set(PYBIND11_INSTALL ON CACHE BOOL "Enable Pybind11 installation")
     # add PyBind11 to project
     if(NOT TARGET pybind11)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
@@ -435,6 +436,10 @@ if(TIMEMORY_BUILD_PYTHON)
         set(CMAKE_INSTALL_PYTHONDIR
             ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
     endif()
+
+    target_include_directories(timemory-python INTERFACE ${PYTHON_INCLUDE_DIRS})
+    target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
+    target_link_libraries(timemory-python INTERFACE pybind11::embed)
 
 endif()
 

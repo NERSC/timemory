@@ -94,12 +94,16 @@ set(TIMEMORY_GPERF_COMPONENTS
 
 set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
 
+string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
+
 # CMake options
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
 add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
+add_feature(CMAKE_C_FLAGS_${_CONFIG} "C compiler build type flags")
+add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
 
 set(BUILD_SHARED_LIBS ${_DEFAULT_BUILD_SHARED} CACHE BOOL "Build shared libraries")
 set(BUILD_STATIC_LIBS ${_DEFAULT_BUILD_STATIC} CACHE BOOL "Build static libraries")

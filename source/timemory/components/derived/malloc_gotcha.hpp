@@ -227,7 +227,7 @@ public:
 
     void stop()
     {
-        // value should be update via customize in-between start() and stop()
+        // value should be update via audit in-between start() and stop()
         auto tmp = record();
         accum += (value - tmp);
         value = std::move(std::max(value, tmp));
@@ -244,7 +244,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, size_t nbytes)
+    void audit(const std::string& fname, size_t nbytes)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
@@ -274,7 +274,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, size_t nmemb, size_t size)
+    void audit(const std::string& fname, size_t nmemb, size_t size)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
@@ -304,7 +304,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, void* ptr)
+    void audit(const std::string& fname, void* ptr)
     {
         if(!ptr)
             return;
@@ -346,7 +346,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, void** devPtr, size_t size)
+    void audit(const std::string& fname, void** devPtr, size_t size)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
@@ -377,7 +377,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, cuda::error_t)
+    void audit(const std::string& fname, cuda::error_t)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);

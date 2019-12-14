@@ -31,7 +31,7 @@ class Timemory(CMakePackage):
     variant('gperftools', default=True,
             description='Enable gperftools support')
 
-    depends_on('cmake@3.10:', type='build')
+    depends_on('cmake@3.11:', type='build')
 
     extends('python', when='+python')
     depends_on('python@3:', when='+python', type=('build', 'run'))

@@ -105,7 +105,7 @@ public:
         using mark_begin_t  = _TypeL<operation::mark_begin<_Types>...>;
         using mark_end_t    = _TypeL<operation::mark_end<_Types>...>;
         using construct_t   = _TypeL<operation::construct<_Types>...>;
-        using customize_t   = _TypeL<operation::customize<_Types>...>;
+        using audit_t   = _TypeL<operation::audit<_Types>...>;
         using set_prefix_t  = _TypeL<operation::set_prefix<_Types>...>;
         using get_data_t    = _TypeL<operation::get_data<_Types>...>;
         using auto_type     = auto_tuple<_Types...>;
@@ -166,7 +166,7 @@ public:
     using mark_begin_t  = typename filtered<impl_unique_concat_type>::mark_begin_t;
     using mark_end_t    = typename filtered<impl_unique_concat_type>::mark_end_t;
     using construct_t   = typename filtered<impl_unique_concat_type>::construct_t;
-    using customize_t   = typename filtered<impl_unique_concat_type>::customize_t;
+    using audit_t   = typename filtered<impl_unique_concat_type>::audit_t;
     using set_prefix_t  = typename filtered<impl_unique_concat_type>::set_prefix_t;
     using get_data_t    = typename filtered<impl_unique_concat_type>::get_data_t;
     // clang-format on
@@ -253,12 +253,12 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a customized operation (typically for GOTCHA)
+    // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>
-    void customize(_Args&&... _args)
+    void audit(_Args&&... _args)
     {
-        apply<void>::access<customize_t>(m_data, std::forward<_Args>(_args)...);
+        apply<void>::access<audit_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     // get member functions taking either a type
