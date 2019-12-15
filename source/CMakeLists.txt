@@ -89,9 +89,6 @@ if(WIN32)
 endif()
 
 set(_LINKER_LANGUAGE CXX)
-#if(TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUPTI)
-#    set(_LINKER_LANGUAGE CUDA)
-#endif()
 
 # routinely have problems with OBJECT libraries on Windows
 if(NOT WIN32 AND (_BUILD_SHARED_CXX OR _BUILD_STATIC_CXX))

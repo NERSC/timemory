@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file bits/timemory.hpp
- * \headerfile bits/timemory.hpp "timemory/bits/timemory.hpp"
+/** \file types.hpp
+ * \headerfile types.hpp "timemory/types.hpp"
  * Provides collection types
  *
  */

@@ -22,24 +22,24 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file auto_timer.hpp
- * \headerfile auto_timer.hpp "timemory/extern/auto_timer.hpp"
- * Extern template declarations that include CUDA
+/** \file extern/auto_timer.hpp
+ * \headerfile extern/auto_timer.hpp "timemory/extern/auto_timer.hpp"
+ * Extern template declarations
  *
  */
 
 #pragma once
 
-#include "timemory/components.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-
 //--------------------------------------------------------------------------------------//
 // auto_timer
 //
-#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_EXTERN_TEMPLATE_BUILD)
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+#    include "timemory/components.hpp"
+#    include "timemory/utility/macros.hpp"
+#    include "timemory/variadic/auto_hybrid.hpp"
+#    include "timemory/variadic/auto_list.hpp"
+#    include "timemory/variadic/auto_tuple.hpp"
 
 // clang-format off
 

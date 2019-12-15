@@ -175,6 +175,7 @@ main(int argc, char** argv)
     std::string fname = "ert_results";
     if(argc > 1) fname = argv[1];
 
+    printf("\n");
     ert::serialize(fname, *data);
 
     dmp::finalize();

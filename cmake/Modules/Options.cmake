@@ -115,7 +115,6 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
     set(TIMEMORY_BUILD_TOOLS OFF)
-    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
 endif()
 
 if(TIMEMORY_SKIP_BUILD)
@@ -125,7 +124,6 @@ if(TIMEMORY_SKIP_BUILD)
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
     set(TIMEMORY_BUILD_TOOLS OFF)
-    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
 endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
@@ -175,8 +173,6 @@ add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
     "Enable building tools" ${${PROJECT_NAME}_MASTER_PROJECT})
-add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
-    "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER

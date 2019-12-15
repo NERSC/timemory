@@ -21,7 +21,7 @@ project(timemory-ERT-Example LANGUAGES CXX)
 option(USE_CUDA "Enable CUDA" ${_USE_CUDA})
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
-set(COMPONENTS compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
+set(COMPONENTS cxx compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
 
 if(USE_CUDA)
     check_language(CUDA)

@@ -366,7 +366,7 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
-#include "timemory/bits/timemory.hpp"
+#include "timemory/types.hpp"
 #include "timemory/config.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/storage.hpp"

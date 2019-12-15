@@ -30,7 +30,7 @@
  *
  */
 
-#define TIMEMORY_EXTERN_TEMPLATE_BUILD
+#define TIMEMORY_BUILD_EXTERN_TEMPLATE
 
 #include "timemory/components.hpp"
 #include "timemory/components/types.hpp"

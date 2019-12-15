@@ -165,7 +165,7 @@ struct dummy
 
 // definitions of types
 #    include "timemory/bits/init.hpp"
-#    include "timemory/bits/timemory.hpp"
+#    include "timemory/types.hpp"
 #    include "timemory/utility/bits/storage.hpp"
 
 // allocator
@@ -175,6 +175,9 @@ struct dummy
 //======================================================================================//
 
 #    include "timemory/extern/auto_timer.hpp"
+#    include "timemory/extern/auto_user_bundle.hpp"
+#    include "timemory/extern/complete_list.hpp"
+#    include "timemory/extern/ert.hpp"
 
 //======================================================================================//
 

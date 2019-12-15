@@ -23,10 +23,6 @@
 // SOFTWARE.
 //
 
-#if !defined(TIMEMORY_EXTERN_TEMPLATES)
-#    define TIMEMORY_EXTERN_TEMPLATES
-#endif
-
 #include "libpytimemory.hpp"
 #include "timemory/timemory.hpp"
 #include <pybind11/pybind11.h>

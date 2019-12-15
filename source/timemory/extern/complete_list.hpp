@@ -22,24 +22,24 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file auto_timer.hpp
- * \headerfile auto_timer.hpp "timemory/extern/auto_timer.hpp"
- * Extern template declarations that include CUDA
+/** \file extern/complete_list.hpp
+ * \headerfile extern/complete_list.hpp "timemory/extern/complete_list.hpp"
+ * Extern template declarations
  *
  */
 
 #pragma once
 
-#include "timemory/components.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-
 //--------------------------------------------------------------------------------------//
-// auto_timer
+// complete_list
 //
-#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_EXTERN_TEMPLATE_BUILD)
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+
+#    include "timemory/components.hpp"
+#    include "timemory/utility/macros.hpp"
+#    include "timemory/variadic/auto_hybrid.hpp"
+#    include "timemory/variadic/auto_list.hpp"
+#    include "timemory/variadic/auto_tuple.hpp"
 
 TIMEMORY_DECLARE_EXTERN_LIST(
     complete_list_t, ::tim::component::caliper, ::tim::component::cpu_clock,
@@ -67,7 +67,6 @@ TIMEMORY_DECLARE_EXTERN_LIST(
     ::tim::component::user_list_bundle, ::tim::component::user_clock,
     ::tim::component::virtual_memory, ::tim::component::voluntary_context_switch,
     ::tim::component::written_bytes)
-}
 
 #endif
 

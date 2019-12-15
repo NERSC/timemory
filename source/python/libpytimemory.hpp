@@ -24,6 +24,10 @@
 
 #pragma once
 
+#if !defined(TIMEMORY_EXTERN_TEMPLATES)
+#    define TIMEMORY_EXTERN_TEMPLATES
+#endif
+
 //======================================================================================//
 // disables a bunch of warnings
 //

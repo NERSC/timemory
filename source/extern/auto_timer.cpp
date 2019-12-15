@@ -30,7 +30,7 @@
  *
  */
 
-#define TIMEMORY_EXTERN_TEMPLATE_BUILD
+#define TIMEMORY_BUILD_EXTERN_TEMPLATE
 
 #include "timemory/variadic/auto_timer.hpp"  // for auto_timer_list_t, auto_...
 #include "timemory/components.hpp"           // for papi_array_t
