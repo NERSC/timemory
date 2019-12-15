@@ -263,7 +263,9 @@ if(TIMEMORY_BUILD_DOCS)
 endif()
 
 if(TIMEMORY_BUILD_PYTHON)
-    set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11")
+    set(PYBIND11_INSTALL ON CACHE BOOL "Don't install Pybind11")
+else()
+    set(PYBIND11_INSTALL OFF)
 endif()
 
 # clang-tidy
