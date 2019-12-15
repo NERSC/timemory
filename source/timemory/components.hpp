@@ -248,6 +248,48 @@ initialize(_CompList<_CompTypes...>&, const std::string&, const std::string&)
 
 }  // namespace env
 
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+/*
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/component_list.hpp"
+
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+template <typename... Types>
+inline typename auto_list<Types...>::init_func_t&
+auto_list<Types...>::get_initializer()
+{
+    static init_func_t _instance = [](this_type& al) {
+        static auto env_delim =
+            tim::delimit(tim::get_env<std::string>("TIMEMORY_AUTO_LIST_INIT", ""));
+        static auto enum_result = enumerate_components(env_delim);
+        for(const auto& itr : enum_result)
+            initialize(itr, al);
+        // env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+    };
+    return _instance;
+}
+
+template <typename... Types>
+inline typename component_list<Types...>::init_func_t&
+component_list<Types...>::get_initializer()
+{
+    static init_func_t _instance = [](this_type& al) {
+        static auto env_delim =
+            tim::delimit(tim::get_env<std::string>("TIMEMORY_AUTO_LIST_INIT", ""));
+        static auto enum_result = enumerate_components(env_delim);
+        for(const auto& itr : enum_result)
+            initialize((TIMEMORY_COMPONENT) itr, al);
+        // env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+    };
+    return _instance;
+}
+
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+*/

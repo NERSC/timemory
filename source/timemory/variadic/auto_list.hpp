@@ -41,6 +41,7 @@
 #include <cstdint>
 #include <string>
 
+#include "timemory/bits/components.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -89,7 +90,10 @@ public:
     static init_func_t& get_initializer()
     {
         static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+            static auto env_ret  = tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "");
+            static auto env_enum = enumerate_components(tim::delimit(env_ret));
+            ::tim::initialize(al, env_enum);
+            // env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
         };
         return _instance;
     }

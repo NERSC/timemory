@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/bits/components.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/variadic/component_list.hpp"
@@ -522,8 +523,11 @@ template <typename... Types>
 inline typename component_list<Types...>::init_func_t&
 component_list<Types...>::get_initializer()
 {
-    static init_func_t _instance = [](this_type& al) {
-        env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
+    static init_func_t _instance = [](this_type& cl) {
+        static auto env_ret  = tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "");
+        static auto env_enum = enumerate_components(tim::delimit(env_ret));
+        ::tim::initialize(cl, env_enum);
+        // env::initialize(cl, "TIMEMORY_COMPONENT_LIST_INIT", "");
     };
     return _instance;
 }

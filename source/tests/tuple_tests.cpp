@@ -473,11 +473,15 @@ TEST_F(tuple_tests, concat)
     using lhs_t = tim::component_tuple<real_clock, system_clock>;
     using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
 
-    using comp_t0 = typename tim::component_tuple<lhs_t, rhs_t>::component_type;
-    using comp_t1 = typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type;
+    using comp_t0 = tim::remove_duplicates<
+        typename tim::component_tuple<lhs_t, rhs_t>::component_type>;
+    using comp_t1 = tim::remove_duplicates<
+        typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type>;
 
-    using data_t0 = typename tim::component_list<lhs_t, rhs_t>::data_type;
-    using data_t1 = typename tim::auto_list<lhs_t, rhs_t, user_clock>::data_type;
+    using data_t0 =
+        tim::remove_duplicates<typename tim::component_list<lhs_t, rhs_t>::data_type>;
+    using data_t1 = tim::remove_duplicates<
+        typename tim::auto_list<lhs_t, rhs_t, user_clock>::data_type>;
 
     std::cout << "\n" << std::flush;
     std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";

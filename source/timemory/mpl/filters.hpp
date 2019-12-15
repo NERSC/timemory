@@ -327,6 +327,28 @@ struct remove_duplicates<std::tuple<In, InTail...>, std::tuple<Out...>>
                                    std::tuple<Out...>>::type>::type;
 };
 
+template <typename In, typename Out>
+struct convert;
+
+template <template <typename...> class InTuple, typename... In,
+          template <typename...> class OutTuple, typename... Out>
+struct convert<InTuple<In...>, OutTuple<Out...>>
+{
+    using type = OutTuple<In...>;
+};
+
+template <typename In, typename Out>
+struct unique;
+
+template <template <typename...> class InTuple, typename... In,
+          template <typename...> class OutTuple, typename... Out>
+struct unique<InTuple<In...>, OutTuple<Out...>>
+{
+    using tuple_type = typename convert<InTuple<In...>, OutTuple<>>::type;
+    using dupl_type  = typename remove_duplicates<tuple_type, OutTuple<>>::type;
+    using type       = typename convert<dupl_type, InTuple<>>::type;
+};
+
 //======================================================================================//
 
 }  // namespace impl
@@ -363,10 +385,13 @@ using is_one_of = typename impl::is_one_of<_Tp, _Types>;
 //======================================================================================//
 
 template <typename T>
-using remove_duplicates = typename impl::remove_duplicates<T, std::tuple<>>::type;
+using remove_duplicates = typename impl::unique<T, std::tuple<>>::type;
 
-// template <typename T>
-// using remove_duplicates = typename impl::remove_duplicates<std::tuple<>, T>::type;
+template <typename T>
+using unique = typename impl::unique<T, std::tuple<>>::type;
+
+template <typename T, typename U>
+using convert = typename impl::convert<T, U>::type;
 
 //======================================================================================//
 //

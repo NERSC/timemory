@@ -122,8 +122,6 @@ exec_amypx(int64_t data_size, int64_t nitr, params_t params,
            std::vector<stream_t>& streams)
 {
     auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
-    // while(label.find("__") != std::string::npos)
-    //    label.erase(label.find("__"), 1);
 
     _Tp* y    = tim::cuda::malloc<_Tp>(data_size * streams.size());
     _Tp* x    = tim::cuda::malloc<_Tp>(data_size * streams.size());

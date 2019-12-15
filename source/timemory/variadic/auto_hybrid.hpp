@@ -66,6 +66,7 @@ public:
     using list_type_list      = typename component_type::list_type_list;
     using data_value_type     = typename component_type::data_value_type;
     using data_label_type     = typename component_type::data_label_type;
+    using init_func_t         = std::function<void(list_type&)>;
     using string_t            = std::string;
     using captured_location_t = typename component_type::captured_location_t;
 
@@ -82,19 +83,39 @@ public:
     static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report());
+    //----------------------------------------------------------------------------------//
+    //
+    static void init_storage() { component_type::init_storage(); }
 
+    //----------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](list_type&) {};
+        return _instance;
+    }
+
+public:
+    template <typename _Func = init_func_t>
+    inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
+                                bool report_at_exit = settings::destructor_report(),
+                                const _Func& _func  = this_type::get_initializer());
+
+    template <typename _Func = init_func_t>
     inline explicit auto_hybrid(const captured_location_t&,
                                 bool flat           = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report());
+                                bool report_at_exit = settings::destructor_report(),
+                                const _Func& _func  = this_type::get_initializer());
 
-    template <typename _Scope>
+    template <typename _Scope, typename _Func = init_func_t>
     inline auto_hybrid(const string_t&, _Scope = _Scope{},
-                       bool report_at_exit = settings::destructor_report());
+                       bool         report_at_exit = settings::destructor_report(),
+                       const _Func& _func          = this_type::get_initializer());
 
+    template <typename _Func = init_func_t>
     inline explicit auto_hybrid(component_type& tmp, bool flat = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report());
+                                bool report_at_exit = settings::destructor_report(),
+                                const _Func& _func  = this_type::get_initializer());
     inline ~auto_hybrid();
 
     // copy and move
@@ -203,9 +224,6 @@ public:
         return os;
     }
 
-    //----------------------------------------------------------------------------------//
-    static void init_storage() { component_type::init_storage(); }
-
 private:
     bool            m_enabled        = true;
     bool            m_report_at_exit = false;
@@ -216,8 +234,9 @@ private:
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
+template <typename _Func>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool flat,
-                                                bool report_at_exit)
+                                                bool report_at_exit, const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
@@ -226,6 +245,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool
 {
     if(m_enabled)
     {
+        _func(m_temporary_object.get_list());
         m_temporary_object.start();
     }
 }
@@ -233,8 +253,10 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
+template <typename _Func>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& object_loc,
-                                                bool flat, bool report_at_exit)
+                                                bool flat, bool report_at_exit,
+                                                const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
@@ -243,6 +265,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& objec
 {
     if(m_enabled)
     {
+        _func(m_temporary_object.get_list());
         m_temporary_object.start();
     }
 }
@@ -250,9 +273,9 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& objec
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
-template <typename _Scope>
+template <typename _Scope, typename _Func>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, _Scope,
-                                                bool            report_at_exit)
+                                                bool report_at_exit, const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_tag, m_enabled,
@@ -261,6 +284,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, _Sco
 {
     if(m_enabled)
     {
+        _func(m_temporary_object.get_list());
         m_temporary_object.start();
     }
 }
@@ -268,8 +292,9 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, _Sco
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
+template <typename _Func>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp, bool flat,
-                                                bool report_at_exit)
+                                                bool report_at_exit, const _Func& _func)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(tmp.clone(true, flat))
@@ -277,6 +302,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp, bool flat,
 {
     if(m_enabled)
     {
+        _func(m_temporary_object.get_list());
         m_temporary_object.start();
     }
 }

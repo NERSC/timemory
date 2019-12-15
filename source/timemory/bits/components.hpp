@@ -107,6 +107,75 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
 
 //--------------------------------------------------------------------------------------//
 
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+inline void
+insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
+{
+    using namespace component;
+    switch(comp)
+    {
+        case CALIPER: obj.template insert<caliper>(); break;
+        case CPU_CLOCK: obj.template insert<cpu_clock>(); break;
+        case CPU_ROOFLINE_DP_FLOPS: obj.template insert<cpu_roofline_dp_flops>(); break;
+        case CPU_ROOFLINE_FLOPS: obj.template insert<cpu_roofline_flops>(); break;
+        case CPU_ROOFLINE_SP_FLOPS: obj.template insert<cpu_roofline_sp_flops>(); break;
+        case CPU_UTIL: obj.template insert<cpu_util>(); break;
+        case CUDA_EVENT: obj.template insert<cuda_event>(); break;
+        case CUPTI_ACTIVITY: obj.template insert<cupti_activity>(); break;
+        case CUPTI_COUNTERS: obj.template insert<cupti_counters>(); break;
+        case DATA_RSS: obj.template insert<data_rss>(); break;
+        case GPERF_CPU_PROFILER: obj.template insert<gperf_cpu_profiler>(); break;
+        case GPERF_HEAP_PROFILER: obj.template insert<gperf_heap_profiler>(); break;
+        case GPU_ROOFLINE_DP_FLOPS: obj.template insert<gpu_roofline_dp_flops>(); break;
+        case GPU_ROOFLINE_FLOPS: obj.template insert<gpu_roofline_flops>(); break;
+        case GPU_ROOFLINE_HP_FLOPS: obj.template insert<gpu_roofline_hp_flops>(); break;
+        case GPU_ROOFLINE_SP_FLOPS: obj.template insert<gpu_roofline_sp_flops>(); break;
+        case LIKWID_NVMON: obj.template insert<likwid_nvmon>(); break;
+        case LIKWID_PERFMON: obj.template insert<likwid_perfmon>(); break;
+        case MONOTONIC_CLOCK: obj.template insert<monotonic_clock>(); break;
+        case MONOTONIC_RAW_CLOCK: obj.template insert<monotonic_raw_clock>(); break;
+        case NUM_IO_IN: obj.template insert<num_io_in>(); break;
+        case NUM_IO_OUT: obj.template insert<num_io_out>(); break;
+        case NUM_MAJOR_PAGE_FAULTS: obj.template insert<num_major_page_faults>(); break;
+        case NUM_MINOR_PAGE_FAULTS: obj.template insert<num_minor_page_faults>(); break;
+        case NUM_MSG_RECV: obj.template insert<num_msg_recv>(); break;
+        case NUM_MSG_SENT: obj.template insert<num_msg_sent>(); break;
+        case NUM_SIGNALS: obj.template insert<num_signals>(); break;
+        case NUM_SWAP: obj.template insert<num_swap>(); break;
+        case NVTX_MARKER: obj.template insert<nvtx_marker>(); break;
+        case PAGE_RSS: obj.template insert<page_rss>(); break;
+        case PAPI_ARRAY: obj.template insert<papi_array_t>(); break;
+        case PEAK_RSS: obj.template insert<peak_rss>(); break;
+        case PRIORITY_CONTEXT_SWITCH:
+            obj.template insert<priority_context_switch>();
+            break;
+        case PROCESS_CPU_CLOCK: obj.template insert<process_cpu_clock>(); break;
+        case PROCESS_CPU_UTIL: obj.template insert<process_cpu_util>(); break;
+        case READ_BYTES: obj.template insert<read_bytes>(); break;
+        case STACK_RSS: obj.template insert<stack_rss>(); break;
+        case SYS_CLOCK: obj.template insert<system_clock>(); break;
+        case TAU_MARKER: obj.template insert<tau_marker>(); break;
+        case THREAD_CPU_CLOCK: obj.template insert<thread_cpu_clock>(); break;
+        case THREAD_CPU_UTIL: obj.template insert<thread_cpu_util>(); break;
+        case TRIP_COUNT: obj.template insert<trip_count>(); break;
+        case USER_TUPLE_BUNDLE: obj.template insert<user_tuple_bundle>(); break;
+        case USER_LIST_BUNDLE: obj.template insert<user_list_bundle>(); break;
+        case USER_CLOCK: obj.template insert<user_clock>(); break;
+        case VIRTUAL_MEMORY: obj.template insert<virtual_memory>(); break;
+        case VOLUNTARY_CONTEXT_SWITCH:
+            obj.template insert<voluntary_context_switch>();
+            break;
+        case VTUNE_EVENT: obj.template insert<vtune_event>(); break;
+        case VTUNE_FRAME: obj.template insert<vtune_frame>(); break;
+        case WALL_CLOCK: obj.template insert<wall_clock>(); break;
+        case WRITTEN_BYTES: obj.template insert<written_bytes>(); break;
+        case TIMEMORY_COMPONENTS_END:
+        default: break;
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <template <typename...> class _CompList, typename... _CompTypes,
           template <typename, typename...> class _Container, typename _Intp,
           typename... _ExtraArgs>
@@ -126,6 +195,30 @@ initialize(_CompList<_CompTypes...>& obj, const int ncomponents, const int* comp
 {
     for(int i = 0; i < ncomponents; ++i)
         initialize(static_cast<TIMEMORY_COMPONENT>(components[i]), obj);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
+          template <typename, typename...> class _Container, typename _Intp,
+          typename... _ExtraArgs>
+void
+insert(_Bundle<_Idx, _Type>& obj, const _Container<_Intp, _ExtraArgs...>& components)
+{
+    obj.clear();
+    for(auto itr : components)
+        insert(static_cast<TIMEMORY_COMPONENT>(itr), obj);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+void
+insert(_Bundle<_Idx, _Type>& obj, const int ncomponents, const int* components)
+{
+    obj.clear();
+    for(int i = 0; i < ncomponents; ++i)
+        insert(static_cast<TIMEMORY_COMPONENT>(components[i]), obj);
 }
 
 //--------------------------------------------------------------------------------------//
