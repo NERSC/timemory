@@ -42,16 +42,16 @@ namespace ert
 //
 // template struct exec_data<component::wall_clock>;
 //
-template struct counter<device::cpu, float, component::wall_clock>;
-template struct counter<device::cpu, double, component::wall_clock>;
+// template struct counter<device::cpu, float, component::wall_clock>;
+// template struct counter<device::cpu, double, component::wall_clock>;
 template struct configuration<device::cpu, float, component::wall_clock>;
 template struct configuration<device::cpu, double, component::wall_clock>;
 //
 #if defined(TIMEMORY_USE_CUDA)
 //
-template struct counter<device::gpu, float, component::wall_clock>;
-template struct counter<device::gpu, double, component::wall_clock>;
-template struct counter<device::gpu, cuda::fp16_t, component::wall_clock>;
+// template struct counter<device::gpu, float, component::wall_clock>;
+// template struct counter<device::gpu, double, component::wall_clock>;
+// template struct counter<device::gpu, cuda::fp16_t, component::wall_clock>;
 template struct configuration<device::gpu, float, component::wall_clock>;
 template struct configuration<device::gpu, double, component::wall_clock>;
 template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
