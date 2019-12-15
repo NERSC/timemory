@@ -32,6 +32,9 @@
 
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
+#    include "timemory/backends/cuda.hpp"
+#    include "timemory/backends/device.hpp"
+#    include "timemory/components/timing.hpp"
 #    include "timemory/ert/configuration.hpp"
 #    include "timemory/ert/counter.hpp"
 #    include "timemory/ert/data.hpp"
@@ -42,22 +45,21 @@ namespace ert
 {
 //
 //
-extern template struct exec_data<::tim::component::wall_clock>;
+extern template struct exec_data<component::wall_clock>;
 //
-extern template struct counter<device::cpu, float, ::tim::component::wall_clock>;
-extern template struct counter<device::cpu, double, ::tim::component::wall_clock>;
-extern template struct configuration<device::cpu, float, ::tim::component::wall_clock>;
-extern template struct configuration<device::cpu, double, ::tim::component::wall_clock>;
+extern template struct counter<device::cpu, float, component::wall_clock>;
+extern template struct counter<device::cpu, double, component::wall_clock>;
+extern template struct configuration<device::cpu, float, component::wall_clock>;
+extern template struct configuration<device::cpu, double, component::wall_clock>;
 //
 #    if defined(TIMEMORY_USE_CUDA)
 //
-extern template struct counter<device::gpu, float, ::tim::component::wall_clock>;
-extern template struct counter<device::gpu, double, ::tim::component::wall_clock>;
-extern template struct counter<device::gpu, cuda::fp16_t, ::tim::component::wall_clock>;
-extern template struct configuration<device::gpu, float, ::tim::component::wall_clock>;
-extern template struct configuration<device::gpu, double, ::tim::component::wall_clock>;
-extern template struct configuration<device::gpu, cuda::fp16_t,
-                                     ::tim::component::wall_clock>;
+extern template struct counter<device::gpu, float, component::wall_clock>;
+extern template struct counter<device::gpu, double, component::wall_clock>;
+extern template struct counter<device::gpu, cuda::fp16_t, component::wall_clock>;
+extern template struct configuration<device::gpu, float, component::wall_clock>;
+extern template struct configuration<device::gpu, double, component::wall_clock>;
+extern template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
 //
 #    endif
 //

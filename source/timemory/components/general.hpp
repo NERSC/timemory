@@ -299,7 +299,7 @@ public:
     template <typename _Toolset, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int>   = 0,
               enable_if_t<(_Toolset::is_component), char> = 0>
-    static void configure(bool _flat = false)
+    static void configure(bool _flat = settings::flat_profile())
     {
         if(!trait::is_available<_Toolset>::value)
             return;
@@ -338,7 +338,7 @@ public:
     template <typename _Toolset, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int>    = 0,
               enable_if_t<!(_Toolset::is_component), char> = 0>
-    static void configure(bool _flat = false)
+    static void configure(bool _flat = settings::flat_profile())
     {
         if(_Toolset::size() == 0)
             return;
@@ -374,7 +374,7 @@ public:
     //
     template <typename _Toolset, typename _InitFunc,
               enable_if_t<!(_Toolset::is_component), char> = 0>
-    static void configure(_InitFunc&& _init, bool _flat = false)
+    static void configure(_InitFunc&& _init, bool _flat = settings::flat_profile())
     {
         if(_Toolset::size() == 0)
             return;
@@ -411,7 +411,7 @@ public:
     //
     template <typename _Head, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    static void configure(bool _flat = false)
+    static void configure(bool _flat = settings::flat_profile())
     {
         configure<_Head>(_flat);
         configure<_Tail...>(_flat);
@@ -504,7 +504,7 @@ public:
     template <typename _Toolset, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int>   = 0,
               enable_if_t<(_Toolset::is_component), char> = 0>
-    void insert(bool _flat = false)
+    void insert(bool _flat = settings::flat_profile())
     {
         internal_init<_Toolset>();
 
@@ -535,7 +535,7 @@ public:
     template <typename _Toolset, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int>    = 0,
               enable_if_t<!(_Toolset::is_component), char> = 0>
-    void insert(bool _flat = false)
+    void insert(bool _flat = settings::flat_profile())
     {
         internal_init();
 
@@ -563,7 +563,7 @@ public:
     //
     template <typename _Toolset, typename _InitFunc,
               enable_if_t<!(_Toolset::is_component), char> = 0>
-    void insert(_InitFunc&& _init, bool _flat = false)
+    void insert(_InitFunc&& _init, bool _flat = settings::flat_profile())
     {
         internal_init();
 
@@ -592,7 +592,7 @@ public:
     //
     template <typename _Head, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    void insert(bool _flat = false)
+    void insert(bool _flat = settings::flat_profile())
     {
         configure<_Head>(_flat);
         configure<_Tail...>(_flat);
