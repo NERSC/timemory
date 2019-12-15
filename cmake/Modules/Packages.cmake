@@ -411,11 +411,13 @@ endif()
 #                               PyBind11
 #
 #----------------------------------------------------------------------------------------#
-if(TIMEMORY_USE_PYTHON AND NOT TIMEMORY_BUILD_PYTHON)
-    find_package(pybind11 REQUIRED)
-    if(NOT PYTHON_EXECUTABLE)
-        find_package(PythonInterp REQUIRED)
-        find_package(PythonLibs REQUIRED)
+if(TIMEMORY_USE_PYTHON)
+    if(NOT TIMEMORY_BUILD_PYTHON)
+        find_package(pybind11 REQUIRED)
+        if(NOT PYTHON_EXECUTABLE)
+            find_package(PythonInterp REQUIRED)
+            find_package(PythonLibs REQUIRED)
+        endif()
     endif()
 elseif(NOT TIMEMORY_USE_PYTHON)
     set(TIMEMORY_BUILD_PYTHON OFF)
