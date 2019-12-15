@@ -10,7 +10,7 @@ project(timemory-gotcha-Example LANGUAGES C CXX)
 include(GNUInstallDirs)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-gotcha-example)
-set(COMPONENTS compile-options arch vector gotcha analysis-tools)
+set(COMPONENTS compile-options vector gotcha analysis-tools OPTIONAL_COMPONENTS arch)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_library(ex_gotcha_lib SHARED ex_gotcha_lib.hpp ex_gotcha_lib.cpp)

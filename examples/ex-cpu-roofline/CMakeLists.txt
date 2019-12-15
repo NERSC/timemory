@@ -8,9 +8,9 @@ endif()
 project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)
-set(COMPONENTS compile-options analysis-tools cpu-roofline mpi)
+set(COMPONENTS compile-options analysis-tools cpu-roofline)
 
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS mpi)
 
 add_library(cpu-fp-single INTERFACE)
 add_library(cpu-fp-double INTERFACE)

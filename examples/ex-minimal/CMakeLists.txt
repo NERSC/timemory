@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(timemory-Minimal-Example LANGUAGES C CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-minimal-example)
-set(COMPONENTS headers compile-options analysis-tools)
+set(COMPONENTS headers compile-options analysis-tools OPTIONAL_COMPONENTS)
+
 option(USE_PAPI "Enable PAPI support" OFF)
 option(USE_CALIPER "Enable Caliper support" OFF)
 if(USE_PAPI)
