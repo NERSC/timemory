@@ -27,8 +27,6 @@
  *
  */
 
-#define TIMEMORY_BUILD_EXTERN_INIT
-
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
 
