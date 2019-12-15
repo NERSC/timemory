@@ -30,16 +30,16 @@
 
 #pragma once
 
+#include "timemory/components.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/auto_tuple.hpp"
+
 //--------------------------------------------------------------------------------------//
 // auto_timer
 //
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
-
-#    include "timemory/components.hpp"
-#    include "timemory/utility/macros.hpp"
-#    include "timemory/variadic/auto_hybrid.hpp"
-#    include "timemory/variadic/auto_list.hpp"
-#    include "timemory/variadic/auto_tuple.hpp"
 
 // clang-format off
 
