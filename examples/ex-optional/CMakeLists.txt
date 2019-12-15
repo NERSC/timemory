@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 project(timemory-Optional-Example LANGUAGES C CXX)
 
-find_package(timemory REQUIRED COMPONENTS cxx compile-options analysis-tools papi caliper tau)
+find_package(timemory REQUIRED COMPONENTS cxx compile-options analysis-tools
+    OPTIONAL_COMPONENTS papi caliper tau)
 
 file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)
 

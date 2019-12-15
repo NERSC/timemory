@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(timemory-CXX-Overhead-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cxx_overhead)
-set(COMPONENTS cxx compile-options analysis-tools)
+set(COMPONENTS cxx compile-options analysis-tools OPTIONAL_COMPONENTS)
 
 option(USE_PAPI "Enable papi" OFF)
 option(USE_CALIPER "Enable caliper" OFF)

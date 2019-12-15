@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 include(CheckLanguage)
 
 # travis has limited resources so running ERT takes a while
-if("$ENV{USER}" STREQUAL "travis" AND "$ENV{CONTINUOUS_INTEGRATION}" STREQUAL "true")
-    return()
-endif()
+# if("$ENV{USER}" STREQUAL "travis" AND "$ENV{CONTINUOUS_INTEGRATION}" STREQUAL "true")
+#    return()
+# endif()
 
 set(_USE_CUDA ON)
 # this is for internal use
@@ -21,7 +21,7 @@ project(timemory-ERT-Example LANGUAGES CXX)
 option(USE_CUDA "Enable CUDA" ${_USE_CUDA})
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
-set(COMPONENTS compile-options arch vector mpi analysis-tools)
+set(COMPONENTS compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
 
 if(USE_CUDA)
     check_language(CUDA)

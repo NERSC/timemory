@@ -218,10 +218,11 @@ TEST_F(user_bundle_tests, bundle_3)
     {
         auto_hybrid_t _bundle(details::get_test_name(), true, false, init_func);
         ret += details::fibonacci(35);
-        _bundle.stop();
-        _bundle.start();
+    }
+
+    {
+        auto_hybrid_t _bundle(details::get_test_name());
         ret += details::fibonacci(35);
-        _bundle.stop();
     }
 
     printf("fibonacci(35) = %li\n", ret);
