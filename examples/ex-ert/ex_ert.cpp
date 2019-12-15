@@ -89,7 +89,7 @@ main(int argc, char** argv)
     // ert::execute<device::cpu, counter_type, float, double>(data);
 
     auto cpu_min_size = 64;
-    auto cpu_max_data = ert::cache_size::get_max();
+    auto cpu_max_data = 2 * ert::cache_size::get_max();
 
     init_list_t cpu_num_threads;
 
@@ -109,6 +109,8 @@ main(int argc, char** argv)
         auto entry = itr / nproc;
         if(entry > 0) cpu_num_threads.insert(entry);
     }
+
+    TIMEMORY_BLANK_AUTO_TIMER("run_ert");
 
 #if !defined(USE_CUDA)
 
