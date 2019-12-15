@@ -171,6 +171,7 @@ def run_pyctest():
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
         "TIMEMORY_USE_GPERF": "OFF",
+        "TIMEMORY_USE_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_USE_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
