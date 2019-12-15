@@ -22,7 +22,7 @@ if(TIMEMORY_USE_PAPI)
     list(APPEND HYBRID_COMPONENTS timemory-papi)
 endif()
 
-if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
+if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
     list(APPEND HYBRID_COMPONENTS timemory-cupti timemory-cudart-device)
 endif()
 
@@ -128,7 +128,7 @@ if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_NVTX)
                         timemory-analysis-tools)
 endif()
 
-if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
+if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
     add_library(cupti-compile-options INTERFACE)
     target_compile_options(cupti-compile-options INTERFACE
         $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)

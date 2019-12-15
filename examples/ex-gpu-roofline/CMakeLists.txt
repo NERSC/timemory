@@ -22,7 +22,7 @@ target_compile_options(gpu-roofline-compile-options INTERFACE
     $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
 
 set(EXE_NAME ex_gpu_roofline)
-set(COMPONENTS cuda cupti compile-options analysis-tools arch papi)
+set(COMPONENTS compile-options analysis-tools roofline)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
 set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
     LANGUAGE CUDA

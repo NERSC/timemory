@@ -170,6 +170,7 @@ struct dummy
 
 // allocator
 #    include "timemory/ert/aligned_allocator.hpp"
+#    include "timemory/ert/configuration.hpp"
 
 //======================================================================================//
 

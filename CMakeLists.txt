@@ -23,7 +23,7 @@ set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
 # this gets annoying
-if(TIMEMORY_BUILD_GTEST)
+if(TIMEMORY_BUILD_GTEST OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
         "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
 endif()

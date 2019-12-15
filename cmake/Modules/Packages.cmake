@@ -27,6 +27,7 @@ add_interface_library(timemory-threading)
 add_interface_library(timemory-papi)
 add_interface_library(timemory-papi-static)
 add_interface_library(timemory-cuda)
+add_interface_library(timemory-cuda-compiler)
 add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
 add_interface_library(timemory-cudart-device)
@@ -40,10 +41,14 @@ add_interface_library(timemory-tau)
 add_interface_library(timemory-python)
 
 add_interface_library(timemory-coverage)
-add_interface_library(timemory-exceptions)
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
+
+add_interface_library(timemory-roofline)
+add_interface_library(timemory-cpu-roofline)
+add_interface_library(timemory-gpu-roofline)
+add_interface_library(timemory-roofline-options)
 
 set(_DMP_LIBRARIES)
 
@@ -136,10 +141,36 @@ function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
     if(NOT TARGET ${_TARGET})
         message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
     endif()
-    message(STATUS  "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
-    # message(AUTHOR_WARNING "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
-    set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
+    if(NOT ${_TARGET} IN_LIST TIMEMORY_EMPTY_INTERFACE_LIBRARIES)
+        message(STATUS  "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+        set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
+    endif()
     add_disabled_interface(${_TARGET})
+endfunction()
+
+function(GENERATE_NON_EMPTY_INTERFACE _TARGET)
+    # parse args
+    if(NOT TARGET ${_TARGET})
+        message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
+    endif()
+
+    set(_FOUND ON)
+    set(_LINK)
+
+    foreach(_DEPENDS ${ARGN})
+        if(${_DEPENDS} IN_LIST TIMEMORY_EMPTY_INTERFACE_LIBRARIES)
+            message(STATUS  "[interface] '${_TARGET}' depends on '${_DEPENDS}' which is empty...")
+            set(_FOUND OFF)
+        else()
+            list(APPEND _LINK ${_DEPENDS})
+        endif()
+    endforeach()
+
+    if(_FOUND)
+        target_link_libraries(${_TARGET} INTERFACE ${_LINK})
+    else()
+        add_disabled_interface(${_TARGET})
+    endif()
 endfunction()
 
 #----------------------------------------------------------------------------------------#
@@ -157,15 +188,6 @@ if(TIMEMORY_LINK_RT)
 endif()
 # include threading because of rooflines
 target_link_libraries(timemory-headers INTERFACE timemory-threading)
-
-#----------------------------------------------------------------------------------------#
-#
-#                               timemory exceptions
-#
-#----------------------------------------------------------------------------------------#
-
-target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
-
 
 #----------------------------------------------------------------------------------------#
 #
@@ -289,7 +311,7 @@ if(MPI_FOUND)
 
     foreach(_LANG C CXX)
         # include directories
-        target_include_directories(timemory-mpi INTERFACE ${MPI_${_LANG}_INCLUDE_PATH})
+        target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_${_LANG}_INCLUDE_PATH})
 
         # link targets
         set(_TYPE )
@@ -328,7 +350,7 @@ if(MPI_FOUND)
     endif()
 
     if(MPI_INCLUDE_PATH)
-        target_include_directories(timemory-mpi INTERFACE ${MPI_INCLUDE_PATH})
+        target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_INCLUDE_PATH})
     endif()
 
     target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
@@ -366,7 +388,7 @@ if(UPCXX_FOUND)
     target_link_libraries(timemory-upcxx INTERFACE ${UPCXX_LIBRARIES})
     target_compile_options(timemory-upcxx INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_OPTIONS}>)
     target_compile_features(timemory-upcxx INTERFACE cxx_std_${UPCXX_CXX_STANDARD})
-    target_include_directories(timemory-upcxx INTERFACE ${UPCXX_INCLUDE_DIRS})
+    target_include_directories(timemory-upcxx SYSTEM INTERFACE ${UPCXX_INCLUDE_DIRS})
     target_compile_definitions(timemory-upcxx INTERFACE ${UPCXX_DEFINITIONS} TIMEMORY_USE_UPCXX)
 
     if(NOT CMAKE_VERSION VERSION_LESS 3.13)
@@ -389,15 +411,17 @@ endif()
 #                               PyBind11
 #
 #----------------------------------------------------------------------------------------#
+if(TIMEMORY_USE_PYTHON AND NOT TIMEMORY_BUILD_PYTHON)
+    find_package(pybind11 REQUIRED)
+    if(NOT PYTHON_EXECUTABLE)
+        find_package(PythonInterp REQUIRED)
+        find_package(PythonLibs REQUIRED)
+    endif()
+elseif(NOT TIMEMORY_USE_PYTHON)
+    set(TIMEMORY_BUILD_PYTHON OFF)
+endif()
 
-if(TIMEMORY_BUILD_PYTHON)
-
-    # checkout PyBind11 if not checked out
-    checkout_git_submodule(RECURSIVE
-        RELATIVE_PATH external/pybind11
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        REPO_URL https://github.com/jrmadsen/pybind11.git
-        REPO_BRANCH master)
+if(TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)
 
     # C++ standard
     if(NOT WIN32 AND NOT "${PYBIND11_CPP_STANDARD}" STREQUAL "-std=c++${CMAKE_CXX_STANDARD}")
@@ -406,10 +430,21 @@ if(TIMEMORY_BUILD_PYTHON)
     endif()
 
     set(PYBIND11_INSTALL ON CACHE BOOL "Enable Pybind11 installation")
-    # add PyBind11 to project
-    if(NOT TARGET pybind11)
-        add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
+
+    if(NOT TIMEMORY_USE_PYTHON OR NOT pybind11_FOUND)
+        # checkout PyBind11 if not checked out
+        checkout_git_submodule(RECURSIVE
+            RELATIVE_PATH external/pybind11
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            REPO_URL https://github.com/jrmadsen/pybind11.git
+            REPO_BRANCH master)
+
+        # add PyBind11 to project
+        if(NOT TARGET pybind11)
+            add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
+        endif()
     endif()
+
 
     if(NOT PYBIND11_PYTHON_VERSION)
         unset(PYBIND11_PYTHON_VERSION CACHE)
@@ -437,10 +472,21 @@ if(TIMEMORY_BUILD_PYTHON)
             ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
     endif()
 
-    target_include_directories(timemory-python INTERFACE ${PYTHON_INCLUDE_DIRS})
-    target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
-    target_link_libraries(timemory-python INTERFACE pybind11::embed)
-
+    if(NOT TIMEMORY_USE_PYTHON OR NOT pybind11_FOUND)
+        target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
+        target_include_directories(timemory-python SYSTEM INTERFACE
+            ${PYTHON_INCLUDE_DIRS}
+            $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+        target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+    elseif(pybind11_FOUND)
+        target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
+        target_include_directories(timemory-python SYSTEM INTERFACE
+            ${PYTHON_INCLUDE_DIRS} ${PYBIND11_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIRS})
+        target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
+    endif()
+else()
+    inform_empty_interface(timemory-python "Python embedded interpreter")
 endif()
 
 
@@ -462,6 +508,7 @@ else()
     set(TIMEMORY_USE_PAPI OFF)
     inform_empty_interface(timemory-papi "PAPI (shared libraries)")
     inform_empty_interface(timemory-papi-static "PAPI (static libraries)")
+    inform_empty_interface(timemory-cpu-roofline "CPU roofline")
 endif()
 
 
@@ -495,120 +542,19 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_CUDA)
-    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
-    find_package(CUDA QUIET)
 
-    if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
+    set(PROJECT_USE_CUDA_OPTION                 TIMEMORY_USE_CUDA)
+    set(PROJECT_CUDA_DEFINITION                 TIMEMORY_USE_CUDA)
+    set(PROJECT_CUDA_INTERFACE_PREFIX           timemory)
+    set(PROJECT_CUDA_DISABLE_HALF2_OPTION       TIMEMORY_DISABLE_CUDA_HALF2)
+    set(PROJECT_CUDA_DISABLE_HALF2_DEFINITION   TIMEMORY_DISABLE_CUDA_HALF2)
 
-        target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_CUDA)
-        target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
-            ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    include(CUDAConfig)
 
-        set_target_properties(timemory-cuda PROPERTIES
-            INTERFACE_CUDA_STANDARD                 ${CMAKE_CUDA_STANDARD}
-            INTERFACE_CUDA_STANDARD_REQUIRED        ${CMAKE_CUDA_STANDARD_REQUIRED}
-            INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS   ON
-            INTERFACE_CUDA_SEPARABLE_COMPILATION    ON)
-
-        set(CUDA_AUTO_ARCH "auto")
-        set(CUDA_ARCHITECTURES auto kepler tesla maxwell pascal volta turing)
-        set(CUDA_ARCH "${CUDA_AUTO_ARCH}" CACHE STRING
-            "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
-        add_feature(CUDA_ARCH "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
-        set_property(CACHE CUDA_ARCH PROPERTY STRINGS ${CUDA_ARCHITECTURES})
-
-        set(cuda_kepler_arch    30)
-        set(cuda_tesla_arch     35)
-        set(cuda_maxwell_arch   50)
-        set(cuda_pascal_arch    60)
-        set(cuda_volta_arch     70)
-        set(cuda_turing_arch    75)
-
-        if(NOT "${CUDA_ARCH}" STREQUAL "${CUDA_AUTO_ARCH}")
-            if(NOT "${CUDA_ARCH}" IN_LIST CUDA_ARCHITECTURES)
-                message(WARNING
-                    "CUDA architecture \"${CUDA_ARCH}\" not known. Options: ${CUDA_ARCH}")
-                unset(CUDA_ARCH CACHE)
-                set(CUDA_ARCH "${CUDA_AUTO_ARCH}")
-            else()
-                set(_ARCH_NUM ${cuda_${CUDA_ARCH}_arch})
-                if(_ARCH_NUM LESS 60)
-                    set(TIMEMORY_DISABLE_CUDA_HALF2 ON)
-                endif()
-            endif()
-        endif()
-	
-        if(NOT _ARCH_NUM)
-	    set(_ARCH_NUM 60)
-        endif()
-
-        target_compile_options(timemory-cuda INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${_ARCH_NUM}
-            -gencode=arch=compute_${_ARCH_NUM},code=sm_${_ARCH_NUM}
-	    -gencode=arch=compute_${_ARCH_NUM},code=compute_${_ARCH_NUM}>)
-
-        #   30, 32      + Kepler support
-        #               + Unified memory programming
-        #   35          + Dynamic parallelism support
-        #   50, 52, 53  + Maxwell support
-        #   60, 61, 62  + Pascal support
-        #   70, 72      + Volta support
-        #   75          + Turing support
-
-        # target_compile_options(timemory-cuda INTERFACE
-        #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
-
-        add_user_flags(timemory-cuda "CUDA")
-
-        target_compile_options(timemory-cuda INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
-
-        if(TIMEMORY_DISABLE_CUDA_HALF2 OR _ARCH_NUM LESS 60)
-            target_compile_definitions(timemory-cuda INTERFACE
-                TIMEMORY_DISABLE_CUDA_HALF2)
-        endif()
-
-        # if(NOT WIN32)
-        #    target_compile_options(timemory-cuda INTERFACE
-        #        $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
-        # endif()
-
-        target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
-            ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-
-        find_library(CUDA_dl_LIBRARY
-            NAMES dl)
-
-        target_compile_options(timemory-cudart INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
-
-        target_compile_options(timemory-cudart-static INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
-
-        target_link_libraries(timemory-cudart INTERFACE
-            ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
-
-        target_link_libraries(timemory-cudart-device INTERFACE
-            ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
-
-        target_link_libraries(timemory-cudart-static INTERFACE
-            ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
-
-        if(CUDA_dl_LIBRARY)
-            target_link_libraries(timemory-cudart INTERFACE
-                ${CUDA_dl_LIBRARY})
-
-            target_link_libraries(timemory-cudart-device INTERFACE
-                ${CUDA_dl_LIBRARY})
-
-            target_link_libraries(timemory-cudart-static INTERFACE
-                ${CUDA_dl_LIBRARY})
-        endif()
-
-    else()
-        message(FATAL_ERROR
-            "TIMEMORY_USE_CUDA=${TIMEMORY_USE_CUDA} but CUDA is not supported!")
-    endif()
 else()
+    set(TIMEMORY_USE_CUDA OFF)
+    set(TIMEMORY_USE_NVTX OFF)
+    set(TIMEMORY_USE_CUPTI OFF)
     inform_empty_interface(timemory-cuda "CUDA")
     inform_empty_interface(timemory-cudart "CUDA Runtime (shared)")
     inform_empty_interface(timemory-cudart-device "CUDA Runtime (device)")
@@ -621,74 +567,36 @@ endif()
 #                               CUPTI
 #
 #----------------------------------------------------------------------------------------#
+
 if(TIMEMORY_USE_CUPTI)
+    find_package(CUPTI)
+endif()
 
-    set(_CUDA_PATHS $ENV{CUDA_HOME} ${CUDA_TOOLKIT_ROOT_DIR} ${CUDA_SDK_ROOT_DIR})
-    set(_CUDA_INC ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+if(CUPTI_FOUND)
 
-    find_path(CUPTI_ROOT_DIR
-        NAMES           include/cupti.h
-        HINTS           ${_CUDA_PATHS}
-        PATHS           ${_CUDA_PATHS}
-        PATH_SUFFIXES   extras/CUPTI)
+    target_compile_definitions(timemory-cupti INTERFACE
+        TIMEMORY_USE_CUPTI)
 
-    # try to find cupti header
-    find_path(CUDA_cupti_INCLUDE_DIR
-        NAMES           cupti.h
-        HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_INC} ${_CUDA_PATHS}
-        PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_INC} ${_CUDA_PATHS}
-        PATH_SUFFIXES   extras/CUPTI/include extras/CUPTI extras/include CUTPI/include include)
+    target_include_directories(timemory-cupti SYSTEM INTERFACE
+        ${CUPTI_INCLUDE_DIRS})
 
-    # try to find cuda driver library
-    find_library(CUDA_cupti_LIBRARY
-        NAMES           cupti
-        HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
-        PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
-        PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
+    target_link_libraries(timemory-cupti INTERFACE
+        ${CUPTI_LIBRARIES}
+        timemory-cuda
+        timemory-cudart
+        timemory-cudart-device)
 
-    # try to find cuda driver library
-    find_library(CUDA_cuda_LIBRARY
-        NAMES           cuda
-        HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
-        PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
-        PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
+    target_link_directories(timemory-cupti INTERFACE
+        $<INSTALL_INTERFACE:${CUPTI_LIBRARY_DIRS}>)
 
-    # try to find cuda driver stubs library if no real driver
-    if(NOT CUDA_cuda_LIBRARY)
-        find_library(CUDA_cuda_LIBRARY
-            NAMES           cuda
-            HINTS           ${_CUDA_PATHS}
-            PATHS           ${_CUDA_PATHS}
-            PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
-        set(HAS_CUDA_cuda_LIBRARY OFF CACHE BOOL "Using stubs library")
-    else()
-        set(HAS_CUDA_cuda_LIBRARY ON CACHE BOOL "Using stubs library")
-    endif()
-
-    find_package_handle_standard_args(CUDA_CUPTI DEFAULT_MSG
-        CUDA_cupti_INCLUDE_DIR
-        CUDA_cupti_LIBRARY
-        CUDA_cuda_LIBRARY)
-
-    # if header and library found
-    if(NOT CUDA_CUPTI_FOUND)
-        set(TIMEMORY_USE_CUPTI OFF)
-    else()
-        target_compile_definitions(timemory-cupti INTERFACE TIMEMORY_USE_CUPTI)
-        target_include_directories(timemory-cupti INTERFACE ${CUDA_INCLUDE_DIRS}
-            ${CUDA_cupti_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-        target_link_libraries(timemory-cupti INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY})
-        set_target_properties(timemory-cupti PROPERTIES
-            INTERFACE_INSTALL_RPATH               ""
-            INTERFACE_INSTALL_RPATH_USE_LINK_PATH ${HAS_CUDA_cuda_LIBRARY})
-    endif()
-
-    # clean-up
-    unset(_CUDA_PATHS)
-    unset(_CUDA_INC)
+    set_target_properties(timemory-cupti PROPERTIES
+        INTERFACE_INSTALL_RPATH                 ""
+        INTERFACE_INSTALL_RPATH_USE_LINK_PATH   ${HAS_CUDA_DRIVER_LIBRARY})
 
 else()
+    set(TIMEMORY_USE_CUPTI OFF)
     inform_empty_interface(timemory-cupti "CUPTI")
+    inform_empty_interface(timemory-gpu-roofline "GPU roofline (CUPTI)")
 endif()
 
 
@@ -697,13 +605,14 @@ endif()
 #                               NVTX
 #
 #----------------------------------------------------------------------------------------#
+
 if(TIMEMORY_USE_NVTX)
     find_package(NVTX QUIET)
 endif()
 
 if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
     target_link_libraries(timemory-nvtx INTERFACE ${NVTX_LIBRARIES})
-    target_include_directories(timemory-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
+    target_include_directories(timemory-nvtx SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
     target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
@@ -719,6 +628,7 @@ endif()
 
 set(_GPERF_COMPONENTS ${TIMEMORY_GPERF_COMPONENTS} profiler tcmalloc)
 list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
+
 if(NOT "${TIMEMORY_GPERF_COMPONENTS}" STREQUAL "")
     find_package(gperftools QUIET COMPONENTS ${_GPERF_COMPONENTS})
 endif()
@@ -733,7 +643,7 @@ if(gperftools_FOUND)
         if(gperftools_PROFILER_LIBRARY)
             target_compile_definitions(timemory-gperftools-cpu INTERFACE
                 TIMEMORY_USE_GPERF_CPU_PROFILER)
-            target_include_directories(timemory-gperftools-cpu INTERFACE
+            target_include_directories(timemory-gperftools-cpu SYSTEM INTERFACE
                 ${gperftools_INCLUDE_DIRS})
             target_link_libraries(timemory-gperftools-cpu INTERFACE
                 ${gperftools_PROFILER_LIBRARY})
@@ -753,7 +663,7 @@ if(gperftools_FOUND)
         if(gperftools_TCMALLOC_LIBRARY)
             target_compile_definitions(timemory-gperftools-heap INTERFACE
                 TIMEMORY_USE_GPERF_HEAP_PROFILER)
-            target_include_directories(timemory-gperftools-heap INTERFACE
+            target_include_directories(timemory-gperftools-heap SYSTEM INTERFACE
                 ${gperftools_INCLUDE_DIRS})
             target_link_libraries(timemory-gperftools-heap INTERFACE
                 ${gperftools_TCMALLOC_LIBRARY})
@@ -767,7 +677,7 @@ if(gperftools_FOUND)
         target_compile_definitions(timemory-gperftools INTERFACE
             TIMEMORY_USE_GPERF)
     endif()
-    target_include_directories(timemory-gperftools INTERFACE
+    target_include_directories(timemory-gperftools SYSTEM INTERFACE
         ${gperftools_INCLUDE_DIRS})
     target_link_libraries(timemory-gperftools INTERFACE
         ${gperftools_LIBRARIES})
@@ -936,6 +846,37 @@ else()
     set(TIMEMORY_USE_TAU OFF)
     inform_empty_interface(timemory-tau "TAU")
 endif()
+
+#----------------------------------------------------------------------------------------#
+#
+#                               Roofline
+#
+#----------------------------------------------------------------------------------------#
+
+add_target_flag_if_avail(timemory-roofline-options INTERFACE
+    "-finline-functions" "-funroll-loops" "-ftree-vectorize"
+    "-ftree-loop-optimize" "-ftree-loop-vectorize" "-O3")
+
+set(VECTOR_DEFINITION               TIMEMORY_VEC)
+set(VECTOR_INTERFACE_TARGET         timemory-roofline-options)
+set(ARCH_INTERFACE_TARGET           timemory-roofline-options)
+
+include(ArchConfig)
+
+target_link_libraries(timemory-cpu-roofline INTERFACE
+    timemory-roofline-options
+    timemory-papi)
+
+target_link_libraries(timemory-gpu-roofline INTERFACE
+    timemory-roofline-options
+    timemory-cupti
+    timemory-cuda
+    timemory-cudart
+    timemory-cudart-device)
+
+generate_non_empty_interface(timemory-roofline
+    timemory-cpu-roofline
+    timemory-gpu-roofline)
 
 #----------------------------------------------------------------------------------------#
 # activate clang-tidy if enabled

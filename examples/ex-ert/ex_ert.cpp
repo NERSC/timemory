@@ -86,6 +86,8 @@ main(int argc, char** argv)
     auto data  = ert_data_ptr_t(new ert_data_t());
     auto nproc = dmp::size();
 
+    // ert::execute<device::cpu, counter_type, float, double>(data);
+
     auto cpu_min_size = 64;
     auto cpu_max_data = ert::cache_size::get_max();
 

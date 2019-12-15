@@ -161,8 +161,12 @@ add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 # Build settings
 add_option(TIMEMORY_BUILD_DOCS
     "Make a `doc` make target"  OFF ${_FEATURE})
+add_option(TIMEMORY_BUILD_TESTING
+    "Enable testing" OFF)
+add_option(TIMEMORY_BUILD_GTEST
+    "Enable GoogleTest" ${TIMEMORY_BUILD_TESTING} ${_FEATURE})
 add_option(TIMEMORY_BUILD_EXAMPLES
-    "Build the examples"  OFF)
+    "Build the examples"  ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_C
     "Build the C compatible library" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_PYTHON
@@ -175,8 +179,6 @@ add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
     "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
-add_option(TIMEMORY_BUILD_GTEST
-    "Enable GoogleTest" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_DEVELOPER
@@ -222,12 +224,14 @@ add_option(TIMEMORY_USE_VTUNE
     "Enable VTune marking API" ON)
 add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_USE_CUDA})
-add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
 add_option(TIMEMORY_USE_NVTX
     "Enable NVTX marking API" ${_USE_CUDA})
+add_option(TIMEMORY_USE_CUPTI
+    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_BUILD_CALIPER})
+add_option(TIMEMORY_USE_PYTHON
+    "Enable Python" ${TIMEMORY_BUILD_PYTHON})
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_USE_LIKWID
         "Enable LIKWID marker forwarding" ON)

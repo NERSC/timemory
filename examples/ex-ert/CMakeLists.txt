@@ -21,7 +21,7 @@ project(timemory-ERT-Example LANGUAGES CXX)
 option(USE_CUDA "Enable CUDA" ${_USE_CUDA})
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
-set(COMPONENTS compile-options arch vector mpi)
+set(COMPONENTS compile-options arch vector mpi analysis-tools)
 
 if(USE_CUDA)
     check_language(CUDA)
@@ -33,10 +33,10 @@ if(USE_CUDA)
 endif()
 
 if(USE_CUDA)
-    list(APPEND COMPONENTS cuda cupti cudart cudart-device)
+    list(APPEND COMPONENTS cuda)
 endif()
 
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cupti)
 
 add_executable(ex_ert ex_ert.cpp)
 target_link_libraries(ex_ert timemory-ert-example)
