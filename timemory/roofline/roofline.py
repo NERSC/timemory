@@ -271,7 +271,7 @@ def get_peak_ops(roof_data, flop_info=None):
 
 #==============================================================================#
 #
-def get_peak_bandwidth(roof_data):
+def get_peak_bandwidth(roof_data, band_labels):
     """
     Get multi-level bandwidth peaks - Implementation from ERT:
     https://bitbucket.org/berkeleylab/cs-roofline-toolkit
@@ -344,6 +344,8 @@ def get_peak_bandwidth(roof_data):
         band_info_list = ["L%d" % (cache_num+1 - cache)] + band_info_list
 
     peak_bandwidths = []
+    band_info_list = [e for e in band_info_list if e in band_labels]
+
     for (band, band_info) in zip(band_list, band_info_list):
         band_info = band_info + " GB/s"
         peak_bandwidths.append([float(band[0]/band[1]), band_info])
@@ -540,7 +542,7 @@ class plot_parameters():
 
 #==============================================================================#
 #
-def plot_roofline(ai_data, op_data, display=False, fname="roofline",
+def plot_roofline(ai_data, op_data, band_labels, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
                   width=1600, height=1200, dpi=100):
     """
@@ -560,7 +562,7 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
     info = op_data["unit_repr"] if "unit_repr" in op_data else None
 
     peak_flop = get_peak_ops(peak_data, info)
-    peak_band = get_peak_bandwidth(band_data)
+    peak_band = get_peak_bandwidth(band_data, band_labels)
     hotspots = get_hotspots(op_data, ai_data)
 
     print("peak_flop = {}, peak_band = {}".format(peak_flop, peak_band))
