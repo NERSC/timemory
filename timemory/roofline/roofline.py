@@ -631,8 +631,10 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
             plt.plot([x1, x2], [y1, y2], color='magenta')
 
             # plot computing roof
+            temp_label = _label.replace('_', '-')
+            temp_label = temp_label.upper()
             text(plot_params.xmax, _peakop + 2,
-                 "%.2f %s" % (_peakop, peak_flop[1]),
+                 "%.2f %s %s" % (_peakop, temp_label, peak_flop[1]),
                  horizontalalignment='right', **get_font())
 
             plt.plot([x0, plot_params.xmax], [_peakop, _peakop], color='b')
