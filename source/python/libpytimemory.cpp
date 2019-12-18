@@ -25,6 +25,7 @@
 
 #include "libpytimemory.hpp"
 #include "timemory/timemory.hpp"
+#include <cstdio>
 #include <pybind11/pybind11.h>
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -39,11 +40,50 @@ extern "C"
 #endif
 
 //======================================================================================//
+
+#if !defined(_WINDOWS)
+using manager_pointer_t = std::shared_ptr<tim::manager>;
+extern manager_pointer_t timemory_master_manager_instance;
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+manager_wrapper::manager_wrapper()
+: m_manager(manager_t::instance().get())
+{}
+
+//--------------------------------------------------------------------------------------//
+
+manager_wrapper::~manager_wrapper() {}
+
+//--------------------------------------------------------------------------------------//
+
+manager_t*
+manager_wrapper::get()
+{
+    return manager_t::instance().get();
+}
+
+//======================================================================================//
 //  Python wrappers
 //======================================================================================//
 
 PYBIND11_MODULE(libpytimemory, tim)
 {
+#if !defined(_WINDOWS)
+    static auto _master_manager = timemory_master_manager_instance;
+#else
+    static auto _master_manager = manager_t::master_instance();
+#endif
+    static thread_local auto _worker_manager = manager_t::instance();
+    //  tim::consume_parameters(_worker_manager, _master_manager);
+
+    if(_worker_manager != _master_manager)
+    {
+        printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
+               (void*) _master_manager.get(), (void*) _worker_manager.get());
+    }
+
     //----------------------------------------------------------------------------------//
     using pytim::string_t;
     py::add_ostream_redirect(tim, "ostream_redirect");

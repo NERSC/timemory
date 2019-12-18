@@ -50,6 +50,46 @@ namespace component
 using size_type = std::size_t;
 
 //======================================================================================//
+//
+class gotcha_suppression
+{
+    template <size_type _Nt, typename _Components, typename _Differentiator>
+    friend struct gotcha;
+
+    static bool& get()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
+
+    struct auto_toggle
+    {
+        explicit auto_toggle(bool& _value, bool _if_equal = false)
+        : m_value(_value)
+        , m_if_equal(_if_equal)
+        {
+            if(m_value == m_if_equal)
+                m_value = !m_value;
+        }
+
+        ~auto_toggle()
+        {
+            if(m_value != m_if_equal)
+                m_value = !m_value;
+        }
+
+        auto_toggle(const auto_toggle&) = delete;
+        auto_toggle(auto_toggle&&)      = delete;
+        auto_toggle& operator=(const auto_toggle&) = delete;
+        auto_toggle& operator=(auto_toggle&&) = delete;
+
+    private:
+        bool& m_value;
+        bool  m_if_equal;
+    };
+};
+
+//======================================================================================//
 ///
 /// \class component::gotcha_invoker
 ///
@@ -62,10 +102,10 @@ struct gotcha_invoker
     using base_type  = typename Type::base_type;
 
     template <typename... _Args>
-    static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
+    static _Ret invoke(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
-        return invoke_sfinae(_obj, _suppress, _ready, _func,
+        return invoke_sfinae(_obj, _ready, _func,
                              std::forward<_Args>(_args)...);
     }
 
@@ -78,59 +118,37 @@ private:
     //  instead of gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _suppress, bool& _ready,
+    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _ready,
                                    _Ret (*)(_Args...), _Args&&... _args)
         -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
     {
-#if defined(DEBUG)
-        if(settings::debug())
-        {
-            auto typestr = demangle<_Tp>();
-            PRINT_HERE("%s '%s::%s'", "invoking", typestr.c_str(), "operator()");
-        }
-#endif
-        _ready    = false;
-        _suppress = true;
-        _Ret _ret = _obj(std::forward<_Args>(_args)...);
-        _suppress = true;
-        _ready    = false;
-        return _ret;
+        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        return _obj(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  Call the original gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp&, long, bool& _suppress, bool& _ready,
+    static auto invoke_sfinae_impl(_Tp&, long, bool& _ready,
                                    _Ret (*_func)(_Args...), _Args&&... _args)
         -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
     {
-#if defined(DEBUG)
-        if(settings::debug())
-        {
-            auto typestr = demangle<_Tp>();
-            PRINT_HERE("'%s::%s' not implemented", typestr.c_str(), "operator()");
-        }
-#endif
-        _ready    = true;
-        _suppress = false;
-        _Ret _ret = _func(std::forward<_Args>(_args)...);
-        _suppress = true;
-        _ready    = false;
-        return _ret;
+        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        return _func(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
     template <typename... _Args>
-    static auto invoke_sfinae(_Tp& _obj, bool& _suppress, bool& _ready,
+    static auto invoke_sfinae(_Tp& _obj, bool& _ready,
                               _Ret (*_func)(_Args...), _Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+        -> decltype(invoke_sfinae_impl(_obj, 0, _ready, _func,
                                        std::forward<_Args>(_args)...),
                     _Ret())
     {
-        return invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+        return invoke_sfinae_impl(_obj, 0, _ready, _func,
                                   std::forward<_Args>(_args)...);
     }
 
@@ -185,10 +203,10 @@ struct gotcha_invoker<_Tp, void>
     using base_type   = typename Type::base_type;
 
     template <typename... _Args>
-    static _Ret invoke(_Tp& _obj, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
+    static _Ret invoke(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
-        invoke_sfinae(_obj, _suppress, _ready, _func, std::forward<_Args>(_args)...);
+        invoke_sfinae(_obj, _ready, _func, std::forward<_Args>(_args)...);
     }
 
 private:
@@ -200,57 +218,37 @@ private:
     //  instead of gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _suppress, bool& _ready,
+    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _ready,
                                    _Ret (*)(_Args...), _Args&&... _args)
         -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
     {
-#if defined(DEBUG)
-        if(settings::debug())
-        {
-            auto typestr = demangle<_Tp>();
-            PRINT_HERE("invoking '%s::%s'", typestr.c_str(), "operator()");
-        }
-#endif
-        _ready    = false;
-        _suppress = true;
+        gotcha_suppression::auto_toggle suppress_lock(_ready);
         _obj(std::forward<_Args>(_args)...);
-        _suppress = true;
-        _ready    = false;
     }
 
     //----------------------------------------------------------------------------------//
     //  Call the original gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp&, long, bool& _suppress, bool& _ready,
+    static auto invoke_sfinae_impl(_Tp&, long, bool& _ready,
                                    _Ret (*_func)(_Args...), _Args&&... _args)
         -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
     {
-#if defined(DEBUG)
-        if(settings::debug())
-        {
-            auto typestr = demangle<_Tp>();
-            PRINT_HERE("'%s::operator()' not implemented", typestr.c_str());
-        }
-#endif
-        _ready    = true;
-        _suppress = false;
+        gotcha_suppression::auto_toggle suppress_lock(_ready);
         _func(std::forward<_Args>(_args)...);
-        _suppress = true;
-        _ready    = false;
     }
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
     template <typename... _Args>
-    static auto invoke_sfinae(_Tp& _obj, bool& _suppress, bool& _ready,
+    static auto invoke_sfinae(_Tp& _obj, bool& _ready,
                               _Ret (*_func)(_Args...), _Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+        -> decltype(invoke_sfinae_impl(_obj, 0, _ready, _func,
                                        std::forward<_Args>(_args)...),
                     _Ret())
     {
-        invoke_sfinae_impl(_obj, 0, _suppress, _ready, _func,
+        invoke_sfinae_impl(_obj, 0, _ready, _func,
                            std::forward<_Args>(_args)...);
     }
     //
@@ -295,46 +293,6 @@ private:
     }
     //
     //----------------------------------------------------------------------------------//
-};
-
-//======================================================================================//
-//
-class gotcha_suppression
-{
-    template <size_type _Nt, typename _Components, typename _Differentiator>
-    friend struct gotcha;
-
-    static bool& get()
-    {
-        static thread_local bool _instance = false;
-        return _instance;
-    }
-
-    struct auto_toggle
-    {
-        explicit auto_toggle(bool& _value, bool _if_equal = false)
-        : m_value(_value)
-        , m_if_equal(_if_equal)
-        {
-            if(m_value == m_if_equal)
-                m_value = !m_value;
-        }
-
-        ~auto_toggle()
-        {
-            if(m_value != m_if_equal)
-                m_value = !m_value;
-        }
-
-        auto_toggle(const auto_toggle&) = delete;
-        auto_toggle(auto_toggle&&)      = delete;
-        auto_toggle& operator=(const auto_toggle&) = delete;
-        auto_toggle& operator=(auto_toggle&&) = delete;
-
-    private:
-        bool& m_value;
-        bool  m_if_equal;
-    };
 };
 
 //======================================================================================//
@@ -476,6 +434,330 @@ struct gotcha
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
         auto& _data = get_data()[_N];
 
+        if(!is_permitted<_N, _Ret, _Args...>(_func))
+            return;
+
+        if(!_data.filled)
+        {
+            // static int _incr = _priority;
+            // _priority        = _incr++;
+
+            auto _label = demangle(_func);
+            if(_tool.length() > 0 && _label.find(_tool + "/") != 0)
+            {
+                _label = _tool + "/" + _label;
+                while(_label.find("//") != std::string::npos)
+                    _label.erase(_label.find("//"), 1);
+            }
+
+            // ensure the hash to string pairing is stored
+            storage_type::instance()->add_hash_id(_label);
+
+            _data.filled      = true;
+            _data.priority    = _priority;
+            _data.tool_id     = _label;
+            _data.wrap_id     = _func;
+            _data.ready       = get_default_ready();
+            _data.constructor = [=]() {
+                this_type::construct<_N, _Ret, _Args...>(_data.wrap_id);
+            };
+            _data.destructor = [=]() { this_type::revert<_N, _Ret, _Args...>(); };
+            _data.binding =
+                std::move(construct_binder<_N, _Ret, _Args...>(_data.wrap_id));
+            error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.tool_id);
+            check_error<_N>(ret_wrap, "binding");
+        }
+
+        if(!_data.is_active)
+        {
+            _data.is_active = true;
+            error_t ret_prio =
+                backend::gotcha::set_priority(_data.tool_id, _data.priority);
+            check_error<_N>(ret_prio, "set priority");
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args>
+    static void configure(const std::string& _func, int _priority = 0,
+                          const std::string& _tool = "")
+    {
+        construct<_N, _Ret, _Args...>(_func, _priority, _tool);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args>
+    static void revert()
+    {
+        gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
+
+        static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
+        auto& _data = get_data()[_N];
+
+        if(_data.filled && _data.is_active)
+        {
+            _data.is_active = false;
+
+            error_t ret_prio = backend::gotcha::set_priority(_data.tool_id, -1);
+            check_error<_N>(ret_prio, "get priority");
+
+            /*
+            _data.wrapper = 0x0;
+            _data.binding = std::move(revert_binder<_N, _Ret, _Args...>(_data.wrap_id));
+
+            error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.wrap_id);
+            check_error<_N>(ret_wrap, "unwrap binding");
+            */
+
+            _data.ready = get_default_ready();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static bool& is_configured()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static std::mutex& get_mutex()
+    {
+        static std::mutex _mtx;
+        return _mtx;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static void configure()
+    {
+        std::unique_lock<std::mutex> lk(get_mutex(), std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+
+        if(!is_configured())
+        {
+            is_configured() = true;
+            lk.unlock();
+            auto& _init = get_initializer();
+            _init();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static void enable() { configure(); }
+
+    //----------------------------------------------------------------------------------//
+
+    static void disable()
+    {
+        std::unique_lock<std::mutex> lk(get_mutex(), std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+
+        if(is_configured())
+        {
+            is_configured() = false;
+            lk.unlock();
+            for(auto& itr : get_data())
+            {
+                if(!itr.is_finalized)
+                {
+                    itr.is_finalized = true;
+                    itr.destructor();
+                }
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static void invoke_global_init(storage_type*)
+    {
+        // if(get_default_ready())
+        //     configure();
+    }
+
+    static void invoke_global_finalize(storage_type*)
+    {
+        while(get_started() > 0)
+            --get_started();
+        while(get_thread_started() > 0)
+            --get_thread_started();
+        disable();
+    }
+
+    static void invoke_thread_init(storage_type*)
+    {
+        auto& _data = get_data();
+        for(size_type i = 0; i < _Nt; ++i)
+            _data[i].ready = (_data[i].filled && get_default_ready());
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+
+    void start()
+    {
+        if(storage_type::is_finalizing())
+            return;
+
+        auto _n = get_started()++;
+        auto _t = get_thread_started()++;
+
+#if defined(DEBUG)
+        if(settings::debug())
+        {
+            static std::atomic<int64_t> _tcount;
+            static thread_local int64_t _tid = _tcount++;
+            std::stringstream           ss;
+            ss << "[T" << _tid << "]> n = " << _n << ", t = " << _t << "...\n";
+            std::cout << ss.str() << std::flush;
+        }
+#endif
+
+        // this ensures that if started from multiple threads, all threads synchronize
+        // before
+        if(_t == 0 && !is_configured())
+            configure();
+
+        if(_n == 0 && !storage_type::is_finalizing())
+        {
+            configure();
+            for(auto& itr : get_data())
+            {
+                if(!itr.is_finalized)
+                    itr.constructor();
+            }
+        }
+
+        if(_t == 0)
+        {
+            auto& _data = get_data();
+            for(size_type i = 0; i < _Nt; ++i)
+                _data[i].ready = _data[i].filled;
+        }
+    }
+
+    void stop()
+    {
+        auto _n = --get_started();
+        auto _t = --get_thread_started();
+
+#if defined(DEBUG)
+        if(settings::debug())
+        {
+            static std::atomic<int64_t> _tcount;
+            static thread_local int64_t _tid = _tcount++;
+            std::stringstream           ss;
+            ss << "[T" << _tid << "]> n = " << _n << ", t = " << _t << "...\n";
+            std::cout << ss.str() << std::flush;
+        }
+#endif
+
+        if(_t == 0)
+        {
+            auto& _data = get_data();
+            for(size_type i = 0; i < _Nt; ++i)
+                _data[i].ready = false;
+        }
+
+        if(_n == 0)
+        {
+            for(auto& itr : get_data())
+            {
+                if(!itr.is_finalized)
+                    itr.destructor();
+            }
+        }
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+    //  secondary method
+    //
+    template <size_t _N, typename _Ret, typename... _Args>
+    struct instrument
+    {
+        static void generate(const std::string& _func, const std::string& _tool = "",
+                             int _priority = 0)
+        {
+            this_type::configure<_N, _Ret, _Args...>(_func, _priority, _tool);
+        }
+    };
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args>
+    struct instrument<_N, _Ret, std::tuple<_Args...>> : instrument<_N, _Ret, _Args...>
+    {};
+
+    //----------------------------------------------------------------------------------//
+
+private:
+    //----------------------------------------------------------------------------------//
+    /// \brief gotcha_data
+    /// Holds the properties for wrapping and unwrapping a binding
+    struct gotcha_data
+    {
+        gotcha_data() = default;
+
+        bool          ready        = get_default_ready();  /// ready to be used
+        bool          filled       = false;                /// structure is populated
+        bool          is_active    = false;                /// is currently wrapping
+        bool          is_finalized = false;                /// no more wrapping is allowed
+        int           priority     = 0;                    /// current priority
+        binding_t     binding      = binding_t{};          /// hold the binder set
+        wrappee_t     wrapper      = 0x0;      /// the func pointer doing wrapping
+        wrappee_t     wrappee      = 0x0;      /// the func pointer being wrapped
+        wrappid_t     wrap_id      = "";       /// the function name (possibly mangled)
+        wrappid_t     tool_id      = "";       /// the function name (unmangled)
+        constructor_t constructor  = []() {};  /// wrap the function
+        destructor_t  destructor   = []() {};  /// unwrap the function
+    };
+
+    //----------------------------------------------------------------------------------//
+
+    static array_t<gotcha_data>& get_data()
+    {
+        static auto _get = []() {
+            array_t<gotcha_data> _arr;
+            return _arr;
+        };
+        static array_t<gotcha_data> _instance = _get();
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// \brief get_started()
+    /// Global counter of active gotchas started
+    static std::atomic<int64_t>& get_started()
+    {
+        static std::atomic<int64_t> _instance;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// \brief get_thread_started()
+    /// Thread-local counter of activate gotchas
+    static int64_t& get_thread_started()
+    {
+        static thread_local int64_t _instance = 0;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// \brief is_permitted()
+    /// Check the permit list and reject list for whether the component is permitted
+    /// to be wrapped.
+    template <size_t _N, typename _Ret, typename... _Args>
+    static bool is_permitted(const std::string& _func)
+    {
         if(_func.find("MPI_") != std::string::npos ||
            _func.find("mpi_") != std::string::npos)
         {
@@ -501,7 +783,7 @@ struct gotcha
                     if(settings::debug())
                         printf("[gotcha]> Skipping gotcha binding for %s...\n",
                                _func.c_str());
-                    return;
+                    return false;
                 }
         }
 
@@ -515,7 +797,7 @@ struct gotcha
                 printf(
                     "[gotcha]> GOTCHA binding for function '%s' is in reject list...\n",
                     _func.c_str());
-            return;
+            return false;
         }
 
         // if a permit_list was provided, then do not construct wrapper if not in permit
@@ -528,297 +810,11 @@ struct gotcha
                     printf("[gotcha]> GOTCHA binding for function '%s' is not in permit "
                            "list...\n",
                            _func.c_str());
-                return;
+                return false;
             }
         }
 
-        if(!_data.filled)
-        {
-            // static int _incr = _priority;
-            // _priority        = _incr++;
-
-            auto _label = demangle(_func);
-            if(_tool.length() > 0 && _label.find(_tool + "/") != 0)
-            {
-                _label = _tool + "/" + _label;
-                while(_label.find("//") != std::string::npos)
-                    _label.erase(_label.find("//"), 1);
-            }
-
-            // ensure the hash to string pairing is stored
-            storage_type::instance()->add_hash_id(_label);
-
-            _data.tool_id = _label;
-            _data.filled  = true;
-            _data.wrap_id = _func;
-            _data.ready   = get_default_ready();
-
-            error_t ret_prio = backend::gotcha::set_priority(_label, _priority);
-            check_error<_N>(ret_prio, "set priority");
-
-            _data.binding = std::move(construct_binder<_N, _Ret, _Args...>(_func));
-
-            error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.tool_id);
-            check_error<_N>(ret_wrap, "binding");
-
-            if(ret_wrap == GOTCHA_SUCCESS)
-            {
-                _data.constructor = [=]() {
-                    this_type::configure<_N, _Ret, _Args...>(_data.wrap_id, _priority,
-                                                             _tool);
-                };
-
-                _data.destructor = [=]() {
-                    this_type::revert<_N, _Ret, _Args...>(_data.wrap_id);
-                };
-
-                if(settings::verbose() > 1 || settings::debug())
-                {
-                    std::cout << "[gotcha::" << __FUNCTION__ << "]> "
-                              << "wrapped: " << _data.wrap_id
-                              << ", wrapped pointer: " << _data.binding.wrapper_pointer
-                              << ", function_handle: " << _data.binding.function_handle
-                              << ", name: " << _data.binding.name << std::endl;
-                }
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t _N, typename _Ret, typename... _Args>
-    static void configure(const std::string& _func, int _priority = 0,
-                          const std::string& _tool = "")
-    {
-        construct<_N, _Ret, _Args...>(_func, _priority, _tool);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t _N, typename _Ret, typename... _Args>
-    static void revert(std::string _func = "")
-    {
-        static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
-        auto& _data = get_data()[_N];
-#if defined(TIMEMORY_USE_GOTCHA)
-
-        if(_data.filled && (_func.empty() || _data.wrap_id == _func))
-        {
-            _data.filled = false;
-            if(_func.empty())
-                _func = _data.wrap_id;
-
-            if(_func.empty() || !_data.wrappee)
-                return;
-
-            auto _orig = gotcha_get_wrappee(_data.wrappee);
-            if(_orig)
-            {
-                wrappee_t _dummy = 0x0;
-                _data.binding    = { _func.c_str(), _orig, &_dummy };
-                error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.wrap_id);
-                check_error<_N>(ret_wrap, "unwrap binding");
-            }
-        }
-#else
-        consume_parameters(_func);
-#endif
-        _data.destructor = []() {};
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static bool& is_configured()
-    {
-        static bool _instance = false;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static void configure()
-    {
-        static std::mutex            _mtx;
-        std::unique_lock<std::mutex> lk(_mtx, std::defer_lock);
-        if(!lk.owns_lock())
-            lk.lock();
-
-        if(!is_configured())
-        {
-            is_configured() = true;
-            lk.unlock();
-            auto& _init = get_initializer();
-            _init();
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static void enable() { configure(); }
-
-    //----------------------------------------------------------------------------------//
-
-    static void disable()
-    {
-        for(auto& itr : get_data())
-        {
-            if(!itr.is_finalized)
-            {
-                itr.is_finalized = true;
-                itr.destructor();
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static void invoke_global_init(storage_type*)
-    {
-        // if(get_default_ready())
-        //     configure();
-    }
-
-    static void invoke_global_finalize(storage_type*)
-    {
-        while(get_started() > 0)
-            --get_started();
-        while(get_thread_started() > 0)
-            --get_thread_started();
-        for(auto& itr : get_data())
-        {
-            if(!itr.is_finalized)
-            {
-                itr.is_finalized = true;
-                itr.destructor();
-            }
-        }
-    }
-
-    static void invoke_thread_init(storage_type*)
-    {
-        auto& _data = get_data();
-        for(size_type i = 0; i < _Nt; ++i)
-            _data[i].ready = (_data[i].filled && get_default_ready());
-    }
-
-    double get_display() const { return 0; }
-
-    double get() const { return 0; }
-
-    void start()
-    {
-        auto _n = get_started()++;
-        auto _t = get_thread_started()++;
-
-        if(_n == 0)
-        {
-            configure();
-        }
-
-        if(_t == 0)
-        {
-            auto& _data = get_data();
-            for(size_type i = 0; i < _Nt; ++i)
-                _data[i].ready = _data[i].filled;
-        }
-    }
-
-    void stop()
-    {
-        auto _n = --get_started();
-        auto _t = --get_thread_started();
-
-        if(_t == 0)
-        {
-            auto& _data = get_data();
-            for(size_type i = 0; i < _Nt; ++i)
-                _data[i].ready = false;
-        }
-
-        if(_n == 0)
-        {
-            for(auto& itr : get_data())
-            {
-                if(!itr.is_finalized)
-                {
-                    itr.is_finalized = true;
-                    itr.destructor();
-                }
-            }
-        }
-    }
-
-public:
-    //----------------------------------------------------------------------------------//
-    //  secondary method
-    //
-    template <size_t _N, typename _Ret, typename... _Args>
-    struct instrument
-    {
-        static void generate(const std::string& _func, const std::string& _tool = "",
-                             int _priority = 0)
-        {
-            this_type::configure<_N, _Ret, _Args...>(_func, _priority, _tool);
-        }
-    };
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t _N, typename _Ret, typename... _Args>
-    struct instrument<_N, _Ret, std::tuple<_Args...>>
-    {
-        static void generate(const std::string& _func, const std::string& _tool = "",
-                             int _priority = 0)
-        {
-            this_type::configure<_N, _Ret, _Args...>(_func, _priority, _tool);
-        }
-    };
-
-    //----------------------------------------------------------------------------------//
-
-private:
-    //----------------------------------------------------------------------------------//
-    struct gotcha_data
-    {
-        gotcha_data() = default;
-
-        bool          ready        = get_default_ready();
-        bool          filled       = false;
-        bool          is_finalized = false;
-        binding_t     binding      = binding_t{};
-        wrappee_t     wrappee      = 0x0;
-        wrappid_t     wrap_id      = "";
-        wrappid_t     tool_id      = "";
-        constructor_t constructor  = []() {};
-        destructor_t  destructor   = []() {};
-    };
-
-    //----------------------------------------------------------------------------------//
-
-    static array_t<gotcha_data>& get_data()
-    {
-        static auto _get = []() {
-            array_t<gotcha_data> _arr;
-            return _arr;
-        };
-        static array_t<gotcha_data> _instance = _get();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static std::atomic<int64_t>& get_started()
-    {
-        static std::atomic<int64_t> _instance;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static int64_t& get_thread_started()
-    {
-        static thread_local int64_t _instance = 0;
-        return _instance;
+        return true;
     }
 
     //----------------------------------------------------------------------------------//
@@ -835,6 +831,24 @@ private:
                 << backend::gotcha::get_error(_ret) << "\n";
             std::cerr << msg.str() << std::endl;
         }
+        else if(settings::verbose() > 1 || settings::debug())
+        {
+#if defined(TIMEMORY_USE_GOTCHA)
+            auto&             _data = get_data()[_N];
+            std::stringstream msg;
+            msg << "[gotcha::" << __FUNCTION__ << "]> " << _prefix << " :: "
+                << "wrapped: " << _data.wrap_id << ", label: " << _data.tool_id;
+            /*
+            if((void*) _data.binding != nullptr)
+            {
+                msg << ", wrapped pointer: " << _data.binding.wrapper_pointer
+                    << ", function_handle: " << _data.binding.function_handle
+                    << ", name: " << _data.binding.name;
+            }
+            */
+            std::cout << msg.str() << std::endl;
+#endif
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -844,9 +858,9 @@ private:
               typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
-        auto& _data = get_data()[_N];
-        return binding_t{ _func.c_str(), (void*) this_type::wrap<_N, _Ret, _Args...>,
-                          &_data.wrappee };
+        auto& _data   = get_data()[_N];
+        _data.wrapper = (void*) this_type::wrap<_N, _Ret, _Args...>;
+        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
     }
 
     //----------------------------------------------------------------------------------//
@@ -856,9 +870,9 @@ private:
               typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
-        auto& _data = get_data()[_N];
-        return binding_t{ _func.c_str(), (void*) this_type::wrap_void<_N, _Args...>,
-                          &_data.wrappee };
+        auto& _data   = get_data()[_N];
+        _data.wrapper = (void*) this_type::wrap_void<_N, _Args...>;
+        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
     }
 
     //----------------------------------------------------------------------------------//
@@ -868,9 +882,9 @@ private:
               typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
-        auto& _data = get_data()[_N];
-        return binding_t{ _func.c_str(), (void*) this_type::wrap_op<_N, _Ret, _Args...>,
-                          &_data.wrappee };
+        auto& _data   = get_data()[_N];
+        _data.wrapper = (void*) this_type::wrap_op<_N, _Ret, _Args...>;
+        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
     }
 
     //----------------------------------------------------------------------------------//
@@ -880,9 +894,55 @@ private:
               typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
     static binding_t construct_binder(const std::string& _func)
     {
+        auto& _data   = get_data()[_N];
+        _data.wrapper = (void*) this_type::wrap_void_op<_N, _Args...>;
+        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size != 0), int>::type      = 0,
+              typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
+    static binding_t revert_binder(const std::string& _func)
+    {
         auto& _data = get_data()[_N];
-        return binding_t{ _func.c_str(), (void*) this_type::wrap_void_op<_N, _Args...>,
-                          &_data.wrappee };
+        return binding_t{ _func.c_str(), _data.wrappee, &_data.wrapper };
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size != 0), int>::type     = 0,
+              typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
+    static binding_t revert_binder(const std::string& _func)
+    {
+        auto& _data = get_data()[_N];
+        return binding_t{ _func.c_str(), _data.wrappee, &_data.wrapper };
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size == 0), int>::type      = 0,
+              typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
+    static binding_t revert_binder(const std::string& _func)
+    {
+        auto& _data = get_data()[_N];
+        void* _orig = gotcha_get_wrappee(_data.wrappee);
+        return binding_t{ _func.c_str(), _data.wrappee, &_orig };
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Ret, typename... _Args, typename _This = this_type,
+              typename std::enable_if<(_This::components_size == 0), int>::type     = 0,
+              typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
+    static binding_t revert_binder(const std::string& _func)
+    {
+        auto& _data = get_data()[_N];
+        void* _orig = gotcha_get_wrappee(_data.wrappee);
+        return binding_t{ _func.c_str(), _data.wrappee, &_orig };
     }
 
     //----------------------------------------------------------------------------------//
@@ -891,13 +951,13 @@ private:
               typename _This                                         = this_type,
               enable_if_t<(_This::differentiator_is_component), int> = 0,
               enable_if_t<!(std::is_same<_Ret, void>::value), int>   = 0>
-    static _Ret invoke(_Comp& _comp, bool& _suppress, bool& _ready,
+    static _Ret invoke(_Comp& _comp, bool& _ready,
                        _Ret (*_func)(_Args...), _Args&&... _args)
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
         _Type& _obj    = _comp.template get<_Type>();
-        return _Invoker::invoke(_obj, _suppress, _ready, _func,
+        return _Invoker::invoke(_obj, _ready, _func,
                                 std::forward<_Args>(_args)...);
     }
 
@@ -907,14 +967,13 @@ private:
               typename _This                                          = this_type,
               enable_if_t<!(_This::differentiator_is_component), int> = 0,
               enable_if_t<!(std::is_same<_Ret, void>::value), int>    = 0>
-    static _Ret invoke(_Comp&, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
+    static _Ret invoke(_Comp&, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
-        _ready    = true;
-        _suppress = false;
+        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        // _ready    = true;
         _Ret _ret = _func(std::forward<_Args>(_args)...);
-        _suppress = true;
-        _ready    = false;
+        // _ready    = false;
         return _ret;
     }
 
@@ -924,13 +983,13 @@ private:
               typename _This                                         = this_type,
               enable_if_t<(_This::differentiator_is_component), int> = 0,
               enable_if_t<(std::is_same<_Ret, void>::value), int>    = 0>
-    static void invoke(_Comp& _comp, bool& _suppress, bool& _ready,
+    static void invoke(_Comp& _comp, bool& _ready,
                        _Ret (*_func)(_Args...), _Args&&... _args)
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
         _Type& _obj    = _comp.template get<_Type>();
-        _Invoker::invoke(_obj, _suppress, _ready, _func, std::forward<_Args>(_args)...);
+        _Invoker::invoke(_obj, _ready, _func, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -939,14 +998,13 @@ private:
               typename _This                                          = this_type,
               enable_if_t<!(_This::differentiator_is_component), int> = 0,
               enable_if_t<(std::is_same<_Ret, void>::value), int>     = 0>
-    static void invoke(_Comp&, bool& _suppress, bool& _ready, _Ret (*_func)(_Args...),
+    static void invoke(_Comp&, bool& _ready, _Ret (*_func)(_Args...),
                        _Args&&... _args)
     {
-        _ready    = true;
-        _suppress = false;
+        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        // _ready    = true;
         _func(std::forward<_Args>(_args)...);
-        _suppress = true;
-        _ready    = false;
+        // _ready    = false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -1022,7 +1080,7 @@ private:
                 ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
                    << _data.ready << ") or is globally suppressed (" << _global_suppress
                    << ")...\n";
-                std::cout << ss.str().c_str() << std::flush;
+                std::cout << ss.str() << std::flush;
             }
             return (_orig) ? (*_orig)(_args...) : _Ret{};
         }
@@ -1030,7 +1088,7 @@ private:
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
         _data.ready      = false;
-        _global_suppress = true;
+        gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
         if(_orig)
         {
@@ -1038,13 +1096,12 @@ private:
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
-            _Ret _ret = invoke<component_type>(_obj, _global_suppress, _data.ready, _orig,
+            _Ret _ret = invoke<component_type>(_obj, _data.ready, _orig,
                                                std::forward<_Args>(_args)...);
             _obj.audit(_data.tool_id, _ret);
             _obj.stop();
 
             // allow re-entrance into wrapper
-            _global_suppress = false;
             _data.ready      = true;
 
             return _ret;
@@ -1053,7 +1110,6 @@ private:
             PRINT_HERE("%s", "nullptr to original function!");
 
         // allow re-entrance into wrapper
-        _global_suppress = false;
         _data.ready      = true;
 #else
         consume_parameters(_args...);
@@ -1084,7 +1140,7 @@ private:
                 ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
                    << _data.ready << ") or is globally suppressed (" << _global_suppress
                    << ")...\n";
-                std::cout << ss.str().c_str() << std::flush;
+                std::cout << ss.str() << std::flush;
             }
             if(_orig)
                 (*_orig)(_args...);
@@ -1094,14 +1150,14 @@ private:
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
         _data.ready      = false;
-        _global_suppress = true;
+        gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
         if(_orig)
         {
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
-            invoke<component_type>(_obj, _global_suppress, _data.ready, _orig,
+            invoke<component_type>(_obj, _data.ready, _orig,
                                    std::forward<_Args>(_args)...);
             _obj.audit(_data.tool_id);
             _obj.stop();
@@ -1112,7 +1168,6 @@ private:
         }
 
         // allow re-entrance into wrapper
-        _global_suppress = false;
         _data.ready      = true;
 #else
         consume_parameters(_args...);
@@ -1138,9 +1193,9 @@ private:
             return (*_orig)(_args...);
 
         _data.ready = false;
-        wrap_type _obj(_data.tool_id, false);
-        _Ret      _ret = invoke(_obj, _orig, std::forward<_Args>(_args)...);
-        _data.ready    = true;
+        static thread_local wrap_type _obj(_data.tool_id, false);
+        _Ret _ret   = invoke(_obj, _orig, std::forward<_Args>(_args)...);
+        _data.ready = true;
         return _ret;
 #else
         consume_parameters(_args...);
@@ -1166,7 +1221,7 @@ private:
         else
         {
             _data.ready = false;
-            wrap_type _obj(_data.tool_id, false);
+            static thread_local wrap_type _obj(_data.tool_id, false);
             invoke(_obj, _orig, std::forward<_Args>(_args)...);
             _data.ready = true;
         }

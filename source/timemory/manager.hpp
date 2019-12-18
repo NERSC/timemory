@@ -355,6 +355,20 @@ public:
         using base_type::size;
     };
 
+    //----------------------------------------------------------------------------------//
+    //
+    /// used by storage classes to ensure that the singleton instance is managed
+    /// via the master thread of holding the manager instance
+    template <typename _Tp>
+    _Tp& get_singleton();
+
+    //----------------------------------------------------------------------------------//
+    //
+    /// used by storage classes to ensure that the singleton instance is managed
+    /// via the master thread of holding the manager instance
+    template <typename _Tp>
+    _Tp& get_noninit_singleton();
+
 private:
     template <typename... _Types>
     friend struct get_storage;

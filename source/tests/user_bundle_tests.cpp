@@ -211,9 +211,9 @@ TEST_F(user_bundle_tests, bundle_2)
 
 TEST_F(user_bundle_tests, bundle_3)
 {
-    using auto_hybrid_t = tim::auto_hybrid<bundle0_t, bundle1_t>;
-    using comp_bundle_t = typename bundle1_t::component_type;
-    auto init_func      = [](comp_bundle_t& al) { al.initialize<cpu_clock>(); };
+    using auto_hybrid_t  = tim::auto_hybrid<bundle0_t, bundle1_t>;
+    using comp_bundle1_t = typename bundle1_t::component_type;
+    auto init_func       = [](comp_bundle1_t& al) { al.initialize<cpu_clock>(); };
 
     {
         auto_hybrid_t _bundle(details::get_test_name(), true, false, init_func);

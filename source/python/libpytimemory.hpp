@@ -102,14 +102,9 @@ using component_enum_vec = std::vector<TIMEMORY_COMPONENT>;
 class manager_wrapper
 {
 public:
-    manager_wrapper()
-    : m_manager(manager_t::instance().get())
-    {}
-
-    ~manager_wrapper() {}
-
-    // ensures thread-local version is called
-    manager_t* get() { return manager_t::instance().get(); }
+    manager_wrapper();
+    ~manager_wrapper();
+    manager_t* get();
 
 protected:
     manager_t* m_manager;

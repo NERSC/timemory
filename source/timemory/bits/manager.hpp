@@ -408,4 +408,24 @@ tim::base::storage::free_shared_manager()
         m_manager->remove_finalizer(m_label);
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+_Tp&
+tim::manager::get_singleton()
+{
+    static _Tp _instance = _Tp::instance();
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+_Tp&
+tim::manager::get_noninit_singleton()
+{
+    static _Tp _instance = _Tp::instance_ptr();
+    return _instance;
+}
+
 //======================================================================================//

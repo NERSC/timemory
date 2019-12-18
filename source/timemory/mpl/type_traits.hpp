@@ -50,7 +50,17 @@ struct sfinae_true : std::true_type
 ///
 template <typename _Tp>
 struct is_available : std::true_type
-{};
+{
+    static bool get() { return get_runtime_value(); }
+    static void set(bool val) { get_runtime_value() = val; }
+
+private:
+    static bool& get_runtime_value()
+    {
+        static bool _instance = true;
+        return _instance;
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that updating w.r.t. another instance should

@@ -35,6 +35,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/serializer.hpp"
 
 // general components
@@ -1209,6 +1210,12 @@ struct echo_measurement
     static string_t generate_name(const string_t& _prefix, string_t _unit,
                                   _Args&&... _args)
     {
+        if(settings::dart_label())
+        {
+            return (_unit.length() > 0 && _unit != "%") ? join("//", Type::label(), _unit)
+                                                        : Type::label();
+        }
+
         auto _extra = join("/", std::forward<_Args>(_args)...);
         auto _label = uppercase(Type::label());
         _unit       = replace(_unit, "", { " " });
@@ -1264,6 +1271,9 @@ struct echo_measurement
     ///
     static string_t generate_prefix(const strvec_t& hierarchy)
     {
+        if(settings::dart_label())
+            return string_t("");
+
         string_t              ret_prefix = "";
         string_t              add_prefix = "";
         static const strset_t repl_chars = { "\t", "\n", "<", ">" };

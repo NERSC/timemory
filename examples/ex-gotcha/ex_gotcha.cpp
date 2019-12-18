@@ -23,6 +23,10 @@
 // SOFTWARE.
 //
 
+#if defined(DEBUG) && !defined(VERBOSE)
+#    define VERBOSE
+#endif
+
 #include "ex_gotcha_lib.hpp"
 #include <timemory/timemory.hpp>
 
@@ -49,19 +53,18 @@ struct exp_intercept : public base<exp_intercept, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "exp_intercept"; }
-    static std::string description()
-    {
-        return "Intercepts 'double exp(double)' for mixed-precision exp";
-    }
+    static std::string description() { return "Intercepts exp(double)"; }
 
     void start() {}
     void stop() {}
-    void audit(const std::string&, double) {}
 
     double operator()(double val)
     {
+        puts("intercepting exp...");
+#if defined(VERBOSE)
         if(tim::settings::verbose() > 0)
             printf("\texecuting modified exp function : %20.3f...", val);
+#endif
         return exp(val);
     }
 };
@@ -110,8 +113,8 @@ init()
         // exp_gotcha_t::configure<0, double, double>("exp", 1, "math");
     };
 
-    mpi_gotcha_t::get_initializer() = [=]() {
 #if defined(TIMEMORY_USE_MPI)
+    mpi_gotcha_t::get_initializer() = [=]() {
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Barrier);
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 1, MPI_Bcast);
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 2, MPI_Scan);
@@ -121,8 +124,8 @@ init()
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 6, MPI_Allgather);
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 7, MPI_Gather);
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 8, MPI_Scatter);
-#endif
     };
+#endif
 
     printf("put gotcha is available: %s\n",
            trait::as_string<trait::is_available<put_gotcha_t>>().c_str());
@@ -133,8 +136,14 @@ init()
     printf("\n");
 
     // configure the bundles
-    user_tuple_bundle::configure<put_gotcha_t, mpi_gotcha_t, exp_gotcha_t>();
+    user_tuple_bundle::configure<fake_gotcha_t>();
     general_bundle_t::configure<wall_clock, cpu_clock, peak_rss>();
+    if(tim::get_env("MPI_INTERCEPT", true))
+        user_tuple_bundle::configure<mpi_gotcha_t>();
+    if(tim::get_env("PUT_INTERCEPT", true))
+        user_tuple_bundle::configure<put_gotcha_t>();
+    if(tim::get_env("EXP_INTERCEPT", true))
+        user_tuple_bundle::configure<exp_gotcha_t>();
 }
 
 //======================================================================================//
@@ -152,50 +161,63 @@ main(int argc, char** argv)
 
     init();
 
-    TIMEMORY_BASIC_MARKER(gotcha_tuple_t, "");
-    puts("Testing puts gotcha wraper...\n");
-
-    tim::dmp::barrier();
-
     int rank = tim::dmp::rank();
     int size = tim::dmp::size();
-
-    dmp::barrier();
 
     printf("size = %i\n", (int) size);
     printf("rank = %i\n", (int) rank);
 
-    int nitr = 15;
-    if(argc > 1) nitr = atoi(argv[1]);
-
-    auto _exp = ext::do_exp_work(nitr);
-    printf("\n");
-    printf("[iterations=%i]>      single-precision exp = %f\n", nitr, std::get<0>(_exp));
-    printf("[iterations=%i]>      double-precision exp = %f\n", nitr, std::get<1>(_exp));
-    printf("\n");
-
-    int nsize = 1000;
-    if(argc > 2) nsize = atoi(argv[2]);
-
-    std::vector<double> recvbuf(nsize, 0.0);
-    std::vector<double> sendbuf(nsize, 0.0);
-    std::mt19937        rng;
-    rng.seed((rank + 1) * std::random_device()());
-    auto dist = [&]() { return std::generate_canonical<double, 10>(rng); };
-    std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
-
-#if defined(TIMEMORY_USE_MPI)
-    MPI_Allreduce(sendbuf.data(), recvbuf.data(), nsize, MPI_DOUBLE, MPI_SUM,
-                  MPI_COMM_WORLD);
-#else
-    std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
+    auto _exec = [&]() {
+#if defined(VERBOSE)
+        printf("[%i]> BEGIN SCOPED GOTCHA....\n", rank);
 #endif
 
-    double sum = std::accumulate(recvbuf.begin(), recvbuf.end(), 0.0);
-    for(int i = 0; i < size; ++i)
-    {
-        printf("[%i]> sum = %8.2f\n", rank, sum);
-    }
+        TIMEMORY_BLANK_MARKER(gotcha_tuple_t, argv[0]);
+
+        puts("Testing puts gotcha wraper...");
+
+        tim::dmp::barrier();
+
+        rank = tim::dmp::rank();
+        size = tim::dmp::size();
+
+        dmp::barrier();
+
+        int nitr = 15;
+        if(argc > 1) nitr = atoi(argv[1]);
+
+        auto _exp = ext::do_exp_work(nitr);
+        printf("\n");
+        printf("[iterations=%i]>      single-precision exp = %f\n", nitr,
+               std::get<0>(_exp));
+        printf("[iterations=%i]>      double-precision exp = %f\n", nitr,
+               std::get<1>(_exp));
+        printf("\n");
+
+#if defined(TIMEMORY_USE_MPI)
+        int nsize = 1000;
+        if(argc > 2) nsize = atoi(argv[2]);
+
+        std::vector<double> recvbuf(nsize, 0.0);
+        std::vector<double> sendbuf(nsize, 0.0);
+        std::mt19937        rng;
+        rng.seed((rank + 1) * std::random_device()());
+        auto dist = [&]() { return std::generate_canonical<double, 10>(rng); };
+        std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
+
+        MPI_Allreduce(sendbuf.data(), recvbuf.data(), nsize, MPI_DOUBLE, MPI_SUM,
+                      MPI_COMM_WORLD);
+
+        double sum = std::accumulate(recvbuf.begin(), recvbuf.end(), 0.0);
+        for(int i = 0; i < size; ++i) printf("[%i]> sum = %8.2f\n", rank, sum);
+#endif
+
+#if defined(VERBOSE)
+        printf("[%i]> END SCOPED GOTCHA....\n", rank);
+#endif
+    };
+
+    for(auto i = 0; i < 10; ++i) _exec();
 
     // MPI_Barrier needs to be disabled before finalization
     mpi_gotcha_t::disable();

@@ -326,36 +326,41 @@ TEST_F(gotcha_tests, work_macro)
         TIMEMORY_CXX_GOTCHA(work_gotcha_t, 0, ext::do_work);
     };
 
-    TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
+    auto _exec = [&]() {
+        TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
 
-    float  fsum = 0.0;
-    double dsum = 0.0;
-    for(int i = 0; i < nitr; ++i)
-    {
-        auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
-        fsum += std::get<0>(ret);
-        dsum += std::get<1>(ret);
-    }
-
-    auto rank = tim::mpi::rank();
-    auto size = tim::mpi::size();
-    for(int i = 0; i < size; ++i)
-    {
-        tim::mpi::barrier();
-        if(i == rank)
+        float  fsum = 0.0;
+        double dsum = 0.0;
+        for(int i = 0; i < nitr; ++i)
         {
-            printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
-            printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+            auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
+            fsum += std::get<0>(ret);
+            dsum += std::get<1>(ret);
+        }
+
+        auto rank = tim::mpi::rank();
+        auto size = tim::mpi::size();
+        for(int i = 0; i < size; ++i)
+        {
+            tim::mpi::barrier();
+            if(i == rank)
+            {
+                printf("\n");
+                printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+                printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+            }
+            tim::mpi::barrier();
         }
         tim::mpi::barrier();
-    }
-    tim::mpi::barrier();
-    if(rank == 0)
-        printf("\n");
+        if(rank == 0)
+            printf("\n");
 
-    ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum, -1829370.79, tolerance);
+        ASSERT_NEAR(fsum, -2416347.50, tolerance);
+        ASSERT_NEAR(dsum, -1829370.79, tolerance);
+    };
+
+    for(auto i = 0; i < 4; ++i)
+        _exec();
 }
 
 //======================================================================================//

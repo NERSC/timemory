@@ -136,9 +136,33 @@ set_priority(const std::string& _tool, int _priority = 0)
         printf("[gotcha::%s]> Setting priority for tool: %s to %i...\n", __FUNCTION__,
                _tool.c_str(), _priority);
 #if defined(TIMEMORY_USE_GOTCHA)
+    return GOTCHA_SUCCESS;
     error_t _ret = gotcha_set_priority(_tool.c_str(), _priority);
     if(_ret != GOTCHA_SUCCESS)
         printf("[gotcha::%s]> Warning! set_priority == %i failed for '%s'. err %i: %s\n",
+               __FUNCTION__, _priority, _tool.c_str(), static_cast<int>(_ret),
+               get_error(_ret).c_str());
+    return _ret;
+#else
+    if(settings::debug())
+        printf("[gotcha::%s]> Warning! GOTCHA not truly enabled!", __FUNCTION__);
+    return GOTCHA_SUCCESS;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline error_t
+get_priority(const std::string& _tool, int& _priority)
+{
+    if(settings::debug())
+        printf("[gotcha::%s]> Getting priority for tool: %s to %i...\n", __FUNCTION__,
+               _tool.c_str(), _priority);
+#if defined(TIMEMORY_USE_GOTCHA)
+    return GOTCHA_SUCCESS;
+    error_t _ret = gotcha_get_priority(_tool.c_str(), &_priority);
+    if(_ret != GOTCHA_SUCCESS)
+        printf("[gotcha::%s]> Warning! get_priority == %i failed for '%s'. err %i: %s\n",
                __FUNCTION__, _priority, _tool.c_str(), static_cast<int>(_ret),
                get_error(_ret).c_str());
     return _ret;

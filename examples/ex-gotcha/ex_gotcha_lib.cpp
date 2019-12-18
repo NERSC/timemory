@@ -39,14 +39,20 @@ template <typename _Tp, typename _Func, typename _Incr>
 _Tp
 work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
 {
+#if !defined(VERBOSE)
+    tim::consume_parameters(fname);
+#endif
+
     _Tp val = 2.0;
     _Tp sum = 0.0;
 
     for(int i = 0; i < nitr; ++i)
     {
         sum += func(val);
+#if defined(VERBOSE)
         printf("\t[itr: %2i]> %-6s %-4s(%7.3f) = %20.3f\n", i,
                tim::demangle(typeid(_Tp).name()).c_str(), fname.c_str(), val, sum);
+#endif
         val = incr(val, i + 1);
     }
     return sum;
@@ -57,14 +63,18 @@ work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
 tuple_t
 do_exp_work(int nitr)
 {
+#if defined(VERBOSE)
     printf("\n");
     PRINT_HERE("%s", "");
     printf("\n");
+#endif
 
     auto fsum = work<float>("expf", nitr, [](float val) -> float { return expf(val); },
                             [](float val, int i) -> float { return val + 0.25 * i; });
 
+#if defined(VERBOSE)
     printf("\n");
+#endif
 
     auto dsum = work<double>("exp", nitr, [](double val) -> double { return exp(val); },
                              [](double val, int i) -> double { return val + 0.25 * i; });
