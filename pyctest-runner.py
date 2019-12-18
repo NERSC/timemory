@@ -58,11 +58,15 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--tools", help="TIMEMORY_BUILD_TOOLS=ON",
                         default=False, action='store_true')
+    parser.add_argument("--tau", help="TIMEMORY_USE_TAU=ON",
+                        default=False, action='store_true')
     parser.add_argument("--mpip", help="TIMEMORY_BUILD_MPIP=ON",
                         default=False, action='store_true')
     parser.add_argument("--cuda", help="TIMEMORY_USE_CUDA=ON",
                         default=False, action='store_true')
     parser.add_argument("--cupti", help="TIMEMORY_USE_CUPTI=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--upcxx", help="TIMEMORY_USE_UPCXX=ON",
                         default=False, action='store_true')
     parser.add_argument("--gotcha", help="TIMEMORY_USE_GOTCHA=ON",
                         default=False, action='store_true')
@@ -161,13 +165,16 @@ def run_pyctest():
         "TIMEMORY_BUILD_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
+        "TIMEMORY_BUILD_TESTING": "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON" if args.extra_optimizations else "OFF",
         "TIMEMORY_USE_MPI": "OFF" if args.no_mpi else "ON",
+        "TIMEMORY_USE_TAU": "ON" if args.tau else "OFF",
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
         "TIMEMORY_USE_PAPI": "OFF" if args.no_papi else "ON",
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
         "TIMEMORY_USE_GPERF": "OFF",
+        "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
         "TIMEMORY_USE_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_USE_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
