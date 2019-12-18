@@ -102,11 +102,9 @@ struct gotcha_invoker
     using base_type  = typename Type::base_type;
 
     template <typename... _Args>
-    static _Ret invoke(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...),
-                       _Args&&... _args)
+    static _Ret invoke(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...), _Args&&... _args)
     {
-        return invoke_sfinae(_obj, _ready, _func,
-                             std::forward<_Args>(_args)...);
+        return invoke_sfinae(_obj, _ready, _func, std::forward<_Args>(_args)...);
     }
 
 private:
@@ -118,8 +116,8 @@ private:
     //  instead of gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _ready,
-                                   _Ret (*)(_Args...), _Args&&... _args)
+    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _ready, _Ret (*)(_Args...),
+                                   _Args&&... _args)
         -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
     {
         gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -130,8 +128,8 @@ private:
     //  Call the original gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp&, long, bool& _ready,
-                                   _Ret (*_func)(_Args...), _Args&&... _args)
+    static auto invoke_sfinae_impl(_Tp&, long, bool& _ready, _Ret (*_func)(_Args...),
+                                   _Args&&... _args)
         -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
     {
         gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -142,14 +140,13 @@ private:
     //  Wrapper that calls one of two above
     //
     template <typename... _Args>
-    static auto invoke_sfinae(_Tp& _obj, bool& _ready,
-                              _Ret (*_func)(_Args...), _Args&&... _args)
+    static auto invoke_sfinae(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...),
+                              _Args&&... _args)
         -> decltype(invoke_sfinae_impl(_obj, 0, _ready, _func,
                                        std::forward<_Args>(_args)...),
                     _Ret())
     {
-        return invoke_sfinae_impl(_obj, 0, _ready, _func,
-                                  std::forward<_Args>(_args)...);
+        return invoke_sfinae_impl(_obj, 0, _ready, _func, std::forward<_Args>(_args)...);
     }
 
     //==================================================================================//
@@ -203,8 +200,7 @@ struct gotcha_invoker<_Tp, void>
     using base_type   = typename Type::base_type;
 
     template <typename... _Args>
-    static _Ret invoke(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...),
-                       _Args&&... _args)
+    static _Ret invoke(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...), _Args&&... _args)
     {
         invoke_sfinae(_obj, _ready, _func, std::forward<_Args>(_args)...);
     }
@@ -218,8 +214,8 @@ private:
     //  instead of gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _ready,
-                                   _Ret (*)(_Args...), _Args&&... _args)
+    static auto invoke_sfinae_impl(_Tp& _obj, int, bool& _ready, _Ret (*)(_Args...),
+                                   _Args&&... _args)
         -> decltype(_obj(std::forward<_Args>(_args)...), _Ret())
     {
         gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -230,8 +226,8 @@ private:
     //  Call the original gotcha_wrappee
     //
     template <typename... _Args>
-    static auto invoke_sfinae_impl(_Tp&, long, bool& _ready,
-                                   _Ret (*_func)(_Args...), _Args&&... _args)
+    static auto invoke_sfinae_impl(_Tp&, long, bool& _ready, _Ret (*_func)(_Args...),
+                                   _Args&&... _args)
         -> decltype(_func(std::forward<_Args>(_args)...), _Ret())
     {
         gotcha_suppression::auto_toggle suppress_lock(_ready);
@@ -242,14 +238,13 @@ private:
     //  Wrapper that calls one of two above
     //
     template <typename... _Args>
-    static auto invoke_sfinae(_Tp& _obj, bool& _ready,
-                              _Ret (*_func)(_Args...), _Args&&... _args)
+    static auto invoke_sfinae(_Tp& _obj, bool& _ready, _Ret (*_func)(_Args...),
+                              _Args&&... _args)
         -> decltype(invoke_sfinae_impl(_obj, 0, _ready, _func,
                                        std::forward<_Args>(_args)...),
                     _Ret())
     {
-        invoke_sfinae_impl(_obj, 0, _ready, _func,
-                           std::forward<_Args>(_args)...);
+        invoke_sfinae_impl(_obj, 0, _ready, _func, std::forward<_Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -951,14 +946,13 @@ private:
               typename _This                                         = this_type,
               enable_if_t<(_This::differentiator_is_component), int> = 0,
               enable_if_t<!(std::is_same<_Ret, void>::value), int>   = 0>
-    static _Ret invoke(_Comp& _comp, bool& _ready,
-                       _Ret (*_func)(_Args...), _Args&&... _args)
+    static _Ret invoke(_Comp& _comp, bool& _ready, _Ret (*_func)(_Args...),
+                       _Args&&... _args)
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
         _Type& _obj    = _comp.template get<_Type>();
-        return _Invoker::invoke(_obj, _ready, _func,
-                                std::forward<_Args>(_args)...);
+        return _Invoker::invoke(_obj, _ready, _func, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -967,8 +961,7 @@ private:
               typename _This                                          = this_type,
               enable_if_t<!(_This::differentiator_is_component), int> = 0,
               enable_if_t<!(std::is_same<_Ret, void>::value), int>    = 0>
-    static _Ret invoke(_Comp&, bool& _ready, _Ret (*_func)(_Args...),
-                       _Args&&... _args)
+    static _Ret invoke(_Comp&, bool& _ready, _Ret (*_func)(_Args...), _Args&&... _args)
     {
         gotcha_suppression::auto_toggle suppress_lock(_ready);
         // _ready    = true;
@@ -983,8 +976,8 @@ private:
               typename _This                                         = this_type,
               enable_if_t<(_This::differentiator_is_component), int> = 0,
               enable_if_t<(std::is_same<_Ret, void>::value), int>    = 0>
-    static void invoke(_Comp& _comp, bool& _ready,
-                       _Ret (*_func)(_Args...), _Args&&... _args)
+    static void invoke(_Comp& _comp, bool& _ready, _Ret (*_func)(_Args...),
+                       _Args&&... _args)
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
@@ -998,8 +991,7 @@ private:
               typename _This                                          = this_type,
               enable_if_t<!(_This::differentiator_is_component), int> = 0,
               enable_if_t<(std::is_same<_Ret, void>::value), int>     = 0>
-    static void invoke(_Comp&, bool& _ready, _Ret (*_func)(_Args...),
-                       _Args&&... _args)
+    static void invoke(_Comp&, bool& _ready, _Ret (*_func)(_Args...), _Args&&... _args)
     {
         gotcha_suppression::auto_toggle suppress_lock(_ready);
         // _ready    = true;
@@ -1087,7 +1079,7 @@ private:
 
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
-        _data.ready      = false;
+        _data.ready = false;
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
         if(_orig)
@@ -1102,7 +1094,7 @@ private:
             _obj.stop();
 
             // allow re-entrance into wrapper
-            _data.ready      = true;
+            _data.ready = true;
 
             return _ret;
         }
@@ -1110,7 +1102,7 @@ private:
             PRINT_HERE("%s", "nullptr to original function!");
 
         // allow re-entrance into wrapper
-        _data.ready      = true;
+        _data.ready = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("%s", "should not be here!");
@@ -1149,7 +1141,7 @@ private:
 
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
-        _data.ready      = false;
+        _data.ready = false;
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
         if(_orig)
@@ -1168,7 +1160,7 @@ private:
         }
 
         // allow re-entrance into wrapper
-        _data.ready      = true;
+        _data.ready = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("%s", "should not be here!");

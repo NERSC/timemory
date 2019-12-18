@@ -138,12 +138,9 @@ init()
     // configure the bundles
     user_tuple_bundle::configure<fake_gotcha_t>();
     general_bundle_t::configure<wall_clock, cpu_clock, peak_rss>();
-    if(tim::get_env("MPI_INTERCEPT", true))
-        user_tuple_bundle::configure<mpi_gotcha_t>();
-    if(tim::get_env("PUT_INTERCEPT", true))
-        user_tuple_bundle::configure<put_gotcha_t>();
-    if(tim::get_env("EXP_INTERCEPT", true))
-        user_tuple_bundle::configure<exp_gotcha_t>();
+    if(tim::get_env("MPI_INTERCEPT", true)) user_tuple_bundle::configure<mpi_gotcha_t>();
+    if(tim::get_env("PUT_INTERCEPT", true)) user_tuple_bundle::configure<put_gotcha_t>();
+    if(tim::get_env("EXP_INTERCEPT", true)) user_tuple_bundle::configure<exp_gotcha_t>();
 }
 
 //======================================================================================//
