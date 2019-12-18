@@ -56,6 +56,9 @@ class gotcha_suppression
     template <size_type _Nt, typename _Components, typename _Differentiator>
     friend struct gotcha;
 
+    template <typename _Tp, typename _Ret>
+    struct gotcha_invoker;
+
     static bool& get()
     {
         static thread_local bool _instance = false;
