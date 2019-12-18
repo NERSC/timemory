@@ -53,6 +53,7 @@ using size_type = std::size_t;
 //
 class gotcha_suppression
 {
+private:
     template <size_type _Nt, typename _Components, typename _Differentiator>
     friend struct gotcha;
 
@@ -65,6 +66,7 @@ class gotcha_suppression
         return _instance;
     }
 
+public:
     struct auto_toggle
     {
         explicit auto_toggle(bool& _value, bool _if_equal = false)
