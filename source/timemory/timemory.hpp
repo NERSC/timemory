@@ -164,7 +164,6 @@ struct dummy
 #    include "timemory/enum.h"
 
 // definitions of types
-#    include "timemory/bits/init.hpp"
 #    include "timemory/types.hpp"
 #    include "timemory/utility/bits/storage.hpp"
 
@@ -178,6 +177,7 @@ struct dummy
 #    include "timemory/extern/auto_user_bundle.hpp"
 #    include "timemory/extern/complete_list.hpp"
 #    include "timemory/extern/ert.hpp"
+#    include "timemory/extern/init.hpp"
 
 //======================================================================================//
 

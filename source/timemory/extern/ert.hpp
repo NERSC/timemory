@@ -57,9 +57,9 @@ extern template struct configuration<device::cpu, double, component::wall_clock>
 // extern template struct counter<device::gpu, float, component::wall_clock>;
 // extern template struct counter<device::gpu, double, component::wall_clock>;
 // extern template struct counter<device::gpu, cuda::fp16_t, component::wall_clock>;
-extern template struct configuration<device::gpu, float, component::wall_clock>;
-extern template struct configuration<device::gpu, double, component::wall_clock>;
-extern template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
+// extern template struct configuration<device::gpu, float, component::wall_clock>;
+// extern template struct configuration<device::gpu, double, component::wall_clock>;
+// extern template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
 //
 #    endif
 //

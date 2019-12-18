@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file bits/init.hpp
- * \headerfile bits/init.hpp "timemory/bits/init.hpp"
+/** \file extern/init.hpp
+ * \headerfile extern/init.hpp "timemory/extern/init.hpp"
  * Provides extern initialization
  *
  */
@@ -62,9 +62,9 @@ TIMEMORY_DECLARE_EXTERN_INIT(data_rss)
 TIMEMORY_DECLARE_EXTERN_INIT(gperf_cpu_profiler)
 TIMEMORY_DECLARE_EXTERN_INIT(gperf_heap_profiler)
 #    if defined(TIMEMORY_USE_CUPTI)
+// TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_dp_flops)
-TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_flops)
-TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_hp_flops)
+// TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_hp_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_sp_flops)
 #    endif
 TIMEMORY_DECLARE_EXTERN_INIT(monotonic_clock)
