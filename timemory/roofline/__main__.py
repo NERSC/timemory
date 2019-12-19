@@ -41,6 +41,7 @@ import timemory
 import timemory.roofline as _roofline
 
 
+
 def parse_args(add_run_args=False):
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
@@ -68,7 +69,7 @@ def parse_args(add_run_args=False):
         parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
                             choices=["cpu_roofline", "cpu_roofline_sp",
                                      "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
-                                     "gpu_roofline_sp", "gpu_roofline_dp"],
+                                     "gpu_roofline_sp", "gpu_roofline_dp", "gpu_roofline_inst"],
                             default="cpu_roofline_dp")
         parser.add_argument("-k", "--keep-going", help="Continue despite execution errors",
                             action='store_true')
@@ -228,6 +229,7 @@ def try_plot():
         # to be a command to execute
         _argv = []
         _cmd = []
+
         _argsets = [_argv, _cmd]
         _i = 0
         _separator = '--'
@@ -244,6 +246,7 @@ def try_plot():
                 _argsets[_i].append(_arg)
 
         sys.argv[1:] = _argv
+
         args = parse_args(len(_cmd) != 0)
         run(args, _cmd)
         if args.verbose is not None:

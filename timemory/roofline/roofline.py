@@ -39,11 +39,13 @@ from matplotlib.pyplot import text
 import numpy
 
 
+
 GIGABYTE = 1.0e9
 VERBOSE = int(os.environ.get("TIMEMORY_VERBOSE", "0"))
 FONT_SIZE = 16
 FONT_COLOR = 'black'
 FONT_WEIGHT = 'bold'
+WARP_SIZE = 32
 
 __all__ = ['get_json_entry',
            'ert_params',
@@ -52,8 +54,12 @@ __all__ = ['get_json_entry',
            'smooth',
            'read_ert',
            'get_peak_ops',
+           'get_peak_int_ops',
            'get_peak_bandwidth',
+           'get_peak_bandwidth_txns',
+           'get_theo_bandwidth_txns',
            'get_hotspots',
+           'get_hotspots_integer',
            'get_color',
            'plot_parameters',
            'plot_roofline',
@@ -157,6 +163,13 @@ class ert_counter():
             _list.append(total / _data[i])
         return _list
 
+    def get_warp_ops(self, total): ## for int ops, scale the peak ops by 32 for warp-based measurements
+        _data = self.data           ## we can use the same function for transaction bandwidth
+        _list = []
+        for i in range(len(_data)):
+            _list.append((total / _data[i])/32)
+        return _list
+
 
 #==============================================================================#
 #
@@ -245,7 +258,7 @@ def get_peak_ops(roof_data, flop_info=None):
     for element in roof_data:
         total_ops = element.total_ops / GIGABYTE
         _label = element.label
-        _data = element.counter.get(total_ops)
+        _data = element.counter.get(total_ops) ## this gives total_ops/repr_data (time) ops/sec
         if VERBOSE > 2:
             print("LABEL: {}, DATA: {}".format(_label, _data))
         if not _label in peak:
@@ -265,6 +278,58 @@ def get_peak_ops(roof_data, flop_info=None):
             info = info_list[0] + " GFLOPs/sec"
 
     print("PEAK: {}".format(peak))
+
+#    peak[:] = [ x/32 for x in peak]
+
+    peak_ops = [peak, info]
+    return peak_ops
+
+
+#==============================================================================#
+#
+def get_peak_int_theo():
+    peak = {}
+    peak["Theoretical Peak"] = [489.6]
+    info = "warps GIPS"
+    peak_ops = [peak, info]
+    print(peak)
+    return peak_ops
+#==============================================================================#
+#
+def get_peak_int_ops(roof_data, flop_info=None):
+    """
+    Get the peak int operations / sec
+    """
+    peak = {}
+
+    for element in roof_data:
+        total_ops = element.total_ops / GIGABYTE
+        _label = element.label
+        _data = element.counter.get_warp_ops(total_ops) ## this gives total_ops/repr_data (time) ops/sec
+        #_int_data = _data/32
+
+        if VERBOSE > 2:
+            print("LABEL: {}, DATA: {}".format(_label, _data))
+        if not _label in peak:
+            peak[_label] = _data
+        else:
+            _peak = peak[_label]
+            for i in range(len(_data)):
+                if i >= len(_peak):
+                    _peak += [_data[i]]
+                else:
+                    _peak[i] = max([_peak[i], _data[i]])
+
+    info = "warp GIPs/sec"
+    if flop_info is not None:
+        info_list = re.sub(r'[^\w]', ' ', flop_info).split()
+        if len(info_list) > 0:
+            info = info_list[0] + " warp GIPs/sec"
+
+    print("PEAK: {}".format(peak))
+
+#    peak[:] = [ x/32 for x in peak]
+    print(peak)
     peak_ops = [peak, info]
     return peak_ops
 
@@ -347,6 +412,100 @@ def get_peak_bandwidth(roof_data):
     for (band, band_info) in zip(band_list, band_info_list):
         band_info = band_info + " GB/s"
         peak_bandwidths.append([float(band[0]/band[1]), band_info])
+
+    return peak_bandwidths
+
+
+#==============================================================================#
+#
+
+def get_theo_bandwidth_txns():
+
+    peak_bandwidths=[]
+    peak_bandwidths.append([float(437.5),"L1 GTXNs/s"])
+    peak_bandwidths.append([float(93.6),"L2 GTXNs/s"])
+    peak_bandwidths.append([float(25.9),"DRAM GTXNs/s"])
+    return peak_bandwidths
+
+#==============================================================================#
+#
+def get_peak_bandwidth_txns(roof_data):
+    """
+    Get multi-level bandwidth peaks for txns (scale down bandwidth  by 32 (32 byte transactions))- Implementation from ERT:
+    https://bitbucket.org/berkeleylab/cs-roofline-toolkit
+    """
+    ref_intensity = 0
+    work_set = []
+    bandwidth_data = []
+
+    # Read bandwidth raw data
+    for element in roof_data:
+        intensity = element.ops_per_set
+        if ref_intensity == 0:
+            ref_intensity = intensity
+        if intensity != ref_intensity:
+            continue
+        work_set.append(element.working_set)
+        total_bytes = element.total_bytes / GIGABYTE
+        bandwidth_data.append(element.counter.get_warp_ops(total_bytes)) #divide by time and 32, this gives GigaTXns per second
+
+    fraction = 1.05
+    samples = 10000
+    bandwidth_data = flatten_list(bandwidth_data)
+    max_bandwidth = max(bandwidth_data)
+    begin = bandwidth_data.index(max_bandwidth)
+
+    work_set = work_set[begin:]
+    bandwidth_data = bandwidth_data[begin:]
+    min_bandwidth = min(bandwidth_data)
+
+    dband = max_bandwidth/float(samples - 1)
+    #print("dband is here*****:"+format(dband))
+
+    counts = samples*[0]
+    totals = samples*[0.0]
+
+    work_set, bandwidth_data = smooth(work_set, bandwidth_data)
+
+    for i in range(0, samples):
+        cband = i*dband
+        #print("cband:"+format(cband))
+        for bandwidth in bandwidth_data:
+            if bandwidth >= cband/fraction and bandwidth <= cband*fraction:
+                totals[i] += bandwidth
+                counts[i] += 1
+    band_list = [[1000*max_bandwidth, 1000]]
+    maxc = -1
+    maxi = -1
+
+    for i in range(samples-3, 1, -1):
+        if counts[i] > 10:
+            if counts[i] > maxc:
+                maxc = counts[i]
+                maxi = i
+        else:
+            if maxc > 1:
+                value = float(totals[maxi])/max(1, counts[maxi])
+                if 1.20*value < float(band_list[-1][0])/band_list[-1][1]:
+                    band_list.append([totals[maxi], counts[maxi]])
+                else:
+                    band_list[-1][0] += totals[maxi]
+                    band_list[-1][1] += counts[maxi]
+            maxc = -1
+            maxi = -1
+
+
+    band_info_list = ["DRAM"]
+    cache_num = len(band_list)-1
+
+    for cache in range(1, cache_num+1):
+        band_info_list = ["L%d" % (cache_num+1 - cache)] + band_info_list
+
+    peak_bandwidths = []
+    for (band, band_info) in zip(band_list, band_info_list):
+        band_info = band_info + " GB/s"
+        peak_bandwidths.append([float(band[0]/band[1]), band_info])
+    print("band_list:"+format(peak_bandwidths)+" len:"+format(len(peak_bandwidths)))
     return peak_bandwidths
 
 
@@ -490,11 +649,222 @@ def get_hotspots(op_data, ai_data):
 
 #==============================================================================#
 #
+
+
+def get_hotspots_integer(op_data, ai_data):
+    """
+    Get the hotspots information
+    """
+    import itertools
+    marker = itertools.cycle(('o', ',', '^', '+', '*','>','<'))
+    if not "type" in op_data or not "type" in ai_data:
+        return []
+
+    op_data_type = op_data["type"]
+    ai_data_type = ai_data["type"]
+
+    op_type = None
+    ai_type = None
+    if "cpu_roofline" in op_data_type:
+        op_type = "cpu"
+    if "cpu_roofline" in ai_data_type:
+        ai_type = "cpu"
+    if "gpu_roofline" in op_data_type:
+        op_type = "gpu"
+    if "gpu_roofline" in ai_data_type:
+        ai_type = "gpu"
+
+    op_graph_data = op_data["graph"]
+    ai_graph_data = ai_data["graph"]
+    hotspots = []
+
+    avg_runtime = 1.0
+    max_runtime = 0.0
+    max_length = min([len(op_graph_data), len(ai_graph_data)])
+    all_runtime = []
+
+    def get_runtime(_data, extra=[]):
+        opts = ["runtime", "elapsed"] + extra
+        for opt in opts:
+            if opt in _data:
+                return float(_data[opt])
+        return None
+
+    def get_int_ops_scaled(_data, extra=[]):
+        #opts = ["flops", "counted_ops", "flop_count", "flop_count_sp", "flop_count_dp",
+                #"flop_count_hp", "DP operations", "SP operations"] + extra
+        opts = ["inst_integer"]
+        for opt in opts:
+            if opt in _data:
+                value = float(_data[opt])
+                if value > 0.0:
+                    return value/32 # scale it by 32 because its a thread level counter
+        return None
+
+    def get_HBM_transactions(_data, extra=[]): # each transaction is 32 bytes long
+        _HBM_transactions = 0
+        opts = ["dram_read_transactions", "dram_write_transactions"] + extra
+        for opt in opts:
+            _HBM_transactions += float(_data[opt])
+        if _HBM_transactions > 0.0:
+            return _HBM_transactions
+
+        else:
+            print("transactions are zeroo")
+            return 0
+
+    def get_L2_transactions(_data, extra=[]):
+        _L2_transactions = 0
+        opts = ["l2_read_transactions", "l2_write_transactions"] + extra
+        for opt in opts:
+            _L2_transactions += float(_data[opt])
+        if _L2_transactions > 0.0:
+            return _L2_transactions
+        else:
+            return 0
+
+    def get_L1_transactions(_data, extra=[]):
+        _L1_transactions = 0
+        opts = ["gld_transactions", "gst_transactions", "shared_store_transactions", "shared_load_transactions"] + extra
+        for opt in opts:
+            if "shared" in opt:
+                _L1_transactions += float(_data[opt])*4
+            else:
+                _L1_transactions += float(_data[opt])
+        if _L1_transactions > 0.0:
+            return _L1_transactions
+        else:
+            return 0
+
+    def check_ignore(_ai, _op):
+        if ("cuptiOverhead" in _ai or "cudaRuntime" in _ai or
+            "cuptiOverhead" in _op or "cudaRuntime" in _op):
+                return True
+        return False
+
+    all_runtime = {}
+    for i in range(0, len(ai_graph_data)):
+        ##if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
+        ##    continue
+
+        ai_repr = ai_graph_data[i]["entry"]["repr_data"]
+        #op_repr = op_graph_data[i]["entry"]["repr_data"]
+        all_runtime [ai_graph_data[i]["hash"]] = get_runtime(ai_repr)
+
+    # for rt in all_runtime:
+    #     avg_runtime += rt
+    #
+    # if len(all_runtime) > 1:
+    #     max_runtime = max(all_runtime)
+    #     avg_runtime -= max_runtime
+    #     avg_runtime /= len(all_runtime) - 1.0
+
+    for i in range(0, len(op_graph_data)):
+        # if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
+        #     continue
+
+    #    runtimes = []
+        Iops = None
+        HBM_transactions = None
+        L1_transactions = None
+        L2_transactions = None
+
+        #ai_repr = ai_graph_data[i]["entry"]["repr_data"]
+        op_repr = op_graph_data[i]["entry"]["repr_data"]
+
+        label = op_graph_data[i]["prefix"]
+        if "thrust" in label:
+            label = "thrust kernel"
+        elif "program_gpu" in label:
+            label = "program"
+        elif "align_sequences":
+            label = "GPU-BSW-Kernel"
+        else:
+            label = label.split("(")[0]
+
+
+        #runtimes[ai_graph_data[i]["prefix"]] =  all_runtime[ai_graph_data[i]["prefix"]] #+= filter(None, [get_runtime(ai_repr), get_runtime(op_repr)])
+
+        if op_type == "gpu":
+            Iops = get_int_ops_scaled(op_repr)
+            HBM_transactions = get_HBM_transactions(op_repr)
+            if HBM_transactions == 0:
+                continue
+
+            L1_transactions = get_L1_transactions(op_repr)
+            if L1_transactions == 0:
+                continue
+            L2_transactions = get_L2_transactions(op_repr)
+            if L2_transactions == 0:
+                continue
+        else:
+            print("selected GPU_int roofline, no GPU data available")
+
+        # elif op_type == "cpu":
+        #     flop = get_flops(op_repr)
+        #     if flop is None:
+        #         flop = get_flops(op_repr, ["counted"])
+        #
+        # if flop is None:
+        #     continue
+
+        # if ai_type == "cpu":
+        #     bandwidth = get_bandwidth(ai_repr)
+        #     if bandwidth is None:
+        #         bandwidth = get_bandwidth(ai_repr, ["counted"])
+
+        runtime = 0.0
+        runtime = all_runtime[op_graph_data[i]["hash"]]
+
+        # for rt in runtimes:
+        #     runtime += rt
+        # runtime /= len(runtimes)
+
+        #hotspot for HBM
+        HBM_intensity = Iops / HBM_transactions # if bandwidth != 0.0 else 0.0
+        HBM_GIPS = Iops / GIGABYTE / runtime
+        HBM_proportion = 0.1#runtime / avg_runtime
+
+        #hotspot for L1
+        L1_intensity = Iops / L1_transactions # if bandwidth != 0.0 else 0.0
+        L1_GIPS = Iops / GIGABYTE / runtime
+        L1_proportion = 0.5#runtime / avg_runtime
+
+        #hotspot for L2
+        L2_intensity = Iops / L2_transactions # if bandwidth != 0.0 else 0.0
+        L2_GIPS = Iops / GIGABYTE / runtime
+        L2_proportion = 1#runtime / avg_runtime
+
+        #label = re.sub(r'^[|0-9]+', ' ', label).replace("> [cxx] ", "").replace(
+        #    "> [_c_] ", "").replace("> [pyc] ", "")
+
+        # if VERBOSE > 1:
+        #     print("intensity: {}, flop: {}, proportion: {}, label: {}".format(
+        #         intensity, flop, proportion, label))
+        #
+        # if VERBOSE > 0:
+        #     print("{} : runtime = {}, avg = {}, proportion = {}, flop = {}".format(
+        #         label, runtime, avg_runtime, proportion, flop))
+        #
+        # # this can arise from overflow
+        # if flop <= 1.0e-3 or bandwidth <= 0.0:
+        #     continue
+
+
+        my_marker = next(marker)
+        hotspots.append([HBM_intensity, HBM_GIPS, HBM_proportion, my_marker, "HBM: "+label])
+        hotspots.append([L1_intensity, L1_GIPS, L1_proportion,my_marker, "L1: "+label])
+        hotspots.append([L2_intensity, L2_GIPS, L2_proportion, my_marker,"L2: "+label])
+    return hotspots
+
+
+#==============================================================================#
+#
 def get_color(proportion):
-    if proportion < 0.01:
-        color = "lawngreen"
-    elif proportion < 0.1:
-        color = "yellow"
+    if proportion < 0.2:
+        color = "green"
+    elif proportion < 0.6:
+        color = "blue"
     else:
         color = "red"
     return color
@@ -519,8 +889,10 @@ class plot_parameters():
         self.xmax = 1000
         self.ymin = 1
         self.ymax = 10**y_digits
-        self.xlabel = ('Arithmetic Intensity [FLOPs/Byte]')
-        self.ylabel = ('Performance [GFLOPs/sec]')
+        #self.xlabel = ('Arithmetic Intensity [FLOPs/Byte]')
+        self.xlabel = ('Instruction Intensity [Warp Inst. Per Transaction]')
+        #self.ylabel = ('Performance [GFLOPs/sec]')
+        self.ylabel = ('Performance [Warp GIPS]')
 
         for element in (hotspots):
             intensity = element[0]
@@ -559,9 +931,14 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
 
     info = op_data["unit_repr"] if "unit_repr" in op_data else None
 
-    peak_flop = get_peak_ops(peak_data, info)
-    peak_band = get_peak_bandwidth(band_data)
-    hotspots = get_hotspots(op_data, ai_data)
+    #peak_flop = get_peak_ops(peak_data, info)
+    #peak_flop = get_peak_int_ops (peak_data, info)
+    peak_flop = get_peak_int_theo()
+    #peak_band = get_peak_bandwidth(band_data)
+    #peak_band = get_peak_bandwidth_txns(band_data)
+    peak_band = get_theo_bandwidth_txns()
+    #hotspots = get_hotspots(op_data, ai_data)
+    hotspots = get_hotspots_integer(op_data, ai_data)
 
     print("peak_flop = {}, peak_band = {}".format(peak_flop, peak_band))
 
@@ -640,15 +1017,33 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
         _nitr += 1
 
 
+    from random import random
+    import pylab
+
+
+    labels = []
     # plot hotspots
+    plotted_spots = []
     for element in (hotspots):
         if VERBOSE > 0:
             print(element[0], element[1])
         c = get_color(element[2])
-        plt.scatter(element[0], element[1], color=c)
-        text(element[0], element[1], "%s" %
-             element[3], rotation=0, rotation_mode='anchor')
+        myScatter = plt.scatter(element[0], element[1], c=c, marker = element[3])
+        plotted_spots.append(myScatter)
+        factor =  10.0 * random() - 5.0
+        label = "{}".format(element[4]).replace(">>>", "")
 
+        #plt.annotate(label, (element[0], element[1] + factor), **get_font())
+        labels.append(label)
+        #text(element[0], element[1], "%s" %
+        #     element[3], rotation=0, rotation_mode='anchor')
+
+    #try:
+    #    from adjustText import adjust_text
+    print(labels)
+    pylab.legend(plotted_spots,labels,prop={'size': 20})
+
+    #plt.legend(labels)
     if display:
         print('Displaying plot...')
         plt.show()
