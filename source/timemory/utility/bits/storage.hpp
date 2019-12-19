@@ -609,10 +609,16 @@ storage<ObjectType, true>::mpi_get()
     if(settings::debug())
         PRINT_HERE("%s", "timemory using MPI");
 
-    mpi::barrier(mpi::comm_world_v);
+    // not yet implemented
+    // auto comm =
+    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
+    auto comm = mpi::comm_world_v;
+    mpi::barrier(comm);
 
-    int mpi_rank = m_node_rank;
-    int mpi_size = m_node_size;
+    int mpi_rank = mpi::rank(comm);
+    int mpi_size = mpi::size(comm);
+    // int mpi_rank = m_node_rank;
+    // int mpi_size = m_node_size;
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -657,7 +663,7 @@ storage<ObjectType, true>::mpi_get()
             std::string str;
             if(settings::debug())
                 printf("[RECV: %i]> starting %i\n", mpi_rank, i);
-            mpi::recv(str, i, 0, mpi::comm_world_v);
+            mpi::recv(str, i, 0, comm);
             if(settings::debug())
                 printf("[RECV: %i]> completed %i\n", mpi_rank, i);
             results[i] = recv_serialize(str);
@@ -668,7 +674,7 @@ storage<ObjectType, true>::mpi_get()
     {
         if(settings::debug())
             printf("[SEND: %i]> starting\n", mpi_rank);
-        mpi::send(str_ret, 0, 0, mpi::comm_world_v);
+        mpi::send(str_ret, 0, 0, comm);
         if(settings::debug())
             printf("[SEND: %i]> completed\n", mpi_rank);
         return dmp_result_t(1, ret);
@@ -819,6 +825,10 @@ void storage<ObjectType, true>::external_print(std::false_type)
             printf("[%s]|%i> dmp results size: %i\n", label.c_str(), m_node_rank,
                    (int) _dmp_results.size());
 
+        // bool return_nonzero_mpi = (dmp::using_mpi() && !settings::mpi_output_per_node()
+        // &&
+        //                           !settings::mpi_output_per_rank());
+
         if(_dmp_results.size() > 0)
         {
             if(m_node_rank != 0)
@@ -829,9 +839,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
                 for(const auto& sitr : _dmp_results)
                 {
                     for(const auto& ritr : sitr)
-                    {
                         _results.push_back(ritr);
-                    }
                 }
             }
         }

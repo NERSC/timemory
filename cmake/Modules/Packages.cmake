@@ -127,7 +127,7 @@ if(TIMEMORY_USE_SANITIZER)
 endif()
 
 if(TIMEMORY_USE_GPERF)
-    target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools)
+    target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools-cpu)
 endif()
 
 if(TIMEMORY_USE_COVERAGE)

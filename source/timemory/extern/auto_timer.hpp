@@ -39,7 +39,8 @@
 //--------------------------------------------------------------------------------------//
 // auto_timer
 //
-#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE) && !(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_CUPTI))
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE) &&    \
+    !(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_CUPTI))
 
 // clang-format off
 

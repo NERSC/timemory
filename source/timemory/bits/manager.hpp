@@ -29,6 +29,8 @@
  *
  */
 
+#include "timemory/backends/papi.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/general/types.hpp"
 #include "timemory/settings.hpp"
@@ -118,6 +120,9 @@ inline manager::manager()
         printf("#--------------------- tim::manager initialized [%i][%i] "
                "---------------------#\n\n",
                m_rank, m_instance_count);
+
+    if(settings::cpu_affinity())
+        threading::affinity::set();
 }
 
 //======================================================================================//

@@ -44,10 +44,12 @@ using lock_t         = std::unique_lock<mutex_t>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
-using auto_bundle_t = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
-using comp_bundle_t = typename auto_bundle_t::component_type;
-using bundle0_t     = tim::auto_tuple<wall_clock, cpu_util>;
-using bundle1_t     = tim::auto_list<cpu_clock, peak_rss>;
+using custom_bundle_t = user_bundle<0, native_tag>;
+using auto_bundle_t   = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
+using comp_bundle_t   = typename auto_bundle_t::component_type;
+using bundle0_t       = tim::auto_tuple<wall_clock, cpu_util>;
+using bundle1_t       = tim::auto_list<cpu_clock, peak_rss>;
+using bundle2_t       = tim::auto_list<custom_bundle_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -231,6 +233,46 @@ TEST_F(user_bundle_tests, bundle_3)
     auto cu_n = cu_size_orig + 1;
     auto cc_n = cc_size_orig + 1;
     auto pr_n = pr_size_orig + 0;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, bundle_4)
+{
+    using comp_bundle2_t = typename bundle2_t::component_type;
+
+    auto init_func = [](comp_bundle2_t& al) {
+        std::vector<std::string> _init = { "wall_clock", "cpu_clock" };
+        al.initialize<custom_bundle_t>();
+        auto _bundle = al.get<custom_bundle_t>();
+        if(_bundle)
+        {
+            tim::insert(*_bundle, _init);
+            tim::insert(*_bundle, { CPU_UTIL, PEAK_RSS });
+        }
+    };
+
+    {
+        bundle2_t _bundle(details::get_test_name(), true, false, init_func);
+        ret += details::fibonacci(35);
+    }
+
+    {
+        bundle2_t _bundle(details::get_test_name());
+        ret += details::fibonacci(35);
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
 
     ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
     ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);

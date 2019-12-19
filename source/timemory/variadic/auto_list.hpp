@@ -129,6 +129,9 @@ public:
     inline component_type&       get_component() { return m_temporary_object; }
     inline const component_type& get_component() const { return m_temporary_object; }
 
+    inline operator component_type&() { return m_temporary_object; }
+    inline operator const component_type&() const { return m_temporary_object; }
+
     // partial interface to underlying component_list
     inline void record()
     {

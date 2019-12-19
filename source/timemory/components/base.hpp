@@ -943,26 +943,6 @@ public:
         is_transient = true;
     }
 
-    //----------------------------------------------------------------------------------//
-    // this_type operators
-    //
-    Type& operator+=(const this_type&) { return static_cast<Type&>(*this); }
-
-    Type& operator-=(const this_type&) { return static_cast<Type&>(*this); }
-
-    //----------------------------------------------------------------------------------//
-    // friend operators
-    //
-    friend Type operator+(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type(lhs) += rhs;
-    }
-
-    friend Type operator-(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type(lhs) -= rhs;
-    }
-
     friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
 
     int64_t nlaps() const { return 0; }

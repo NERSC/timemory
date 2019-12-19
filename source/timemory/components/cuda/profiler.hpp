@@ -41,6 +41,10 @@ namespace tim
 {
 namespace component
 {
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+extern template struct base<cuda_profiler, void>;
+#endif
+
 //--------------------------------------------------------------------------------------//
 // controls the CUDA profiler
 //

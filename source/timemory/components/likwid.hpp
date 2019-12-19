@@ -39,8 +39,6 @@
 #        define LIKWID_MARKER_THREADINIT
 #        define LIKWID_MARKER_SWITCH
 #        define LIKWID_MARKER_REGISTER(...)
-#        define LIKWID_MARKER_START(...)
-#        define LIKWID_MARKER_STOP(...)
 #        define LIKWID_MARKER_CLOSE
 #        define LIKWID_MARKER_GET(...)
 #        define LIKWID_MARKER_RESET(...)
@@ -51,8 +49,6 @@
 #        define LIKWID_NVMARKER_THREADINIT
 #        define LIKWID_NVMARKER_SWITCH
 #        define LIKWID_NVMARKER_REGISTER(...)
-#        define LIKWID_NVMARKER_START(...)
-#        define LIKWID_NVMARKER_STOP(...)
 #        define LIKWID_NVMARKER_CLOSE
 #        define LIKWID_NVMARKER_GET(...)
 #        define LIKWID_NVMARKER_RESET(...)
@@ -67,12 +63,11 @@ namespace tim
 namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
-/*
+
 extern template struct base<likwid_perfmon, void, policy::global_init,
                             policy::thread_init>;
-extern template struct base<likwid_nvmon, void, policy::global_init,
-                            policy::thread_init>;
-*/
+extern template struct base<likwid_nvmon, void, policy::global_init, policy::thread_init>;
+
 #endif
 
 //======================================================================================//
@@ -100,29 +95,43 @@ struct likwid_perfmon
     likwid_perfmon() = default;
 
     likwid_perfmon(const std::string& _prefix)
-    : is_registered(false)
-    , prefix(_prefix)
+    : prefix(_prefix)
     {
         register_marker();
     }
 
-    void start() { LIKWID_MARKER_START(prefix); }
-    void stop() { LIKWID_MARKER_STOP(prefix); }
+    void start()
+    {
+#if defined(TIMEMORY_USE_LIKWID)
+        likwid_markerStartRegion(prefix.c_str());
+#endif
+    }
+
+    void stop()
+    {
+#if defined(TIMEMORY_USE_LIKWID)
+        likwid_markerStopRegion(prefix.c_str());
+#endif
+    }
+
+    void reset()
+    {
+#if defined(TIMEMORY_USE_LIKWID)
+        likwid_markerResetRegion(prefix.c_str());
+#endif
+    }
+
+    void register_marker()
+    {
+#if defined(LIKWID_WITH_NVMON)
+        likwid_gpuMarkerRegisterRegion(prefix.c_str());
+#endif
+    }
 
     void set_prefix(const std::string& _prefix)
     {
         prefix = _prefix;
         register_marker();
-    }
-
-    void register_marker()
-    {
-        if(is_registered)
-            return;
-        if(prefix.length() == 0)
-            return;
-        is_registered = true;
-        LIKWID_MARKER_REGISTER(prefix);
     }
 
 private:
@@ -131,8 +140,7 @@ private:
     // Member Variables
     //
     //----------------------------------------------------------------------------------//
-    bool        is_registered = false;
-    std::string prefix        = "";
+    std::string prefix = "";
 };
 
 //======================================================================================//
@@ -160,29 +168,43 @@ struct likwid_nvmon
     likwid_nvmon() = default;
 
     likwid_nvmon(const std::string& _prefix)
-    : is_registered(false)
-    , prefix(_prefix)
+    : prefix(_prefix)
     {
         register_marker();
     }
 
-    void start() { LIKWID_NVMARKER_START(prefix); }
-    void stop() { LIKWID_NVMARKER_STOP(prefix); }
+    void start()
+    {
+#if defined(LIKWID_WITH_NVMON)
+        likwid_gpuMarkerStartRegion(prefix.c_str());
+#endif
+    }
+
+    void stop()
+    {
+#if defined(LIKWID_WITH_NVMON)
+        likwid_gpuMarkerStopRegion(prefix.c_str());
+#endif
+    }
+
+    void reset()
+    {
+#if defined(LIKWID_WITH_NVMON)
+        likwid_gpuMarkerResetRegion(prefix.c_str());
+#endif
+    }
+
+    void register_marker()
+    {
+#if defined(LIKWID_WITH_NVMON)
+        likwid_gpuMarkerRegisterRegion(prefix.c_str());
+#endif
+    }
 
     void set_prefix(const std::string& _prefix)
     {
         prefix = _prefix;
         register_marker();
-    }
-
-    void register_marker()
-    {
-        if(is_registered)
-            return;
-        if(prefix.length() == 0)
-            return;
-        is_registered = true;
-        LIKWID_NVMARKER_REGISTER(prefix);
     }
 
 private:
@@ -191,8 +213,7 @@ private:
     // Member Variables
     //
     //----------------------------------------------------------------------------------//
-    bool        is_registered = false;
-    std::string prefix        = "";
+    std::string prefix = "";
 };
 
 }  // namespace component

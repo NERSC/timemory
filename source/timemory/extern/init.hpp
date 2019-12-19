@@ -53,6 +53,7 @@ TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_sp_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_util)
 #    if defined(TIMEMORY_USE_CUDA)
 TIMEMORY_DECLARE_EXTERN_INIT(cuda_event)
+TIMEMORY_DECLARE_EXTERN_INIT(cuda_profiler)
 #    endif
 #    if defined(TIMEMORY_USE_CUPTI)
 TIMEMORY_DECLARE_EXTERN_INIT(cupti_activity)
@@ -66,6 +67,10 @@ TIMEMORY_DECLARE_EXTERN_INIT(gperf_heap_profiler)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_dp_flops)
 // TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_hp_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_sp_flops)
+#    endif
+#    if defined(TIMEMORY_USE_LIKWID)
+TIMEMORY_DECLARE_EXTERN_INIT(likwid_perfmon)
+TIMEMORY_DECLARE_EXTERN_INIT(likwid_nvmon)
 #    endif
 TIMEMORY_DECLARE_EXTERN_INIT(monotonic_clock)
 TIMEMORY_DECLARE_EXTERN_INIT(monotonic_raw_clock)

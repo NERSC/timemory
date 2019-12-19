@@ -358,7 +358,7 @@ def run_pyctest():
               construct_command(["./ex_cxx_overhead"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-cuda-event"),
@@ -421,7 +421,7 @@ def run_pyctest():
               construct_command(["./ex_ert"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-cxx-tuple"),

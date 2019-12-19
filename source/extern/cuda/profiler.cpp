@@ -37,13 +37,13 @@
 
 namespace tim
 {
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cuda_event)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(cuda_profiler)
 
 namespace component
 {
 //
 //
-template struct base<cuda_event, float>;
+template struct base<cuda_profiler, void>;
 //
 //
 }  // namespace component

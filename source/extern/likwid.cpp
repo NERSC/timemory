@@ -33,17 +33,19 @@
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
 
-#if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_LIKWID)
 
 namespace tim
 {
-TIMEMORY_INSTANTIATE_EXTERN_INIT(cuda_event)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(likwid_perfmon)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(likwid_nvmon)
 
 namespace component
 {
 //
 //
-template struct base<cuda_event, float>;
+template struct base<likwid_perfmon, void, policy::global_init, policy::thread_init>;
+template struct base<likwid_nvmon, void, policy::global_init, policy::thread_init>;
 //
 //
 }  // namespace component

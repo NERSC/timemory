@@ -116,6 +116,9 @@ TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 1)
 /// echo the category, not the identifier
 TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_label, "TIMEMORY_DART_LABEL", true)
 
+/// enable thread affinity
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY", false)
+
 //======================================================================================//
 //
 //                          COMPONENTS SPECIFIC SETTINGS
@@ -131,6 +134,14 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_thread, "TIMEMORY_MPI_THREAD", true)
 
 /// use MPI_Init_thread type
 TIMEMORY_ENV_STATIC_ACCESSOR(string_t, mpi_thread_type, "TIMEMORY_MPI_THREAD_TYPE", "")
+
+/// output MPI data per rank
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_output_per_rank, "TIMEMORY_MPI_OUTPUT_PER_RANK",
+                             false)
+
+/// output MPI data per node
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_output_per_node, "TIMEMORY_MPI_OUTPUT_PER_NODE",
+                             false)
 
 //--------------------------------------------------------------------------------------//
 //      PAPI

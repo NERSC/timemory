@@ -35,13 +35,12 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/backends/papi.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/singleton.hpp"
 #include "timemory/utility/storage.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -49,12 +48,16 @@
 
 #include <atomic>
 #include <cstdint>
+#include <deque>
+#include <functional>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
 #include <tuple>
-#include <unordered_map>
+#include <utility>
 
 //--------------------------------------------------------------------------------------//
 

@@ -42,6 +42,7 @@
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
+#include "timemory/components/user_bundle.hpp"
 
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
