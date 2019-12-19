@@ -42,14 +42,9 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<papi_array<8>, std::array<long long, 8>, policy::thread_init,
-                            policy::thread_finalize>;
-
-extern template struct base<papi_array<16>, std::array<long long, 16>,
-                            policy::thread_init, policy::thread_finalize>;
-
-extern template struct base<papi_array<32>, std::array<long long, 32>,
-                            policy::thread_init, policy::thread_finalize>;
+extern template struct base<papi_array<8>, std::array<long long, 8>>;
+extern template struct base<papi_array<16>, std::array<long long, 16>>;
+extern template struct base<papi_array<32>, std::array<long long, 32>>;
 
 #endif
 
@@ -61,16 +56,14 @@ extern template struct base<papi_array<32>, std::array<long long, 32>,
 
 template <size_t MaxNumEvents>
 struct papi_array
-: public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>,
-              policy::thread_init, policy::thread_finalize>
+: public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>>
 {
-    using size_type  = std::size_t;
-    using event_list = std::vector<int>;
-    using value_type = std::array<long long, MaxNumEvents>;
-    using entry_type = typename value_type::value_type;
-    using this_type  = papi_array<MaxNumEvents>;
-    using base_type =
-        base<this_type, value_type, policy::thread_init, policy::thread_finalize>;
+    using size_type         = std::size_t;
+    using event_list        = std::vector<int>;
+    using value_type        = std::array<long long, MaxNumEvents>;
+    using entry_type        = typename value_type::value_type;
+    using this_type         = papi_array<MaxNumEvents>;
+    using base_type         = base<this_type, value_type>;
     using storage_type      = typename base_type::storage_type;
     using get_initializer_t = std::function<event_list()>;
 
@@ -171,7 +164,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init(storage_type*)
+    static void thread_init(storage_type*)
     {
         if(!initialize_papi())
             return;
@@ -186,7 +179,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_finalize(storage_type*)
+    static void thread_finalize(storage_type*)
     {
         if(!initialize_papi())
             return;
@@ -306,9 +299,7 @@ protected:
     using base_type::set_stopped;
     using base_type::value;
 
-    friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
-    friend struct base<this_type, value_type, policy::thread_init,
-                       policy::thread_finalize>;
+    friend struct base<this_type, value_type>;
 
     using base_type::implements_storage_v;
     friend class impl::storage<this_type, implements_storage_v>;

@@ -100,7 +100,7 @@ template <typename _Tp>
 struct mark_end;
 
 template <typename _Tp>
-struct customize;
+struct audit;
 
 template <typename RetType, typename LhsType, typename RhsType>
 struct compose;
@@ -149,19 +149,19 @@ struct pointer_counter;
 
 }  // namespace operation
 
+//======================================================================================//
+// generic helpers that can/should be inherited from
+//
 namespace policy
 {
-struct serialization;
-struct global_init;
-struct global_finalize;
-struct thread_init;
-struct thread_finalize;
-
-template <typename... _Policies>
-struct wrapper;
+template <typename _Tp>
+struct instance_tracker;
 
 }  // namespace policy
 
+//======================================================================================//
+// type-traits for customization
+//
 namespace trait
 {
 template <typename _Tp>

@@ -31,7 +31,6 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
-#include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
@@ -44,7 +43,7 @@ namespace tim
 {
 namespace component
 {
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 struct base
 {
 public:
@@ -59,8 +58,8 @@ public:
     using value_type = _Value;
     using accum_type =
         typename std::conditional<record_statistics_v, statistics<_Value>, _Value>::type;
-    using policy_type    = policy::wrapper<_Policies...>;
-    using this_type      = base<_Tp, _Value, _Policies...>;
+    using this_type      = base<_Tp, _Value>;
+    using base_type      = this_type;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
     using graph_iterator = typename storage_type::iterator;
     using properties_t   = properties<this_type>;
@@ -103,6 +102,7 @@ public:
     : is_running(false)
     , is_on_stack(false)
     , is_transient(false)
+    , is_flat(false)
     , depth_change(false)
     , value(value_type())
     , accum(value_type())
@@ -124,33 +124,14 @@ public:
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
-protected:
-    // policy section
-    static void global_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_init<_Tp>(_store);
-    }
-
-    static void thread_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_init<_Tp>(_store);
-    }
-
-    static void global_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_finalize<_Tp>(_store);
-    }
-
-    static void thread_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_finalize<_Tp>(_store);
-    }
-
+public:
+    static void global_init(storage_type*) {}
+    static void thread_init(storage_type*) {}
+    static void global_finalize(storage_type*) {}
+    static void thread_finalize(storage_type*) {}
     template <typename _Archive>
-    static void serialization_policy(_Archive& ar, const unsigned int ver)
-    {
-        policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
-    }
+    static void extra_serialization(_Archive&, const unsigned int)
+    {}
 
 public:
     static void initialize_storage()
@@ -190,6 +171,7 @@ public:
         is_running   = false;
         is_on_stack  = false;
         is_transient = false;
+        is_flat      = false;
         laps         = 0;
         value        = value_type();
         accum        = value_type();
@@ -444,16 +426,18 @@ public:
 protected:
     const value_type& load() const { return (is_transient) ? accum : value; }
 
-private:
+protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
     template <typename _Scope, typename _Up = this_type,
-              enable_if_t<(_Up::implements_storage_v), int> = 0>
+              enable_if_t<(_Up::implements_storage_v), int>                 = 0,
+              enable_if_t<!(std::is_same<_Scope, scope::flat>::value), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
     {
         if(!is_on_stack)
         {
+            is_flat          = false;
             auto  _storage   = get_storage();
             auto  _beg_depth = _storage->depth();
             Type& obj        = static_cast<Type&>(*this);
@@ -466,11 +450,29 @@ private:
     }
 
     template <typename _Scope, typename _Up = this_type,
+              enable_if_t<(_Up::implements_storage_v), int>                = 0,
+              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
+    void insert_node(const _Scope&, const int64_t& _hash)
+    {
+        if(!is_on_stack)
+        {
+            is_flat        = true;
+            auto  _storage = get_storage();
+            Type& obj      = static_cast<Type&>(*this);
+            graph_itr      = _storage->template insert<_Scope>(obj, _hash);
+            is_on_stack    = true;
+            depth_change   = false;
+            _storage->stack_push(&obj);
+        }
+    }
+
+    template <typename _Scope, typename _Up = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t&)
     {
         if(!is_on_stack)
         {
+            is_flat        = true;
             auto  _storage = get_storage();
             Type& obj      = static_cast<Type&>(*this);
             is_on_stack    = true;
@@ -486,34 +488,41 @@ private:
     {
         if(is_on_stack)
         {
+            Type& obj    = graph_itr->obj();
+            Type& rhs    = static_cast<Type&>(*this);
+            depth_change = false;
+
             if(storage_type::is_finalizing())
             {
-                Type& obj = graph_itr->obj();
-                Type& rhs = static_cast<Type&>(*this);
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                obj.is_running = false;
-                is_on_stack    = false;
+            }
+            else if(is_flat)
+            {
+                auto _storage = get_storage();
+
+                obj += rhs;
+                obj.plus(rhs);
+                Type::append(graph_itr, rhs);
+                _storage->stack_pop(&rhs);
             }
             else
             {
                 auto _storage   = get_storage();
                 auto _beg_depth = _storage->depth();
 
-                Type& obj = graph_itr->obj();
-                Type& rhs = static_cast<Type&>(*this);
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
                 _storage->pop();
                 _storage->stack_pop(&rhs);
-                obj.is_running = false;
-                is_on_stack    = false;
 
                 auto _end_depth = _storage->depth();
                 depth_change    = (_beg_depth > _end_depth);
             }
+            obj.is_running = false;
+            is_on_stack    = false;
         }
     }
 
@@ -583,12 +592,12 @@ protected:
     }
 
     static void cleanup() {}
-    static void invoke_cleanup() { Type::cleanup(); }
 
 protected:
     bool           is_running   = false;
     bool           is_on_stack  = false;
     bool           is_transient = false;
+    bool           is_flat      = false;
     bool           depth_change = false;
     value_type     value        = value_type();
     accum_type     accum        = accum_type();
@@ -729,8 +738,8 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Policies>
-struct base<_Tp, void, _Policies...>
+template <typename _Tp>
+struct base<_Tp, void>
 {
 public:
     static constexpr bool implements_storage_v = false;
@@ -742,8 +751,8 @@ public:
 
     using Type         = _Tp;
     using value_type   = void;
-    using policy_type  = policy::wrapper<_Policies...>;
-    using this_type    = base<_Tp, value_type, _Policies...>;
+    using this_type    = base<_Tp, value_type>;
+    using base_type    = this_type;
     using storage_type = impl::storage<_Tp, implements_storage_v>;
 
 private:
@@ -789,32 +798,13 @@ public:
     base& operator=(this_type&&) = default;
 
 public:
-    // policy section
-    static void global_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_init<_Tp>(_store);
-    }
-
-    static void thread_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_init<_Tp>(_store);
-    }
-
-    static void global_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_finalize<_Tp>(_store);
-    }
-
-    static void thread_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_finalize<_Tp>(_store);
-    }
-
+    static void global_init(storage_type*) {}
+    static void thread_init(storage_type*) {}
+    static void global_finalize(storage_type*) {}
+    static void thread_finalize(storage_type*) {}
     template <typename _Archive>
-    static void serialization_policy(_Archive& ar, const unsigned int ver)
-    {
-        policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
-    }
+    static void extra_serialization(_Archive&, const unsigned int)
+    {}
 
 public:
     static void initialize_storage()
@@ -911,26 +901,6 @@ public:
         is_transient = true;
     }
 
-    //----------------------------------------------------------------------------------//
-    // this_type operators
-    //
-    Type& operator+=(const this_type&) { return static_cast<Type&>(*this); }
-
-    Type& operator-=(const this_type&) { return static_cast<Type&>(*this); }
-
-    //----------------------------------------------------------------------------------//
-    // friend operators
-    //
-    friend Type operator+(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type(lhs) += rhs;
-    }
-
-    friend Type operator-(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type(lhs) -= rhs;
-    }
-
     friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
 
     int64_t nlaps() const { return 0; }
@@ -981,7 +951,6 @@ protected:
     }
 
     static void cleanup() {}
-    static void invoke_cleanup() { Type::cleanup(); }
 
 protected:
     bool is_running   = false;
@@ -1010,11 +979,10 @@ public:
 ///     - std::string
 ///     - value_type
 ///
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 template <typename _Vp>
 void
-base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
-                                             const Type& rhs)
+base<_Tp, _Value>::append_impl(std::true_type, graph_iterator itr, const Type& rhs)
 {
     static_assert(trait::secondary_data<_Tp>::value,
                   "append_impl should not be compiled");
@@ -1030,10 +998,10 @@ base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
 //----------------------------------------------------------------------------------//
 //  type does not contain secondary data
 //
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 template <typename _Vp>
 void
-base<_Tp, _Value, _Policies...>::append_impl(std::false_type, graph_iterator, const Type&)
+base<_Tp, _Value>::append_impl(std::false_type, graph_iterator, const Type&)
 {}
 
 }  // namespace component

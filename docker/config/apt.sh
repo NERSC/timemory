@@ -19,13 +19,25 @@ DISTRIB_CODENAME=$(cat /etc/lsb-release | grep DISTRIB_CODENAME | awk -F '=' '{p
 
 run-verbose apt-get update
 run-verbose apt-get install -y software-properties-common wget curl
-# add extra repos
+# test
 run-verbose add-apt-repository -u -y ppa:ubuntu-toolchain-r/test
+# cmake
 wget -O kitware-archive-latest.asc https://apt.kitware.com/keys/kitware-archive-latest.asc
 apt-key add kitware-archive-latest.asc
 rm -f kitware-archive-latest.asc
 apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main"
+# llvm
+wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+cat << EOF > /etc/apt/sources.list.d/llvm-toolchain.list
+# 8
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-8 main
+deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-8 main
+# 9
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
+deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
+EOF
 # upgrade
+run-verbose apt-get update
 run-verbose apt-get dist-upgrade -y
 
 #-----------------------------------------------------------------------------#
@@ -42,17 +54,9 @@ run-verbose apt-get install -y build-essential cmake git-core ssed bash-completi
 #
 #-----------------------------------------------------------------------------#
 
-if [ "${COMPILER_TYPE}" = "gcc" ]; then
-
-    # install compilers
-    run-verbose apt-get -y install gcc-${COMPILER_VERSION} g++-${COMPILER_VERSION} gcc-${COMPILER_VERSION}-multilib
-
-elif [ "${COMPILER_TYPE}" = "llvm" ]; then
-
-    # install compilers
-    run-verbose apt-get -y install clang-${COMPILER_VERSION} libc++-dev libc++abi-dev
-
-fi
+# install compilers
+run-verbose apt-get -y install gcc-${GCC_VERSION} g++-${GCC_VERSION} gcc-${GCC_VERSION}-multilib
+run-verbose apt-get -y install clang-${CLANG_VERSION} libc++-dev libc++abi-dev
 
 DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
     libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \
@@ -89,12 +93,12 @@ fi
 #   UPDATE ALTERNATIVES -- GCC
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5 6 7 8 9 ${COMPILER_VERSION}
+for i in 5 6 7 8 9 ${GCC_VERSION}
 do
     if [ -n "$(which gcc-${i})" ]; then
         run-verbose update-alternatives --install $(which gcc) gcc $(which gcc-${i}) ${priority} \
             --slave $(which g++) g++ $(which g++-${i})
-        run-verbose priority=$(( ${priority}+10 ))
+        priority=$(( ${priority}+10 ))
     fi
 done
 
@@ -102,12 +106,12 @@ done
 #   UPDATE ALTERNATIVES -- CLANG
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5.0 6.0 7.0 7 8 9 10 ${COMPILER_VERSION}
+for i in 5.0 6.0 7.0 7 8 9 10 ${CLANG_VERSION}
 do
     if [ -n "$(which clang-${i})" ]; then
         run-verbose update-alternatives --install /usr/bin/clang clang $(which clang-${i}) ${priority} \
             --slave /usr/bin/clang++ clang++ $(which clang++-${i})
-        run-verbose priority=$(( ${priority}+10 ))
+        priority=$(( ${priority}+10 ))
     fi
 done
 
@@ -118,7 +122,7 @@ priority=10
 if [ -n "$(which clang)" ]; then
     run-verbose update-alternatives --install $(which cc)  cc  $(which clang)   ${priority}
     run-verbose update-alternatives --install $(which c++) c++ $(which clang++) ${priority}
-    run-verbose priority=$(( ${priority}+10 ))
+    priority=$(( ${priority}+10 ))
 fi
 
 if [ -n "$(which gcc)" ]; then

@@ -164,21 +164,26 @@ struct dummy
 #    include "timemory/enum.h"
 
 // definitions of types
-#    include "timemory/bits/init.hpp"
-#    include "timemory/bits/timemory.hpp"
+#    include "timemory/types.hpp"
 #    include "timemory/utility/bits/storage.hpp"
 
 // allocator
 #    include "timemory/ert/aligned_allocator.hpp"
+#    include "timemory/ert/configuration.hpp"
 
 //======================================================================================//
 
 #    include "timemory/extern/auto_timer.hpp"
+#    include "timemory/extern/auto_user_bundle.hpp"
+#    include "timemory/extern/complete_list.hpp"
+#    include "timemory/extern/ert.hpp"
+#    include "timemory/extern/init.hpp"
 
 //======================================================================================//
 
 #    include "timemory/config.hpp"
 #    include "timemory/plotting.hpp"
+#    include "timemory/utility/conditional.hpp"
 #    include "timemory/utility/storage.hpp"
 
 //--------------------------------------------------------------------------------------//

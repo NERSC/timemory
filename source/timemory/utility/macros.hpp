@@ -280,6 +280,8 @@
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_noninit_storage_singleton<storage<component::TYPE>>();                       \
+        extern template class impl::storage<component::TYPE,                             \
+                                            implements_storage<component::TYPE>::value>; \
         extern template class storage<component::TYPE>;
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
@@ -287,20 +289,24 @@
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_storage_singleton<storage<component::TYPE>>()                                \
         {                                                                                \
-            using _storage_t           = storage<component::TYPE>;                       \
-            using _single_t            = details::storage_singleton_t<_storage_t>;       \
-            static _single_t _instance = _single_t::instance();                          \
+            using _storage_t = storage<component::TYPE>;                                 \
+            using _single_t  = details::storage_singleton_t<_storage_t>;                 \
+            static _single_t& _instance =                                                \
+                ::tim::manager::master_instance()->get_singleton<_single_t>();           \
             return _instance;                                                            \
         }                                                                                \
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_noninit_storage_singleton<storage<component::TYPE>>()                        \
         {                                                                                \
-            using _storage_t           = storage<component::TYPE>;                       \
-            using _single_t            = details::storage_singleton_t<_storage_t>;       \
-            static _single_t _instance = _single_t::instance_ptr();                      \
+            using _storage_t = storage<component::TYPE>;                                 \
+            using _single_t  = details::storage_singleton_t<_storage_t>;                 \
+            static _single_t& _instance =                                                \
+                ::tim::manager::master_instance()->get_noninit_singleton<_single_t>();   \
             return _instance;                                                            \
         }                                                                                \
+        template class impl::storage<component::TYPE,                                    \
+                                     implements_storage<component::TYPE>::value>;        \
         template class storage<component::TYPE>;
 
 #else

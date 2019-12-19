@@ -119,7 +119,10 @@ ENDFUNCTION()
 #          Mark an interface as disabled
 #
 FUNCTION(ADD_DISABLED_INTERFACE _var)
-    set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES ${_var})
+    get_property(_DISABLED GLOBAL PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES)
+    if(NOT ${_var} IN_LIST _DISABLED)
+        set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES ${_var})
+    endif()
 ENDFUNCTION()
 
 
@@ -168,7 +171,7 @@ ENDFUNCTION()
 # against the test.
 #
 FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
-    if(NOT TIMEMORY_BUILD_GTEST)
+    if(NOT TIMEMORY_BUILD_GTEST AND NOT TIMEMORY_BUILD_TESTING)
         return()
     endif()
     include(GoogleTest)

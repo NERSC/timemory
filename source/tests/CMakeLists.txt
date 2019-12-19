@@ -22,7 +22,7 @@ if(TIMEMORY_USE_PAPI)
     list(APPEND HYBRID_COMPONENTS timemory-papi)
 endif()
 
-if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
+if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
     list(APPEND HYBRID_COMPONENTS timemory-cupti timemory-cudart-device)
 endif()
 
@@ -87,7 +87,8 @@ if(TIMEMORY_USE_PAPI)
         DISCOVER_TESTS
         SOURCES         papi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options
-                        timemory-develop-options timemory-analysis-tools)
+                        timemory-develop-options timemory-analysis-tools
+                        timemory-arch)
 endif()
 
 add_timemory_google_test(apply_tests
@@ -127,7 +128,7 @@ if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_NVTX)
                         timemory-analysis-tools)
 endif()
 
-if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
+if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
     add_library(cupti-compile-options INTERFACE)
     target_compile_options(cupti-compile-options INTERFACE
         $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
@@ -136,7 +137,8 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
         SOURCES         cupti_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options timemory-develop-options
                         timemory-cuda    timemory-cupti  # timemory-cudart-device
-                        cupti-compile-options timemory-analysis-tools)
+                        cupti-compile-options timemory-analysis-tools
+                        timemory-arch)
 endif()
 
 if(_HAS_PROFILER)
@@ -192,3 +194,9 @@ if(TIMEMORY_USE_UPCXX)
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                         timemory-analysis-tools timemory-upcxx)
 endif()
+
+add_timemory_google_test(variadic_tests
+    DISCOVER_TESTS
+    SOURCES         variadic_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools timemory-mpi)

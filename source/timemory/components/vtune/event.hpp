@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file components/vtune/event.hpp
+ * \headerfile components/vtune/event.hpp "timemory/components/vtune/event.hpp"
+ * This component provides VTune event markers
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/ittnotify.hpp"
@@ -35,28 +41,25 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<vtune_event, void, policy::global_init,
-                            policy::global_finalize>;
+extern template struct base<vtune_event, void>;
 
 #endif
 
 //--------------------------------------------------------------------------------------//
 // create VTune events
 //
-struct vtune_event
-: public base<vtune_event, void, policy::global_init, policy::global_finalize>
+struct vtune_event : public base<vtune_event, void>
 {
     using value_type = void;
     using this_type  = vtune_event;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::global_finalize>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "vtune_event"; }
     static std::string description() { return "Create VTune events"; }
     static value_type  record() {}
 
-    static void invoke_global_init(storage_type*) { ittnotify::pause(); }
-    static void invoke_global_finalize(storage_type*) { ittnotify::pause(); }
+    static void global_init(storage_type*) { ittnotify::pause(); }
+    static void global_finalize(storage_type*) { ittnotify::pause(); }
 
     void start()
     {

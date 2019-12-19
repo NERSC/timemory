@@ -22,6 +22,10 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
+#if !defined(TIMEMORY_EXTERN_TEMPLATES)
+#    define TIMEMORY_EXTERN_TEMPLATES
+#endif
+
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>

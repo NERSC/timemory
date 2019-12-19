@@ -43,7 +43,7 @@ namespace component
 {
 //
 //
-
+template struct base<cuda_event, float>;
 //
 //
 }  // namespace component

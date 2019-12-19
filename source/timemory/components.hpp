@@ -41,6 +41,7 @@
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
+#include "timemory/components/user_bundle.hpp"
 
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
@@ -55,6 +56,7 @@
 // cuda event
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/components/cuda/event.hpp"
+#    include "timemory/components/cuda/profiler.hpp"
 #endif
 
 // nvtx marker
@@ -139,6 +141,27 @@ initialize(_CompList<_CompTypes...>&               obj,
 //--------------------------------------------------------------------------------------//
 //
 ///  description:
+///      use this function to insert tools into a bundle
+//
+///  usage:
+///      using namespace tim::component;
+///      using optional_t = tim::auto_tuple<user_list_bundle>;
+//
+///      auto obj = new optional_t(__FUNCTION__, __LINE__);
+///      tim::insert(obj.get<user_list_bundle>(), { CPU_CLOCK, CPU_UTIL });
+//
+///  typename... _ExtraArgs
+///      required because of extra "hidden" template parameters in STL containers
+//
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
+          template <typename, typename...> class _Container, typename _Intp,
+          typename... _ExtraArgs>
+void
+insert(_Bundle<_Idx, _Type>& obj, const _Container<_Intp, _ExtraArgs...>& components);
+
+//--------------------------------------------------------------------------------------//
+//
+///  description:
 ///      use this function to generate an array of enumerations from a list of string
 ///      that can be subsequently used to initialize an auto_list or a component_list
 ///
@@ -170,9 +193,19 @@ namespace tim
 template <template <typename...> class _CompList, typename... _CompTypes,
           typename _EnumT = int>
 inline void
-initialize(_CompList<_CompTypes...>& obj, const std::initializer_list<_EnumT>& components)
+initialize(_CompList<_CompTypes...>& obj, std::initializer_list<_EnumT> components)
 {
     initialize(obj, std::vector<_EnumT>(components));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
+          typename _EnumT = int>
+inline void
+insert(_Bundle<_Idx, _Type>& obj, std::initializer_list<_EnumT> components)
+{
+    insert(obj, std::vector<_EnumT>(components));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -181,6 +214,24 @@ inline std::vector<TIMEMORY_COMPONENT>
 enumerate_components(const std::initializer_list<std::string>& component_names)
 {
     return enumerate_components(std::vector<std::string>(component_names));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename...> class _CompList, typename... _CompTypes>
+inline void
+initialize(_CompList<_CompTypes...>& obj, std::initializer_list<std::string> components)
+{
+    initialize(obj, enumerate_components(components));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+inline void
+insert(_Bundle<_Idx, _Type>& obj, const std::initializer_list<std::string>& components)
+{
+    insert(obj, enumerate_components(components));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -224,11 +275,37 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& components)
 
 //--------------------------------------------------------------------------------------//
 //
+/// this is for initializing with a container of string
+//
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
+          typename... _ExtraArgs, template <typename, typename...> class _Container>
+inline void
+insert(_Bundle<_Idx, _Type>&                         obj,
+       const _Container<std::string, _ExtraArgs...>& components)
+{
+    insert(obj, enumerate_components(components));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+/// this is for initializing with a string
+//
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+inline void
+insert(_Bundle<_Idx, _Type>& obj, const std::string& components)
+{
+    insert(obj, enumerate_components(tim::delimit(components)));
+}
+
+//--------------------------------------------------------------------------------------//
+//
 /// this is for initializing reading an environment variable, getting a string, breaking
 /// into list of components, and initializing
 //
 namespace env
 {
+//--------------------------------------------------------------------------------------//
+
 template <template <typename...> class _CompList, typename... _CompTypes,
           typename std::enable_if<(sizeof...(_CompTypes) > 0), int>::type = 0>
 inline void
@@ -239,14 +316,71 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
     initialize(obj, enumerate_components(tim::delimit(env_result)));
 }
 
+//--------------------------------------------------------------------------------------//
+
 template <template <typename...> class _CompList, typename... _CompTypes,
           typename std::enable_if<(sizeof...(_CompTypes) == 0), int>::type = 0>
 inline void
 initialize(_CompList<_CompTypes...>&, const std::string&, const std::string&)
 {}
 
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+inline void
+insert(_Bundle<_Idx, _Type>& obj, const std::string& env_var,
+       const std::string& default_env)
+{
+    auto env_result = tim::get_env(env_var, default_env);
+    insert(obj, enumerate_components(tim::delimit(env_result)));
+}
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace env
+
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+/*
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/component_list.hpp"
+
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+template <typename... Types>
+inline typename auto_list<Types...>::init_func_t&
+auto_list<Types...>::get_initializer()
+{
+    static init_func_t _instance = [](this_type& al) {
+        static auto env_delim =
+            tim::delimit(tim::get_env<std::string>("TIMEMORY_AUTO_LIST_INIT", ""));
+        static auto enum_result = enumerate_components(env_delim);
+        for(const auto& itr : enum_result)
+            initialize(itr, al);
+        // env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+    };
+    return _instance;
+}
+
+template <typename... Types>
+inline typename component_list<Types...>::init_func_t&
+component_list<Types...>::get_initializer()
+{
+    static init_func_t _instance = [](this_type& al) {
+        static auto env_delim =
+            tim::delimit(tim::get_env<std::string>("TIMEMORY_AUTO_LIST_INIT", ""));
+        static auto enum_result = enumerate_components(env_delim);
+        for(const auto& itr : enum_result)
+            initialize((TIMEMORY_COMPONENT) itr, al);
+        // env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+    };
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+*/

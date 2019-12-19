@@ -48,44 +48,31 @@ namespace component
 //
 template struct base<
     gpu_roofline<float, double>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 template struct base<
     gpu_roofline<float>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 template struct base<
     gpu_roofline<double>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 template struct gpu_roofline<float, double>;
-
 template struct gpu_roofline<float>;
-
 template struct gpu_roofline<double>;
 
 #    if defined(TIMEMORY_CUDA_FP16)
 
 template struct base<
     gpu_roofline<cuda::fp16_t, float, double>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 template struct base<
     gpu_roofline<cuda::fp16_t>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 template struct gpu_roofline<cuda::fp16_t, float, double>;
-
 template struct gpu_roofline<cuda::fp16_t>;
 
 #    endif

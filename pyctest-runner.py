@@ -58,11 +58,15 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--tools", help="TIMEMORY_BUILD_TOOLS=ON",
                         default=False, action='store_true')
+    parser.add_argument("--tau", help="TIMEMORY_USE_TAU=ON",
+                        default=False, action='store_true')
     parser.add_argument("--mpip", help="TIMEMORY_BUILD_MPIP=ON",
                         default=False, action='store_true')
     parser.add_argument("--cuda", help="TIMEMORY_USE_CUDA=ON",
                         default=False, action='store_true')
     parser.add_argument("--cupti", help="TIMEMORY_USE_CUPTI=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--upcxx", help="TIMEMORY_USE_UPCXX=ON",
                         default=False, action='store_true')
     parser.add_argument("--gotcha", help="TIMEMORY_USE_GOTCHA=ON",
                         default=False, action='store_true')
@@ -80,8 +84,6 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--extra-optimizations",
                         help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
-                        default=False, action='store_true')
-    parser.add_argument("--extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=ON",
                         default=False, action='store_true')
     parser.add_argument("--build-libs", help="Build library type(s)", default=("shared"),
                         nargs='*', type=str, choices=("static", "shared"))
@@ -163,20 +165,22 @@ def run_pyctest():
         "TIMEMORY_BUILD_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
-        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON" if args.extern_templates else "OFF",
+        "TIMEMORY_BUILD_TESTING": "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON" if args.extra_optimizations else "OFF",
         "TIMEMORY_USE_MPI": "OFF" if args.no_mpi else "ON",
+        "TIMEMORY_USE_TAU": "ON" if args.tau else "OFF",
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
         "TIMEMORY_USE_PAPI": "OFF" if args.no_papi else "ON",
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
         "TIMEMORY_USE_GPERF": "OFF",
+        "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
+        "TIMEMORY_USE_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_USE_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
-        "USE_EXTERN_TEMPLATES": "ON" if args.extern_templates else "OFF",
         "USE_PAPI": "OFF" if args.no_papi else "ON",
         "USE_MPI": "OFF" if args.no_mpi else "ON",
         "USE_CALIPER": "ON" if args.caliper else "OFF",
@@ -354,7 +358,7 @@ def run_pyctest():
               construct_command(["./ex_cxx_overhead"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-cuda-event"),
@@ -417,7 +421,7 @@ def run_pyctest():
               construct_command(["./ex_ert"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-cxx-tuple"),

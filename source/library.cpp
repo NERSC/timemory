@@ -214,10 +214,8 @@ extern "C"
         // clear the map
         _record_map.clear();
 
-        // Compensate for Intel compiler not allowing auto output
-#if defined(__INTEL_COMPILER)
-        toolset_t::print_storage();
-#endif
+        // do the finalization
+        tim::timemory_finalize();
 
         // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)

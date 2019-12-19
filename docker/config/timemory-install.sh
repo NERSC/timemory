@@ -35,10 +35,14 @@ run-verbose cd ${ROOT_DIR}
 run-verbose wget http://tau.uoregon.edu/tau.tgz
 run-verbose tar -xzf tau.tgz
 run-verbose cd tau-*
+export CFLAGS="-O3"
+export CPPFLAGS="-O3"
 # run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich -cuda=/usr/local/cuda
 run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich
 run-verbose make -j6
 run-verbose make install -j6
+unset CFLAGS
+unset CPPFLAGS
 
 run-verbose cd ${ROOT_DIR}
 run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/NERSC/timemory.git timemory-source

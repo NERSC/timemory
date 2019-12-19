@@ -25,6 +25,7 @@
 
 #include "libpytimemory.hpp"
 #include "timemory/timemory.hpp"
+#include <cstdio>
 #include <pybind11/pybind11.h>
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -39,11 +40,50 @@ extern "C"
 #endif
 
 //======================================================================================//
+
+#if !defined(_WINDOWS)
+using manager_pointer_t = std::shared_ptr<tim::manager>;
+extern manager_pointer_t timemory_master_manager_instance;
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+manager_wrapper::manager_wrapper()
+: m_manager(manager_t::instance().get())
+{}
+
+//--------------------------------------------------------------------------------------//
+
+manager_wrapper::~manager_wrapper() {}
+
+//--------------------------------------------------------------------------------------//
+
+manager_t*
+manager_wrapper::get()
+{
+    return manager_t::instance().get();
+}
+
+//======================================================================================//
 //  Python wrappers
 //======================================================================================//
 
 PYBIND11_MODULE(libpytimemory, tim)
 {
+#if !defined(_WINDOWS)
+    static auto _master_manager = timemory_master_manager_instance;
+#else
+    static auto _master_manager = manager_t::master_instance();
+#endif
+    static thread_local auto _worker_manager = manager_t::instance();
+    //  tim::consume_parameters(_worker_manager, _master_manager);
+
+    if(_worker_manager != _master_manager)
+    {
+        printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
+               (void*) _master_manager.get(), (void*) _worker_manager.get());
+    }
+
     //----------------------------------------------------------------------------------//
     using pytim::string_t;
     py::add_ostream_redirect(tim, "ostream_redirect");
@@ -84,6 +124,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("cpu_roofline_sp_flops", CPU_ROOFLINE_SP_FLOPS)
         .value("cpu_util", CPU_UTIL)
         .value("cuda_event", CUDA_EVENT)
+        .value("cuda_profiler", CUDA_PROFILER)
         .value("cupti_activity", CUPTI_ACTIVITY)
         .value("cupti_counters", CUPTI_COUNTERS)
         .value("data_rss", DATA_RSS)
@@ -329,17 +370,26 @@ PYBIND11_MODULE(libpytimemory, tim)
             [&](py::list argv, std::string _prefix, std::string _suffix) {
                 if(argv.size() < 1)
                     return;
-                auto  _str  = argv.begin()->cast<std::string>();
-                char* _argv = new char[_str.size()];
-                std::strcpy(_argv, _str.c_str());
-                auto tmp_argc = 1;
-                auto tmp_argv = &_argv;
-                tim::timemory_init(tmp_argc, tmp_argv, _prefix, _suffix);
+                int    _argc = argv.size();
+                char** _argv = new char*[argv.size()];
+                for(int i = 0; i < _argc; ++i)
+                {
+                    auto  _str    = argv[i].cast<std::string>();
+                    char* _argv_i = new char[_str.size()];
+                    std::strcpy(_argv_i, _str.c_str());
+                    _argv[i] = _argv_i;
+                }
+                tim::timemory_init(&_argc, &_argv, _prefix, _suffix);
+                for(int i = 0; i < _argc; ++i)
+                    delete[] _argv[i];
                 delete[] _argv;
             },
-            "Parse the environment and use argv[0] to set output path",
+            "Parse the environment and use argv to set output path",
             py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
             py::arg("suffix") = "-output");
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_finalize", [&]() { tim::timemory_finalize(); },
+            "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
     //----------------------------------------------------------------------------------//

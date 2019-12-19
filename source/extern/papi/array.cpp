@@ -43,14 +43,9 @@ namespace component
 {
 //
 //
-template struct base<papi_array<8>, std::array<long long, 8>, policy::thread_init,
-                     policy::thread_finalize>;
-
-template struct base<papi_array<16>, std::array<long long, 16>, policy::thread_init,
-                     policy::thread_finalize>;
-
-template struct base<papi_array<32>, std::array<long long, 32>, policy::thread_init,
-                     policy::thread_finalize>;
+template struct base<papi_array<8>, std::array<long long, 8>>;
+template struct base<papi_array<16>, std::array<long long, 16>>;
+template struct base<papi_array<32>, std::array<long long, 32>>;
 //
 //
 }  // namespace component

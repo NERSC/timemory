@@ -31,6 +31,7 @@ components = [
     "voluntary_context_switch",
     "priority_context_switch",
     "cuda_event",
+    "cuda_profiler",
     "papi_array_t",
     "caliper",
     "trip_count",

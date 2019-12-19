@@ -35,12 +35,14 @@
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/serializer.hpp"
 
 // general components
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
+#include "timemory/components/user_bundle.hpp"
 
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
@@ -600,7 +602,7 @@ struct mark_end
 
 //--------------------------------------------------------------------------------------//
 ///
-/// \class operation::customize
+/// \class operation::audit
 ///
 /// \brief The purpose of this operation class is for a component to provide some extra
 /// customization within a GOTCHA function.
@@ -613,7 +615,7 @@ struct mark_end
 /// size.
 ///
 template <typename _Tp>
-struct customize
+struct audit
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
@@ -625,9 +627,9 @@ struct customize
     //
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    customize(Type& obj, _Args&&... _args)
+    audit(Type& obj, _Args&&... _args)
     {
-        obj.customize(std::forward<_Args>(_args)...);
+        obj.audit(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -635,16 +637,16 @@ struct customize
     //
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    customize(Type& obj, _Args&&... _args)
+    audit(Type& obj, _Args&&... _args)
     {
-        customize_sfinae(obj, std::forward<_Args>(_args)...);
+        audit_sfinae(obj, std::forward<_Args>(_args)...);
     }
     */
 
     template <typename... _Args>
-    customize(Type& obj, _Args&&... _args)
+    audit(Type& obj, _Args&&... _args)
     {
-        customize_sfinae(obj, std::forward<_Args>(_args)...);
+        audit_sfinae(obj, std::forward<_Args>(_args)...);
     }
 
 private:
@@ -652,27 +654,27 @@ private:
     //  The equivalent of supports args and an implementation provided
     //
     template <typename _Up, typename... _Args>
-    auto customize_sfinae_impl(_Up& obj, int, _Args&&... _args)
-        -> decltype(obj.customize(std::forward<_Args>(_args)...), void())
+    auto audit_sfinae_impl(_Up& obj, int, _Args&&... _args)
+        -> decltype(obj.audit(std::forward<_Args>(_args)...), void())
     {
-        obj.customize(std::forward<_Args>(_args)...);
+        obj.audit(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  The equivalent of !supports_args and no implementation provided
     //
     template <typename _Up, typename... _Args>
-    auto customize_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
+    auto audit_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
     {}
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
     template <typename _Up, typename... _Args>
-    auto customize_sfinae(_Up& obj, _Args&&... _args)
-        -> decltype(customize_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    auto audit_sfinae(_Up& obj, _Args&&... _args)
+        -> decltype(audit_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
     {
-        customize_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+        audit_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -1209,6 +1211,12 @@ struct echo_measurement
     static string_t generate_name(const string_t& _prefix, string_t _unit,
                                   _Args&&... _args)
     {
+        if(settings::dart_label())
+        {
+            return (_unit.length() > 0 && _unit != "%") ? join("//", Type::label(), _unit)
+                                                        : Type::label();
+        }
+
         auto _extra = join("/", std::forward<_Args>(_args)...);
         auto _label = uppercase(Type::label());
         _unit       = replace(_unit, "", { " " });
@@ -1264,6 +1272,9 @@ struct echo_measurement
     ///
     static string_t generate_prefix(const strvec_t& hierarchy)
     {
+        if(settings::dart_label())
+            return string_t("");
+
         string_t              ret_prefix = "";
         string_t              add_prefix = "";
         static const strset_t repl_chars = { "\t", "\n", "<", ">" };

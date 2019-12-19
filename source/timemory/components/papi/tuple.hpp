@@ -45,15 +45,13 @@ namespace component
 
 template <int... EventTypes>
 struct papi_tuple
-: public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>,
-              policy::thread_init, policy::thread_finalize>
+: public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>>
 {
-    using size_type  = std::size_t;
-    using value_type = std::array<long long, sizeof...(EventTypes)>;
-    using entry_type = typename value_type::value_type;
-    using this_type  = papi_tuple<EventTypes...>;
-    using base_type =
-        base<this_type, value_type, policy::thread_init, policy::thread_finalize>;
+    using size_type    = std::size_t;
+    using value_type   = std::array<long long, sizeof...(EventTypes)>;
+    using entry_type   = typename value_type::value_type;
+    using this_type    = papi_tuple<EventTypes...>;
+    using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
     static const size_type num_events = sizeof...(EventTypes);
@@ -124,11 +122,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init(storage_type*) { configure(); }
+    static void thread_init(storage_type*) { configure(); }
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_finalize(storage_type*)
+    static void thread_finalize(storage_type*)
     {
         if(initialize_papi())
         {
@@ -183,9 +181,7 @@ protected:
     using base_type::set_stopped;
     using base_type::value;
 
-    friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
-    friend struct base<this_type, value_type, policy::thread_init,
-                       policy::thread_finalize>;
+    friend struct base<this_type, value_type>;
 
     using base_type::implements_storage_v;
     friend class impl::storage<this_type, implements_storage_v>;

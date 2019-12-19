@@ -147,7 +147,7 @@ tim_api struct settings
     TIMEMORY_ENV_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                                  std::numeric_limits<uint16_t>::max())
     TIMEMORY_ENV_STATIC_ACCESSOR(string_t, time_format, "TIMEMORY_TIME_FORMAT",
-                                 "%F_%I.%M.%S_%p")
+                                 "%F_%I.%M_%p")
 
     // general formatting
     TIMEMORY_ENV_STATIC_ACCESSOR(int16_t, precision, "TIMEMORY_PRECISION", -1)
@@ -179,8 +179,13 @@ tim_api struct settings
     // dart control
     /// only echo this measurement type
     TIMEMORY_ENV_STATIC_ACCESSOR(string_t, dart_type, "TIMEMORY_DART_TYPE", "")
-    /// only echo this many measurement
-    TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 0)
+    /// only echo this many dart tags
+    TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 1)
+    /// echo the category, not the identifier
+    TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_label, "TIMEMORY_DART_LABEL", true)
+
+    /// enable thread affinity
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY", false)
 
     //==================================================================================//
     //
@@ -198,6 +203,14 @@ tim_api struct settings
     /// use MPI_Init_thread type
     TIMEMORY_ENV_STATIC_ACCESSOR(string_t, mpi_thread_type, "TIMEMORY_MPI_THREAD_TYPE",
                                  "")
+
+    /// output MPI data per rank
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_output_per_rank,
+                                 "TIMEMORY_MPI_OUTPUT_PER_RANK", false)
+
+    /// output MPI data per node
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_output_per_node,
+                                 "TIMEMORY_MPI_OUTPUT_PER_NODE", false)
 
     //----------------------------------------------------------------------------------//
     //      PAPI
@@ -422,7 +435,9 @@ tim_api struct settings
         {
             if(dir.length() > 0 && dir[dir.length() - 1] != '/')
                 dir += "/";
-            dir += get_local_datetime(time_format().c_str());
+            // ensure that all output files use same local datetime
+            static auto _local_datetime = get_local_datetime(time_format().c_str());
+            dir += _local_datetime;
         }
         auto ret = makedir(dir);
         return (ret == 0) ? filepath::osrepr(dir + string_t("/") + output_prefix())

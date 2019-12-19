@@ -41,6 +41,7 @@
 #include <cstdint>
 #include <string>
 
+#include "timemory/bits/components.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -89,7 +90,10 @@ public:
     static init_func_t& get_initializer()
     {
         static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+            static auto env_ret  = tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "");
+            static auto env_enum = enumerate_components(tim::delimit(env_ret));
+            ::tim::initialize(al, env_enum);
+            // env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
         };
         return _instance;
     }
@@ -124,6 +128,9 @@ public:
     // public member functions
     inline component_type&       get_component() { return m_temporary_object; }
     inline const component_type& get_component() const { return m_temporary_object; }
+
+    inline operator component_type&() { return m_temporary_object; }
+    inline operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
     inline void record()
@@ -164,10 +171,10 @@ public:
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
     template <typename... _Args>
-    inline void customize(_Args&&... _args)
+    inline void audit(_Args&&... _args)
     {
         if(m_enabled)
-            m_temporary_object.customize(std::forward<_Args>(_args)...);
+            m_temporary_object.audit(std::forward<_Args>(_args)...);
     }
 
     inline data_value_type get() const { return m_temporary_object.get(); }
@@ -352,6 +359,10 @@ get_labeled(const auto_list<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 // variadic versions
+
+#define TIMEMORY_VARIADIC_BLANK_AUTO_LIST(tag, ...)                                      \
+    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \
+    TIMEMORY_BLANK_AUTO_LIST(_TIM_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_LIST(tag, ...)                                      \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \

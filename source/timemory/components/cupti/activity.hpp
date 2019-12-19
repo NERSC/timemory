@@ -62,14 +62,12 @@ namespace component
 
 //#if defined(TIMEMORY_USE_CUPTI)
 
-struct cupti_activity
-: public base<cupti_activity, uint64_t, policy::global_init, policy::global_finalize>
+struct cupti_activity : public base<cupti_activity, uint64_t>
 {
     // required aliases
     using value_type = uint64_t;
     using this_type  = cupti_activity;
-    using base_type =
-        base<cupti_activity, value_type, policy::global_init, policy::global_finalize>;
+    using base_type  = base<cupti_activity, value_type>;
 
     // component-specific aliases
     using ratio_t           = std::nano;
@@ -159,7 +157,7 @@ struct cupti_activity
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init(storage_type*)
+    static void global_init(storage_type*)
     {
         static std::atomic<short> _once;
         if(_once++ > 0)
@@ -170,7 +168,7 @@ struct cupti_activity
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize(storage_type*)
+    static void global_finalize(storage_type*)
     {
         cupti::activity::finalize_trace(get_kind_types());
     }

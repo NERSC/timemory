@@ -508,6 +508,38 @@ struct callback
 
 //======================================================================================//
 
+template <typename _Device, typename _Count, typename _Tp, typename... _Types,
+          typename _DataType = exec_data<_Count>,
+          typename _DataPtr  = std::shared_ptr<_DataType>,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+std::shared_ptr<_DataType>
+execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+{
+    using _ConfigType = configuration<_Device, _Tp, _Count>;
+    using _ExecType   = executor<_Device, _Tp, _Count>;
+
+    _ConfigType _config;
+    _ExecType(_config, _data);
+
+    return _data;
+}
+
+//======================================================================================//
+
+template <typename _Device, typename _Count, typename _Tp, typename... _Types,
+          typename _DataType = exec_data<_Count>,
+          typename _DataPtr  = std::shared_ptr<_DataType>,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+std::shared_ptr<_DataType>
+execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+{
+    execute<_Device, _Count, _Tp>(_data);
+    execute<_Device, _Count, _Types...>(_data);
+    return _data;
+}
+
+//======================================================================================//
+
 }  // namespace ert
 
 }  // namespace tim

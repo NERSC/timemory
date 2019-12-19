@@ -231,7 +231,7 @@ inline std::string
 signal_settings::str()
 {
     std::stringstream ss;
-    auto              spacer = [&]() { return "    "; };
+    auto              spacer = []() { return "    "; };
 
 #if defined(SIGNAL_AVAILABLE)
 

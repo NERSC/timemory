@@ -92,8 +92,7 @@ struct requires_prefix<component::malloc_gotcha> : std::true_type
 
 namespace component
 {
-struct malloc_gotcha
-: base<malloc_gotcha, double, policy::global_init, policy::global_finalize>
+struct malloc_gotcha : base<malloc_gotcha, double>
 {
 #if defined(TIMEMORY_USE_CUDA)
     static constexpr uintmax_t data_size = 5;
@@ -106,7 +105,7 @@ struct malloc_gotcha
     // clang-format off
     using value_type   = double;
     using this_type    = malloc_gotcha;
-    using base_type    = base<this_type, value_type, policy::global_init, policy::global_finalize>;
+    using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
     using string_hash  = std::hash<std::string>;
     // clang-format on
@@ -179,11 +178,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init(storage_type*) {}
+    static void global_init(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize(storage_type*) {}
+    static void global_finalize(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 
@@ -227,7 +226,7 @@ public:
 
     void stop()
     {
-        // value should be update via customize in-between start() and stop()
+        // value should be update via audit in-between start() and stop()
         auto tmp = record();
         accum += (value - tmp);
         value = std::move(std::max(value, tmp));
@@ -244,7 +243,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, size_t nbytes)
+    void audit(const std::string& fname, size_t nbytes)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
@@ -274,7 +273,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, size_t nmemb, size_t size)
+    void audit(const std::string& fname, size_t nmemb, size_t size)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
@@ -304,7 +303,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, void* ptr)
+    void audit(const std::string& fname, void* ptr)
     {
         if(!ptr)
             return;
@@ -346,7 +345,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, void** devPtr, size_t size)
+    void audit(const std::string& fname, void** devPtr, size_t size)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
@@ -377,7 +376,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    void customize(const std::string& fname, cuda::error_t)
+    void audit(const std::string& fname, cuda::error_t)
     {
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);

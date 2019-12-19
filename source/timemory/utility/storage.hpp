@@ -101,8 +101,8 @@ namespace impl
 //
 //======================================================================================//
 
-template <typename ObjectType>
-class storage<ObjectType, true> : public base::storage
+template <typename Type>
+class storage<Type, true> : public base::storage
 {
 public:
     //----------------------------------------------------------------------------------//
@@ -121,18 +121,18 @@ public:
     //----------------------------------------------------------------------------------//
     //
     using base_type      = base::storage;
-    using component_type = ObjectType;
-    using this_type      = storage<ObjectType, true>;
+    using component_type = Type;
+    using this_type      = storage<Type, true>;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
-    using node_tuple_t  = std::tuple<uint64_t, ObjectType, int64_t>;
+    using node_tuple_t  = std::tuple<uint64_t, Type, int64_t>;
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
     using strvector_t    = std::vector<string_t>;
     using result_tuple_t =
-        std::tuple<uint64_t, ObjectType, string_t, int64_t, uint64_t, strvector_t>;
+        std::tuple<uint64_t, Type, string_t, int64_t, uint64_t, strvector_t>;
 
     friend struct details::storage_deleter<this_type>;
     friend struct write_serialization<this_type>;
@@ -201,14 +201,14 @@ public:
         result_node& operator=(result_node&&) = default;
 
         uint64_t&    hash() { return std::get<0>(*this); }
-        ObjectType&  data() { return std::get<1>(*this); }
+        Type&        data() { return std::get<1>(*this); }
         string_t&    prefix() { return std::get<2>(*this); }
         int64_t&     depth() { return std::get<3>(*this); }
         uint64_t&    rolling_hash() { return std::get<4>(*this); }
         strvector_t& hierarchy() { return std::get<5>(*this); }
 
         const uint64_t&    hash() const { return std::get<0>(*this); }
-        const ObjectType&  data() const { return std::get<1>(*this); }
+        const Type&        data() const { return std::get<1>(*this); }
         const string_t&    prefix() const { return std::get<2>(*this); }
         const int64_t&     depth() const { return std::get<3>(*this); }
         const uint64_t&    rolling_hash() const { return std::get<4>(*this); }
@@ -224,29 +224,29 @@ public:
     {
         using this_type       = graph_node;
         using base_type       = node_tuple_t;
-        using data_value_type = typename ObjectType::value_type;
-        using data_base_type  = typename ObjectType::base_type;
+        using data_value_type = typename Type::value_type;
+        using data_base_type  = typename Type::base_type;
         using string_t        = std::string;
 
-        uint64_t&   id() { return std::get<0>(*this); }
-        ObjectType& obj() { return std::get<1>(*this); }
-        int64_t&    depth() { return std::get<2>(*this); }
+        uint64_t& id() { return std::get<0>(*this); }
+        Type&     obj() { return std::get<1>(*this); }
+        int64_t&  depth() { return std::get<2>(*this); }
 
-        const uint64_t&   id() const { return std::get<0>(*this); }
-        const ObjectType& obj() const { return std::get<1>(*this); }
-        const int64_t&    depth() const { return std::get<2>(*this); }
+        const uint64_t& id() const { return std::get<0>(*this); }
+        const Type&     obj() const { return std::get<1>(*this); }
+        const int64_t&  depth() const { return std::get<2>(*this); }
 
         string_t get_prefix() const { return master_instance()->get_prefix(*this); }
 
         graph_node()
-        : base_type(0, ObjectType(), 0)
+        : base_type(0, Type(), 0)
         {}
 
         explicit graph_node(base_type&& _base)
         : base_type(std::forward<base_type>(_base))
         {}
 
-        graph_node(const uint64_t& _id, const ObjectType& _obj, int64_t _depth)
+        graph_node(const uint64_t& _id, const Type& _obj, int64_t _depth)
         : base_type(_id, _obj, _depth)
         {}
 
@@ -268,7 +268,7 @@ public:
             return *this;
         }
 
-        size_t data_size() const { return sizeof(ObjectType) + 2 * sizeof(int64_t); }
+        size_t data_size() const { return sizeof(Type) + 2 * sizeof(int64_t); }
 
         friend std::ostream& operator<<(std::ostream& os, const graph_node& obj)
         {
@@ -300,12 +300,12 @@ public:
     //----------------------------------------------------------------------------------//
     //
     storage()
-    : base_type(singleton_t::is_master_thread(), instance_count()++, ObjectType::label())
+    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::label())
     {
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
 
-        component::properties<ObjectType>::has_storage() = true;
+        component::properties<Type>::has_storage() = true;
 
         static std::atomic<int32_t> _skip_once;
         if(_skip_once++ > 0)
@@ -360,11 +360,11 @@ public:
 public:
     virtual void print() final
     {
-        typename trait::external_output_handling<ObjectType>::type type;
+        typename trait::external_output_handling<Type>::type type;
         external_print(type);
     }
 
-    virtual void cleanup() final { ObjectType::invoke_cleanup(); }
+    virtual void cleanup() final { Type::cleanup(); }
 
     void get_shared_manager();
 
@@ -394,10 +394,10 @@ public:
             master_is_finalizing() = true;
 
         if(m_thread_init)
-            ObjectType::thread_finalize_policy(this);
+            Type::thread_finalize(this);
 
         if(m_is_master && m_global_init)
-            ObjectType::global_finalize_policy(this);
+            Type::global_finalize(this);
 
         if(settings::debug())
             PRINT_HERE("[%s]> finalizing...", m_label.c_str());
@@ -405,7 +405,7 @@ public:
 
     void stack_clear()
     {
-        std::unordered_set<ObjectType*> _stack = m_stack;
+        std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
             itr->stop();
@@ -422,7 +422,7 @@ public:
             if(!m_is_master)
                 master_instance()->global_init();
             if(m_is_master)
-                ObjectType::global_init_policy(this);
+                Type::global_init(this);
             m_global_init = true;
             return m_global_init;
         };
@@ -440,7 +440,7 @@ public:
                 master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
-            ObjectType::thread_init_policy(this);
+            Type::thread_init(this);
             m_thread_init = true;
             return m_thread_init;
         };
@@ -508,8 +508,8 @@ public:
 
     const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
 
-    void stack_push(ObjectType* obj) { m_stack.insert(obj); }
-    void stack_pop(ObjectType* obj)
+    void stack_push(Type* obj) { m_stack.insert(obj); }
+    void stack_pop(Type* obj)
     {
         auto itr = m_stack.find(obj);
         if(itr != m_stack.end())
@@ -535,7 +535,7 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(uint64_t hash_id, const ObjectType& obj, uint64_t hash_depth)
+    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
@@ -626,81 +626,37 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(uint64_t hash_id, const ObjectType& obj, uint64_t hash_depth)
+    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
             initialize();
-        bool _has_head = _data().has_head();
 
-        // if first instance
-        if(!_has_head || (this == master_instance() && m_node_ids.size() == 0))
+        static thread_local auto _current = _data().head();
+        static thread_local bool _first   = true;
+        if(_first)
         {
-            graph_node_t node(hash_id, obj, hash_depth);
-            auto         itr                = _data().append_child(node);
-            m_node_ids[hash_depth][hash_id] = itr;
-            return itr;
-        }
-
-        // lambda for updating settings
-        auto _update = [&](iterator itr) { return itr; };
-
-        if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-           m_node_ids[hash_depth].find(hash_id)->second->depth() ==
-               m_graph_data_instance->depth())
-        {
-            return _update(m_node_ids[hash_depth].find(hash_id)->second);
-        }
-
-        using sibling_itr = typename graph_t::sibling_iterator;
-        graph_node_t node(hash_id, obj, hash_depth);
-
-        // lambda for inserting child
-        auto _insert_head = [&]() {
-            node.depth()                    = hash_depth;
-            auto itr                        = m_graph_data_instance->append_head(node);
-            m_node_ids[hash_depth][hash_id] = itr;
-            // if(m_node_ids[hash_depth].bucket_count() < m_node_ids[hash_depth].size())
-            //    m_node_ids[hash_depth].rehash(m_node_ids[hash_depth].size() + 10);
-            return itr;
-        };
-
-        auto current   = m_graph_data_instance->head();
-        auto nchildren = graph_t::number_of_children(current);
-
-        if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-            return _insert_head();
-        else if(m_graph_data_instance->graph().is_valid(current))
-        {
-            // check siblings
-            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-            {
-                // skip if current
-                if(itr == current)
-                    continue;
-                // check hash id's
-                if((hash_id) == itr->id())
-                    return _update(itr);
-            }
-
-            // check children
-            if(nchildren == 0)
-                return _insert_head();
+            _first = false;
+            if(_current.begin())
+                _current = _current.begin();
             else
             {
-                // check child
-                auto fchild = graph_t::child(current, 0);
-                if(m_graph_data_instance->graph().is_valid(fchild))
-                {
-                    for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-                    {
-                        if((hash_id) == itr->id())
-                            return _update(itr);
-                    }
-                }
+                graph_node_t node(hash_id, obj, hash_depth);
+                auto         itr                = _data().emplace_child(_current, node);
+                m_node_ids[hash_depth][hash_id] = itr;
+                _current                        = itr;
+                return itr;
             }
         }
-        return _insert_head();
+
+        auto _existing = m_node_ids[hash_depth].find(hash_id);
+        if(_existing != m_node_ids[hash_depth].end())
+            return m_node_ids[hash_depth].find(hash_id)->second;
+
+        graph_node_t node(hash_id, obj, hash_depth);
+        auto         itr                = _data().emplace_child(_current, node);
+        m_node_ids[hash_depth][hash_id] = itr;
+        return itr;
     }
 
     //----------------------------------------------------------------------------------//
@@ -709,7 +665,7 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(const ObjectType& obj, uint64_t hash_id)
+    iterator insert(const Type& obj, uint64_t hash_id)
     {
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
@@ -726,15 +682,17 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(const ObjectType& obj, uint64_t hash_id)
+    iterator insert(const Type& obj, uint64_t hash_id)
     {
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
         static bool _data_init   = data_init();
         consume_parameters(_global_init, _thread_init, _data_init);
 
-        auto itr = insert<_Scope>(hash_id, obj, 1);
-        add_hash_id(hash_id, hash_id);
+        // auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
+        uint64_t hash_depth = 1;
+        auto     itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
+        add_hash_id(hash_id, hash_id * hash_depth);
         return itr;
     }
 
@@ -774,7 +732,7 @@ public:
         else
         {
             // else, create a new entry
-            auto&& _tmp = ObjectType();
+            auto&& _tmp = Type();
             _tmp += std::get<2>(_secondary);
             _tmp.laps = 1;
             graph_node_t _node(_hash, _tmp, _depth);
@@ -806,16 +764,16 @@ protected:
 
         using storage_t = this_type;
 
-        template <typename _Archive, typename _Type = ObjectType,
+        template <typename _Archive, typename _Type = Type,
                   typename std::enable_if<(is_enabled<_Type>::value), char>::type = 0>
         static void serialize(storage_t& _obj, _Archive& ar, const unsigned int version,
                               const result_array_t& result)
         {
-            typename tim::trait::array_serialization<ObjectType>::type type;
+            typename tim::trait::array_serialization<Type>::type type;
             _obj.serialize_me(type, ar, version, result);
         }
 
-        template <typename _Archive, typename _Type = ObjectType,
+        template <typename _Archive, typename _Type = Type,
                   typename std::enable_if<!(is_enabled<_Type>::value), char>::type = 0>
         static void serialize(storage_t&, _Archive&, const unsigned int,
                               const result_array_t&)
@@ -856,29 +814,29 @@ private:
     }
 
 private:
-    // tim::trait::array_serialization<ObjectType>::type == TRUE
+    // tim::trait::array_serialization<Type>::type == TRUE
     template <typename Archive>
     void serialize_me(std::true_type, Archive&, const unsigned int,
                       const result_array_t&);
 
-    // tim::trait::array_serialization<ObjectType>::type == FALSE
+    // tim::trait::array_serialization<Type>::type == FALSE
     template <typename Archive>
     void serialize_me(std::false_type, Archive&, const unsigned int,
                       const result_array_t&);
 
-    // tim::trait::external_output_handling<ObjectType>::type == TRUE
+    // tim::trait::external_output_handling<Type>::type == TRUE
     void external_print(std::true_type);
 
-    // tim::trait::external_output_handling<ObjectType>::type == FALSE
+    // tim::trait::external_output_handling<Type>::type == FALSE
     void external_print(std::false_type);
 
     graph_data_t&       _data();
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
 
 private:
-    mutable graph_data_t*           m_graph_data_instance = nullptr;
-    iterator_hash_map_t             m_node_ids;
-    std::unordered_set<ObjectType*> m_stack;
+    mutable graph_data_t*     m_graph_data_instance = nullptr;
+    iterator_hash_map_t       m_node_ids;
+    std::unordered_set<Type*> m_stack;
 };
 
 //======================================================================================//
@@ -887,14 +845,14 @@ private:
 //
 //======================================================================================//
 
-template <typename ObjectType>
-class storage<ObjectType, false> : public base::storage
+template <typename Type>
+class storage<Type, false> : public base::storage
 {
 public:
     //----------------------------------------------------------------------------------//
     //
     using base_type     = base::storage;
-    using this_type     = storage<ObjectType, false>;
+    using this_type     = storage<Type, false>;
     using string_t      = std::string;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;
@@ -952,12 +910,12 @@ public:
     //----------------------------------------------------------------------------------//
     //
     storage()
-    : base_type(singleton_t::is_master_thread(), instance_count()++, ObjectType::label())
+    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::label())
     {
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
         get_shared_manager();
-        component::properties<ObjectType>::has_storage() = false;
+        component::properties<Type>::has_storage() = false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -983,11 +941,11 @@ public:
     //
     virtual void print() final { finalize(); }
 
-    virtual void cleanup() final { ObjectType::invoke_cleanup(); }
+    virtual void cleanup() final { Type::cleanup(); }
 
     virtual void stack_clear() final
     {
-        std::unordered_set<ObjectType*> _stack = m_stack;
+        std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
             itr->stop();
@@ -1008,12 +966,12 @@ public:
 
         if(!m_is_master)
         {
-            ObjectType::thread_init_policy(this);
+            Type::thread_init(this);
         }
         else
         {
-            ObjectType::global_init_policy(this);
-            ObjectType::thread_init_policy(this);
+            Type::global_init(this);
+            Type::thread_init(this);
         }
     }
 
@@ -1032,14 +990,14 @@ public:
         if(!m_is_master)
         {
             worker_is_finalizing() = true;
-            ObjectType::thread_finalize_policy(this);
+            Type::thread_finalize(this);
         }
         else
         {
             master_is_finalizing() = true;
             worker_is_finalizing() = true;
-            ObjectType::thread_finalize_policy(this);
-            ObjectType::global_finalize_policy(this);
+            Type::thread_finalize(this);
+            Type::global_finalize(this);
         }
     }
 
@@ -1049,14 +1007,14 @@ public:
     inline size_t depth() const { return 0; }
 
     iterator pop() { return nullptr; }
-    iterator insert(int64_t, const ObjectType&, const string_t&) { return nullptr; }
+    iterator insert(int64_t, const Type&, const string_t&) { return nullptr; }
 
     template <typename _Archive>
     void serialize(_Archive&, const unsigned int)
     {}
 
-    void stack_push(ObjectType* obj) { m_stack.insert(obj); }
-    void stack_pop(ObjectType* obj)
+    void stack_push(Type* obj) { m_stack.insert(obj); }
+    void stack_pop(Type* obj)
     {
         auto itr = m_stack.find(obj);
         if(itr != m_stack.end())
@@ -1106,7 +1064,7 @@ private:
     {}
 
 private:
-    std::unordered_set<ObjectType*> m_stack;
+    std::unordered_set<Type*> m_stack;
 };
 
 //======================================================================================//

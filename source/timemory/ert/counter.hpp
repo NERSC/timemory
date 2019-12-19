@@ -109,8 +109,8 @@ public:
             uint64_t _align = 8 * sizeof(_Tp))
     : params(_params)
     , align(_align)
-    , configure_callback(_func)
     , data(_exec_data)
+    , configure_callback(_func)
     {
         compute_internal();
     }

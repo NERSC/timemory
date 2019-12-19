@@ -262,13 +262,13 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a customized operation (typically for GOTCHA)
+    // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>
-    void customize(_Args&&... _args)
+    void audit(_Args&&... _args)
     {
-        m_tuple.customize(std::forward<_Args>(_args)...);
-        m_list.customize(std::forward<_Args>(_args)...);
+        m_tuple.audit(std::forward<_Args>(_args)...);
+        m_list.audit(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

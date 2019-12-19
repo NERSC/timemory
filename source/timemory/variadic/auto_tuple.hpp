@@ -101,6 +101,9 @@ public:
     inline component_type&       get_component() { return m_temporary_object; }
     inline const component_type& get_component() const { return m_temporary_object; }
 
+    inline operator component_type&() { return m_temporary_object; }
+    inline operator const component_type&() const { return m_temporary_object; }
+
     // partial interface to underlying component_tuple
     inline void record()
     {
@@ -140,10 +143,10 @@ public:
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
     template <typename... _Args>
-    inline void customize(_Args&&... _args)
+    inline void audit(_Args&&... _args)
     {
         if(m_enabled)
-            m_temporary_object.customize(std::forward<_Args>(_args)...);
+            m_temporary_object.audit(std::forward<_Args>(_args)...);
     }
 
     inline data_value_type get() const { return m_temporary_object.get(); }
@@ -297,6 +300,10 @@ get_labeled(const auto_tuple<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 // variadic versions
+
+#define TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE(tag, ...)                                     \
+    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
+    TIMEMORY_BLANK_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \

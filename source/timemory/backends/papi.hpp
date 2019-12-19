@@ -480,20 +480,21 @@ inline void
 enable_multiplexing(int event_set, int component = 0)
 {
 #if defined(TIMEMORY_USE_PAPI)
+    bool working_assign = true;
     if(working())
     {
         auto              retval = PAPI_assign_eventset_component(event_set, component);
         std::stringstream ss;
         ss << "Warning!! Failure to assign event set component. event set: " << event_set
            << ", component: " << component;
-        working() = check(retval, ss.str());
+        working_assign = check(retval, ss.str());
     }
-    if(working())
+    if(working_assign)
     {
         auto              retval = PAPI_set_multiplex(event_set);
         std::stringstream ss;
         ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
-        working() = check(retval, ss.str());
+        check(retval, ss.str());
     }
 #else
     consume_parameters(event_set, component);

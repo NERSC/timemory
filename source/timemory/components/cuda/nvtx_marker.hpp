@@ -48,11 +48,11 @@ namespace component
 //--------------------------------------------------------------------------------------//
 // adds NVTX markers
 //
-struct nvtx_marker : public base<nvtx_marker, void, policy::thread_init>
+struct nvtx_marker : public base<nvtx_marker, void>
 {
     using value_type = void;
     using this_type  = nvtx_marker;
-    using base_type  = base<this_type, value_type, policy::thread_init>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "nvtx_marker"; }
     static std::string description() { return "NVTX markers"; }
@@ -83,7 +83,7 @@ struct nvtx_marker : public base<nvtx_marker, void, policy::thread_init>
         return _instance->find(_stream)->second;
     }
 
-    static void invoke_thread_init(storage_type*) { nvtx::name_thread(get_thread_id()); }
+    static void thread_init(storage_type*) { nvtx::name_thread(get_thread_id()); }
 
     nvtx_marker(const nvtx::color::color_t& _color = 0, const std::string& _prefix = "",
                 cuda::stream_t _stream = 0)

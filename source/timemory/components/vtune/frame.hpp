@@ -35,28 +35,25 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<vtune_frame, void, policy::global_init,
-                            policy::global_finalize>;
+extern template struct base<vtune_frame, void>;
 
 #endif
 
 //--------------------------------------------------------------------------------------//
 // create VTune frames
 //
-struct vtune_frame
-: public base<vtune_frame, void, policy::global_init, policy::global_finalize>
+struct vtune_frame : public base<vtune_frame, void>
 {
     using value_type = void;
     using this_type  = vtune_frame;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::global_finalize>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "vtune_frame"; }
     static std::string description() { return "Create VTune frames"; }
     static value_type  record() {}
 
-    static void invoke_global_init(storage_type*) { ittnotify::pause(); }
-    static void invoke_global_finalize(storage_type*) { ittnotify::pause(); }
+    static void global_init(storage_type*) { ittnotify::pause(); }
+    static void global_finalize(storage_type*) { ittnotify::pause(); }
 
     void start()
     {

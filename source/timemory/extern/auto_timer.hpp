@@ -22,9 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file auto_timer.hpp
- * \headerfile auto_timer.hpp "timemory/extern/auto_timer.hpp"
- * Extern template declarations that include CUDA
+/** \file extern/auto_timer.hpp
+ * \headerfile extern/auto_timer.hpp "timemory/extern/auto_timer.hpp"
+ * Extern template declarations
  *
  */
 
@@ -39,7 +39,8 @@
 //--------------------------------------------------------------------------------------//
 // auto_timer
 //
-#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_EXTERN_TEMPLATE_BUILD)
+#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE) &&    \
+    !(defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_CUPTI))
 
 // clang-format off
 
@@ -60,7 +61,7 @@ TIMEMORY_DECLARE_EXTERN_LIST(minimal_auto_timer_t,
                              ::tim::component::cupti_activity,
                              ::tim::component::cupti_counters)
 
-TIMEMORY_DECLARE_EXTERN_HYBRID(minimal_auto_timer_t)
+// TIMEMORY_DECLARE_EXTERN_HYBRID(minimal_auto_timer_t)
 
 TIMEMORY_DECLARE_EXTERN_TUPLE(full_auto_timer_t,
                               ::tim::component::wall_clock,
@@ -88,15 +89,7 @@ TIMEMORY_DECLARE_EXTERN_LIST(full_auto_timer_t,
                              ::tim::component::gpu_roofline_sp_flops,
                              ::tim::component::gpu_roofline_dp_flops)
 
-TIMEMORY_DECLARE_EXTERN_HYBRID(full_auto_timer_t)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(auto_bundle_t,
-                              ::tim::component::user_tuple_bundle)
-
-TIMEMORY_DECLARE_EXTERN_LIST(auto_bundle_t,
-                             ::tim::component::user_list_bundle)
-
-TIMEMORY_DECLARE_EXTERN_HYBRID(auto_bundle_t)
+// TIMEMORY_DECLARE_EXTERN_HYBRID(full_auto_timer_t)
 
 // clang-format on
 

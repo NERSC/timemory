@@ -35,13 +35,12 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/backends/papi.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/singleton.hpp"
 #include "timemory/utility/storage.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -49,12 +48,16 @@
 
 #include <atomic>
 #include <cstdint>
+#include <deque>
+#include <functional>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
 #include <tuple>
-#include <unordered_map>
+#include <utility>
 
 //--------------------------------------------------------------------------------------//
 
@@ -354,6 +357,20 @@ public:
         using base_type::serialize;
         using base_type::size;
     };
+
+    //----------------------------------------------------------------------------------//
+    //
+    /// used by storage classes to ensure that the singleton instance is managed
+    /// via the master thread of holding the manager instance
+    template <typename _Tp>
+    _Tp& get_singleton();
+
+    //----------------------------------------------------------------------------------//
+    //
+    /// used by storage classes to ensure that the singleton instance is managed
+    /// via the master thread of holding the manager instance
+    template <typename _Tp>
+    _Tp& get_noninit_singleton();
 
 private:
     template <typename... _Types>

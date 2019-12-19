@@ -270,9 +270,9 @@ namespace impl
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename ObjectType>
+template <typename Type>
 std::string
-storage<ObjectType, true>::get_prefix(const graph_node& node)
+storage<Type, true>::get_prefix(const graph_node& node)
 {
     auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, node.id());
     if(_ret.find("unknown-hash=") == 0)
@@ -292,11 +292,11 @@ storage<ObjectType, true>::get_prefix(const graph_node& node)
 
 //======================================================================================//
 
-template <typename ObjectType>
-typename storage<ObjectType, true>::graph_data_t&
-storage<ObjectType, true>::_data()
+template <typename Type>
+typename storage<Type, true>::graph_data_t&
+storage<Type, true>::_data()
 {
-    using object_base_t = typename ObjectType::base_type;
+    using object_base_t = typename Type::base_type;
 
     if(m_graph_data_instance == nullptr && !m_is_master)
     {
@@ -331,9 +331,9 @@ storage<ObjectType, true>::_data()
 
 //======================================================================================//
 
-template <typename ObjectType>
+template <typename Type>
 void
-storage<ObjectType, true>::merge()
+storage<Type, true>::merge()
 {
     if(!m_is_master || !m_initialized)
         return;
@@ -361,9 +361,9 @@ storage<ObjectType, true>::merge()
 
 //======================================================================================//
 
-template <typename ObjectType>
+template <typename Type>
 void
-storage<ObjectType, true>::merge(this_type* itr)
+storage<Type, true>::merge(this_type* itr)
 {
     using pre_order_iterator = typename graph_t::pre_order_iterator;
 
@@ -397,6 +397,8 @@ storage<ObjectType, true>::merge(this_type* itr)
     // if self is not initialized but itr is, copy data
     if(itr && itr->is_initialized() && !this->is_initialized())
     {
+        PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
+                   Type::label().c_str());
         graph().insert_subgraph_after(_data().head(), itr->data().head());
         m_initialized = itr->m_initialized;
         m_finalized   = itr->m_finalized;
@@ -419,6 +421,8 @@ storage<ObjectType, true>::merge(this_type* itr)
             typename graph_t::pre_order_iterator _nitr(itr->data().head());
             if(graph().is_valid(_nitr.begin()) && _nitr.begin())
             {
+                if(settings::debug())
+                    PRINT_HERE("[%s]> worker is merging", Type::label().c_str());
                 pre_order_iterator _pos   = _titr;
                 pre_order_iterator _other = _nitr.begin();
                 graph().append_child(_pos, _other);
@@ -428,6 +432,8 @@ storage<ObjectType, true>::merge(this_type* itr)
 
             if(!_merged)
             {
+                if(settings::debug())
+                    PRINT_HERE("[%s]> worker is not merged!", Type::label().c_str());
                 ++_nitr;
                 if(graph().is_valid(_nitr) && _nitr)
                 {
@@ -441,6 +447,8 @@ storage<ObjectType, true>::merge(this_type* itr)
 
     if(!_merged)
     {
+        if(settings::debug())
+            PRINT_HERE("[%s]> worker is not merged!", Type::label().c_str());
         pre_order_iterator _nitr(itr->data().head());
         ++_nitr;
         if(!graph().is_valid(_nitr))
@@ -453,9 +461,9 @@ storage<ObjectType, true>::merge(this_type* itr)
 
 //======================================================================================//
 
-template <typename ObjectType>
-typename storage<ObjectType, true>::result_array_t
-storage<ObjectType, true>::get()
+template <typename Type>
+typename storage<Type, true>::result_array_t
+storage<Type, true>::get()
 {
     //------------------------------------------------------------------------------//
     //
@@ -537,7 +545,7 @@ storage<ObjectType, true>::get()
             }
         }
 
-        bool _thread_scope_only = trait::thread_scope_only<ObjectType>::value;
+        bool _thread_scope_only = trait::thread_scope_only<Type>::value;
         if(!settings::collapse_threads() || _thread_scope_only)
             return _list;
 
@@ -587,9 +595,9 @@ storage<ObjectType, true>::get()
 
 //======================================================================================//
 
-template <typename ObjectType>
-typename storage<ObjectType, true>::dmp_result_t
-storage<ObjectType, true>::mpi_get()
+template <typename Type>
+typename storage<Type, true>::dmp_result_t
+storage<Type, true>::mpi_get()
 {
 #if !defined(TIMEMORY_USE_MPI)
     if(settings::debug())
@@ -600,10 +608,16 @@ storage<ObjectType, true>::mpi_get()
     if(settings::debug())
         PRINT_HERE("%s", "timemory using MPI");
 
-    mpi::barrier(mpi::comm_world_v);
+    // not yet implemented
+    // auto comm =
+    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
+    auto comm = mpi::comm_world_v;
+    mpi::barrier(comm);
 
-    int mpi_rank = m_node_rank;
-    int mpi_size = m_node_size;
+    int mpi_rank = mpi::rank(comm);
+    int mpi_size = mpi::size(comm);
+    // int mpi_rank = m_node_rank;
+    // int mpi_size = m_node_size;
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -648,7 +662,7 @@ storage<ObjectType, true>::mpi_get()
             std::string str;
             if(settings::debug())
                 printf("[RECV: %i]> starting %i\n", mpi_rank, i);
-            mpi::recv(str, i, 0, mpi::comm_world_v);
+            mpi::recv(str, i, 0, comm);
             if(settings::debug())
                 printf("[RECV: %i]> completed %i\n", mpi_rank, i);
             results[i] = recv_serialize(str);
@@ -659,7 +673,7 @@ storage<ObjectType, true>::mpi_get()
     {
         if(settings::debug())
             printf("[SEND: %i]> starting\n", mpi_rank);
-        mpi::send(str_ret, 0, 0, mpi::comm_world_v);
+        mpi::send(str_ret, 0, 0, comm);
         if(settings::debug())
             printf("[SEND: %i]> completed\n", mpi_rank);
         return dmp_result_t(1, ret);
@@ -671,9 +685,9 @@ storage<ObjectType, true>::mpi_get()
 
 //======================================================================================//
 
-template <typename ObjectType>
-typename storage<ObjectType, true>::dmp_result_t
-storage<ObjectType, true>::upc_get()
+template <typename Type>
+typename storage<Type, true>::dmp_result_t
+storage<Type, true>::upc_get()
 {
 #if !defined(TIMEMORY_USE_UPCXX)
     if(settings::debug())
@@ -753,16 +767,16 @@ storage<ObjectType, true>::upc_get()
 
 //======================================================================================//
 
-template <typename ObjectType>
-void storage<ObjectType, true>::external_print(std::false_type)
+template <typename Type>
+void storage<Type, true>::external_print(std::false_type)
 {
     base::storage::stop_profiler();
 
     if(!m_initialized && !m_finalized)
         return;
 
-    auto                  requires_json = trait::requires_json<ObjectType>::value;
-    auto                  label         = ObjectType::label();
+    auto                  requires_json = trait::requires_json<Type>::value;
+    auto                  label         = Type::label();
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
 
     if(!singleton_t::is_master(this))
@@ -810,6 +824,10 @@ void storage<ObjectType, true>::external_print(std::false_type)
             printf("[%s]|%i> dmp results size: %i\n", label.c_str(), m_node_rank,
                    (int) _dmp_results.size());
 
+        // bool return_nonzero_mpi = (dmp::using_mpi() && !settings::mpi_output_per_node()
+        // &&
+        //                           !settings::mpi_output_per_rank());
+
         if(_dmp_results.size() > 0)
         {
             if(m_node_rank != 0)
@@ -820,9 +838,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
                 for(const auto& sitr : _dmp_results)
                 {
                     for(const auto& ritr : sitr)
-                    {
                         _results.push_back(ritr);
-                    }
                 }
             }
         }
@@ -853,7 +869,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         }
 #endif
 
-        int64_t _width     = ObjectType::get_width();
+        int64_t _width     = Type::get_width();
         int64_t _max_depth = 0;
         int64_t _max_laps  = 0;
         // find the max width
@@ -878,7 +894,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         std::vector<int64_t> _widths      = { _width, _width_laps, _width_depth };
 
         // return type of get() function
-        using get_return_type = decltype(std::declval<const ObjectType>().get());
+        using get_return_type = decltype(std::declval<const Type>().get());
 
         auto_lock_t flk(type_mutex<std::ofstream>(), std::defer_lock);
         auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
@@ -999,44 +1015,50 @@ void storage<ObjectType, true>::external_print(std::false_type)
                 get_return_type exclusive_values;
                 // continue while not at end of graph until first sibling is
                 // encountered
-                if(eitr == _results.end())
-                    continue;
-                auto eitr_depth = std::get<3>(*eitr);
-                while(eitr_depth != itr_depth)
+                if(eitr != _results.end())
                 {
-                    auto& eitr_obj = std::get<1>(*eitr);
-
-                    // if one level down, this is an exclusive value
-                    if(eitr_depth == itr_depth + 1)
+                    auto eitr_depth = std::get<3>(*eitr);
+                    while(eitr_depth != itr_depth)
                     {
-                        // if first exclusive value encountered: assign; else:
-                        // combine
-                        if(nexclusive == 0)
-                            exclusive_values = eitr_obj.get();
-                        else
-                            math::combine(exclusive_values, eitr_obj.get());
-                        // increment. beyond 0 vs. 1, this value plays no role
-                        ++nexclusive;
+                        auto& eitr_obj = std::get<1>(*eitr);
+
+                        // if one level down, this is an exclusive value
+                        if(eitr_depth == itr_depth + 1)
+                        {
+                            // if first exclusive value encountered: assign; else:
+                            // combine
+                            if(nexclusive == 0)
+                                exclusive_values = eitr_obj.get();
+                            else
+                                math::combine(exclusive_values, eitr_obj.get());
+                            // increment. beyond 0 vs. 1, this value plays no role
+                            ++nexclusive;
+                        }
+                        // increment iterator for next while check
+                        ++eitr;
+                        if(eitr == _results.end())
+                            break;
+                        eitr_depth = std::get<3>(*eitr);
                     }
-                    // increment iterator for next while check
-                    ++eitr;
-                    if(eitr == _results.end())
-                        break;
-                    eitr_depth = std::get<3>(*eitr);
-                }
-                // if there were exclusive values encountered
-                if(nexclusive > 0 && trait::is_available<ObjectType>::value)
-                {
-                    math::print_percentage(
-                        _pss, math::compute_percentage(exclusive_values, itr_obj.get()));
+                    // if there were exclusive values encountered
+                    if(nexclusive > 0 && trait::is_available<Type>::value)
+                    {
+                        math::print_percentage(
+                            _pss,
+                            math::compute_percentage(exclusive_values, itr_obj.get()));
+                    }
                 }
             }
 
             auto _laps = itr_obj.nlaps();
 
             std::stringstream _oss;
-            operation::print<ObjectType>(itr_obj, _oss, itr_prefix, _laps, itr_depth,
-                                         _widths, true, _pss.str());
+            operation::print<Type>(itr_obj, _oss, itr_prefix, _laps, itr_depth, _widths,
+                                   true, _pss.str());
+            // for(const auto& itr : itr->hierarchy())
+            //    _oss << itr << "//";
+            // _oss << "\n";
+
             if(cout != nullptr)
                 *cout << _oss.str() << std::flush;
             if(fout != nullptr)
@@ -1056,8 +1078,8 @@ void storage<ObjectType, true>::external_print(std::false_type)
         if(settings::dart_type().length() > 0)
         {
             auto dtype = settings::dart_type();
-            if(operation::echo_measurement<ObjectType>::lowercase(dtype) !=
-               operation::echo_measurement<ObjectType>::lowercase(label))
+            if(operation::echo_measurement<Type>::lowercase(dtype) !=
+               operation::echo_measurement<Type>::lowercase(label))
                 _dart_output = false;
         }
 
@@ -1078,7 +1100,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
 
                 auto& itr_obj       = itr.data();
                 auto& itr_hierarchy = itr.hierarchy();
-                operation::echo_measurement<ObjectType>(itr_obj, itr_hierarchy);
+                operation::echo_measurement<Type>(itr_obj, itr_hierarchy);
                 ++_nitr;
             }
         }
@@ -1095,8 +1117,8 @@ void storage<ObjectType, true>::external_print(std::false_type)
 
 //======================================================================================//
 
-template <typename ObjectType>
-void storage<ObjectType, true>::external_print(std::true_type)
+template <typename Type>
+void storage<Type, true>::external_print(std::true_type)
 {
     base::storage::stop_profiler();
 
@@ -1122,21 +1144,21 @@ void storage<ObjectType, true>::external_print(std::true_type)
 
 //======================================================================================//
 
-template <typename ObjectType>
+template <typename Type>
 template <typename Archive>
 void
-storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
-                                        const unsigned int    version,
-                                        const result_array_t& graph_list)
+storage<Type, true>::serialize_me(std::false_type, Archive& ar,
+                                  const unsigned int    version,
+                                  const result_array_t& graph_list)
 {
     if(graph_list.size() == 0)
         return;
 
-    ar(cereal::make_nvp("type", ObjectType::label()),
-       cereal::make_nvp("description", ObjectType::description()),
-       cereal::make_nvp("unit_value", ObjectType::unit()),
-       cereal::make_nvp("unit_repr", ObjectType::display_unit()));
-    ObjectType::serialization_policy(ar, version);
+    ar(cereal::make_nvp("type", Type::label()),
+       cereal::make_nvp("description", Type::description()),
+       cereal::make_nvp("unit_value", Type::unit()),
+       cereal::make_nvp("unit_repr", Type::display_unit()));
+    Type::extra_serialization(ar, version);
     ar.setNextName("graph");
     ar.startNode();
     ar.makeArray();
@@ -1152,12 +1174,11 @@ storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
 
 //======================================================================================//
 
-template <typename ObjectType>
+template <typename Type>
 template <typename Archive>
 void
-storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
-                                        const unsigned int    version,
-                                        const result_array_t& graph_list)
+storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned int version,
+                                  const result_array_t& graph_list)
 {
     if(graph_list.size() == 0)
         return;
@@ -1165,15 +1186,15 @@ storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
     // remove those const in case not marked const
     auto& _graph_list = const_cast<result_array_t&>(graph_list);
 
-    ObjectType& obj           = _graph_list.front().data();
-    auto        labels        = obj.label_array();
-    auto        descripts     = obj.descript_array();
-    auto        units         = obj.unit_array();
-    auto        display_units = obj.display_unit_array();
+    Type& obj           = _graph_list.front().data();
+    auto  labels        = obj.label_array();
+    auto  descripts     = obj.descript_array();
+    auto  units         = obj.unit_array();
+    auto  display_units = obj.display_unit_array();
     ar(cereal::make_nvp("type", labels), cereal::make_nvp("description", descripts),
        cereal::make_nvp("unit_value", units),
        cereal::make_nvp("unit_repr", display_units));
-    ObjectType::serialization_policy(ar, version);
+    Type::extra_serialization(ar, version);
     ar.setNextName("graph");
     ar.startNode();
     ar.makeArray();
@@ -1245,9 +1266,9 @@ tim::base::storage::add_json_output(const string_t& _label, const string_t& _fil
 
 //--------------------------------------------------------------------------------------//
 
-template <typename ObjectType>
+template <typename Type>
 void
-tim::impl::storage<ObjectType, true>::get_shared_manager()
+tim::impl::storage<Type, true>::get_shared_manager()
 {
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
@@ -1261,15 +1282,15 @@ tim::impl::storage<ObjectType, true>::get_shared_manager()
             this->stack_clear();
             this_type::get_singleton().reset(this);
         };
-        m_manager->add_finalizer(ObjectType::label(), std::move(_finalize), _is_master);
+        m_manager->add_finalizer(Type::label(), std::move(_finalize), _is_master);
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename ObjectType>
+template <typename Type>
 void
-tim::impl::storage<ObjectType, false>::get_shared_manager()
+tim::impl::storage<Type, false>::get_shared_manager()
 {
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
@@ -1283,7 +1304,7 @@ tim::impl::storage<ObjectType, false>::get_shared_manager()
             this->stack_clear();
             this_type::get_singleton().reset(this);
         };
-        m_manager->add_finalizer(ObjectType::label(), std::move(_finalize), _is_master);
+        m_manager->add_finalizer(Type::label(), std::move(_finalize), _is_master);
     }
 }
 

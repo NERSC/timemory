@@ -284,6 +284,7 @@ def get_peak_ops(roof_data, flop_info=None):
 
 #==============================================================================#
 #
+<<<<<<< HEAD
 def get_peak_int_theo():
     peak = {}
     peak["Theoretical Peak"] = [489.6]
@@ -330,7 +331,8 @@ def get_peak_int_theo():
 
 #==============================================================================#
 #
-def get_peak_bandwidth(roof_data):
+
+def get_peak_bandwidth(roof_data, band_labels):
     """
     Get multi-level bandwidth peaks - Implementation from ERT:
     https://bitbucket.org/berkeleylab/cs-roofline-toolkit
@@ -403,6 +405,8 @@ def get_peak_bandwidth(roof_data):
         band_info_list = ["L%d" % (cache_num+1 - cache)] + band_info_list
 
     peak_bandwidths = []
+    band_info_list = [e for e in band_info_list if e in band_labels]
+
     for (band, band_info) in zip(band_list, band_info_list):
         band_info = band_info + " GB/s"
         peak_bandwidths.append([float(band[0]/band[1]), band_info])
@@ -871,7 +875,7 @@ class plot_parameters():
 
 #==============================================================================#
 #
-def plot_roofline(ai_data, op_data, display=False, fname="roofline",
+def plot_roofline(ai_data, op_data, band_labels, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
                   width=1600, height=1200, dpi=100, inst_roofline=False):
     """
@@ -901,7 +905,7 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
     if inst_roofline:
         peak_band = get_theo_bandwidth_txns()
     else:
-        peak_band = get_peak_bandwidth(band_data)
+        peak_band = get_peak_bandwidth(band_data,band_labels)
 
     if inst_roofline:
         hotspots = get_hotspots_integer(op_data, ai_data)
@@ -977,8 +981,10 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
             plt.plot([x1, x2], [y1, y2], color='magenta')
 
             # plot computing roof
+            temp_label = _label.replace('_', '-')
+            temp_label = temp_label.upper()
             text(plot_params.xmax, _peakop + 2,
-                 "%.2f %s" % (_peakop, peak_flop[1]),
+                 "%.2f %s %s" % (_peakop, temp_label, peak_flop[1]),
                  horizontalalignment='right', **get_font())
 
             plt.plot([x0, plot_params.xmax], [_peakop, _peakop], color='b')

@@ -6,7 +6,7 @@ import argparse
 from timemory_types import components, mangled_enums
 
 
-def generate_case_label(component, indent_tabs=3, spaces=4, reference=True, template=True):
+def generate_case_label(component, func, indent_tabs=3, spaces=4, reference=True, template=True):
     """
     This function generates a case label for C++
     """
@@ -15,13 +15,12 @@ def generate_case_label(component, indent_tabs=3, spaces=4, reference=True, temp
     spacer = " "*spaces             # a spacer of spaces length
     atab = "{}".format(spacer)      # the generic tab
     ftab = atab*indent_tabs         # the first tab level
-    stab = atab*(indent_tabs+1)     # the second tab level
 
     init_str = "." if reference else "->"
     if template:
         init_str += "template "
-    return "{2}case {1}: obj{3}init<{0}>(); break;\n".format(
-        component, enumeration.upper(), ftab, init_str)
+    return "{2}case {1}: obj{3}{4}<{0}>(); break;\n".format(
+        component, enumeration.upper(), ftab, init_str, func)
 
 
 if __name__ == "__main__":
@@ -50,7 +49,10 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("-S", "--specialized", help="Initialization is specialized (not a template)",
                         action='store_true')
-    parser.add_argument("-V", "--verbose", help="Enable verbosity", default=0, type=int)
+    parser.add_argument("-V", "--verbose",
+                        help="Enable verbosity", default=0, type=int)
+    parser.add_argument("-f", "--function",
+                        help="Function name", default="init", type=str)
 
     args = parser.parse_args()
 
@@ -85,15 +87,16 @@ if __name__ == "__main__":
         print("timemory components: [{}]\n".format(", ".join(components)))
     outdata = ""
     for component in components:
-        outdata += "{}".format(generate_case_label(component,
+        outdata += "{}".format(generate_case_label(component, args.function,
                                                    args.tabs_per_indent, args.spaces_per_tab,
                                                    not args.pointer, not args.specialized))
-    outdata = outdata.strip("\n");
+    outdata = outdata.strip("\n")
     spacer = " "*args.spaces_per_tab    # a spacer of spaces length
     atab = "{}".format(spacer)          # the generic tab
     ftab = atab*args.tabs_per_indent    # the first tab level
 
-    outdata += "\n{}case TIMEMORY_COMPONENTS_END:\n{}default: break;".format(ftab, ftab)
+    outdata += "\n{}case TIMEMORY_COMPONENTS_END:\n{}default: break;".format(
+        ftab, ftab)
 
     if subdata is not None:
         try:

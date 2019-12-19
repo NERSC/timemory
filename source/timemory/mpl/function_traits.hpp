@@ -30,6 +30,11 @@
 
 #pragma once
 
+#if defined(__GNUC__) && (__GNUC__ >= 7) && (__cplusplus < 201703L)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wnoexcept-type"
+#endif
+
 #include <functional>
 #include <iomanip>
 #include <sstream>
@@ -183,3 +188,7 @@ struct function_traits<R (C::*)(Args...) const noexcept>
 //======================================================================================//
 
 }  // namespace tim
+
+#if defined(__GNUC__) && (__GNUC__ >= 7) && (__cplusplus < 201703L)
+#    pragma GCC diagnostic pop
+#endif

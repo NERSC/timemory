@@ -54,12 +54,16 @@ namespace tim
 //
 namespace component
 {
+// this is a type for tagging native types
+struct native_tag
+{};
+
 // define this short-hand from C++14 for C++11
 template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 // generic static polymorphic base class
-template <typename _Tp, typename value_type = int64_t, typename... _Policies>
+template <typename _Tp, typename value_type = int64_t>
 struct base;
 
 // holder that provides nothing
@@ -117,9 +121,9 @@ struct vtune_event;
 
 // cuda
 struct cuda_event;
-
-// nvtx
+struct cuda_profiler;
 struct nvtx_marker;
+using cuda_nvtx = nvtx_marker;
 
 template <size_t _N, typename _Components, typename _Differentiator = void>
 struct gotcha;
@@ -160,12 +164,12 @@ using gpu_roofline_dp_flops = gpu_roofline<double>;
 using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
 using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
 
-template <size_t _Idx>
+template <size_t _Idx, typename _Tag = native_tag>
 struct user_bundle;
 
 // reserved
-using user_tuple_bundle = user_bundle<10101>;
-using user_list_bundle  = user_bundle<11011>;
+using user_tuple_bundle = user_bundle<10101, native_tag>;
+using user_list_bundle  = user_bundle<11011, native_tag>;
 
 }  // namespace component
 }  // namespace tim

@@ -27,7 +27,7 @@
  *
  * This is a pre-declaration of all the variadic wrappers.
  * Care should be taken to make sure that this includes a minimal
- * number of additional headers.
+ * number of additional headers. Also provides concat of types
  *
  */
 
@@ -42,6 +42,14 @@
 //
 namespace tim
 {
+namespace component
+{
+template <typename... _Types>
+struct cpu_roofline;
+
+template <typename... _Types>
+struct gpu_roofline;
+}  // namespace component
 //--------------------------------------------------------------------------------------//
 //
 //  Forward declaration of variadic wrapper types
@@ -85,42 +93,190 @@ struct concat<std::tuple<_Types...>>
 template <typename... _Types>
 struct concat<component_tuple<_Types...>>
 {
-    using type = std::tuple<_Types...>;
+    using type = typename concat<_Types...>::type;
 };
 
 template <typename... _Types>
 struct concat<component_list<_Types...>>
 {
-    using type = std::tuple<_Types...>;
+    using type = typename concat<_Types...>::type;
 };
 
 template <typename... _Types>
 struct concat<auto_tuple<_Types...>>
 {
-    using type = std::tuple<_Types...>;
+    using type = typename concat<_Types...>::type;
 };
 
 template <typename... _Types>
 struct concat<auto_list<_Types...>>
 {
-    using type = std::tuple<_Types...>;
+    using type = typename concat<_Types...>::type;
 };
 
-//--------------------------------------------------------------------------------------//
-//          Combine tuple + tuple and tuple + _Types...
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Lhs, template <typename...> class _LhsT, typename... _Rhs,
-          template <typename...> class _RhsT>
-struct concat<_LhsT<_Lhs...>, _RhsT<_Rhs...>>
+template <typename... _Lhs, typename... _Rhs>
+struct concat<std::tuple<_Lhs...>, std::tuple<_Rhs...>>
 {
     using type = typename concat<_Lhs..., _Rhs...>::type;
 };
 
-template <typename... _Lhs, template <typename...> class _LhsT, typename... _Rhs>
-struct concat<_LhsT<_Lhs...>, _Rhs...>
+//--------------------------------------------------------------------------------------//
+//      component_hybrid
+//--------------------------------------------------------------------------------------//
+
+template <typename... _TupTypes, typename... _LstTypes>
+struct concat<component_hybrid<std::tuple<_TupTypes...>, std::tuple<_LstTypes...>>>
 {
-    using type = typename concat<_Lhs..., _Rhs...>::type;
+    using tuple_type = component_tuple<_TupTypes...>;
+    using list_type  = component_list<_LstTypes...>;
+    using type       = component_hybrid<tuple_type, list_type>;
+};
+
+template <typename... _TupTypes, typename... _LstTypes>
+struct concat<component_hybrid<component_tuple<_TupTypes...>, std::tuple<_LstTypes...>>>
+{
+    using tuple_type = component_tuple<_TupTypes...>;
+    using list_type  = component_list<_LstTypes...>;
+    using type       = component_hybrid<tuple_type, list_type>;
+};
+
+template <typename... _TupTypes, typename... _LstTypes>
+struct concat<component_hybrid<std::tuple<_TupTypes...>, component_list<_LstTypes...>>>
+{
+    using tuple_type = component_tuple<_TupTypes...>;
+    using list_type  = component_list<_LstTypes...>;
+    using type       = component_hybrid<tuple_type, list_type>;
+};
+
+//--------------------------------------------------------------------------------------//
+//      auto_hybrid
+//--------------------------------------------------------------------------------------//
+
+template <typename... _TupTypes, typename... _LstTypes>
+struct concat<auto_hybrid<std::tuple<_TupTypes...>, std::tuple<_LstTypes...>>>
+{
+    using tuple_type = component_tuple<_TupTypes...>;
+    using list_type  = component_list<_LstTypes...>;
+    using type       = auto_hybrid<tuple_type, list_type>;
+};
+
+template <typename... _TupTypes, typename... _LstTypes>
+struct concat<auto_hybrid<component_tuple<_TupTypes...>, std::tuple<_LstTypes...>>>
+{
+    using tuple_type = component_tuple<_TupTypes...>;
+    using list_type  = component_list<_LstTypes...>;
+    using type       = auto_hybrid<tuple_type, list_type>;
+};
+
+template <typename... _TupTypes, typename... _LstTypes>
+struct concat<auto_hybrid<std::tuple<_TupTypes...>, component_list<_LstTypes...>>>
+{
+    using tuple_type = component_tuple<_TupTypes...>;
+    using list_type  = component_list<_LstTypes...>;
+    using type       = auto_hybrid<tuple_type, list_type>;
+};
+
+//--------------------------------------------------------------------------------------//
+//
+//      Combine
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<std::tuple<_Lhs...>, _Rhs...>
+{
+    using type = typename concat<typename concat<_Lhs...>::type,
+                                 typename concat<_Rhs...>::type>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//      component_tuple
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<component_tuple<_Lhs...>, _Rhs...>
+{
+    using type = typename concat<typename concat<_Lhs...>::type,
+                                 typename concat<_Rhs...>::type>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//      component_list
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<component_list<_Lhs...>, _Rhs...>
+{
+    using type = typename concat<typename concat<_Lhs...>::type,
+                                 typename concat<_Rhs...>::type>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//      auto_tuple
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<auto_tuple<_Lhs...>, _Rhs...>
+{
+    using type = typename concat<typename concat<_Lhs...>::type,
+                                 typename concat<_Rhs...>::type>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//      auto_list
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<auto_list<_Lhs...>, _Rhs...>
+{
+    using type = typename concat<typename concat<_Lhs...>::type,
+                                 typename concat<_Rhs...>::type>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//      component_hybrid
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tup, typename _Lst, typename... _Rhs, typename... _Tail>
+struct concat<component_hybrid<_Tup, _Lst>, component_tuple<_Rhs...>, _Tail...>
+{
+    using type =
+        typename concat<component_hybrid<typename concat<_Tup, _Rhs...>::type, _Lst>,
+                        _Tail...>::type;
+    using tuple_type = typename type::tuple_type;
+    using list_type  = typename type::list_type;
+};
+
+template <typename _Tup, typename _Lst, typename... _Rhs, typename... _Tail>
+struct concat<component_hybrid<_Tup, _Lst>, component_list<_Rhs...>, _Tail...>
+{
+    using type =
+        typename concat<component_hybrid<_Tup, typename concat<_Lst, _Rhs...>::type>,
+                        _Tail...>::type;
+    using tuple_type = typename type::tuple_type;
+    using list_type  = typename type::list_type;
+};
+
+//--------------------------------------------------------------------------------------//
+//      auto_hybrid
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tup, typename _Lst, typename... _Rhs, typename... _Tail>
+struct concat<auto_hybrid<_Tup, _Lst>, component_tuple<_Rhs...>, _Tail...>
+{
+    using type = typename concat<auto_hybrid<typename concat<_Tup, _Rhs...>::type, _Lst>,
+                                 _Tail...>::type;
+    using tuple_type = typename type::tuple_type;
+    using list_type  = typename type::list_type;
+};
+
+template <typename _Tup, typename _Lst, typename... _Rhs, typename... _Tail>
+struct concat<auto_hybrid<_Tup, _Lst>, component_list<_Rhs...>, _Tail...>
+{
+    using type = typename concat<auto_hybrid<_Tup, typename concat<_Lst, _Rhs...>::type>,
+                                 _Tail...>::type;
+    using tuple_type = typename type::tuple_type;
+    using list_type  = typename type::list_type;
 };
 
 }  // namespace impl

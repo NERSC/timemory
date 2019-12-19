@@ -94,12 +94,16 @@ set(TIMEMORY_GPERF_COMPONENTS
 
 set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
 
+string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
+
 # CMake options
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
 add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
+add_feature(CMAKE_C_FLAGS_${_CONFIG} "C compiler build type flags")
+add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
 
 set(BUILD_SHARED_LIBS ${_DEFAULT_BUILD_SHARED} CACHE BOOL "Build shared libraries")
 set(BUILD_STATIC_LIBS ${_DEFAULT_BUILD_STATIC} CACHE BOOL "Build static libraries")
@@ -111,7 +115,7 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
     set(TIMEMORY_BUILD_TOOLS OFF)
-    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
+    set(TIMEMORY_USE_PYTHON OFF)
 endif()
 
 if(TIMEMORY_SKIP_BUILD)
@@ -121,7 +125,6 @@ if(TIMEMORY_SKIP_BUILD)
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
     set(TIMEMORY_BUILD_TOOLS OFF)
-    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
 endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
@@ -157,8 +160,12 @@ add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 # Build settings
 add_option(TIMEMORY_BUILD_DOCS
     "Make a `doc` make target"  OFF ${_FEATURE})
+add_option(TIMEMORY_BUILD_TESTING
+    "Enable testing" OFF)
+add_option(TIMEMORY_BUILD_GTEST
+    "Enable GoogleTest" ${TIMEMORY_BUILD_TESTING} ${_FEATURE})
 add_option(TIMEMORY_BUILD_EXAMPLES
-    "Build the examples"  OFF)
+    "Build the examples"  ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_C
     "Build the C compatible library" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_PYTHON
@@ -167,12 +174,8 @@ add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
     "Enable building tools" ${${PROJECT_NAME}_MASTER_PROJECT})
-add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
-    "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
-add_option(TIMEMORY_BUILD_GTEST
-    "Enable GoogleTest" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_DEVELOPER
@@ -218,12 +221,14 @@ add_option(TIMEMORY_USE_VTUNE
     "Enable VTune marking API" ON)
 add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_USE_CUDA})
-add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
 add_option(TIMEMORY_USE_NVTX
     "Enable NVTX marking API" ${_USE_CUDA})
+add_option(TIMEMORY_USE_CUPTI
+    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_BUILD_CALIPER})
+add_option(TIMEMORY_USE_PYTHON
+    "Enable Python" ${TIMEMORY_BUILD_PYTHON})
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_USE_LIKWID
         "Enable LIKWID marker forwarding" ON)
@@ -259,7 +264,9 @@ if(TIMEMORY_BUILD_DOCS)
 endif()
 
 if(TIMEMORY_BUILD_PYTHON)
-    set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11")
+    set(PYBIND11_INSTALL ON CACHE BOOL "Don't install Pybind11")
+else()
+    set(PYBIND11_INSTALL OFF)
 endif()
 
 # clang-tidy

@@ -108,7 +108,7 @@ public:
         using mark_begin_t       = _TypeL<operation::pointer_operator<_Types, operation::mark_begin<_Types>>...>;
         using mark_end_t         = _TypeL<operation::pointer_operator<_Types, operation::mark_end<_Types>>...>;
         using construct_t        = _TypeL<operation::pointer_operator<_Types, operation::construct<_Types>>...>;
-        using customize_t        = _TypeL<operation::pointer_operator<_Types, operation::customize<_Types>>...>;
+        using audit_t        = _TypeL<operation::pointer_operator<_Types, operation::audit<_Types>>...>;
         using set_prefix_t       = _TypeL<operation::pointer_operator<_Types, operation::set_prefix<_Types>>...>;
         using get_data_t         = _TypeL<operation::pointer_operator<_Types, operation::get_data<_Types>>...>;
         using print_t            = _TypeL<operation::print<_Types>...>;
@@ -119,7 +119,7 @@ public:
         // clang-format on
     };
 
-    using impl_unique_concat_type = available_tuple<remove_duplicates<concat<Types...>>>;
+    using impl_unique_concat_type = available_tuple<concat<Types...>>;
 
 public:
     using string_t            = std::string;
@@ -176,7 +176,7 @@ public:
     using mark_begin_t    = typename filtered<impl_unique_concat_type>::mark_begin_t;
     using mark_end_t      = typename filtered<impl_unique_concat_type>::mark_end_t;
     using construct_t     = typename filtered<impl_unique_concat_type>::construct_t;
-    using customize_t     = typename filtered<impl_unique_concat_type>::customize_t;
+    using audit_t     = typename filtered<impl_unique_concat_type>::audit_t;
     using set_prefix_t    = typename filtered<impl_unique_concat_type>::set_prefix_t;
     using get_data_t      = typename filtered<impl_unique_concat_type>::get_data_t;
     using pointer_count_t = typename filtered<impl_unique_concat_type>::pointer_count_t;
@@ -193,9 +193,10 @@ public:
     explicit component_list(const captured_location_t& loc, const bool& store = false,
                             const bool& flat = settings::flat_profile());
 
-    template <typename _Func = init_func_t>
-    explicit component_list(_Func&& _func, const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile())
+    template <typename _Func>
+    explicit component_list(const _Func& _func, const string_t& key,
+                            const bool& store = false,
+                            const bool& flat  = settings::flat_profile())
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_is_pushed(false)
@@ -215,8 +216,8 @@ public:
         }
     }
 
-    template <typename _Func = init_func_t>
-    explicit component_list(_Func&& _func, const captured_location_t& loc,
+    template <typename _Func>
+    explicit component_list(const _Func& _func, const captured_location_t& loc,
                             const bool& store = false,
                             const bool& flat  = settings::flat_profile())
     : m_store(store && settings::enabled())
@@ -310,12 +311,12 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a customized operation (typically for GOTCHA)
+    // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>
-    void customize(_Args&&... _args)
+    void audit(_Args&&... _args)
     {
-        apply<void>::access<customize_t>(m_data, std::forward<_Args>(_args)...);
+        apply<void>::access<audit_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

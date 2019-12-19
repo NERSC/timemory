@@ -44,7 +44,12 @@ using lock_t         = std::unique_lock<mutex_t>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
-using user_bundle_t = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
+using custom_bundle_t = user_bundle<0, native_tag>;
+using auto_bundle_t   = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
+using comp_bundle_t   = typename auto_bundle_t::component_type;
+using bundle0_t       = tim::auto_tuple<wall_clock, cpu_util>;
+using bundle1_t       = tim::auto_list<cpu_clock, peak_rss>;
+using bundle2_t       = tim::auto_list<custom_bundle_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -99,20 +104,30 @@ class user_bundle_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-        using bundle0_t = tim::auto_tuple<wall_clock, cpu_util>;
-        using bundle1_t = tim::auto_list<cpu_clock, peak_rss>;
+        user_list_bundle::reset();
 
         auto bundle1_init = [](bundle1_t& _bundle) {
-            if(details::get_test_name() == "bundle_1")
-            {
-                PRINT_HERE("%s", details::get_test_name().c_str());
+            if(details::get_test_name() != "bundle_0" &&
+               details::get_test_name() != "bundle_3")
                 _bundle.initialize<cpu_clock, peak_rss>();
-            }
         };
 
         user_tuple_bundle::configure<bundle0_t>();
         user_list_bundle::configure<bundle1_t>(bundle1_init);
+
+        wc_size_orig = tim::storage<wall_clock>::instance()->size();
+        cu_size_orig = tim::storage<cpu_util>::instance()->size();
+        cc_size_orig = tim::storage<cpu_clock>::instance()->size();
+        pr_size_orig = tim::storage<peak_rss>::instance()->size();
+        ret          = 0;
     }
+
+protected:
+    size_t wc_size_orig;
+    size_t cu_size_orig;
+    size_t cc_size_orig;
+    size_t pr_size_orig;
+    long   ret;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -120,31 +135,149 @@ protected:
 TEST_F(user_bundle_tests, bundle_0)
 {
     {
-        TIMEMORY_BLANK_MARKER(user_bundle_t, details::get_test_name().c_str());
-        long ret = details::fibonacci(35);
-        printf("fibonacci(35) = %li\n", ret);
+        TIMEMORY_BLANK_MARKER(auto_bundle_t, details::get_test_name().c_str());
+        ret += details::fibonacci(35);
     }
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), 1);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), 1);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), 0);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), 0);
+
+    {
+        TIMEMORY_BLANK_MARKER(auto_bundle_t, details::get_test_name().c_str());
+        ret += details::fibonacci(35);
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 0;
+    auto pr_n = pr_size_orig + 0;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(user_bundle_tests, bundle_1)
 {
-    auto wc_size_orig = tim::storage<wall_clock>::instance()->size();
-    auto cu_size_orig = tim::storage<cpu_util>::instance()->size();
     {
-        TIMEMORY_BLANK_MARKER(user_bundle_t, details::get_test_name().c_str());
-        long ret = details::fibonacci(35);
-        printf("fibonacci(35) = %li\n", ret);
+        TIMEMORY_BLANK_MARKER(auto_bundle_t, details::get_test_name().c_str());
+        ret += details::fibonacci(35);
     }
-    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_size_orig + 1);
-    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_size_orig + 1);
-    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), 1);
-    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), 1);
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, bundle_2)
+{
+    {
+        comp_bundle_t _instance(details::get_test_name(), true);
+        _instance.get<user_tuple_bundle>().clear();
+
+        _instance.start();
+        ret += details::fibonacci(35);
+        _instance.stop();
+
+        _instance.start();
+        ret += details::fibonacci(35);
+        _instance.stop();
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 0;
+    auto cu_n = cu_size_orig + 0;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, bundle_3)
+{
+    using auto_hybrid_t  = tim::auto_hybrid<bundle0_t, bundle1_t>;
+    using comp_bundle1_t = typename bundle1_t::component_type;
+    auto init_func       = [](comp_bundle1_t& al) { al.initialize<cpu_clock>(); };
+
+    {
+        auto_hybrid_t _bundle(details::get_test_name(), true, false, init_func);
+        ret += details::fibonacci(35);
+    }
+
+    {
+        auto_hybrid_t _bundle(details::get_test_name());
+        ret += details::fibonacci(35);
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 0;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, bundle_4)
+{
+    using comp_bundle2_t = typename bundle2_t::component_type;
+
+    auto init_func = [](comp_bundle2_t& al) {
+        std::vector<std::string> _init = { "wall_clock", "cpu_clock" };
+        al.initialize<custom_bundle_t>();
+        auto _bundle = al.get<custom_bundle_t>();
+        if(_bundle)
+        {
+            tim::insert(*_bundle, _init);
+            tim::insert(*_bundle, { CPU_UTIL, PEAK_RSS });
+        }
+    };
+
+    {
+        bundle2_t _bundle(details::get_test_name(), true, false, init_func);
+        ret += details::fibonacci(35);
+    }
+
+    {
+        bundle2_t _bundle(details::get_test_name());
+        ret += details::fibonacci(35);
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -157,11 +290,13 @@ main(int argc, char** argv)
     tim::settings::verbose()     = 0;
     tim::settings::debug()       = false;
     tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);  // parses environment, sets output paths
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = false;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
     tim::timemory_finalize();

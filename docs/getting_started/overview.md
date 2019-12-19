@@ -5,9 +5,7 @@
 - Using timemory as an included sub-module
 - Using CMake and `find_package`
 - Using Makefiles
-- Timemory as an optional dependency in ~15 lines
-- Timemory as preload library
-    - `LD_PRELOAD` / `DYLD_INSERT_LIBRARIES` trink on Linux / macOS
+- Timemory as an optional dependency
 
 ## [Basics](basics.md)
 

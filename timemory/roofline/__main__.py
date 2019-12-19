@@ -52,6 +52,8 @@ def parse_args(add_run_args=False):
                         default="roofline")
     parser.add_argument("-D", "--output-dir", type=str, help="Output directory",
                         default=os.getcwd())
+    parser.add_argument("-b", "--bandwidth", type=str, help="Roofline bandwidth peak, \"dram\" as default",
+                        action='append', dest='bandwidths', choices=["l1", "l2", "l3", "dram"], default=['dram'])
     parser.add_argument("--format", type=str,
                         help="Image format", default="png")
     parser.add_argument("-T", "--title", type=str,
@@ -107,12 +109,14 @@ def plot(args):
         ai_ranks = ai_data["timemory"]["ranks"]
         op_ranks = op_data["timemory"]["ranks"]
 
+        band_labels = [element.upper() for element in args.bandwidths]
+
         if len(ai_ranks) != len(op_ranks):
             raise RuntimeError("Number of ranks in output files is different: {} vs. {}".format(
                 len(ai_ranks), len(op_ranks)))
 
         if len(op_data) == 1:
-            _roofline.plot_roofline(ai_ranks[0], op_ranks[0], args.display,
+            _roofline.plot_roofline(ai_ranks[0], op_ranks[0], band_labels, args.display,
                                     fname, args.format, fdir, args.title,
                                     args.plot_dimensions[0], args.plot_dimensions[1],
                                     args.plot_dimensions[2], _inst_roofline)
@@ -121,7 +125,7 @@ def plot(args):
             for _ai, _op in zip(ai_ranks, op_ranks):
                 _fname = "{}_{}".format(fname, _rank)
                 _title = "{} (MPI rank: {})".format(args.title, _rank)
-                _roofline.plot_roofline(_ai, _op, args.display,
+                _roofline.plot_roofline(_ai, _op, band_labels, args.display,
                                         _fname, args.format, fdir, _title,
                                         args.plot_dimensions[0], args.plot_dimensions[1],
                                         args.plot_dimensions[2],_inst_roofline)

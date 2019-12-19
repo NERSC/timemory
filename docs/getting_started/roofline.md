@@ -53,7 +53,6 @@ python -m timemory.roofline -- ./test_cxx_roofline
 
 | Option                | Type       | Description                                            |
 | --------------------- | ---------- | ------------------------------------------------------ |
-| `-p`, `--preload`     | bool       | Enable `libtimemory-preload`                           |
 | `-k`, `--keep-going`  | bool       | Continue even if execution returned non-zero exit code |
 | `-t`, `--rtype`       | Label      | Roofline type                                          |
 | `-r`, `--rerun`       | `ai`, `op` | Re-run this mode and not the other mode                |

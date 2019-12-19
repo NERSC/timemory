@@ -46,6 +46,8 @@ set(timemory_headers
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
     ${cxx_headers_category_bits} ${cxx_headers_general} ${compat_headers})
 
+source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_headers})
+
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
@@ -87,9 +89,6 @@ if(WIN32)
 endif()
 
 set(_LINKER_LANGUAGE CXX)
-#if(TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUPTI)
-#    set(_LINKER_LANGUAGE CUDA)
-#endif()
 
 # routinely have problems with OBJECT libraries on Windows
 if(NOT WIN32 AND (_BUILD_SHARED_CXX OR _BUILD_STATIC_CXX))

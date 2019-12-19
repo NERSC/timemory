@@ -22,9 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file cuda_event.hpp
- * \headerfile cuda_event.hpp "timemory/cuda_event.hpp"
- * This component provides kernel timer
+/** \file components/cuda/event.hpp
+ * \headerfile components/cuda/event.hpp "timemory/components/cuda/event.hpp"
+ * This component provides a CUDA kernel timer via cudaEvent_t
  *
  */
 
@@ -49,7 +49,7 @@ namespace tim
 namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
-
+extern template struct base<cuda_event, float>;
 #endif
 
 //--------------------------------------------------------------------------------------//

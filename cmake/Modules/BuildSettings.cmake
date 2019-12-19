@@ -101,56 +101,13 @@ endif()
 #
 add_interface_library(timemory-vector)
 add_interface_library(timemory-arch)
-add_interface_library(timemory-avx512)
-target_link_libraries(timemory-avx512 INTERFACE timemory-arch)
-# always provide vectorization width
 target_link_libraries(timemory-compile-options INTERFACE timemory-vector)
 
-find_package(CpuArch)
+set(VECTOR_DEFINITION               TIMEMORY_VEC)
+set(VECTOR_INTERFACE_TARGET         timemory-vector)
+set(ARCH_INTERFACE_TARGET           timemory-arch)
 
-if(CpuArch_FOUND)
-
-    set(_VEC_256 OFF)
-    set(_VEC_512 OFF)
-    foreach(_ARCH ${CpuArch_FEATURES})
-        if("${_ARCH}" MATCHES ".*avx512.*" OR "${_ARCH}" MATCHES ".*AVX512.*")
-            set(_VEC_512 ON)
-        elseif("${_ARCH}" MATCHES ".*avx.*" OR "${_ARCH}" MATCHES ".*AVX.*")
-            set(_VEC_256 ON)
-        endif()
-    endforeach()
-
-    if(_VEC_512)
-        message(STATUS "Compiling with vector width: 512")
-        target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=512)
-    elseif(_VEC_256)
-        message(STATUS "Compiling with vector width: 256")
-        target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=256)
-    else()
-        message(STATUS "Compiling with vector width: 128")
-        target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=128)
-    endif()
-
-    if(TIMEMORY_USE_ARCH)
-        foreach(_ARCH ${CpuArch_FEATURES})
-            add_target_flag_if_avail(timemory-arch "-m${_ARCH}")
-            # intel compiler
-            if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
-                add_target_flag_if_avail(timemory-arch "-ax${_ARCH}")
-            endif()
-        endforeach()
-    endif()
-
-endif()
-
-if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
-    add_target_flag_if_avail(timemory-avx512 "-xMIC-AVX512")
-endif()
-
-if(NOT CMAKE_C_COMPILER_IS_INTEL OR NOT CMAKE_CXX_COMPILER_IS_INTEL)
-    add_target_flag_if_avail(timemory-avx512 "-mavx512f" "-mavx512pf" "-mavx512er" "-mavx512cd")
-endif()
-
+include(ArchConfig)
 
 #----------------------------------------------------------------------------------------#
 # sanitizer
@@ -209,8 +166,8 @@ endif()
 
 
 #----------------------------------------------------------------------------------------#
-# -------------------------------------------------------------------------------------- #
 # user customization
 #
 add_user_flags(timemory-compile-options "C")
 add_user_flags(timemory-compile-options "CXX")
+add_user_flags(timemory-compile-options "CUDA")

@@ -830,7 +830,8 @@ struct profiler
     using event_val_t      = impl::kernel_data_t::event_val_t;
     using metric_val_t     = impl::kernel_data_t::metric_val_t;
     using results_t        = std::vector<result>;
-    using kernel_results_t = std::unordered_map<std::string, results_t>;
+    using kernel_pair_t    = std::pair<std::string, results_t>;
+    using kernel_results_t = std::vector<kernel_pair_t>;
 
     profiler(const strvec_t&, const strvec_t&, const int = 0) {}
 
@@ -852,6 +853,11 @@ struct profiler
     metric_val_t    get_metric_values(const char*) { return metric_val_t{}; }
     const strvec_t& get_event_names() const { return m_event_names; }
     const strvec_t& get_metric_names() const { return m_metric_names; }
+
+    kernel_results_t get_kernel_events_and_metrics(const strvec_t&)
+    {
+        return kernel_results_t{};
+    }
 
 private:
     // bool     m_is_running    = false;

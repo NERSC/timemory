@@ -54,6 +54,7 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case CPU_ROOFLINE_SP_FLOPS: obj.template init<cpu_roofline_sp_flops>(); break;
         case CPU_UTIL: obj.template init<cpu_util>(); break;
         case CUDA_EVENT: obj.template init<cuda_event>(); break;
+        case CUDA_PROFILER: obj.template init<cuda_profiler>(); break;
         case CUPTI_ACTIVITY: obj.template init<cupti_activity>(); break;
         case CUPTI_COUNTERS: obj.template init<cupti_counters>(); break;
         case DATA_RSS: obj.template init<data_rss>(); break;
@@ -89,9 +90,9 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case THREAD_CPU_CLOCK: obj.template init<thread_cpu_clock>(); break;
         case THREAD_CPU_UTIL: obj.template init<thread_cpu_util>(); break;
         case TRIP_COUNT: obj.template init<trip_count>(); break;
-        case USER_TUPLE_BUNDLE: obj.template init<user_tuple_bundle>(); break;
-        case USER_LIST_BUNDLE: obj.template init<user_list_bundle>(); break;
         case USER_CLOCK: obj.template init<user_clock>(); break;
+        case USER_LIST_BUNDLE: obj.template init<user_list_bundle>(); break;
+        case USER_TUPLE_BUNDLE: obj.template init<user_tuple_bundle>(); break;
         case VIRTUAL_MEMORY: obj.template init<virtual_memory>(); break;
         case VOLUNTARY_CONTEXT_SWITCH:
             obj.template init<voluntary_context_switch>();
@@ -100,6 +101,76 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case VTUNE_FRAME: obj.template init<vtune_frame>(); break;
         case WALL_CLOCK: obj.template init<wall_clock>(); break;
         case WRITTEN_BYTES: obj.template init<written_bytes>(); break;
+        case TIMEMORY_COMPONENTS_END:
+        default: break;
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+inline void
+insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
+{
+    using namespace component;
+    switch(comp)
+    {
+        case CALIPER: obj.template insert<caliper>(); break;
+        case CPU_CLOCK: obj.template insert<cpu_clock>(); break;
+        case CPU_ROOFLINE_DP_FLOPS: obj.template insert<cpu_roofline_dp_flops>(); break;
+        case CPU_ROOFLINE_FLOPS: obj.template insert<cpu_roofline_flops>(); break;
+        case CPU_ROOFLINE_SP_FLOPS: obj.template insert<cpu_roofline_sp_flops>(); break;
+        case CPU_UTIL: obj.template insert<cpu_util>(); break;
+        case CUDA_EVENT: obj.template insert<cuda_event>(); break;
+        case CUDA_PROFILER: obj.template insert<cuda_profiler>(); break;
+        case CUPTI_ACTIVITY: obj.template insert<cupti_activity>(); break;
+        case CUPTI_COUNTERS: obj.template insert<cupti_counters>(); break;
+        case DATA_RSS: obj.template insert<data_rss>(); break;
+        case GPERF_CPU_PROFILER: obj.template insert<gperf_cpu_profiler>(); break;
+        case GPERF_HEAP_PROFILER: obj.template insert<gperf_heap_profiler>(); break;
+        case GPU_ROOFLINE_DP_FLOPS: obj.template insert<gpu_roofline_dp_flops>(); break;
+        case GPU_ROOFLINE_FLOPS: obj.template insert<gpu_roofline_flops>(); break;
+        case GPU_ROOFLINE_HP_FLOPS: obj.template insert<gpu_roofline_hp_flops>(); break;
+        case GPU_ROOFLINE_SP_FLOPS: obj.template insert<gpu_roofline_sp_flops>(); break;
+        case LIKWID_NVMON: obj.template insert<likwid_nvmon>(); break;
+        case LIKWID_PERFMON: obj.template insert<likwid_perfmon>(); break;
+        case MONOTONIC_CLOCK: obj.template insert<monotonic_clock>(); break;
+        case MONOTONIC_RAW_CLOCK: obj.template insert<monotonic_raw_clock>(); break;
+        case NUM_IO_IN: obj.template insert<num_io_in>(); break;
+        case NUM_IO_OUT: obj.template insert<num_io_out>(); break;
+        case NUM_MAJOR_PAGE_FAULTS: obj.template insert<num_major_page_faults>(); break;
+        case NUM_MINOR_PAGE_FAULTS: obj.template insert<num_minor_page_faults>(); break;
+        case NUM_MSG_RECV: obj.template insert<num_msg_recv>(); break;
+        case NUM_MSG_SENT: obj.template insert<num_msg_sent>(); break;
+        case NUM_SIGNALS: obj.template insert<num_signals>(); break;
+        case NUM_SWAP: obj.template insert<num_swap>(); break;
+        case NVTX_MARKER: obj.template insert<nvtx_marker>(); break;
+        case PAGE_RSS: obj.template insert<page_rss>(); break;
+        case PAPI_ARRAY: obj.template insert<papi_array_t>(); break;
+        case PEAK_RSS: obj.template insert<peak_rss>(); break;
+        case PRIORITY_CONTEXT_SWITCH:
+            obj.template insert<priority_context_switch>();
+            break;
+        case PROCESS_CPU_CLOCK: obj.template insert<process_cpu_clock>(); break;
+        case PROCESS_CPU_UTIL: obj.template insert<process_cpu_util>(); break;
+        case READ_BYTES: obj.template insert<read_bytes>(); break;
+        case STACK_RSS: obj.template insert<stack_rss>(); break;
+        case SYS_CLOCK: obj.template insert<system_clock>(); break;
+        case TAU_MARKER: obj.template insert<tau_marker>(); break;
+        case THREAD_CPU_CLOCK: obj.template insert<thread_cpu_clock>(); break;
+        case THREAD_CPU_UTIL: obj.template insert<thread_cpu_util>(); break;
+        case TRIP_COUNT: obj.template insert<trip_count>(); break;
+        case USER_CLOCK: obj.template insert<user_clock>(); break;
+        case USER_LIST_BUNDLE: obj.template insert<user_list_bundle>(); break;
+        case USER_TUPLE_BUNDLE: obj.template insert<user_tuple_bundle>(); break;
+        case VIRTUAL_MEMORY: obj.template insert<virtual_memory>(); break;
+        case VOLUNTARY_CONTEXT_SWITCH:
+            obj.template insert<voluntary_context_switch>();
+            break;
+        case VTUNE_EVENT: obj.template insert<vtune_event>(); break;
+        case VTUNE_FRAME: obj.template insert<vtune_frame>(); break;
+        case WALL_CLOCK: obj.template insert<wall_clock>(); break;
+        case WRITTEN_BYTES: obj.template insert<written_bytes>(); break;
         case TIMEMORY_COMPONENTS_END:
         default: break;
     }
@@ -130,6 +201,28 @@ initialize(_CompList<_CompTypes...>& obj, const int ncomponents, const int* comp
 
 //--------------------------------------------------------------------------------------//
 
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
+          template <typename, typename...> class _Container, typename _Intp,
+          typename... _ExtraArgs>
+void
+insert(_Bundle<_Idx, _Type>& obj, const _Container<_Intp, _ExtraArgs...>& components)
+{
+    for(auto itr : components)
+        insert(static_cast<TIMEMORY_COMPONENT>(itr), obj);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+void
+insert(_Bundle<_Idx, _Type>& obj, const int ncomponents, const int* components)
+{
+    for(int i = 0; i < ncomponents; ++i)
+        insert(static_cast<TIMEMORY_COMPONENT>(components[i]), obj);
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _StringT, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
 _Container<TIMEMORY_COMPONENT>
@@ -156,6 +249,7 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         _instance["cpu_roofline_sp_flops"]    = CPU_ROOFLINE_SP_FLOPS;
         _instance["cpu_util"]                 = CPU_UTIL;
         _instance["cuda_event"]               = CUDA_EVENT;
+        _instance["cuda_profiler"]            = CUDA_PROFILER;
         _instance["cupti_activity"]           = CUPTI_ACTIVITY;
         _instance["cupti_counters"]           = CUPTI_COUNTERS;
         _instance["data_rss"]                 = DATA_RSS;
@@ -231,9 +325,9 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
             "'cpu_clock', 'cpu_roofline', 'cpu_roofline_double', 'cpu_roofline_dp', "
             "'cpu_roofline_dp_flops', 'cpu_roofline_flops', 'cpu_roofline_single', "
             "'cpu_roofline_sp', 'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', "
-            "'cupti_activity', 'cupti_counters', 'data_rss', 'gperf-cpu', 'gperf-heap', "
-            "'gperf_cpu_profiler', 'gperf_heap_profiler', 'gperftools-cpu', "
-            "'gperftools-heap', 'gpu_roofline', 'gpu_roofline_double', "
+            "'cuda_profiler', 'cupti_activity', 'cupti_counters', 'data_rss', "
+            "'gperf_cpu', 'gperf_cpu_profiler', 'gperf_heap', 'gperf_heap_profiler', "
+            "'gperftools-cpu', 'gperftools-heap', 'gpu_roofline', 'gpu_roofline_double', "
             "'gpu_roofline_dp', 'gpu_roofline_dp_flops', 'gpu_roofline_flops', "
             "'gpu_roofline_half', 'gpu_roofline_hp', 'gpu_roofline_hp_flops', "
             "'gpu_roofline_single', 'gpu_roofline_sp', 'gpu_roofline_sp_flops', "

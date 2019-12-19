@@ -41,6 +41,32 @@ namespace dmp
 //--------------------------------------------------------------------------------------//
 
 inline bool
+using_mpi()
+{
+#if defined(TIMEMORY_USE_MPI)
+    return mpi::is_initialized();
+#else
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+using_upcxx()
+{
+#if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)
+    return (mpi::is_initialized()) ? false : upc::is_initialized();
+#elif defined(TIMEMORY_USE_UPCXX)
+    return upc::is_initialized();
+#else
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
 is_supported()
 {
 #if defined(TIMEMORY_USE_UPCXX)

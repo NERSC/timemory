@@ -50,7 +50,17 @@ struct sfinae_true : std::true_type
 ///
 template <typename _Tp>
 struct is_available : std::true_type
-{};
+{
+    static bool get() { return get_runtime_value(); }
+    static void set(bool val) { get_runtime_value() = val; }
+
+private:
+    static bool& get_runtime_value()
+    {
+        static bool _instance = true;
+        return _instance;
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that updating w.r.t. another instance should
@@ -262,18 +272,18 @@ namespace details
 {
 template <typename T, typename... Args>
 static auto
-test_customize_support(int)
-    -> sfinae_true<decltype(std::declval<T>().customize(std::declval<Args>()...))>;
+test_audit_support(int)
+    -> sfinae_true<decltype(std::declval<T>().audit(std::declval<Args>()...))>;
 
 template <typename, typename... Args>
 static auto
-test_customize_support(long) -> std::false_type;
+test_audit_support(long) -> std::false_type;
 }  // namespace details
 
 //----------------------------------------------------------------------------------//
 
 template <typename T, typename... Args>
-struct test_customize_support : decltype(details::test_customize_support<T, Args...>(0))
+struct test_audit_support : decltype(details::test_audit_support<T, Args...>(0))
 {};
 
 }  // namespace trait
@@ -578,6 +588,16 @@ struct supports_custom_record<component::cpu_roofline<_Types...>> : std::true_ty
 
 template <>
 struct is_available<component::cuda_event> : std::false_type
+{};
+
+template <>
+struct is_available<component::cuda_profiler> : std::false_type
+{};
+
+#else
+
+template <>
+struct external_output_handling<component::cuda_profiler> : std::true_type
 {};
 
 #endif  // TIMEMORY_USE_CUDA

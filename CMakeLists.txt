@@ -2,7 +2,7 @@
 #       CMake settings
 ##########################################################################################
 
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     set(MSG "")
@@ -16,12 +16,32 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
     cmake_policy(SET CMP0079 NEW)
+    cmake_policy(SET CMP0082 NEW)
 endif()
+# set these as the defaults
+set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
 # this gets annoying
-if(TIMEMORY_BUILD_GTEST)
+if(TIMEMORY_BUILD_GTEST OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
         "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
 endif()
+#
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+# install directories
+include(GNUInstallDirs)
+# cmake installation folder
+set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
+    CACHE PATH "Installation directory for CMake package config files")
+
+# create the full path version and generic path versions
+foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
+    # generic "PROJECT_INSTALL_" variables (used by documentation)"
+    set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
+endforeach()
 
 #----------------------------------------------------------------------------------------#
 #   versioning
@@ -118,6 +138,7 @@ else()
         if(NOT TIMEMORY_BUILD_QUIET)
             message(AUTHOR_WARNING "BUILD_SHARED_LIBS=OFF --> disabling TIMEMORY_BUILD_PYTHON...")
             set(TIMEMORY_BUILD_PYTHON OFF)
+            set(TIMEMORY_USE_PYTHON OFF)
         endif()
     endif()
 endif()
@@ -153,8 +174,6 @@ unset(_TLS_OPTIONS)
 
 include(ClangFormat)
 include(Compilers)
-include(GNUInstallDirs)
-include(ProjectSettings)
 include(BuildSettings)
 include(Packages)
 include(CMakeParseArguments)

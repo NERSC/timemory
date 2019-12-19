@@ -326,36 +326,41 @@ TEST_F(gotcha_tests, work_macro)
         TIMEMORY_CXX_GOTCHA(work_gotcha_t, 0, ext::do_work);
     };
 
-    TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
+    auto _exec = [&]() {
+        TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
 
-    float  fsum = 0.0;
-    double dsum = 0.0;
-    for(int i = 0; i < nitr; ++i)
-    {
-        auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
-        fsum += std::get<0>(ret);
-        dsum += std::get<1>(ret);
-    }
-
-    auto rank = tim::mpi::rank();
-    auto size = tim::mpi::size();
-    for(int i = 0; i < size; ++i)
-    {
-        tim::mpi::barrier();
-        if(i == rank)
+        float  fsum = 0.0;
+        double dsum = 0.0;
+        for(int i = 0; i < nitr; ++i)
         {
-            printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
-            printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+            auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
+            fsum += std::get<0>(ret);
+            dsum += std::get<1>(ret);
+        }
+
+        auto rank = tim::mpi::rank();
+        auto size = tim::mpi::size();
+        for(int i = 0; i < size; ++i)
+        {
+            tim::mpi::barrier();
+            if(i == rank)
+            {
+                printf("\n");
+                printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+                printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+            }
+            tim::mpi::barrier();
         }
         tim::mpi::barrier();
-    }
-    tim::mpi::barrier();
-    if(rank == 0)
-        printf("\n");
+        if(rank == 0)
+            printf("\n");
 
-    ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum, -1829370.79, tolerance);
+        ASSERT_NEAR(fsum, -2416347.50, tolerance);
+        ASSERT_NEAR(dsum, -1829370.79, tolerance);
+    };
+
+    for(auto i = 0; i < 4; ++i)
+        _exec();
 }
 
 //======================================================================================//
@@ -941,15 +946,22 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    _argc                        = argc;
-    _argv                        = argv;
+    _argc = argc;
+    _argv = argv;
+
+    tim::settings::verbose()     = 0;
+    tim::settings::debug()       = false;
+    tim::settings::json_output() = true;
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
-    tim::mpi::finalize();
+    tim::dmp::finalize();
     return ret;
 }
 

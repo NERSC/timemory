@@ -35,6 +35,7 @@
 #include "timemory/settings.hpp"
 
 #include <array>
+#include <cstddef>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -50,7 +51,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 
-using hash_result_type          = std::hash<std::string>::result_type;
+using hash_result_type          = std::size_t;
 using graph_hash_map_t          = std::unordered_map<hash_result_type, std::string>;
 using graph_hash_alias_t        = std::unordered_map<hash_result_type, hash_result_type>;
 using graph_hash_map_ptr_t      = std::shared_ptr<graph_hash_map_t>;
