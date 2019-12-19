@@ -167,7 +167,7 @@ class ert_counter():
         _data = self.data           ## we can use the same function for transaction bandwidth
         _list = []
         for i in range(len(_data)):
-            _list.append((total / _data[i])/32)
+            _list.append((total / _data[i])/WARP_SIZE)
         return _list
 
 
@@ -279,8 +279,6 @@ def get_peak_ops(roof_data, flop_info=None):
 
     print("PEAK: {}".format(peak))
 
-#    peak[:] = [ x/32 for x in peak]
-
     peak_ops = [peak, info]
     return peak_ops
 
@@ -306,7 +304,6 @@ def get_peak_int_ops(roof_data, flop_info=None):
         total_ops = element.total_ops / GIGABYTE
         _label = element.label
         _data = element.counter.get_warp_ops(total_ops) ## this gives total_ops/repr_data (time) ops/sec
-        #_int_data = _data/32
 
         if VERBOSE > 2:
             print("LABEL: {}, DATA: {}".format(_label, _data))
@@ -328,8 +325,6 @@ def get_peak_int_ops(roof_data, flop_info=None):
 
     print("PEAK: {}".format(peak))
 
-#    peak[:] = [ x/32 for x in peak]
-    print(peak)
     peak_ops = [peak, info]
     return peak_ops
 
@@ -515,6 +510,8 @@ def get_hotspots(op_data, ai_data):
     """
     Get the hotspots information
     """
+    import itertools
+    marker = itertools.cycle(('o', ',', '^', '+', '*','>','<'))
 
     if not "type" in op_data or not "type" in ai_data:
         return []
@@ -643,7 +640,8 @@ def get_hotspots(op_data, ai_data):
         if flop <= 1.0e-3 or bandwidth <= 0.0:
             continue
 
-        hotspots.append([intensity, flop, proportion, label])
+        my_marker = next(marker)
+        hotspots.append([intensity, flop, proportion,my_marker, label])
     return hotspots
 
 
@@ -691,14 +689,12 @@ def get_hotspots_integer(op_data, ai_data):
         return None
 
     def get_int_ops_scaled(_data, extra=[]):
-        #opts = ["flops", "counted_ops", "flop_count", "flop_count_sp", "flop_count_dp",
-                #"flop_count_hp", "DP operations", "SP operations"] + extra
         opts = ["inst_integer"]
         for opt in opts:
             if opt in _data:
                 value = float(_data[opt])
                 if value > 0.0:
-                    return value/32 # scale it by 32 because its a thread level counter
+                    return value/WARP_SIZE # scale it by 32 because its a thread level counter
         return None
 
     def get_HBM_transactions(_data, extra=[]): # each transaction is 32 bytes long
@@ -710,7 +706,7 @@ def get_hotspots_integer(op_data, ai_data):
             return _HBM_transactions
 
         else:
-            print("transactions are zeroo")
+            print("No Memory Transactions counted")
             return 0
 
     def get_L2_transactions(_data, extra=[]):
@@ -744,46 +740,26 @@ def get_hotspots_integer(op_data, ai_data):
 
     all_runtime = {}
     for i in range(0, len(ai_graph_data)):
-        ##if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
-        ##    continue
-
         ai_repr = ai_graph_data[i]["entry"]["repr_data"]
-        #op_repr = op_graph_data[i]["entry"]["repr_data"]
         all_runtime [ai_graph_data[i]["hash"]] = get_runtime(ai_repr)
 
-    # for rt in all_runtime:
-    #     avg_runtime += rt
-    #
-    # if len(all_runtime) > 1:
-    #     max_runtime = max(all_runtime)
-    #     avg_runtime -= max_runtime
-    #     avg_runtime /= len(all_runtime) - 1.0
+
 
     for i in range(0, len(op_graph_data)):
-        # if check_ignore(ai_graph_data[i]["prefix"], op_graph_data[i]["prefix"]):
-        #     continue
 
-    #    runtimes = []
         Iops = None
         HBM_transactions = None
         L1_transactions = None
         L2_transactions = None
 
-        #ai_repr = ai_graph_data[i]["entry"]["repr_data"]
         op_repr = op_graph_data[i]["entry"]["repr_data"]
 
         label = op_graph_data[i]["prefix"]
         if "thrust" in label:
             label = "thrust kernel"
-        elif "program_gpu" in label:
-            label = "program"
-        elif "align_sequences":
-            label = "GPU-BSW-Kernel"
         else:
             label = label.split("(")[0]
 
-
-        #runtimes[ai_graph_data[i]["prefix"]] =  all_runtime[ai_graph_data[i]["prefix"]] #+= filter(None, [get_runtime(ai_repr), get_runtime(op_repr)])
 
         if op_type == "gpu":
             Iops = get_int_ops_scaled(op_repr)
@@ -798,27 +774,11 @@ def get_hotspots_integer(op_data, ai_data):
             if L2_transactions == 0:
                 continue
         else:
-            print("selected GPU_int roofline, no GPU data available")
-
-        # elif op_type == "cpu":
-        #     flop = get_flops(op_repr)
-        #     if flop is None:
-        #         flop = get_flops(op_repr, ["counted"])
-        #
-        # if flop is None:
-        #     continue
-
-        # if ai_type == "cpu":
-        #     bandwidth = get_bandwidth(ai_repr)
-        #     if bandwidth is None:
-        #         bandwidth = get_bandwidth(ai_repr, ["counted"])
+            print("no GPU data available")
 
         runtime = 0.0
         runtime = all_runtime[op_graph_data[i]["hash"]]
 
-        # for rt in runtimes:
-        #     runtime += rt
-        # runtime /= len(runtimes)
 
         #hotspot for HBM
         HBM_intensity = Iops / HBM_transactions # if bandwidth != 0.0 else 0.0
@@ -914,7 +874,7 @@ class plot_parameters():
 #
 def plot_roofline(ai_data, op_data, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
-                  width=1600, height=1200, dpi=100):
+                  width=1600, height=1200, dpi=100, inst_roofline=False):
     """
     Plot the roofline
     """
@@ -931,14 +891,21 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
 
     info = op_data["unit_repr"] if "unit_repr" in op_data else None
 
-    #peak_flop = get_peak_ops(peak_data, info)
-    #peak_flop = get_peak_int_ops (peak_data, info)
-    peak_flop = get_peak_int_theo()
-    #peak_band = get_peak_bandwidth(band_data)
-    #peak_band = get_peak_bandwidth_txns(band_data)
-    peak_band = get_theo_bandwidth_txns()
-    #hotspots = get_hotspots(op_data, ai_data)
-    hotspots = get_hotspots_integer(op_data, ai_data)
+    if inst_roofline:
+        peak_flop = get_peak_int_theo()
+    else:
+        peak_flop = get_peak_ops(peak_data, info)
+
+    if inst_roofline:
+        peak_band = get_theo_bandwidth_txns()
+    else:
+        peak_band = get_peak_bandwidth(band_data)
+
+    if inst_roofline:
+        hotspots = get_hotspots_integer(op_data, ai_data)
+    else:
+        hotspots = get_hotspots(op_data, ai_data)
+
 
     print("peak_flop = {}, peak_band = {}".format(peak_flop, peak_band))
 

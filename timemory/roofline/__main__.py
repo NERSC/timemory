@@ -63,14 +63,10 @@ def parse_args(add_run_args=False):
                         help="MPI Rank", default=None)
     parser.add_argument("-v", "--verbose", type=int,
                         help="Verbosity", default=None)
+
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
-        parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
-                            choices=["cpu_roofline", "cpu_roofline_sp",
-                                     "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
-                                     "gpu_roofline_sp", "gpu_roofline_dp", "gpu_roofline_inst"],
-                            default="cpu_roofline_dp")
         parser.add_argument("-k", "--keep-going", help="Continue despite execution errors",
                             action='store_true')
         parser.add_argument("-r", "--rerun", help="Re-run this mode and not the other", type=str,
@@ -82,11 +78,20 @@ def parse_args(add_run_args=False):
                             type=str, help="AI intensity input")
         parser.add_argument("-op", "--operations",
                             type=str, help="Operations input")
+        parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
+                            choices=["cpu_roofline", "cpu_roofline_sp",
+                                     "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
+                                     "gpu_roofline_sp", "gpu_roofline_dp", "gpu_roofline_inst"],
+                            default="cpu_roofline_dp")
 
     return parser.parse_args()
 
 
 def plot(args):
+    _inst_roofline = False
+
+    if "gpu_roofline_inst" in args.rtype:
+        _inst_roofline = True
 
     try:
         fname = os.path.basename(args.output_file)
@@ -109,7 +114,7 @@ def plot(args):
             _roofline.plot_roofline(ai_ranks[0], op_ranks[0], args.display,
                                     fname, args.format, fdir, args.title,
                                     args.plot_dimensions[0], args.plot_dimensions[1],
-                                    args.plot_dimensions[2])
+                                    args.plot_dimensions[2], args.rtype)
         else:
             _rank = 0
             for _ai, _op in zip(ai_ranks, op_ranks):
@@ -118,7 +123,7 @@ def plot(args):
                 _roofline.plot_roofline(_ai, _op, args.display,
                                         _fname, args.format, fdir, _title,
                                         args.plot_dimensions[0], args.plot_dimensions[1],
-                                        args.plot_dimensions[2])
+                                        args.plot_dimensions[2],args.rtype)
                 _rank += 1
 
     except Exception as e:
