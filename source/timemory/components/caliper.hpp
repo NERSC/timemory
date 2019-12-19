@@ -44,22 +44,22 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<caliper, void, policy::global_init>;
+extern template struct base<caliper, void>;
 
 #endif
 
-struct caliper : public base<caliper, void, policy::global_init>
+struct caliper : public base<caliper, void>
 {
     // timemory component api
     using value_type = void;
     using this_type  = caliper;
-    using base_type  = base<this_type, value_type, policy::global_init>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "caliper"; }
     static std::string description() { return "caliper"; }
     static value_type  record() {}
 
-    static void invoke_global_init(storage_type*) { cali::init(); }
+    static void global_init(storage_type*) { cali::init(); }
 
     caliper(const std::string& _channel = get_channel(),
             const int& _attributes = get_attributes(), const std::string& _prefix = "")

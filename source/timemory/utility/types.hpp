@@ -44,7 +44,7 @@ namespace details
 template <typename StorageType>
 struct storage_deleter;
 
-template <typename ObjectType>
+template <typename Type>
 class storage;
 
 template <typename _Tp>
@@ -57,7 +57,7 @@ using storage_singleton_t =
 
 namespace impl
 {
-template <typename ObjectType, bool IsAvailable>
+template <typename Type, bool ImplementsStorage>
 class storage
 {};
 }  // namespace impl

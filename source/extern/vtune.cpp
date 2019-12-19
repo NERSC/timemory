@@ -44,8 +44,8 @@ namespace component
 {
 //
 //
-template struct base<vtune_event, void, policy::global_init, policy::global_finalize>;
-template struct base<vtune_frame, void, policy::global_init, policy::global_finalize>;
+template struct base<vtune_event, void>;
+template struct base<vtune_frame, void>;
 //
 //
 }  // namespace component

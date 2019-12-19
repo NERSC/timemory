@@ -46,22 +46,12 @@ namespace component
 //
 //
 template struct base<cpu_roofline<float, double>,
-                     std::pair<std::vector<long long>, double>, policy::thread_init,
-                     policy::thread_finalize, policy::global_finalize,
-                     policy::serialization>;
-
-template struct base<cpu_roofline<float>, std::pair<std::vector<long long>, double>,
-                     policy::thread_init, policy::thread_finalize,
-                     policy::global_finalize, policy::serialization>;
-
-template struct base<cpu_roofline<double>, std::pair<std::vector<long long>, double>,
-                     policy::thread_init, policy::thread_finalize,
-                     policy::global_finalize, policy::serialization>;
+                     std::pair<std::vector<long long>, double>>;
+template struct base<cpu_roofline<float>, std::pair<std::vector<long long>, double>>;
+template struct base<cpu_roofline<double>, std::pair<std::vector<long long>, double>>;
 
 // template struct cpu_roofline<float, double>;
-
 // template struct cpu_roofline<float>;
-
 // template struct cpu_roofline<double>;
 //
 //

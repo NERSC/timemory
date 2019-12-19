@@ -32,7 +32,8 @@
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
-#include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
@@ -51,17 +52,13 @@ namespace component
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<cpu_roofline<float, double>,
-                            std::pair<std::vector<long long>, double>,
-                            policy::thread_init, policy::thread_finalize,
-                            policy::global_finalize, policy::serialization>;
+                            std::pair<std::vector<long long>, double>>;
 
-extern template struct base<
-    cpu_roofline<float>, std::pair<std::vector<long long>, double>, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+extern template struct base<cpu_roofline<float>,
+                            std::pair<std::vector<long long>, double>>;
 
-extern template struct base<
-    cpu_roofline<double>, std::pair<std::vector<long long>, double>, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+extern template struct base<cpu_roofline<double>,
+                            std::pair<std::vector<long long>, double>>;
 
 #endif
 
@@ -80,22 +77,18 @@ extern template struct base<
 //
 template <typename... _Types>
 struct cpu_roofline
-: public base<cpu_roofline<_Types...>, std::pair<std::vector<long long>, double>,
-              policy::thread_init, policy::thread_finalize, policy::global_finalize,
-              policy::serialization>
+: public base<cpu_roofline<_Types...>, std::pair<std::vector<long long>, double>>
 {
     static_assert(!is_one_of<cuda::fp16_t, std::tuple<_Types...>>::value,
                   "Error! No CPU roofline support for cuda::fp16_t");
 
-    using size_type  = std::size_t;
-    using event_type = std::vector<int>;
-    using array_type = std::vector<long long>;
-    using data_type  = long long*;
-    using value_type = std::pair<array_type, double>;
-    using this_type  = cpu_roofline<_Types...>;
-    using base_type =
-        base<this_type, value_type, policy::thread_init, policy::thread_finalize,
-             policy::global_finalize, policy::serialization>;
+    using size_type    = std::size_t;
+    using event_type   = std::vector<int>;
+    using array_type   = std::vector<long long>;
+    using data_type    = long long*;
+    using value_type   = std::pair<array_type, double>;
+    using this_type    = cpu_roofline<_Types...>;
+    using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
     using record_type  = std::function<value_type()>;
 
@@ -222,7 +215,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init(storage_type*)
+    static void thread_init(storage_type*)
     {
         papi::init();
         papi::register_thread();
@@ -301,7 +294,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_finalize(storage_type*)
+    static void thread_finalize(storage_type*)
     {
         // found that PAPI occassionally seg-faults during add_event so adding here too...
         static std::mutex            _mutex;
@@ -334,7 +327,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize(storage_type* _store)
+    static void global_finalize(storage_type* _store)
     {
         if(_store && _store->size() > 0)
         {
@@ -350,7 +343,7 @@ struct cpu_roofline
     //----------------------------------------------------------------------------------//
 
     template <typename _Archive>
-    static void invoke_serialize(_Archive& ar, const unsigned int /*version*/)
+    static void extra_serialization(_Archive& ar, const unsigned int /*version*/)
     {
         auto& _ert_data = get_ert_data();
         if(!_ert_data.get())  // for input
@@ -578,12 +571,7 @@ protected:
     using base_type::set_stopped;
     using base_type::value;
 
-    friend struct policy::wrapper<policy::thread_init, policy::thread_finalize,
-                                  policy::global_finalize, policy::serialization>;
-
-    friend struct base<this_type, value_type, policy::thread_init,
-                       policy::thread_finalize, policy::global_finalize,
-                       policy::serialization>;
+    friend struct base<this_type, value_type>;
 
     using base_type::implements_storage_v;
     friend class impl::storage<this_type, implements_storage_v>;

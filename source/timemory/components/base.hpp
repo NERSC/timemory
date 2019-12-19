@@ -31,7 +31,6 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
-#include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
@@ -44,7 +43,7 @@ namespace tim
 {
 namespace component
 {
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 struct base
 {
 public:
@@ -59,8 +58,7 @@ public:
     using value_type = _Value;
     using accum_type =
         typename std::conditional<record_statistics_v, statistics<_Value>, _Value>::type;
-    using policy_type    = policy::wrapper<_Policies...>;
-    using this_type      = base<_Tp, _Value, _Policies...>;
+    using this_type      = base<_Tp, _Value>;
     using base_type      = this_type;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
     using graph_iterator = typename storage_type::iterator;
@@ -126,33 +124,14 @@ public:
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
-protected:
-    // policy section
-    static void global_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_init<_Tp>(_store);
-    }
-
-    static void thread_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_init<_Tp>(_store);
-    }
-
-    static void global_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_finalize<_Tp>(_store);
-    }
-
-    static void thread_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_finalize<_Tp>(_store);
-    }
-
+public:
+    static void global_init(storage_type*) {}
+    static void thread_init(storage_type*) {}
+    static void global_finalize(storage_type*) {}
+    static void thread_finalize(storage_type*) {}
     template <typename _Archive>
-    static void serialization_policy(_Archive& ar, const unsigned int ver)
-    {
-        policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
-    }
+    static void extra_serialization(_Archive&, const unsigned int)
+    {}
 
 public:
     static void initialize_storage()
@@ -613,7 +592,6 @@ protected:
     }
 
     static void cleanup() {}
-    static void invoke_cleanup() { Type::cleanup(); }
 
 protected:
     bool           is_running   = false;
@@ -760,8 +738,8 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Policies>
-struct base<_Tp, void, _Policies...>
+template <typename _Tp>
+struct base<_Tp, void>
 {
 public:
     static constexpr bool implements_storage_v = false;
@@ -773,8 +751,7 @@ public:
 
     using Type         = _Tp;
     using value_type   = void;
-    using policy_type  = policy::wrapper<_Policies...>;
-    using this_type    = base<_Tp, value_type, _Policies...>;
+    using this_type    = base<_Tp, value_type>;
     using base_type    = this_type;
     using storage_type = impl::storage<_Tp, implements_storage_v>;
 
@@ -821,32 +798,13 @@ public:
     base& operator=(this_type&&) = default;
 
 public:
-    // policy section
-    static void global_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_init<_Tp>(_store);
-    }
-
-    static void thread_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_init<_Tp>(_store);
-    }
-
-    static void global_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_finalize<_Tp>(_store);
-    }
-
-    static void thread_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_finalize<_Tp>(_store);
-    }
-
+    static void global_init(storage_type*) {}
+    static void thread_init(storage_type*) {}
+    static void global_finalize(storage_type*) {}
+    static void thread_finalize(storage_type*) {}
     template <typename _Archive>
-    static void serialization_policy(_Archive& ar, const unsigned int ver)
-    {
-        policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
-    }
+    static void extra_serialization(_Archive&, const unsigned int)
+    {}
 
 public:
     static void initialize_storage()
@@ -993,7 +951,6 @@ protected:
     }
 
     static void cleanup() {}
-    static void invoke_cleanup() { Type::cleanup(); }
 
 protected:
     bool is_running   = false;
@@ -1022,11 +979,10 @@ public:
 ///     - std::string
 ///     - value_type
 ///
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 template <typename _Vp>
 void
-base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
-                                             const Type& rhs)
+base<_Tp, _Value>::append_impl(std::true_type, graph_iterator itr, const Type& rhs)
 {
     static_assert(trait::secondary_data<_Tp>::value,
                   "append_impl should not be compiled");
@@ -1042,10 +998,10 @@ base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
 //----------------------------------------------------------------------------------//
 //  type does not contain secondary data
 //
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 template <typename _Vp>
 void
-base<_Tp, _Value, _Policies...>::append_impl(std::false_type, graph_iterator, const Type&)
+base<_Tp, _Value>::append_impl(std::false_type, graph_iterator, const Type&)
 {}
 
 }  // namespace component

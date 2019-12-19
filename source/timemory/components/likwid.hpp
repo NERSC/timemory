@@ -64,9 +64,8 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<likwid_perfmon, void, policy::global_init,
-                            policy::thread_init>;
-extern template struct base<likwid_nvmon, void, policy::global_init, policy::thread_init>;
+extern template struct base<likwid_perfmon, void>;
+extern template struct base<likwid_nvmon, void>;
 
 #endif
 
@@ -76,21 +75,19 @@ extern template struct base<likwid_nvmon, void, policy::global_init, policy::thr
 //
 //======================================================================================//
 
-struct likwid_perfmon
-: public base<likwid_perfmon, void, policy::global_init, policy::thread_init>
+struct likwid_perfmon : public base<likwid_perfmon, void>
 {
     // timemory component api
     using value_type = void;
     using this_type  = likwid_perfmon;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::thread_init>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "likwid_perfmon"; }
     static std::string description() { return "LIKWID perfmon (CPU) marker forwarding"; }
     static value_type  record() {}
 
-    static void invoke_global_init(storage_type*) { LIKWID_MARKER_INIT; }
-    static void invoke_thread_init(storage_type*) { LIKWID_MARKER_THREADINIT; }
+    static void global_init(storage_type*) { LIKWID_MARKER_INIT; }
+    static void thread_init(storage_type*) { LIKWID_MARKER_THREADINIT; }
 
     likwid_perfmon() = default;
 
@@ -149,21 +146,19 @@ private:
 //
 //======================================================================================//
 
-struct likwid_nvmon
-: public base<likwid_nvmon, void, policy::global_init, policy::thread_init>
+struct likwid_nvmon : public base<likwid_nvmon, void>
 {
     // timemory component api
     using value_type = void;
     using this_type  = likwid_nvmon;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::thread_init>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "likwid_nvmon"; }
     static std::string description() { return "LIKWID nvmon (GPU) marker forwarding"; }
     static value_type  record() {}
 
-    static void invoke_global_init(storage_type*) { LIKWID_NVMARKER_INIT; }
-    static void invoke_thread_init(storage_type*) { LIKWID_NVMARKER_THREADINIT; }
+    static void global_init(storage_type*) { LIKWID_NVMARKER_INIT; }
+    static void thread_init(storage_type*) { LIKWID_NVMARKER_THREADINIT; }
 
     likwid_nvmon() = default;
 

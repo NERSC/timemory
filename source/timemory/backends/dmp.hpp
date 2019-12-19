@@ -40,7 +40,7 @@ namespace dmp
 {
 //--------------------------------------------------------------------------------------//
 
-bool
+inline bool
 using_mpi()
 {
 #if defined(TIMEMORY_USE_MPI)
@@ -52,7 +52,7 @@ using_mpi()
 
 //--------------------------------------------------------------------------------------//
 
-bool
+inline bool
 using_upcxx()
 {
 #if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)

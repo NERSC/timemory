@@ -34,6 +34,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/mangler.hpp"
@@ -342,9 +343,7 @@ struct gotcha_components_size<_Tuple<_Types...>>
 //  TODO: filter any gotcha components out of _Components
 //
 template <size_type _Nt, typename _Components, typename _Differentiator>
-struct gotcha
-: public base<gotcha<_Nt, _Components, _Differentiator>, void, policy::global_init,
-              policy::global_finalize, policy::thread_init>
+struct gotcha : public base<gotcha<_Nt, _Components, _Differentiator>, void>
 {
     static_assert(_Components::contains_gotcha == false,
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
@@ -352,8 +351,7 @@ struct gotcha
 
     using value_type     = void;
     using this_type      = gotcha<_Nt, _Components, _Differentiator>;
-    using base_type      = base<this_type, value_type, policy::global_init,
-                           policy::global_finalize, policy::thread_init>;
+    using base_type      = base<this_type, value_type>;
     using storage_type   = typename base_type::storage_type;
     using component_type = typename _Components::component_type;
     using type_tuple     = typename _Components::type_tuple;
@@ -577,13 +575,13 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init(storage_type*)
+    static void global_init(storage_type*)
     {
         // if(get_default_ready())
         //     configure();
     }
 
-    static void invoke_global_finalize(storage_type*)
+    static void global_finalize(storage_type*)
     {
         while(get_started() > 0)
             --get_started();
@@ -592,7 +590,7 @@ struct gotcha
         disable();
     }
 
-    static void invoke_thread_init(storage_type*)
+    static void thread_init(storage_type*)
     {
         auto& _data = get_data();
         for(size_type i = 0; i < _Nt; ++i)

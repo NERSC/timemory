@@ -36,7 +36,8 @@
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/ert/types.hpp"
-#include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
@@ -60,35 +61,25 @@ namespace component
 
 extern template struct base<
     gpu_roofline<float, double>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 extern template struct base<
     gpu_roofline<float>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 extern template struct base<
     gpu_roofline<double>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 #    if defined(TIMEMORY_CUDA_FP16)
 /*
 extern template struct base<
     gpu_roofline<cuda::fp16_t, float, double>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 
 extern template struct base<
     gpu_roofline<cuda::fp16_t>,
-    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>,
-    policy::global_init, policy::global_finalize, policy::thread_init,
-    policy::thread_finalize, policy::global_finalize, policy::serialization>;
+    std::tuple<typename cupti_activity::value_type, typename cupti_counters::value_type>>;
 */
 #    endif
 #endif
@@ -106,19 +97,13 @@ extern template struct base<
 //
 template <typename... _Types>
 struct gpu_roofline
-: public base<gpu_roofline<_Types...>,
-              std::tuple<typename cupti_activity::value_type,
-                         typename cupti_counters::value_type>,
-              policy::global_init, policy::global_finalize, policy::thread_init,
-              policy::thread_finalize, policy::global_finalize, policy::serialization>
+: public base<gpu_roofline<_Types...>, std::tuple<typename cupti_activity::value_type,
+                                                  typename cupti_counters::value_type>>
 {
-    using value_type = std::tuple<typename cupti_activity::value_type,
+    using value_type   = std::tuple<typename cupti_activity::value_type,
                                   typename cupti_counters::value_type>;
-    using this_type  = gpu_roofline<_Types...>;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::global_finalize,
-             policy::thread_init, policy::thread_finalize, policy::global_finalize,
-             policy::serialization>;
+    using this_type    = gpu_roofline<_Types...>;
+    using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
     using size_type     = std::size_t;
@@ -266,13 +251,7 @@ public:
             }
 
             // integer
-            if(is_one_of<int16_t, types_tuple>::value ||
-               is_one_of<int32_t, types_tuple>::value ||
-               is_one_of<int64_t, types_tuple>::value ||
-               is_one_of<uint16_t, types_tuple>::value ||
-               is_one_of<uint32_t, types_tuple>::value ||
-               is_one_of<uint64_t, types_tuple>::value ||
-               is_one_of<size_t, types_tuple>::value || settings::instruction_roofline())
+            if(is_one_of_integral<types_tuple>::value || settings::instruction_roofline())
             {
                 for(string_t itr :
                     { "ipc", "inst_executed", "inst_integer", "inst_fp_64", "inst_fp_32",
@@ -356,12 +335,12 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init(storage_type*)
+    static void global_init(storage_type*)
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::invoke_global_init(nullptr);
+            activity_type::global_init(nullptr);
         else
-            counters_type::invoke_global_init(nullptr);
+            counters_type::global_init(nullptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -374,12 +353,12 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize(storage_type* _store)
+    static void global_finalize(storage_type* _store)
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::invoke_global_finalize(nullptr);
+            activity_type::global_finalize(nullptr);
         else
-            counters_type::invoke_global_finalize(nullptr);
+            counters_type::global_finalize(nullptr);
 
         if(_store && _store->size() > 0)
         {
@@ -394,13 +373,13 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init(storage_type*) {}
-    static void invoke_thread_finalize(storage_type*) {}
+    static void thread_init(storage_type*) {}
+    static void thread_finalize(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 
     template <typename _Archive>
-    static void invoke_serialize(_Archive& ar, const unsigned int)
+    static void extra_serialization(_Archive& ar, const unsigned int)
     {
         auto& _ert_data = get_ert_data();
         if(!_ert_data.get())  // for input
@@ -671,14 +650,7 @@ protected:
     using base_type::set_stopped;
     using base_type::value;
 
-    friend struct policy::wrapper<policy::global_init, policy::global_finalize,
-                                  policy::thread_init, policy::thread_finalize,
-                                  policy::global_finalize, policy::serialization>;
-
-    friend struct base<this_type, value_type, policy::global_init,
-                       policy::global_finalize, policy::thread_init,
-                       policy::thread_finalize, policy::global_finalize,
-                       policy::serialization>;
+    friend struct base<this_type, value_type>;
 
     using base_type::implements_storage_v;
     friend class impl::storage<this_type, implements_storage_v>;

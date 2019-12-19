@@ -49,31 +49,29 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<tau_marker, void, policy::global_init, policy::thread_init>;
+extern template struct base<tau_marker, void>;
 
 #endif
 
-struct tau_marker
-: public base<tau_marker, void, policy::global_init, policy::thread_init>
+struct tau_marker : public base<tau_marker, void>
 {
     // timemory component api
     using value_type = void;
     using this_type  = tau_marker;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::thread_init>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "tau"; }
     static std::string description() { return "TAU marker forward"; }
     static value_type  record() {}
 
-    static void invoke_global_init(storage_type*)
+    static void global_init(storage_type*)
     {
 #if defined(TIMEMORY_USE_TAU)
         Tau_set_node(dmp::rank());
 #endif
     }
 
-    static void invoke_thread_init(storage_type*)
+    static void thread_init(storage_type*)
     {
 #if defined(TIMEMORY_USE_TAU)
         TAU_REGISTER_THREAD();

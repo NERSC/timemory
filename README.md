@@ -27,38 +27,55 @@
 
 ## Why Use timemory?
 
-__*Timemory is arguably the most customizable performance analysis and tuning API available while maintaining a very low overhead.*__
+- __*Timemory is arguably the most customizable performance analysis and tuning API available*__
+- __*High-performance*__: very low overhead when enabled and borderline negligible runtime disabled
+- Ability to arbitrarily switch and combine different measurement types anywhere in application
+- Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
+    - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 
-- __*Direct access*__ to performance analysis data in Python and C++
+### Support for Multiple Instrumentation Marker APIs
+
+- NVTX for Nsight-Systems and NVprof
+- [LIKWID](https://github.com/RRZE-HPC/likwid)
+- [Caliper](https://github.com/LLNL/Caliper)
+- [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
+- ittnotify (Intel VTune and Advisor)
+
+### Create Your Own Performance and Analysis Tools
+
+- Written in C++
+- Direct access to performance analysis data in Python and C++
+- Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
+    - Flexible and easily extensible interface: no data type restrictions in custom components
+
+### Generic Bundling of Multiple Tools
+
+- CPU hardware counters via PAPI
+- NVIDIA GPU hardware counters via CUPTI
+- NVIDIA GPU tracing via CUPTI
+- Generating a Roofline for performance-critical sections on the CPU and NVIDIA GPUs
+- Memory usage
+- Tool insertiong around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
+- Wall-clock, cpu-clock, system-clock timing
+- Number of bytes read/written to file-system (and rate)
+- Number of context switches
+- Trip counts
+- CUDA kernel runtime(s)
+
+### Powerful GOTCHA Extensions
+
+- [GOTCHA](https://github.com/LLNL/GOTCHA) is an API for LD_PRELOAD
+    - Significantly simplify existing implementations
+- Scoped GOTCHA
+- Use gotcha component to replace external function calls with own instrumentation
+- Use gotcha component to instrument external library calls
+
+### Multi-language Support
+
 - Variadic interface to all the utilities from C code
 - Variadic interface to all the utilities from C++ code
 - Variadic interface to all the utilities from Python code
     - Includes context-managers and decorators
-- __*Create your own components*__: any one-time measurement or start/stop paradigm can be wrapped with timemory
-    - Flexible and easily extensible interface: __*no data type restrictions in custom components*__
-- __*High-performance*__: template meta-programming and lambdas result in extensive inlining
-- Ability to arbitrarily switch and combine different measurement types anywhere in application
-- Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
-    - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
-- Arbitrarily add support for:
-    - __*CPU hardware counters*__ via PAPI
-    - __*NVIDIA GPU hardware counters*__ via CUPTI
-    - __*NVIDIA GPU tracing*__ via CUPTI
-    - Generating a __*Roofline*__ for performance-critical sections on the CPU and NVIDIA GPUs
-    - Marker forwarding to NVTX for Nsight-Systems and NVprof
-    - Marker forwarding to [LIKWID](https://github.com/RRZE-HPC/likwid)
-    - Marker forwarding to [Caliper](https://github.com/LLNL/Caliper)
-        - Includes marker forwarding to [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
-        - Includes marker forwarding to Intel VTune and Advisor
-    - Memory usage
-    - Tool insertiong around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
-        - Many more possible!
-    - Wall-clock, cpu-clock, system-clock timing
-    - Number of bytes read/written to file-system (and rate)
-    - Number of context switches
-    - Trip counts
-    - CUDA kernel runtime(s)
-    - [GOTCHA](https://github.com/LLNL/GOTCHA) wrappers around external library function calls
 
 ## Overview
 
@@ -85,21 +102,21 @@ print("Elapsed time: {}".format(tstop - tstart))
 Timemory streamlines this work. In C++ codes, all you have to do is include the headers.
 It comes in handy especially when optimizing a
 certain algorithm or section of your code -- you just insert a line of code that specifies what
-you want to measure and run your code: __*initialization and output are automated*__.
+you want to measure and run your code: initialization and output are automated.
 
 ## Profiling and timemory
 
 Timemory is not a full profiler and is intended to supplement profilers, not be used in lieu of profiling,
 which are important for _discovering where to place timemory markers_.
-The library provides an easy-to-use method for __*always-on general HPC analysis metrics*__
+The library provides an easy-to-use method for always-on general HPC analysis metrics
 (i.e. timing, memory usage, etc.) with the same or less overhead than if these metrics were to
 records and stored in a custom solution (there is zero polymorphism) and, for C++ code, extensively
 inlined.
-__*Functionally, the overhead is non-existant*__: sampling profilers (e.g. gperftools, VTune)
+Functionally, the overhead is non-existant: sampling profilers (e.g. gperftools, VTune)
 at standard sampling rates barely notice the presence of timemory unless it is been
 used _very_ unwisely.
 
-Additional tools are provided, such as hardware counters, to __*increase optimization productivity.*__
+Additional tools are provided, such as hardware counters, to increase optimization productivity.
 What to check whether those changes increased data locality (i.e. decreased cache misses) but don't care about any other sections of the code?
 Use the following and set `TIMEMORY_PAPI_EVENTS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM"` in
 the environment:
@@ -121,7 +138,7 @@ then finding ROI, then comparing to previous results, and then repeating from
 In general, profilers are not run frequently enough and performance degradation
 or memory bloat can go undetected for several commits until a production run crashes or
 underperforms. This generally leads to a scramble to detect which revision caused the issue.
-Here, timemory can __*decrease performance regression identification time.*__
+Here, timemory can decrease performance regression identification time.
 When timemory is combined with a continuous integration reporting system,
 this scramble can be mitigated fairly quickly because the high-level reporting
 provided allows one to associate a region and commit with exact performance numbers.
@@ -195,9 +212,9 @@ struct wall_clock : public base<wall_clock, int64_t>
 ## GOTCHA and timemory
 
 C++ codes running on the Linux operating system can take advantage of the built-in
-[GOTCHA](https://github.com/LLNL/GOTCHA) functionality to insert timemory markers __*around external function calls*__.
+[GOTCHA](https://github.com/LLNL/GOTCHA) functionality to insert timemory markers around external function calls.
 [GOTCHA](https://github.com/LLNL/GOTCHA) is similar to `LD_PRELOAD` but operates via a programmable API.
-__*This include limited support for C++ function mangling*__ (in general, mangling template functions are not supported -- yet).
+This include limited support for C++ function mangling (in general, mangling template functions are not supported -- yet).
 
 Writing a GOTCHA hook in timemory is greatly simplified and applications using timemory can specify their own GOTCHA hooks
 in a few lines of code instead of being restricted to a pre-defined set of GOTCHA hooks.

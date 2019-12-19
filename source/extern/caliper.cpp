@@ -43,7 +43,7 @@ namespace component
 {
 //
 //
-template struct base<caliper, void, policy::global_init>;
+template struct base<caliper, void>;
 //
 //
 }  // namespace component

@@ -92,8 +92,7 @@ struct requires_prefix<component::malloc_gotcha> : std::true_type
 
 namespace component
 {
-struct malloc_gotcha
-: base<malloc_gotcha, double, policy::global_init, policy::global_finalize>
+struct malloc_gotcha : base<malloc_gotcha, double>
 {
 #if defined(TIMEMORY_USE_CUDA)
     static constexpr uintmax_t data_size = 5;
@@ -106,7 +105,7 @@ struct malloc_gotcha
     // clang-format off
     using value_type   = double;
     using this_type    = malloc_gotcha;
-    using base_type    = base<this_type, value_type, policy::global_init, policy::global_finalize>;
+    using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
     using string_hash  = std::hash<std::string>;
     // clang-format on
@@ -179,11 +178,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init(storage_type*) {}
+    static void global_init(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize(storage_type*) {}
+    static void global_finalize(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 

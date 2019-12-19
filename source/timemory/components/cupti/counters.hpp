@@ -92,15 +92,12 @@ namespace component
 
 //#if defined(TIMEMORY_USE_CUPTI)
 
-struct cupti_counters
-: public base<cupti_counters, cupti::profiler::results_t, policy::global_init,
-              policy::global_finalize, policy::serialization>
+struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 {
     // required aliases
     using value_type = cupti::profiler::results_t;
     using this_type  = cupti_counters;
-    using base_type  = base<cupti_counters, value_type, policy::global_init,
-                           policy::global_finalize, policy::serialization>;
+    using base_type  = base<cupti_counters, value_type>;
 
     // custom aliases
     using size_type        = std::size_t;
@@ -176,8 +173,8 @@ struct cupti_counters
             init();
     }
 
-    static void invoke_global_init(storage_type*) { configure(); }
-    static void invoke_global_finalize(storage_type*) { clear(); }
+    static void global_init(storage_type*) { configure(); }
+    static void global_finalize(storage_type*) { clear(); }
 
     static const profptr_t& get_profiler() { return _get_profiler(); }
     static const strvec_t&  get_events() { return *_get_events(); }
@@ -472,7 +469,7 @@ struct cupti_counters
     //----------------------------------------------------------------------------------//
     //
     template <typename _Archive>
-    static void invoke_serialize(_Archive& ar, const unsigned int /*version*/)
+    static void extra_serialization(_Archive& ar, const unsigned int /*version*/)
     {
         auto& _devices = *_get_device();
         auto& _events  = *_get_events();

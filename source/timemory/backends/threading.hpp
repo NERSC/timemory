@@ -92,6 +92,7 @@ struct affinity
         pthread_setaffinity_np(athread, sizeof(cpu_set_t), &cpuset);
         return proc_id;
 #else
+        consume_parameters(athread);
         return -1;
 #endif
     }

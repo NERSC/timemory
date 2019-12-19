@@ -36,22 +36,16 @@
 namespace tim
 {
 TIMEMORY_INSTANTIATE_EXTERN_INIT(trip_count)
-
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_cpu_profiler)
-#endif
-
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_heap_profiler)
-#endif
 
 namespace component
 {
 //
 //
 template struct base<trip_count>;
-template struct base<gperf_cpu_profiler, void, policy::thread_init, policy::global_finalize>;
-template struct base<gperf_heap_profiler, void, policy::global_finalize>;
+template struct base<gperf_cpu_profiler, void>;
+template struct base<gperf_heap_profiler, void>;
 //
 //
 }  // namespace component

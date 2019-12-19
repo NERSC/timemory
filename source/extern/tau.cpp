@@ -43,7 +43,7 @@ namespace component
 {
 //
 //
-template struct base<tau_marker, void, policy::global_init, policy::thread_init>;
+template struct base<tau_marker, void>;
 //
 //
 }  // namespace component

@@ -44,8 +44,8 @@ namespace component
 {
 //
 //
-template struct base<likwid_perfmon, void, policy::global_init, policy::thread_init>;
-template struct base<likwid_nvmon, void, policy::global_init, policy::thread_init>;
+template struct base<likwid_perfmon, void>;
+template struct base<likwid_nvmon, void>;
 //
 //
 }  // namespace component

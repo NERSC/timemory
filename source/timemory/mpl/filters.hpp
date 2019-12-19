@@ -307,6 +307,22 @@ struct is_one_of<F, _Tuple<S, T...>>
 };
 
 //======================================================================================//
+// check if any types are integral types
+//
+template <typename...>
+struct is_one_of_integral
+{
+    static constexpr bool value = false;
+};
+
+template <typename T, template <typename...> class _Tuple, typename... Tail>
+struct is_one_of_integral<_Tuple<T, Tail...>>
+{
+    static constexpr bool value =
+        std::is_integral<T>::value || is_one_of_integral<_Tuple<Tail...>>::value;
+};
+
+//======================================================================================//
 
 template <typename In, typename Out>
 struct remove_duplicates;
@@ -381,6 +397,14 @@ struct index_of<_Tp, _Tuple<Head, Tail...>>
 ///
 template <typename _Tp, typename _Types>
 using is_one_of = typename impl::is_one_of<_Tp, _Types>;
+
+//======================================================================================//
+
+///
+/// check if type is in expansion
+///
+template <typename _Types>
+using is_one_of_integral = typename impl::is_one_of_integral<_Types>;
 
 //======================================================================================//
 

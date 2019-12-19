@@ -35,16 +35,6 @@
 
 namespace tim
 {
-TIMEMORY_INSTANTIATE_EXTERN_INIT(trip_count)
-
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_cpu_profiler)
-#endif
-
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(gperf_heap_profiler)
-#endif
-
 TIMEMORY_INSTANTIATE_EXTERN_INIT(user_tuple_bundle)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(user_list_bundle)
 
@@ -52,7 +42,6 @@ namespace component
 {
 //
 //
-template struct base<trip_count>;
 template struct base<user_bundle<10101, native_tag>, void>;
 template struct base<user_bundle<11011, native_tag>, void>;
 //

@@ -63,7 +63,7 @@ template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 // generic static polymorphic base class
-template <typename _Tp, typename value_type = int64_t, typename... _Policies>
+template <typename _Tp, typename value_type = int64_t>
 struct base;
 
 // holder that provides nothing
