@@ -54,9 +54,8 @@ __all__ = ['get_json_entry',
            'smooth',
            'read_ert',
            'get_peak_ops',
-           'get_peak_int_ops',
+           'get_peak_int_theo',
            'get_peak_bandwidth',
-           'get_peak_bandwidth_txns',
            'get_theo_bandwidth_txns',
            'get_hotspots',
            'get_hotspots_integer',
@@ -294,39 +293,39 @@ def get_peak_int_theo():
     return peak_ops
 #==============================================================================#
 #
-def get_peak_int_ops(roof_data, flop_info=None):
-    """
-    Get the peak int operations / sec
-    """
-    peak = {}
-
-    for element in roof_data:
-        total_ops = element.total_ops / GIGABYTE
-        _label = element.label
-        _data = element.counter.get_warp_ops(total_ops) ## this gives total_ops/repr_data (time) ops/sec
-
-        if VERBOSE > 2:
-            print("LABEL: {}, DATA: {}".format(_label, _data))
-        if not _label in peak:
-            peak[_label] = _data
-        else:
-            _peak = peak[_label]
-            for i in range(len(_data)):
-                if i >= len(_peak):
-                    _peak += [_data[i]]
-                else:
-                    _peak[i] = max([_peak[i], _data[i]])
-
-    info = "warp GIPs/sec"
-    if flop_info is not None:
-        info_list = re.sub(r'[^\w]', ' ', flop_info).split()
-        if len(info_list) > 0:
-            info = info_list[0] + " warp GIPs/sec"
-
-    print("PEAK: {}".format(peak))
-
-    peak_ops = [peak, info]
-    return peak_ops
+# def get_peak_int_ops(roof_data, flop_info=None):
+#     """
+#     Get the peak int operations / sec
+#     """
+#     peak = {}
+#
+#     for element in roof_data:
+#         total_ops = element.total_ops / GIGABYTE
+#         _label = element.label
+#         _data = element.counter.get_warp_ops(total_ops) ## this gives total_ops/repr_data (time) ops/sec
+#
+#         if VERBOSE > 2:
+#             print("LABEL: {}, DATA: {}".format(_label, _data))
+#         if not _label in peak:
+#             peak[_label] = _data
+#         else:
+#             _peak = peak[_label]
+#             for i in range(len(_data)):
+#                 if i >= len(_peak):
+#                     _peak += [_data[i]]
+#                 else:
+#                     _peak[i] = max([_peak[i], _data[i]])
+#
+#     info = "warp GIPs/sec"
+#     if flop_info is not None:
+#         info_list = re.sub(r'[^\w]', ' ', flop_info).split()
+#         if len(info_list) > 0:
+#             info = info_list[0] + " warp GIPs/sec"
+#
+#     print("PEAK: {}".format(peak))
+#
+#     peak_ops = [peak, info]
+#     return peak_ops
 
 
 #==============================================================================#
@@ -424,84 +423,84 @@ def get_theo_bandwidth_txns():
 
 #==============================================================================#
 #
-def get_peak_bandwidth_txns(roof_data):
-    """
-    Get multi-level bandwidth peaks for txns (scale down bandwidth  by 32 (32 byte transactions))- Implementation from ERT:
-    https://bitbucket.org/berkeleylab/cs-roofline-toolkit
-    """
-    ref_intensity = 0
-    work_set = []
-    bandwidth_data = []
-
-    # Read bandwidth raw data
-    for element in roof_data:
-        intensity = element.ops_per_set
-        if ref_intensity == 0:
-            ref_intensity = intensity
-        if intensity != ref_intensity:
-            continue
-        work_set.append(element.working_set)
-        total_bytes = element.total_bytes / GIGABYTE
-        bandwidth_data.append(element.counter.get_warp_ops(total_bytes)) #divide by time and 32, this gives GigaTXns per second
-
-    fraction = 1.05
-    samples = 10000
-    bandwidth_data = flatten_list(bandwidth_data)
-    max_bandwidth = max(bandwidth_data)
-    begin = bandwidth_data.index(max_bandwidth)
-
-    work_set = work_set[begin:]
-    bandwidth_data = bandwidth_data[begin:]
-    min_bandwidth = min(bandwidth_data)
-
-    dband = max_bandwidth/float(samples - 1)
-    #print("dband is here*****:"+format(dband))
-
-    counts = samples*[0]
-    totals = samples*[0.0]
-
-    work_set, bandwidth_data = smooth(work_set, bandwidth_data)
-
-    for i in range(0, samples):
-        cband = i*dband
-        #print("cband:"+format(cband))
-        for bandwidth in bandwidth_data:
-            if bandwidth >= cband/fraction and bandwidth <= cband*fraction:
-                totals[i] += bandwidth
-                counts[i] += 1
-    band_list = [[1000*max_bandwidth, 1000]]
-    maxc = -1
-    maxi = -1
-
-    for i in range(samples-3, 1, -1):
-        if counts[i] > 10:
-            if counts[i] > maxc:
-                maxc = counts[i]
-                maxi = i
-        else:
-            if maxc > 1:
-                value = float(totals[maxi])/max(1, counts[maxi])
-                if 1.20*value < float(band_list[-1][0])/band_list[-1][1]:
-                    band_list.append([totals[maxi], counts[maxi]])
-                else:
-                    band_list[-1][0] += totals[maxi]
-                    band_list[-1][1] += counts[maxi]
-            maxc = -1
-            maxi = -1
-
-
-    band_info_list = ["DRAM"]
-    cache_num = len(band_list)-1
-
-    for cache in range(1, cache_num+1):
-        band_info_list = ["L%d" % (cache_num+1 - cache)] + band_info_list
-
-    peak_bandwidths = []
-    for (band, band_info) in zip(band_list, band_info_list):
-        band_info = band_info + " GB/s"
-        peak_bandwidths.append([float(band[0]/band[1]), band_info])
-    print("band_list:"+format(peak_bandwidths)+" len:"+format(len(peak_bandwidths)))
-    return peak_bandwidths
+# def get_peak_bandwidth_txns(roof_data):
+#     """
+#     Get multi-level bandwidth peaks for txns (scale down bandwidth  by 32 (32 byte transactions))- Implementation from ERT:
+#     https://bitbucket.org/berkeleylab/cs-roofline-toolkit
+#     """
+#     ref_intensity = 0
+#     work_set = []
+#     bandwidth_data = []
+#
+#     # Read bandwidth raw data
+#     for element in roof_data:
+#         intensity = element.ops_per_set
+#         if ref_intensity == 0:
+#             ref_intensity = intensity
+#         if intensity != ref_intensity:
+#             continue
+#         work_set.append(element.working_set)
+#         total_bytes = element.total_bytes / GIGABYTE
+#         bandwidth_data.append(element.counter.get_warp_ops(total_bytes)) #divide by time and 32, this gives GigaTXns per second
+#
+#     fraction = 1.05
+#     samples = 10000
+#     bandwidth_data = flatten_list(bandwidth_data)
+#     max_bandwidth = max(bandwidth_data)
+#     begin = bandwidth_data.index(max_bandwidth)
+#
+#     work_set = work_set[begin:]
+#     bandwidth_data = bandwidth_data[begin:]
+#     min_bandwidth = min(bandwidth_data)
+#
+#     dband = max_bandwidth/float(samples - 1)
+#     #print("dband is here*****:"+format(dband))
+#
+#     counts = samples*[0]
+#     totals = samples*[0.0]
+#
+#     work_set, bandwidth_data = smooth(work_set, bandwidth_data)
+#
+#     for i in range(0, samples):
+#         cband = i*dband
+#         #print("cband:"+format(cband))
+#         for bandwidth in bandwidth_data:
+#             if bandwidth >= cband/fraction and bandwidth <= cband*fraction:
+#                 totals[i] += bandwidth
+#                 counts[i] += 1
+#     band_list = [[1000*max_bandwidth, 1000]]
+#     maxc = -1
+#     maxi = -1
+#
+#     for i in range(samples-3, 1, -1):
+#         if counts[i] > 10:
+#             if counts[i] > maxc:
+#                 maxc = counts[i]
+#                 maxi = i
+#         else:
+#             if maxc > 1:
+#                 value = float(totals[maxi])/max(1, counts[maxi])
+#                 if 1.20*value < float(band_list[-1][0])/band_list[-1][1]:
+#                     band_list.append([totals[maxi], counts[maxi]])
+#                 else:
+#                     band_list[-1][0] += totals[maxi]
+#                     band_list[-1][1] += counts[maxi]
+#             maxc = -1
+#             maxi = -1
+#
+#
+#     band_info_list = ["DRAM"]
+#     cache_num = len(band_list)-1
+#
+#     for cache in range(1, cache_num+1):
+#         band_info_list = ["L%d" % (cache_num+1 - cache)] + band_info_list
+#
+#     peak_bandwidths = []
+#     for (band, band_info) in zip(band_list, band_info_list):
+#         band_info = band_info + " GB/s"
+#         peak_bandwidths.append([float(band[0]/band[1]), band_info])
+#     print("band_list:"+format(peak_bandwidths)+" len:"+format(len(peak_bandwidths)))
+#     return peak_bandwidths
 
 
 #==============================================================================#
