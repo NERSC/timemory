@@ -878,7 +878,10 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
     """
     Plot the roofline
     """
-
+    if inst_roofline:
+        print("GPU INST ROOFLINE ON")
+    else:
+        print("INST ROOFLINE OFF")
     # if passed the entire JSON (i.e. not invoked using main),
     # just plot the first rank
     if "timemory" in ai_data:

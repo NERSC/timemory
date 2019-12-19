@@ -91,6 +91,7 @@ def plot(args):
     _inst_roofline = False
 
     if "gpu_roofline_inst" in args.rtype:
+        print("RTYPE:"+format(args.rtype))
         _inst_roofline = True
 
     try:
@@ -114,7 +115,7 @@ def plot(args):
             _roofline.plot_roofline(ai_ranks[0], op_ranks[0], args.display,
                                     fname, args.format, fdir, args.title,
                                     args.plot_dimensions[0], args.plot_dimensions[1],
-                                    args.plot_dimensions[2], args.rtype)
+                                    args.plot_dimensions[2], _inst_roofline)
         else:
             _rank = 0
             for _ai, _op in zip(ai_ranks, op_ranks):
@@ -123,7 +124,7 @@ def plot(args):
                 _roofline.plot_roofline(_ai, _op, args.display,
                                         _fname, args.format, fdir, _title,
                                         args.plot_dimensions[0], args.plot_dimensions[1],
-                                        args.plot_dimensions[2],args.rtype)
+                                        args.plot_dimensions[2],_inst_roofline)
                 _rank += 1
 
     except Exception as e:
