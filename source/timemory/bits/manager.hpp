@@ -234,6 +234,9 @@ manager::finalize()
 
     m_is_finalizing = false;
 
+    if(m_instance_count == 0)
+        write_metadata("manager::finalize");
+
     if(settings::debug())
         PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
                    (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
@@ -253,6 +256,7 @@ manager::exit_hook()
         if(master_count > 0)
         {
             auto master_manager = get_shared_ptr_pair_master_instance<manager>();
+            master_manager->write_metadata("manager::exit_hook");
             master_manager.reset();
         }
         else
@@ -277,7 +281,14 @@ manager::write_metadata(const char* context)
     if(m_rank != 0)
         return;
 
-    auto fname = m_metadata_fname;
+    static bool written = false;
+    if(written)
+        return;
+
+    written          = true;
+    m_metadata_fname = settings::compose_output_filename("metadata", "json");
+    auto fname       = m_metadata_fname;
+
     printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     std::ofstream         ofs(fname.c_str());
