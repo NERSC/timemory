@@ -32,6 +32,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/policy.hpp"
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda_profiler_api.h>
