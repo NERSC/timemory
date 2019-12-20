@@ -393,23 +393,12 @@ PYBIND11_MODULE(libpytimemory, tim)
             []() {
                 try
                 {
-                    PRINT_HERE("%s", "");
                     tim::timemory_finalize();
-                    PRINT_HERE("%s", "");
+                    tim::manager::exit_hook();
                 } catch(std::exception& e)
                 {
                     PRINT_HERE("ERROR: %s", e.what());
-                    PRINT_HERE("%s", "finalizing signals...");
-                    tim::disable_signal_detection();
-                    PRINT_HERE("%s", "finalizing manager...");
-                    auto _manager = tim::manager::instance();
-                    if(_manager)
-                        _manager->finalize();
-                    PRINT_HERE("%s", "finalizing upcxx...");
-                    tim::upc::finalize();
-                    PRINT_HERE("%s", "finalizing mpi...");
-                    tim::mpi::finalize();
-                    PRINT_HERE("%s", "done...");
+                    tim::manager::exit_hook();
                 }
             },
             "Finalize timemory (generate output) -- important to call if using MPI");
