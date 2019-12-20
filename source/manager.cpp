@@ -46,7 +46,8 @@ static manager_pointer_t timemory_master_manager_instance =
 
 extern "C"
 {
-    __library_ctor__ void timemory_library_constructor()
+    // __library_ctor__
+    void timemory_library_constructor()
     {
 #    if defined(DEBUG)
         auto _debug   = tim::settings::debug();
