@@ -44,6 +44,7 @@ add_interface_library(timemory-coverage)
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
+add_interface_library(timemory-tcmalloc-minimal)
 
 add_interface_library(timemory-roofline)
 add_interface_library(timemory-cpu-roofline)
@@ -636,6 +637,10 @@ if(NOT "${TIMEMORY_GPERF_COMPONENTS}" STREQUAL "")
 endif()
 
 if(gperftools_FOUND)
+    if(gperftools_TCMALLOC_MINIMAL_LIBRARY)
+        target_link_libraries(timemory-tcmalloc-minimal INTERFACE
+            ${gperftools_TCMALLOC_MINIMAL_LIBRARY})
+    endif()
     set(_HAS_PROFILER OFF)
     set(_HAS_TCMALLOC OFF)
     if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
@@ -689,6 +694,13 @@ else()
     inform_empty_interface(timemory-gperftools "gperftools")
     inform_empty_interface(timemory-gperftools-cpu "gperftools-cpu")
     inform_empty_interface(timemory-gperftools-heap "gperftools-heap")
+    find_package(gperftools QUIET COMPONENTS tcmalloc_minimal)
+    if(gperftools_TCMALLOC_MINIMAL_LIBRARY)
+        target_link_libraries(timemory-tcmalloc-minimal INTERFACE
+            ${gperftools_TCMALLOC_MINIMAL_LIBRARY})
+    else()
+        inform_empty_interface(timemory-tcmalloc-minimal "tcmalloc-minimal")
+    endif()
 endif()
 
 
