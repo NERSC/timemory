@@ -54,6 +54,8 @@ def parse_args(add_run_args=False):
                         default=os.getcwd())
     parser.add_argument("-b", "--bandwidth", type=str, help="Roofline bandwidth peak, \"dram\" as default",
                         action='append', dest='bandwidths', choices=["l1", "l2", "l3", "dram"], default=['dram'])
+    parser.add_argument("-tb", "--txn_bandwidth", type=float, help="GPU Instruction Roofline transaction bandwidth peak (NVIDIA V100 values set by default) L1, L2, DRAM",dest='txns_bandwidths', default=[437.5, 93.6, 25.9], nargs=3)
+    parser.add_argument("-iP", "--inst_peak", type=float, help="GPU Instruction peak (per warp) in GIPS (NVIDIA V100 peak set by default)",dest='inst_peak', default=[489.60], nargs=1)
     parser.add_argument("--format", type=str,
                         help="Image format", default="png")
     parser.add_argument("-T", "--title", type=str,
@@ -90,11 +92,6 @@ def parse_args(add_run_args=False):
 
 
 def plot(args):
-    _inst_roofline = False
-
-    if "gpu_roofline_inst" in args.rtype:
-        print("RTYPE:"+format(args.rtype))
-        _inst_roofline = True
 
     try:
         fname = os.path.basename(args.output_file)
@@ -116,19 +113,18 @@ def plot(args):
                 len(ai_ranks), len(op_ranks)))
 
         if len(op_data) == 1:
-            _roofline.plot_roofline(ai_ranks[0], op_ranks[0], band_labels, args.display,
-                                    fname, args.format, fdir, args.title,
+            _roofline.plot_roofline(ai_ranks[0], op_ranks[0], band_labels,args.txns_bandwidths, args.inst_peak, args.rtype, args.display,fname, args.format, fdir, args.title,
                                     args.plot_dimensions[0], args.plot_dimensions[1],
-                                    args.plot_dimensions[2], _inst_roofline)
+                                    args.plot_dimensions[2])
         else:
             _rank = 0
             for _ai, _op in zip(ai_ranks, op_ranks):
                 _fname = "{}_{}".format(fname, _rank)
                 _title = "{} (MPI rank: {})".format(args.title, _rank)
-                _roofline.plot_roofline(_ai, _op, band_labels, args.display,
+                _roofline.plot_roofline(_ai, _op, band_labels,args.txns_bandwidths, args.inst_peak, args.rtype, args.display,
                                         _fname, args.format, fdir, _title,
                                         args.plot_dimensions[0], args.plot_dimensions[1],
-                                        args.plot_dimensions[2],_inst_roofline)
+                                        args.plot_dimensions[2])
                 _rank += 1
 
     except Exception as e:
