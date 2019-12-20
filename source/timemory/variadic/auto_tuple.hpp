@@ -57,14 +57,16 @@ template <typename... Types>
 class auto_tuple
 {
 public:
-    using this_type       = auto_tuple<Types...>;
-    using base_type       = component_tuple<Types...>;
-    using component_type  = typename base_type::component_type;
-    using type_tuple      = typename component_type::type_tuple;
-    using data_value_type = typename component_type::data_value_type;
-    using data_label_type = typename component_type::data_label_type;
-    using data_type       = typename component_type::data_type;
-    using string_t        = std::string;
+    using this_type           = auto_tuple<Types...>;
+    using base_type           = component_tuple<Types...>;
+    using component_type      = typename base_type::component_type;
+    using type_tuple          = typename component_type::type_tuple;
+    using data_value_type     = typename component_type::data_value_type;
+    using data_label_type     = typename component_type::data_label_type;
+    using data_type           = typename component_type::data_type;
+    using string_t            = std::string;
+    using init_func_t         = std::function<void(this_type&)>;
+    using captured_location_t = typename component_type::captured_location_t;
 
     // used by component hybrid and gotcha
     static constexpr bool is_component_list   = false;
@@ -79,13 +81,31 @@ public:
     static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
-                               bool report_at_exit = false);
-    inline explicit auto_tuple(const source_location::captured&,
-                               bool flat           = settings::flat_profile(),
-                               bool report_at_exit = false);
-    inline explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                               bool report_at_exit = false);
+    //----------------------------------------------------------------------------------//
+    //
+    static void init_storage() { component_type::init_storage(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type&) {};
+        return _instance;
+    }
+
+public:
+    template <typename _Func = init_func_t>
+    explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
+                        bool report_at_exit = false,
+                        const _Func&        = this_type::get_initializer());
+
+    template <typename _Func = init_func_t>
+    explicit auto_tuple(const captured_location_t&, bool flat = settings::flat_profile(),
+                        bool report_at_exit = false,
+                        const _Func&        = this_type::get_initializer());
+
+    explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
+                        bool report_at_exit = false);
     inline ~auto_tuple();
 
     // copy and move
@@ -187,9 +207,6 @@ public:
         return os;
     }
 
-    //----------------------------------------------------------------------------------//
-    static void init_storage() { component_type::init_storage(); }
-
 protected:
     bool            m_enabled        = true;
     bool            m_report_at_exit = false;
@@ -200,16 +217,17 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
-                                 bool report_at_exit)
+template <typename _Func>
+auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_exit,
+                                 const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
-                               : component_type{})
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
     {
+        _func(*this);
         m_temporary_object.start();
     }
 }
@@ -217,16 +235,17 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_tuple<Types...>::auto_tuple(const source_location::captured& captured, bool flat,
-                                 bool report_at_exit)
+template <typename _Func>
+auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
+                                 bool report_at_exit, const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(captured, m_enabled, flat)
-                               : component_type{})
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
     {
+        _func(*this);
         m_temporary_object.start();
     }
 }

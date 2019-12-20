@@ -35,9 +35,12 @@
 //======================================================================================//
 #    if !defined(_WINDOWS)
 
-using manager_pointer_t                            = std::shared_ptr<tim::manager>;
-manager_pointer_t timemory_master_manager_instance = tim::manager::master_instance();
-
+using manager_pointer_t = std::shared_ptr<tim::manager>;
+namespace
+{
+static manager_pointer_t timemory_master_manager_instance =
+    tim::manager::master_instance();
+}
 #    endif
 //======================================================================================//
 
@@ -55,12 +58,16 @@ extern "C"
             printf("[%s]> initializing manager...\n", __FUNCTION__);
 #    endif
 
-        static thread_local auto _worker = tim::manager::instance();
+        /*
 #    if !defined(_WINDOWS)
         static auto _master = timemory_master_manager_instance;
 #    else
         static auto _master = tim::manager::master_instance();
 #    endif
+        */
+        static auto              _master = tim::manager::master_instance();
+        static thread_local auto _worker = tim::manager::instance();
+
         if(!_master)
             _master = tim::manager::master_instance();
 
@@ -154,7 +161,7 @@ namespace tim
 std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
-    static std::atomic<int32_t> _instance;
+    static std::atomic<int32_t> _instance(0);
     return _instance;
 }
 
@@ -164,7 +171,7 @@ manager::f_manager_instance_count()
 std::atomic<int32_t>&
 manager::f_thread_counter()
 {
-    static std::atomic<int32_t> _instance;
+    static std::atomic<int32_t> _instance(0);
     return _instance;
 }
 

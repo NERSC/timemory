@@ -66,6 +66,11 @@ public:
     singleton(pointer);
     ~singleton();
 
+    singleton(const singleton&) = delete;
+    singleton(singleton&&)      = delete;
+    singleton& operator=(const singleton&) = delete;
+    singleton& operator=(singleton&&) = delete;
+
 public:
     // public member function
     void initialize();
@@ -77,11 +82,14 @@ public:
     static pointer master_instance();
 
     // instance functions that do not initialize
-    static smart_pointer& smart_instance() { return _local_instance(); }
+    smart_pointer&        smart_instance() { return _local_instance(); }
     static smart_pointer& smart_master_instance() { return _master_instance(); }
 
     // for checking but not allocating
-    static pointer instance_ptr() { return _local_instance().get(); }
+    pointer instance_ptr()
+    {
+        return is_master_thread() ? f_master_instance() : _local_instance().get();
+    }
     static pointer master_instance_ptr() { return f_master_instance(); }
 
     // the thread the master instance was created on
@@ -323,7 +331,7 @@ singleton<Type, Pointer>::instance()
 {
     if(std::this_thread::get_id() == f_master_thread())
         return master_instance();
-    else if(!_local_instance())
+    else if(!_local_instance().get())
     {
         _local_instance().reset(new Type());
         insert(_local_instance().get());

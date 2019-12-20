@@ -514,7 +514,7 @@ template <typename CountedType>
 int64_t&
 static_counted_object<CountedType>::thread_number()
 {
-    static std::atomic<int64_t> _all_instance;
+    static std::atomic<int64_t> _all_instance(0);
     static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }
@@ -612,7 +612,7 @@ template <typename CountedType>
 int64_t&
 counted_object<CountedType>::thread_number()
 {
-    static std::atomic<int64_t> _all_instance;
+    static std::atomic<int64_t> _all_instance(0);
     static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }
@@ -704,7 +704,7 @@ template <typename HashedType>
 int64_t&
 hashed_object<HashedType>::thread_number()
 {
-    static std::atomic<int64_t> _all_instance;
+    static std::atomic<int64_t> _all_instance(0);
     static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }

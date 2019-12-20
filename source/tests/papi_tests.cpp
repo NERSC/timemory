@@ -163,7 +163,7 @@ class papi_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-        static std::atomic<int> once;
+        static std::atomic<int> once(0);
         if(once++ == 0)
         {
             tim::papi::init();

@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file accumulators.hpp
- * \headerfile accumulators.hpp "timemory/utility/accumulators.hpp"
+/** \file statistics.hpp
+ * \headerfile statistics.hpp "timemory/utility/statistics.hpp"
  * This provides accumulation capabilities
  *
  */

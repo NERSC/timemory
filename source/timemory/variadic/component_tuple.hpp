@@ -116,10 +116,11 @@ public:
 public:
     using string_t            = std::string;
     using size_type           = int64_t;
-    using string_hash         = std::hash<string_t>;
     using this_type           = component_tuple<Types...>;
     using data_type           = typename filtered<impl_unique_concat_type>::data_type;
     using type_tuple          = typename filtered<impl_unique_concat_type>::type_tuple;
+    using string_hash         = std::hash<string_t>;
+    using init_func_t         = std::function<void(this_type&)>;
     using data_value_type     = get_data_value_t<data_type>;
     using data_label_type     = get_data_label_t<data_type>;
     using captured_location_t = source_location::captured;
@@ -142,6 +143,14 @@ public:
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
         (std::tuple_size<filter_gotchas<Types...>>::value != 0);
+
+    //--------------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type&) {};
+        return _instance;
+    }
 
 public:
     // modifier types
@@ -174,10 +183,14 @@ public:
 public:
     component_tuple();
 
+    template <typename _Func = init_func_t>
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool& flat = settings::flat_profile());
+                             const bool& flat = settings::flat_profile(),
+                             const _Func&     = get_initializer());
+    template <typename _Func = init_func_t>
     explicit component_tuple(const captured_location_t& loc, const bool& store = false,
-                             const bool& flat = settings::flat_profile());
+                             const bool& flat = settings::flat_profile(),
+                             const _Func&     = get_initializer());
 
     ~component_tuple();
 

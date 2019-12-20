@@ -235,4 +235,32 @@ struct record_statistics;
 
 }  // namespace trait
 
+//--------------------------------------------------------------------------------------//
+
+namespace operation
+{
+//----------------------------------------------------------------------------------//
+// shorthand for available, non-void, using internal output handling
+//
+template <typename _Up>
+struct is_enabled
+{
+    using _Vp                   = typename _Up::value_type;
+    static constexpr bool value = (trait::is_available<_Up>::value &&
+                                   !(trait::external_output_handling<_Up>::value) &&
+                                   !(std::is_same<_Vp, void>::value));
+};
+
+//----------------------------------------------------------------------------------//
+// shorthand for non-void, using internal output handling
+//
+template <typename _Up>
+struct has_data
+{
+    using _Vp                   = typename _Up::value_type;
+    static constexpr bool value = (!(trait::external_output_handling<_Up>::value) &&
+                                   !(std::is_same<_Vp, void>::value));
+};
+
+}  // namespace operation
 }  // namespace tim

@@ -14,6 +14,7 @@ file(GLOB_RECURSE
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
 file(GLOB cxx_headers_extern        ${CMAKE_CURRENT_LIST_DIR}/timemory/extern/*.hpp)
 file(GLOB cxx_headers_general       ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
+file(GLOB cxx_headers_runtime       ${CMAKE_CURRENT_LIST_DIR}/timemory/runtime/*.hpp)
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
 file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
 file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
@@ -29,13 +30,25 @@ file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 file(GLOB_RECURSE
     cxx_extern_sources              ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
 
+set(_CATEGORIES backends components compat data ert extern general mpl runtime utility variadic)
 # bits folder
 set(cxx_headers_category_bits)
-foreach(_CATEGORY backends components ert mpl variadic utility)
+foreach(_CATEGORY ${_CATEGORIES})
     file(GLOB cxx_headers_${_CATEGORY}_bits
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.h
         ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.hpp
         ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.icpp)
     list(APPEND cxx_headers_category_bits ${cxx_headers_${_CATEGORY}_bits})
+endforeach()
+
+# impl folder
+set(cxx_headers_category_impl)
+foreach(_CATEGORY ${_CATEGORIES})
+    file(GLOB cxx_headers_${_CATEGORY}_impl
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/impl/*.h
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/impl/*.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/impl/*.icpp)
+    list(APPEND cxx_headers_category_impl ${cxx_headers_${_CATEGORY}_impl})
 endforeach()
 
 # all the headers
@@ -44,7 +57,8 @@ set(timemory_headers
     ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
     ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_extern}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
-    ${cxx_headers_category_bits} ${cxx_headers_general} ${compat_headers})
+    ${cxx_headers_category_bits} ${cxx_headers_category_impl}
+    ${cxx_headers_general} ${cxx_headers_runtime} ${compat_headers})
 
 source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_headers})
 

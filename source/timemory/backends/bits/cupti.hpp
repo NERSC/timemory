@@ -210,7 +210,7 @@ inline void
 init_driver()
 {
 #if defined(TIMEMORY_USE_CUPTI)
-    static std::atomic<short> _once;
+    static std::atomic<short> _once(0);
     if(_once++ > 0)
         return;
 

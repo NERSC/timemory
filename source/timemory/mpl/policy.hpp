@@ -67,7 +67,7 @@ protected:
     //
     static std::atomic<int_type>& get_started()
     {
-        static std::atomic<int_type> _instance;
+        static std::atomic<int_type> _instance(0);
         return _instance;
     }
 

@@ -40,6 +40,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <functional>
 #include <mutex>
 #include <sstream>
@@ -56,7 +57,7 @@ namespace tim
 inline std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
-    static std::atomic<int32_t> instance;
+    static std::atomic<int32_t> instance(0);
     return instance;
 }
 
@@ -66,7 +67,7 @@ manager::f_manager_instance_count()
 inline std::atomic<int32_t>&
 manager::f_thread_counter()
 {
-    static std::atomic<int32_t> _instance;
+    static std::atomic<int32_t> _instance(0);
     return _instance;
 }
 
@@ -99,6 +100,7 @@ inline manager::manager()
 , m_instance_count(f_manager_instance_count()++)
 , m_rank(dmp::rank())
 , m_metadata_fname(settings::compose_output_filename("metadata", "json"))
+, m_thread_id(std::this_thread::get_id())
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
 , m_lock(new auto_lock_t(m_mutex, std::defer_lock))
@@ -422,26 +424,6 @@ tim::base::storage::free_shared_manager()
 {
     if(m_manager)
         m_manager->remove_finalizer(m_label);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-_Tp&
-tim::manager::get_singleton()
-{
-    static _Tp _instance = _Tp::instance();
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-_Tp&
-tim::manager::get_noninit_singleton()
-{
-    static _Tp _instance = _Tp::instance_ptr();
-    return _instance;
 }
 
 //======================================================================================//

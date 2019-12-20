@@ -54,7 +54,7 @@ _Pair&
 get_shared_ptr_pair()
 {
     static auto              _master = std::make_shared<_Tp>();
-    static std::atomic<int>  _counter;
+    static std::atomic<int>  _counter(0);
     static thread_local auto _worker   = _Ptr((_counter++ == 0) ? nullptr : new _Tp());
     static thread_local auto _instance = _Pair{ _master, _worker };
     return _instance;

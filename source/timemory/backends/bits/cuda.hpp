@@ -38,7 +38,7 @@ tim::cuda::device_query()
 {
 #if defined(TIMEMORY_USE_CUDA)
 
-    static std::atomic<int16_t> _once;
+    static std::atomic<int16_t> _once(0);
     auto                        _count = _once++;
     if(_count > 0)
         return;

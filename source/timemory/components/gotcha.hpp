@@ -611,7 +611,7 @@ public:
 #if defined(DEBUG)
         if(settings::debug())
         {
-            static std::atomic<int64_t> _tcount;
+            static std::atomic<int64_t> _tcount(0);
             static thread_local int64_t _tid = _tcount++;
             std::stringstream           ss;
             ss << "[T" << _tid << "]> n = " << _n << ", t = " << _t << "...\n";
@@ -650,7 +650,7 @@ public:
 #if defined(DEBUG)
         if(settings::debug())
         {
-            static std::atomic<int64_t> _tcount;
+            static std::atomic<int64_t> _tcount(0);
             static thread_local int64_t _tid = _tcount++;
             std::stringstream           ss;
             ss << "[T" << _tid << "]> n = " << _n << ", t = " << _t << "...\n";
@@ -736,7 +736,7 @@ private:
     /// Global counter of active gotchas started
     static std::atomic<int64_t>& get_started()
     {
-        static std::atomic<int64_t> _instance;
+        static std::atomic<int64_t> _instance(0);
         return _instance;
     }
 
@@ -1069,7 +1069,7 @@ private:
         {
             if(settings::debug())
             {
-                static std::atomic<int64_t> _tcount;
+                static std::atomic<int64_t> _tcount(0);
                 static thread_local int64_t _tid = _tcount++;
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
@@ -1129,7 +1129,7 @@ private:
         {
             if(settings::debug())
             {
-                static std::atomic<int64_t> _tcount;
+                static std::atomic<int64_t> _tcount(0);
                 static thread_local int64_t _tid = _tcount++;
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha

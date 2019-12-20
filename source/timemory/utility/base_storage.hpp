@@ -40,6 +40,7 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/gperf.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
@@ -101,21 +102,32 @@ public:
         if(m_is_master && m_instance_id > 0)
         {
             int _id = m_instance_id;
-            PRINT_HERE("%s: %i",
-                       "Warning! base::storage is master but is not zero instance", _id);
+            PRINT_HERE("%s: %i (%s)",
+                       "Warning! base::storage is master but is not zero instance", _id,
+                       m_label.c_str());
         }
 
         if(!m_is_master && m_instance_id == 0)
         {
             int _id = m_instance_id;
-            PRINT_HERE("%s: %i",
-                       "Warning! base::storage is not master but is zero instance", _id);
+            PRINT_HERE("%s: %i (%s)",
+                       "Warning! base::storage is not master but is zero instance", _id,
+                       m_label.c_str());
         }
+
+        if(settings::debug())
+            PRINT_HERE("%s: %i (%s)", "base::storage instance created",
+                       (int) m_instance_id, m_label.c_str());
     }
 
     //----------------------------------------------------------------------------------//
     //
-    virtual ~storage() = default;
+    virtual ~storage()
+    {
+        if(settings::debug())
+            PRINT_HERE("%s: %i (%s)", "base::storage instance deleted",
+                       (int) m_instance_id, m_label.c_str());
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -156,7 +168,7 @@ protected:
 
     static std::atomic<int>& storage_once_flag()
     {
-        static std::atomic<int> _instance;
+        static std::atomic<int> _instance(0);
         return _instance;
     }
 

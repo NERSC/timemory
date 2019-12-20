@@ -248,7 +248,7 @@ static void CUPTIAPI
                                const CUpti_CallbackData* cbInfo)
 {
     using map_type = map_t<uint64_t, kernel_data_t>;
-    static std::atomic<uint64_t> correlation_data;
+    static std::atomic<uint64_t> correlation_data(0);
 
     // This callback is enabled only for launch so we shouldn't see anything else.
     if((cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020) &&
@@ -541,7 +541,7 @@ struct profiler
 
         m_kernel_data[impl::dummy_kernel_id] = dummy_data;
         cuptiEnableKernelReplayMode(m_context);
-        static std::atomic<int> _once;
+        static std::atomic<int> _once(0);
         if(_once++ == 0)
         {
             // store the initial data so that warmup does not show up

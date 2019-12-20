@@ -95,7 +95,7 @@ using ulong_t      = unsigned long int;
 inline ulong_t
 get_thread_index()
 {
-    static std::atomic<ulong_t> thr_counter;
+    static std::atomic<ulong_t> thr_counter(0);
     static thread_local ulong_t thr_count = thr_counter++;
     return thr_count;
 }
@@ -108,7 +108,7 @@ get_papi_thread_num()
 #if defined(TIMEMORY_USE_PAPI)
     return PAPI_thread_id();
 #else
-    static std::atomic<uint64_t> thr_counter;
+    static std::atomic<uint64_t> thr_counter(0);
     static thread_local uint64_t thr_count = thr_counter++;
     return thr_count;
 #endif
@@ -340,7 +340,7 @@ init_threading()
     {
         if(is_master_thread() && !working())
         {
-            static std::atomic<int> _once;
+            static std::atomic<int> _once(0);
             if(_once++ == 0)
                 fprintf(stderr,
                         "Warning!! Thread support is not enabled because it is not "
@@ -371,7 +371,7 @@ init_multiplexing()
     {
         if(!working())
         {
-            static std::atomic<int32_t> _once;
+            static std::atomic<int32_t> _once(0);
             if(_once++ == 0)
                 fprintf(stderr,
                         "Warning!! Multiplexing is not enabled because of previous PAPI "

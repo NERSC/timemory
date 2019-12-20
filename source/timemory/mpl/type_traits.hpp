@@ -287,6 +287,21 @@ struct test_audit_support : decltype(details::test_audit_support<T, Args...>(0))
 {};
 
 }  // namespace trait
+
+//======================================================================================//
+//
+//      determines if storage should be implemented
+//
+//======================================================================================//
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+struct implements_storage
+{
+    static constexpr bool value = (trait::is_available<_Tp>::value &&
+                                   !(trait::external_output_handling<_Tp>::value) &&
+                                   !(std::is_same<_Vp, void>::value));
+};
+
 }  // namespace tim
 
 //======================================================================================//
@@ -921,8 +936,8 @@ struct external_output_handling<component::tau_marker> : std::true_type
 //
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx>
-struct requires_prefix<component::user_bundle<_Idx>> : std::true_type
+template <size_t _Idx, typename _Type>
+struct requires_prefix<component::user_bundle<_Idx, _Type>> : std::true_type
 {};
 
 //--------------------------------------------------------------------------------------//

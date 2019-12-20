@@ -66,7 +66,7 @@ struct nvtx_marker : public base<nvtx_marker, void>
 
     static const int32_t& get_thread_id()
     {
-        static std::atomic<int32_t> _thread_counter;
+        static std::atomic<int32_t> _thread_counter(0);
         static thread_local int32_t _thread_id = _thread_counter++;
         return _thread_id;
     }

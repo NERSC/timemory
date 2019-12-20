@@ -133,10 +133,30 @@ tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
 inline void
 tim::timemory_finalize()
 {
-    manager::instance()->finalize();
-    upc::finalize();
-    mpi::finalize();
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing signals...");
+
     disable_signal_detection();
+
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing manager...");
+
+    auto _manager = manager::instance();
+    if(_manager)
+        _manager->finalize();
+
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing upcxx...");
+
+    upc::finalize();
+
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing mpi...");
+
+    mpi::finalize();
+
+    if(settings::debug())
+        PRINT_HERE("%s", "done...");
 }
 
 //--------------------------------------------------------------------------------------//

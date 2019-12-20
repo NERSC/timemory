@@ -187,57 +187,15 @@ public:
 public:
     component_list();
 
+    template <typename _Func = init_func_t>
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile());
+                            const bool& flat = settings::flat_profile(),
+                            const _Func&     = get_initializer());
 
+    template <typename _Func = init_func_t>
     explicit component_list(const captured_location_t& loc, const bool& store = false,
-                            const bool& flat = settings::flat_profile());
-
-    template <typename _Func>
-    explicit component_list(const _Func& _func, const string_t& key,
-                            const bool& store = false,
-                            const bool& flat  = settings::flat_profile())
-    : m_store(store && settings::enabled())
-    , m_flat(flat)
-    , m_is_pushed(false)
-    , m_print_prefix(true)
-    , m_print_laps(true)
-    , m_laps(0)
-    , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
-    , m_key(key)
-    , m_data(data_type())
-    {
-        apply<void>::set_value(m_data, nullptr);
-        if(settings::enabled())
-        {
-            _func(*this);
-            // compute_width(key);
-            set_object_prefix(m_key);
-        }
-    }
-
-    template <typename _Func>
-    explicit component_list(const _Func& _func, const captured_location_t& loc,
-                            const bool& store = false,
-                            const bool& flat  = settings::flat_profile())
-    : m_store(store && settings::enabled())
-    , m_flat(flat)
-    , m_is_pushed(false)
-    , m_print_prefix(true)
-    , m_print_laps(true)
-    , m_laps(0)
-    , m_hash(loc.get_hash())
-    , m_key(loc.get_id())
-    , m_data(data_type())
-    {
-        apply<void>::set_value(m_data, nullptr);
-        if(settings::enabled())
-        {
-            _func(*this);
-            // compute_width(key);
-            set_object_prefix(m_key);
-        }
-    }
+                            const bool& flat = settings::flat_profile(),
+                            const _Func&     = get_initializer());
 
     ~component_list();
 
@@ -476,7 +434,7 @@ public:
         }
         else
         {
-            static std::atomic<int> _count;
+            static std::atomic<int> _count(0);
             if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = demangle(typeid(_Tp).name());
@@ -495,7 +453,7 @@ public:
               enable_if_t<(trait::is_available<_Tp>::value == false), int>      = 0>
     void init(_Args&&...)
     {
-        static std::atomic<int> _count;
+        static std::atomic<int> _count(0);
         if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
         {
             std::string _id = demangle(typeid(_Tp).name());

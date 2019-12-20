@@ -139,6 +139,8 @@ public:
               enable_if_t<(_Toolset::is_component), char>              = 0>
     static void configure(bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+
         if(!trait::is_available<_Toolset>::value)
             return;
 
@@ -176,6 +178,8 @@ public:
               enable_if_t<!(_Toolset::is_component), char>             = 0>
     static void configure(bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+
         if(_Toolset::size() == 0)
             return;
 
@@ -213,6 +217,8 @@ public:
               enable_if_t<!(_Toolset::is_component), char>             = 0>
     static void configure(_InitFunc&& _init, bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+
         if(_Toolset::size() == 0)
             return;
 

@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
+#include "timemory/data/statistics.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
@@ -41,6 +42,12 @@
 
 namespace tim
 {
+//======================================================================================//
+//
+//      base component class
+//
+//======================================================================================//
+
 namespace component
 {
 template <typename _Tp, typename _Value>

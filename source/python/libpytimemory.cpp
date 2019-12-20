@@ -43,7 +43,7 @@ extern "C"
 
 #if !defined(_WINDOWS)
 using manager_pointer_t = std::shared_ptr<tim::manager>;
-extern manager_pointer_t timemory_master_manager_instance;
+// extern manager_pointer_t timemory_master_manager_instance;
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -70,6 +70,7 @@ manager_wrapper::get()
 
 PYBIND11_MODULE(libpytimemory, tim)
 {
+    /*
 #if !defined(_WINDOWS)
     static auto _master_manager = timemory_master_manager_instance;
 #else
@@ -83,7 +84,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
                (void*) _master_manager.get(), (void*) _worker_manager.get());
     }
-
+    */
     //----------------------------------------------------------------------------------//
     using pytim::string_t;
     py::add_ostream_redirect(tim, "ostream_redirect");
@@ -388,7 +389,29 @@ PYBIND11_MODULE(libpytimemory, tim)
             py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
             py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_finalize", [&]() { tim::timemory_finalize(); },
+    tim.def("timemory_finalize",
+            []() {
+                try
+                {
+                    PRINT_HERE("%s", "");
+                    tim::timemory_finalize();
+                    PRINT_HERE("%s", "");
+                } catch(std::exception& e)
+                {
+                    PRINT_HERE("ERROR: %s", e.what());
+                    PRINT_HERE("%s", "finalizing signals...");
+                    tim::disable_signal_detection();
+                    PRINT_HERE("%s", "finalizing manager...");
+                    auto _manager = tim::manager::instance();
+                    if(_manager)
+                        _manager->finalize();
+                    PRINT_HERE("%s", "finalizing upcxx...");
+                    tim::upc::finalize();
+                    PRINT_HERE("%s", "finalizing mpi...");
+                    tim::mpi::finalize();
+                    PRINT_HERE("%s", "done...");
+                }
+            },
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");

@@ -111,7 +111,7 @@ struct papi_array
 
             if(settings::verbose() > 1 || settings::debug())
             {
-                static std::atomic<int> _once;
+                static std::atomic<int> _once(0);
                 if(_once++ == 0)
                 {
                     printf("[papi_array]> TIMEMORY_PAPI_EVENTS: '%s'...\n",

@@ -35,7 +35,6 @@
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/storage.hpp"
 
 //======================================================================================//
 
@@ -43,6 +42,8 @@ namespace tim
 {
 namespace component
 {
+//--------------------------------------------------------------------------------------//
+
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<wall_clock>;

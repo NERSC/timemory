@@ -48,7 +48,7 @@ using native_handle_t = std::thread::native_handle_type;
 inline int64_t
 get_id()
 {
-    static std::atomic<int64_t> _global_counter;
+    static std::atomic<int64_t> _global_counter(0);
     static thread_local int64_t _this_id = _global_counter++;
     return _this_id;
 }
@@ -61,7 +61,7 @@ struct affinity
     {
         static functor_t _instance = [](int64_t tid) {
             consume_parameters(tid);
-            static std::atomic<int64_t> _counter;
+            static std::atomic<int64_t> _counter(0);
             return _counter++;
         };
         return _instance;

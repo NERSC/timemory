@@ -38,8 +38,7 @@ namespace tim
 {
 //======================================================================================//
 // declares:
-//      template <> get_storage_singleton<TYPE>();
-//      template <> get_noninit_storage_singleton<TYPE>();
+//      extern template get_storage_singleton<TYPE>();
 //
 #    if defined(TIMEMORY_USE_CALIPER)
 TIMEMORY_DECLARE_EXTERN_INIT(caliper)

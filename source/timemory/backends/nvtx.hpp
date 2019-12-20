@@ -64,7 +64,7 @@ get_thread_id()
 #elif defined(_WINDOWS)
     return GetCurrentThreadId();
 #else
-    static std::atomic<uint32_t> _thread_counter;
+    static std::atomic<uint32_t> _thread_counter(0);
     static thread_local uint32_t _thread_id = _thread_counter++;
     return _thread_id;
 #endif

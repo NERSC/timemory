@@ -86,7 +86,7 @@ protected:
 private:
     static std::atomic<int64_t>& get_index()
     {
-        static std::atomic<int64_t> _instance;
+        static std::atomic<int64_t> _instance(0);
         return _instance;
     }
 };

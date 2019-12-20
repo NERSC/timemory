@@ -110,6 +110,24 @@ public:
 
     using size_type           = int64_t;
     using captured_location_t = source_location::captured;
+    using init_func_t         = std::function<void(this_type&)>;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    static void init_storage()
+    {
+        tuple_type::init_storage();
+        list_type::init_storage();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type&) {};
+        return _instance;
+    }
 
 public:
     explicit component_hybrid()
@@ -117,21 +135,27 @@ public:
     , m_list()
     {}
 
+    template <typename _Func = init_func_t>
     explicit component_hybrid(const string_t& key, const bool& store = false,
-                              const bool& flat = settings::flat_profile())
+                              const bool&  flat  = settings::flat_profile(),
+                              const _Func& _func = this_type::get_initializer())
     : m_tuple(key, store, flat)
     , m_list(key, store, flat)
     {
+        _func(*this);
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
         m_list.m_print_prefix = false;
     }
 
+    template <typename _Func = init_func_t>
     explicit component_hybrid(const captured_location_t& loc, const bool& store = false,
-                              const bool& flat = settings::flat_profile())
+                              const bool&  flat  = settings::flat_profile(),
+                              const _Func& _func = this_type::get_initializer())
     : m_tuple(loc, store, flat)
     , m_list(loc, store, flat)
     {
+        _func(*this);
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
         m_list.m_print_prefix = false;
@@ -443,14 +467,6 @@ public:
     {
         tuple_type::print_storage();
         list_type::print_storage();
-    }
-
-public:
-    //----------------------------------------------------------------------------------//
-    static void init_storage()
-    {
-        tuple_type::init_storage();
-        list_type::init_storage();
     }
 
 public:

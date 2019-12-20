@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include "timemory/bits/components.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/runtime/initialize.hpp"
 #include "timemory/variadic/component_list.hpp"
 
 //======================================================================================//
@@ -58,8 +58,9 @@ component_list<Types...>::component_list()
 }
 
 template <typename... Types>
+template <typename _Func>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
-                                         const bool& flat)
+                                         const bool& flat, const _Func& _func)
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
@@ -72,7 +73,7 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
     apply<void>::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        get_initializer()(*this);
+        _func(*this);
         // compute_width(m_key);
         set_object_prefix(m_key);
     }
@@ -81,8 +82,10 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
+template <typename _Func>
 component_list<Types...>::component_list(const captured_location_t& loc,
-                                         const bool& store, const bool& flat)
+                                         const bool& store, const bool& flat,
+                                         const _Func& _func)
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
@@ -95,7 +98,7 @@ component_list<Types...>::component_list(const captured_location_t& loc,
     apply<void>::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        get_initializer()(*this);
+        _func(*this);
         // compute_width(m_key);
         set_object_prefix(m_key);
     }
@@ -476,7 +479,7 @@ template <typename... Types>
 inline int64_t
 component_list<Types...>::output_width(int64_t width)
 {
-    static std::atomic<int64_t> _instance;
+    static std::atomic<int64_t> _instance(0);
     if(width > 0)
     {
         auto current_width = _instance.load(std::memory_order_relaxed);

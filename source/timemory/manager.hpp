@@ -39,9 +39,9 @@
 #include "timemory/general/hash.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/utility/base_storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/storage.hpp"
 #include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -136,11 +136,12 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
     {
+        using storage_type = typename _Tp::storage_type;
         if(!component::properties<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::instance();
-            ret->initialize();
+            auto ret = storage_type::instance();
+            if(ret)
+                ret->initialize();
         }
     }
 
@@ -158,10 +159,10 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _print_storage()
     {
+        using storage_type = typename _Tp::storage_type;
         if(component::properties<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
+            auto ret = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 ret->print();
         }
@@ -181,10 +182,10 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _clear()
     {
+        using storage_type = typename _Tp::storage_type;
         if(component::properties<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
+            auto ret = storage_type::noninit_instance();
             if(ret)
                 ret->data().reset();
         }
@@ -204,10 +205,10 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _serialize(_Archive& ar)
     {
+        using storage_type = typename _Tp::storage_type;
         if(component::properties<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
+            auto ret = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 ret->_serialize(ar);
         }
@@ -224,24 +225,26 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _size(uint64_t& _sz)
+    {
+        auto label         = tim::demangle<_Tp>();
+        using storage_type = typename _Tp::storage_type;
+        label += std::string(" (") + tim::demangle<storage_type>() + ")";
+        if(component::properties<_Tp>::has_storage())
+        {
+            auto ret = storage_type::noninit_instance();
+            if(ret && !ret->empty())
+                _sz += ret->size();
+        }
+    }
+
+    template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
     void _size(uint64_t& _sz)
     {
         _size<_Tp>(_sz);
         _size<_Tail...>(_sz);
-    }
-
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
-    void _size(uint64_t& _sz)
-    {
-        if(component::properties<_Tp>::has_storage())
-        {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
-            if(ret && !ret->empty())
-                _sz += ret->size();
-        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -363,14 +366,10 @@ public:
     /// used by storage classes to ensure that the singleton instance is managed
     /// via the master thread of holding the manager instance
     template <typename _Tp>
-    _Tp& get_singleton();
-
-    //----------------------------------------------------------------------------------//
-    //
-    /// used by storage classes to ensure that the singleton instance is managed
-    /// via the master thread of holding the manager instance
-    template <typename _Tp>
-    _Tp& get_noninit_singleton();
+    auto get_singleton() -> decltype(_Tp::instance())
+    {
+        return _Tp::instance();
+    }
 
 private:
     template <typename... _Types>
@@ -397,9 +396,10 @@ private:
     /// notifies that it is finalizing
     bool m_is_finalizing = false;
     /// instance id
-    int32_t  m_instance_count;
-    int32_t  m_rank;
-    string_t m_metadata_fname;
+    int32_t         m_instance_count;
+    int32_t         m_rank;
+    string_t        m_metadata_fname;
+    std::thread::id m_thread_id;
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
     graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();

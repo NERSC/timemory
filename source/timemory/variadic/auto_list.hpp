@@ -41,8 +41,8 @@
 #include <cstdint>
 #include <string>
 
-#include "timemory/bits/components.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/runtime/initialize.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_list.hpp"
@@ -93,28 +93,22 @@ public:
             static auto env_ret  = tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "");
             static auto env_enum = enumerate_components(tim::delimit(env_ret));
             ::tim::initialize(al, env_enum);
-            // env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
         };
         return _instance;
     }
 
 public:
     template <typename _Func = init_func_t>
-    inline explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
-                              bool         report_at_exit = false,
-                              const _Func& _func          = this_type::get_initializer());
+    explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
+                       bool report_at_exit = false, const _Func& = get_initializer());
 
     template <typename _Func = init_func_t>
-    inline explicit auto_list(const captured_location_t&,
-                              bool         flat           = settings::flat_profile(),
-                              bool         report_at_exit = false,
-                              const _Func& _func          = this_type::get_initializer());
+    explicit auto_list(const captured_location_t&, bool flat = settings::flat_profile(),
+                       bool report_at_exit = false, const _Func& = get_initializer());
 
-    template <typename _Func = init_func_t>
-    inline explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
-                              bool         report_at_exit = false,
-                              const _Func& _func          = this_type::get_initializer());
-    inline ~auto_list();
+    explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
+                       bool report_at_exit = false);
+    ~auto_list();
 
     // copy and move
     inline auto_list(const this_type&) = default;
@@ -253,31 +247,11 @@ private:
 
 template <typename... Types>
 template <typename _Func>
-auto_list<Types...>::auto_list(const string_t& object_tag, bool flat, bool report_at_exit,
+auto_list<Types...>::auto_list(const string_t& key, bool flat, bool report_at_exit,
                                const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
-                               : component_type{})
-, m_reference_object(nullptr)
-{
-    if(m_enabled)
-    {
-        _func(*this);
-        m_temporary_object.start();
-    }
-}
-
-//======================================================================================//
-
-template <typename... Types>
-template <typename _Func>
-auto_list<Types...>::auto_list(const captured_location_t& object_loc, bool flat,
-                               bool report_at_exit, const _Func& _func)
-: m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
-                               : component_type{})
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -291,8 +265,24 @@ auto_list<Types...>::auto_list(const captured_location_t& object_loc, bool flat,
 
 template <typename... Types>
 template <typename _Func>
-auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                               const _Func& _func)
+auto_list<Types...>::auto_list(const captured_location_t& loc, bool flat,
+                               bool report_at_exit, const _Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        _func(*this);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(tmp.clone(true, flat))
@@ -300,7 +290,6 @@ auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_ex
 {
     if(m_enabled)
     {
-        _func(*this);
         m_temporary_object.start();
     }
 }

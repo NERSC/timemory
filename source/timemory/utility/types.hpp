@@ -39,27 +39,27 @@ class singleton;
 
 //--------------------------------------------------------------------------------------//
 
-namespace details
+namespace impl
 {
+//--------------------------------------------------------------------------------------//
+//
 template <typename StorageType>
 struct storage_deleter;
 
-template <typename Type>
-class storage;
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 using storage_singleton_t =
-    singleton<_Tp, std::unique_ptr<_Tp, details::storage_deleter<_Tp>>>;
-
-}  // namespace details
+    singleton<_Tp, std::unique_ptr<_Tp, impl::storage_deleter<_Tp>>>;
 
 //--------------------------------------------------------------------------------------//
 
-namespace impl
-{
 template <typename Type, bool ImplementsStorage>
 class storage
 {};
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace impl
 
 //--------------------------------------------------------------------------------------//
@@ -71,11 +71,19 @@ class storage;
 
 //--------------------------------------------------------------------------------------//
 
-namespace cupti
-{
-struct result;
-}
+template <typename Type>
+class storage;
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+impl::storage_singleton_t<_Tp>*
+get_storage_singleton();
+
+//--------------------------------------------------------------------------------------//
+// clang-format off
+namespace cupti { struct result; }
+// clang-format on
 //--------------------------------------------------------------------------------------//
 
 namespace scope
