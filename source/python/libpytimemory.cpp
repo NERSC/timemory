@@ -394,11 +394,9 @@ PYBIND11_MODULE(libpytimemory, tim)
                 try
                 {
                     tim::timemory_finalize();
-                    tim::manager::exit_hook();
                 } catch(std::exception& e)
                 {
                     PRINT_HERE("ERROR: %s", e.what());
-                    tim::manager::exit_hook();
                 }
             },
             "Finalize timemory (generate output) -- important to call if using MPI");
