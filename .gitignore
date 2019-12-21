@@ -8,6 +8,7 @@ settings.json
 
 # Edit files
 *~
+._*
 
 # build directories
 /build-*
