@@ -476,7 +476,7 @@ private:
                   string_hash()("calloc"),
                   string_hash()("cudaMalloc"),
                   string_hash()("free"),
-                  string_hash("cudaFree") }
+                  string_hash()("cudaFree") }
             };
 #else
             hash_array_t _instance = { { string_hash()("malloc"), string_hash()("calloc"),
