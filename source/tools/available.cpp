@@ -93,8 +93,8 @@ struct get_availability
         string_t id_type      = component::properties<Type>::id();
         auto     ids_set      = component::properties<Type>::ids();
         auto     itr          = ids_set.begin();
-        string_t db        = (markdown) ? "`\"" : "\"";
-        string_t de        = (markdown) ? "\"`" : "\"";
+        string_t db           = (markdown) ? "`\"" : "\"";
+        string_t de           = (markdown) ? "\"`" : "\"";
         string_t ids_str      = TIMEMORY_JOIN("", TIMEMORY_JOIN("", db, *itr++, de));
         for(; itr != ids_set.end(); ++itr)
             ids_str = TIMEMORY_JOIN("  ", ids_str, TIMEMORY_JOIN("", db, *itr, de));
@@ -512,7 +512,8 @@ write_settings_info(std::ostream& os, const array_t<bool, _N>&, const array_t<bo
             _widths.at(i) =
                 std::max<uint64_t>(_widths.at(i), itr.at(i).length() + padding);
 
-    array_t<string_t, 4> _labels = { "ENVIRONMENT", "C++ STATIC ACCESSOR", "TYPE", "VALUE" };
+    array_t<string_t, 4> _labels = { "ENVIRONMENT", "C++ STATIC ACCESSOR", "TYPE",
+                                     "VALUE" };
     array_t<bool, 4>     _center = { false, false, true, true };
 
     if(!markdown)
