@@ -14,7 +14,6 @@ include(Compilers)
 
 find_library(dl_LIBRARY NAMES dl)
 if(dl_LIBRARY)
-    # target_compile_definitions(timemory-compile-options INTERFACE TIMEMORY_USE_DL)
     target_link_libraries(timemory-compile-options INTERFACE ${dl_LIBRARY})
 endif()
 

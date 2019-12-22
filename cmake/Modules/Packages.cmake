@@ -41,11 +41,12 @@ add_interface_library(timemory-tau)
 add_interface_library(timemory-python)
 
 add_interface_library(timemory-coverage)
+add_interface_library(timemory-gperftools-compile-options)
+add_interface_library(timemory-all-gperftools)
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
-add_interface_library(timemory-all-gperftools)
-add_interface_library(timemory-gperftools-compile-options)
+add_interface_library(timemory-gperftools-static)
 add_interface_library(timemory-tcmalloc-minimal)
 
 add_interface_library(timemory-roofline)
@@ -76,9 +77,11 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cupti
     timemory-cudart-device
     #
+    timemory-all-gperftools
     timemory-gperftools
     timemory-gperftools-cpu
     timemory-gperftools-heap
+    timemory-gperftools-static
     #
     timemory-caliper
     timemory-gotcha
@@ -95,7 +98,6 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
-    timemory-gperftools
     timemory-caliper
     timemory-gotcha
     timemory-likwid
@@ -111,11 +113,18 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
-    timemory-gperftools
     timemory-caliper
     timemory-vtune
     timemory-tau
     ${_DMP_LIBRARIES})
+
+set(_GPERF_ANALYSIS OFF)
+# if not python or force requested
+if((NOT (TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)) OR TIMEMORY_FORCE_GPERF_PYTHON)
+    list(APPEND TIMEMORY_EXTERNAL_SHARED_INTERFACES timemory-gperftools)
+    list(APPEND TIMEMORY_EXTERNAL_STATIC_INTERFACES timemory-gperftools-static)
+    set(_GPERF_ANALYSIS ON)
+endif()
 
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
@@ -132,7 +141,7 @@ if(TIMEMORY_USE_SANITIZER)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)
 endif()
 
-if(TIMEMORY_USE_GPERF)
+if(TIMEMORY_USE_GPERF AND _GPERF_ANALYSIS)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools-cpu)
 endif()
 
@@ -710,8 +719,19 @@ if(_GPERF_COMPONENTS)
     list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
 endif()
 
+if(NOT TIMEMORY_FORCE_GPERF_PYTHON)
+    if(TIMEMORY_USE_PYTHON)
+        set(_GPERF_COMPONENTS )
+        set(TIMEMORY_gperftools_COMPONENTS )
+    endif()
 
-if(NOT "${_GPERF_COMPONENTS}" STREQUAL "")
+    if(TIMEMORY_BUILD_PYTHON)
+        set(_GPERF_COMPONENTS )
+        set(TIMEMORY_gperftools_COMPONENTS )
+    endif()
+endif()
+
+if(TIMEMORY_USE_GPERF)
     #
     # general set of compiler flags when using gperftools
     #
@@ -773,7 +793,7 @@ if(NOT "${_GPERF_COMPONENTS}" STREQUAL "")
         INTERFACE               timemory-all-gperftools
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF
         LINK_LIBRARIES          timemory-gperftools-compile-options
-        DESCRIPTION             "statically-linked gperftools"
+        DESCRIPTION             "tcmalloc_and_profiler (preference for shared)"
         FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
 
     find_package_interface(
@@ -798,6 +818,21 @@ if(NOT "${_GPERF_COMPONENTS}" STREQUAL "")
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "threading-optimized malloc replacement"
         FIND_ARGS               QUIET COMPONENTS tcmalloc)
+
+    # set local overloads
+    set(gperftools_PREFER_SHARED OFF)
+    set(gperftools_PREFER_STATIC ON)
+
+    find_package_interface(
+        NAME                    gperftools
+        INTERFACE               timemory-gperftools-static
+        LINK_LIBRARIES          timemory-gperftools-compile-options
+        DESCRIPTION             "tcmalloc_and_profiler (preference for static)"
+        FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
+
+    # remove local overloads
+    unset(gperftools_PREFER_SHARED)
+    unset(gperftools_PREFER_STATIC)
 endif()
 
 
@@ -964,7 +999,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-add_target_flag_if_avail(timemory-roofline-options INTERFACE
+add_target_flag_if_avail(timemory-roofline-options
     "-finline-functions" "-funroll-loops" "-ftree-vectorize"
     "-ftree-loop-optimize" "-ftree-loop-vectorize" "-O3")
 

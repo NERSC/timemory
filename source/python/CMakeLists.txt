@@ -6,7 +6,7 @@
 #
 ##########################################################################################
 
-if(NOT TIMEMORY_BUILD_PYTHON)
+if(NOT TIMEMORY_BUILD_PYTHON AND NOT TIMEMORY_USE_PYTHON)
     return()
 endif()
 
@@ -41,7 +41,6 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-external-shared
     timemory-python-compile-options
     timemory-mpip-library
-    timemory-gperftools
     PRIVATE pybind11::module)
 
 if(TIMEMORY_USE_CUDA)

@@ -115,8 +115,9 @@ struct get_availability<component_list<_Types...>>
     using this_type = get_availability<component_list<_Types...>>;
 
     static constexpr size_t size() { return sizeof...(_Types); }
+    static constexpr size_t nelem = sizeof...(_Types);
 
-    using info_vec_t  = array_t<info_type, size()>;
+    using info_vec_t  = array_t<info_type, nelem>;
     using avail_types = std::tuple<get_availability<_Types>...>;
 
     static info_vec_t get_info()

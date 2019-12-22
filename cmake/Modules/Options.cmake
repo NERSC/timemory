@@ -182,8 +182,10 @@ add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_DEVELOPER
     "Enable building with developer flags" OFF ${_FEATURE})
+add_option(TIMEMORY_FORCE_GPERF_PYTHON
+    "Enable gperftools + Python (may cause termination errors)" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_QUIET
-    "Enable GoogleTest" OFF NO_FEATURE)
+    "Disable verbose messages" OFF NO_FEATURE)
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
@@ -216,7 +218,7 @@ add_option(TIMEMORY_USE_CLANG_TIDY
 add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE} ${_FEATURE})
 add_option(TIMEMORY_USE_GPERF
-    "Enable gperf-tools" OFF)
+    "Enable gperf-tools" ON)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_VTUNE
