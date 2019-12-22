@@ -41,13 +41,6 @@ extern "C"
 
 //======================================================================================//
 
-#if !defined(_WINDOWS)
-using manager_pointer_t = std::shared_ptr<tim::manager>;
-// extern manager_pointer_t timemory_master_manager_instance;
-#endif
-
-//--------------------------------------------------------------------------------------//
-
 manager_wrapper::manager_wrapper()
 : m_manager(manager_t::instance().get())
 {}
@@ -70,22 +63,18 @@ manager_wrapper::get()
 
 PYBIND11_MODULE(libpytimemory, tim)
 {
-    /*
-#if !defined(_WINDOWS)
-    static auto _master_manager = timemory_master_manager_instance;
-#else
-    static auto _master_manager = manager_t::master_instance();
-#endif
+    //----------------------------------------------------------------------------------//
+    //
+    static auto              _master_manager = manager_t::master_instance();
     static thread_local auto _worker_manager = manager_t::instance();
-    //  tim::consume_parameters(_worker_manager, _master_manager);
-
     if(_worker_manager != _master_manager)
     {
         printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
                (void*) _master_manager.get(), (void*) _worker_manager.get());
     }
-    */
+
     //----------------------------------------------------------------------------------//
+    //
     using pytim::string_t;
     py::add_ostream_redirect(tim, "ostream_redirect");
 

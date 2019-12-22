@@ -48,6 +48,18 @@ struct enumerator;
 //--------------------------------------------------------------------------------------//
 //
 template <typename _Tp>
+struct state
+{
+    static bool& has_storage()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename _Tp>
 struct properties
 {
     using type                                = _Tp;
@@ -56,11 +68,6 @@ struct properties
     static constexpr const char* enum_string() { return "TIMEMORY_COMPONENTS_END"; }
     static constexpr const char* id() { return ""; }
     static idset_t               ids() { return idset_t{}; }
-    static bool&                 has_storage()
-    {
-        static thread_local bool _instance = false;
-        return _instance;
-    }
 };
 
 //

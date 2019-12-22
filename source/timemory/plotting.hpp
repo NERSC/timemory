@@ -65,15 +65,29 @@ template <typename _Tp, typename... _Tail,
 void
 _plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
 {
-    if(!component::properties<_Tp>::has_storage())
+    using storage_type = typename _Tp::storage_type;
+
+    if(trait::external_output_handling<_Tp>::value ||
+       std::is_same<typename _Tp::value_type, void>::value)
         return;
 
-    if(std::system(nullptr) && tim::settings::json_output() &&
-       !tim::trait::external_output_handling<_Tp>::value)
+    if(!settings::json_output() && !trait::requires_json<_Tp>::value)
+        return;
+
+    auto ret = storage_type::noninit_instance();
+    if(!ret)
+        return;
+    if(ret->empty())
+        return;
+
+    // if(!component::state<_Tp>::has_storage())
+    //     return;
+
+    if(std::system(nullptr))
     {
         auto label    = _Tp::label();
         auto descript = _Tp::description();
-        auto jname    = tim::settings::compose_output_filename(label, ".json");
+        auto jname    = settings::compose_output_filename(label, ".json");
         {
             std::ifstream ifs(jname.c_str());
             bool          exists = ifs.good();

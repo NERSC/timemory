@@ -69,7 +69,7 @@ public:
     using base_type      = this_type;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
     using graph_iterator = typename storage_type::iterator;
-    using properties_t   = properties<this_type>;
+    using state_t        = state<this_type>;
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
@@ -561,9 +561,9 @@ protected:
                 _instance = storage_type::instance();
         }
 
-        if(!properties_t::has_storage() && _instance)
+        if(!state_t::has_storage() && _instance)
             _instance->initialize();
-        return properties_t::has_storage();
+        return state_t::has_storage();
     }
 
     template <typename _Up = _Tp, typename _Vp = _Value,
@@ -578,7 +578,7 @@ protected:
     //
     static Type dummy()
     {
-        properties_t::has_storage() = true;
+        state_t::has_storage() = true;
         Type _fake{};
         return _fake;
     }

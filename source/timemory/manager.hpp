@@ -137,11 +137,18 @@ private:
     void _init_storage()
     {
         using storage_type = typename _Tp::storage_type;
-        if(!component::properties<_Tp>::has_storage())
+        static thread_local std::atomic<int> _once(0);
+        if(_once++ == 0 && !component::state<_Tp>::has_storage())
         {
             auto ret = storage_type::instance();
             if(ret)
                 ret->initialize();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -160,11 +167,17 @@ private:
     void _print_storage()
     {
         using storage_type = typename _Tp::storage_type;
-        if(component::properties<_Tp>::has_storage())
+        // if(component::state<_Tp>::has_storage())
         {
             auto ret = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 ret->print();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -183,11 +196,17 @@ private:
     void _clear()
     {
         using storage_type = typename _Tp::storage_type;
-        if(component::properties<_Tp>::has_storage())
+        // if(component::state<_Tp>::has_storage())
         {
             auto ret = storage_type::noninit_instance();
             if(ret)
                 ret->data().reset();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -206,11 +225,17 @@ private:
     void _serialize(_Archive& ar)
     {
         using storage_type = typename _Tp::storage_type;
-        if(component::properties<_Tp>::has_storage())
+        // if(component::state<_Tp>::has_storage())
         {
             auto ret = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 ret->_serialize(ar);
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -231,11 +256,17 @@ private:
         auto label         = tim::demangle<_Tp>();
         using storage_type = typename _Tp::storage_type;
         label += std::string(" (") + tim::demangle<storage_type>() + ")";
-        if(component::properties<_Tp>::has_storage())
+        // if(component::state<_Tp>::has_storage())
         {
             auto ret = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 _sz += ret->size();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 

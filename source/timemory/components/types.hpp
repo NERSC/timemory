@@ -191,11 +191,6 @@ using user_list_bundle  = user_bundle<11011, native_tag>;
                 static idset_t _instance{ ID, __VA_ARGS__ };                             \
                 return _instance;                                                        \
             }                                                                            \
-            static bool& has_storage()                                                   \
-            {                                                                            \
-                static thread_local bool _instance = false;                              \
-                return _instance;                                                        \
-            }                                                                            \
         };                                                                               \
         template <>                                                                      \
         struct enumerator<ENUM> : properties<TYPE>                                       \

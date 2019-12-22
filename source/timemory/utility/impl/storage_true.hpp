@@ -280,7 +280,7 @@ public:
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
 
-        component::properties<Type>::has_storage() = true;
+        component::state<Type>::has_storage() = true;
 
         static std::atomic<int32_t> _skip_once(0);
         if(_skip_once++ > 0)

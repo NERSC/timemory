@@ -118,7 +118,7 @@ public:
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
         get_shared_manager();
-        component::properties<Type>::has_storage() = false;
+        component::state<Type>::has_storage() = true;
     }
 
     //----------------------------------------------------------------------------------//
