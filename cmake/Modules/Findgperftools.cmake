@@ -119,10 +119,10 @@ foreach(_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
         DOC "gperftools ${_gperftools_COMPONENT} library (static)")
 
     # handle preference settings first
-    if(gperftools_PREFER_STATIC)
-        set(${_gperftools_LIBRARY_BASE} ${${_gperftools_LIBRARY_BASE}_STATIC})
-    elseif(gperftools_PREFER_STATIC)
+    if(gperftools_PREFER_SHARED)
         set(${_gperftools_LIBRARY_BASE} ${${_gperftools_LIBRARY_BASE}_SHARED})
+    elseif(gperftools_PREFER_STATIC)
+        set(${_gperftools_LIBRARY_BASE} ${${_gperftools_LIBRARY_BASE}_STATIC})
     endif()
 
     # set depending on try BUILD_{SHARED,STATIC}_LIBS

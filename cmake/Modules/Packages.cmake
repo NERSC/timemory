@@ -704,6 +704,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+set(gperftools_PREFER_SHARED ON CACHE BOOL "Prefer goerftools shared libraries")
 set(_GPERF_COMPONENTS ${TIMEMORY_gperftools_COMPONENTS})
 if(_GPERF_COMPONENTS)
     list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
