@@ -290,6 +290,19 @@ struct test_audit_support : decltype(details::test_audit_support<T, Args...>(0))
 
 //======================================================================================//
 //
+//      determines if output is generated
+//
+//======================================================================================//
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+struct generates_output
+{
+    static constexpr bool value = (!(trait::external_output_handling<_Tp>::value) &&
+                                   !(std::is_same<_Vp, void>::value));
+};
+
+//======================================================================================//
+//
 //      determines if storage should be implemented
 //
 //======================================================================================//

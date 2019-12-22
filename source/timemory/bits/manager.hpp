@@ -291,7 +291,9 @@ manager::write_metadata(const char* context)
     m_metadata_fname = settings::compose_output_filename("metadata", "json");
     auto fname       = m_metadata_fname;
 
-    printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+    if(settings::verbose() > 0 || settings::banner() || settings::debug())
+        printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     std::ofstream         ofs(fname.c_str());
     if(ofs)

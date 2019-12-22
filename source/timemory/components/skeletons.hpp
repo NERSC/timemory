@@ -224,17 +224,18 @@ struct caliper
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Vp, typename... _Policies>
+template <typename _Tp, typename _Vp>
 struct base;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Policies>
-struct base<_Tp, skeleton::base, _Policies...>
+template <typename _Tp>
+struct base<_Tp, skeleton::base>
 {
     static constexpr bool implements_storage_v = false;
     using Type                                 = _Tp;
     using value_type                           = void;
+    using base_type                            = base<_Tp, skeleton::base>;
 };
 
 //--------------------------------------------------------------------------------------//

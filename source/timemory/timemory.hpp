@@ -51,6 +51,10 @@ print_env()
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
+    template <typename... _Types, typename... _Args>
+    static void configure(_Args&&...)
+    {}
+
     template <typename... _Args>
     dummy(_Args&&...)
     {}

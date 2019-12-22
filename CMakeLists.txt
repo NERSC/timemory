@@ -27,21 +27,15 @@ if(TIMEMORY_BUILD_GTEST OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
         "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
 endif()
+# override any cache settings
+if(TIMEMORY_BUILD_TESTING)
+    set(TIMEMORY_BUILD_GTEST ON)
+    set(TIMEMORY_BUILD_EXAMPLES ON)
+endif()
 #
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
-# install directories
-include(GNUInstallDirs)
-# cmake installation folder
-set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
-    CACHE PATH "Installation directory for CMake package config files")
-
-# create the full path version and generic path versions
-foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
-    # generic "PROJECT_INSTALL_" variables (used by documentation)"
-    set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
-endforeach()
 
 #----------------------------------------------------------------------------------------#
 #   versioning
@@ -75,8 +69,28 @@ endif()
 
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
+# install directories
+include(GNUInstallDirs)
+# cmake installation folder -- change CMAKE_INSTALL_DATAROOTDIR to tweak this
+set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
+
+# create the full path version and generic path versions
+foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
+    # generic "PROJECT_INSTALL_" variables (used by documentation)"
+    set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
+endforeach()
+
 configure_file(${PROJECT_SOURCE_DIR}/source/timemory/version.h.in
-    ${PROJECT_SOURCE_DIR}/source/timemory/version.h)
+    ${PROJECT_BINARY_DIR}/source/timemory/_version.h @ONLY)
+
+# execute_process(
+#    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#        ${PROJECT_BINARY_DIR}/source/timemory/_version.h
+#        ${PROJECT_BINARY_DIR}/source/timemory/version.h
+#    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+#    ERROR_VARIABLE ERR_MSG
+#    RESULT_VARIABLE RET
+#)
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MASTER_PROJECT ON)
@@ -202,8 +216,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   timemory source
 #----------------------------------------------------------------------------------------#
-# activate clang-tidy if enabled
-_timemory_activate_clang_tidy()
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    # activate clang-tidy if enabled
+    _timemory_activate_clang_tidy()
+endif()
 
 add_subdirectory(source)
 
@@ -217,7 +233,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE INTERNAL "timemory install directory")
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory")
     add_subdirectory(examples)
 endif()
 
@@ -230,9 +246,9 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     include(Documentation)
 
     if(TIMEMORY_BUILD_DOCS)
-        SET(CMAKE_INSTALL_MESSAGE NEVER)
+        # SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
-        SET(CMAKE_INSTALL_MESSAGE LAZY)
+        # SET(CMAKE_INSTALL_MESSAGE LAZY)
     endif()
 
     print_features()

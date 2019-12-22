@@ -197,6 +197,13 @@ tim_api struct settings
     //      MPI
     //----------------------------------------------------------------------------------//
 
+    /// timemory will try to call MPI_Init or MPI_Init_thread during certain
+    /// timemory_init()
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_init, "TIMEMORY_MPI_INIT", true)
+
+    /// timemory will try to call MPI_Finalize during timemory_finalize()
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_finalize, "TIMEMORY_MPI_FINALIZE", true)
+
     /// use MPI_Init and MPI_Init_thread
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_thread, "TIMEMORY_MPI_THREAD", true)
 
@@ -211,6 +218,16 @@ tim_api struct settings
     /// output MPI data per node
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_output_per_node,
                                  "TIMEMORY_MPI_OUTPUT_PER_NODE", false)
+
+    //----------------------------------------------------------------------------------//
+    //      UPC++
+    //----------------------------------------------------------------------------------//
+
+    /// timemory will try to call upcxx::init during certain timemory_init()
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, upcxx_init, "TIMEMORY_UPCXX_INIT", true)
+
+    /// timemory will try to call upcxx::finalize during timemory_finalize()
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, upcxx_finalize, "TIMEMORY_UPCXX_FINALIZE", true)
 
     //----------------------------------------------------------------------------------//
     //      PAPI
@@ -527,12 +544,18 @@ tim_api struct settings
         _TRY_CATCH_NVP("TIMEMORY_MEMORY_WIDTH", memory_width)
         _TRY_CATCH_NVP("TIMEMORY_MEMORY_UNITS", memory_units)
         _TRY_CATCH_NVP("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific)
+        _TRY_CATCH_NVP("TIMEMORY_MPI_INIT", mpi_init)
+        _TRY_CATCH_NVP("TIMEMORY_MPI_FINALIZE", mpi_finalize)
         _TRY_CATCH_NVP("TIMEMORY_MPI_THREAD", mpi_thread)
         _TRY_CATCH_NVP("TIMEMORY_MPI_THREAD_TYPE", mpi_thread_type)
+        _TRY_CATCH_NVP("TIMEMORY_MPI_OUTPUT_PER_RANK", mpi_output_per_rank)
+        _TRY_CATCH_NVP("TIMEMORY_MPI_OUTPUT_PER_NODE", mpi_output_per_node)
         _TRY_CATCH_NVP("TIMEMORY_OUTPUT_PATH", output_path)
         _TRY_CATCH_NVP("TIMEMORY_OUTPUT_PREFIX", output_prefix)
         _TRY_CATCH_NVP("TIMEMORY_DART_TYPE", dart_type)
         _TRY_CATCH_NVP("TIMEMORY_DART_COUNT", dart_count)
+        _TRY_CATCH_NVP("TIMEMORY_DART_LABEL", dart_label)
+        _TRY_CATCH_NVP("TIMEMORY_CPU_AFFINITY", cpu_affinity)
         _TRY_CATCH_NVP("TIMEMORY_PAPI_MULTIPLEXING", papi_multiplexing)
         _TRY_CATCH_NVP("TIMEMORY_PAPI_FAIL_ON_ERROR", papi_fail_on_error)
         _TRY_CATCH_NVP("TIMEMORY_PAPI_QUIET", papi_quiet)
@@ -552,6 +575,7 @@ tim_api struct settings
         _TRY_CATCH_NVP("TIMEMORY_ROOFLINE_TYPE_LABELS", roofline_type_labels)
         _TRY_CATCH_NVP("TIMEMORY_ROOFLINE_TYPE_LABELS_CPU", roofline_type_labels_cpu)
         _TRY_CATCH_NVP("TIMEMORY_ROOFLINE_TYPE_LABELS_GPU", roofline_type_labels_gpu)
+        _TRY_CATCH_NVP("TIMEMORY_INSTRUCTION_ROOFLINE", instruction_roofline)
         _TRY_CATCH_NVP("TIMEMORY_ERT_NUM_THREADS", ert_num_threads)
         _TRY_CATCH_NVP("TIMEMORY_ERT_NUM_THREADS_CPU", ert_num_threads_cpu)
         _TRY_CATCH_NVP("TIMEMORY_ERT_NUM_THREADS_GPU", ert_num_threads_gpu)
@@ -565,6 +589,7 @@ tim_api struct settings
         _TRY_CATCH_NVP("TIMEMORY_ERT_MAX_DATA_SIZE", ert_max_data_size)
         _TRY_CATCH_NVP("TIMEMORY_ERT_MAX_DATA_SIZE_CPU", ert_max_data_size_cpu)
         _TRY_CATCH_NVP("TIMEMORY_ERT_MAX_DATA_SIZE_GPU", ert_max_data_size_gpu)
+        _TRY_CATCH_NVP("TIMEMORY_ERT_SKIP_OPS", ert_skip_ops)
         _TRY_CATCH_NVP("TIMEMORY_ALLOW_SIGNAL_HANDLER", allow_signal_handler)
         _TRY_CATCH_NVP("TIMEMORY_ENABLE_SIGNAL_HANDLER", enable_signal_handler)
         _TRY_CATCH_NVP("TIMEMORY_ENABLE_ALL_SIGNALS", enable_all_signals)
@@ -574,6 +599,8 @@ tim_api struct settings
         _TRY_CATCH_NVP("TIMEMORY_PYTHON_EXE", python_exe)
         _TRY_CATCH_NVP("TIMEMORY_COMMAND_LINE", command_line)
         _TRY_CATCH_NVP("TIMEMORY_ENVIRONMENT", environment)
+        _TRY_CATCH_NVP("TIMEMORY_UPCXX_INIT", upcxx_init)
+        _TRY_CATCH_NVP("TIMEMORY_UPCXX_FINALIZE", upcxx_finalize)
 #undef _TRY_CATCH_NVP
     }
 

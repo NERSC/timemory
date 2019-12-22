@@ -56,7 +56,7 @@ struct caliper : public base<caliper, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "caliper"; }
-    static std::string description() { return "caliper"; }
+    static std::string description() { return "Caliper instrumentation markers"; }
     static value_type  record() {}
 
     static void global_init(storage_type*) { cali::init(); }

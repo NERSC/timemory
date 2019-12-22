@@ -88,11 +88,13 @@ if(SKBUILD)
     set(_DEFAULT_BUILD_STATIC OFF)
 endif()
 
-set(TIMEMORY_GPERF_COMPONENTS
-    "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug"
-    CACHE STRING "gperftools components")
+set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
 
-set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
+set(TIMEMORY_gperftools_COMPONENTS_OPTIONS
+    "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug")
+
+set_property(CACHE TIMEMORY_gperftools_COMPONENTS PROPERTY STRINGS
+    "${TIMEMORY_gperftools_COMPONENTS_OPTIONS}")
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
 
@@ -114,7 +116,6 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     # local override
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
-    set(TIMEMORY_BUILD_TOOLS OFF)
     set(TIMEMORY_USE_PYTHON OFF)
 endif()
 
@@ -125,6 +126,7 @@ if(TIMEMORY_SKIP_BUILD)
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
     set(TIMEMORY_BUILD_TOOLS OFF)
+    set(TIMEMORY_USE_PYTHON OFF)
 endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
@@ -245,7 +247,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 if(${PROJECT_NAME}_MASTER_PROJECT)
-    add_feature(TIMEMORY_GPERF_COMPONENTS "gperftool components")
+    add_feature(TIMEMORY_gperftools_COMPONENTS "gperftool components")
 endif()
 
 if(TIMEMORY_USE_CUDA)
@@ -289,7 +291,7 @@ macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
             file(SHA1 ${PROJECT_SOURCE_DIR}/.clang-tidy clang_tidy_sha1)
             set(CLANG_TIDY_DEFINITIONS "CLANG_TIDY_SHA1=${clang_tidy_sha1}")
             unset(clang_tidy_sha1)
+            # configure_file(${PROJECT_SOURCE_DIR}/.clang-tidy ${PROJECT_SOURCE_DIR}/.clang-tidy COPYONLY)
         endif()
-        configure_file(${PROJECT_SOURCE_DIR}/.clang-tidy ${PROJECT_SOURCE_DIR}/.clang-tidy COPYONLY)
     endif()
 endmacro()

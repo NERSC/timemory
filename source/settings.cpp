@@ -129,6 +129,12 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY", false)
 //      MPI
 //----------------------------------------------------------------------------------//
 
+/// timemory will try to call MPI_Init or MPI_Init_thread during certain timemory_init()
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_init, "TIMEMORY_MPI_INIT", true)
+
+/// timemory will try to call MPI_Finalize during timemory_finalize()
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_finalize, "TIMEMORY_MPI_FINALIZE", true)
+
 /// use MPI_Init and MPI_Init_thread
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_thread, "TIMEMORY_MPI_THREAD", true)
 
@@ -142,6 +148,16 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_output_per_rank, "TIMEMORY_MPI_OUTPUT_PER
 /// output MPI data per node
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, mpi_output_per_node, "TIMEMORY_MPI_OUTPUT_PER_NODE",
                              false)
+
+//----------------------------------------------------------------------------------//
+//      UPC++
+//----------------------------------------------------------------------------------//
+
+/// timemory will try to call upcxx::init during certain timemory_init()
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, upcxx_init, "TIMEMORY_UPCXX_INIT", true)
+
+/// timemory will try to call upcxx::finalize during timemory_finalize()
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, upcxx_finalize, "TIMEMORY_UPCXX_FINALIZE", true)
 
 //--------------------------------------------------------------------------------------//
 //      PAPI

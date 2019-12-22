@@ -44,6 +44,8 @@ add_interface_library(timemory-coverage)
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
+add_interface_library(timemory-all-gperftools)
+add_interface_library(timemory-gperftools-compile-options)
 add_interface_library(timemory-tcmalloc-minimal)
 
 add_interface_library(timemory-roofline)
@@ -65,22 +67,25 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-mpi
     timemory-upcxx
     timemory-threading
+    #
     timemory-papi
+    #
     timemory-cuda
     timemory-cudart
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
-    timemory-coverage
+    #
     timemory-gperftools
     timemory-gperftools-cpu
     timemory-gperftools-heap
-    timemory-santizier
+    #
     timemory-caliper
     timemory-gotcha
     timemory-likwid
     timemory-vtune
-    timemory-tau)
+    timemory-tau
+    timemory-python)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -90,7 +95,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
-    timemory-gperftools-cpu
+    timemory-gperftools
     timemory-caliper
     timemory-gotcha
     timemory-likwid
@@ -106,7 +111,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
-    timemory-gperftools-cpu
+    timemory-gperftools
     timemory-caliper
     timemory-vtune
     timemory-tau
@@ -138,6 +143,12 @@ endif()
 # not exported
 add_library(timemory-google-test INTERFACE)
 
+#----------------------------------------------------------------------------------------#
+#
+#                           handle empty interface
+#
+#----------------------------------------------------------------------------------------#
+
 function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
     if(NOT TARGET ${_TARGET})
         message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
@@ -149,7 +160,13 @@ function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
     add_disabled_interface(${_TARGET})
 endfunction()
 
-function(GENERATE_NON_EMPTY_INTERFACE _TARGET)
+#----------------------------------------------------------------------------------------#
+#
+#                           generate composite interface
+#
+#----------------------------------------------------------------------------------------#
+
+function(GENERATE_COMPOSITE_INTERFACE _TARGET)
     # parse args
     if(NOT TARGET ${_TARGET})
         message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
@@ -172,6 +189,64 @@ function(GENERATE_NON_EMPTY_INTERFACE _TARGET)
     else()
         add_disabled_interface(${_TARGET})
     endif()
+endfunction()
+
+#----------------------------------------------------------------------------------------#
+#
+#                               function for configuring
+#                                 an interface library
+#
+#----------------------------------------------------------------------------------------#
+
+function(find_package_interface)
+    set(_option_args)
+    set(_single_args NAME INTERFACE DESCRIPTION)
+    set(_multiv_args FIND_ARGS COMPILE_DEFINITIONS COMPILE_OPTIONS LINK_LIBRARIES)
+
+    cmake_parse_arguments(PACKAGE
+        "${_option_args}" "${_single_args}" "${_multiv_args}" ${ARGN})
+
+    if("${PACKAGE_NAME}" STREQUAL "")
+        message(FATAL_ERROR "find_package_interface :: missing variable: NAME")
+    endif()
+
+    if("${PACKAGE_INTERFACE}" STREQUAL "")
+        message(FATAL_ERROR "find_package_interface (${PACKAGE_NAME}) :: missing variable: INTERFACE")
+    endif()
+
+    if(NOT TARGET ${PACKAGE_INTERFACE})
+        add_library(${PACKAGE_INTERFACE} INTERFACE)
+    endif()
+
+    if("${PACKAGE_DESCRIPTION}" STREQUAL "")
+        set(PACKAGE_DESCRIPTION "${PACKAGE_INTERFACE}")
+    endif()
+
+    # find the package
+    find_package(${PACKAGE_NAME} ${PACKAGE_FIND_ARGS})
+
+    if(${PACKAGE_NAME}_FOUND)
+        # include the directories
+        target_include_directories(${PACKAGE_INTERFACE} SYSTEM INTERFACE
+            ${${PACKAGE_NAME}_INCLUDE_DIRS})
+
+        # link libraries
+        target_link_libraries(${PACKAGE_INTERFACE} INTERFACE
+            ${${PACKAGE_NAME}_LIBRARIES} ${PACKAGE_LINK_LIBRARIES})
+
+        # add any compile definitions
+        foreach(_DEF ${PACKAGE_COMPILE_DEFINITIONS})
+            target_compile_definitions(${PACKAGE_INTERFACE} INTERFACE ${_DEF})
+        endforeach()
+
+        # add any compile-flags
+        foreach(_FLAG ${PACKAGE_COMPILE_OPTIONS})
+            add_target_flag_if_avail(${PACKAGE_INTERFACE} "${_FLAG}")
+        endforeach()
+    else()
+        inform_empty_interface(${PACKAGE_INTERFACE} "${PACKAGE_DESCRIPTION}")
+    endif()
+
 endfunction()
 
 #----------------------------------------------------------------------------------------#
@@ -629,78 +704,99 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-set(_GPERF_COMPONENTS ${TIMEMORY_GPERF_COMPONENTS} profiler tcmalloc)
-list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
-
-if(NOT "${TIMEMORY_GPERF_COMPONENTS}" STREQUAL "")
-    find_package(gperftools QUIET COMPONENTS ${_GPERF_COMPONENTS})
+set(_GPERF_COMPONENTS ${TIMEMORY_gperftools_COMPONENTS})
+if(_GPERF_COMPONENTS)
+    list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
 endif()
 
-if(gperftools_FOUND)
-    if(gperftools_TCMALLOC_MINIMAL_LIBRARY)
-        target_link_libraries(timemory-tcmalloc-minimal INTERFACE
-            ${gperftools_TCMALLOC_MINIMAL_LIBRARY})
+
+if(NOT "${_GPERF_COMPONENTS}" STREQUAL "")
+    #
+    # general set of compiler flags when using gperftools
+    #
+    add_target_flag_if_avail(timemory-gperftools-compile-options "-g" "-rdynamic")
+
+    # NOTE:
+    #   When compiling with programs with gcc, that you plan to link
+    #   with libtcmalloc, it's safest to pass in the flags
+    #
+    #    -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+    #
+    #   when compiling.  gcc makes some optimizations assuming it is using its
+    #   own, built-in malloc; that assumption obviously isn't true with
+    #   tcmalloc.  In practice, we haven't seen any problems with this, but
+    #   the expected risk is highest for users who register their own malloc
+    #   hooks with tcmalloc (using gperftools/malloc_hook.h).  The risk is
+    #   lowest for folks who use tcmalloc_minimal (or, of course, who pass in
+    #   the above flags :-) ).
+    #
+    # Reference: https://github.com/gperftools/gperftools and "TCMALLOC" section
+    #
+    add_target_flag_if_avail(timemory-gperftools-compile-options
+        "-fno-builtin-malloc" "-fno-builtin-calloc"
+        "-fno-builtin-realloc" "-fno-builtin-free")
+
+    #
+    # NOTE:
+    #   if tcmalloc is dynamically linked to Python, the lazy loading of tcmalloc
+    #   changes malloc/free after Python has used libc malloc, which commonly
+    #   corrupts the deletion of the Python interpreter at the end of the application
+    #
+    if(TIMEMORY_BUILD_PYTHON)
+        set(gperftools_PREFER_STATIC OFF)
     endif()
-    set(_HAS_PROFILER OFF)
-    set(_HAS_TCMALLOC OFF)
-    if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
-        "tcmalloc_and_profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS)
-        target_compile_definitions(timemory-gperftools INTERFACE
-            TIMEMORY_USE_GPERF_CPU_PROFILER)
-        if(gperftools_PROFILER_LIBRARY)
-            target_compile_definitions(timemory-gperftools-cpu INTERFACE
-                TIMEMORY_USE_GPERF_CPU_PROFILER)
-            target_include_directories(timemory-gperftools-cpu SYSTEM INTERFACE
-                ${gperftools_INCLUDE_DIRS})
-            target_link_libraries(timemory-gperftools-cpu INTERFACE
-                ${gperftools_PROFILER_LIBRARY})
-            add_target_flag_if_avail(timemory-gperftools-cpu "-g")
-        else()
-            inform_empty_interface(timemory-gperftools-cpu "gperftools-cpu")
+
+    set(_DEFINITIONS)
+    foreach(_COMP ${_GPERF_COMPONENTS})
+        if("tcmalloc" MATCHES "${_COMP}")
+            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERF_HEAP_PROFILER)
         endif()
-        set(_HAS_PROFILER ON)
-    endif()
-    if("tcmalloc" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
-        "tcmalloc_and_profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
-        "tcmalloc_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
-        "tcmalloc_minimal" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
-        "tcmalloc_minimal_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS)
-        target_compile_definitions(timemory-gperftools INTERFACE
-            TIMEMORY_USE_GPERF_HEAP_PROFILER)
-        if(gperftools_TCMALLOC_LIBRARY)
-            target_compile_definitions(timemory-gperftools-heap INTERFACE
-                TIMEMORY_USE_GPERF_HEAP_PROFILER)
-            target_include_directories(timemory-gperftools-heap SYSTEM INTERFACE
-                ${gperftools_INCLUDE_DIRS})
-            target_link_libraries(timemory-gperftools-heap INTERFACE
-                ${gperftools_TCMALLOC_LIBRARY})
-            add_target_flag_if_avail(timemory-gperftools-heap "-g")
-        else()
-            inform_empty_interface(timemory-gperftools-heap "gperftools-heap")
+        if("profiler")
+            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERF_CPU_PROFILER)
         endif()
-        set(_HAS_TCMALLOC ON)
+    endforeach()
+
+    if(_DEFINITIONS)
+        list(REMOVE_DUPLICATES _DEFINITIONS)
     endif()
-    if(_HAS_PROFILER AND _HAS_TCMALLOC)
-        target_compile_definitions(timemory-gperftools INTERFACE
-            TIMEMORY_USE_GPERF)
-    endif()
-    target_include_directories(timemory-gperftools SYSTEM INTERFACE
-        ${gperftools_INCLUDE_DIRS})
-    target_link_libraries(timemory-gperftools INTERFACE
-        ${gperftools_LIBRARIES})
-    add_target_flag_if_avail(timemory-gperftools "-g")
-else()
-    set(TIMEMORY_USE_GPERF OFF)
-    inform_empty_interface(timemory-gperftools "gperftools")
-    inform_empty_interface(timemory-gperftools-cpu "gperftools-cpu")
-    inform_empty_interface(timemory-gperftools-heap "gperftools-heap")
-    find_package(gperftools QUIET COMPONENTS tcmalloc_minimal)
-    if(gperftools_TCMALLOC_MINIMAL_LIBRARY)
-        target_link_libraries(timemory-tcmalloc-minimal INTERFACE
-            ${gperftools_TCMALLOC_MINIMAL_LIBRARY})
-    else()
-        inform_empty_interface(timemory-tcmalloc-minimal "tcmalloc-minimal")
-    endif()
+    find_package_interface(
+        NAME                    gperftools
+        INTERFACE               timemory-gperftools
+        COMPILE_DEFINITIONS     ${_DEFINITIONS}
+        LINK_LIBRARIES          timemory-gperftools-compile-options
+        DESCRIPTION             "gperftools with user defined components"
+        FIND_ARGS               COMPONENTS ${_GPERF_COMPONENTS})
+
+    find_package_interface(
+        NAME                    gperftools
+        INTERFACE               timemory-all-gperftools
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF
+        LINK_LIBRARIES          timemory-gperftools-compile-options
+        DESCRIPTION             "statically-linked gperftools"
+        FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
+
+    find_package_interface(
+        NAME                    gperftools
+        INTERFACE               timemory-gperftools-cpu
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF_CPU_PROFILER
+        LINK_LIBRARIES          timemory-gperftools-compile-options
+        DESCRIPTION             "CPU profiler"
+        FIND_ARGS               QUIET COMPONENTS profiler)
+
+    find_package_interface(
+        NAME                    gperftools
+        INTERFACE               timemory-gperftools-heap
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF_HEAP_PROFILER
+        LINK_LIBRARIES          timemory-gperftools-compile-options
+        DESCRIPTION             "heap profiler and heap checker"
+        FIND_ARGS               QUIET COMPONENTS tcmalloc)
+
+    find_package_interface(
+        NAME                    gperftools
+        INTERFACE               timemory-tcmalloc-minimal
+        LINK_LIBRARIES          timemory-gperftools-compile-options
+        DESCRIPTION             "threading-optimized malloc replacement"
+        FIND_ARGS               QUIET COMPONENTS tcmalloc)
 endif()
 
 
@@ -888,11 +984,6 @@ target_link_libraries(timemory-gpu-roofline INTERFACE
     timemory-cudart
     timemory-cudart-device)
 
-generate_non_empty_interface(timemory-roofline
+generate_composite_interface(timemory-roofline
     timemory-cpu-roofline
     timemory-gpu-roofline)
-
-#----------------------------------------------------------------------------------------#
-# activate clang-tidy if enabled
-#
-_timemory_activate_clang_tidy()

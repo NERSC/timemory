@@ -73,7 +73,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-// stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
+// stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual
 //   "stringify-ing" after the macro has been substituted by it's result
 #if !defined(TIMEMORY_STRINGIZE)
 #    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)

@@ -332,14 +332,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 # Python bindings
 #
-if(TIMEMORY_BUILD_PYTHON)
-    add_subdirectory(python)
-endif()
-
-#----------------------------------------------------------------------------------------#
-# Preload library tool
-#
-# add_subdirectory(preload)
+add_subdirectory(python)
 
 #----------------------------------------------------------------------------------------#
 # install the plotting.py module as a Python executable

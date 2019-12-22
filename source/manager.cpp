@@ -46,26 +46,16 @@ static manager_pointer_t timemory_master_manager_instance =
 
 extern "C"
 {
-    // __library_ctor__
-    void timemory_library_constructor()
+    __library_ctor__ void timemory_library_constructor()
     {
 #    if defined(DEBUG)
         auto _debug   = tim::settings::debug();
         auto _verbose = tim::settings::verbose();
-#    endif
 
-#    if defined(DEBUG)
         if(_debug || _verbose > 3)
             printf("[%s]> initializing manager...\n", __FUNCTION__);
 #    endif
 
-        /*
-#    if !defined(_WINDOWS)
-        static auto _master = timemory_master_manager_instance;
-#    else
-        static auto _master = tim::manager::master_instance();
-#    endif
-        */
         static auto              _master = tim::manager::master_instance();
         static thread_local auto _worker = tim::manager::instance();
 
@@ -73,10 +63,8 @@ extern "C"
             _master = tim::manager::master_instance();
 
         if(_worker != _master)
-        {
             printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
                    (void*) _master.get(), (void*) _worker.get());
-        }
 
 #    if defined(DEBUG)
         if(_debug || _verbose > 3)

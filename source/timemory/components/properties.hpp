@@ -36,20 +36,33 @@ namespace tim
 {
 namespace component
 {
+template <typename _Tp>
+using uoset_t = std::unordered_set<_Tp>;
+using idset_t = uoset_t<std::string>;
+
+//--------------------------------------------------------------------------------------//
+//
+template <TIMEMORY_COMPONENT _ID>
+struct enumerator;
+
 //--------------------------------------------------------------------------------------//
 //
 template <typename _Tp>
 struct properties
 {
-    // eventually this should provide overloading to enum
+    using type                                = _Tp;
+    using value_type                          = TIMEMORY_COMPONENT;
     static constexpr TIMEMORY_COMPONENT value = TIMEMORY_COMPONENTS_END;
-
-    static bool& has_storage()
+    static constexpr const char* enum_string() { return "TIMEMORY_COMPONENTS_END"; }
+    static constexpr const char* id() { return ""; }
+    static const idset_t&        ids() { return idset_t{}; }
+    static bool&                 has_storage()
     {
         static thread_local bool _instance = false;
         return _instance;
     }
 };
+
 //
 //--------------------------------------------------------------------------------------//
 }  // namespace component

@@ -380,7 +380,7 @@ PYBIND11_MODULE(libpytimemory, tim)
                     std::strcpy(_argv_i, _str.c_str());
                     _argv[i] = _argv_i;
                 }
-                tim::timemory_init(&_argc, &_argv, _prefix, _suffix);
+                tim::timemory_init(_argc, _argv, _prefix, _suffix);
                 for(int i = 0; i < _argc; ++i)
                     delete[] _argv[i];
                 delete[] _argv;

@@ -70,4 +70,5 @@ if __name__ == "__main__":
     # get the dictionary
     data = timemory.get()
     # print the dictionary
-    print("TIMEMORY_DATA:\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
+    print("TIMEMORY_DATA:\n{}".format(
+        json.dumps(data, indent=4, sort_keys=True)))

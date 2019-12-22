@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
+cmake_policy(PUSH)
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
@@ -31,3 +32,5 @@ add_subdirectory(ex-cuda-event)
 add_subdirectory(ex-ert)
 add_subdirectory(ex-cpu-roofline)
 add_subdirectory(ex-gpu-roofline)
+
+cmake_policy(POP)

@@ -123,8 +123,22 @@ inline void
 tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
                    const std::string& _suffix)
 {
-    mpi::initialize(argc, argv);
-    upc::initialize();
+    if(settings::mpi_init())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "initializing mpi...");
+
+        mpi::initialize(argc, argv);
+    }
+
+    if(settings::upcxx_init())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "initializing upcxx...");
+
+        upc::initialize();
+    }
+
     timemory_init(*argc, *argv, _prefix, _suffix);
 }
 
@@ -133,8 +147,8 @@ tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
 inline void
 tim::timemory_finalize()
 {
-    if(settings::debug())
-        PRINT_HERE("%s", "finalizing signals...");
+    if(settings::enable_signal_handler() && settings::debug())
+        PRINT_HERE("%s", "disabling signal detection...");
 
     disable_signal_detection();
 
@@ -145,15 +159,21 @@ tim::timemory_finalize()
     if(_manager)
         _manager->finalize();
 
-    if(settings::debug())
-        PRINT_HERE("%s", "finalizing upcxx...");
+    if(settings::upcxx_finalize())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "finalizing upcxx...");
 
-    upc::finalize();
+        upc::finalize();
+    }
 
-    if(settings::debug())
-        PRINT_HERE("%s", "finalizing mpi...");
+    if(settings::mpi_finalize())
+    {
+        if(settings::debug())
+            PRINT_HERE("%s", "finalizing mpi...");
 
-    mpi::finalize();
+        mpi::finalize();
+    }
 
     if(settings::debug())
         PRINT_HERE("%s", "done...");
