@@ -334,7 +334,7 @@ def run_pyctest():
     # create tests
     #
 
-    test_env = ";".join(["CPUPROFILE_FREQUENCY=2000",
+    test_env = ";".join(["CPUPROFILE_FREQUENCY=200",
                          "CPUPROFILE_REALTIME=1",
                          "CALI_CONFIG_PROFILE=runtime-report",
                          "TIMEMORY_DART_OUTPUT=ON",
