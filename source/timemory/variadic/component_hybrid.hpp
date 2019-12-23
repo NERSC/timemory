@@ -23,7 +23,7 @@
 // SOFTWARE.
 //
 
-/** \file variadic/component_hybrid.hpp
+/** \file timemory/variadic/component_hybrid.hpp
  * \headerfile variadic/component_hybrid.hpp "timemory/variadic/component_hybrid.hpp"
  * This is the C++ class that bundles together components and enables
  * operation on the components as a single entity

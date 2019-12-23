@@ -174,9 +174,6 @@ template <typename _Tp>
 struct array_serialization;
 
 template <typename _Tp>
-struct external_output_handling;
-
-template <typename _Tp>
 struct requires_prefix;
 
 template <typename _Tp>
@@ -245,10 +242,9 @@ namespace operation
 template <typename _Up>
 struct is_enabled
 {
-    using _Vp                   = typename _Up::value_type;
-    static constexpr bool value = (trait::is_available<_Up>::value &&
-                                   !(trait::external_output_handling<_Up>::value) &&
-                                   !(std::is_same<_Vp, void>::value));
+    using _Vp = typename _Up::value_type;
+    static constexpr bool value =
+        (trait::is_available<_Up>::value && !(std::is_same<_Vp, void>::value));
 };
 
 //----------------------------------------------------------------------------------//
@@ -258,8 +254,7 @@ template <typename _Up>
 struct has_data
 {
     using _Vp                   = typename _Up::value_type;
-    static constexpr bool value = (!(trait::external_output_handling<_Up>::value) &&
-                                   !(std::is_same<_Vp, void>::value));
+    static constexpr bool value = (!(std::is_same<_Vp, void>::value));
 };
 
 }  // namespace operation

@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file variadic/auto_macros.hpp
- * \headerfile variadic/auto_macros.hpp "timemory/variadic/macros.hpp"
+/** \file timemory/variadic/auto_macros.hpp
+ * \headerfile timemory/variadic/auto_macros.hpp "timemory/variadic/macros.hpp"
  * Generic macros that are intended to be building-blocks for other macros, e.g.
  * TIMEMORY_MARKER, TIMEMORY_HANDLE, TIMEMORY_CALIPER, etc.
  *

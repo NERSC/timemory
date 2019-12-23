@@ -67,8 +67,7 @@ _plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
 {
     using storage_type = typename _Tp::storage_type;
 
-    if(trait::external_output_handling<_Tp>::value ||
-       std::is_same<typename _Tp::value_type, void>::value)
+    if(std::is_same<typename _Tp::value_type, void>::value)
         return;
 
     if(!settings::json_output() && !trait::requires_json<_Tp>::value)

@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/utility/impl/storage_false.hpp
+ * \headerfile utility/impl/storage_false.hpp "timemory/utility/impl/storage_false.hpp"
+ * Defines storage implementation when the data type is void
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/dmp.hpp"

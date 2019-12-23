@@ -22,9 +22,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file storage.hpp
- * \headerfile storage.hpp "timemory/details/storage.hpp"
- * Provides inline implementation of storage member functions
+/** \file timemory/utility/bits/storage.hpp
+ * \headerfile timemory/utility/bits/storage.hpp "timemory/utility/bits/storage.hpp"
+ * Provides implementation of some storage related functions
  *
  */
 

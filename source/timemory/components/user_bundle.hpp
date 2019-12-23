@@ -25,7 +25,9 @@
 
 /** \file components/user_bundle.hpp
  * \headerfile components/user_bundle.hpp "timemory/components/user_bundle.hpp"
- * Defines the user_bundle component
+ * Defines the user_bundle component which can be used to inject components
+ * at runtime. There are very useful for dynamically assembling collections
+ * of tools at runtime
  *
  */
 

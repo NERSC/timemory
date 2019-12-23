@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/utility/impl/storage_true.hpp
+ * \headerfile utility/impl/storage_true.hpp "timemory/utility/impl/storage_true.hpp"
+ * Defines storage implementation when the data type is not void
+ *
+ */
+
 #pragma once
 
 //--------------------------------------------------------------------------------------//
@@ -333,11 +339,7 @@ public:
     //
 
 public:
-    virtual void print() final
-    {
-        typename trait::external_output_handling<Type>::type type;
-        external_print(type);
-    }
+    virtual void print() final { internal_print(); }
 
     virtual void cleanup() final { Type::cleanup(); }
 
@@ -657,9 +659,7 @@ protected:
         {
             using _Vp = typename _Up::value_type;
             static constexpr bool value =
-                (trait::is_available<_Up>::value &&
-                 !(trait::external_output_handling<_Up>::value) &&
-                 !(std::is_same<_Vp, void>::value));
+                (trait::is_available<_Up>::value && !(std::is_same<_Vp, void>::value));
         };
 
         using storage_t = this_type;
@@ -724,11 +724,7 @@ private:
     void serialize_me(std::false_type, Archive&, const unsigned int,
                       const result_array_t&);
 
-    // tim::trait::external_output_handling<Type>::type == TRUE
-    void external_print(std::true_type);
-
-    // tim::trait::external_output_handling<Type>::type == FALSE
-    void external_print(std::false_type);
+    void internal_print();
 
     graph_data_t&       _data();
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
@@ -1243,7 +1239,8 @@ storage<Type, true>::upc_get()
 //======================================================================================//
 
 template <typename Type>
-void storage<Type, true>::external_print(std::false_type)
+void
+storage<Type, true>::internal_print()
 {
     base::storage::stop_profiler();
 
@@ -1579,33 +1576,6 @@ void storage<Type, true>::external_print(std::false_type)
                 ++_nitr;
             }
         }
-        instance_count().store(0);
-    }
-    else
-    {
-        if(singleton_t::is_master(this))
-        {
-            instance_count().store(0);
-        }
-    }
-}
-
-//======================================================================================//
-
-template <typename Type>
-void storage<Type, true>::external_print(std::true_type)
-{
-    base::storage::stop_profiler();
-
-    if(!singleton_t::is_master(this))
-    {
-        singleton_t::master_instance()->merge(this);
-        finalize();
-    }
-    else if(settings::auto_output())
-    {
-        merge();
-        finalize();
         instance_count().store(0);
     }
     else

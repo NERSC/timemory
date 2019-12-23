@@ -22,10 +22,11 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file operations.hpp
- * \headerfile operations.hpp "timemory/mpl/operations.hpp"
- * These are structs and functions that provide the operations on the
- * components
+/** \file mpl/bits/operations.hpp
+ * \headerfile mpl/bits/operations.hpp "timemory/mpl/bits/operations.hpp"
+ * These are some extra operations included in other place that add to the standard
+ * mpl/operations but are separate so they can be included elsewhere to avoid
+ * a cyclic include dependency
  *
  */
 

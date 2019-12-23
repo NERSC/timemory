@@ -23,6 +23,12 @@
 // SOFTWARE.
 //
 
+/** \file timemory/components/general.hpp
+ * \headerfile timemory/components/general.hpp "timemory/components/general.hpp"
+ * Defines some short general components
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/gperf.hpp"

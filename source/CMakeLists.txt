@@ -102,6 +102,11 @@ if(WIN32)
     set(_EXTERN_TEMP )
 endif()
 
+set(_ANALYSIS_TOOLS timemory-analysis-tools)
+if(NOT _GPERF_IN_LIBRARY)
+    set(_ANALYSIS_TOOLS)
+endif()
+
 set(_LINKER_LANGUAGE CXX)
 
 # routinely have problems with OBJECT libraries on Windows
@@ -126,7 +131,7 @@ if(NOT WIN32 AND (_BUILD_SHARED_CXX OR _BUILD_STATIC_CXX))
     target_link_libraries(timemory-cxx-object PRIVATE
         timemory-compile-options
         timemory-develop-options
-        timemory-analysis-tools
+        ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -157,7 +162,7 @@ if(_BUILD_SHARED_CXX)
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
         timemory-develop-options
-        timemory-analysis-tools
+        ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
     if(TIMEMORY_BUILD_C)
@@ -191,7 +196,7 @@ if(_BUILD_STATIC_CXX)
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
         timemory-develop-options
-        timemory-analysis-tools
+        ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
     if(TIMEMORY_BUILD_C)
@@ -240,7 +245,7 @@ if(TIMEMORY_BUILD_C)
                                     timemory-develop-options
                                     timemory-cxx-shared
                                     timemory-external-shared
-                                    timemory-analysis-tools
+                                    ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
         if(WIN32)
             target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
@@ -264,7 +269,7 @@ if(TIMEMORY_BUILD_C)
                                     timemory-develop-options
                                     timemory-cxx-static
                                     timemory-external-static
-                                    timemory-analysis-tools
+                                    ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
         if(WIN32)
             target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)

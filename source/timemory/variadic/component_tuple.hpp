@@ -23,7 +23,7 @@
 // SOFTWARE.
 //
 
-/** \file variadic/component_tuple.hpp
+/** \file timemory/variadic/component_tuple.hpp
  * \headerfile variadic/component_tuple.hpp "timemory/variadic/component_tuple.hpp"
  * This is the C++ class that bundles together components and enables
  * operation on the components as a single entity

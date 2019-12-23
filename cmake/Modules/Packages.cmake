@@ -118,12 +118,12 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-tau
     ${_DMP_LIBRARIES})
 
-set(_GPERF_ANALYSIS OFF)
+set(_GPERF_IN_LIBRARY OFF)
 # if not python or force requested
 if((NOT (TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)) OR TIMEMORY_FORCE_GPERF_PYTHON)
     list(APPEND TIMEMORY_EXTERNAL_SHARED_INTERFACES timemory-gperftools)
     list(APPEND TIMEMORY_EXTERNAL_STATIC_INTERFACES timemory-gperftools-static)
-    set(_GPERF_ANALYSIS ON)
+    set(_GPERF_IN_LIBRARY ON)
 endif()
 
 add_interface_library(timemory-extensions)
@@ -141,7 +141,7 @@ if(TIMEMORY_USE_SANITIZER)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)
 endif()
 
-if(TIMEMORY_USE_GPERF AND _GPERF_ANALYSIS)
+if(TIMEMORY_USE_GPERF)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools-cpu)
 endif()
 
@@ -819,20 +819,24 @@ if(TIMEMORY_USE_GPERF)
         DESCRIPTION             "threading-optimized malloc replacement"
         FIND_ARGS               QUIET COMPONENTS tcmalloc)
 
-    # set local overloads
-    set(gperftools_PREFER_SHARED OFF)
-    set(gperftools_PREFER_STATIC ON)
+    if(TIMEMORY_GPERF_STATIC)
+        # set local overloads
+        set(gperftools_PREFER_SHARED OFF)
+        set(gperftools_PREFER_STATIC ON)
 
-    find_package_interface(
-        NAME                    gperftools
-        INTERFACE               timemory-gperftools-static
-        LINK_LIBRARIES          timemory-gperftools-compile-options
-        DESCRIPTION             "tcmalloc_and_profiler (preference for static)"
-        FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
+        find_package_interface(
+            NAME                    gperftools
+            INTERFACE               timemory-gperftools-static
+            LINK_LIBRARIES          timemory-gperftools-compile-options
+            DESCRIPTION             "tcmalloc_and_profiler (preference for static)"
+            FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
 
-    # remove local overloads
-    unset(gperftools_PREFER_SHARED)
-    unset(gperftools_PREFER_STATIC)
+        # remove local overloads
+        unset(gperftools_PREFER_SHARED)
+        unset(gperftools_PREFER_STATIC)
+    else()
+        inform_empty_interface(timemory-gperftools-static "gperftools static linking")
+    endif()
 endif()
 
 
@@ -1023,3 +1027,12 @@ target_link_libraries(timemory-gpu-roofline INTERFACE
 generate_composite_interface(timemory-roofline
     timemory-cpu-roofline
     timemory-gpu-roofline)
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                       Include customizable UserPackages file
+#
+#----------------------------------------------------------------------------------------#
+
+include(UserPackages)

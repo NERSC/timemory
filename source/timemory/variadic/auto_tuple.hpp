@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file variadic/auto_tuple.hpp
- * \headerfile variadic/auto_tuple.hpp "timemory/variadic/auto_tuple.hpp"
+/** \file timemory/variadic/auto_tuple.hpp
+ * \headerfile timemory/variadic/auto_tuple.hpp "timemory/variadic/auto_tuple.hpp"
  * Automatic starting and stopping of components. Accept unlimited number of
  * parameters. The constructor starts the components, the destructor stops the
  * components

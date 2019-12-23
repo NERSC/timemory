@@ -22,10 +22,19 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file timemory/mpl/type_traits.hpp
+ * \headerfile timemory/mpl/type_traits.hpp "timemory/mpl/type_traits.hpp"
+ * These are the definitions of type-traits used by timemory and should be defined
+ * separately from the class so that they can be queried without including the
+ * definition of the component
+ *
+ */
+
 #pragma once
 
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/types.hpp"
+
 #include <type_traits>
 
 //======================================================================================//
@@ -75,13 +84,6 @@ struct record_max : std::false_type
 ///
 template <typename _Tp>
 struct array_serialization : std::false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// trait that signifies that a component uses the timemory output handling
-///
-template <typename _Tp>
-struct external_output_handling : std::false_type
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -297,8 +299,7 @@ struct test_audit_support : decltype(details::test_audit_support<T, Args...>(0))
 template <typename _Tp, typename _Vp = typename _Tp::value_type>
 struct generates_output
 {
-    static constexpr bool value = (!(trait::external_output_handling<_Tp>::value) &&
-                                   !(std::is_same<_Vp, void>::value));
+    static constexpr bool value = (!(std::is_same<_Vp, void>::value));
 };
 
 //======================================================================================//
@@ -310,9 +311,8 @@ struct generates_output
 template <typename _Tp, typename _Vp = typename _Tp::value_type>
 struct implements_storage
 {
-    static constexpr bool value = (trait::is_available<_Tp>::value &&
-                                   !(trait::external_output_handling<_Tp>::value) &&
-                                   !(std::is_same<_Vp, void>::value));
+    static constexpr bool value =
+        (trait::is_available<_Tp>::value && !(std::is_same<_Vp, void>::value));
 };
 
 }  // namespace tim
@@ -622,12 +622,6 @@ template <>
 struct is_available<component::cuda_profiler> : std::false_type
 {};
 
-#else
-
-template <>
-struct external_output_handling<component::cuda_profiler> : std::true_type
-{};
-
 #endif  // TIMEMORY_USE_CUDA
 
 //--------------------------------------------------------------------------------------//
@@ -748,10 +742,6 @@ template <>
 struct requires_prefix<component::nvtx_marker> : std::true_type
 {};
 
-template <>
-struct external_output_handling<component::nvtx_marker> : std::true_type
-{};
-
 #endif  // TIMEMORY_USE_NVTX
 
 //--------------------------------------------------------------------------------------//
@@ -775,10 +765,6 @@ struct requires_prefix<component::caliper> : std::true_type
 
 #endif  // TIMEMORY_USE_CALIPER
 
-template <>
-struct external_output_handling<component::caliper> : std::true_type
-{};
-
 //--------------------------------------------------------------------------------------//
 //
 //                              GOTCHA
@@ -793,10 +779,6 @@ struct is_available<component::gotcha<_N, _Comp, _Diff>> : std::false_type
 {};
 
 #else  // TIMEMORY_USE_GOTCHA
-
-template <size_t _N, typename _Comp, typename _Diff>
-struct external_output_handling<component::gotcha<_N, _Comp, _Diff>> : std::true_type
-{};
 
 template <size_t _N, typename _Comp, typename _Diff>
 struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : std::true_type
@@ -820,12 +802,6 @@ template <>
 struct requires_prefix<component::gperf_heap_profiler> : std::true_type
 {};
 
-//--------------------------------------------------------------------------------------//
-//
-template <>
-struct external_output_handling<component::gperf_heap_profiler> : std::true_type
-{};
-
 #else
 
 //--------------------------------------------------------------------------------------//
@@ -841,15 +817,7 @@ struct is_available<component::gperf_heap_profiler> : std::false_type
 //  TIMEMORY_USE_GPERF
 //
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-
-//--------------------------------------------------------------------------------------//
-//
-template <>
-struct external_output_handling<component::gperf_cpu_profiler> : std::true_type
-{};
-
-#else
+#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -938,10 +906,6 @@ struct requires_prefix<component::tau_marker> : std::true_type
 {};
 
 #endif  // TIMEMORY_USE_TAU
-
-template <>
-struct external_output_handling<component::tau_marker> : std::true_type
-{};
 
 //--------------------------------------------------------------------------------------//
 //

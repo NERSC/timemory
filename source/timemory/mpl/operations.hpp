@@ -38,61 +38,8 @@
 #include "timemory/settings.hpp"
 #include "timemory/utility/serializer.hpp"
 
-// general components
-#include "timemory/components/general.hpp"
-#include "timemory/components/rusage.hpp"
-#include "timemory/components/timing.hpp"
-#include "timemory/components/user_bundle.hpp"
-
-// caliper components
-#if defined(TIMEMORY_USE_CALIPER)
-#    include "timemory/components/caliper.hpp"
-#endif
-
-// gotcha components
-#if defined(TIMEMORY_USE_GOTCHA)
-#    include "timemory/components/gotcha.hpp"
-#endif
-
-// cuda event
-#if defined(TIMEMORY_USE_CUDA)
-#    include "timemory/components/cuda/event.hpp"
-#endif
-
-// nvtx marker
-#if defined(TIMEMORY_USE_NVTX)
-#    include "timemory/components/cuda/nvtx_marker.hpp"
-#endif
-
-// likwid
-#if defined(TIMEMORY_USE_LIKWID)
-#    include "timemory/components/likwid.hpp"
-#endif
-
-// GPU hardware counter components
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti/activity.hpp"
-#    include "timemory/components/cupti/counters.hpp"
-#    include "timemory/components/roofline/gpu.hpp"
-#endif
-
-// CPU/GPU hardware counter components
-#if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/papi/array.hpp"
-#    include "timemory/components/papi/tuple.hpp"
-#    include "timemory/components/roofline/cpu.hpp"
-#endif
-
-// TAU component
-#if defined(TIMEMORY_USE_TAU)
-#    include "timemory/components/tau.hpp"
-#endif
-
-// VTune components
-#if defined(TIMEMORY_USE_VTUNE)
-#    include "timemory/components/vtune/event.hpp"
-#    include "timemory/components/vtune/frame.hpp"
-#endif
+// this file needs to be able to see the full definition of components
+#include "timemory/components.hpp"
 
 #include <iostream>
 #include <ostream>

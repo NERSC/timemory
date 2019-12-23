@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file variadic/types.hpp
- * \headerfile variadic/types.hpp "timemory/variadic/types.hpp"
+/** \file timemory/variadic/types.hpp
+ * \headerfile timemory/variadic/types.hpp "timemory/variadic/types.hpp"
  *
  * This is a pre-declaration of all the variadic wrappers.
  * Care should be taken to make sure that this includes a minimal
@@ -42,14 +42,6 @@
 //
 namespace tim
 {
-namespace component
-{
-template <typename... _Types>
-struct cpu_roofline;
-
-template <typename... _Types>
-struct gpu_roofline;
-}  // namespace component
 //--------------------------------------------------------------------------------------//
 //
 //  Forward declaration of variadic wrapper types

@@ -23,7 +23,7 @@
 // SOFTWARE.
 //
 
-/** \file variadic/component_list.hpp
+/** \file timemory/variadic/component_list.hpp
  * \headerfile variadic/component_list.hpp "timemory/variadic/component_list.hpp"
  * This is similar to component_tuple but not as optimized.
  * This exists so that Python and C, which do not support templates,

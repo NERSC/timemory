@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file variadic/auto_hybrid.hpp
- * \headerfile variadic/auto_hybrid.hpp "timemory/variadic/auto_hybrid.hpp"
+/** \file timemory/variadic/auto_hybrid.hpp
+ * \headerfile timemory/variadic/auto_hybrid.hpp "timemory/variadic/auto_hybrid.hpp"
  * Automatic starting and stopping of components. Accept a component_tuple as first
  * type and component_list as second type
  *

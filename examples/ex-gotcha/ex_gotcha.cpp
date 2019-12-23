@@ -48,16 +48,6 @@ namespace component
 {
 struct exp_intercept : public base<exp_intercept, void>
 {
-    using value_type = void;
-    using this_type  = exp_intercept;
-    using base_type  = base<this_type, value_type>;
-
-    static std::string label() { return "exp_intercept"; }
-    static std::string description() { return "Intercepts exp(double)"; }
-
-    void start() {}
-    void stop() {}
-
     double operator()(double val)
     {
         puts("intercepting exp...");
@@ -136,8 +126,8 @@ init()
     printf("\n");
 
     // configure the bundles
-    user_tuple_bundle::configure<fake_gotcha_t>();
     general_bundle_t::configure<wall_clock, cpu_clock, peak_rss>();
+    user_tuple_bundle::configure<fake_gotcha_t>();
     if(tim::get_env("MPI_INTERCEPT", true)) user_tuple_bundle::configure<mpi_gotcha_t>();
     if(tim::get_env("PUT_INTERCEPT", true)) user_tuple_bundle::configure<put_gotcha_t>();
     if(tim::get_env("EXP_INTERCEPT", true)) user_tuple_bundle::configure<exp_gotcha_t>();

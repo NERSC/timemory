@@ -218,7 +218,7 @@ add_option(TIMEMORY_USE_CLANG_TIDY
 add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE} ${_FEATURE})
 add_option(TIMEMORY_USE_GPERF
-    "Enable gperf-tools" ON)
+    "Enable gperftools" ON)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_VTUNE
@@ -241,6 +241,9 @@ if(_NON_APPLE_UNIX)
 endif()
 add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF ${_FEATURE})
+
+add_option(TIMEMORY_GPERF_STATIC
+    "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
