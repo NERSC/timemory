@@ -23,15 +23,23 @@
 // SOFTWARE.
 //
 
+/** \file timemory/components/general.hpp
+ * \headerfile timemory/components/general.hpp "timemory/components/general.hpp"
+ * Defines some short general components
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/gperf.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/variadic/types.hpp"
 
+#include <cassert>
 #include <cstdint>
 
 //======================================================================================//
@@ -43,6 +51,8 @@ namespace component
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<trip_count>;
+extern template struct base<gperf_cpu_profiler, void>;
+extern template struct base<gperf_heap_profiler, void>;
 
 #endif
 
@@ -82,21 +92,19 @@ struct trip_count : public base<trip_count>
 //--------------------------------------------------------------------------------------//
 // start/stop gperftools cpu profiler
 //
-struct gperf_cpu_profiler
-: public base<gperf_cpu_profiler, void, policy::thread_init, policy::global_finalize>
+struct gperf_cpu_profiler : public base<gperf_cpu_profiler, void>
 {
     using value_type = void;
     using this_type  = gperf_cpu_profiler;
-    using base_type =
-        base<this_type, value_type, policy::thread_init, policy::global_finalize>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "gperf_cpu_profiler"; }
     static std::string description() { return "gperftools cpu profiler"; }
     static value_type  record() {}
 
-    static void invoke_thread_init(storage_type*) { gperf::cpu::register_thread(); }
+    static void thread_init(storage_type*) { gperf::cpu::register_thread(); }
 
-    static void invoke_global_finalize(storage_type*)
+    static void global_finalize(storage_type*)
     {
         if(gperf::cpu::is_running())
         {
@@ -111,11 +119,11 @@ struct gperf_cpu_profiler
         if(!gperf::cpu::is_running())
         {
             index                 = this_type::get_index()++;
-            const auto& _mpi_info = get_mpi_info();
-            bool        _mpi_init = std::get<0>(_mpi_info);
-            int32_t     _mpi_rank = std::get<1>(_mpi_info);
+            const auto& _dmp_info = get_dmp_info();
+            bool        _dmp_init = std::get<0>(_dmp_info);
+            int32_t     _dmp_rank = std::get<1>(_dmp_info);
             auto        fname     = settings::compose_output_filename(
-                label() + "_" + std::to_string(index), ".dat", _mpi_init, &_mpi_rank);
+                label() + "_" + std::to_string(index), ".dat", _dmp_init, _dmp_rank);
             auto ret = gperf::cpu::profiler_start(fname);
             if(ret == 0)
                 fprintf(stderr, "[gperf_cpu_profiler]> Error starting %s...",
@@ -139,15 +147,15 @@ protected:
 private:
     static std::atomic<int64_t>& get_index()
     {
-        static std::atomic<int64_t> _instance;
+        static std::atomic<int64_t> _instance(0);
         return _instance;
     }
 
-    using mpi_info_t = std::tuple<bool, int32_t, int32_t>;
+    using dmp_info_t = std::tuple<bool, int32_t, int32_t>;
 
-    static const mpi_info_t& get_mpi_info()
+    static const dmp_info_t& get_dmp_info()
     {
-        static mpi_info_t _info{ mpi::is_initialized(), mpi::rank(), mpi::size() };
+        static dmp_info_t _info{ dmp::is_initialized(), dmp::rank(), dmp::size() };
         return _info;
     }
 };
@@ -155,18 +163,17 @@ private:
 //--------------------------------------------------------------------------------------//
 // start/stop gperftools cpu profiler
 //
-struct gperf_heap_profiler
-: public base<gperf_heap_profiler, void, policy::global_finalize>
+struct gperf_heap_profiler : public base<gperf_heap_profiler, void>
 {
     using value_type = void;
     using this_type  = gperf_heap_profiler;
-    using base_type  = base<this_type, value_type, policy::global_finalize>;
+    using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "gperf_heap_profiler"; }
     static std::string description() { return "gperftools heap profiler"; }
     static value_type  record() {}
 
-    static void invoke_global_finalize(storage_type*)
+    static void global_finalize(storage_type*)
     {
         if(gperf::heap::is_running())
         {
@@ -208,7 +215,7 @@ protected:
 private:
     static std::atomic<int64_t>& get_index()
     {
-        static std::atomic<int64_t> _instance;
+        static std::atomic<int64_t> _instance(0);
         return _instance;
     }
 };

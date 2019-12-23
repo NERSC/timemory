@@ -21,45 +21,35 @@ These are the full target names available within CMake. These targets are always
 may provide an empty target if the underlying specifications (such as a library and include path)
 were not available when timemory was installed.
 
-| Target name              | Description                                 | Type           |
-| ------------------------ | ------------------------------------------- | -------------- |
-| timemory-headers         | Provides include path for timemory          | interface      |
-| timemory-cereal          | Provides include path for cereal            | interface      |
-| timemory-c-shared        | C library                                   | shared library |
-| timemory-c-static        | C library                                   | static library |
-| timemory-cxx-shared      | C++ library                                 | shared library |
-| timemory-cxx-static      | C++ library                                 | static library |
-| timemory-extensions      | All non-essential extensions                | interface      |
-| timemory-mpi             | MPI includes and libraries                  | interface      |
-| timemory-papi            | PAPI includes and libraries                 | interface      |
-| timemory-cuda            | CUDA includes and libraries                 | interface      |
-| timemory-cudart          | CUDA runtime library                        | interface      |
-| timemory-cudart-device   | CUDA device runtime library                 | interface      |
-| timemory-cudart-static   | CUDA static runtime library                 | interface      |
-| timemory-cupti           | CUPTI includes and libraries                | interface      |
-| timemory-gperf           | gperftools includes and libraries           | interface      |
-| timemory-coverage        | Code coverage flags                         | interface      |
-| timemory-sanitizer       | Sanitizer flags                             | interface      |
-| timemory-compile-options | Compiler flags recommended/used by timemory | interface      |
-| timemory-arch            | Architecture-specific flags                 | interface      |
-| timemory-vector          | Vectorization flags                         | interface      |
-| timemory-extern-temples  | Import extern templates                     | interface      |
-
-### Simple `find_package` Approach
-
-```cmake
-add_library(foo SHARED foo.cpp)
-
-# this adds the timemory include path
-target_link_library(foo timemory-headers)
-
-# this sets foo.cpp to be compiled with the C++ compiler flags timemory was compiled with
-target_link_library(foo timemory-cxx-compile-flags)
-
-# this sets the TIMEMORY_USE_PAPI pre-processor definition, adds PAPI include path, and
-# links papi libraries
-target_link_library(foo timemory-papi)
-```
+| Target name              | Description                                                        | Type           |
+| ------------------------ | ------------------------------------------------------------------ | -------------- |
+| timemory-headers         | Provides include path for timemory                                 | interface      |
+| timemory-cereal          | Provides include path for cereal                                   | interface      |
+| timemory-c-shared        | C library                                                          | shared library |
+| timemory-c-static        | C library                                                          | static library |
+| timemory-cxx-shared      | C++ library                                                        | shared library |
+| timemory-cxx-static      | C++ library                                                        | static library |
+| timemory-extensions      | All non-essential extensions                                       | interface      |
+| timemory-mpi             | MPI includes and libraries                                         | interface      |
+| timemory-papi            | PAPI includes and libraries                                        | interface      |
+| timemory-cuda            | CUDA includes and libraries                                        | interface      |
+| timemory-cudart          | CUDA runtime library                                               | interface      |
+| timemory-cudart-device   | CUDA device runtime library                                        | interface      |
+| timemory-cudart-static   | CUDA static runtime library                                        | interface      |
+| timemory-cupti           | CUPTI includes and libraries                                       | interface      |
+| timemory-gperftools      | gperftools includes and libraries                                  | interface      |
+| timemory-gperftools-cpu  | gperftools includes and libraries for CPU profiler                 | interface      |
+| timemory-gperftools-heap | gperftools includes and libraries for heap profiler                | interface      |
+| timemory-coverage        | Code coverage flags                                                | interface      |
+| timemory-sanitizer       | Sanitizer flags                                                    | interface      |
+| timemory-compile-options | Compiler flags recommended/used by timemory                        | interface      |
+| timemory-arch            | Architecture-specific flags                                        | interface      |
+| timemory-vector          | Vectorization flags                                                | interface      |
+| timemory-roofline        | All necessary includes, libs, flags, etc. for CPU and GPU roofline | interface      |
+| timemory-roofline-cpu    | All necessary includes, libs, flags, etc. for CPU roofline         | interface      |
+| timemory-roofline-gpu    | All necessary includes, libs, flags, etc. for GPU roofline         | interface      |
+| timemory-likwid          | LIKWID includes and libraries                                      | interface      |
+| timemory-tau             | TAU includes and libraries                                         | interface      |
 
 ### `find_package` Approach with COMPONENTS
 
@@ -71,7 +61,7 @@ timemory will bundle the targets specified after `COMPONENTS` into one interface
 
 ```cmake
 # create interface target w/ the components
-find_package(timemory REQUIRED COMPONENTS cxx shared compile-options extensions)
+find_package(timemory REQUIRED COMPONENTS cxx shared compile-options)
 
 # create some library
 add_library(foo SHARED foo.cpp)
@@ -83,8 +73,7 @@ target_link_library(foo timemory)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-cuda-extern)
 
 # creates interface library target: timemory-cuda-extern
-find_package(timemory REQUIRED COMPONENTS cxx static compile-options extensions
-    cuda cupti extern-templates)
+find_package(timemory REQUIRED COMPONENTS cxx static compile-options cuda cupti)
 
 # create anoter library
 add_library(bar STATIC bar.cpp)
@@ -97,25 +86,24 @@ target_link_library(foo timemory-cuda-extern)
 
 The following table provides the relevant translation for projects that use Makefiles.
 
-| CMake Target            | Relevant Makefile Translations                                     |
-| ----------------------- | ------------------------------------------------------------------ |
-| timemory-headers        | `-I<prefix>/include`                                               |
-| timemory-cereal         | `-I<prefix>/include`                                               |
-| timemory-c-shared       | `-shared -lctimemory`                                              |
-| timemory-c-static       | `-static -lctimemory`                                              |
-| timemory-cxx-shared     | `-shared -ltimemory`                                               |
-| timemory-cxx-static     | `-static -ltimemory`                                               |
-| timemory-mpi            | `-DTIMEMORY_USE_MPI` + MPI flags                                   |
-| timemory-papi           | `-DTIMEMORY_USE_PAPI` + PAPI include + PAPI libs                   |
-| timemory-cuda           | `-DTIMEMORY_USE_CUDA` + CUDA include + CUDA libs + CUDA arch flags |
-| timemory-cupti          | `-DTIMEMORY_USE_CUPTI` + CUPTI include + CUPTI libs                |
-| timemory-gperf          | `-DTIMEMORY_USE_GPERF` + gperf include + gperf libs                |
-| timemory-extern-temples | `-DTIMEMORY_USE_EXTERN_TEMPLATES`                                  |
-| timemory-cudart         | `-lcudart`                                                         |
-| timemory-cudart-device  | `-lcudadevrt`                                                      |
-| timemory-cudart-static  | `-lcudart_static`                                                  |
-| timemory-coverage       | `--coverage`                                                       |
-| timemory-sanitizer      | `-fsanitizer=<type>`                                               |
+| CMake Target           | Relevant Makefile Translations                                     |
+| ---------------------- | ------------------------------------------------------------------ |
+| timemory-headers       | `-I<prefix>/include`                                               |
+| timemory-cereal        | `-I<prefix>/include`                                               |
+| timemory-c-shared      | `-shared -lctimemory`                                              |
+| timemory-c-static      | `-static -lctimemory`                                              |
+| timemory-cxx-shared    | `-shared -ltimemory`                                               |
+| timemory-cxx-static    | `-static -ltimemory`                                               |
+| timemory-mpi           | `-DTIMEMORY_USE_MPI` + MPI flags                                   |
+| timemory-papi          | `-DTIMEMORY_USE_PAPI` + PAPI include + PAPI libs                   |
+| timemory-cuda          | `-DTIMEMORY_USE_CUDA` + CUDA include + CUDA libs + CUDA arch flags |
+| timemory-cupti         | `-DTIMEMORY_USE_CUPTI` + CUPTI include + CUPTI libs                |
+| timemory-gperftools    | `-DTIMEMORY_USE_GPERF` + gperf include + gperf libs                |
+| timemory-cudart        | `-lcudart`                                                         |
+| timemory-cudart-device | `-lcudadevrt`                                                      |
+| timemory-cudart-static | `-lcudart_static`                                                  |
+| timemory-coverage      | `--coverage`                                                       |
+| timemory-sanitizer     | `-fsanitizer=<type>`                                               |
 
 ## Optional timemory Usage
 

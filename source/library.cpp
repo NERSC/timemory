@@ -99,7 +99,7 @@ inline const component_enum_t&
 get_current_components()
 {
     auto& _stack = get_components_stack();
-    if(_stack.size() == 0)
+    if(_stack.empty())
     {
         _stack.push_back(
             tim::enumerate_components(get_default_components(), "TIMEMORY_COMPONENTS"));
@@ -154,7 +154,9 @@ extern "C"
     API void timemory_delete_record(uint64_t id)
     {
         if(timemory_delete_function)
+        {
             (*timemory_delete_function)(id);
+        }
         else if(get_record_map().find(id) != get_record_map().end())
         {
             static thread_local auto& _record_map = get_record_map();
@@ -187,7 +189,7 @@ extern "C"
     //  finalize the library
     API void timemory_finalize_library(void)
     {
-        if(tim::settings::enabled() == false && get_record_map().size() == 0)
+        if(tim::settings::enabled() == false && get_record_map().empty())
             return;
 
         auto& _record_map = get_record_map();
@@ -212,10 +214,8 @@ extern "C"
         // clear the map
         _record_map.clear();
 
-        // Compensate for Intel compiler not allowing auto output
-#if defined(__INTEL_COMPILER)
-        toolset_t::print_storage();
-#endif
+        // do the finalization
+        tim::timemory_finalize();
 
         // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)

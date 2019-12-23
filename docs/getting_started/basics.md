@@ -12,31 +12,29 @@ In C++ and Python, timemory can be added in one line of code (once the type is d
 ### C++
 
 ```cpp
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, peak_rss>;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, peak_rss, user_tuple_bundle>;
 void some_function()
 {
     TIMEMORY_MARKER(auto_tuple_t, "");
     // ...
 }
-```
 
-### CUDA
-
-```cpp
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, peak_rss, cuda_event>;
-void some_function()
+void init()
 {
-    TIMEMORY_MARKER(auto_tuple_t, "");
-    // ...
+    // insert the cpu_util component at runtime
+    user_tuple_bundle::configure<cpu_util>();
 }
 ```
 
 ### Python
 
 ```python
-@timemory.util.auto_timer()
+from timemory.util import auto_timer
+
+@auto_timer()
 def some_function():
-    # ...
+    with auto_timer():
+        # ...
 ```
 
 ### C

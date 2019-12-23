@@ -16,6 +16,7 @@ foreach(_YEAR 2019 2018 2017)
             list(APPEND _ITTNOTIFY_PATH_HINTS "${${_VAR}}")
         endif()
         unset(_VAR)
+    endforeach()
 endforeach()
 
 #------------------------------------------------------------------------------#
@@ -38,6 +39,15 @@ find_library(ITTNOTIFY_LIBRARY
 
 #------------------------------------------------------------------------------#
 
+find_library(ITTNOTIFY_dl_LIBRARY
+    NAMES dl
+    PATH_SUFFIXES lib lib64 lib32
+    HINTS ${_ITTNOTIFY_PATH_HINTS}
+    PATHS ${_ITTNOTIFY_PATH_HINTS}
+)
+
+#------------------------------------------------------------------------------#
+
 if(ITTNOTIFY_INCLUDE_DIR)
     set(ITTNOTIFY_INCLUDE_DIRS ${ITTNOTIFY_INCLUDE_DIR})
 endif()
@@ -46,6 +56,9 @@ endif()
 
 if(ITTNOTIFY_LIBRARY)
     set(ITTNOTIFY_LIBRARIES ${ITTNOTIFY_LIBRARY})
+    if(ITTNOTIFY_dl_LIBRARY)
+        list(APPEND ITTNOTIFY_LIBRARIES ${ITTNOTIFY_dl_LIBRARY})
+    endif()
 endif()
 
 #------------------------------------------------------------------------------#
@@ -57,4 +70,5 @@ find_package_handle_standard_args(ittnotify REQUIRED_VARS
 #------------------------------------------------------------------------------#
 
 unset(_ITTNOTIFY_PATH_HINTS)
+
 #------------------------------------------------------------------------------#

@@ -63,10 +63,6 @@ using measurement_t =
 using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
                                        thread_cpu_clock, process_cpu_clock>;
 
-// measure wall-clock, thread cpu-clock + process cpu-utilization
-using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util,
-                                    caliper, papi_tuple_t>;
-
 //--------------------------------------------------------------------------------------//
 
 namespace details
@@ -286,25 +282,39 @@ TEST_F(tuple_tests, all_threads)
     const size_t store_size = 13;
 
     if(tim::trait::is_available<wall_clock>::value)
+    {
         EXPECT_EQ(tim::storage<wall_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<thread_cpu_clock>::value)
+    {
         EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<thread_cpu_util>::value)
+    {
         EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<process_cpu_clock>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<process_cpu_util>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_util>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<peak_rss>::value)
+    {
         EXPECT_EQ(tim::storage<peak_rss>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<page_rss>::value)
+    {
         EXPECT_EQ(tim::storage<page_rss>::instance()->get().size(), store_size);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -391,25 +401,41 @@ TEST_F(tuple_tests, collapsed_threads)
     const size_t store_size = 15;
 
     if(tim::trait::is_available<wall_clock>::value)
+    {
         EXPECT_EQ(tim::storage<wall_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<thread_cpu_clock>::value)
-        EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(), store_size);
+    {
+        EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(),
+                  store_size + 4);
+    }
 
     if(tim::trait::is_available<thread_cpu_util>::value)
-        EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(), store_size);
+    {
+        EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(),
+                  store_size + 4);
+    }
 
     if(tim::trait::is_available<process_cpu_clock>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_clock>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<process_cpu_util>::value)
+    {
         EXPECT_EQ(tim::storage<process_cpu_util>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<peak_rss>::value)
+    {
         EXPECT_EQ(tim::storage<peak_rss>::instance()->get().size(), store_size);
+    }
 
     if(tim::trait::is_available<page_rss>::value)
+    {
         EXPECT_EQ(tim::storage<page_rss>::instance()->get().size(), store_size);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -442,6 +468,39 @@ TEST_F(tuple_tests, measure)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(tuple_tests, concat)
+{
+    using lhs_t = tim::component_tuple<real_clock, system_clock>;
+    using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
+
+    using comp_t0 = tim::remove_duplicates<
+        typename tim::component_tuple<lhs_t, rhs_t>::component_type>;
+    using comp_t1 = tim::remove_duplicates<
+        typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type>;
+
+    using data_t0 =
+        tim::remove_duplicates<typename tim::component_list<lhs_t, rhs_t>::data_type>;
+    using data_t1 = tim::remove_duplicates<
+        typename tim::auto_list<lhs_t, rhs_t, user_clock>::data_type>;
+
+    std::cout << "\n" << std::flush;
+    std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
+    std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
+    std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
+    std::cout << "\n" << std::flush;
+
+    EXPECT_EQ(comp_t0::size(), 3);
+    EXPECT_EQ(comp_t1::size(), 4);
+
+    EXPECT_EQ(std::tuple_size<data_t0>::value, 3);
+    EXPECT_EQ(std::tuple_size<data_t1>::value, 4);
+}
+
+//--------------------------------------------------------------------------------------//
+
 int
 main(int argc, char** argv)
 {
@@ -450,12 +509,17 @@ main(int argc, char** argv)
     tim::settings::verbose()     = 0;
     tim::settings::debug()       = false;
     tim::settings::json_output() = true;
-    tim::timemory_init(argc, argv);  // parses environment, sets output paths
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

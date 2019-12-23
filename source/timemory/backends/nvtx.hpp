@@ -22,9 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file backends/nvtx.hpp
+ * \headerfile backends/nvtx.hpp "timemory/backends/nvtx.hpp"
+ * Defines NVTX markers
+ *
+ */
+
 #pragma once
 
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cstdint>
@@ -58,7 +64,7 @@ get_thread_id()
 #elif defined(_WINDOWS)
     return GetCurrentThreadId();
 #else
-    static std::atomic<uint32_t> _thread_counter;
+    static std::atomic<uint32_t> _thread_counter(0);
     static thread_local uint32_t _thread_id = _thread_counter++;
     return _thread_id;
 #endif

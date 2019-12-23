@@ -26,7 +26,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/graph.hpp"
 
 #include <cstdint>

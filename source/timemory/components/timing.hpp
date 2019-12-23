@@ -22,13 +22,19 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file timemory/components/timing.hpp
+ * \headerfile timemory/components/timing.hpp "timemory/components/timing.hpp"
+ * Provides components for timing-related records
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/clocks.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/storage.hpp"
 
 //======================================================================================//
 
@@ -36,9 +42,11 @@ namespace tim
 {
 namespace component
 {
+//--------------------------------------------------------------------------------------//
+
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<real_clock>;
+extern template struct base<wall_clock>;
 extern template struct base<system_clock>;
 extern template struct base<user_clock>;
 extern template struct base<cpu_clock>;
@@ -59,20 +67,20 @@ extern template struct base<thread_cpu_util, std::pair<int64_t, int64_t>>;
 //--------------------------------------------------------------------------------------//
 // the system's real time (i.e. wall time) clock, expressed as the amount of time since
 // the epoch.
-struct real_clock : public base<real_clock, int64_t>
+struct wall_clock : public base<wall_clock, int64_t>
 {
     using ratio_t    = std::nano;
     using value_type = int64_t;
-    using base_type  = base<real_clock, value_type>;
+    using base_type  = base<wall_clock, value_type>;
 
-    static std::string label() { return "real"; }
+    static std::string label() { return "wall"; }
     static std::string description() { return "wall time"; }
     static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
     double get_display() const { return get(); }
     double get() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val) / ratio_t::den * get_unit();
     }
 
@@ -92,10 +100,10 @@ struct real_clock : public base<real_clock, int64_t>
 };
 
 //--------------------------------------------------------------------------------------//
-// alias for "real_clock"
-using wall_clock = real_clock;
-// alias for "real_clock" since time is a construct of our consciousness
-using virtual_clock = real_clock;
+// alias for "wall_clock"
+using real_clock = wall_clock;
+// alias for "wall_clock" since time is a construct of our consciousness
+using virtual_clock = wall_clock;
 
 //--------------------------------------------------------------------------------------//
 // uses clock() -- only relevant as a time when a different is computed
@@ -114,7 +122,7 @@ struct system_clock : public base<system_clock>
     static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -150,7 +158,7 @@ struct user_clock : public base<user_clock>
     static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -186,7 +194,7 @@ struct cpu_clock : public base<cpu_clock>
     static value_type  record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -222,7 +230,7 @@ struct monotonic_clock : public base<monotonic_clock>
     }
     double get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -259,7 +267,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     }
     double get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -294,7 +302,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -328,7 +336,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
     static value_type  record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? accum : value;
+        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -366,14 +374,14 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     static std::string description() { return "cpu utilization"; }
     static value_type  record()
     {
-        return value_type(cpu_clock::record(), real_clock::record());
+        return value_type(cpu_clock::record(), wall_clock::record());
     }
     double get_display() const
     {
-        double denom =
-            (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
-        double numer =
-            (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
+        const auto& _data =
+            (is_transient) ? static_cast<const value_type&>(accum) : value;
+        double denom = (_data.second > 0) ? _data.second : 1;
+        double numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
     double serialization() { return get_display(); }
@@ -386,18 +394,15 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     void stop()
     {
         auto tmp = record();
-        accum.first += (tmp.first - value.first);
-        accum.second += (tmp.second - value.second);
+        accum += (tmp - value);
         value = std::move(tmp);
         set_stopped();
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        accum.first += rhs.accum.first;
-        accum.second += rhs.accum.second;
-        value.first += rhs.value.first;
-        value.second += rhs.value.second;
+        accum += rhs.accum;
+        value += rhs.value;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -405,10 +410,8 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
 
     this_type& operator-=(const this_type& rhs)
     {
-        accum.first -= rhs.accum.first;
-        accum.second -= rhs.accum.second;
-        value.first -= rhs.value.first;
-        value.second -= rhs.value.second;
+        accum -= rhs.accum;
+        value -= rhs.value;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -432,14 +435,14 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     static std::string description() { return "process cpu utilization"; }
     static value_type  record()
     {
-        return value_type(process_cpu_clock::record(), real_clock::record());
+        return value_type(process_cpu_clock::record(), wall_clock::record());
     }
     double get_display() const
     {
-        double denom =
-            (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
-        double numer =
-            (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
+        const auto& _data =
+            (is_transient) ? static_cast<const value_type&>(accum) : value;
+        double denom = (_data.second > 0) ? _data.second : 1;
+        double numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
     double serialization() { return get_display(); }
@@ -452,18 +455,15 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     void stop()
     {
         auto tmp = record();
-        accum.first += (tmp.first - value.first);
-        accum.second += (tmp.second - value.second);
+        accum += (tmp - value);
         value = std::move(tmp);
         set_stopped();
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        accum.first += rhs.accum.first;
-        accum.second += rhs.accum.second;
-        value.first += rhs.value.first;
-        value.second += rhs.value.second;
+        accum += rhs.accum;
+        value += rhs.value;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -471,10 +471,8 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
 
     this_type& operator-=(const this_type& rhs)
     {
-        accum.first -= rhs.accum.first;
-        accum.second -= rhs.accum.second;
-        value.first -= rhs.value.first;
-        value.second -= rhs.value.second;
+        accum -= rhs.accum;
+        value -= rhs.value;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -498,14 +496,14 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     static std::string description() { return "thread cpu utilization"; }
     static value_type  record()
     {
-        return value_type(thread_cpu_clock::record(), real_clock::record());
+        return value_type(thread_cpu_clock::record(), wall_clock::record());
     }
     double get_display() const
     {
-        double denom =
-            (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
-        double numer =
-            (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
+        const auto& _data =
+            (is_transient) ? static_cast<const value_type&>(accum) : value;
+        double denom = (_data.second > 0) ? _data.second : 1;
+        double numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
     double serialization() { return get_display(); }
@@ -518,18 +516,15 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     void stop()
     {
         auto tmp = record();
-        accum.first += (tmp.first - value.first);
-        accum.second += (tmp.second - value.second);
+        accum += (tmp - value);
         value = std::move(tmp);
         set_stopped();
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        accum.first += rhs.accum.first;
-        accum.second += rhs.accum.second;
-        value.first += rhs.value.first;
-        value.second += rhs.value.second;
+        accum += rhs.accum;
+        value += rhs.value;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -537,10 +532,8 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
 
     this_type& operator-=(const this_type& rhs)
     {
-        accum.first -= rhs.accum.first;
-        accum.second -= rhs.accum.second;
-        value.first -= rhs.value.first;
-        value.second -= rhs.value.second;
+        accum -= rhs.accum;
+        value -= rhs.value;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;

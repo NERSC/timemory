@@ -65,10 +65,9 @@ set_cmake_bool_option("TIMEMORY_BUILD_EXAMPLES",
                       args.enable_build_examples, args.disable_build_examples)
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
 
+
 # ---------------------------------------------------------------------------- #
 #
-
-
 def get_project_version():
     # open "VERSION"
     with open(os.path.join(os.getcwd(), 'VERSION'), 'r') as f:
@@ -215,9 +214,10 @@ with warnings.catch_warnings():
         setup_requires=[],
         keywords=get_keywords(),
         classifiers=get_classifiers(),
-        python_requires='>=2.6',
+        python_requires='>=2.7',
         cmdclass=dict(install=custom_install),
         entry_points={
-            'console_scripts': ['timemory-plotter=timemory.plotting.__main__:plot'],
+            'console_scripts': ['timemory-plotter=timemory.plotting.__main__:try_plot',
+                                'timemory-roofline=timemory.roofline.__main__:try_plot'],
         },
     )

@@ -22,12 +22,14 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file papi_defs.hpp
- * \headerfile papi_defs.hpp "timemory/papi_defs.hpp"
+/** \file backends/bits/papi.hpp
+ * \headerfile backends/bits/papi.hpp "timemory/backends/bits/papi.hpp"
  * This provides a fake PAPI interface to simplify compilation when PAPI is not
  * available, similar to mpi.hpp
  *
  */
+
+#pragma once
 
 #include <string>
 

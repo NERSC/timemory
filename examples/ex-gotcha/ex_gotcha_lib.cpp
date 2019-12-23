@@ -39,14 +39,20 @@ template <typename _Tp, typename _Func, typename _Incr>
 _Tp
 work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
 {
+#if !defined(VERBOSE)
+    tim::consume_parameters(fname);
+#endif
+
     _Tp val = 2.0;
     _Tp sum = 0.0;
 
     for(int i = 0; i < nitr; ++i)
     {
         sum += func(val);
-        printf("\t[itr: %i]> %-6s %-4s(%6.3f) = %15.2f\n", i,
+#if defined(VERBOSE)
+        printf("\t[itr: %2i]> %-6s %-4s(%7.3f) = %20.3f\n", i,
                tim::demangle(typeid(_Tp).name()).c_str(), fname.c_str(), val, sum);
+#endif
         val = incr(val, i + 1);
     }
     return sum;
@@ -57,94 +63,20 @@ work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
 tuple_t
 do_exp_work(int nitr)
 {
+#if defined(VERBOSE)
     printf("\n");
-    PRINT_HERE("");
+    PRINT_HERE("%s", "");
     printf("\n");
+#endif
 
     auto fsum = work<float>("expf", nitr, [](float val) -> float { return expf(val); },
                             [](float val, int i) -> float { return val + 0.25 * i; });
 
+#if defined(VERBOSE)
     printf("\n");
+#endif
 
     auto dsum = work<double>("exp", nitr, [](double val) -> double { return exp(val); },
-                             [](double val, int i) -> double { return val + 0.25 * i; });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    return tuple_t(fsum, dsum);
-}
-
-//--------------------------------------------------------------------------------------//
-
-tuple_t
-do_cos_work(int nitr, const std::pair<float, double>& pair)
-{
-    printf("\n");
-    PRINT_HERE("");
-    printf("\n");
-
-    auto fsum = work<float>("cosf", nitr, [](float val) -> float { return cosf(val); },
-                            [](float val, int i) -> float { return val + 0.25 * i; });
-
-    printf("\n");
-
-    auto dsum = work<double>("cos", nitr, [](double val) -> double { return cos(val); },
-                             [](double val, int i) -> double { return val + 0.25 * i; });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-    auto _pair = pair;
-    auto _R    = ext::do_cos_work_ref(nitr, _pair);
-
-    printf("\n");
-    printf("[iterations=%i]> (R)  single-precision cos = %f\n", nitr, std::get<0>(_R));
-    printf("[iterations=%i]> (R)  double-precision cos = %f\n", nitr, std::get<1>(_R));
-
-    return tuple_t(fsum, dsum);
-}
-
-//--------------------------------------------------------------------------------------//
-
-tuple_t
-do_cos_work_ref(int nitr, std::pair<float, double>& _pair)
-{
-    printf("\n");
-    PRINT_HERE("");
-    printf("\n");
-
-    auto fsum = work<float>("cosf", nitr, [](float val) -> float { return cosf(val); },
-                            [](float val, int i) -> float { return val + 0.25 * i; });
-
-    printf("\n");
-
-    auto dsum = work<double>("cos", nitr, [](double val) -> double { return cos(val); },
-                             [](double val, int i) -> double { return val + 0.25 * i; });
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-    auto _RK = ext::do_cos_work_cref(nitr, _pair);
-
-    printf("\n");
-    printf("[iterations=%i]> (RK) single-precision cos = %f\n", nitr, std::get<0>(_RK));
-    printf("[iterations=%i]> (RK) double-precision cos = %f\n", nitr, std::get<1>(_RK));
-
-    return tuple_t(fsum, dsum);
-}
-
-//--------------------------------------------------------------------------------------//
-
-tuple_t
-do_cos_work_cref(int nitr, const std::pair<float, double>&)
-{
-    printf("\n");
-    PRINT_HERE("");
-    printf("\n");
-
-    auto fsum = work<float>("cosf", nitr, [](float val) -> float { return cosf(val); },
-                            [](float val, int i) -> float { return val + 0.25 * i; });
-
-    printf("\n");
-
-    auto dsum = work<double>("cos", nitr, [](double val) -> double { return cos(val); },
                              [](double val, int i) -> double { return val + 0.25 * i; });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));

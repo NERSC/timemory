@@ -104,7 +104,7 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
     std::vector<_Tp, tim::ert::aligned_allocator<_Tp, 64>> array(nsize);
     std::memset(array.data(), 0, nsize * sizeof(_Tp));
 
-    _Component::invoke_thread_init(nullptr);
+    _Component::thread_init(nullptr);
 
     using pointer = ptr_t<_Component>;
     pointer obj   = pointer(new _Component(std::forward<_Args>(_args)...));
@@ -114,7 +114,7 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
                                             store_func);
     obj->stop();
 
-    _Component::invoke_thread_finalize(nullptr);
+    _Component::thread_finalize(nullptr);
 
     // return zeros if not working
     if(!tim::papi::working())
@@ -163,7 +163,7 @@ class papi_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-        static std::atomic<int> once;
+        static std::atomic<int> once(0);
         if(once++ == 0)
         {
             tim::papi::init();
@@ -341,12 +341,21 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::timemory_init(argc, argv);
+
+    tim::settings::verbose()     = 0;
+    tim::settings::debug()       = false;
+    tim::settings::json_output() = true;
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

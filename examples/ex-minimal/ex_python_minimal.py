@@ -1,7 +1,8 @@
 #!@PYTHON_EXECUTABLE@
 
-import sys
+import timemory
 from timemory.util import auto_timer
+import sys
 
 
 def fib(n):
@@ -20,3 +21,4 @@ def main(nfib):
 
 if __name__ == "__main__":
     main(int(sys.argv[1]) if len(sys.argv) > 1 else 34)
+    timemory.timemory_finalize()

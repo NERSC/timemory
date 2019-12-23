@@ -12,22 +12,56 @@ export PATH=/opt/conda/bin:/usr/local/cuda/bin:${PATH}
 export CC=$(which cc)
 export CXX=$(which c++)
 export CUDACXX=$(which nvcc)
+export CPATH=${CPATH}:/usr/include/mpich
+export CUDA_HOME=$(realpath /usr/local/cuda)
+export LIBRARY_PATH=/usr/local/lib:${LIBRARY_PATH}
+export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 ROOT_DIR=${PWD}
-: ${TIMEMORY_BRANCH:="CUPTI"}
+: ${TIMEMORY_BRANCH:="master"}
 
-run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/jrmadsen/TiMemory.git timemory-source
+run-verbose cd ${ROOT_DIR}
+run-verbose git clone https://github.com/RRZE-HPC/likwid.git
+run-verbose cd likwid
+ssed -i 's/FORTRAN_INTERFACE = false/FORTRAN_INTERFACE = true/g' config.mk
+ssed -i 's/NVIDIA_INTERFACE = false/NVIDIA_INTERFACE = true/g' config.mk
+ssed -i 's/BUILDAPPDAEMON=false/BUILDAPPDAEMON=true/g' config.mk
+run-verbose make -j6
+ssed -i 's/@install/install/g' Makefile
+ssed -i 's/@cd/cd/g' Makefile
+run-verbose make install -j6
+
+run-verbose cd ${ROOT_DIR}
+run-verbose wget http://tau.uoregon.edu/tau.tgz
+run-verbose tar -xzf tau.tgz
+run-verbose cd tau-*
+export CFLAGS="-O3"
+export CPPFLAGS="-O3"
+# run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich -cuda=/usr/local/cuda
+run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich
+run-verbose make -j6
+run-verbose make install -j6
+unset CFLAGS
+unset CPPFLAGS
+
+run-verbose cd ${ROOT_DIR}
+run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/NERSC/timemory.git timemory-source
 run-verbose cd timemory-source
 
-SOURCE_DIR=${PWD}
+SOURCE_DIR=$(pwd)
 run-verbose mkdir timemory-build
 run-verbose cd timemory-build
 
-BINARY_DIR=${PWD}
-run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTIMEMORY_BUILD_GTEST=ON -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
-run-verbose ninja -j2
+run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
+run-verbose ninja -j6
 run-verbose ninja install
+
+run-verbose git clone https://jrmadsen@bitbucket.org/berkeleylab/upcxx.git
+run-verbose cd upcxx
+export CFLAGS="-fPIC"
+export CPPFLAGS="-fPIC"
+run-verbose ./install /usr/local
 
 cd ${ROOT_DIR}
 
-run-verbose rm -rf ${BINARY_DIR} ${SOURCE_DIR}
+run-verbose rm -rf ${ROOT_DIR}/*

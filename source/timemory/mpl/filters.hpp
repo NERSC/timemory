@@ -262,6 +262,13 @@ using operation_filter_true =
 //
 //======================================================================================//
 
+template <typename _Tp>
+struct get_data_tuple_type
+{
+    using type = typename std::conditional<(std::is_fundamental<_Tp>::value), _Tp,
+                                           decltype(std::declval<_Tp>().get())>::type;
+};
+
 template <typename... _ImplTypes>
 struct get_data_tuple
 {
@@ -272,9 +279,9 @@ struct get_data_tuple
 template <typename... _ImplTypes, template <typename...> class _Tuple>
 struct get_data_tuple<_Tuple<_ImplTypes...>>
 {
-    using value_type = _Tuple<decltype(std::declval<_ImplTypes>().get())...>;
+    using value_type = _Tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
     using label_type =
-        _Tuple<_Tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+        _Tuple<_Tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
 };
 
 //======================================================================================//
@@ -300,6 +307,22 @@ struct is_one_of<F, _Tuple<S, T...>>
 };
 
 //======================================================================================//
+// check if any types are integral types
+//
+template <typename...>
+struct is_one_of_integral
+{
+    static constexpr bool value = false;
+};
+
+template <typename T, template <typename...> class _Tuple, typename... Tail>
+struct is_one_of_integral<_Tuple<T, Tail...>>
+{
+    static constexpr bool value =
+        std::is_integral<T>::value || is_one_of_integral<_Tuple<Tail...>>::value;
+};
+
+//======================================================================================//
 
 template <typename In, typename Out>
 struct remove_duplicates;
@@ -318,6 +341,28 @@ struct remove_duplicates<std::tuple<In, InTail...>, std::tuple<Out...>>
         typename remove_duplicates<std::tuple<InTail...>, std::tuple<Out..., In>>::type,
         typename remove_duplicates<std::tuple<InTail...>,
                                    std::tuple<Out...>>::type>::type;
+};
+
+template <typename In, typename Out>
+struct convert;
+
+template <template <typename...> class InTuple, typename... In,
+          template <typename...> class OutTuple, typename... Out>
+struct convert<InTuple<In...>, OutTuple<Out...>>
+{
+    using type = OutTuple<In...>;
+};
+
+template <typename In, typename Out>
+struct unique;
+
+template <template <typename...> class InTuple, typename... In,
+          template <typename...> class OutTuple, typename... Out>
+struct unique<InTuple<In...>, OutTuple<Out...>>
+{
+    using tuple_type = typename convert<InTuple<In...>, OutTuple<>>::type;
+    using dupl_type  = typename remove_duplicates<tuple_type, OutTuple<>>::type;
+    using type       = typename convert<dupl_type, InTuple<>>::type;
 };
 
 //======================================================================================//
@@ -355,8 +400,22 @@ using is_one_of = typename impl::is_one_of<_Tp, _Types>;
 
 //======================================================================================//
 
+///
+/// check if type is in expansion
+///
+template <typename _Types>
+using is_one_of_integral = typename impl::is_one_of_integral<_Types>;
+
+//======================================================================================//
+
 template <typename T>
-using remove_duplicates = typename impl::remove_duplicates<std::tuple<>, T>::type;
+using remove_duplicates = typename impl::unique<T, std::tuple<>>::type;
+
+template <typename T>
+using unique = typename impl::unique<T, std::tuple<>>::type;
+
+template <typename T, typename U>
+using convert = typename impl::convert<T, U>::type;
 
 //======================================================================================//
 //

@@ -179,6 +179,10 @@ endmacro()
 #----------------------------------------------------------------------------------------#
 macro(ADD_TARGET_CXX_FLAG _TARG)
     target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${ARGN}>)
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
+        target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${ARGN}>)
+    endif()
 endmacro()
 
 
@@ -265,9 +269,11 @@ endmacro()
 #----------------------------------------------------------------------------------------#
 # check C and CXX flag
 #----------------------------------------------------------------------------------------#
-macro(ADD_FLAG_IF_AVAIL FLAG)
-    ADD_C_FLAG_IF_AVAIL("${FLAG}")
-    ADD_CXX_FLAG_IF_AVAIL("${FLAG}")
+macro(ADD_FLAG_IF_AVAIL)
+    foreach(_ARG ${ARGN})
+        ADD_C_FLAG_IF_AVAIL("${_ARG}")
+        ADD_CXX_FLAG_IF_AVAIL("${_ARG}")
+    endforeach()
 endmacro()
 
 

@@ -52,7 +52,7 @@ template <typename _Tp>
 struct init_storage;
 
 template <typename _Tp>
-struct live_count;
+struct construct;
 
 template <typename _Tp>
 struct set_prefix;
@@ -99,6 +99,9 @@ struct mark_begin;
 template <typename _Tp>
 struct mark_end;
 
+template <typename _Tp>
+struct audit;
+
 template <typename RetType, typename LhsType, typename RhsType>
 struct compose;
 
@@ -144,33 +147,21 @@ struct pointer_deleter;
 template <typename _Tp>
 struct pointer_counter;
 
-template <typename _Tp>
-struct set_width;
-
-template <typename _Tp>
-struct set_precision;
-
-template <typename _Tp>
-struct set_format_flags;
-
-template <typename _Tp>
-struct set_units;
-
 }  // namespace operation
 
+//======================================================================================//
+// generic helpers that can/should be inherited from
+//
 namespace policy
 {
-struct serialization;
-struct global_init;
-struct global_finalize;
-struct thread_init;
-struct thread_finalize;
-
-template <typename... _Policies>
-struct wrapper;
+template <typename _Tp>
+struct instance_tracker;
 
 }  // namespace policy
 
+//======================================================================================//
+// type-traits for customization
+//
 namespace trait
 {
 template <typename _Tp>
@@ -181,9 +172,6 @@ struct record_max;
 
 template <typename _Tp>
 struct array_serialization;
-
-template <typename _Tp>
-struct external_output_handling;
 
 template <typename _Tp>
 struct requires_prefix;
@@ -232,6 +220,42 @@ struct iterable_measurement;
 
 template <typename _Tp>
 struct secondary_data;
+
+template <typename _Tp>
+struct thread_scope_only;
+
+template <typename _Tp>
+struct split_serialization;
+
+template <typename _Tp>
+struct record_statistics;
+
 }  // namespace trait
 
+//--------------------------------------------------------------------------------------//
+
+namespace operation
+{
+//----------------------------------------------------------------------------------//
+// shorthand for available, non-void, using internal output handling
+//
+template <typename _Up>
+struct is_enabled
+{
+    using _Vp = typename _Up::value_type;
+    static constexpr bool value =
+        (trait::is_available<_Up>::value && !(std::is_same<_Vp, void>::value));
+};
+
+//----------------------------------------------------------------------------------//
+// shorthand for non-void, using internal output handling
+//
+template <typename _Up>
+struct has_data
+{
+    using _Vp                   = typename _Up::value_type;
+    static constexpr bool value = (!(std::is_same<_Vp, void>::value));
+};
+
+}  // namespace operation
 }  // namespace tim

@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file graph.hpp
- * \headerfile graph.hpp "timemory/utility/graph.hpp"
+/** \file utility/graph.hpp
+ * \headerfile utility/graph.hpp "timemory/utility/graph.hpp"
  * Arbitrary Graph / Tree (i.e. binary-tree but not binary)
  */
 
@@ -90,7 +90,7 @@ public:
     template <typename _Archive>
     void serialize(_Archive& ar, const unsigned int)
     {
-        ar(serializer::make_nvp("data", data));
+        ar(cereal::make_nvp("data", data));
     }
 };
 
@@ -762,7 +762,7 @@ public:
     void serialize(_Archive& ar, const unsigned int)
     {
         for(auto itr = begin(); itr != end(); ++itr)
-            ar(serializer::make_nvp("node", *itr));
+            ar(cereal::make_nvp("node", *itr));
     }
 
     size_t data_size()

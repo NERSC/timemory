@@ -2,7 +2,7 @@
 #       CMake settings
 ##########################################################################################
 
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     set(MSG "")
@@ -16,11 +16,25 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
     cmake_policy(SET CMP0079 NEW)
+    cmake_policy(SET CMP0082 NEW)
 endif()
+# set these as the defaults
+set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
 # this gets annoying
-if(TIMEMORY_BUILD_GTEST)
+if(TIMEMORY_BUILD_GTEST OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
         "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
+endif()
+# override any cache settings
+if(TIMEMORY_BUILD_TESTING)
+    set(TIMEMORY_BUILD_GTEST ON)
+    set(TIMEMORY_BUILD_EXAMPLES ON)
+endif()
+#
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -55,8 +69,28 @@ endif()
 
 project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
+# install directories
+include(GNUInstallDirs)
+# cmake installation folder -- change CMAKE_INSTALL_DATAROOTDIR to tweak this
+set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
+
+# create the full path version and generic path versions
+foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
+    # generic "PROJECT_INSTALL_" variables (used by documentation)"
+    set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
+endforeach()
+
 configure_file(${PROJECT_SOURCE_DIR}/source/timemory/version.h.in
-    ${PROJECT_SOURCE_DIR}/source/timemory/version.h)
+    ${PROJECT_BINARY_DIR}/source/timemory/_version.h @ONLY)
+
+# execute_process(
+#    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#        ${PROJECT_BINARY_DIR}/source/timemory/_version.h
+#        ${PROJECT_BINARY_DIR}/source/timemory/version.h
+#    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+#    ERROR_VARIABLE ERR_MSG
+#    RESULT_VARIABLE RET
+#)
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MASTER_PROJECT ON)
@@ -114,11 +148,12 @@ mark_as_advanced(TIMEMORY_BUILD_QUIET)
 if(SKBUILD)
     set(_BUILD_SHARED_CXX ON)
 else()
-    if(TIMEMORY_BUILD_PYTHON AND NOT BUILD_SHARED_LIBS)
+    if((TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON) AND NOT BUILD_SHARED_LIBS)
         if(NOT TIMEMORY_BUILD_QUIET)
             message(AUTHOR_WARNING "BUILD_SHARED_LIBS=OFF --> disabling TIMEMORY_BUILD_PYTHON...")
-            set(TIMEMORY_BUILD_PYTHON OFF)
         endif()
+        set(TIMEMORY_BUILD_PYTHON OFF)
+        set(TIMEMORY_USE_PYTHON OFF)
     endif()
 endif()
 
@@ -130,7 +165,7 @@ endif()
 set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
 set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
 
-if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
+if(SKBUILD OR TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON)
     set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "${_TLS_DESCRIPT}")
     # ensure local override
     set(TIMEMORY_TLS_MODEL "global-dynamic")
@@ -153,8 +188,6 @@ unset(_TLS_OPTIONS)
 
 include(ClangFormat)
 include(Compilers)
-include(GNUInstallDirs)
-include(ProjectSettings)
 include(BuildSettings)
 include(Packages)
 include(CMakeParseArguments)
@@ -183,8 +216,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   timemory source
 #----------------------------------------------------------------------------------------#
-# activate clang-tidy if enabled
-_timemory_activate_clang_tidy()
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    # activate clang-tidy if enabled
+    _timemory_activate_clang_tidy()
+endif()
 
 add_subdirectory(source)
 
@@ -198,7 +233,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE INTERNAL "timemory install directory")
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory")
     add_subdirectory(examples)
 endif()
 
@@ -211,9 +246,9 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     include(Documentation)
 
     if(TIMEMORY_BUILD_DOCS)
-        SET(CMAKE_INSTALL_MESSAGE NEVER)
+        # SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
-        SET(CMAKE_INSTALL_MESSAGE LAZY)
+        # SET(CMAKE_INSTALL_MESSAGE LAZY)
     endif()
 
     print_features()

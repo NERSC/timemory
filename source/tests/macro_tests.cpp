@@ -109,7 +109,9 @@ TEST_F(macro_tests, blank_marker)
         FAIL();
     }
     else
+    {
         SUCCEED();
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -119,8 +121,8 @@ TEST_F(macro_tests, basic_marker)
     TIMEMORY_BASIC_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_119.stop();
-    auto              key = timemory_variable_119.key();
+    timemory_variable_121.stop();
+    auto              key = timemory_variable_121.key();
     std::stringstream expected;
     expected << __FUNCTION__ << "/" << details::get_test_name();
     if(key != expected.str())
@@ -134,7 +136,9 @@ TEST_F(macro_tests, basic_marker)
         FAIL();
     }
     else
+    {
         SUCCEED();
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -145,8 +149,8 @@ TEST_F(macro_tests, marker)
     auto line = __LINE__ - 1;
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_144.stop();
-    auto              key = timemory_variable_144.key();
+    timemory_variable_148.stop();
+    auto              key = timemory_variable_148.key();
     std::stringstream expected;
     std::string       file = __FILE__;
     file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
@@ -163,7 +167,9 @@ TEST_F(macro_tests, marker)
         FAIL();
     }
     else
+    {
         SUCCEED();
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -172,12 +178,21 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::timemory_init(argc, argv);
+
+    tim::settings::verbose()     = 0;
+    tim::settings::debug()       = false;
+    tim::settings::json_output() = true;
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

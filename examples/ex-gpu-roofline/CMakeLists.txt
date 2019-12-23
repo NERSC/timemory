@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 # this is for internal use
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
@@ -11,12 +11,18 @@ endif()
 
 project(timemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+endif()
+
+option(BUILD_COMBINED_ROOFLINE "Build a combined roofline example" ON)
+
 add_library(gpu-roofline-compile-options INTERFACE)
 target_compile_options(gpu-roofline-compile-options INTERFACE
     $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
 
 set(EXE_NAME ex_gpu_roofline)
-set(COMPONENTS cuda cupti compile-options analysis-tools arch papi)
+set(COMPONENTS compile-options analysis-tools roofline)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
 set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
     LANGUAGE CUDA
@@ -53,18 +59,23 @@ add_executable(ex-gpu-roofline-double          ${EXE_NAME}.cpp)
 target_link_libraries(ex-gpu-roofline-double   timemory-gpu-roofline-example gpu-fp-double)
 set_target_properties(ex-gpu-roofline-double   PROPERTIES OUTPUT_NAME ${EXE_NAME}.dp)
 
-# using double-precision
-add_executable(ex-gpu-roofline                 ${EXE_NAME}.cpp)
-target_link_libraries(ex-gpu-roofline          timemory-gpu-roofline-example)
-set_target_properties(ex-gpu-roofline          PROPERTIES OUTPUT_NAME ${EXE_NAME})
+# using all-precision
+if(BUILD_COMBINED_ROOFLINE)
+    add_executable(ex-gpu-roofline                 ${EXE_NAME}.cpp)
+    target_link_libraries(ex-gpu-roofline          timemory-gpu-roofline-example)
+    set_target_properties(ex-gpu-roofline          PROPERTIES OUTPUT_NAME ${EXE_NAME})
+endif()
 
 install(
     TARGETS
-        ex-gpu-roofline
         ex-gpu-roofline-single
         ex-gpu-roofline-double
     DESTINATION
         bin)
+
+if(TARGET ex-gpu-roofline)
+    install(TARGETS ex-gpu-roofline DESTINATION bin)
+endif()
 
 if(TARGET ex-gpu-roofline-half)
     install(TARGETS ex-gpu-roofline-half DESTINATION bin)

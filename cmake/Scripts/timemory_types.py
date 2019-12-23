@@ -31,6 +31,7 @@ components = [
     "voluntary_context_switch",
     "priority_context_switch",
     "cuda_event",
+    "cuda_profiler",
     "papi_array_t",
     "caliper",
     "trip_count",
@@ -49,6 +50,13 @@ components = [
     "gperf_cpu_profiler",
     "gperf_heap_profiler",
     "virtual_memory",
+    "likwid_perfmon",
+    "likwid_nvmon",
+    "vtune_frame",
+    "vtune_event",
+    "user_tuple_bundle",
+    "user_list_bundle",
+    "tau_marker"
 ]
 
 #
@@ -80,6 +88,11 @@ mangled_strings = {
     "caliper": ["cali"],
     "written_bytes": ["write_bytes"],
     "nvtx_marker": ["nvtx"],
+    "likwid_perfmon": ["likwid_cpu"],
+    "likwid_nvmon": ["likwid_gpu"],
+    "tau_marker": ["tau"],
+    "gperf_cpu_profiler": ["gperf_cpu", "gperftools-cpu"],
+    "gperf_heap_profiler": ["gperf_heap", "gperftools-heap"],
 }
 
 recommended_types = {

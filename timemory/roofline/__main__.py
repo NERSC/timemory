@@ -41,6 +41,7 @@ import timemory
 import timemory.roofline as _roofline
 
 
+
 def parse_args(add_run_args=False):
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
@@ -51,20 +52,25 @@ def parse_args(add_run_args=False):
                         default="roofline")
     parser.add_argument("-D", "--output-dir", type=str, help="Output directory",
                         default=os.getcwd())
+    parser.add_argument("-b", "--bandwidth", type=str, help="Roofline bandwidth peak, \"dram\" as default",
+                        action='append', dest='bandwidths', choices=["l1", "l2", "l3", "dram"], default=['dram'])
+    parser.add_argument("-tb", "--txn_bandwidth", type=float, help="GPU Instruction Roofline transaction bandwidth peak (NVIDIA V100 values set by default) L1, L2, DRAM",dest='txns_bandwidths', default=[437.5, 93.6, 25.9], nargs=3)
+    parser.add_argument("-iP", "--inst_peak", type=float, help="GPU Instruction peak (per warp) in GIPS (NVIDIA V100 peak set by default)",dest='inst_peak', default=[489.60], nargs=1)
     parser.add_argument("--format", type=str,
                         help="Image format", default="png")
-    parser.add_argument("-T", "--title", type=str, help="Title for the plot", default="Roofline")
+    parser.add_argument("-T", "--title", type=str,
+                        help="Title for the plot", default="Roofline")
     parser.add_argument("-P", "--plot-dimensions", type=int,
                         help="Image dimensions: Width, Height, DPI",
-                        default=[1600, 1200, 90], nargs=3)
-    parser.add_argument("-R", "--rank", type=int, help="MPI Rank", default=None)
+                        default=[1600, 1200, 100], nargs=3)
+    parser.add_argument("-R", "--rank", type=int,
+                        help="MPI Rank", default=None)
+    parser.add_argument("-v", "--verbose", type=int,
+                        help="Verbosity", default=None)
+
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
-        parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
-                            choices=["cpu_roofline", "gpu_roofline", "gpu_roofline_half",
-                                     "gpu_roofline_float", "gpu_roofline_double"],
-                            default="cpu_roofline")
         parser.add_argument("-k", "--keep-going", help="Continue despite execution errors",
                             action='store_true')
         parser.add_argument("-r", "--rerun", help="Re-run this mode and not the other", type=str,
@@ -76,21 +82,50 @@ def parse_args(add_run_args=False):
                             type=str, help="AI intensity input")
         parser.add_argument("-op", "--operations",
                             type=str, help="Operations input")
+        parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
+                            choices=["cpu_roofline", "cpu_roofline_sp",
+                                     "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
+                                     "gpu_roofline_sp", "gpu_roofline_dp", "gpu_roofline_inst"],
+                            default="cpu_roofline_dp")
 
     return parser.parse_args()
 
 
 def plot(args):
+
     try:
         fname = os.path.basename(args.output_file)
         fdir = os.path.realpath(args.output_dir)
 
         fai = open(args.arithmetic_intensity, 'r')
         fop = open(args.operations, 'r')
-        _roofline.plot_roofline(json.load(fai), json.load(fop), args.display,
-                                fname, args.format, fdir, args.title,
-                                args.plot_dimensions[0], args.plot_dimensions[1],
-                                args.plot_dimensions[2])
+
+        ai_data = json.load(fai)
+        op_data = json.load(fop)
+
+        ai_ranks = ai_data["timemory"]["ranks"]
+        op_ranks = op_data["timemory"]["ranks"]
+
+        band_labels = [element.upper() for element in args.bandwidths]
+
+        if len(ai_ranks) != len(op_ranks):
+            raise RuntimeError("Number of ranks in output files is different: {} vs. {}".format(
+                len(ai_ranks), len(op_ranks)))
+
+        if len(op_data) == 1:
+            _roofline.plot_roofline(ai_ranks[0], op_ranks[0], band_labels,args.txns_bandwidths, args.inst_peak, args.rtype, args.display,fname, args.format, fdir, args.title,
+                                    args.plot_dimensions[0], args.plot_dimensions[1],
+                                    args.plot_dimensions[2])
+        else:
+            _rank = 0
+            for _ai, _op in zip(ai_ranks, op_ranks):
+                _fname = "{}_{}".format(fname, _rank)
+                _title = "{} (MPI rank: {})".format(args.title, _rank)
+                _roofline.plot_roofline(_ai, _op, band_labels,args.txns_bandwidths, args.inst_peak, args.rtype, args.display,
+                                        _fname, args.format, fdir, _title,
+                                        args.plot_dimensions[0], args.plot_dimensions[1],
+                                        args.plot_dimensions[2])
+                _rank += 1
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -184,23 +219,23 @@ def run(args, cmd):
     _rank = "" if args.rank is None else "_{}".format(args.rank)
     if "gpu_roofline" in args.rtype:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_activity{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_activity.json".format(output_prefix, args.rtype))
         args.operations = os.path.join(
-            output_path, "{}{}_counters{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_counters.json".format(output_prefix, args.rtype))
     else:
         args.arithmetic_intensity = os.path.join(
-            output_path, "{}{}_ai{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
         args.operations = os.path.join(
-            output_path, "{}{}_op{}.json".format(output_prefix, args.rtype, _rank))
+            output_path, "{}{}_op.json".format(output_prefix, args.rtype))
 
 
-if __name__ == "__main__":
-
+def try_plot():
     try:
         # look for "--" and interpret anything after that
         # to be a command to execute
         _argv = []
         _cmd = []
+
         _argsets = [_argv, _cmd]
         _i = 0
         _separator = '--'
@@ -217,12 +252,17 @@ if __name__ == "__main__":
                 _argsets[_i].append(_arg)
 
         sys.argv[1:] = _argv
+
         args = parse_args(len(_cmd) != 0)
         run(args, _cmd)
+        if args.verbose is not None:
+            _roofline.VERBOSE = args.verbose
         plot(args)
 
-        if len(_cmd) != 0:
-            args = parse_ar
     except Exception as e:
         msg = "\nCommand line argument error:\n\t{}\n".format(e)
         warnings.warn(msg)
+
+
+if __name__ == "__main__":
+    try_plot()

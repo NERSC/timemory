@@ -22,16 +22,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/configuration.hpp
+ * \headerfile timemory/ert/configuration.hpp "timemory/ert/configuration.hpp"
+ * Provides configuration for executing empirical roofline toolkit (ERT)
+ *
+ */
+
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/bits/settings.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
+#include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/ert/types.hpp"
+#include "timemory/settings.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -41,24 +48,29 @@
 #    define TIMEMORY_VEC 256
 #endif
 
+#if !defined(TIMEMORY_USER_ERT_FLOPS)
+#    define TIMEMORY_USER_ERT_FLOPS
+#endif
+
 namespace tim
 {
 namespace ert
 {
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
+template <typename _Device, typename _Tp, typename _Counter>
 struct configuration
 {
-    using this_type       = configuration<_Device, _Tp, _ExecData, _Counter>;
-    using ert_data_t      = _ExecData;
-    using ert_params_t    = exec_params;
+    using this_type       = configuration<_Device, _Tp, _Counter>;
+    using ert_data_t      = exec_data<_Counter>;
     using device_t        = _Device;
     using counter_t       = _Counter;
-    using ert_counter_t   = counter<device_t, _Tp, ert_data_t, counter_t>;
+    using ert_counter_t   = counter<device_t, _Tp, counter_t>;
     using ert_data_ptr_t  = std::shared_ptr<ert_data_t>;
     using executor_func_t = std::function<ert_counter_t(ert_data_ptr_t)>;
     using get_uint64_t    = std::function<uint64_t()>;
+    using skip_ops_t      = std::unordered_set<size_t>;
+    using get_skip_ops_t  = std::function<skip_ops_t()>;
 
     //----------------------------------------------------------------------------------//
 
@@ -140,6 +152,24 @@ struct configuration
     }
 
     //----------------------------------------------------------------------------------//
+
+    static get_skip_ops_t& get_skip_ops()
+    {
+        static get_skip_ops_t _instance = []() {
+            auto       _skipstr    = settings::ert_skip_ops();
+            auto       _skipstrvec = delimit(_skipstr, ",; \t");
+            skip_ops_t _result;
+            for(const auto& itr : _skipstrvec)
+            {
+                if(itr.find_first_not_of("0123456789") == std::string::npos)
+                    _result.insert(atol(itr.c_str()));
+            }
+            return _result;
+        };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
     /// configure the number of threads, number of streams, block size, grid size, and
     /// alignment
     template <typename Dev                                            = _Device,
@@ -185,10 +215,11 @@ struct configuration
             auto _grid_size  = get_grid_size()();
             auto _block_size = get_block_size()();
             auto _align_size = get_alignment()();
+            auto _skip_ops   = get_skip_ops()();
 
             // execution parameters
-            ert_params_t params(_mws_size, _max_size, _num_thread, _num_stream,
-                                _grid_size, _block_size);
+            exec_params params(_mws_size, _max_size, _num_thread, _num_stream, _grid_size,
+                               _block_size);
             // operation _counter instance
             ert_counter_t _counter(params, data, _align_size);
 
@@ -196,6 +227,9 @@ struct configuration
             _counter.bytes_per_element = sizeof(_Tp);
             // set number of memory accesses per element from two functions
             _counter.memory_accesses_per_element = 2;
+
+            for(const auto& itr : _skip_ops)
+                _counter.add_skip_ops(itr);
 
             auto dtype = demangle(typeid(_Tp).name());
 
@@ -220,12 +254,24 @@ public:
     get_uint64_t    alignment        = this_type::get_alignment();
     get_uint64_t    grid_size        = this_type::get_grid_size();
     get_uint64_t    block_size       = this_type::get_block_size();
-    executor_func_t executor         = this_type::get_executor();
+    executor_func_t executor;
+
+public:
+    configuration()
+    : num_threads(this_type::get_num_threads())
+    , num_streams(this_type::get_num_streams())
+    , min_working_size(this_type::get_min_working_size())
+    , max_data_size(this_type::get_max_data_size())
+    , alignment(this_type::get_alignment())
+    , grid_size(this_type::get_grid_size())
+    , block_size(this_type::get_block_size())
+    , executor(this_type::get_executor())
+    {}
 };
 
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
+template <typename _Device, typename _Tp, typename _Counter>
 struct executor
 {
     static_assert(!std::is_same<_Device, device::gpu>::value,
@@ -234,16 +280,17 @@ struct executor
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _ExecData, _Counter>;
-    using counter_type       = counter<_Device, _Tp, _ExecData, _Counter>;
-    using this_type          = executor<_Device, _Tp, _ExecData, _Counter>;
+    using configuration_type = configuration<_Device, _Tp, _Counter>;
+    using counter_type       = counter<_Device, _Tp, _Counter>;
+    using this_type          = executor<_Device, _Tp, _Counter>;
     using callback_type      = std::function<void(counter_type&)>;
+    using ert_data_t         = exec_data<_Counter>;
 
 public:
     //----------------------------------------------------------------------------------//
     //  standard invocation with no callback specialization
     //
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data)
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data)
     {
         try
         {
@@ -260,7 +307,7 @@ public:
     //  specialize the counter callback
     //
     template <typename _Func>
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data,
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
              _Func&& _counter_callback)
     {
         try
@@ -326,13 +373,14 @@ public:
         _counter.label = "vector_fma";
         // run the kernels
         ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, fma_func, store_func);
+        ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func);
     }
 };
 
 //======================================================================================//
 
-template <typename _Tp, typename _ExecData, typename _Counter>
-struct executor<device::gpu, _Tp, _ExecData, _Counter>
+template <typename _Tp, typename _Counter>
+struct executor<device::gpu, _Tp, _Counter>
 {
     using _Device = device::gpu;
     static_assert(std::is_same<_Device, device::gpu>::value,
@@ -341,16 +389,17 @@ struct executor<device::gpu, _Tp, _ExecData, _Counter>
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _ExecData, _Counter>;
-    using counter_type       = counter<_Device, _Tp, _ExecData, _Counter>;
-    using this_type          = executor<_Device, _Tp, _ExecData, _Counter>;
+    using configuration_type = configuration<_Device, _Tp, _Counter>;
+    using counter_type       = counter<_Device, _Tp, _Counter>;
+    using this_type          = executor<_Device, _Tp, _Counter>;
     using callback_type      = std::function<void(counter_type&)>;
+    using ert_data_t         = exec_data<_Counter>;
 
 public:
     //----------------------------------------------------------------------------------//
     //  standard invocation with no callback specialization
     //
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data)
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data)
     {
         try
         {
@@ -367,7 +416,7 @@ public:
     //  specialize the counter callback
     //
     template <typename _Func>
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data,
+    executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
              _Func&& _counter_callback)
     {
         try
@@ -434,6 +483,7 @@ public:
         _counter.label = "vector_fma";
         // run the kernels
         ops_main<4, 16, 64, 128, 256, 512>(_counter, fma_func, store_func);
+        ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func);
     }
 };
 
@@ -455,6 +505,38 @@ struct callback
         _exec.callback = f;
     }
 };
+
+//======================================================================================//
+
+template <typename _Device, typename _Count, typename _Tp, typename... _Types,
+          typename _DataType = exec_data<_Count>,
+          typename _DataPtr  = std::shared_ptr<_DataType>,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+std::shared_ptr<_DataType>
+execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+{
+    using _ConfigType = configuration<_Device, _Tp, _Count>;
+    using _ExecType   = executor<_Device, _Tp, _Count>;
+
+    _ConfigType _config;
+    _ExecType(_config, _data);
+
+    return _data;
+}
+
+//======================================================================================//
+
+template <typename _Device, typename _Count, typename _Tp, typename... _Types,
+          typename _DataType = exec_data<_Count>,
+          typename _DataPtr  = std::shared_ptr<_DataType>,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+std::shared_ptr<_DataType>
+execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+{
+    execute<_Device, _Count, _Tp>(_data);
+    execute<_Device, _Count, _Types...>(_data);
+    return _data;
+}
 
 //======================================================================================//
 

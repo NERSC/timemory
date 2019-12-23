@@ -26,7 +26,7 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -210,7 +210,7 @@ inline void
 init_driver()
 {
 #if defined(TIMEMORY_USE_CUPTI)
-    static std::atomic<short> _once;
+    static std::atomic<short> _once(0);
     if(_once++ > 0)
         return;
 
@@ -738,9 +738,8 @@ struct result
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        ar(serializer::make_nvp("is_event_value", is_event_value),
-           serializer::make_nvp("name", name),
-           serializer::make_nvp("data", get<double>(data)));
+        ar(cereal::make_nvp("is_event_value", is_event_value),
+           cereal::make_nvp("name", name), cereal::make_nvp("data", get<double>(data)));
     }
 
     bool operator==(const result& rhs) const { return (name == rhs.name); }
@@ -763,6 +762,18 @@ struct result
         if(name == "unk")
             operator=(rhs);
         minus(data, rhs.data);
+        return *this;
+    }
+
+    result& operator*=(const result&)
+    {
+        throw std::runtime_error("cupti::result does not support operator *=");
+        return *this;
+    }
+
+    result& operator/=(const result&)
+    {
+        throw std::runtime_error("cupti::result does not support operator /=");
         return *this;
     }
 
@@ -819,7 +830,8 @@ struct profiler
     using event_val_t      = impl::kernel_data_t::event_val_t;
     using metric_val_t     = impl::kernel_data_t::metric_val_t;
     using results_t        = std::vector<result>;
-    using kernel_results_t = std::unordered_map<std::string, results_t>;
+    using kernel_pair_t    = std::pair<std::string, results_t>;
+    using kernel_results_t = std::vector<kernel_pair_t>;
 
     profiler(const strvec_t&, const strvec_t&, const int = 0) {}
 
@@ -841,6 +853,11 @@ struct profiler
     metric_val_t    get_metric_values(const char*) { return metric_val_t{}; }
     const strvec_t& get_event_names() const { return m_event_names; }
     const strvec_t& get_metric_names() const { return m_metric_names; }
+
+    kernel_results_t get_kernel_events_and_metrics(const strvec_t&)
+    {
+        return kernel_results_t{};
+    }
 
 private:
     // bool     m_is_running    = false;
@@ -1035,7 +1052,7 @@ public:
         return m_elapsed;
     }
 
-    named_elapsed_t get_named(uint64_t idx, bool remove = false)
+    named_elapsed_t get_named(uint64_t idx, bool remove_itr = false)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
@@ -1045,7 +1062,7 @@ public:
         if(itr != m_named_elapsed.end())
         {
             ret = itr->second;
-            if(remove)
+            if(remove_itr)
                 m_named_elapsed.erase(itr);
         }
         return ret;

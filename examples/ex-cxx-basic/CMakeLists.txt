@@ -1,10 +1,20 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 project(timemory-CXX-Basic-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-cxx-basic-example)
-set(COMPONENTS compile-options analysis-tools papi)
-option(USE_CALIPER "Enable timemory Caliper" ON)
+set(COMPONENTS cxx compile-options analysis-tools)
+
+option(USE_TAU "Enable TAU support" OFF)
+option(USE_PAPI "Enable PAPI support" OFF)
+option(USE_CALIPER "Enable Caliper support" OFF)
+
+if(USE_TAU)
+    list(APPEND COMPONENTS tau)
+endif()
+if(USE_PAPI)
+    list(APPEND COMPONENTS papi)
+endif()
 if(USE_CALIPER)
     list(APPEND COMPONENTS caliper)
 endif()

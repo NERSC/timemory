@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/library.h
+ * \headerfile timemory/library.h "timemory/library.h"
+ * This provides declaration for the library interface
+ *
+ */
+
 #pragma once
 
 #include "timemory/compat/library.h"
@@ -30,7 +36,7 @@
 //
 #if defined(__cplusplus)
 
-// for generating names
+#    include "timemory/utility/bits/storage.hpp"
 #    include "timemory/variadic/macros.hpp"
 
 //--------------------------------------------------------------------------------------//

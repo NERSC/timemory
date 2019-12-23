@@ -22,10 +22,19 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file timemory/mpl/type_traits.hpp
+ * \headerfile timemory/mpl/type_traits.hpp "timemory/mpl/type_traits.hpp"
+ * These are the definitions of type-traits used by timemory and should be defined
+ * separately from the class so that they can be queried without including the
+ * definition of the component
+ *
+ */
+
 #pragma once
 
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/types.hpp"
+
 #include <type_traits>
 
 //======================================================================================//
@@ -39,11 +48,28 @@ namespace tim
 namespace trait
 {
 //--------------------------------------------------------------------------------------//
+/// this is a helper trait
+///
+template <typename>
+struct sfinae_true : std::true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation (e.g. PAPI) is available
 ///
 template <typename _Tp>
 struct is_available : std::true_type
-{};
+{
+    static bool get() { return get_runtime_value(); }
+    static void set(bool val) { get_runtime_value() = val; }
+
+private:
+    static bool& get_runtime_value()
+    {
+        static bool _instance = true;
+        return _instance;
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that updating w.r.t. another instance should
@@ -58,13 +84,6 @@ struct record_max : std::false_type
 ///
 template <typename _Tp>
 struct array_serialization : std::false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// trait that signifies that a component uses the timemory output handling
-///
-template <typename _Tp>
-struct external_output_handling : std::false_type
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -200,6 +219,30 @@ struct secondary_data : std::false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait that signifies the component only has relevant values if it is not collapsed
+/// into the master thread
+///
+template <typename _Tp>
+struct thread_scope_only : std::false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies the component will be providing a separate split load(...) and
+/// store(...) for serialization so the base class should not provide a generic
+/// serialize(...) function
+///
+template <typename _Tp>
+struct split_serialization : std::false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies the component will accumulate a min/max
+///
+template <typename _Tp>
+struct record_statistics : std::false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Trait>
 inline std::string
@@ -211,6 +254,67 @@ as_string()
 
 //--------------------------------------------------------------------------------------//
 }  // namespace trait
+}  // namespace tim
+
+//======================================================================================//
+//
+//                              Implicit testing for traits
+//
+//======================================================================================//
+
+namespace tim
+{
+namespace trait
+{
+//----------------------------------------------------------------------------------//
+//
+// https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check
+// -for-a-functions-existence
+namespace details
+{
+template <typename T, typename... Args>
+static auto
+test_audit_support(int)
+    -> sfinae_true<decltype(std::declval<T>().audit(std::declval<Args>()...))>;
+
+template <typename, typename... Args>
+static auto
+test_audit_support(long) -> std::false_type;
+}  // namespace details
+
+//----------------------------------------------------------------------------------//
+
+template <typename T, typename... Args>
+struct test_audit_support : decltype(details::test_audit_support<T, Args...>(0))
+{};
+
+}  // namespace trait
+
+//======================================================================================//
+//
+//      determines if output is generated
+//
+//======================================================================================//
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+struct generates_output
+{
+    static constexpr bool value = (!(std::is_same<_Vp, void>::value));
+};
+
+//======================================================================================//
+//
+//      determines if storage should be implemented
+//
+//======================================================================================//
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+struct implements_storage
+{
+    static constexpr bool value =
+        (trait::is_available<_Tp>::value && !(std::is_same<_Vp, void>::value));
+};
+
 }  // namespace tim
 
 //======================================================================================//
@@ -369,6 +473,20 @@ struct custom_laps_printing<component::trip_count> : std::true_type
 
 //--------------------------------------------------------------------------------------//
 //
+//                              THREAD SCOPE ONLY
+//
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct thread_scope_only<component::thread_cpu_clock> : std::true_type
+{};
+
+template <>
+struct thread_scope_only<component::thread_cpu_util> : std::true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+//
 //                              NOT UNIX (i.e. Windows)
 //
 //--------------------------------------------------------------------------------------//
@@ -500,6 +618,10 @@ template <>
 struct is_available<component::cuda_event> : std::false_type
 {};
 
+template <>
+struct is_available<component::cuda_profiler> : std::false_type
+{};
+
 #endif  // TIMEMORY_USE_CUDA
 
 //--------------------------------------------------------------------------------------//
@@ -507,6 +629,12 @@ struct is_available<component::cuda_event> : std::false_type
 //                              CUPTI / GPU ROOFLINE
 //
 //--------------------------------------------------------------------------------------//
+//  always specify split serialization so there is never an ambiguity
+//
+template <typename... _Types>
+struct split_serialization<component::gpu_roofline<_Types...>> : std::true_type
+{};
+
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUPTI
 //
 #if !defined(TIMEMORY_USE_CUPTI)
@@ -593,6 +721,10 @@ template <>
 struct secondary_data<component::cupti_counters> : std::true_type
 {};
 
+template <typename... _Types>
+struct secondary_data<component::gpu_roofline<_Types...>> : std::true_type
+{};
+
 #endif  // TIMEMORY_USE_CUPTI
 
 //--------------------------------------------------------------------------------------//
@@ -608,10 +740,6 @@ struct is_available<component::nvtx_marker> : std::false_type
 
 template <>
 struct requires_prefix<component::nvtx_marker> : std::true_type
-{};
-
-template <>
-struct external_output_handling<component::nvtx_marker> : std::true_type
 {};
 
 #endif  // TIMEMORY_USE_NVTX
@@ -637,10 +765,6 @@ struct requires_prefix<component::caliper> : std::true_type
 
 #endif  // TIMEMORY_USE_CALIPER
 
-template <>
-struct external_output_handling<component::caliper> : std::true_type
-{};
-
 //--------------------------------------------------------------------------------------//
 //
 //                              GOTCHA
@@ -655,10 +779,6 @@ struct is_available<component::gotcha<_N, _Comp, _Diff>> : std::false_type
 {};
 
 #else  // TIMEMORY_USE_GOTCHA
-
-template <size_t _N, typename _Comp, typename _Diff>
-struct external_output_handling<component::gotcha<_N, _Comp, _Diff>> : std::true_type
-{};
 
 template <size_t _N, typename _Comp, typename _Diff>
 struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : std::true_type
@@ -682,12 +802,6 @@ template <>
 struct requires_prefix<component::gperf_heap_profiler> : std::true_type
 {};
 
-//--------------------------------------------------------------------------------------//
-//
-template <>
-struct external_output_handling<component::gperf_heap_profiler> : std::true_type
-{};
-
 #else
 
 //--------------------------------------------------------------------------------------//
@@ -703,15 +817,7 @@ struct is_available<component::gperf_heap_profiler> : std::false_type
 //  TIMEMORY_USE_GPERF
 //
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-
-//--------------------------------------------------------------------------------------//
-//
-template <>
-struct external_output_handling<component::gperf_cpu_profiler> : std::true_type
-{};
-
-#else
+#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -720,6 +826,96 @@ struct is_available<component::gperf_cpu_profiler> : std::false_type
 {};
 
 #endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              LIKWID
+//
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_LIKWID
+//
+#if !defined(TIMEMORY_USE_LIKWID)
+
+template <>
+struct is_available<component::likwid_perfmon> : std::false_type
+{};
+
+template <>
+struct is_available<component::likwid_nvmon> : std::false_type
+{};
+
+#else
+
+template <>
+struct requires_prefix<component::likwid_perfmon> : std::true_type
+{};
+
+template <>
+struct requires_prefix<component::likwid_nvmon> : std::true_type
+{};
+
+#    if !defined(TIMEMORY_USE_CUDA)
+template <>
+struct is_available<component::likwid_nvmon> : std::false_type
+{};
+#    endif
+
+#endif  // TIMEMORY_USE_LIKWID
+
+//--------------------------------------------------------------------------------------//
+//
+//                              VTune
+//
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct requires_prefix<component::vtune_event> : std::true_type
+{};
+
+template <>
+struct requires_prefix<component::vtune_frame> : std::true_type
+{};
+
+#if !defined(TIMEMORY_USE_VTUNE)
+template <>
+struct is_available<component::vtune_event> : std::false_type
+{};
+
+template <>
+struct is_available<component::vtune_frame> : std::false_type
+{};
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              TAU
+//
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_TAU
+//
+#if !defined(TIMEMORY_USE_TAU)
+
+template <>
+struct is_available<component::tau_marker> : std::false_type
+{};
+
+#else
+
+template <>
+struct requires_prefix<component::tau_marker> : std::true_type
+{};
+
+#endif  // TIMEMORY_USE_TAU
+
+//--------------------------------------------------------------------------------------//
+//
+//                              User-bundle
+//
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type>
+struct requires_prefix<component::user_bundle<_Idx, _Type>> : std::true_type
+{};
 
 //--------------------------------------------------------------------------------------//
 }  // namespace trait

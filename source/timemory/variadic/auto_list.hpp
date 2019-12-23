@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file auto_list.hpp
- * \headerfile auto_list.hpp "timemory/variadic/auto_list.hpp"
+/** \file timemory/variadic/auto_list.hpp
+ * \headerfile timemory/variadic/auto_list.hpp "timemory/variadic/auto_list.hpp"
  * Automatic starting and stopping of components. Accept unlimited number of
  * parameters. The constructor starts the components, the destructor stops the
  * components
@@ -42,6 +42,7 @@
 #include <string>
 
 #include "timemory/mpl/filters.hpp"
+#include "timemory/runtime/initialize.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_list.hpp"
@@ -71,6 +72,12 @@ public:
     static constexpr bool is_component_list   = false;
     static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = false;
+    static constexpr bool is_component_type   = false;
+    static constexpr bool is_auto_list        = true;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = false;
+    static constexpr bool is_auto_type        = true;
+    static constexpr bool is_component        = false;
     static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
@@ -83,28 +90,25 @@ public:
     static init_func_t& get_initializer()
     {
         static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+            static auto env_ret  = tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "");
+            static auto env_enum = enumerate_components(tim::delimit(env_ret));
+            ::tim::initialize(al, env_enum);
         };
         return _instance;
     }
 
 public:
     template <typename _Func = init_func_t>
-    inline explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
-                              bool         report_at_exit = false,
-                              const _Func& _func          = this_type::get_initializer());
+    explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
+                       bool report_at_exit = false, const _Func& = get_initializer());
 
     template <typename _Func = init_func_t>
-    inline explicit auto_list(const captured_location_t&,
-                              bool         flat           = settings::flat_profile(),
-                              bool         report_at_exit = false,
-                              const _Func& _func          = this_type::get_initializer());
+    explicit auto_list(const captured_location_t&, bool flat = settings::flat_profile(),
+                       bool report_at_exit = false, const _Func& = get_initializer());
 
-    template <typename _Func = init_func_t>
-    inline explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
-                              bool         report_at_exit = false,
-                              const _Func& _func          = this_type::get_initializer());
-    inline ~auto_list();
+    explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
+                       bool report_at_exit = false);
+    ~auto_list();
 
     // copy and move
     inline auto_list(const this_type&) = default;
@@ -118,6 +122,9 @@ public:
     // public member functions
     inline component_type&       get_component() { return m_temporary_object; }
     inline const component_type& get_component() const { return m_temporary_object; }
+
+    inline operator component_type&() { return m_temporary_object; }
+    inline operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
     inline void record()
@@ -158,10 +165,10 @@ public:
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
     template <typename... _Args>
-    inline void customize(_Args&&... _args)
+    inline void audit(_Args&&... _args)
     {
         if(m_enabled)
-            m_temporary_object.customize(std::forward<_Args>(_args)...);
+            m_temporary_object.audit(std::forward<_Args>(_args)...);
     }
 
     inline data_value_type get() const { return m_temporary_object.get(); }
@@ -176,6 +183,7 @@ public:
     inline bool report_at_exit() const { return m_report_at_exit; }
 
     inline bool             store() const { return m_temporary_object.store(); }
+    inline data_type&       data() { return m_temporary_object.data(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
@@ -239,31 +247,11 @@ private:
 
 template <typename... Types>
 template <typename _Func>
-auto_list<Types...>::auto_list(const string_t& object_tag, bool flat, bool report_at_exit,
+auto_list<Types...>::auto_list(const string_t& key, bool flat, bool report_at_exit,
                                const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
-                               : component_type{})
-, m_reference_object(nullptr)
-{
-    if(m_enabled)
-    {
-        _func(*this);
-        m_temporary_object.start();
-    }
-}
-
-//======================================================================================//
-
-template <typename... Types>
-template <typename _Func>
-auto_list<Types...>::auto_list(const captured_location_t& object_loc, bool flat,
-                               bool report_at_exit, const _Func& _func)
-: m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
-                               : component_type{})
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -277,8 +265,24 @@ auto_list<Types...>::auto_list(const captured_location_t& object_loc, bool flat,
 
 template <typename... Types>
 template <typename _Func>
-auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                               const _Func& _func)
+auto_list<Types...>::auto_list(const captured_location_t& loc, bool flat,
+                               bool report_at_exit, const _Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        _func(*this);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(tmp.clone(true, flat))
@@ -286,7 +290,6 @@ auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_ex
 {
     if(m_enabled)
     {
-        _func(*this);
         m_temporary_object.start();
     }
 }
@@ -346,6 +349,10 @@ get_labeled(const auto_list<_Types...>& _obj)
 //--------------------------------------------------------------------------------------//
 // variadic versions
 
+#define TIMEMORY_VARIADIC_BLANK_AUTO_LIST(tag, ...)                                      \
+    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \
+    TIMEMORY_BLANK_AUTO_LIST(_TIM_TYPEDEF(__LINE__), tag);
+
 #define TIMEMORY_VARIADIC_BASIC_AUTO_LIST(tag, ...)                                      \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \
     TIMEMORY_BASIC_AUTO_LIST(_TIM_TYPEDEF(__LINE__), tag);
@@ -353,5 +360,44 @@ get_labeled(const auto_list<_Types...>& _obj)
 #define TIMEMORY_VARIADIC_AUTO_LIST(tag, ...)                                            \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                        \
     TIMEMORY_AUTO_LIST(_TIM_TYPEDEF(__LINE__), tag);
+
+//======================================================================================//
+//
+//      std::get operator
+//
+namespace std
+{
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(tim::auto_list<Types...>& obj) -> decltype(get<N>(obj.data()))
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(const tim::auto_list<Types...>& obj) -> decltype(get<N>(obj.data()))
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(tim::auto_list<Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::auto_list<Types...>>(obj).data()))
+{
+    using obj_type = tim::auto_list<Types...>;
+    return get<N>(std::forward<obj_type>(obj).data());
+}
+
+//======================================================================================//
+
+}  // namespace std
 
 //======================================================================================//

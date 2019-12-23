@@ -62,6 +62,8 @@ using vector_t = std::vector<_Tp>;
 static constexpr int64_t nitr      = 100000;
 static const double      tolerance = 1.0e-2;
 
+static int    _argc = 0;
+static char** _argv = nullptr;
 namespace details
 {
 //--------------------------------------------------------------------------------------//
@@ -146,7 +148,30 @@ allreduce(const vector_t<_Tp>& sendbuf, vector_t<_Tp>& recvbuf)
 class gotcha_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override {}
+    void SetUp() override
+    {
+        static bool configured = false;
+        if(!configured)
+        {
+            configured                    = true;
+            tim::settings::width()        = 16;
+            tim::settings::precision()    = 6;
+            tim::settings::timing_units() = "sec";
+            tim::settings::memory_units() = "kB";
+            tim::settings::verbose()      = 0;
+            tim::settings::debug()        = false;
+            tim::settings::json_output()  = true;
+            tim::settings::mpi_thread()   = false;
+            tim::mpi::initialize(_argc, _argv);
+#if defined(TIMEMORY_USE_PAPI)
+            cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
+            cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
+#endif
+            tim::settings::dart_output() = true;
+            tim::settings::dart_count()  = 1;
+            tim::settings::banner()      = false;
+        }
+    }
 };
 
 //======================================================================================//
@@ -154,7 +179,7 @@ protected:
 TEST_F(gotcha_tests, mpi_explicit)
 {
     mpi_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE(details::get_test_name().c_str());
+        PRINT_HERE("%s", details::get_test_name().c_str());
 #if defined(TIMEMORY_USE_MPI)
         mpi_gotcha_t::configure<0, int, const void*, void*, int, MPI_Datatype, MPI_Op,
                                 MPI_Comm>("MPI_Allreduce");
@@ -202,7 +227,7 @@ TEST_F(gotcha_tests, mpi_explicit)
 TEST_F(gotcha_tests, mpi_macro)
 {
     mpi_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE(details::get_test_name().c_str());
+        PRINT_HERE("%s", details::get_test_name().c_str());
 #if defined(TIMEMORY_USE_MPI)
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Allreduce);
 #endif
@@ -252,7 +277,7 @@ TEST_F(gotcha_tests, work_explicit)
     using pair_type  = std::pair<float, double>;
 
     work_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE(details::get_test_name().c_str());
+        PRINT_HERE("%s", details::get_test_name().c_str());
         auto mangled_do_work = tim::mangle<decltype(ext::do_work)>("ext::do_work");
         work_gotcha_t::configure<0, tuple_type, int64_t, const pair_type&>(
             mangled_do_work);
@@ -297,40 +322,45 @@ TEST_F(gotcha_tests, work_macro)
     using pair_type = std::pair<float, double>;
 
     work_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE(details::get_test_name().c_str());
+        PRINT_HERE("%s", details::get_test_name().c_str());
         TIMEMORY_CXX_GOTCHA(work_gotcha_t, 0, ext::do_work);
     };
 
-    TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
+    auto _exec = [&]() {
+        TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
 
-    float  fsum = 0.0;
-    double dsum = 0.0;
-    for(int i = 0; i < nitr; ++i)
-    {
-        auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
-        fsum += std::get<0>(ret);
-        dsum += std::get<1>(ret);
-    }
-
-    auto rank = tim::mpi::rank();
-    auto size = tim::mpi::size();
-    for(int i = 0; i < size; ++i)
-    {
-        tim::mpi::barrier();
-        if(i == rank)
+        float  fsum = 0.0;
+        double dsum = 0.0;
+        for(int i = 0; i < nitr; ++i)
         {
-            printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
-            printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+            auto ret = ext::do_work(1000, pair_type(0.25, 0.125));
+            fsum += std::get<0>(ret);
+            dsum += std::get<1>(ret);
+        }
+
+        auto rank = tim::mpi::rank();
+        auto size = tim::mpi::size();
+        for(int i = 0; i < size; ++i)
+        {
+            tim::mpi::barrier();
+            if(i == rank)
+            {
+                printf("\n");
+                printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+                printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+            }
+            tim::mpi::barrier();
         }
         tim::mpi::barrier();
-    }
-    tim::mpi::barrier();
-    if(rank == 0)
-        printf("\n");
+        if(rank == 0)
+            printf("\n");
 
-    ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum, -1829370.79, tolerance);
+        ASSERT_NEAR(fsum, -2416347.50, tolerance);
+        ASSERT_NEAR(dsum, -1829370.79, tolerance);
+    };
+
+    for(auto i = 0; i < 4; ++i)
+        _exec();
 }
 
 //======================================================================================//
@@ -355,7 +385,6 @@ TEST_F(gotcha_tests, malloc_gotcha)
 {
     using malloc_gotcha_spec_t = malloc_gotcha::gotcha_spec<gotcha_tuple_t>;
     using malloc_gotcha_t      = typename malloc_gotcha_spec_t::gotcha_type;
-    // using malloc_toolset_t     = typename malloc_gotcha_spec_t::component_type;
     using toolset_t = tim::auto_tuple<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
 
     malloc_gotcha_t::get_initializer() = []() {
@@ -385,7 +414,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
     {
         std::vector<float>  fsendbuf, frecvbuf;
         std::vector<double> dsendbuf, drecvbuf;
-        for(int i = 0; i < nitr; ++i)
+        for(int i = 0; i < nitr / 10; ++i)
         {
             details::generate<float>(1000, fsendbuf);
             details::allreduce(fsendbuf, frecvbuf);
@@ -419,73 +448,73 @@ TEST_F(gotcha_tests, malloc_gotcha)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+    ASSERT_NEAR(fsum, 4986708.50 * size, tolerance);
+    ASSERT_NEAR(dsum, 4986870.45 * size, tolerance);
 }
 
 //======================================================================================//
 
 TEST_F(gotcha_tests, member_functions)
 {
-    using pair_type = std::pair<float, double>;
+    using pair_type     = std::pair<float, double>;
+    auto real_storage   = tim::storage<real_clock>::instance();
+    auto real_init_size = real_storage->size();
+    printf("[initial]> wall-clock storage size: %li\n", (long int) real_init_size);
 
     memfun_gotcha_t::get_default_ready() = true;
     memfun_gotcha_t::get_initializer()   = [=]() {
-        PRINT_HERE(details::get_test_name().c_str());
+        PRINT_HERE("%s", details::get_test_name().c_str());
 
         {
-            using func_t         = decltype(&DoWork::get);
-            constexpr size_t idx = 0;
+            using func_t = decltype(&DoWork::get);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::get));
 
-            // auto func_name = tim::mangle<func_t>("DoWork::get");
-            // memfun_gotcha_t::configure<idx, std::tuple<float, double>>(func_name);
-            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, idx, &DoWork::get);
+            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, 0, &DoWork::get);
         }
         {
-            using func_t         = decltype(&DoWork::execute_fp4);
-            constexpr size_t idx = 1;
+            using func_t = decltype(&DoWork::execute_fp4);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::execute_fp4));
 
-            TIMEMORY_CXX_MEMFUN_GOTCHA(memfun_gotcha_t, idx, DoWork::execute_fp4);
+            TIMEMORY_CXX_MEMFUN_GOTCHA(memfun_gotcha_t, 1, DoWork::execute_fp4);
         }
         {
-            using func_t         = decltype(&DoWork::execute_fp8);
-            constexpr size_t idx = 2;
+            using func_t = decltype(&DoWork::execute_fp8);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::execute_fp8));
 
-            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, idx, &DoWork::execute_fp8);
+            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, 2, &DoWork::execute_fp8);
         }
     };
 
-    TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
-
     float  fsum = 0.0;
     double dsum = 0.0;
-    DoWork dw(pair_type(0.25, 0.5));
-
-    // auto orig = tim::settings::verbose();
-    for(int i = 0; i < nitr; ++i)
     {
-        if(i >= (nitr - 10))
-        {
-            dw.execute_fp4(1000);
-            dw.execute_fp8(1000);
-        }
-        else
-        {
-            auto        _fp4 = [&]() { dw.execute_fp4(1000); };
-            auto        _fp8 = [&]() { dw.execute_fp8(1000); };
-            std::thread t4(_fp4);
-            std::thread t8(_fp8);
+        TIMEMORY_BLANK_POINTER(auto_hybrid_t, details::get_test_name());
 
-            t4.join();
-            t8.join();
-        }
+        DoWork dw(pair_type(0.25, 0.5));
 
-        auto ret = dw.get();
-        fsum += std::get<0>(ret);
-        dsum += std::get<1>(ret);
+        auto _nitr = nitr / 8;
+        for(int i = 0; i < _nitr; ++i)
+        {
+            if(i >= (_nitr - 10))
+            {
+                dw.execute_fp4(1000);
+                dw.execute_fp8(1000);
+            }
+            else
+            {
+                auto        _fp4 = [&]() { dw.execute_fp4(1000); };
+                auto        _fp8 = [&]() { dw.execute_fp8(1000); };
+                std::thread t4(_fp4);
+                std::thread t8(_fp8);
+
+                t4.join();
+                t8.join();
+            }
+
+            auto ret = dw.get();
+            fsum += std::get<0>(ret);
+            dsum += std::get<1>(ret);
+        }
     }
 
     auto rank = tim::mpi::rank();
@@ -505,10 +534,12 @@ TEST_F(gotcha_tests, member_functions)
     if(rank == 0)
         printf("\n");
 
-    ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum, 881550.95, tolerance);
-    auto real_storage = tim::storage<real_clock>::instance();
-    ASSERT_EQ(real_storage->get().size(), 4);
+    auto real_final_size = real_storage->get().size();
+    printf("[final]> wall-clock storage size: %li\n", (long int) real_final_size);
+
+    ASSERT_NEAR(fsum, -302122.44, tolerance);
+    ASSERT_NEAR(dsum, +110193.87, tolerance);
+    ASSERT_EQ(real_final_size, 4 + real_init_size);
 }
 
 //======================================================================================//
@@ -915,24 +946,23 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::settings::width()        = 16;
-    tim::settings::precision()    = 6;
-    tim::settings::timing_units() = "sec";
-    tim::settings::memory_units() = "kB";
-    tim::settings::verbose()      = 0;
-    tim::settings::debug()        = false;
-    tim::settings::json_output()  = true;
-    tim::timemory_init(argc, argv);  // parses environment, sets output paths
-    tim::mpi::initialize(argc, argv);
-#if defined(TIMEMORY_USE_PAPI)
-    cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
-    cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
-#endif
+    _argc = argc;
+    _argv = argv;
+
+    tim::settings::verbose()     = 0;
+    tim::settings::debug()       = false;
+    tim::settings::json_output() = true;
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
 }
 
 //======================================================================================//

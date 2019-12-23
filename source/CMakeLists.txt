@@ -9,10 +9,12 @@ file(GLOB cxx_headers_variadic      ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/
 file(GLOB cxx_headers_backends      ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB cxx_headers_ert           ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
 file(GLOB cxx_headers_details       ${CMAKE_CURRENT_LIST_DIR}/timemory/details/*.hpp)
-file(GLOB cxx_headers_components    ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/components/derived/*.hpp)
+file(GLOB_RECURSE
+    cxx_headers_components          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
 file(GLOB cxx_headers_extern        ${CMAKE_CURRENT_LIST_DIR}/timemory/extern/*.hpp)
+file(GLOB cxx_headers_general       ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
+file(GLOB cxx_headers_runtime       ${CMAKE_CURRENT_LIST_DIR}/timemory/runtime/*.hpp)
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
 file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
 file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
@@ -24,16 +26,29 @@ file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
-file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+file(GLOB_RECURSE
+    cxx_extern_sources              ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
 
+set(_CATEGORIES backends components compat data ert extern general mpl runtime utility variadic)
 # bits folder
 set(cxx_headers_category_bits)
-foreach(_CATEGORY backends components ert mpl variadic utility)
+foreach(_CATEGORY ${_CATEGORIES})
     file(GLOB cxx_headers_${_CATEGORY}_bits
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.h
         ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.hpp
         ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.icpp)
     list(APPEND cxx_headers_category_bits ${cxx_headers_${_CATEGORY}_bits})
+endforeach()
+
+# impl folder
+set(cxx_headers_category_impl)
+foreach(_CATEGORY ${_CATEGORIES})
+    file(GLOB cxx_headers_${_CATEGORY}_impl
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/impl/*.h
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/impl/*.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/impl/*.icpp)
+    list(APPEND cxx_headers_category_impl ${cxx_headers_${_CATEGORY}_impl})
 endforeach()
 
 # all the headers
@@ -42,7 +57,10 @@ set(timemory_headers
     ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
     ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_extern}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
-    ${cxx_headers_category_bits} ${compat_headers})
+    ${cxx_headers_category_bits} ${cxx_headers_category_impl}
+    ${cxx_headers_general} ${cxx_headers_runtime} ${compat_headers})
+
+source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_headers})
 
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
@@ -57,8 +75,17 @@ add_subdirectory(timemory)
 # build library setup
 #
 # directly compile sources
-set(C_LIBRARY_SOURCES    ${c_sources}   ${c_headers})
-set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
+set(C_LIBRARY_SOURCES        ${c_sources}   ${c_headers})
+# routinely have problems with OBJECT libraries on Windows
+if(WIN32)
+    set(CXX_EXTERN_SOURCES   )
+    set(CXX_EXTERN_TARGETS   "")
+    set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${cxx_extern_sources} ${timemory_headers} ${cereal_headers})
+else()
+    set(CXX_EXTERN_SOURCES   ${cxx_extern_sources})
+    set(CXX_EXTERN_TARGETS   "$<TARGET_OBJECTS:timemory-cxx-object>")
+    set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
+endif()
 
 set(_ARCH_LIBRARY )
 if(TIMEMORY_USE_ARCH)
@@ -75,10 +102,43 @@ if(WIN32)
     set(_EXTERN_TEMP )
 endif()
 
+set(_ANALYSIS_TOOLS timemory-analysis-tools)
+if(NOT _GPERF_IN_LIBRARY)
+    set(_ANALYSIS_TOOLS)
+endif()
+
 set(_LINKER_LANGUAGE CXX)
-#if(TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUPTI)
-#    set(_LINKER_LANGUAGE CUDA)
-#endif()
+
+# routinely have problems with OBJECT libraries on Windows
+if(NOT WIN32 AND (_BUILD_SHARED_CXX OR _BUILD_STATIC_CXX))
+    build_library(
+        PIC
+        TYPE                OBJECT
+        TARGET_NAME         timemory-cxx-object
+        OUTPUT_NAME         timemory
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
+        SOURCES             ${CXX_EXTERN_SOURCES}
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
+
+    target_link_libraries(timemory-cxx-object PUBLIC
+        timemory-headers
+        timemory-vector
+        timemory-external-shared
+        timemory-external-static)
+
+    target_link_libraries(timemory-cxx-object PRIVATE
+        timemory-compile-options
+        timemory-develop-options
+        ${_ANALYSIS_TOOLS}
+        ${_ARCH_LIBRARY})
+
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        target_compile_definitions(timemory-cxx-object PRIVATE DEBUG)
+    endif()
+
+endif()
 
 if(_BUILD_SHARED_CXX)
     build_library(
@@ -90,6 +150,7 @@ if(_BUILD_SHARED_CXX)
         LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
+                            ${CXX_EXTERN_TARGETS}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
 
@@ -101,7 +162,7 @@ if(_BUILD_SHARED_CXX)
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
         timemory-develop-options
-        timemory-analysis-tools
+        ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
     if(TIMEMORY_BUILD_C)
@@ -123,6 +184,7 @@ if(_BUILD_STATIC_CXX)
         LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
+                            ${CXX_EXTERN_TARGETS}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_EXTERN_INIT} ${_EXTERN_TEMP})
 
@@ -134,7 +196,7 @@ if(_BUILD_STATIC_CXX)
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
         timemory-develop-options
-        timemory-analysis-tools
+        ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
     if(TIMEMORY_BUILD_C)
@@ -183,7 +245,7 @@ if(TIMEMORY_BUILD_C)
                                     timemory-develop-options
                                     timemory-cxx-shared
                                     timemory-external-shared
-                                    timemory-analysis-tools
+                                    ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
         if(WIN32)
             target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
@@ -207,7 +269,7 @@ if(TIMEMORY_BUILD_C)
                                     timemory-develop-options
                                     timemory-cxx-static
                                     timemory-external-static
-                                    timemory-analysis-tools
+                                    ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
         if(WIN32)
             target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)
@@ -266,34 +328,39 @@ export(
 #
 add_subdirectory(tools)
 
+add_library(timemory-mpip-library INTERFACE)
+if(TARGET timemory-mpip)
+    target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPI_P)
+    target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip)
+endif()
 
 #----------------------------------------------------------------------------------------#
 # Python bindings
 #
-if(TIMEMORY_BUILD_PYTHON)
-    add_subdirectory(python)
-endif()
-
-#----------------------------------------------------------------------------------------#
-# Preload library tool
-#
-# add_subdirectory(preload)
+add_subdirectory(python)
 
 #----------------------------------------------------------------------------------------#
 # install the plotting.py module as a Python executable
 # named 'timemory-plotter' as C++ JSON outputs can use this
 # to generate plots
 #
-if(TIMEMORY_BUILD_PYTHON AND NOT SKBUILD)
+if((TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON) AND NOT SKBUILD)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/__main__.py
         ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
 
-    install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
-        DESTINATION ${CMAKE_INSTALL_BINDIR}
+    configure_file(${PROJECT_SOURCE_DIR}/timemory/roofline/__main__.py
+        ${PROJECT_BINARY_DIR}/timemory-roofline @ONLY)
+
+    install(
+        FILES
+            ${PROJECT_BINARY_DIR}/timemory-plotter
+            ${PROJECT_BINARY_DIR}/timemory-roofline
+        DESTINATION
+            ${CMAKE_INSTALL_BINDIR}
         PERMISSIONS
-        OWNER_EXECUTE OWNER_READ OWNER_WRITE
-        GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ)
+            OWNER_EXECUTE OWNER_READ OWNER_WRITE
+            GROUP_EXECUTE GROUP_READ
+            WORLD_EXECUTE WORLD_READ)
 endif()
 
 #----------------------------------------------------------------------------------------#

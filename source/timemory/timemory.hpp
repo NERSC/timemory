@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file timemory.hpp
- * \headerfile timemory.hpp "timemory/timemory.hpp"
+/** \file timemory/timemory.hpp
+ * \headerfile timemory/timemory.hpp "timemory/timemory.hpp"
  * All-inclusive timemory header
  *
  */
@@ -51,6 +51,10 @@ print_env()
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
+    template <typename... _Types, typename... _Args>
+    static void configure(_Args&&...)
+    {}
+
     template <typename... _Args>
     dummy(_Args&&...)
     {}
@@ -136,6 +140,16 @@ struct dummy
 #    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
 #    define TIMEMORY_DEBUG_AUTO_TIMER(...)
 
+// auto-bundle (user-bundles)
+#    define TIMEMORY_BLANK_AUTO_BUNDLE(...)
+#    define TIMEMORY_BASIC_AUTO_BUNDLE(...)
+#    define TIMEMORY_AUTO_BUNDLE(...)
+#    define TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE(...)
+#    define TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE(...)
+#    define TIMEMORY_AUTO_BUNDLE_HANDLE(...)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE(...)
+#    define TIMEMORY_DEBUG_AUTO_BUNDLE(...)
+
 #else
 
 #    include "timemory/components.hpp"
@@ -148,23 +162,34 @@ struct dummy
 #    include "timemory/variadic/auto_hybrid.hpp"
 #    include "timemory/variadic/auto_list.hpp"
 #    include "timemory/variadic/auto_timer.hpp"
+#    include "timemory/variadic/auto_user_bundle.hpp"
 #    include "timemory/variadic/macros.hpp"
 
 #    include "timemory/enum.h"
 
 // definitions of types
-#    include "timemory/bits/timemory.hpp"
+#    include "timemory/types.hpp"
+#    include "timemory/utility/bits/storage.hpp"
 
 // allocator
 #    include "timemory/ert/aligned_allocator.hpp"
+#    include "timemory/ert/configuration.hpp"
 
 //======================================================================================//
 
-#    include "timemory/bits/init.hpp"
 #    include "timemory/extern/auto_timer.hpp"
+#    include "timemory/extern/auto_user_bundle.hpp"
+#    include "timemory/extern/complete_list.hpp"
+#    include "timemory/extern/ert.hpp"
+#    include "timemory/extern/init.hpp"
 
 //======================================================================================//
 
+#    include "timemory/config.hpp"
 #    include "timemory/plotting.hpp"
+#    include "timemory/utility/conditional.hpp"
+#    include "timemory/utility/storage.hpp"
+
+//--------------------------------------------------------------------------------------//
 
 #endif  // ! defined(DISABLE_TIMEMORY)

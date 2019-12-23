@@ -73,15 +73,16 @@ extern "C"
 {
 #endif  // if defined(__cplusplus)
 
-    extern void        c_timemory_init(int argc, char** argv, timemory_settings);
-    extern int         c_timemory_enabled(void);
-    extern void*       c_timemory_create_auto_timer(const char*);
-    extern void        c_timemory_delete_auto_timer(void*);
-    extern void*       c_timemory_create_auto_tuple(const char*, ...);
-    extern void        c_timemory_delete_auto_tuple(void*);
-    extern const char* c_timemory_blank_label(const char*);
-    extern const char* c_timemory_basic_label(const char*, const char*);
-    extern const char* c_timemory_label(const char*, const char*, int, const char*);
+    extern tim_api void        c_timemory_init(int argc, char** argv, timemory_settings);
+    extern tim_api int         c_timemory_enabled(void);
+    extern tim_api void*       c_timemory_create_auto_timer(const char*);
+    extern tim_api void        c_timemory_delete_auto_timer(void*);
+    extern tim_api void*       c_timemory_create_auto_tuple(const char*, ...);
+    extern tim_api void        c_timemory_delete_auto_tuple(void*);
+    extern tim_api const char* c_timemory_blank_label(const char*);
+    extern tim_api const char* c_timemory_basic_label(const char*, const char*);
+    extern tim_api const char* c_timemory_label(const char*, const char*, int,
+                                                const char*);
 
     extern uint64_t timemory_get_unique_id(void);
     extern void timemory_create_record(const char* name, uint64_t* id, int n, int* ct);

@@ -292,13 +292,17 @@ main(int argc, char** argv)
     tim::settings::cout_output()      = true;
     tim::settings::json_output()      = false;
     tim::settings::timing_precision() = 6;
-    tim::settings::debug()            = true;
-    tim::timemory_init(argc, argv);
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
-    return RUN_ALL_TESTS();
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -25,11 +25,37 @@
 
 #include "libpytimemory.hpp"
 #include "timemory/timemory.hpp"
+#include <cstdio>
 #include <pybind11/pybind11.h>
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/backends/cupti.hpp"
 #endif
+
+#if defined(TIMEMORY_USE_MPI_P)
+extern "C"
+{
+    extern void init_timemory_mpip_tools();
+}
+#endif
+
+//======================================================================================//
+
+manager_wrapper::manager_wrapper()
+: m_manager(manager_t::instance().get())
+{}
+
+//--------------------------------------------------------------------------------------//
+
+manager_wrapper::~manager_wrapper() {}
+
+//--------------------------------------------------------------------------------------//
+
+manager_t*
+manager_wrapper::get()
+{
+    return manager_t::instance().get();
+}
 
 //======================================================================================//
 //  Python wrappers
@@ -38,6 +64,17 @@
 PYBIND11_MODULE(libpytimemory, tim)
 {
     //----------------------------------------------------------------------------------//
+    //
+    static auto              _master_manager = manager_t::master_instance();
+    static thread_local auto _worker_manager = manager_t::instance();
+    if(_worker_manager != _master_manager)
+    {
+        printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
+               (void*) _master_manager.get(), (void*) _worker_manager.get());
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
     using pytim::string_t;
     py::add_ostream_redirect(tim, "ostream_redirect");
 
@@ -77,9 +114,9 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("cpu_roofline_sp_flops", CPU_ROOFLINE_SP_FLOPS)
         .value("cpu_util", CPU_UTIL)
         .value("cuda_event", CUDA_EVENT)
+        .value("cuda_profiler", CUDA_PROFILER)
         .value("cupti_activity", CUPTI_ACTIVITY)
         .value("cupti_counters", CUPTI_COUNTERS)
-        .value("page_rss", PAGE_RSS)
         .value("data_rss", DATA_RSS)
         .value("gperf_cpu_profiler", GPERF_CPU_PROFILER)
         .value("gperf_heap_profiler", GPERF_HEAP_PROFILER)
@@ -87,6 +124,8 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("gpu_roofline_flops", GPU_ROOFLINE_FLOPS)
         .value("gpu_roofline_hp_flops", GPU_ROOFLINE_HP_FLOPS)
         .value("gpu_roofline_sp_flops", GPU_ROOFLINE_SP_FLOPS)
+        .value("likwid_nvmon", LIKWID_NVMON)
+        .value("likwid_perfmon", LIKWID_PERFMON)
         .value("monotonic_clock", MONOTONIC_CLOCK)
         .value("monotonic_raw_clock", MONOTONIC_RAW_CLOCK)
         .value("num_io_in", NUM_IO_IN)
@@ -98,20 +137,27 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("num_signals", NUM_SIGNALS)
         .value("num_swap", NUM_SWAP)
         .value("nvtx_marker", NVTX_MARKER)
+        .value("page_rss", PAGE_RSS)
         .value("papi_array", PAPI_ARRAY)
         .value("peak_rss", PEAK_RSS)
         .value("priority_context_switch", PRIORITY_CONTEXT_SWITCH)
         .value("process_cpu_clock", PROCESS_CPU_CLOCK)
         .value("process_cpu_util", PROCESS_CPU_UTIL)
         .value("read_bytes", READ_BYTES)
-        .value("wall_clock", WALL_CLOCK)
         .value("stack_rss", STACK_RSS)
         .value("sys_clock", SYS_CLOCK)
+        .value("tau_marker", TAU_MARKER)
         .value("thread_cpu_clock", THREAD_CPU_CLOCK)
         .value("thread_cpu_util", THREAD_CPU_UTIL)
         .value("trip_count", TRIP_COUNT)
+        .value("user_tuple_bundle", USER_TUPLE_BUNDLE)
+        .value("user_list_bundle", USER_LIST_BUNDLE)
         .value("user_clock", USER_CLOCK)
+        .value("virtual_memory", VIRTUAL_MEMORY)
         .value("voluntary_context_switch", VOLUNTARY_CONTEXT_SWITCH)
+        .value("vtune_event", VTUNE_EVENT)
+        .value("vtune_frame", VTUNE_FRAME)
+        .value("wall_clock", WALL_CLOCK)
         .value("written_bytes", WRITTEN_BYTES);
 
     //==================================================================================//
@@ -124,27 +170,29 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::enum_<sys_signal_t> sys_signal_enum(sig, "sys_signal", py::arithmetic(),
                                             "Signals for TiMemory module");
     //----------------------------------------------------------------------------------//
-    sys_signal_enum.value("Hangup", sys_signal_t::sHangup)
-        .value("Interrupt", sys_signal_t::sInterrupt)
-        .value("Quit", sys_signal_t::sQuit)
-        .value("Illegal", sys_signal_t::sIllegal)
-        .value("Trap", sys_signal_t::sTrap)
-        .value("Abort", sys_signal_t::sAbort)
-        .value("Emulate", sys_signal_t::sEmulate)
-        .value("FPE", sys_signal_t::sFPE)
-        .value("Kill", sys_signal_t::sKill)
-        .value("Bus", sys_signal_t::sBus)
-        .value("SegFault", sys_signal_t::sSegFault)
-        .value("System", sys_signal_t::sSystem)
-        .value("Pipe", sys_signal_t::sPipe)
-        .value("Alarm", sys_signal_t::sAlarm)
-        .value("Terminate", sys_signal_t::sTerminate)
-        .value("Urgent", sys_signal_t::sUrgent)
-        .value("Stop", sys_signal_t::sStop)
-        .value("CPUtime", sys_signal_t::sCPUtime)
-        .value("FileSize", sys_signal_t::sFileSize)
-        .value("VirtualAlarm", sys_signal_t::sVirtualAlarm)
-        .value("ProfileAlarm", sys_signal_t::sProfileAlarm);
+    sys_signal_enum.value("Hangup", sys_signal_t::Hangup)
+        .value("Interrupt", sys_signal_t::Interrupt)
+        .value("Quit", sys_signal_t::Quit)
+        .value("Illegal", sys_signal_t::Illegal)
+        .value("Trap", sys_signal_t::Trap)
+        .value("Abort", sys_signal_t::Abort)
+        .value("Emulate", sys_signal_t::Emulate)
+        .value("FPE", sys_signal_t::FPE)
+        .value("Kill", sys_signal_t::Kill)
+        .value("Bus", sys_signal_t::Bus)
+        .value("SegFault", sys_signal_t::SegFault)
+        .value("System", sys_signal_t::System)
+        .value("Pipe", sys_signal_t::Pipe)
+        .value("Alarm", sys_signal_t::Alarm)
+        .value("Terminate", sys_signal_t::Terminate)
+        .value("Urgent", sys_signal_t::Urgent)
+        .value("Stop", sys_signal_t::Stop)
+        .value("CPUtime", sys_signal_t::CPUtime)
+        .value("FileSize", sys_signal_t::FileSize)
+        .value("VirtualAlarm", sys_signal_t::VirtualAlarm)
+        .value("ProfileAlarm", sys_signal_t::ProfileAlarm)
+        .value("User1", sys_signal_t::User1)
+        .value("User2", sys_signal_t::User2);
 
     //==================================================================================//
     //
@@ -249,6 +297,12 @@ PYBIND11_MODULE(libpytimemory, tim)
 #endif
     };
     //----------------------------------------------------------------------------------//
+    auto _init_mpip = [&]() {
+#if defined(TIMEMORY_USE_MPI_P)
+        init_timemory_mpip_tools();
+#endif
+    };
+    //----------------------------------------------------------------------------------//
 
     //==================================================================================//
     //
@@ -306,17 +360,39 @@ PYBIND11_MODULE(libpytimemory, tim)
             [&](py::list argv, std::string _prefix, std::string _suffix) {
                 if(argv.size() < 1)
                     return;
-                auto  _str  = argv.begin()->cast<std::string>();
-                char* _argv = new char[_str.size()];
-                std::strcpy(_argv, _str.c_str());
-                tim::timemory_init(1, &_argv, _prefix, _suffix);
+                int    _argc = argv.size();
+                char** _argv = new char*[argv.size()];
+                for(int i = 0; i < _argc; ++i)
+                {
+                    auto  _str    = argv[i].cast<std::string>();
+                    char* _argv_i = new char[_str.size()];
+                    std::strcpy(_argv_i, _str.c_str());
+                    _argv[i] = _argv_i;
+                }
+                tim::timemory_init(_argc, _argv, _prefix, _suffix);
+                for(int i = 0; i < _argc; ++i)
+                    delete[] _argv[i];
                 delete[] _argv;
             },
-            "Parse the environment and use argv[0] to set output path",
+            "Parse the environment and use argv to set output path",
             py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
             py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
+    tim.def("timemory_finalize",
+            []() {
+                try
+                {
+                    tim::timemory_finalize();
+                } catch(std::exception& e)
+                {
+                    PRINT_HERE("ERROR: %s", e.what());
+                }
+            },
+            "Finalize timemory (generate output) -- important to call if using MPI");
+    //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
+    //----------------------------------------------------------------------------------//
+    tim.def("init_mpip", _init_mpip, "Enable MPIP profiling");
 
     //==================================================================================//
     //

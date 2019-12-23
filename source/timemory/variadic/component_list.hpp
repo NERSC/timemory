@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file component_list.hpp
- * \headerfile component_list.hpp "timemory/variadic/component_list.hpp"
+/** \file timemory/variadic/component_list.hpp
+ * \headerfile variadic/component_list.hpp "timemory/variadic/component_list.hpp"
  * This is similar to component_tuple but not as optimized.
  * This exists so that Python and C, which do not support templates,
  * can implement a subset of the tools
@@ -42,12 +42,13 @@
 #include <stdio.h>
 #include <string>
 
-#include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
+#include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
@@ -106,7 +107,8 @@ public:
         using stand_stop_t       = _TypeL<operation::pointer_operator<_Types, operation::standard_stop<_Types>>...>;
         using mark_begin_t       = _TypeL<operation::pointer_operator<_Types, operation::mark_begin<_Types>>...>;
         using mark_end_t         = _TypeL<operation::pointer_operator<_Types, operation::mark_end<_Types>>...>;
-        using customize_t        = _TypeL<operation::pointer_operator<_Types, operation::customize<_Types>>...>;
+        using construct_t        = _TypeL<operation::pointer_operator<_Types, operation::construct<_Types>>...>;
+        using audit_t        = _TypeL<operation::pointer_operator<_Types, operation::audit<_Types>>...>;
         using set_prefix_t       = _TypeL<operation::pointer_operator<_Types, operation::set_prefix<_Types>>...>;
         using get_data_t         = _TypeL<operation::pointer_operator<_Types, operation::get_data<_Types>>...>;
         using print_t            = _TypeL<operation::print<_Types>...>;
@@ -117,7 +119,7 @@ public:
         // clang-format on
     };
 
-    using impl_unique_concat_type = available_tuple<remove_duplicates<concat<Types...>>>;
+    using impl_unique_concat_type = available_tuple<concat<Types...>>;
 
 public:
     using string_t            = std::string;
@@ -140,6 +142,12 @@ public:
     static constexpr bool is_component_list   = true;
     static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = false;
+    static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_list        = false;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = false;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = false;
 
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
@@ -167,7 +175,8 @@ public:
     using stand_stop_t    = typename filtered<impl_unique_concat_type>::stand_stop_t;
     using mark_begin_t    = typename filtered<impl_unique_concat_type>::mark_begin_t;
     using mark_end_t      = typename filtered<impl_unique_concat_type>::mark_end_t;
-    using customize_t     = typename filtered<impl_unique_concat_type>::customize_t;
+    using construct_t     = typename filtered<impl_unique_concat_type>::construct_t;
+    using audit_t     = typename filtered<impl_unique_concat_type>::audit_t;
     using set_prefix_t    = typename filtered<impl_unique_concat_type>::set_prefix_t;
     using get_data_t      = typename filtered<impl_unique_concat_type>::get_data_t;
     using pointer_count_t = typename filtered<impl_unique_concat_type>::pointer_count_t;
@@ -178,54 +187,15 @@ public:
 public:
     component_list();
 
+    template <typename _Func = init_func_t>
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile());
+                            const bool& flat = settings::flat_profile(),
+                            const _Func&     = get_initializer());
 
+    template <typename _Func = init_func_t>
     explicit component_list(const captured_location_t& loc, const bool& store = false,
-                            const bool& flat = settings::flat_profile());
-
-    template <typename _Func = init_func_t>
-    explicit component_list(_Func&& _func, const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile())
-    : m_store(store && settings::enabled())
-    , m_flat(flat)
-    , m_is_pushed(false)
-    , m_print_prefix(true)
-    , m_print_laps(true)
-    , m_laps(0)
-    , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
-    , m_key(key)
-    , m_data(data_type())
-    {
-        apply<void>::set_value(m_data, nullptr);
-        {
-            compute_width(key);
-            if(settings::enabled())
-                _func(*this);
-        }
-    }
-
-    template <typename _Func = init_func_t>
-    explicit component_list(_Func&& _func, const captured_location_t& loc,
-                            const bool& store = false,
-                            const bool& flat  = settings::flat_profile())
-    : m_store(store && settings::enabled())
-    , m_flat(flat)
-    , m_is_pushed(false)
-    , m_print_prefix(true)
-    , m_print_laps(true)
-    , m_laps(0)
-    , m_hash(loc.get_hash())
-    , m_key(loc.get_id())
-    , m_data(data_type())
-    {
-        apply<void>::set_value(m_data, nullptr);
-        {
-            compute_width(m_key);
-            if(settings::enabled())
-                _func(*this);
-        }
-    }
+                            const bool& flat = settings::flat_profile(),
+                            const _Func&     = get_initializer());
 
     ~component_list();
 
@@ -270,6 +240,15 @@ public:
     inline const bool&      store() const;
 
     //----------------------------------------------------------------------------------//
+    // construct the objects that have constructors with matching arguments
+    //
+    template <typename... _Args>
+    void construct(_Args&&... _args)
+    {
+        apply<void>::access<construct_t>(m_data, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
@@ -290,12 +269,12 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a customized operation (typically for GOTCHA)
+    // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>
-    void customize(_Args&&... _args)
+    void audit(_Args&&... _args)
     {
-        apply<void>::access<customize_t>(m_data, std::forward<_Args>(_args)...);
+        apply<void>::access<audit_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -369,6 +348,7 @@ public:
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        obj.compute_width(obj.key());
         uint64_t count = 0;
         apply<void>::access<pointer_count_t>(obj.m_data, std::ref(count));
         if(count < 1)
@@ -401,7 +381,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        ar(serializer::make_nvp("key", m_key), serializer::make_nvp("laps", m_laps));
+        ar(cereal::make_nvp("key", m_key), cereal::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
         apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
@@ -454,7 +434,7 @@ public:
         }
         else
         {
-            static std::atomic<int> _count;
+            static std::atomic<int> _count(0);
             if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = demangle(typeid(_Tp).name());
@@ -473,7 +453,7 @@ public:
               enable_if_t<(trait::is_available<_Tp>::value == false), int>      = 0>
     void init(_Args&&...)
     {
-        static std::atomic<int> _count;
+        static std::atomic<int> _count(0);
         if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
         {
             std::string _id = demangle(typeid(_Tp).name());
@@ -542,22 +522,17 @@ protected:
     static int64_t output_width(int64_t = 0);
 
     // protected member functions
-    string_t get_prefix() const;
-    void     compute_width(const string_t& key);
-    void     update_width() const;
-    void     set_object_prefix(const string_t& key);
+    const string_t& get_prefix() const;
+    void            compute_width(const string_t& key) const;
+    void            update_width() const;
+    void            set_object_prefix(const string_t& key);
 
-    template <typename _Tp, enable_if_t<(trait::requires_prefix<_Tp>::value), int> = 0>
-    void set_object_prefix(_Tp* obj)
+    template <typename _Tp>
+    void set_object_prefix(_Tp* obj) const
     {
-        if(obj)
-            obj->set_prefix(m_key);
+        using _PrefixOp = operation::pointer_operator<_Tp, operation::set_prefix<_Tp>>;
+        _PrefixOp(obj, m_key);
     }
-
-    template <typename _Tp,
-              enable_if_t<(trait::requires_prefix<_Tp>::value == false), int> = 0>
-    void set_object_prefix(_Tp*)
-    {}
 
 protected:
     // objects
@@ -566,7 +541,7 @@ protected:
     bool              m_is_pushed    = false;
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
-    int64_t           m_laps         = 0;
+    int32_t           m_laps         = 0;
     uint64_t          m_hash         = 0;
     string_t          m_key          = "";
     mutable data_type m_data         = data_type();

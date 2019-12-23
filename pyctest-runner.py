@@ -58,11 +58,15 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--tools", help="TIMEMORY_BUILD_TOOLS=ON",
                         default=False, action='store_true')
+    parser.add_argument("--tau", help="TIMEMORY_USE_TAU=ON",
+                        default=False, action='store_true')
     parser.add_argument("--mpip", help="TIMEMORY_BUILD_MPIP=ON",
                         default=False, action='store_true')
     parser.add_argument("--cuda", help="TIMEMORY_USE_CUDA=ON",
                         default=False, action='store_true')
     parser.add_argument("--cupti", help="TIMEMORY_USE_CUPTI=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--upcxx", help="TIMEMORY_USE_UPCXX=ON",
                         default=False, action='store_true')
     parser.add_argument("--gotcha", help="TIMEMORY_USE_GOTCHA=ON",
                         default=False, action='store_true')
@@ -81,10 +85,10 @@ def configure():
     parser.add_argument("--extra-optimizations",
                         help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
                         default=False, action='store_true')
-    parser.add_argument("--extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=ON",
-                        default=False, action='store_true')
     parser.add_argument("--build-libs", help="Build library type(s)", default=("shared"),
                         nargs='*', type=str, choices=("static", "shared"))
+    parser.add_argument(
+        "--generate", help="Generate the tests only", action='store_true')
 
     args = parser.parse_args()
 
@@ -112,9 +116,7 @@ def configure():
     if platform.system() != "Linux":
         args.no_papi = True
 
-    # always echo dart measurements
-    os.environ["TIMEMORY_DART_OUTPUT"] = "ON"
-    os.environ["TIMEMORY_DART_COUNT"] = "1"
+    os.environ["PYCTEST_TESTING"] = "ON"
 
     return args
 
@@ -163,20 +165,25 @@ def run_pyctest():
         "TIMEMORY_BUILD_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
-        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON" if args.extern_templates else "OFF",
+        "TIMEMORY_BUILD_TESTING": "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON" if args.extra_optimizations else "OFF",
         "TIMEMORY_USE_MPI": "OFF" if args.no_mpi else "ON",
+        "TIMEMORY_USE_TAU": "ON" if args.tau else "OFF",
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
         "TIMEMORY_USE_PAPI": "OFF" if args.no_papi else "ON",
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
         "TIMEMORY_USE_GPERF": "OFF",
+        "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
+        "TIMEMORY_USE_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_USE_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
-        "USE_EXTERN_TEMPLATES": "ON" if args.extern_templates else "OFF",
+        "USE_PAPI": "OFF" if args.no_papi else "ON",
+        "USE_MPI": "OFF" if args.no_mpi else "ON",
+        "USE_CALIPER": "ON" if args.caliper else "OFF",
     }
 
     if not args.no_c:
@@ -206,10 +213,6 @@ def run_pyctest():
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
         components = "profiler" if args.profile == "cpu" else "tcmalloc"
         build_opts["TIMEMORY_GPERF_COMPONENTS"] = components
-        if pyct.BUILD_TYPE != "RelWithDebInfo":
-            warnings.warn(
-                "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
-            pyct.BUILD_TYPE = "RelWithDebInfo"
         pyct.BUILD_NAME = "{} {}".format(
             pyct.BUILD_NAME, args.profile.upper())
 
@@ -322,8 +325,8 @@ def run_pyctest():
                                   clobber=clobber_notes)
                     # make sure all subsequent iterations don't clobber
                     clobber_notes = False
-        else:
-            _cmd.append("{}/timem".format(pyct.BINARY_DIRECTORY))
+        # else:
+        #    _cmd.append("{}/timem".format(pyct.BINARY_DIRECTORY))
         _cmd.extend(cmd)
         return _cmd
 
@@ -331,7 +334,11 @@ def run_pyctest():
     # create tests
     #
 
-    test_env = "CPUPROFILE_FREQUENCY=1000;CPUPROFILE_REALTIME=1;CALI_CONFIG_PROFILE=runtime-report"
+    test_env = ";".join(["CPUPROFILE_FREQUENCY=200",
+                         "CPUPROFILE_REALTIME=1",
+                         "CALI_CONFIG_PROFILE=runtime-report",
+                         "TIMEMORY_DART_OUTPUT=ON",
+                         "TIMEMORY_DART_COUNT=1"])
 
     pyct.test(construct_name("test-optional-off"),
               construct_command(["./ex_optional_off"], args),
@@ -351,7 +358,7 @@ def run_pyctest():
               construct_command(["./ex_cxx_overhead"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-cuda-event"),
@@ -414,7 +421,7 @@ def run_pyctest():
               construct_command(["./ex_ert"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-cxx-tuple"),
@@ -470,7 +477,7 @@ def run_pyctest():
               construct_command(["./ex_python_minimal"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
+               "TIMEOUT": "480",
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-gotcha"),
@@ -480,9 +487,32 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
+    pyct.test(construct_name("test-likwid"),
+              construct_command(["./ex_likwid"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-python-likwid"),
+              construct_command(["./ex_python_likwid"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    if args.cupti:
+        pyct.test(construct_name("test-gpu-roofline"),
+                  construct_command(["./ex_gpu_roofline"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
     pyct.generate_config(pyct.BINARY_DIRECTORY)
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
-    pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
+    if not args.generate:
+        pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
 
 
 #------------------------------------------------------------------------------#

@@ -46,6 +46,8 @@ using default_device = device_t;
 using fp16_t = tim::cuda::fp16_t;
 #endif
 
+using simple_timer_t = tim::auto_tuple<wall_clock>;
+
 //--------------------------------------------------------------------------------------//
 
 #if ROOFLINE_FP_BYTES == 8
@@ -83,11 +85,8 @@ GLOBAL_CALLABLE void
 amypx(int64_t n, _Tp* x, _Tp* y, int64_t nitr)
 {
     auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
-    for(int64_t j = 0; j < nitr; ++j)
-    {
-        for(int i = range.begin(); i < range.end(); i += range.stride())
-            y[i] = static_cast<_Tp>(2.0) * y[i] + x[i];
-    }
+    for(int i = range.begin(); i < range.end(); i += range.stride())
+        y[i] = static_cast<_Tp>(2.0) * y[i] + x[i];
 }
 
 //--------------------------------------------------------------------------------------//
@@ -119,26 +118,38 @@ void customize_roofline(int64_t, int64_t, int64_t, int64_t, int64_t, int64_t);
 
 template <typename _Tp>
 void
-exec_amypx(int64_t data_size, int64_t nitr, params_t params)
+exec_amypx(int64_t data_size, int64_t nitr, params_t params,
+           std::vector<stream_t>& streams)
 {
     auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
 
-    _Tp* y = tim::cuda::malloc<_Tp>(data_size);
-    _Tp* x = tim::cuda::malloc<_Tp>(data_size);
-    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, 1);
-    tim::cuda::device_sync();
-    tim::device::launch(data_size, params,
-                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, y, 0.0,
-                        data_size);
-    tim::device::launch(data_size, params,
-                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, x, 1.0,
-                        data_size);
-    tim::cuda::device_sync();
+    _Tp* y    = tim::cuda::malloc<_Tp>(data_size * streams.size());
+    _Tp* x    = tim::cuda::malloc<_Tp>(data_size * streams.size());
+    _Tp  zero = 0.0;
+    _Tp  one  = 1.0;
 
-    TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
-    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, nitr);
-    tim::cuda::device_sync();
-    TIMEMORY_CALIPER_APPLY(0, stop);
+    for(uint64_t i = 0; i < streams.size(); ++i)
+    {
+        stream_t stream = streams.at(i);
+        auto     _y     = y + data_size * i;
+        auto     _x     = x + data_size * i;
+        params.stream   = stream;
+        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y, 1);
+        tim::cuda::stream_sync(stream);
+        tim::device::launch(data_size, stream, params,
+                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _y, zero,
+                            data_size);
+        tim::device::launch(data_size, stream, params,
+                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _x, one,
+                            data_size);
+        tim::cuda::stream_sync(stream);
+
+        TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
+        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y,
+                            nitr);
+        tim::cuda::stream_sync(stream);
+        TIMEMORY_CALIPER_APPLY(0, stop);
+    }
 
     tim::cuda::free(x);
     tim::cuda::free(y);
@@ -148,27 +159,40 @@ exec_amypx(int64_t data_size, int64_t nitr, params_t params)
 #if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
 template <>
 void
-exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params)
+exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params,
+                   std::vector<stream_t>& streams)
 {
     using _Tp  = fp16_t;
     auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
+    // while(label.find("__") != std::string::npos)
+    //     label.erase(label.find("__"), 1);
 
-    _Tp* y = tim::cuda::malloc<_Tp>(data_size);
-    _Tp* x = tim::cuda::malloc<_Tp>(data_size);
-    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, 1);
-    tim::cuda::device_sync();
-    tim::device::launch(data_size, params,
-                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, y,
-                        _Tp({ 0.0, 0.0 }), data_size);
-    tim::device::launch(data_size, params,
-                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, x,
-                        _Tp({ 1.0, 1.0 }), data_size);
-    tim::cuda::device_sync();
+    _Tp* y    = tim::cuda::malloc<_Tp>(data_size * streams.size());
+    _Tp* x    = tim::cuda::malloc<_Tp>(data_size * streams.size());
+    _Tp  zero = { 0.0, 0.0 };
+    _Tp  one  = { 1.0, 1.0 };
 
-    TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
-    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, nitr);
-    tim::cuda::device_sync();
-    TIMEMORY_CALIPER_APPLY(0, stop);
+    for(uint64_t i = 0; i < streams.size(); ++i)
+    {
+        stream_t stream = streams.at(i);
+        auto     _y     = y + data_size * i;
+        auto     _x     = x + data_size * i;
+        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y, 1);
+        tim::cuda::stream_sync(stream);
+        tim::device::launch(data_size, stream, params,
+                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _y, zero,
+                            data_size);
+        tim::device::launch(data_size, stream, params,
+                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _x, one,
+                            data_size);
+        tim::cuda::stream_sync(stream);
+
+        TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
+        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y,
+                            nitr);
+        tim::cuda::stream_sync(stream);
+        TIMEMORY_CALIPER_APPLY(0, stop);
+    }
 
     tim::cuda::free(x);
     tim::cuda::free(y);
@@ -179,16 +203,16 @@ exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params)
 int
 main(int argc, char** argv)
 {
-    tim::settings::json_output() = true;
+    tim::settings::json_output()          = true;
+    tim::settings::instruction_roofline() = true;
     tim::timemory_init(argc, argv);
-    // TIMEMORY_CONFIGURE(gpu_roofline_t);
     tim::cuda::device_query();
     tim::cuda::set_device(0);
 
-    int64_t num_threads   = 1;                         // default number of threads
-    int64_t num_streams   = 1;                         // default number of streams
-    int64_t working_size  = 1 * tim::units::megabyte;  // default working set size
-    int64_t memory_factor = 10;                        // default multiple of 500 MB
+    int64_t num_threads   = 1;                           // default number of threads
+    int64_t num_streams   = 1;                           // default number of streams
+    int64_t working_size  = 500 * tim::units::megabyte;  // default working set size
+    int64_t memory_factor = 10;                          // default multiple of 500 MB
     int64_t iterations    = 1000;
     int64_t block_size    = 1024;
     int64_t grid_size     = 0;
@@ -233,6 +257,10 @@ main(int argc, char** argv)
 
     usage();
 
+    std::vector<stream_t> streams(num_streams);
+    for(auto& itr : streams)
+        tim::cuda::stream_create(itr);
+
 #if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
     customize_roofline<fp16_t>(num_threads, working_size, memory_factor, num_streams,
                                grid_size, block_size);
@@ -262,18 +290,30 @@ main(int argc, char** argv)
     //
 
 #if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
-    exec_amypx<fp16_t>(data_size / 2, iterations * 2, params);
-    exec_amypx<fp16_t>(data_size, iterations, params);
-    exec_amypx<fp16_t>(data_size * 2, iterations / 2, params);
+    {
+        printf("Executing fp16 routines...\n");
+        simple_timer_t routine("fp16", false, true);
+        exec_amypx<fp16_t>(data_size / 2, iterations * 2, params, streams);
+        exec_amypx<fp16_t>(data_size * 1, iterations / 1, params, streams);
+        exec_amypx<fp16_t>(data_size * 2, iterations / 2, params, streams);
+    }
 #endif
 
-    exec_amypx<float>(data_size / 2, iterations * 2, params);
-    exec_amypx<float>(data_size, iterations, params);
-    exec_amypx<float>(data_size * 2, iterations / 2, params);
+    {
+        printf("Executing fp32 routines...\n");
+        simple_timer_t routine("fp32", false, true);
+        exec_amypx<float>(data_size / 2, iterations * 2, params, streams);
+        exec_amypx<float>(data_size * 1, iterations / 1, params, streams);
+        exec_amypx<float>(data_size * 2, iterations / 2, params, streams);
+    }
 
-    exec_amypx<double>(data_size / 2, iterations * 2, params);
-    exec_amypx<double>(data_size, iterations, params);
-    exec_amypx<double>(data_size * 2, iterations / 2, params);
+    {
+        printf("Executing fp64 routines...\n");
+        simple_timer_t routine("fp64", false, true);
+        exec_amypx<double>(data_size / 2, iterations * 2, params, streams);
+        exec_amypx<double>(data_size * 1, iterations / 1, params, streams);
+        exec_amypx<double>(data_size * 2, iterations / 2, params, streams);
+    }
 
     //
     // stop the overall timing
@@ -287,6 +327,8 @@ main(int argc, char** argv)
     total.stop();
 
     std::cout << "Total time: " << total << std::endl;
+
+    tim::timemory_finalize();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -298,10 +340,10 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
 {
     using namespace tim;
     using counter_t         = component::real_clock;
-    using ert_data_t        = ert::exec_data;
+    using ert_data_t        = ert::exec_data<counter_t>;
     using ert_params_t      = ert::exec_params;
     using ert_data_ptr_t    = std::shared_ptr<ert_data_t>;
-    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, counter_t>;
+    using ert_executor_type = ert::executor<device_t, _Tp, counter_t>;
     using ert_config_type   = typename ert_executor_type::configuration_type;
     using ert_counter_type  = typename ert_executor_type::counter_type;
 
@@ -351,8 +393,8 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
 
             // set the label
             _counter.label = "vector_fma";
-            tim::ert::ops_main<2, 4, 6, 8, 10, 12, 16, 32, 64, 96, 128, 192, 256, 512>(
-                _counter, fma_func, store_func);
+            tim::ert::ops_main<2, 4, 8, 16, 32, 64, 128, 256, 512>(_counter, fma_func,
+                                                                   store_func);
         };
 
         // set the callback

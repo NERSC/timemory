@@ -78,6 +78,7 @@ main(int argc, char** argv)
 {
     tim::settings::verbose()     = 1;
     tim::settings::json_output() = true;
+    tim::dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv);
     tim::print_env();
 
@@ -179,6 +180,10 @@ main(int argc, char** argv)
     check(l);
     check_const(l);
     std::cout << std::endl;
+
+    tim::dmp::finalize();
+
+    return 0;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -239,7 +244,7 @@ template <typename _Tp>
 void
 customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor)
 {
-    using ert_params_t   = typename roofline_t::ert_params_t;
+    using ert_params_t   = tim::ert::exec_params;
     using ert_data_ptr_t = typename roofline_t::ert_data_ptr_t;
     using ert_counter_t  = typename roofline_t::ert_counter_type<_Tp>;
 

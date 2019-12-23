@@ -44,7 +44,7 @@ namespace trait
 //--------------------------------------------------------------------------------------//
 
 template <>
-struct is_timing_category<component::real_clock> : std::true_type
+struct is_timing_category<component::wall_clock> : std::true_type
 {};
 
 template <>
@@ -164,7 +164,7 @@ struct is_memory_category<component::virtual_memory> : std::true_type
 //--------------------------------------------------------------------------------------//
 
 template <>
-struct uses_timing_units<component::real_clock> : std::true_type
+struct uses_timing_units<component::wall_clock> : std::true_type
 {};
 
 template <>

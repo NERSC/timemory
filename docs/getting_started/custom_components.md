@@ -1,15 +1,14 @@
 # Custom Components
 
 Timemory supports user-specifed components. A custom component must inherit from the static polymorphic base class:
-`tim::component::base`. This class provides the integration into the API and requires a minimum of two types:
+`tim::component::base`. This class provides the integration into the API and requires two types:
 
-1. component type (i.e. itself) [`required`]
-2. the data type being stored [`required`]
-3. A variadic list of policy classes [`optional`]
+1. component type (i.e. itself)
+2. the data type being stored
 
 ```cpp
 // generic static polymorphic base class
-template <typename _Tp, typename value_type = int64_t, typename... _Policies>
+template <typename _Tp, typename value_type = int64_t>
 struct base;
 
 // create cpu_clock component and use default data type (int64_t)
@@ -33,7 +32,6 @@ struct papi_tuple
 : public base<
               papi_tuple<EventTypes...>,                    // self type
               std::array<long long, sizeof...(EventTypes)>, // data type
-              policy::thread_init, policy::thread_finalize  // policies
              >
 {
     // ...
@@ -42,7 +40,7 @@ struct papi_tuple
 
 ## Type Traits
 
-Type traits are provided to customize how operations on the data type are handled. For example, adding two `real_clock`
+Type traits are provided to customize how operations on the data type are handled. For example, adding two `wall_clock`
 components together is a simple `a += b` operation but adding two `peak_rss` components is better defined as a
 max operation: `a = max(a, b)` since `+=` a "peak" memory value could return a result larger than the total amount of
 memory on the system. Additionally, certain components are not available on certain systems, e.g. components that
@@ -93,8 +91,8 @@ This means that with the above example, on Windows, the `example_real_stack_type
 same behavor as the `example_real_type` type:
 
 ```cpp
-using example_real_type       = tim::auto_tuple< real_clock >;
-using example_real_stack_type = tim::auto_tuple< real_clock, stack_rss >;
+using example_real_type       = tim::auto_tuple< wall_clock >;
+using example_real_stack_type = tim::auto_tuple< wall_clock, stack_rss >;
 // On Windows, above type will filter out stack_rss at compile time
 ```
 
@@ -102,31 +100,6 @@ In addition to a performance benefit (no operations on a component that does not
 cleaner code base (significant reduction of `#ifdef` blocks), this can be used to enable "add-on" features for
 performance analysis that won't be included in production code, e.g. including `cpu_roofline_dp_flops` in a specification
 but not enabling the PAPI backend in a production code.
-
-## Policies
-
-Policy classes are provided to enable static functionality that may be critical to the functionality of a
-component but are not required by most components. Policy classes are declared in the base class specification
-and their inclusion requires the definition of an associated static member function.
-
-> Namespace: `tim::policy`
-
-| Policy                             | Associated Static Member Function                     | Invocation Context                             |
-| ---------------------------------- | ----------------------------------------------------- | ---------------------------------------------- |
-| **`tim::policy::global_init`**     | `void invoke_global_init()`                           | Initial creation of component within a process |
-| **`tim::policy::global_finalize`** | `void invoke_global_finalize()`                       | Termination of process (application cleanup)   |
-| **`tim::policy::thread_init`**     | `void invoke_thread_init()`                           | Initial creation of component within a thread  |
-| **`tim::policy::thread_finalize`** | `void invoke_thread_finalize()`                       | Termination of thread (thread cleanup)         |
-| **`tim::policy::serialization`**   | `template <typename Archive> void invoke_serialize()` | Serialization to JSON                          |
-
-In general, the `global_init` policy is used to define an operation that occur prior to recording any component of this
-type, e.g. parse environment of any relevant settings; the `global_finalize` policy is used to define an operation that
-occurs after all the recording is completed for a process, e.g. calculate the peak values for a roofline; the
-`thread_init` policy is used to define an operation that occurs prior to recording any component of this type within that
-thread of execution, e.g. start PAPI hardware counters for thread; the `thread_finalize` policy is used to define
-an operation that occurs after all the recording is completed within that thread of execution, e.g. stop PAPI hardware
-counters for thread; the `serialization` policy is used add additional information to the JSON serialization, e.g.
-adding the peak data to a roofline component.
 
 ## Custom Component Example
 
@@ -139,7 +112,7 @@ adding the peak data to a roofline component.
 | `format_flags`        | `std::ios_base::fmtflags` | Bitset of formatting flags                                              |
 | `unit()`              | numerical value           | Units of data type                                                      |
 | `label()`             | string                    | Short-hand description without spaces                                   |
-| `descript()`          | string                    | Full description of component                                           |
+| `description()`       | string                    | Full description of component                                           |
 | `display_unit()`      | string                    | String representation of `unit()`                                       |
 | `record()`            | static function           | How to measure/record data type of component (must return `value_type`) |
 | `get() const`         | const member function     | Returns the current measurement                                         |
@@ -148,13 +121,13 @@ adding the peak data to a roofline component.
 | `stop()`              | member function           | Defines operation when component recording is stopped                   |
 
 ```cpp
-struct real_clock : public base<real_clock, int64_t>
+struct wall_clock : public base<wall_clock, int64_t>
 {
     // [required] alias to the type of data being recorded is stored
     using value_type = int64_t;
 
     // [required] alias to base type that implements a lot of the functionality
-    using base_type  = base<real_clock, value_type>;
+    using base_type  = base<wall_clock, value_type>;
 
     // this is specific to this particular component
     using ratio_t    = std::nano;
@@ -168,7 +141,7 @@ struct real_clock : public base<real_clock, int64_t>
     // [required] these handle units conversions and descriptions
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "real"; }
-    static std::string descript() { return "wall time"; }
+    static std::string description() { return "wall time"; }
     static std::string display_unit() { return "sec"; }
 
     // [required] this defines how to record a value for the component
@@ -187,7 +160,7 @@ struct real_clock : public base<real_clock, int64_t>
     }
 
     // [required] this defines how the value is represented in '<<' and can return any type
-    float compute_display() const
+    float get_display()() const
     {
         return this->get();
     }

@@ -23,11 +23,13 @@
 //  IN THE SOFTWARE.
 //
 
-/** \file cuda.hpp
- * \headerfile cuda.hpp "timemory/details/cuda.hpp"
+/** \file backends/bits/cuda.hpp
+ * \headerfile backends/bits/cuda.hpp "timemory/backends/bits/cuda.hpp"
  * Header implementation for CUDA
  *
  */
+
+#pragma once
 
 //--------------------------------------------------------------------------------------//
 
@@ -36,7 +38,7 @@ tim::cuda::device_query()
 {
 #if defined(TIMEMORY_USE_CUDA)
 
-    static std::atomic<int16_t> _once;
+    static std::atomic<int16_t> _once(0);
     auto                        _count = _once++;
     if(_count > 0)
         return;

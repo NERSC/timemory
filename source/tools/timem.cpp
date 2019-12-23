@@ -38,6 +38,10 @@
 
 #if defined(_UNIX)
 #    include <unistd.h>
+extern "C"
+{
+    extern char** environ;
+}
 #endif
 
 // C++ includes
@@ -99,6 +103,8 @@ class custom_component_tuple : public component_tuple<Types...>
     using apply_stop_t  = modifiers<operation::stop, Types...>;
     using apply_print_t = modifiers<custom_print, Types...>;
 
+    static std::string label();
+
 public:
     custom_component_tuple(const string_t& key)
     : component_tuple<Types...>(key, true, true)
@@ -148,7 +154,16 @@ get_measure()
 bool
 use_shell()
 {
-    static bool _instance = tim::get_env("TIMEM_USE_SHELL", false);
+    static bool _instance = tim::get_env("TIMEM_USE_SHELL", true);
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool
+debug()
+{
+    static bool _instance = tim::get_env("TIMEM_DEBUG", false);
     return _instance;
 }
 
@@ -159,6 +174,15 @@ command()
 {
     static std::string _instance;
     return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+std::string
+tim::custom_component_tuple<Types...>::label()
+{
+    return command();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -223,13 +247,10 @@ parent_process(pid_t pid)
 
     if(tim::settings::file_output())
     {
-        auto        _init = tim::mpi::is_initialized();
-        auto        _rank = tim::mpi::rank();
         std::string label = "timem";
         if(tim::settings::text_output())
         {
-            auto fname =
-                tim::settings::compose_output_filename(label, ".txt", _init, &_rank);
+            auto          fname = tim::settings::compose_output_filename(label, ".txt");
             std::ofstream ofs(fname.c_str());
             if(ofs)
             {
@@ -246,10 +267,9 @@ parent_process(pid_t pid)
 
         if(tim::settings::json_output())
         {
-            auto jname =
-                tim::settings::compose_output_filename(label, ".json", _init, &_rank);
+            auto jname = tim::settings::compose_output_filename(label, ".json");
             printf("[timem]> Outputting '%s'...\n", jname.c_str());
-            serialize_storage(jname, *get_measure());
+            tim::generic_serialization(jname, *get_measure());
         }
     }
     else
@@ -273,12 +293,19 @@ getcharptr(const std::string& str)
 void
 explain(int ret, const char* pathname, char** argv)
 {
-#if defined(TIMEMORY_USE_LIBEXPLAIN)
     if(ret < 0)
+    {
+#if defined(TIMEMORY_USE_LIBEXPLAIN)
         fprintf(stderr, "%s\n", explain_execvp(pathname, argv));
 #else
-    tim::consume_parameters(ret, pathname, argv);
+        fprintf(stderr, "Return code: %i : %s\n", ret, pathname);
+        int n = 0;
+        std::cerr << "Command: ";
+        while(argv[n] != nullptr)
+            std::cerr << argv[n++] << " ";
+        std::cerr << std::endl;
 #endif
+    }
 }
 //--------------------------------------------------------------------------------------//
 
@@ -291,51 +318,94 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     // with file being executed the array pointer must be terminated by
     // NULL pointer
 
-    char** argv_list = static_cast<char**>(malloc(sizeof(char*) * argc));
+    char** argv_list = (char**) malloc(sizeof(char**) * (argc));
     for(uint64_t i = 0; i < argc - 1; i++)
-        argv_list[i] = argv[i + 1];
+        argv_list[i] = strdup(argv[i + 1]);
     argv_list[argc - 1] = nullptr;
 
     // launches the command with the shell, this is the default because it
     // enables aliases
-    auto launch_using_shell = [=]() {
-        int      ret        = -1;
-        uint64_t argc_extra = 3;
-        uint64_t argc_shell = argc + argc_extra;
-        char**   argv_shell_list =
-            static_cast<char**>(malloc(sizeof(char*) * argc_shell + 1));
-        char* _shell = getusershell();
-        printf("using shell: %s\n", _shell);
-        if(_shell)
+    auto launch_using_shell = [&]() {
+        int         ret             = -1;
+        uint64_t    argc_extra      = 3;
+        uint64_t    argc_shell      = argc + argc_extra;
+        char**      argv_shell_list = (char**) malloc(sizeof(char**) * (argc_shell));
+        std::string _shell          = tim::get_env<std::string>("SHELL", getusershell());
+
+        if(debug())
+            printf("using shell: %s\n", _shell.c_str());
+
+        argv_shell_list[argc_shell - 1] = nullptr;
+        if(_shell.length() > 0)
         {
-            argv_shell_list[0]        = _shell;
-            char interactive_option[] = "-i";
-            char command_option[]     = "-c";
-            argv_shell_list[1]        = interactive_option;
-            argv_shell_list[2]        = command_option;
+            if(debug())
+                PRINT_HERE("%s", "");
+
+            std::string _interactive = "-i";
+            std::string _command     = "-c";
+            argv_shell_list[0]       = strdup(_shell.c_str());
+            argv_shell_list[1]       = strdup(_interactive.c_str());
+            argv_shell_list[2]       = strdup(_command.c_str());
+
+            if(debug())
+                PRINT_HERE("%s", "");
+
             for(uint64_t i = 0; i < argc - 1; ++i)
             {
-                auto  len = strlen(argv_list[i]);
-                char* var = static_cast<char*>(malloc(sizeof(char) * (len + 1)));
-                strncpy(var, argv_list[i], len);
-                var[len]                        = '\0';
-                argv_shell_list[i + argc_extra] = var;
+                if(argv[i + 1] == nullptr)
+                    continue;
+
+                if(debug())
+                    PRINT_HERE("%llu", (unsigned long long) i);
+
+                std::string _arg                = argv[i + 1];
+                argv_shell_list[i + argc_extra] = strdup(_arg.c_str());
+
+                if(debug())
+                    PRINT_HERE("%llu", (unsigned long long) i);
             }
-            argv_shell_list[argc_shell] = nullptr;
-            ret                         = execvp(argv_shell_list[0], argv_shell_list);
+
+            if(debug())
+                PRINT_HERE("%s", "");
+
+            argv_shell_list[argc_shell - 1] = nullptr;
+
+            if(debug())
+                PRINT_HERE("%s", "");
+
+            ret = execvp(argv_shell_list[0], argv_shell_list);
             explain(ret, argv_shell_list[0], argv_shell_list);
+
+            if(ret != 0)
+            {
+                PRINT_HERE("return code: %i", ret);
+                explain(ret, argv_shell_list[0], argv_shell_list);
+                ret = execv(argv_shell_list[0], argv_shell_list);
+            }
+
+            if(ret != 0)
+            {
+                PRINT_HERE("return code: %i", ret);
+                explain(ret, argv_shell_list[0], argv_shell_list);
+                ret = execve(argv_shell_list[0], argv_shell_list, environ);
+            }
+
+            if(debug())
+                PRINT_HERE("return code: %i", ret);
         }
         else
         {
             fprintf(stderr, "getusershell failed!\n");
         }
-        free(argv_shell_list);
+        if(debug())
+            PRINT_HERE("%s", "");
+        // delete[] argv_shell_list;
         return ret;
     };
 
     // this will launch the process and inherit the environment but aliases will not
     // be available
-    auto launch_without_shell = [=]() {
+    auto launch_without_shell = [&]() {
         int ret = execvp(argv_list[0], argv_list);
         // explain error if enabled
         explain(ret, argv_list[0], argv_list);
@@ -353,19 +423,27 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
         // launch the command with shell. If that fails, launch without shell
         ret = launch_using_shell();
         if(ret < 0)
+        {
+            if(debug())
+                puts("Error launching with shell! Trying without shell...");
             ret = launch_without_shell();
+        }
     }
     else
     {
         // launch the command without shell. If that fails, launch with shell
         ret = launch_without_shell();
         if(ret < 0)
+        {
+            if(debug())
+                puts("Error launching without shell! Trying with shell...");
             ret = launch_using_shell();
+        }
     }
 
     explain(ret, argv_list[0], argv_list);
 
-    exit(0);
+    exit(ret);
 }
 
 //--------------------------------------------------------------------------------------//

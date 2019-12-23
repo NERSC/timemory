@@ -91,7 +91,7 @@ int main(int argc, char** argv)
     // create an auto tuple accessible via a caliper integer or expand to nothing
     //
     auto main = TIMEMORY_HANDLE(auto_hybrid_t, "");
-    TIMEMORY_CALIPER(0, auto_hybrid_t, "[]");
+    TIMEMORY_CALIPER(0, auto_hybrid_t, "");
 
     //
     // call <auto_tuple_t>.report_at_exit(true) or expand to nothing

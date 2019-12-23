@@ -29,6 +29,10 @@
  *
  */
 
+#include "timemory/backends/papi.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/general/hash.hpp"
+#include "timemory/general/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -36,6 +40,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <functional>
 #include <mutex>
 #include <sstream>
@@ -52,7 +57,7 @@ namespace tim
 inline std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
-    static std::atomic<int32_t> instance;
+    static std::atomic<int32_t> instance(0);
     return instance;
 }
 
@@ -62,7 +67,7 @@ manager::f_manager_instance_count()
 inline std::atomic<int32_t>&
 manager::f_thread_counter()
 {
-    static std::atomic<int32_t> _instance;
+    static std::atomic<int32_t> _instance(0);
     return _instance;
 }
 
@@ -91,27 +96,35 @@ manager::master_instance()
 //======================================================================================//
 
 inline manager::manager()
-: m_instance_count(f_manager_instance_count()++)
+: m_is_finalizing(false)
+, m_instance_count(f_manager_instance_count()++)
+, m_rank(dmp::rank())
+, m_metadata_fname(settings::compose_output_filename("metadata", "json"))
+, m_thread_id(std::this_thread::get_id())
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
+, m_lock(new auto_lock_t(m_mutex, std::defer_lock))
 {
     f_thread_counter()++;
     static std::atomic<int> _once(0);
 
-    if(_once++ == 0)
+    bool _first = (_once++ == 0);
+
+    if(_first)
     {
         settings::parse();
         papi::init();
         std::atexit(manager::exit_hook);
     }
 
-    if(m_instance_count == 0)
-    {
-        if(settings::banner())
-            printf("#--------------------- tim::manager initialized [%i] "
-                   "---------------------#\n\n",
-                   m_instance_count);
-    }
+    // if(settings::banner())
+    if(_first && settings::banner())
+        printf("#--------------------- tim::manager initialized [%i][%i] "
+               "---------------------#\n\n",
+               m_rank, m_instance_count);
+
+    if(settings::cpu_affinity())
+        threading::affinity::set();
 }
 
 //======================================================================================//
@@ -120,31 +133,74 @@ inline manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
 
-    if(get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
-       m_instance_count == 0)
+    bool _last = (get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
+                  m_instance_count == 0);
+
+    if(m_rank == 0 && _remain == 0)
+        write_metadata("manager::~manager");
+
+    if(_last)
     {
+        // papi::shutdown();
+        // dmp::finalize();
         f_thread_counter().store(0, std::memory_order_relaxed);
-        if(settings::banner())
-            printf("\n\n#---------------------- tim::manager destroyed [%i] "
-                   "----------------------#\n",
-                   m_instance_count);
     }
+
+    // if(settings::banner())
+    if(_last && settings::banner())
+        printf("\n\n#---------------------- tim::manager destroyed [%i][%i] "
+               "----------------------#\n",
+               m_rank, m_instance_count);
+
+    delete m_lock;
 }
 
 //======================================================================================//
 
 template <typename _Func>
 inline void
-manager::add_finalizer(_Func&& _func, bool _is_master)
+manager::add_finalizer(const std::string& _key, _Func&& _func, bool _is_master)
 {
-    auto_lock_t lk(m_mutex, std::defer_lock);
-    if(!lk.owns_lock())
-        lk.lock();
+    // ensure there are no duplicates
+    remove_finalizer(_key);
+
+    if(m_lock && !m_lock->owns_lock())
+        m_lock->lock();
+
+    m_metadata_fname = settings::compose_output_filename("metadata", "json");
+
+    auto _entry = finalizer_pair_t{ _key, std::forward<_Func>(_func) };
 
     if(_is_master)
-        m_master_finalizers.push_back(std::forward<_Func>(_func));
+        m_master_finalizers.push_back(_entry);
     else
-        m_worker_finalizers.push_back(std::forward<_Func>(_func));
+        m_worker_finalizers.push_back(_entry);
+}
+
+//======================================================================================//
+
+inline void
+manager::remove_finalizer(const std::string& _key)
+{
+    // if(m_is_finalizing)
+    //    return;
+
+    if(m_lock && !m_lock->owns_lock())
+        m_lock->lock();
+
+    auto _remove_finalizer = [&](finalizer_list_t& _finalizers) {
+        for(auto itr = _finalizers.begin(); itr != _finalizers.end(); ++itr)
+        {
+            if(itr->first == _key)
+            {
+                _finalizers.erase(itr);
+                return;
+            }
+        }
+    };
+
+    _remove_finalizer(m_master_finalizers);
+    _remove_finalizer(m_worker_finalizers);
 }
 
 //======================================================================================//
@@ -152,16 +208,20 @@ manager::add_finalizer(_Func&& _func, bool _is_master)
 inline void
 manager::finalize()
 {
-    auto_lock_t lk(m_mutex, std::defer_lock);
-    if(!lk.owns_lock())
-        lk.lock();
+    if(m_lock && !m_lock->owns_lock())
+        m_lock->lock();
+
+    m_is_finalizing = true;
+    if(settings::debug())
+        PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
+                   (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
 
     auto _finalize = [](finalizer_list_t& _finalizers) {
         // reverse to delete the most recent additions first
         std::reverse(_finalizers.begin(), _finalizers.end());
         // invoke all the functions
         for(auto& itr : _finalizers)
-            itr();
+            itr.second();
         // remove all these finalizers
         _finalizers.clear();
     };
@@ -173,6 +233,15 @@ manager::finalize()
     _finalize(m_worker_finalizers);
     // finalize masters second
     _finalize(m_master_finalizers);
+
+    m_is_finalizing = false;
+
+    if(m_instance_count == 0)
+        write_metadata("manager::finalize");
+
+    if(settings::debug())
+        PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
+                   (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
 }
 
 //======================================================================================//
@@ -180,21 +249,94 @@ manager::finalize()
 inline void
 manager::exit_hook()
 {
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing...");
+
     try
     {
-        if(f_manager_instance_count() > 0)
+        auto master_count = f_manager_instance_count().load();
+        if(master_count > 0)
         {
             auto master_manager = get_shared_ptr_pair_master_instance<manager>();
+            master_manager->write_metadata("manager::exit_hook");
             master_manager.reset();
         }
-        papi::shutdown();
-        mpi::finalize();
+        else
+        {
+            // papi::shutdown();
+            // dmp::finalize();
+        }
+        // papi::shutdown();
     } catch(...)
     {}
+
+    if(settings::debug())
+        PRINT_HERE("%s", "finalizing...");
+}
+
+//======================================================================================//
+// metadata
+//
+inline void
+manager::write_metadata(const char* context)
+{
+    if(m_rank != 0)
+        return;
+
+    static bool written = false;
+    if(written)
+        return;
+
+    written          = true;
+    m_metadata_fname = settings::compose_output_filename("metadata", "json");
+    auto fname       = m_metadata_fname;
+
+    if(settings::verbose() > 0 || settings::banner() || settings::debug())
+        printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::ofstream         ofs(fname.c_str());
+    if(ofs)
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
+        cereal::JSONOutputArchive          oa(ofs, opts);
+        oa.setNextName("timemory");
+        oa.startNode();
+        {
+            oa.setNextName("metadata");
+            oa.startNode();
+            {
+                oa.setNextName("settings");
+                oa.startNode();
+                settings::serialize_settings(oa);
+                oa.finishNode();
+            }
+            {
+                oa.setNextName("output");
+                oa.startNode();
+                oa(cereal::make_nvp("text", m_text_files),
+                   cereal::make_nvp("json", m_json_files));
+                oa.finishNode();
+            }
+            auto _env = env_settings::instance()->get();
+            oa(cereal::make_nvp("environment", _env));
+            oa.finishNode();
+        }
+        oa.finishNode();
+    }
+    if(ofs)
+        ofs << std::endl;
+    else
+        printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
+
+    ofs.close();
 }
 
 //======================================================================================//
 // static function
+//
 inline manager::comm_group_t
 manager::get_communicator_group()
 {
@@ -244,12 +386,32 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
+#include "timemory/config.hpp"
 #include "timemory/settings.hpp"
+#include "timemory/types.hpp"
 #include "timemory/utility/storage.hpp"
-#include "timemory/variadic/component_tuple.hpp"
 
 //======================================================================================//
+//  non-template version
+//
+inline void
+tim::settings::initialize_storage()
+{
+    //
+    // THIS CAUSES SUPER-LONG COMPILE TIMES BECAUSE IT ALWAYS GETS INSTANTIATED
+    //
 
+    // using _Tuple = available_tuple<tim::complete_tuple_t>;
+    // manager::get_storage<_Tuple>::initialize();
+
+    throw std::runtime_error(
+        "tim::settings::initialize_storage() without tuple of types has been disabled "
+        "because it causes extremely long compile times!");
+}
+
+//--------------------------------------------------------------------------------------//
+//  template version
+//
 template <typename _Tuple>
 void
 tim::settings::initialize_storage()
@@ -257,21 +419,13 @@ tim::settings::initialize_storage()
     manager::get_storage<_Tuple>::initialize();
 }
 
-namespace tim
-{
 //--------------------------------------------------------------------------------------//
-// extra variadic initialization
-//
-template <typename... _Types>
+
 inline void
-timemory_init()
+tim::base::storage::free_shared_manager()
 {
-    using tuple_type = tuple_concat_t<_Types...>;
-    settings::initialize_storage<tuple_type>();
+    if(m_manager)
+        m_manager->remove_finalizer(m_label);
 }
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace tim
 
 //======================================================================================//

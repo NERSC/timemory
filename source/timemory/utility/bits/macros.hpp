@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file details/macros.hpp
- * \headerfile details/macros.hpp "timemory/details/macros.hpp"
+/** \file timemory/utility/bits/macros.hpp
+ * \headerfile timemory/utility/bits/macros.hpp "timemory/utility/bits/macros.hpp"
  * Deprecated macros
  */
 

@@ -5,6 +5,14 @@
 #
 ##########################################################################################
 
+add_executable(timemory-avail
+    ${CMAKE_CURRENT_LIST_DIR}/available.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/available.hpp)
+target_include_directories(timemory-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+target_link_libraries(timemory-avail PRIVATE timemory-extensions timemory-headers)
+set_target_properties(timemory-avail PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
+install(TARGETS timemory-avail DESTINATION bin)
+
 # disabled
 if(NOT TIMEMORY_BUILD_TOOLS)
     return()
@@ -16,10 +24,12 @@ if(WIN32)
 endif()
 
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ON)
-add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ON)
+if(TIMEMORY_USE_MPI)
+    add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ON)
+endif()
 
 # pmpi tool
-if(TARGET timemory-cxx-shared AND TIMEMORY_USE_GOTCHA)
+if(TARGET timemory-cxx-shared AND TIMEMORY_USE_MPI)
     add_subdirectory(mpip)
 endif()
 
@@ -30,7 +40,6 @@ endif()
 #----------------------------------------------------------------------------------------#
 # Embed the link path into the executable
 #
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 add_library(timem-libexplain INTERFACE)
 
 add_option(TIMEMORY_BUILD_TOOLS_LIBEXPECT "Enable using libexpect to diagnose errors" OFF)
@@ -51,6 +60,7 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
     else()
         set(TIMEMORY_BUILD_TOOLS_LIBEXPECT OFF)
     endif()
+
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -65,6 +75,9 @@ target_link_libraries(timem PRIVATE
     timemory-headers
     timemory-papi
     timem-libexplain)
+
+set_target_properties(timem PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ON)
 
 # timem installation
 install(TARGETS timem DESTINATION bin)

@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file units.hpp
- * \headerfile units.hpp "timemory/units.hpp"
+/** \file timemory/units.hpp
+ * \headerfile timemory/units.hpp "timemory/units.hpp"
  * Timing and memory units
  *
  */
@@ -48,6 +48,7 @@
 // clang-format off
 #    include <windows.h>
 #    include <sysinfoapi.h>
+#    include <time.h>
 // clang-format on
 #endif
 

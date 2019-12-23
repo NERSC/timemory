@@ -22,10 +22,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file utility/mangler.hpp
+ * \headerfile utility/mangler.hpp "timemory/utility/mangler.hpp"
+ * Provides mangling for C++ functions
+ *
+ */
+
 #pragma once
 
-#include "timemory/bits/settings.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/utility.hpp"
 

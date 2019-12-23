@@ -23,8 +23,8 @@
 //  IN THE SOFTWARE.
 //
 
-/** \file cuda.hpp
- * \headerfile cuda.hpp "timemory/backends/cuda.hpp"
+/** \file backends/cuda.hpp
+ * \headerfile backends/cuda.hpp "timemory/backends/cuda.hpp"
  * Defines cuda functions and dummy functions when compiled without CUDA
  *
  */

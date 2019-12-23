@@ -3,28 +3,19 @@
 import sys
 import argparse
 # read in components and mangled enums
-from timemory_types import components, mangled_enums
+from timemory_types import components, mangled_enums, mangled_strings
 
 
-def generate_get_enum(component, indent_tabs=3, spaces=4, reference=True, template=True):
+def generate_get_enum(component):
     """
     This function generates a case label for C++
     """
-    enumeration = mangled_enums.get(component, component)
+    enumeration = mangled_enums.get(component, component).upper()
+    strings = ["{}".format(component)] + mangled_strings.get(component, [])
 
-    spacer = " "*spaces             # a spacer of spaces length
-    atab = "{}".format(spacer)      # the generic tab
-    ftab = atab*indent_tabs         # the first tab level
-
-    _beg = "template <>\nstruct get_enum<{}>\n{}".format(
-        component, "{")
-    _comp = "\n{}static constexpr TIMEMORY_COMPONENT value = {};".format(
-        ftab, enumeration.upper())
-    _bool = "\n{}static bool& has_storage() {} static thread_local bool _instance = false; return _instance; {}".format(
-        ftab, "{", "}")
-    _end = "\n{};".format("}")
-    return _beg + _comp + _bool + _end
-
+    quoted = ('"{}"'.format(x) for x in strings)
+    return "TIMEMORY_PROPERTY_SPECIALIZATION({}, {}, {})".format(
+           component, enumeration, ", ".join(quoted))
 
 if __name__ == "__main__":
 
@@ -50,8 +41,7 @@ if __name__ == "__main__":
         print("timemory components: [{}]\n".format(", ".join(components)))
     outdata = ""
     for component in components:
-        outdata += "{}\n".format(generate_get_enum(component,
-                                                   args.tabs_per_indent, args.spaces_per_tab))
+        outdata += "{}\n".format(generate_get_enum(component))
         outdata += "\n//{}//\n\n".format("-" * 86)
     outdata = outdata.strip("\n")
     print("{}".format(outdata))

@@ -41,11 +41,11 @@
 #include <timemory/utility/testing.hpp>
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_counters.hpp"
+#    include "timemory/components/cupti/counters.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_counters.hpp"
+#    include "timemory/components/cupti/counters.hpp"
 #endif
 
 using namespace tim::component;
@@ -55,6 +55,8 @@ using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_ut
                                      nvtx_marker, papi_array_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using cuda_tuple_t = tim::auto_tuple<cuda_event, nvtx_marker>;
+using counter_t    = real_clock;
+using ert_data_t   = tim::ert::exec_data<counter_t>;
 
 //======================================================================================//
 
@@ -229,9 +231,9 @@ main(int argc, char** argv)
 void
 print_info(const std::string& func)
 {
-    if(tim::mpi::rank() == 0)
+    if(tim::dmp::rank() == 0)
     {
-        std::cout << "\n[" << tim::mpi::rank() << "]\e[1;33m TESTING \e[0m["
+        std::cout << "\n[" << tim::dmp::rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n"
                   << std::endl;
@@ -244,7 +246,7 @@ void
 print_string(const std::string& str)
 {
     std::stringstream _ss;
-    _ss << "[" << tim::mpi::rank() << "] " << str << std::endl;
+    _ss << "[" << tim::dmp::rank() << "] " << str << std::endl;
     std::cout << _ss.str();
 }
 
@@ -1284,9 +1286,9 @@ test_9_cupti_counters()
         a = a * b + c;
     };
 
-    tim::ert::exec_params                params(16, 64 * 64);
-    std::shared_ptr<tim::ert::exec_data> exec_data(new tim::ert::exec_data);
-    auto                                 _counter = new counter_t(params, exec_data, 64);
+    tim::ert::exec_params       params(16, 64 * 64);
+    std::shared_ptr<ert_data_t> exec_data(new ert_data_t);
+    auto                        _counter = new counter_t(params, exec_data, 64);
 
     std::vector<float> cpu_data(num_data, 0);
     float*             data;

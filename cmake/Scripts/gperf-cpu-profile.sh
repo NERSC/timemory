@@ -121,12 +121,12 @@ if [ -f "${GPERF_PROFILE}" ]; then
             run-verbose ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot
             run-verbose dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.${IMG_FORMAT}
             echo-dart-measurement ${GPERF_PROFILE}.${IMG_FORMAT} ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.${IMG_FORMAT}
-            if [ -f ./gprof2dot.py ]; then
-                run-verbose ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
-                run-verbose python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
-                run-verbose dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
-                echo-dart-measurement ${GPERF_PROFILE}.callgrind ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
-            fi
+            # if [ -f ./gprof2dot.py ]; then
+            #    run-verbose ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
+            #    run-verbose python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
+            #    run-verbose dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
+            #    echo-dart-measurement ${GPERF_PROFILE}.callgrind ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
+            #fi
         fi
         if [ "${INTERACTIVE}" -gt 0 ]; then
             run-verbose ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE}

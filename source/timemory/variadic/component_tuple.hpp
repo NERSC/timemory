@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file component_tuple.hpp
- * \headerfile component_tuple.hpp "timemory/variadic/component_tuple.hpp"
+/** \file timemory/variadic/component_tuple.hpp
+ * \headerfile variadic/component_tuple.hpp "timemory/variadic/component_tuple.hpp"
  * This is the C++ class that bundles together components and enables
  * operation on the components as a single entity
  *
@@ -42,12 +42,13 @@
 #include <iostream>
 #include <string>
 
-#include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
+#include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
@@ -103,21 +104,23 @@ public:
         using stand_stop_t  = _TypeL<operation::standard_stop<_Types>...>;
         using mark_begin_t  = _TypeL<operation::mark_begin<_Types>...>;
         using mark_end_t    = _TypeL<operation::mark_end<_Types>...>;
-        using customize_t   = _TypeL<operation::customize<_Types>...>;
+        using construct_t   = _TypeL<operation::construct<_Types>...>;
+        using audit_t       = _TypeL<operation::audit<_Types>...>;
         using set_prefix_t  = _TypeL<operation::set_prefix<_Types>...>;
         using get_data_t    = _TypeL<operation::get_data<_Types>...>;
         using auto_type     = auto_tuple<_Types...>;
     };
 
-    using impl_unique_concat_type = available_tuple<remove_duplicates<concat<Types...>>>;
+    using impl_unique_concat_type = available_tuple<concat<Types...>>;
 
 public:
     using string_t            = std::string;
     using size_type           = int64_t;
-    using string_hash         = std::hash<string_t>;
     using this_type           = component_tuple<Types...>;
     using data_type           = typename filtered<impl_unique_concat_type>::data_type;
     using type_tuple          = typename filtered<impl_unique_concat_type>::type_tuple;
+    using string_hash         = std::hash<string_t>;
+    using init_func_t         = std::function<void(this_type&)>;
     using data_value_type     = get_data_value_t<data_type>;
     using data_label_type     = get_data_label_t<data_type>;
     using captured_location_t = source_location::captured;
@@ -130,10 +133,24 @@ public:
     static constexpr bool is_component_list   = false;
     static constexpr bool is_component_tuple  = true;
     static constexpr bool is_component_hybrid = false;
+    static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_list        = false;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = false;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = false;
 
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
         (std::tuple_size<filter_gotchas<Types...>>::value != 0);
+
+    //--------------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type&) {};
+        return _instance;
+    }
 
 public:
     // modifier types
@@ -157,7 +174,8 @@ public:
     using stand_stop_t  = typename filtered<impl_unique_concat_type>::stand_stop_t;
     using mark_begin_t  = typename filtered<impl_unique_concat_type>::mark_begin_t;
     using mark_end_t    = typename filtered<impl_unique_concat_type>::mark_end_t;
-    using customize_t   = typename filtered<impl_unique_concat_type>::customize_t;
+    using construct_t   = typename filtered<impl_unique_concat_type>::construct_t;
+    using audit_t   = typename filtered<impl_unique_concat_type>::audit_t;
     using set_prefix_t  = typename filtered<impl_unique_concat_type>::set_prefix_t;
     using get_data_t    = typename filtered<impl_unique_concat_type>::get_data_t;
     // clang-format on
@@ -165,10 +183,14 @@ public:
 public:
     component_tuple();
 
+    template <typename _Func = init_func_t>
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool& flat = settings::flat_profile());
+                             const bool& flat = settings::flat_profile(),
+                             const _Func&     = get_initializer());
+    template <typename _Func = init_func_t>
     explicit component_tuple(const captured_location_t& loc, const bool& store = false,
-                             const bool& flat = settings::flat_profile());
+                             const bool& flat = settings::flat_profile(),
+                             const _Func&     = get_initializer());
 
     ~component_tuple();
 
@@ -215,6 +237,15 @@ public:
     inline const bool&      store() const;
 
     //----------------------------------------------------------------------------------//
+    // construct the objects that have constructors with matching arguments
+    //
+    template <typename... _Args>
+    void construct(_Args&&... _args)
+    {
+        apply<void>::access<construct_t>(m_data, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
@@ -235,12 +266,12 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a customized operation (typically for GOTCHA)
+    // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>
-    void customize(_Args&&... _args)
+    void audit(_Args&&... _args)
     {
-        apply<void>::access<customize_t>(m_data, std::forward<_Args>(_args)...);
+        apply<void>::access<audit_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     // get member functions taking either a type
@@ -369,7 +400,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        ar(serializer::make_nvp("key", m_key), serializer::make_nvp("laps", m_laps));
+        ar(cereal::make_nvp("key", m_key), cereal::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
         apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
@@ -383,10 +414,10 @@ protected:
     // protected member functions
     inline data_type&       get_data();
     inline const data_type& get_data() const;
-    inline string_t         get_prefix() const;
-    inline void             compute_width(const string_t&);
+    inline const string_t&  get_prefix() const;
+    inline void             compute_width(const string_t&) const;
     inline void             update_width() const;
-    inline void             set_object_prefix(const string_t&);
+    inline void             set_object_prefix(const string_t&) const;
 
 protected:
     // objects

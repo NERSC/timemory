@@ -30,7 +30,9 @@
 
 #pragma once
 
+#include "timemory/general/hash.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/runtime/initialize.hpp"
 #include "timemory/variadic/component_list.hpp"
 
 //======================================================================================//
@@ -56,8 +58,9 @@ component_list<Types...>::component_list()
 }
 
 template <typename... Types>
+template <typename _Func>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
-                                         const bool& flat)
+                                         const bool& flat, const _Func& _func)
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
@@ -70,16 +73,19 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
     apply<void>::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        compute_width(m_key);
-        get_initializer()(*this);
+        _func(*this);
+        // compute_width(m_key);
+        set_object_prefix(m_key);
     }
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
+template <typename _Func>
 component_list<Types...>::component_list(const captured_location_t& loc,
-                                         const bool& store, const bool& flat)
+                                         const bool& store, const bool& flat,
+                                         const _Func& _func)
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
@@ -92,8 +98,9 @@ component_list<Types...>::component_list(const captured_location_t& loc,
     apply<void>::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        compute_width(m_key);
-        get_initializer()(*this);
+        _func(*this);
+        // compute_width(m_key);
+        set_object_prefix(m_key);
     }
 }
 
@@ -427,20 +434,20 @@ component_list<Types...>::store() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline std::string
+inline const std::string&
 component_list<Types...>::get_prefix() const
 {
     auto _get_prefix = []() {
-        if(!mpi::is_initialized())
+        if(!dmp::is_initialized())
             return string_t(">>> ");
 
         // prefix spacing
         static uint16_t width = 1;
-        if(mpi::size() > 9)
-            width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
+        if(dmp::size() > 9)
+            width = std::max(width, (uint16_t)(log10(dmp::size()) + 1));
         std::stringstream ss;
         ss.fill('0');
-        ss << "|" << std::setw(width) << mpi::rank() << ">>> ";
+        ss << "|" << std::setw(width) << dmp::rank() << ">>> ";
         return ss.str();
     };
     static string_t _prefix = _get_prefix();
@@ -451,11 +458,10 @@ component_list<Types...>::get_prefix() const
 //
 template <typename... Types>
 inline void
-component_list<Types...>::compute_width(const string_t& key)
+component_list<Types...>::compute_width(const string_t& _key) const
 {
-    static string_t _prefix = get_prefix();
-    output_width(key.length() + _prefix.length() + 1);
-    set_object_prefix(key);
+    static const string_t& _prefix = get_prefix();
+    output_width(_key.length() + _prefix.length() + 1);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -464,7 +470,7 @@ template <typename... Types>
 inline void
 component_list<Types...>::update_width() const
 {
-    const_cast<this_type&>(*this).compute_width(m_key);
+    compute_width(m_key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -473,7 +479,7 @@ template <typename... Types>
 inline int64_t
 component_list<Types...>::output_width(int64_t width)
 {
-    static std::atomic<int64_t> _instance;
+    static std::atomic<int64_t> _instance(0);
     if(width > 0)
     {
         auto current_width = _instance.load(std::memory_order_relaxed);
@@ -520,8 +526,11 @@ template <typename... Types>
 inline typename component_list<Types...>::init_func_t&
 component_list<Types...>::get_initializer()
 {
-    static init_func_t _instance = [](this_type& al) {
-        env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
+    static init_func_t _instance = [](this_type& cl) {
+        static auto env_ret  = tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "");
+        static auto env_enum = enumerate_components(tim::delimit(env_ret));
+        ::tim::initialize(cl, env_enum);
+        // env::initialize(cl, "TIMEMORY_COMPONENT_LIST_INIT", "");
     };
     return _instance;
 }

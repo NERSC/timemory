@@ -27,6 +27,7 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -42,7 +43,7 @@ namespace component
 {
 //
 //
-template struct base<caliper, void, policy::global_init>;
+template struct base<caliper, void>;
 //
 //
 }  // namespace component

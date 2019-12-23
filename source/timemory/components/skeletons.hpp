@@ -118,18 +118,17 @@ template <typename... _Types>
 struct gpu_roofline
 {
     using device_t       = device::cpu;
-    using clock_type     = real_clock;
-    using ert_data_t     = ert::exec_data;
-    using ert_params_t   = ert::exec_params;
+    using clock_type     = wall_clock;
+    using ert_data_t     = ert::exec_data<clock_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
     template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_config_type = ert::configuration<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_counter_type = ert::counter<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_executor_type = ert::executor<device_t, _Tp, clock_type>;
     template <typename _Tp>
     using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
 
@@ -172,18 +171,17 @@ template <typename... _Types>
 struct cpu_roofline
 {
     using device_t       = device::cpu;
-    using clock_type     = real_clock;
-    using ert_data_t     = ert::exec_data;
-    using ert_params_t   = ert::exec_params;
+    using clock_type     = wall_clock;
+    using ert_data_t     = ert::exec_data<clock_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
     template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_config_type = ert::configuration<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_counter_type = ert::counter<device_t, _Tp, clock_type>;
     template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, clock_type>;
+    using ert_executor_type = ert::executor<device_t, _Tp, clock_type>;
     template <typename _Tp>
     using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
 
@@ -226,17 +224,18 @@ struct caliper
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Vp, typename... _Policies>
+template <typename _Tp, typename _Vp>
 struct base;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Policies>
-struct base<_Tp, skeleton::base, _Policies...>
+template <typename _Tp>
+struct base<_Tp, skeleton::base>
 {
     static constexpr bool implements_storage_v = false;
     using Type                                 = _Tp;
     using value_type                           = void;
+    using base_type                            = base<_Tp, skeleton::base>;
 };
 
 //--------------------------------------------------------------------------------------//

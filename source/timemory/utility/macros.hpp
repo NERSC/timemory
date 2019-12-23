@@ -236,72 +236,70 @@
 //      extern declaration
 //
 #    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
-        extern template class tim::auto_tuple<__VA_ARGS__>;                              \
-        extern template class tim::component_tuple<__VA_ARGS__>;                         \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = tim::component_tuple<__VA_ARGS__>;
+        extern template class ::tim::component_tuple<__VA_ARGS__>;                       \
+        extern template class ::tim::auto_tuple<__VA_ARGS__>;                            \
+        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
 
 #    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
-        extern template class tim::auto_list<__VA_ARGS__>;                               \
-        extern template class tim::component_list<__VA_ARGS__>;                          \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = tim::component_list<__VA_ARGS__>;
+        extern template class ::tim::component_list<__VA_ARGS__>;                        \
+        extern template class ::tim::auto_list<__VA_ARGS__>;                             \
+        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
 
 #    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
-        extern template class tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),              \
-                                               _EXTERN_LIST_ALIAS(_ALIAS)>;              \
-        extern template class tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),         \
-                                                    _EXTERN_LIST_ALIAS(_ALIAS)>;
+        extern template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),       \
+                                                      _EXTERN_LIST_ALIAS(_ALIAS)>;       \
+        extern template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),            \
+                                                 _EXTERN_LIST_ALIAS(_ALIAS)>;
 
 //--------------------------------------------------------------------------------------//
 //      extern instantiation
 //
 #    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
-        template class tim::auto_tuple<__VA_ARGS__>;                                     \
-        template class tim::component_tuple<__VA_ARGS__>;                                \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = tim::component_tuple<__VA_ARGS__>;
+        template class ::tim::component_tuple<__VA_ARGS__>;                              \
+        template class ::tim::auto_tuple<__VA_ARGS__>;                                   \
+        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
-        template class tim::auto_list<__VA_ARGS__>;                                      \
-        template class tim::component_list<__VA_ARGS__>;                                 \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = tim::component_list<__VA_ARGS__>;
+        template class ::tim::component_list<__VA_ARGS__>;                               \
+        template class ::tim::auto_list<__VA_ARGS__>;                                    \
+        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
-        template class tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                     \
-                                        _EXTERN_LIST_ALIAS(_ALIAS)>;                     \
-        template class tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                \
-                                             _EXTERN_LIST_ALIAS(_ALIAS)>;
+        template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),              \
+                                               _EXTERN_LIST_ALIAS(_ALIAS)>;              \
+        template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                   \
+                                          _EXTERN_LIST_ALIAS(_ALIAS)>;
 
 //--------------------------------------------------------------------------------------//
 //      extern storage singleton
 //
 #    define TIMEMORY_DECLARE_EXTERN_INIT(TYPE)                                           \
-        template <>                                                                      \
-        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        extern template impl::storage_singleton_t<storage<component::TYPE>>*             \
         get_storage_singleton<storage<component::TYPE>>();                               \
-        template <>                                                                      \
-        details::storage_singleton_t<storage<component::TYPE>>&                          \
-        get_noninit_storage_singleton<storage<component::TYPE>>();                       \
-        extern template class storage<component::TYPE>;
+        extern template class impl::storage<component::TYPE,                             \
+                                            implements_storage<component::TYPE>::value>; \
+        extern template class storage<component::TYPE>;                                  \
+        extern template class singleton<                                                 \
+            impl::storage<component::TYPE, implements_storage<component::TYPE>::value>,  \
+            std::unique_ptr<                                                             \
+                impl::storage<component::TYPE,                                           \
+                              implements_storage<component::TYPE>::value>,               \
+                impl::storage_deleter<impl::storage<                                     \
+                    component::TYPE, implements_storage<component::TYPE>::value>>>>;
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
-        template <>                                                                      \
-        details::storage_singleton_t<storage<component::TYPE>>&                          \
-        get_storage_singleton<storage<component::TYPE>>()                                \
-        {                                                                                \
-            using _storage_t           = storage<component::TYPE>;                       \
-            using _single_t            = details::storage_singleton_t<_storage_t>;       \
-            static _single_t _instance = _single_t::instance();                          \
-            return _instance;                                                            \
-        }                                                                                \
-        template <>                                                                      \
-        details::storage_singleton_t<storage<component::TYPE>>&                          \
-        get_noninit_storage_singleton<storage<component::TYPE>>()                        \
-        {                                                                                \
-            using _storage_t           = storage<component::TYPE>;                       \
-            using _single_t            = details::storage_singleton_t<_storage_t>;       \
-            static _single_t _instance = _single_t::instance_ptr();                      \
-            return _instance;                                                            \
-        }                                                                                \
-        template class storage<component::TYPE>;
+        template impl::storage_singleton_t<storage<component::TYPE>>*                    \
+        get_storage_singleton<storage<component::TYPE>>();                               \
+        template class impl::storage<component::TYPE,                                    \
+                                     implements_storage<component::TYPE>::value>;        \
+        template class storage<component::TYPE>;                                         \
+        template class singleton<                                                        \
+            impl::storage<component::TYPE, implements_storage<component::TYPE>::value>,  \
+            std::unique_ptr<                                                             \
+                impl::storage<component::TYPE,                                           \
+                              implements_storage<component::TYPE>::value>,               \
+                impl::storage_deleter<impl::storage<                                     \
+                    component::TYPE, implements_storage<component::TYPE>::value>>>>;
 
 #else
 
@@ -365,27 +363,31 @@
 //======================================================================================//
 
 #if !defined(PRINT_HERE)
-#    define PRINT_HERE(extra)                                                            \
-        printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#    define PRINT_HERE(fmt, ...)                                                         \
+        printf("> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__, __LINE__,          \
+               __VA_ARGS__)
 #endif
 
 #if !defined(DEBUG_PRINT_HERE)
 #    if defined(DEBUG)
-#        define DEBUG_PRINT_HERE(extra)                                                  \
-            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#        define DEBUG_PRINT_HERE(fmt, ...)                                               \
+            if(::tim::settings::debug())                                                 \
+            printf("> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__, __LINE__,      \
+                   __VA_ARGS__)
 #    else
-#        define DEBUG_PRINT_HERE(extra)
+#        define DEBUG_PRINT_HERE(fmt, ...)
 #    endif
 #endif
 
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
-#        define PRETTY_PRINT_HERE(extra)                                                 \
-            printf("> [%s@'%s':%i] %s...\n", __PRETTY_FUNCTION__, __FILE__, __LINE__,    \
-                   extra)
+#        define PRETTY_PRINT_HERE(fmt, ...)                                              \
+            printf("> [%s@'%s':%i] " fmt "...\n", __PRETTY_FUNCTION__, __FILE__,         \
+                   __LINE__, __VA_ARGS__)
 #    else
-#        define PRETTY_PRINT_HERE(extra)                                                 \
-            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#        define PRETTY_PRINT_HERE(fmt, ...)                                              \
+            printf("> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__, __LINE__,      \
+                   __VA_ARGS__)
 #    endif
 #endif
 

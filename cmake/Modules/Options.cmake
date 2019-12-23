@@ -22,6 +22,11 @@ if(UNIX AND NOT APPLE)
     set(_USE_PAPI ON)
 endif()
 
+set(_BUILD_OPT OFF)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    set(_BUILD_OPT ON)
+endif()
+
 set(_USE_COVERAGE OFF)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(_USE_COVERAGE ON)
@@ -30,6 +35,11 @@ endif()
 set(_BUILD_CALIPER ON)
 if(WIN32)
     set(_BUILD_CALIPER OFF)
+endif()
+
+set(_NON_APPLE_UNIX OFF)
+if(UNIX AND NOT APPLE)
+    set(_NON_APPLE_UNIX ON)
 endif()
 
 # Check if CUDA can be enabled
@@ -78,11 +88,15 @@ if(SKBUILD)
     set(_DEFAULT_BUILD_STATIC OFF)
 endif()
 
-set(TIMEMORY_GPERF_COMPONENTS
-    "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug"
-    CACHE STRING "gperftools components")
+set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
 
-set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
+set(TIMEMORY_gperftools_COMPONENTS_OPTIONS
+    "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug")
+
+set_property(CACHE TIMEMORY_gperftools_COMPONENTS PROPERTY STRINGS
+    "${TIMEMORY_gperftools_COMPONENTS_OPTIONS}")
+
+string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
 
 # CMake options
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
@@ -90,6 +104,8 @@ add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
+add_feature(CMAKE_C_FLAGS_${_CONFIG} "C compiler build type flags")
+add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
 
 set(BUILD_SHARED_LIBS ${_DEFAULT_BUILD_SHARED} CACHE BOOL "Build shared libraries")
 set(BUILD_STATIC_LIBS ${_DEFAULT_BUILD_STATIC} CACHE BOOL "Build static libraries")
@@ -100,8 +116,7 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
     # local override
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
-    set(TIMEMORY_BUILD_TOOLS OFF)
-    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
+    set(TIMEMORY_USE_PYTHON OFF)
 endif()
 
 if(TIMEMORY_SKIP_BUILD)
@@ -111,7 +126,7 @@ if(TIMEMORY_SKIP_BUILD)
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
     set(TIMEMORY_BUILD_TOOLS OFF)
-    set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
+    set(TIMEMORY_USE_PYTHON OFF)
 endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
@@ -147,27 +162,31 @@ add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 # Build settings
 add_option(TIMEMORY_BUILD_DOCS
     "Make a `doc` make target"  OFF ${_FEATURE})
+add_option(TIMEMORY_BUILD_TESTING
+    "Enable testing" OFF)
+add_option(TIMEMORY_BUILD_GTEST
+    "Enable GoogleTest" ${TIMEMORY_BUILD_TESTING} ${_FEATURE})
 add_option(TIMEMORY_BUILD_EXAMPLES
-    "Build the examples"  OFF)
+    "Build the examples"  ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_C
-    "Build the C compatible library"  ${${PROJECT_NAME}_MASTER_PROJECT})
+    "Build the C compatible library" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_PYTHON
     "Build Python binds for ${PROJECT_NAME}" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
-    "Enable building tools"  ${${PROJECT_NAME}_MASTER_PROJECT})
-add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
-    "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
+    "Enable building tools" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
-    "Add extra optimization flags" OFF)
-add_option(TIMEMORY_BUILD_GTEST
-    "Enable GoogleTest" OFF)
+    "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_DEVELOPER
-    "Enable building with developer flags" OFF)
-if(UNIX AND NOT APPLE)
+    "Enable building with developer flags" OFF ${_FEATURE})
+add_option(TIMEMORY_FORCE_GPERF_PYTHON
+    "Enable gperftools + Python (may cause termination errors)" OFF ${_FEATURE})
+add_option(TIMEMORY_BUILD_QUIET
+    "Disable verbose messages" OFF NO_FEATURE)
+if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
 endif()
@@ -181,37 +200,50 @@ endif()
 
 # timemory options
 add_option(TIMEMORY_USE_EXCEPTIONS
-    "Signal handler throws exceptions (default: exit)" OFF  ${_FEATURE})
+    "Signal handler throws exceptions (default: exit)" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_EXTERN_INIT
     "Do initialization in library instead of headers" OFF)
-add_option(TIMEMORY_USE_MPI "Enable MPI usage"
-    ON ${_FEATURE})
+add_option(TIMEMORY_USE_MPI
+    "Enable MPI usage" ON)
+add_option(TIMEMORY_USE_UPCXX
+    "Enable UPCXX usage (MPI support takes precedence)" ON)
 add_option(TIMEMORY_USE_SANITIZER
     "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF ${_FEATURE})
+add_option(TIMEMORY_USE_TAU
+    "Enable TAU marking API" ON)
 add_option(TIMEMORY_USE_PAPI
-    "Enable PAPI" ${_USE_PAPI} ${_FEATURE})
+    "Enable PAPI" ${_USE_PAPI})
 add_option(TIMEMORY_USE_CLANG_TIDY
     "Enable running clang-tidy" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE} ${_FEATURE})
 add_option(TIMEMORY_USE_GPERF
-    "Enable gperf-tools" OFF)
+    "Enable gperftools" ON)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF ${_FEATURE})
+add_option(TIMEMORY_USE_VTUNE
+    "Enable VTune marking API" ON)
 add_option(TIMEMORY_USE_CUDA
-    "Enable CUDA option for GPU measurements" ${_USE_CUDA} ${_FEATURE})
-add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA} ${_FEATURE})
+    "Enable CUDA option for GPU measurements" ${_USE_CUDA})
 add_option(TIMEMORY_USE_NVTX
-    "Enable NVTX marking API" ${_USE_CUDA} ${_FEATURE})
+    "Enable NVTX marking API" ${_USE_CUDA})
+add_option(TIMEMORY_USE_CUPTI
+    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
 add_option(TIMEMORY_USE_CALIPER
-    "Enable Caliper" ${_BUILD_CALIPER} ${_FEATURE})
-if(UNIX AND NOT APPLE)
+    "Enable Caliper" ${_BUILD_CALIPER})
+add_option(TIMEMORY_USE_PYTHON
+    "Enable Python" ${TIMEMORY_BUILD_PYTHON})
+if(_NON_APPLE_UNIX)
+    add_option(TIMEMORY_USE_LIKWID
+        "Enable LIKWID marker forwarding" ON)
     add_option(TIMEMORY_USE_GOTCHA
-        "Enable GOTCHA" ON ${_FEATURE})
+        "Enable GOTCHA" ON)
 endif()
 add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF ${_FEATURE})
+
+add_option(TIMEMORY_GPERF_STATIC
+    "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -220,7 +252,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 if(${PROJECT_NAME}_MASTER_PROJECT)
-    add_feature(TIMEMORY_GPERF_COMPONENTS "gperftool components")
+    add_feature(TIMEMORY_gperftools_COMPONENTS "gperftool components")
 endif()
 
 if(TIMEMORY_USE_CUDA)
@@ -239,7 +271,9 @@ if(TIMEMORY_BUILD_DOCS)
 endif()
 
 if(TIMEMORY_BUILD_PYTHON)
-    set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11")
+    set(PYBIND11_INSTALL ON CACHE BOOL "Don't install Pybind11")
+else()
+    set(PYBIND11_INSTALL OFF)
 endif()
 
 # clang-tidy
@@ -262,7 +296,7 @@ macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
             file(SHA1 ${PROJECT_SOURCE_DIR}/.clang-tidy clang_tidy_sha1)
             set(CLANG_TIDY_DEFINITIONS "CLANG_TIDY_SHA1=${clang_tidy_sha1}")
             unset(clang_tidy_sha1)
+            # configure_file(${PROJECT_SOURCE_DIR}/.clang-tidy ${PROJECT_SOURCE_DIR}/.clang-tidy COPYONLY)
         endif()
-        configure_file(${PROJECT_SOURCE_DIR}/.clang-tidy ${PROJECT_SOURCE_DIR}/.clang-tidy COPYONLY)
     endif()
 endmacro()

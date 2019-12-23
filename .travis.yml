@@ -232,30 +232,24 @@ install:
   - env
   - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow gperftools
   - source activate pyctest
-  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DBUILD_STATIC_LIBS=OFF -DTIMEMORY_USE_CALIPER=ON -DTIMEMORY_USE_GOTCHA=ON -- -j2
+  # - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DBUILD_STATIC_LIBS=OFF -DTIMEMORY_USE_CALIPER=ON -DTIMEMORY_USE_GOTCHA=ON -- -j2
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-mpi ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
-  - travis_wait 45 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
+  - travis_wait 75 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
 
 script:
   - eval "${MATRIX_EVAL}"
-  - python -c "import timemory; print(timemory.__file__)"
-  - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
+  # - python -c "import timemory; print(timemory.__file__)"
+  - echo "Testing is Done"
 
 after_success:
   - eval "${MATRIX_EVAL}"
   - SUBMIT_COVERAGE=0
   - if [ -n "${COVERAGE}" ]; then SUBMIT_COVERAGE=1; fi
-  # Create lcov report
-  # capture coverage info
+  # Create lcov report: capture coverage info, filter, debugging, and upload
   - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --directory . --capture --output-file coverage.info ; fi
-  # filter out system and extra files.
-  # To also not include test code in coverage add them with full path to the patterns: '*/tests/*'
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' --output-file coverage.info; fi
-  # output coverage data for debugging (optional)
+  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' --output-file coverage.info; fi
   - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --list coverage.info; fi
-  # Uploading to CodeCov
-  # '-f' specifies file(s) to use and disables manual coverage gathering and file search which has already been done above
   - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi

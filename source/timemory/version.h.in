@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/version.h
+ * \headerfile timemory/version.h "timemory/version.h"
+ * Versioning header
+ *
+ */
+
 #pragma once
 
 //

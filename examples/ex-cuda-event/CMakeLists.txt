@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 # this is for internal use
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
@@ -18,7 +18,7 @@ if(USE_CUPTI)
     list(APPEND COMPONENTS cupti)
 endif()
 
-option(USE_PAPI "Enable PAPI" ON)
+option(USE_PAPI "Enable PAPI" OFF)
 if(USE_PAPI)
     list(APPEND COMPONENTS papi)
 endif()

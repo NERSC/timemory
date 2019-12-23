@@ -6,7 +6,7 @@ import argparse
 from timemory_types import components, mangled_enums, mangled_strings
 
 
-def generate_if_statement(component, idx, indent_tabs=2, spaces=4, vec_var="vec"):
+def generate_if_statement(component, idx, indent_tabs=2, spaces=4, var="_hashmap"):
     """
     This function generates a case label for C++
     """
@@ -16,16 +16,12 @@ def generate_if_statement(component, idx, indent_tabs=2, spaces=4, vec_var="vec"
         strcomponent += [component]
     strcomponent.sort()
 
-    checkstatement = ""
-    for i in range(0, len(strcomponent)):
-        checkstatement += "itr == \"{}\"".format(strcomponent[i])
-        if i + 1 < len(strcomponent):
-            checkstatement += " || "
-
     tab = " " * spaces * indent_tabs
-    cond = "if" if idx == 0 else "else if"
-    return "{}{}({}) {} {}.push_back({}); {}".format(
-        tab, cond, checkstatement, "{", vec_var, enumeration.upper(), "}")
+    statement = ""
+    for comp in strcomponent:
+        statement = '{}{}{}["{}"] = {};\n'.format(
+            statement, tab, var, comp, enumeration.upper())
+    return statement
 
 
 if __name__ == "__main__":
@@ -50,11 +46,12 @@ if __name__ == "__main__":
                         help="Replace area between '{}' and '{}' in the output file".format(rbegin, rend))
     parser.add_argument("-c", "--config", help="alternative to -i/--input when replacing",
                         type=str, default=None)
-    parser.add_argument("-v", "--vec-var", help="Name of the enumeration vector variable",
-                        type=str, default="vec")
+    parser.add_argument("-v", "--var", help="Name of the map variable",
+                        type=str, default="_instance")
     parser.add_argument("-I", "--iter-var", help="Name of the iteration variable",
                         type=str, default="itr")
-    parser.add_argument("-V", "--verbose", help="Enable verbosity", default=0, type=int)
+    parser.add_argument("-V", "--verbose",
+                        help="Enable verbosity", default=0, type=int)
 
     args = parser.parse_args()
 
@@ -93,16 +90,22 @@ if __name__ == "__main__":
             component_options.append(component)
     component_options.sort()
 
-    outdata = ""
+    tab = " " * args.spaces_per_tab * args.tabs_per_indent
+    btab = " " * args.spaces_per_tab * (args.tabs_per_indent - 1)
+    outdata = "{}static auto _generate = []() {}\n{}component_hash_map_t _instance;\n".format(btab, '{', tab)
+
     idx = 0
     for component in components:
-        outdata += "{}\n".format(generate_if_statement(component, idx,
-                                                       args.tabs_per_indent, args.spaces_per_tab,
-                                                       args.vec_var))
+        outdata += "{}".format(generate_if_statement(component, idx,
+                                                     args.tabs_per_indent, args.spaces_per_tab,
+                                                     args.var))
         idx += 1
-    tab = " " * args.spaces_per_tab * args.tabs_per_indent
-    outdata += '{}else {} fprintf(stderr, "Unknown component label: %s{}", {}.c_str()); {}'.format(
-        tab, "{", ". Valid choices are: {}\\n".format(component_options), args.iter_var, "}")
+    outdata += "{}return _instance;\n{}{}\n".format(tab, btab, '};')
+
+    message = '{}static auto errmsg = [](const std::string& {}) {} fprintf(stderr, "Unknown component label: %s{}", {}.c_str()); {};'.format(
+        btab, args.iter_var, "{", ". Valid choices are: {}\\n".format(component_options), args.iter_var, "}")
+
+    outdata += "\n{}".format(message)
 
     if subdata is not None:
         try:

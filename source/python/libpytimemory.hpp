@@ -24,6 +24,10 @@
 
 #pragma once
 
+#if !defined(TIMEMORY_EXTERN_TEMPLATES)
+#    define TIMEMORY_EXTERN_TEMPLATES
+#endif
+
 //======================================================================================//
 // disables a bunch of warnings
 //
@@ -56,10 +60,10 @@
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
 
-#include "timemory/backends/mpi.hpp"
-#include "timemory/bits/settings.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/enum.h"
 #include "timemory/manager.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/variadic/auto_list.hpp"
@@ -98,14 +102,9 @@ using component_enum_vec = std::vector<TIMEMORY_COMPONENT>;
 class manager_wrapper
 {
 public:
-    manager_wrapper()
-    : m_manager(manager_t::instance().get())
-    {}
-
-    ~manager_wrapper() {}
-
-    // ensures thread-local version is called
-    manager_t* get() { return manager_t::instance().get(); }
+    manager_wrapper();
+    ~manager_wrapper();
+    manager_t* get();
 
 protected:
     manager_t* m_manager;

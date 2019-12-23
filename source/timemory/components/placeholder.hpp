@@ -95,10 +95,6 @@ namespace trait
 template <typename... _Types>
 struct is_available<component::placeholder<_Types...>> : std::false_type
 {};
-
-template <typename... _Types>
-struct external_output_handling<component::placeholder<_Types...>> : std::true_type
-{};
 }  // namespace trait
 
 }  // namespace tim

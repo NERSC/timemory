@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/cache_size.hpp
+ * \headerfile timemory/ert/cache_size.hpp "timemory/ert/cache_size.hpp"
+ * Provides routines for getting cache information
+ *
+ */
+
 #pragma once
 
 #include <array>
@@ -131,7 +137,7 @@ cache_size(const int& _level)
     fpath << "/sys/devices/system/cpu/cpu0/cache/index" << level << "/";
 
     // files to read
-    static thread_local std::array<std::string, 3> files(
+    const std::array<std::string, 3> files(
         { { "number_of_sets", "ways_of_associativity", "coherency_line_size" } });
 
     uint64_t product = 1;
@@ -217,7 +223,7 @@ get_max()
     {
         try
         {
-            auto sz = impl::cache_size(level);
+            size_t sz = impl::cache_size(level);
             // if this succeeded, we can return the value
             return sz;
         } catch(...)

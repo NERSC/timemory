@@ -23,14 +23,15 @@
 //  IN THE SOFTWARE.
 //
 
-/** \file mpi.hpp
- * \headerfile mpi.hpp "timemory/mpi.hpp"
+/** \file backends/mpi.hpp
+ * \headerfile backends/mpi.hpp "timemory/backends/mpi.hpp"
  * Defines mpi functions and dummy functions when compiled without MPI
  *
  */
 
 #pragma once
 
+#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
 #include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
@@ -53,6 +54,24 @@ using info_t                            = MPI_Info;
 static const comm_t  comm_world_v       = MPI_COMM_WORLD;
 static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
+namespace threading
+{
+enum : int
+{
+    /// Only one thread will execute.
+    single = MPI_THREAD_SINGLE,
+    /// Only main thread will do MPI calls. The process may be multi-threaded, but only
+    /// the main thread will make MPI calls (all MPI calls are funneled to the main
+    /// thread)
+    funneled = MPI_THREAD_FUNNELED,
+    /// Only one thread at the time do MPI calls. The process may be multi-threaded, and
+    /// multiple threads may make MPI calls, but only one at a time: MPI calls are not
+    /// made concurrently from two distinct threads (all MPI calls are serialized).
+    serialized = MPI_THREAD_SERIALIZED,
+    /// Multiple thread may do MPI calls with no restrictions.
+    multiple = MPI_THREAD_MULTIPLE
+};
+}  // namespace threading
 #else
 // dummy MPI types
 using comm_t                            = int32_t;
@@ -60,11 +79,54 @@ using info_t                            = int32_t;
 static const comm_t  comm_world_v       = 0;
 static const info_t  info_null_v        = 0;
 static const int32_t comm_type_shared_v = 0;
+namespace threading
+{
+enum : int
+{
+    /// Only one thread will execute.
+    single = 0,
+    /// Only main thread will do MPI calls. The process may be multi-threaded, but only
+    /// the main thread will make MPI calls (all MPI calls are funneled to the main
+    /// thread)
+    funneled = 1,
+    /// Only one thread at the time do MPI calls. The process may be multi-threaded, and
+    /// multiple threads may make MPI calls, but only one at a time: MPI calls are not
+    /// made concurrently from two distinct threads (all MPI calls are serialized).
+    serialized = 2,
+    /// Multiple thread may do MPI calls with no restrictions.
+    multiple = 3
+};
+}  // namespace threading
 #endif
 
 template <typename _Tp>
 using communicator_map_t = std::unordered_map<comm_t, _Tp>;
 
+inline int32_t
+rank(comm_t comm = comm_world_v);
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+check_error(int err_code)
+{
+#if defined(TIMEMORY_USE_MPI)
+    if(err_code != MPI_SUCCESS)
+    {
+        int  len = 0;
+        char msg[1024];
+        MPI_Error_string(err_code, msg, &len);
+        int idx   = (len < 1023) ? len + 1 : 1023;
+        msg[idx]  = '\0';
+        int _rank = rank();
+        printf("[%i]> Error code (%i): %s\n", _rank, err_code, msg);
+    }
+    return (err_code == MPI_SUCCESS);
+#else
+    consume_parameters(err_code);
+    return false;
+#endif
+}
 //--------------------------------------------------------------------------------------//
 
 inline void
@@ -113,7 +175,44 @@ initialize(int& argc, char**& argv)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(!is_initialized())
-        MPI_Init(&argc, &argv);
+    {
+        using namespace threading;
+        bool success_v = false;
+        if(settings::mpi_thread())
+        {
+            auto _init = [&](int itr) {
+                int  _actual = -1;
+                auto ret     = MPI_Init_thread(&argc, &argv, itr, &_actual);
+                if(_actual != itr)
+                {
+                    std::stringstream ss;
+                    ss << "Warning! MPI_Init_thread does not support " << itr;
+                    std::cerr << ss.str() << std::flush;
+                    throw std::runtime_error(ss.str().c_str());
+                }
+                return check_error(ret);
+            };
+
+            // check_error(MPI_Init(&argc, &argv));
+            // int _provided = 0;
+            // MPI_Query_thread(&_provided);
+
+            auto _mpi_type = settings::mpi_thread_type();
+            if(_mpi_type == "single")
+                success_v = _init(single);
+            else if(_mpi_type == "serialized")
+                success_v = _init(serialized);
+            else if(_mpi_type == "funneled")
+                success_v = _init(funneled);
+            else if(_mpi_type == "multiple")
+                success_v = _init(multiple);
+            else
+                success_v = _init(multiple);
+        }
+
+        if(!success_v)
+            check_error(MPI_Init(&argc, &argv));
+    }
 #else
     consume_parameters(argc, argv);
 #endif
@@ -124,12 +223,7 @@ initialize(int& argc, char**& argv)
 inline void
 initialize(int* argc, char*** argv)
 {
-#if defined(TIMEMORY_USE_MPI)
-    if(!is_initialized())
-        MPI_Init(argc, argv);
-#else
-    consume_parameters(argc, argv);
-#endif
+    initialize(*argc, *argv);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -155,7 +249,7 @@ finalize()
 //--------------------------------------------------------------------------------------//
 
 inline int32_t
-rank(comm_t comm = comm_world_v)
+rank(comm_t comm)
 {
     int32_t _rank = 0;
 #if defined(TIMEMORY_USE_MPI)
@@ -294,6 +388,45 @@ get_node_index()
     if(!is_initialized())
         return 0;
     return rank() / get_num_ranks_per_node();
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+send(const std::string& str, int dest, int tag, comm_t comm)
+{
+#if defined(TIMEMORY_USE_MPI)
+    unsigned long long len = str.size();
+    MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm);
+    if(len != 0)
+        MPI_Send(const_cast<char*>(str.data()), len, MPI_CHAR, dest, tag, comm);
+#else
+    consume_parameters(str, dest, tag, comm);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+recv(std::string& str, int src, int tag, comm_t comm)
+{
+#if defined(TIMEMORY_USE_MPI)
+    unsigned long long len;
+    MPI_Status         s;
+    MPI_Recv(&len, 1, MPI_UNSIGNED_LONG_LONG, src, tag, comm, &s);
+    if(len != 0)
+    {
+        std::vector<char> tmp(len);
+        MPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s);
+        str.assign(tmp.begin(), tmp.end());
+    }
+    else
+    {
+        str.clear();
+    }
+#else
+    consume_parameters(str, src, tag, comm);
+#endif
 }
 
 //--------------------------------------------------------------------------------------//

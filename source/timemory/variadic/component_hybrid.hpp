@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file component_hybrid.hpp
- * \headerfile component_hybrid.hpp "timemory/variadic/component_hybrid.hpp"
+/** \file timemory/variadic/component_hybrid.hpp
+ * \headerfile variadic/component_hybrid.hpp "timemory/variadic/component_hybrid.hpp"
  * This is the C++ class that bundles together components and enables
  * operation on the components as a single entity
  *
@@ -42,6 +42,7 @@
 #include <iostream>
 #include <string>
 
+#include "timemory/general/source_location.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/types.hpp"
@@ -56,7 +57,8 @@ namespace tim
 template <typename _CompTuple, typename _CompList>
 class component_hybrid
 {
-    static_assert(_CompTuple::is_component_tuple && _CompList::is_component_list,
+    static_assert((_CompTuple::is_component_tuple || _CompTuple::is_auto_tuple) &&
+                      (_CompList::is_component_list || _CompList::is_auto_list),
                   "Error! _CompTuple must be tim::component_tuple<...> and _CompList "
                   "must be tim::component_list<...>");
 
@@ -70,8 +72,8 @@ class component_hybrid
 
 public:
     using this_type       = component_hybrid<_CompTuple, _CompList>;
-    using tuple_type      = _CompTuple;
-    using list_type       = _CompList;
+    using tuple_type      = typename _CompTuple::component_type;
+    using list_type       = typename _CompList::component_type;
     using tuple_data_type = typename tuple_type::data_type;
     using list_data_type  = typename list_type::data_type;
     using data_type       = decltype(std::tuple_cat(std::declval<tuple_type>().data(),
@@ -95,12 +97,37 @@ public:
     static constexpr bool is_component_list   = false;
     static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = true;
+    static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_list        = false;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = false;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = false;
+
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
         (tuple_type::contains_gotcha || list_type::contains_gotcha);
 
     using size_type           = int64_t;
     using captured_location_t = source_location::captured;
+    using init_func_t         = std::function<void(this_type&)>;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    static void init_storage()
+    {
+        tuple_type::init_storage();
+        list_type::init_storage();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type&) {};
+        return _instance;
+    }
 
 public:
     explicit component_hybrid()
@@ -108,21 +135,27 @@ public:
     , m_list()
     {}
 
+    template <typename _Func = init_func_t>
     explicit component_hybrid(const string_t& key, const bool& store = false,
-                              const bool& flat = settings::flat_profile())
+                              const bool&  flat  = settings::flat_profile(),
+                              const _Func& _func = this_type::get_initializer())
     : m_tuple(key, store, flat)
     , m_list(key, store, flat)
     {
+        _func(*this);
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
         m_list.m_print_prefix = false;
     }
 
+    template <typename _Func = init_func_t>
     explicit component_hybrid(const captured_location_t& loc, const bool& store = false,
-                              const bool& flat = settings::flat_profile())
+                              const bool&  flat  = settings::flat_profile(),
+                              const _Func& _func = this_type::get_initializer())
     : m_tuple(loc, store, flat)
     , m_list(loc, store, flat)
     {
+        _func(*this);
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
         m_list.m_print_prefix = false;
@@ -221,6 +254,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // construct the objects that have constructors with matching arguments
+    //
+    template <typename... _Args>
+    void construct(_Args&&... _args)
+    {
+        m_tuple.construct(std::forward<_Args>(_args)...);
+        m_list.construct(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
@@ -243,13 +286,13 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a customized operation (typically for GOTCHA)
+    // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>
-    void customize(_Args&&... _args)
+    void audit(_Args&&... _args)
     {
-        m_tuple.customize(std::forward<_Args>(_args)...);
-        m_list.customize(std::forward<_Args>(_args)...);
+        m_tuple.audit(std::forward<_Args>(_args)...);
+        m_list.audit(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -424,14 +467,6 @@ public:
     {
         tuple_type::print_storage();
         list_type::print_storage();
-    }
-
-public:
-    //----------------------------------------------------------------------------------//
-    static void init_storage()
-    {
-        tuple_type::init_storage();
-        list_type::init_storage();
     }
 
 public:

@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file utility.hpp
- * \headerfile utility.hpp "timemory/utility/utility.hpp"
+/** \file utility/utility.hpp
+ * \headerfile utility/utility.hpp "timemory/utility/utility.hpp"
  * General utility functions
  *
  */
@@ -73,7 +73,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-// stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
+// stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual
 //   "stringify-ing" after the macro has been substituted by it's result
 #if !defined(TIMEMORY_STRINGIZE)
 #    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
@@ -314,190 +314,6 @@ delimit(const string_t& line, const string_t& delimiters = ",; ",
     return _result;
 }
 
-//======================================================================================//
-//
-//  Environment
-//
-//======================================================================================//
-
-class env_settings
-{
-public:
-    using mutex_t     = std::recursive_mutex;
-    using string_t    = std::string;
-    using env_map_t   = std::map<string_t, string_t>;
-    using env_uomap_t = std::map<string_t, string_t>;
-    using env_pair_t  = std::pair<string_t, string_t>;
-
-public:
-    static env_settings* instance();
-
-public:
-    template <typename _Tp>
-    void insert(const std::string& env_id, _Tp val)
-    {
-#if !defined(TIMEMORY_DISABLE_STORE_ENVIRONMENT)
-        std::stringstream ss;
-        ss << std::boolalpha << val;
-
-        auto_lock_t lk(env_settings::mutex(), std::defer_lock);
-        if(!lk.owns_lock())
-            lk.lock();
-        if(m_env.find(env_id) == m_env.end() || m_env.find(env_id)->second != ss.str())
-            m_env[env_id] = ss.str();
-#endif
-    }
-
-    env_map_t get() const
-    {
-        auto      _tmp = m_env;
-        env_map_t _ret;
-        for(const auto& itr : _tmp)
-            _ret[itr.first] = itr.second;
-        return _ret;
-    }
-
-    static mutex_t& mutex()
-    {
-        static mutex_t m_mutex;
-        return m_mutex;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const env_settings& env)
-    {
-        std::stringstream filler;
-        filler.fill('#');
-        filler << std::setw(90) << "";
-        std::stringstream ss;
-        ss << filler.str() << "\n# Environment settings:\n";
-
-        auto_lock_t lk(env_settings::mutex(), std::defer_lock);
-        if(!lk.owns_lock())
-            lk.lock();
-        auto _data = env.get();
-        lk.unlock();
-
-        for(const auto& itr : _data)
-        {
-            ss << "# " << std::setw(35) << std::right << itr.first << "\t = \t"
-               << std::left << itr.second << "\n";
-        }
-        ss << filler.str();
-        os << ss.str() << std::endl;
-        return os;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // serialization
-    //
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
-    {
-        auto_lock_t lk(env_settings::mutex(), std::defer_lock);
-        if(!lk.owns_lock())
-            lk.lock();
-        ar(serializer::make_nvp("environment", m_env));
-    }
-
-private:
-    env_uomap_t m_env;
-};
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_EXTERN_INIT)
-inline env_settings*
-env_settings::instance()
-{
-    static env_settings* _instance = new env_settings();
-    return _instance;
-}
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-_Tp
-get_env(const std::string& env_id, _Tp _default = _Tp())
-{
-    char* env_var = std::getenv(env_id.c_str());
-    if(env_var)
-    {
-        std::string        str_var = std::string(env_var);
-        std::istringstream iss(str_var);
-        _Tp                var = _Tp();
-        iss >> var;
-        env_settings::instance()->insert<_Tp>(env_id, var);
-        return var;
-    }
-    // record default value
-    env_settings::instance()->insert<_Tp>(env_id, _default);
-
-    // return default if not specified in environment
-    return _default;
-}
-
-//--------------------------------------------------------------------------------------//
-// specialization for string since the above will have issues if string
-// includes spaces
-template <>
-inline std::string
-get_env(const std::string& env_id, std::string _default)
-{
-    char* env_var = std::getenv(env_id.c_str());
-    if(env_var)
-    {
-        std::stringstream ss;
-        ss << env_var;
-        env_settings::instance()->insert(env_id, ss.str());
-        return ss.str();
-    }
-    // record default value
-    env_settings::instance()->insert(env_id, _default);
-
-    // return default if not specified in environment
-    return _default;
-}
-
-//--------------------------------------------------------------------------------------//
-//  overload for boolean
-//
-template <>
-inline bool
-get_env(const std::string& env_id, bool _default)
-{
-    char* env_var = std::getenv(env_id.c_str());
-    if(env_var)
-    {
-        std::string var = std::string(env_var);
-        bool        val = true;
-        if(var.find_first_not_of("0123456789") == std::string::npos)
-            val = (bool) atoi(var.c_str());
-        else
-        {
-            for(auto& itr : var)
-                itr = tolower(itr);
-            if(var == "off" || var == "false")
-                val = false;
-        }
-        env_settings::instance()->insert<bool>(env_id, val);
-        return val;
-    }
-    // record default value
-    env_settings::instance()->insert<bool>(env_id, _default);
-
-    // return default if not specified in environment
-    return _default;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-print_env(std::ostream& os = std::cout)
-{
-    os << (*env_settings::instance());
-}
-
 //--------------------------------------------------------------------------------------//
 //  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
 inline str_list_t
@@ -698,7 +514,7 @@ template <typename CountedType>
 int64_t&
 static_counted_object<CountedType>::thread_number()
 {
-    static std::atomic<int64_t> _all_instance;
+    static std::atomic<int64_t> _all_instance(0);
     static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }
@@ -796,7 +612,7 @@ template <typename CountedType>
 int64_t&
 counted_object<CountedType>::thread_number()
 {
-    static std::atomic<int64_t> _all_instance;
+    static std::atomic<int64_t> _all_instance(0);
     static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }
@@ -888,7 +704,7 @@ template <typename HashedType>
 int64_t&
 hashed_object<HashedType>::thread_number()
 {
-    static std::atomic<int64_t> _all_instance;
+    static std::atomic<int64_t> _all_instance(0);
     static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }

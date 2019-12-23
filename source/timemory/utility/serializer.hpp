@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file serializer.hpp
- * \headerfile serializer.hpp "timemory/utility/serializer.hpp"
+/** \file utility/serializer.hpp
+ * \headerfile utility/serializer.hpp "timemory/utility/serializer.hpp"
  * Headers for serialization
  */
 
@@ -48,6 +48,7 @@
 #include <cereal/types/common.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/memory.hpp>
+#include <cereal/types/set.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/utility.hpp>
@@ -55,20 +56,36 @@
 
 // archives
 #include <cereal/archives/json.hpp>
+#if defined(TIMEMORY_INCLUDE_XML_ARCHIVE)
+#    include <cereal/archives/xml.hpp>
+#endif
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
-namespace serializer
+using setting_parse_callback_t     = std::function<void()>;
+using setting_parse_callback_vec_t = std::vector<setting_parse_callback_t>;
+
+//--------------------------------------------------------------------------------------//
+
+namespace tim
 {
-//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_EXTERN_INIT)
 
-using cereal::make_nvp;
+extern setting_parse_callback_vec_t&
+get_parse_callbacks();
 
-//--------------------------------------------------------------------------------------//
+#else
 
-}  // namespace serializer
+inline setting_parse_callback_vec_t&
+get_parse_callbacks()
+{
+    static setting_parse_callback_vec_t _instance;
+    return _instance;
+}
 
-//======================================================================================//
+#endif
+
+}  // namespace tim
 
 #if defined(__GNUC__) && (__GNUC__ > 7)
 #    pragma GCC diagnostic pop

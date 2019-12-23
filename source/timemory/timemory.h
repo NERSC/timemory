@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/timemory.h
+ * \headerfile timemory/timemory.h "timemory/timemory.h"
+ * Generic header for C and/or C++
+ *
+ */
+
 #pragma once
 
 #if defined(__cplusplus)

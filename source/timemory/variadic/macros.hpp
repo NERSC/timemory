@@ -22,10 +22,10 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file auto_macros.hpp
- * \headerfile auto_macros.hpp "timemory/variadic/macros.hpp"
+/** \file timemory/variadic/auto_macros.hpp
+ * \headerfile timemory/variadic/auto_macros.hpp "timemory/variadic/macros.hpp"
  * Generic macros that are intended to be building-blocks for other macros, e.g.
- * TIMEMORY_TUPLE and TIMEMORY_TIMER
+ * TIMEMORY_MARKER, TIMEMORY_HANDLE, TIMEMORY_CALIPER, etc.
  *
  */
 
@@ -34,8 +34,8 @@
 #include <cstdint>
 #include <string>
 
-#include "timemory/bits/types.hpp"
 #include "timemory/compat/macros.h"
+#include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 # this is for internal use
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory" AND NOT TIMEMORY_USE_PAPI)
@@ -8,9 +8,9 @@ endif()
 project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)
-set(COMPONENTS papi threading compile-options analysis-tools arch)
+set(COMPONENTS compile-options analysis-tools cpu-roofline)
 
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS mpi)
 
 add_library(cpu-fp-single INTERFACE)
 add_library(cpu-fp-double INTERFACE)

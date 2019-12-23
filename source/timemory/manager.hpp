@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file manager.hpp
- * \headerfile manager.hpp "timemory/manager.hpp"
+/** \file timemory/manager.hpp
+ * \headerfile timemory/manager.hpp "timemory/manager.hpp"
  * Static singleton handler that is not templated. In general, this is the
  * first object created and last object destroyed. It should be utilized to
  * store type-independent data
@@ -35,23 +35,29 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/backends/papi.hpp"
+#include "timemory/backends/mpi.hpp"
+#include "timemory/general/hash.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/utility/base_storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/singleton.hpp"
-#include "timemory/utility/storage.hpp"
 #include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 
 #include <atomic>
 #include <cstdint>
+#include <deque>
+#include <functional>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <tuple>
-#include <unordered_map>
+#include <utility>
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,7 +82,9 @@ public:
     using mutex_t          = std::mutex;
     using auto_lock_t      = std::unique_lock<mutex_t>;
     using finalizer_func_t = std::function<void()>;
-    using finalizer_list_t = std::deque<finalizer_func_t>;
+    using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
+    using finalizer_list_t = std::deque<finalizer_pair_t>;
+    using strmap_t         = std::map<string_t, std::set<string_t>>;
 
 public:
     // Constructor and Destructors
@@ -91,9 +99,22 @@ public:
 
     // storage-types add functors to destroy the instances
     template <typename _Func>
-    void add_finalizer(_Func&&, bool);
-
+    void add_finalizer(const std::string&, _Func&&, bool);
+    void remove_finalizer(const std::string&);
     void finalize();
+
+    void add_text_output(const string_t& _label, const string_t& _file)
+    {
+        m_text_files[_label].insert(_file);
+    }
+
+    void add_json_output(const string_t& _label, const string_t& _file)
+    {
+        m_json_files[_label].insert(_file);
+    }
+
+    void    write_metadata(const char* = "");
+    int32_t get_rank() const { return m_rank; }
 
 public:
     // Public static functions
@@ -115,11 +136,19 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
     {
-        if(!component::properties<_Tp>::has_storage())
+        using storage_type = typename _Tp::storage_type;
+        static thread_local std::atomic<int> _once(0);
+        if(_once++ == 0 && !component::state<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::instance();
-            ret->initialize();
+            auto ret = storage_type::instance();
+            if(ret)
+                ret->initialize();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -137,12 +166,18 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _print_storage()
     {
-        if(component::properties<_Tp>::has_storage())
+        using storage_type = typename _Tp::storage_type;
+        // if(component::state<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
+            auto ret = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 ret->print();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -160,12 +195,18 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _clear()
     {
-        if(component::properties<_Tp>::has_storage())
+        using storage_type = typename _Tp::storage_type;
+        // if(component::state<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
+            auto ret = storage_type::noninit_instance();
             if(ret)
                 ret->data().reset();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -183,12 +224,18 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _serialize(_Archive& ar)
     {
-        if(component::properties<_Tp>::has_storage())
+        using storage_type = typename _Tp::storage_type;
+        // if(component::state<_Tp>::has_storage())
         {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
+            auto ret = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 ret->_serialize(ar);
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
         }
     }
 
@@ -203,24 +250,32 @@ private:
     //----------------------------------------------------------------------------------//
     //
     template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _size(uint64_t& _sz)
+    {
+        auto label         = tim::demangle<_Tp>();
+        using storage_type = typename _Tp::storage_type;
+        label += std::string(" (") + tim::demangle<storage_type>() + ")";
+        // if(component::state<_Tp>::has_storage())
+        {
+            auto ret = storage_type::noninit_instance();
+            if(ret && !ret->empty())
+                _sz += ret->size();
+
+            if(settings::debug())
+                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                       demangle<_Tp>().c_str(), (void*) ret,
+                       (component::state<_Tp>::has_storage()) ? "true" : "false",
+                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
+        }
+    }
+
+    template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
     void _size(uint64_t& _sz)
     {
         _size<_Tp>(_sz);
         _size<_Tail...>(_sz);
-    }
-
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
-    void _size(uint64_t& _sz)
-    {
-        if(component::properties<_Tp>::has_storage())
-        {
-            using storage_type = typename _Tp::storage_type;
-            auto ret           = storage_type::noninit_instance();
-            if(ret && !ret->empty())
-                _sz += ret->size();
-        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -243,11 +298,15 @@ private:
                 // args: precision, spacing, indent size
                 cereal::JSONOutputArchive::Options opts(12, spacing, 4);
                 cereal::JSONOutputArchive          oa(ss, opts);
-                oa.setNextName("rank");
+                oa.setNextName("timemory");
                 oa.startNode();
-                auto rank = mpi::rank();
-                oa(cereal::make_nvp("rank_id", rank));
-                _manager->_serialize<decltype(oa), _Types...>(oa);
+                {
+                    oa.setNextName("ranks");
+                    oa.startNode();
+                    oa.makeArray();
+                    _manager->_serialize<decltype(oa), _Types...>(oa);
+                    oa.finishNode();
+                }
                 oa.finishNode();
             }
             return ss.str();
@@ -333,6 +392,16 @@ public:
         using base_type::size;
     };
 
+    //----------------------------------------------------------------------------------//
+    //
+    /// used by storage classes to ensure that the singleton instance is managed
+    /// via the master thread of holding the manager instance
+    template <typename _Tp>
+    auto get_singleton() -> decltype(_Tp::instance())
+    {
+        return _Tp::instance();
+    }
+
 private:
     template <typename... _Types>
     friend struct get_storage;
@@ -355,8 +424,13 @@ protected:
 private:
     /// number of timing manager instances
     static std::atomic<int32_t>& f_manager_instance_count();
+    /// notifies that it is finalizing
+    bool m_is_finalizing = false;
     /// instance id
-    int32_t m_instance_count;
+    int32_t         m_instance_count;
+    int32_t         m_rank;
+    string_t        m_metadata_fname;
+    std::thread::id m_thread_id;
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
     graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
@@ -364,6 +438,9 @@ private:
     finalizer_list_t       m_master_finalizers;
     finalizer_list_t       m_worker_finalizers;
     mutex_t                m_mutex;
+    auto_lock_t*           m_lock = nullptr;
+    strmap_t               m_text_files;
+    strmap_t               m_json_files;
 
 private:
     /// num-threads based on number of managers created

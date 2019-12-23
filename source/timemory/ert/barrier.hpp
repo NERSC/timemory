@@ -22,11 +22,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/barrier.hpp
+ * \headerfile timemory/ert/barrier.hpp "timemory/ert/barrier.hpp"
+ * Provides multi-threading barriers
+ *
+ */
+
 #pragma once
 
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <future>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
@@ -51,7 +58,13 @@ public:
 
 public:
     explicit thread_barrier(const size_t& nthreads)
-    : m_num_threads(nthreads)
+    : m_master(std::this_thread::get_id())
+    , m_num_threads(nthreads)
+    , m_waiting(0)
+    , m_counter(0)
+    , m_notify(0)
+    , m_promise(std::promise<void>())
+    , m_future(m_promise.get_future().share())
     {}
 
     thread_barrier(const thread_barrier&) = delete;
@@ -105,6 +118,36 @@ public:
             m_counter = 0;  // reset barrier
     }
 
+    // workers increment an atomic until and wait on future until
+    // master sets the promise once the
+    void notify_wait()
+    {
+        if(is_master())
+        {
+            lock_t lk(m_mutex);
+            while(m_notify.load() < m_num_threads)
+                m_cv.wait(lk);
+            m_promise.set_value();
+            while(m_notify.load() > 0)
+            {
+            }
+            std::promise<void>       _ptmp;
+            std::shared_future<void> _ftmp = _ptmp.get_future().share();
+            std::swap(m_promise, _ptmp);
+            std::swap(m_future, _ftmp);
+        }
+        else
+        {
+            {
+                lock_t lk(m_mutex);
+                ++m_notify;
+                m_cv.notify_one();
+            }
+            m_future.wait();
+            --m_notify;
+        }
+    }
+
     // check if this is the thread the created barrier
     bool is_master() const { return std::this_thread::get_id() == m_master; }
 
@@ -117,6 +160,9 @@ private:
     std::atomic_flag spin_lock     = ATOMIC_FLAG_INIT;  // for spin lock
     mutex_t          m_mutex;
     condvar_t        m_cv;
+    std::atomic<size_type>   m_notify;
+    std::promise<void>       m_promise;
+    std::shared_future<void> m_future;
 };
 
 }  // namespace ert

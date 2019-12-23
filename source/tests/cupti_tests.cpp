@@ -280,7 +280,7 @@ TEST_F(cupti_tests, activity)
 
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
-    cupti_activity::invoke_global_finalize(0);
+    cupti_activity::global_finalize(0);
     num_iter /= 2;
 
     ASSERT_NEAR(real_diff, expected_diff, expected_tol);
@@ -634,16 +634,24 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+
     tim::settings::scientific()   = false;
     tim::settings::timing_units() = "msec";
     tim::settings::precision()    = 6;
     tim::settings::width()        = 12;
     tim::settings::debug()        = false;
-    tim::settings::verbose()      = 1;
-    tim::timemory_init(argc, argv);
+    tim::settings::verbose()      = 0;
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
+
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
 
     return RUN_ALL_TESTS();
 }

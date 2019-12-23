@@ -16,18 +16,22 @@ class Timemory(CMakePackage):
     maintainers = ['jrmadsen']
 
     version('master', branch='master', submodules=True)
+    version('develop', branch='develop', submodules=True)
 
     variant('python', default=True, description='Enable Python support')
     variant('mpi', default=False, description='Enable MPI support')
+    variant('tau', default=True, description='Enable TAU support')
     variant('papi', default=True, description='Enable PAPI support')
     variant('cuda', default=True, description='Enable CUDA support')
     variant('cupti', default=True, description='Enable CUPTI support')
+    variant('upcxx', default=False, description='Enable UPC++ support')
     variant('gotcha', default=True, description='Enable GOTCHA support')
+    variant('likwid', default=True, description='Enable LIKWID support')
     variant('caliper', default=True, description='Enable Caliper support')
     variant('gperftools', default=True,
             description='Enable gperftools support')
 
-    depends_on('cmake@3.10:', type='build')
+    depends_on('cmake@3.11:', type='build')
 
     extends('python', when='+python')
     depends_on('python@3:', when='+python', type=('build', 'run'))
@@ -35,9 +39,13 @@ class Timemory(CMakePackage):
     depends_on('py-pillow', when='+python', type=('run'))
     depends_on('py-matplotlib', when='+python', type=('run'))
     depends_on('mpi', when='+mpi')
+    depends_on('tau', when='+tau')
     depends_on('papi', when='+papi')
     depends_on('cuda', when='+cuda')
+    depends_on('cuda', when='+cupti')
+    depends_on('upcxx', when='+upcxx')
     depends_on('gotcha', when='+gotcha')
+    depends_on('likwid', when='+likwid')
     depends_on('caliper', when='+caliper')
     depends_on('gperftools', when='+gperftools')
 
@@ -67,6 +75,16 @@ class Timemory(CMakePackage):
             args.append('-DTIMEMORY_USE_CALIPER=ON')
         else:
             args.append('-DTIMEMORY_USE_CALIPER=OFF')
+
+        if '+tau' in spec:
+            args.append('-DTIMEMORY_USE_TAU=ON')
+        else:
+            args.append('-DTIMEMORY_USE_TAU=OFF')
+
+        if '+likwid' in spec:
+            args.append('-DTIMEMORY_USE_LIKWID=ON')
+        else:
+            args.append('-DTIMEMORY_USE_LIKWID=OFF')
 
         if '+papi' in spec:
             args.append('-DTIMEMORY_USE_PAPI=ON')

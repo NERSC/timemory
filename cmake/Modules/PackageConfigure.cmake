@@ -20,7 +20,7 @@ foreach(_LANG C CXX CUDA)
 endforeach()
 
 set(_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-if(TIMEMORY_BUILD_PYTHON)
+if(TIMEMORY_BUILD_PYTHON OR TIMEMORY_USE_PYTHON)
     execute_process(COMMAND
         ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.prefix))"
         OUTPUT_VARIABLE _INSTALL_PREFIX

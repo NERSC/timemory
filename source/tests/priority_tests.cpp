@@ -85,7 +85,7 @@ struct test_clock : public base<test_clock<Idx>>
     {
         auto tmp = record();
         accum += (tmp - value);
-        value = std::move(tmp);
+        value = tmp;
         set_stopped();
     }
 };
@@ -288,13 +288,20 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::timemory_init(argc, argv);
-    tim::settings::precision()   = 6;
-    tim::settings::width()       = 15;
+
+    tim::settings::precision() = 6;
+    tim::settings::width()     = 15;
+    tim::timemory_init(&argc, &argv);
     tim::settings::dart_output() = true;
     tim::settings::dart_count()  = 1;
     tim::settings::banner()      = false;
 
+    tim::settings::dart_type() = "peak_rss";
+    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    auto ret = RUN_ALL_TESTS();
+
+    tim::dmp::finalize();
+    return ret;
     return RUN_ALL_TESTS();
 }
 

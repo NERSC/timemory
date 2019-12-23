@@ -38,103 +38,66 @@ namespace tim
 {
 namespace policy
 {
-// these are policy classes
-struct serialization
-{};
-struct global_init
-{};
-struct global_finalize
-{};
-struct thread_init
-{};
-struct thread_finalize
-{};
+//======================================================================================//
 
-template <typename... _Policies>
-struct wrapper
+template <typename _Tp>
+struct instance_tracker
 {
-    using type = std::tuple<_Policies...>;
+    using type     = _Tp;
+    using int_type = int64_t;
+
+    instance_tracker()                        = default;
+    ~instance_tracker()                       = default;
+    instance_tracker(const instance_tracker&) = default;
+    instance_tracker(instance_tracker&&)      = default;
+    instance_tracker& operator=(const instance_tracker&) = default;
+    instance_tracker& operator=(instance_tracker&&) = default;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    static int_type get_started_count() { return get_started().load(); }
 
     //----------------------------------------------------------------------------------//
-    //  Policy is specified
+    //
+    static int_type get_thread_started_count() { return get_thread_started(); }
+
+protected:
     //----------------------------------------------------------------------------------//
-    template <typename _Tp, typename _Archive, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<serialization, typename _Polp::type>::value == true),
-                          int> = 0>
-    static void invoke_serialize(_Archive& ar, const unsigned int ver)
+    //
+    static std::atomic<int_type>& get_started()
     {
-        _Tp::invoke_serialize(ar, ver);
-    }
-
-    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == true),
-                          int> = 0>
-    static void invoke_global_init(_Store* _store)
-    {
-        _Tp::invoke_global_init(_store);
-    }
-
-    template <
-        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of<global_finalize, typename _Polp::type>::value == true),
-                    int> = 0>
-    static void invoke_global_finalize(_Store* _store)
-    {
-        _Tp::invoke_global_finalize(_store);
-    }
-
-    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<thread_init, typename _Polp::type>::value == true),
-                          int> = 0>
-    static void invoke_thread_init(_Store* _store)
-    {
-        _Tp::invoke_thread_init(_store);
-    }
-
-    template <
-        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of<thread_finalize, typename _Polp::type>::value == true),
-                    int> = 0>
-    static void invoke_thread_finalize(_Store* _store)
-    {
-        _Tp::invoke_thread_finalize(_store);
+        static std::atomic<int_type> _instance(0);
+        return _instance;
     }
 
     //----------------------------------------------------------------------------------//
-    //  Policy is NOT specified
+    //
+    static int_type& get_thread_started()
+    {
+        static thread_local int_type _instance = 0;
+        return _instance;
+    }
+
     //----------------------------------------------------------------------------------//
-    template <
-        typename _Tp, typename _Archive, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of<serialization, typename _Polp::type>::value == false),
-                    int> = 0>
-    static void invoke_serialize(_Archive&, const unsigned int)
-    {}
+    //
+    void start()
+    {
+        m_tot = get_started()++;
+        m_thr = get_thread_started()++;
+    }
 
-    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == false),
-                          int> = 0>
-    static void invoke_global_init(_Store*)
-    {}
+    //----------------------------------------------------------------------------------//
+    //
+    void stop()
+    {
+        m_tot = --get_started();
+        m_thr = --get_thread_started();
+    }
 
-    template <
-        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of<global_finalize, typename _Polp::type>::value == false),
-                    int> = 0>
-    static void invoke_global_finalize(_Store*)
-    {}
-
-    template <typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<thread_init, typename _Polp::type>::value == false),
-                          int> = 0>
-    static void invoke_thread_init(_Store*)
-    {}
-
-    template <
-        typename _Tp, typename _Store, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of<thread_finalize, typename _Polp::type>::value == false),
-                    int> = 0>
-    static void invoke_thread_finalize(_Store*)
-    {}
+protected:
+    int_type m_tot = 0;
+    int_type m_thr = 0;
 };
 
 }  // namespace policy

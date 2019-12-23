@@ -6,6 +6,9 @@
 #
 ##########################################################################################
 
+if(NOT TIMEMORY_BUILD_PYTHON AND NOT TIMEMORY_USE_PYTHON)
+    return()
+endif()
 
 unset(CMAKE_CXX_CLANG_TIDY)
 
@@ -37,6 +40,7 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-compile-options
     timemory-external-shared
     timemory-python-compile-options
+    timemory-mpip-library
     PRIVATE pybind11::module)
 
 if(TIMEMORY_USE_CUDA)

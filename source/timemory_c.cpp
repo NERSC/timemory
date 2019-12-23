@@ -30,7 +30,9 @@
  *
  */
 
-#define TIMEMORY_BUILD_EXTERN_INIT
+#if !defined(TIMEMORY_EXTERN_TEMPLATES)
+#    define TIMEMORY_EXTERN_TEMPLATES
+#endif
 
 #include "timemory/compat/library.h"
 #include "timemory/timemory.hpp"
@@ -176,14 +178,17 @@ extern "C"
 
         if(_mode == 0)
             return _extra;
-        else if(_mode == 1 && strlen(_extra) == 0)
+
+        if(_mode == 1 && strlen(_extra) == 0)
             return _func;
 
         free_cstr() = true;
 
         std::stringstream ss;
         if(_mode == 1)
+        {
             ss << _func << "/";
+        }
         else if(_mode == 2)
         {
             ss << _func << "/"
@@ -196,9 +201,13 @@ extern "C"
         if(buff)
         {
             if(strlen(_extra) == 0)
+            {
                 sprintf(buff, "%s", ss.str().c_str());
+            }
             else
+            {
                 sprintf(buff, "%s/%s", ss.str().c_str(), _extra);
+            }
         }
         return (const char*) buff;
     }

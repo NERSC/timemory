@@ -33,10 +33,10 @@ using tim::component::cpu_clock;
 using tim::component::cpu_util;
 using tim::component::page_rss;
 using tim::component::peak_rss;
-using tim::component::real_clock;
+using tim::component::wall_clock;
 
 // some using statements
-using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, page_rss, peak_rss>;
+using tuple_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util, page_rss, peak_rss>;
 using list_t  = tim::auto_timer_list_t;
 
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;

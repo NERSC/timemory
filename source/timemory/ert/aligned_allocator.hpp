@@ -22,6 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file timemory/ert/aligned_allocator.hpp
+ * \headerfile timemory/ert/aligned_allocator.hpp "timemory/ert/aligned_allocator.hpp"
+ * Provides an aligned allocator
+ *
+ */
+
 #pragma once
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -66,7 +72,7 @@
 #endif
 
 #include "timemory/backends/device.hpp"
-#include "timemory/bits/settings.hpp"
+#include "timemory/settings.hpp"
 
 namespace tim
 {
@@ -94,9 +100,7 @@ template <typename _Tp, typename _Device,
 _Tp*
 allocate_aligned(std::size_t size, std::size_t alignment)
 {
-#if defined(__INTEL_COMPILER)
-    return static_cast<_Tp*>(_mm_malloc(size * sizeof(_Tp), alignment));
-#elif defined(_ISOC11_SOURCE)
+#if defined(_ISOC11_SOURCE)
     return static_cast<_Tp*>(aligned_alloc(alignment, size * sizeof(_Tp)));
 #elif defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L)
     void* ptr = nullptr;
@@ -128,9 +132,7 @@ template <typename _Tp, typename _Device,
 void
 free_aligned(_Tp* ptr)
 {
-#if defined(__INTEL_COMPILER)
-    _mm_free(static_cast<void*>(ptr));
-#elif defined(_ISOC11_SOURCE) || defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L) ||      \
+#if defined(_ISOC11_SOURCE) || defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L) ||        \
     defined(_WINDOWS)
     free(static_cast<void*>(ptr));
 #else

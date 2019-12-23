@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file components.hpp
- * \headerfile components.hpp "timemory/components.hpp"
+/** \file timemory/components.hpp
+ * \headerfile timemory/components.hpp "timemory/components.hpp"
  * These are core tools provided by TiMemory. These tools can be used individually
  * or bundled together in a component_tuple (C++) or component_list (C, Python)
  *
@@ -41,6 +41,7 @@
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
+#include "timemory/components/user_bundle.hpp"
 
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
@@ -54,26 +55,43 @@
 
 // cuda event
 #if defined(TIMEMORY_USE_CUDA)
-#    include "timemory/components/cuda_event.hpp"
+#    include "timemory/components/cuda/event.hpp"
+#    include "timemory/components/cuda/profiler.hpp"
 #endif
 
 // nvtx marker
 #if defined(TIMEMORY_USE_NVTX)
-#    include "timemory/components/nvtx_marker.hpp"
+#    include "timemory/components/cuda/nvtx_marker.hpp"
+#endif
+
+// likwid
+#if defined(TIMEMORY_USE_LIKWID)
+#    include "timemory/components/likwid.hpp"
 #endif
 
 // GPU hardware counter components
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_activity.hpp"
-#    include "timemory/components/cupti_counters.hpp"
-#    include "timemory/components/gpu_roofline.hpp"
+#    include "timemory/components/cupti/activity.hpp"
+#    include "timemory/components/cupti/counters.hpp"
+#    include "timemory/components/roofline/gpu.hpp"
 #endif
 
 // CPU/GPU hardware counter components
 #if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/cpu_roofline.hpp"
-#    include "timemory/components/papi_array.hpp"
-#    include "timemory/components/papi_tuple.hpp"
+#    include "timemory/components/papi/array.hpp"
+#    include "timemory/components/papi/tuple.hpp"
+#    include "timemory/components/roofline/cpu.hpp"
+#endif
+
+// TAU component
+#if defined(TIMEMORY_USE_TAU)
+#    include "timemory/components/tau.hpp"
+#endif
+
+// VTune components
+#if defined(TIMEMORY_USE_VTUNE)
+#    include "timemory/components/vtune/event.hpp"
+#    include "timemory/components/vtune/frame.hpp"
 #endif
 
 #include "timemory/backends/cuda.hpp"
@@ -87,150 +105,7 @@
 //
 //======================================================================================//
 
-#include "timemory/enum.h"
-#include "timemory/mpl/apply.hpp"
-
-#include <algorithm>
-#include <cctype>
-#include <string>
-#include <vector>
-
-namespace tim
-{
-//--------------------------------------------------------------------------------------//
-//
-///  description:
-///      use this function to initialize a auto_list or component_list from a list
-///      of enumerations
-//
-///  usage:
-///      using namespace tim::component;
-///      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
-//
-///      auto obj = new optional_t(__FUNCTION__, __LINE__);
-///      tim::initialize(*obj, { CPU_CLOCK, CPU_UTIL });
-//
-///  typename... _ExtraArgs
-///      required because of extra "hidden" template parameters in STL containers
-//
-template <template <typename...> class _CompList, typename... _CompTypes,
-          template <typename, typename...> class _Container, typename _Intp,
-          typename... _ExtraArgs>
-void
-initialize(_CompList<_CompTypes...>&               obj,
-           const _Container<_Intp, _ExtraArgs...>& components);
-
-//--------------------------------------------------------------------------------------//
-//
-///  description:
-///      use this function to generate an array of enumerations from a list of string
-///      that can be subsequently used to initialize an auto_list or a component_list
-///
-///  usage:
-///      using namespace tim::component;
-///      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
-///
-///      auto obj = new optional_t(__FUNCTION__, __LINE__);
-///      tim::initialize(*obj, tim::enumerate_components({ "cpu_clock", "cpu_util"}));
-///
-template <typename _StringT, typename... _ExtraArgs,
-          template <typename, typename...> class _Container>
-_Container<TIMEMORY_COMPONENT>
-enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names);
-
-}  // namespace tim
-
-// initialize and enumerate_components
-#include "timemory/bits/components.hpp"
-
-namespace tim
-{
-//--------------------------------------------------------------------------------------//
-//
-//                  specializations for std::initializer_list
-//
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _CompList, typename... _CompTypes,
-          typename _EnumT = int>
-inline void
-initialize(_CompList<_CompTypes...>& obj, const std::initializer_list<_EnumT>& components)
-{
-    initialize(obj, std::vector<_EnumT>(components));
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline std::vector<TIMEMORY_COMPONENT>
-enumerate_components(const std::initializer_list<std::string>& component_names)
-{
-    return enumerate_components(std::vector<std::string>(component_names));
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline std::vector<TIMEMORY_COMPONENT>
-enumerate_components(const std::string& names, const std::string& env_id = "")
-{
-    if(env_id.length() > 0)
-        return enumerate_components(tim::delimit(get_env<std::string>(env_id, names)));
-    else
-        return enumerate_components(tim::delimit(names));
-}
-
-//--------------------------------------------------------------------------------------//
-//
-//                  extra specializations for std::string
-//
-//--------------------------------------------------------------------------------------//
-//
-/// this is for initializing with a container of string
-//
-template <template <typename...> class _CompList, typename... _CompTypes,
-          typename... _ExtraArgs, template <typename, typename...> class _Container>
-inline void
-initialize(_CompList<_CompTypes...>&                     obj,
-           const _Container<std::string, _ExtraArgs...>& components)
-{
-    initialize(obj, enumerate_components(components));
-}
-
-//--------------------------------------------------------------------------------------//
-//
-/// this is for initializing with a string
-//
-template <template <typename...> class _CompList, typename... _CompTypes>
-inline void
-initialize(_CompList<_CompTypes...>& obj, const std::string& components)
-{
-    initialize(obj, enumerate_components(tim::delimit(components)));
-}
-
-//--------------------------------------------------------------------------------------//
-//
-/// this is for initializing reading an environment variable, getting a string, breaking
-/// into list of components, and initializing
-//
-namespace env
-{
-template <template <typename...> class _CompList, typename... _CompTypes,
-          typename std::enable_if<(sizeof...(_CompTypes) > 0), int>::type = 0>
-inline void
-initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
-           const std::string& default_env)
-{
-    auto env_result = tim::get_env(env_var, default_env);
-    initialize(obj, enumerate_components(tim::delimit(env_result)));
-}
-
-template <template <typename...> class _CompList, typename... _CompTypes,
-          typename std::enable_if<(sizeof...(_CompTypes) == 0), int>::type = 0>
-inline void
-initialize(_CompList<_CompTypes...>&, const std::string&, const std::string&)
-{}
-
-}  // namespace env
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace tim
+// #include "timemory/runtime/enumerate.hpp"
+// #include "timemory/runtime/configure.hpp"
+// #include "timemory/runtime/insert.hpp"
+// #include "timemory/runtime/initialize.hpp"

@@ -22,11 +22,16 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file components/base.hpp
+ * \headerfile components/base.hpp "timemory/components/base.hpp"
+ * Defines the static polymorphic base for the components
+ *
+ */
+
 #pragma once
 
-#include "timemory/bits/types.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/mpl/policy.hpp"
+#include "timemory/data/statistics.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
@@ -37,29 +42,41 @@
 
 namespace tim
 {
+//======================================================================================//
+//
+//      base component class
+//
+//======================================================================================//
+
 namespace component
 {
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 struct base
 {
 public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
     static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
+    static constexpr bool record_statistics_v  = trait::record_statistics<_Tp>::value;
+    static constexpr bool is_component_type    = false;
+    static constexpr bool is_auto_type         = false;
+    static constexpr bool is_component         = true;
 
-    using Type           = _Tp;
-    using value_type     = _Value;
-    using policy_type    = policy::wrapper<_Policies...>;
-    using this_type      = base<_Tp, _Value, _Policies...>;
+    using Type       = _Tp;
+    using value_type = _Value;
+    using accum_type =
+        typename std::conditional<record_statistics_v, statistics<_Value>, _Value>::type;
+    using this_type      = base<_Tp, _Value>;
+    using base_type      = this_type;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
     using graph_iterator = typename storage_type::iterator;
-    using properties_t   = properties<this_type>;
+    using state_t        = state<this_type>;
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
     friend class storage<_Tp>;
 
     friend struct operation::init_storage<_Tp>;
-    friend struct operation::live_count<_Tp>;
+    friend struct operation::construct<_Tp>;
     friend struct operation::set_prefix<_Tp>;
     friend struct operation::pop_node<_Tp>;
     friend struct operation::record<_Tp>;
@@ -92,14 +109,18 @@ public:
     : is_running(false)
     , is_on_stack(false)
     , is_transient(false)
+    , is_flat(false)
     , depth_change(false)
     , value(value_type())
     , accum(value_type())
     , laps(0)
     , graph_itr(graph_iterator{ nullptr })
     {
-        static thread_local bool _inited = init_storage();
-        consume_parameters(_inited);
+        if(!storage_type::is_finalizing())
+        {
+            static thread_local auto _storage = get_storage();
+            consume_parameters(_storage);
+        }
     }
 
     ~base() = default;
@@ -110,33 +131,14 @@ public:
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
-protected:
-    // policy section
-    static void global_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_init<_Tp>(_store);
-    }
-
-    static void thread_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_init<_Tp>(_store);
-    }
-
-    static void global_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_finalize<_Tp>(_store);
-    }
-
-    static void thread_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_finalize<_Tp>(_store);
-    }
-
+public:
+    static void global_init(storage_type*) {}
+    static void thread_init(storage_type*) {}
+    static void global_finalize(storage_type*) {}
+    static void thread_finalize(storage_type*) {}
     template <typename _Archive>
-    static void serialization_policy(_Archive& ar, const unsigned int ver)
-    {
-        policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
-    }
+    static void extra_serialization(_Archive&, const unsigned int)
+    {}
 
 public:
     static void initialize_storage()
@@ -169,11 +171,6 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
-    // function operator
-    //
-    value_type operator()() { return Type::record(); }
-
-    //----------------------------------------------------------------------------------//
     // reset the values
     //
     void reset()
@@ -181,6 +178,7 @@ public:
         is_running   = false;
         is_on_stack  = false;
         is_transient = false;
+        is_flat      = false;
         laps         = 0;
         value        = value_type();
         accum        = value_type();
@@ -254,21 +252,21 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // default get and get_display
+    // default get
     //
     value_type get() const { return (is_transient) ? value : accum; }
 
     //----------------------------------------------------------------------------------//
     // comparison operators
     //
-    bool operator==(const this_type& rhs) const { return (value == rhs.value); }
-    bool operator<(const this_type& rhs) const { return (value < rhs.value); }
-    bool operator>(const this_type& rhs) const { return (value > rhs.value); }
+    bool operator==(const this_type& rhs) const { return (load() == rhs.load()); }
+    bool operator<(const this_type& rhs) const { return (load() < rhs.load()); }
+    bool operator>(const this_type& rhs) const { return (load() > rhs.load()); }
     bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
     bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
     bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
 
-    // this_type operators (plain-old data)
+    // this_type operators
     //
     Type& operator+=(const this_type& rhs)
     {
@@ -280,8 +278,18 @@ public:
         return operator-=(static_cast<const Type&>(rhs));
     }
 
+    Type& operator*=(const this_type& rhs)
+    {
+        return operator*=(static_cast<const Type&>(rhs));
+    }
+
+    Type& operator/=(const this_type& rhs)
+    {
+        return operator/=(static_cast<const Type&>(rhs));
+    }
+
     //----------------------------------------------------------------------------------//
-    // this_type operators (plain-old data)
+    // Type operators
     //
     Type& operator+=(const Type& rhs)
     {
@@ -297,8 +305,22 @@ public:
         return static_cast<Type&>(*this);
     }
 
+    Type& operator*=(const Type& rhs)
+    {
+        value *= rhs.value;
+        accum *= rhs.accum;
+        return static_cast<Type&>(*this);
+    }
+
+    Type& operator/=(const Type& rhs)
+    {
+        value /= rhs.value;
+        accum /= rhs.accum;
+        return static_cast<Type&>(*this);
+    }
+
     //----------------------------------------------------------------------------------//
-    // value type operators (plain-old data)
+    // value type operators
     //
     template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
@@ -333,7 +355,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // value type operators (complex data)
+    // value type operators
     //
     template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
@@ -372,6 +394,16 @@ public:
         return this_type(lhs) -= rhs;
     }
 
+    friend Type operator*(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) *= rhs;
+    }
+
+    friend Type operator/(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) /= rhs;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         operation::base_printer<Type>(os, obj);
@@ -381,14 +413,16 @@ public:
     //----------------------------------------------------------------------------------//
     // serialization
     //
-    template <typename Archive>
+    template <typename Archive, typename _Up = Type,
+              enable_if_t<!(trait::split_serialization<_Up>::value), int> = 0>
     void serialize(Archive& ar, const unsigned int)
     {
         // operation::serialization<Type, Archive>(*this, ar, version);
         auto _data = static_cast<const Type&>(*this).get();
-        ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _data),
-           serializer::make_nvp("value", value), serializer::make_nvp("accum", accum));
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("repr_data", _data), cereal::make_nvp("value", value),
+           cereal::make_nvp("accum", accum), cereal::make_nvp("units", get_unit()),
+           cereal::make_nvp("display_units", get_display_unit()));
     }
 
     const int64_t&    nlaps() const { return laps; }
@@ -396,16 +430,21 @@ public:
     const value_type& get_accum() const { return accum; }
     const bool&       get_is_transient() const { return is_transient; }
 
-private:
+protected:
+    const value_type& load() const { return (is_transient) ? accum : value; }
+
+protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
     template <typename _Scope, typename _Up = this_type,
-              enable_if_t<(_Up::implements_storage_v), int> = 0>
+              enable_if_t<(_Up::implements_storage_v), int>                 = 0,
+              enable_if_t<!(std::is_same<_Scope, scope::flat>::value), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
     {
         if(!is_on_stack)
         {
+            is_flat          = false;
             auto  _storage   = get_storage();
             auto  _beg_depth = _storage->depth();
             Type& obj        = static_cast<Type&>(*this);
@@ -413,13 +452,40 @@ private:
             is_on_stack      = true;
             auto _end_depth  = _storage->depth();
             depth_change     = (_beg_depth < _end_depth);
+            _storage->stack_push(&obj);
+        }
+    }
+
+    template <typename _Scope, typename _Up = this_type,
+              enable_if_t<(_Up::implements_storage_v), int>                = 0,
+              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
+    void insert_node(const _Scope&, const int64_t& _hash)
+    {
+        if(!is_on_stack)
+        {
+            is_flat        = true;
+            auto  _storage = get_storage();
+            Type& obj      = static_cast<Type&>(*this);
+            graph_itr      = _storage->template insert<_Scope>(obj, _hash);
+            is_on_stack    = true;
+            depth_change   = false;
+            _storage->stack_push(&obj);
         }
     }
 
     template <typename _Scope, typename _Up = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t&)
-    {}
+    {
+        if(!is_on_stack)
+        {
+            is_flat        = true;
+            auto  _storage = get_storage();
+            Type& obj      = static_cast<Type&>(*this);
+            is_on_stack    = true;
+            _storage->stack_push(&obj);
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
@@ -429,47 +495,80 @@ private:
     {
         if(is_on_stack)
         {
-            auto _storage   = get_storage();
-            auto _beg_depth = _storage->depth();
+            Type& obj    = graph_itr->obj();
+            Type& rhs    = static_cast<Type&>(*this);
+            depth_change = false;
 
-            Type& obj = graph_itr->obj();
-            Type& rhs = static_cast<Type&>(*this);
-            obj += rhs;
-            obj.plus(rhs);
-            Type::append(graph_itr, rhs);
-            _storage->pop();
+            if(storage_type::is_finalizing())
+            {
+                obj += rhs;
+                obj.plus(rhs);
+                Type::append(graph_itr, rhs);
+            }
+            else if(is_flat)
+            {
+                auto _storage = get_storage();
+
+                obj += rhs;
+                obj.plus(rhs);
+                Type::append(graph_itr, rhs);
+                _storage->stack_pop(&rhs);
+            }
+            else
+            {
+                auto _storage   = get_storage();
+                auto _beg_depth = _storage->depth();
+
+                obj += rhs;
+                obj.plus(rhs);
+                Type::append(graph_itr, rhs);
+                _storage->pop();
+                _storage->stack_pop(&rhs);
+
+                auto _end_depth = _storage->depth();
+                depth_change    = (_beg_depth > _end_depth);
+            }
             obj.is_running = false;
             is_on_stack    = false;
-
-            auto _end_depth = _storage->depth();
-            depth_change    = (_beg_depth > _end_depth);
         }
     }
 
     template <typename _Up                                   = this_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void pop_node()
-    {}
+    {
+        if(is_on_stack)
+        {
+            auto  _storage = get_storage();
+            Type& rhs      = static_cast<Type&>(*this);
+            if(_storage)
+                _storage->stack_pop(&rhs);
+            is_on_stack = false;
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     // initialize the storage
     //
     template <typename _Up = _Tp, typename _Vp = _Value,
               enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
-    bool init_storage()
+    static bool init_storage(storage_type*& _instance)
     {
-        if(!properties_t::has_storage())
+        if(!_instance)
         {
-            static thread_local auto _instance = storage_type::instance();
-            _instance->initialize();
-            get_storage() = _instance;
+            static thread_local int32_t _count = 0;
+            if(_count++ == 0)
+                _instance = storage_type::instance();
         }
-        return properties_t::has_storage();
+
+        if(!state_t::has_storage() && _instance)
+            _instance->initialize();
+        return state_t::has_storage();
     }
 
     template <typename _Up = _Tp, typename _Vp = _Value,
               enable_if_t<!(implements_storage<_Up, _Vp>::value), int> = 0>
-    bool init_storage()
+    static bool init_storage(storage_type*&)
     {
         return true;
     }
@@ -479,7 +578,7 @@ private:
     //
     static Type dummy()
     {
-        properties_t::has_storage() = true;
+        state_t::has_storage() = true;
         Type _fake{};
         return _fake;
     }
@@ -500,21 +599,23 @@ protected:
     }
 
     static void cleanup() {}
-    static void invoke_cleanup() { Type::cleanup(); }
 
 protected:
     bool           is_running   = false;
     bool           is_on_stack  = false;
     bool           is_transient = false;
+    bool           is_flat      = false;
     bool           depth_change = false;
     value_type     value        = value_type();
-    value_type     accum        = value_type();
+    accum_type     accum        = accum_type();
     int64_t        laps         = 0;
     graph_iterator graph_itr    = graph_iterator{ nullptr };
 
     static storage_type*& get_storage()
     {
         static thread_local storage_type* _instance = nullptr;
+        static thread_local bool          _inited   = init_storage(_instance);
+        consume_parameters(_inited);
         return _instance;
     }
 
@@ -644,23 +745,28 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Policies>
-struct base<_Tp, void, _Policies...>
+template <typename _Tp>
+struct base<_Tp, void>
 {
 public:
     static constexpr bool implements_storage_v = false;
+    static constexpr bool has_secondary_data   = false;
+    static constexpr bool record_statistics_v  = false;
+    static constexpr bool is_component_type    = false;
+    static constexpr bool is_auto_type         = false;
+    static constexpr bool is_component         = true;
 
     using Type         = _Tp;
     using value_type   = void;
-    using policy_type  = policy::wrapper<_Policies...>;
-    using this_type    = base<_Tp, value_type, _Policies...>;
+    using this_type    = base<_Tp, value_type>;
+    using base_type    = this_type;
     using storage_type = impl::storage<_Tp, implements_storage_v>;
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
 
     friend struct operation::init_storage<_Tp>;
-    friend struct operation::live_count<_Tp>;
+    friend struct operation::construct<_Tp>;
     friend struct operation::set_prefix<_Tp>;
     friend struct operation::pop_node<_Tp>;
     friend struct operation::record<_Tp>;
@@ -686,7 +792,12 @@ private:
     friend struct operation::compose;
 
 public:
-    base()                          = default;
+    base()
+    : is_running(false)
+    , is_on_stack(false)
+    , is_transient(false)
+    {}
+
     ~base()                         = default;
     explicit base(const this_type&) = default;
     explicit base(this_type&&)      = default;
@@ -694,32 +805,13 @@ public:
     base& operator=(this_type&&) = default;
 
 public:
-    // policy section
-    static void global_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_init<_Tp>(_store);
-    }
-
-    static void thread_init_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_init<_Tp>(_store);
-    }
-
-    static void global_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_global_finalize<_Tp>(_store);
-    }
-
-    static void thread_finalize_policy(storage_type* _store)
-    {
-        policy_type::template invoke_thread_finalize<_Tp>(_store);
-    }
-
+    static void global_init(storage_type*) {}
+    static void thread_init(storage_type*) {}
+    static void global_finalize(storage_type*) {}
+    static void thread_finalize(storage_type*) {}
     template <typename _Archive>
-    static void serialization_policy(_Archive& ar, const unsigned int ver)
-    {
-        policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
-    }
+    static void extra_serialization(_Archive&, const unsigned int)
+    {}
 
 public:
     static void initialize_storage()
@@ -741,11 +833,6 @@ public:
     {}
 
 public:
-    //----------------------------------------------------------------------------------//
-    // function operator
-    //
-    value_type operator()() { Type::record(); }
-
     //----------------------------------------------------------------------------------//
     // reset the values
     //
@@ -821,26 +908,6 @@ public:
         is_transient = true;
     }
 
-    //----------------------------------------------------------------------------------//
-    // this_type operators
-    //
-    Type& operator+=(const this_type&) { return static_cast<Type&>(*this); }
-
-    Type& operator-=(const this_type&) { return static_cast<Type&>(*this); }
-
-    //----------------------------------------------------------------------------------//
-    // friend operators
-    //
-    friend Type operator+(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type(lhs) += rhs;
-    }
-
-    friend Type operator-(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type(lhs) -= rhs;
-    }
-
     friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
 
     int64_t nlaps() const { return 0; }
@@ -854,13 +921,28 @@ private:
     template <typename _Scope = scope::process, typename... _Args>
     void insert_node(const _Scope&, _Args&&...)
     {
-        is_on_stack = true;
+        if(!is_on_stack)
+        {
+            // auto  _storage = get_storage();
+            // Type& obj      = static_cast<Type&>(*this);
+            is_on_stack = true;
+            // _storage->stack_push(&obj);
+        }
     }
 
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
-    void pop_node() { is_on_stack = false; }
+    void pop_node()
+    {
+        if(is_on_stack)
+        {
+            // auto  _storage = get_storage();
+            // Type& rhs      = static_cast<Type&>(*this);
+            is_on_stack = false;
+            // _storage->stack_pop(&rhs);
+        }
+    }
 
 protected:
     void plus(const this_type& rhs)
@@ -876,7 +958,6 @@ protected:
     }
 
     static void cleanup() {}
-    static void invoke_cleanup() { Type::cleanup(); }
 
 protected:
     bool is_running   = false;
@@ -905,11 +986,10 @@ public:
 ///     - std::string
 ///     - value_type
 ///
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 template <typename _Vp>
 void
-base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
-                                             const Type& rhs)
+base<_Tp, _Value>::append_impl(std::true_type, graph_iterator itr, const Type& rhs)
 {
     static_assert(trait::secondary_data<_Tp>::value,
                   "append_impl should not be compiled");
@@ -925,10 +1005,10 @@ base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
 //----------------------------------------------------------------------------------//
 //  type does not contain secondary data
 //
-template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Tp, typename _Value>
 template <typename _Vp>
 void
-base<_Tp, _Value, _Policies...>::append_impl(std::false_type, graph_iterator, const Type&)
+base<_Tp, _Value>::append_impl(std::false_type, graph_iterator, const Type&)
 {}
 
 }  // namespace component

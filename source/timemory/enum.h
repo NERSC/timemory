@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file enum.h
- * \headerfile enum.h "timemory/enum.h"
+/** \file timemory/enum.h
+ * \headerfile timemory/enum.h "timemory/enum.h"
  * This provides the core enumeration for components
  *
  */
@@ -84,7 +84,7 @@
 
 //======================================================================================//
 //
-//      Windows DLL settings
+//      Symbol override
 //
 //======================================================================================//
 
@@ -113,42 +113,50 @@ enum TIMEMORY_COMPONENT
     CPU_ROOFLINE_SP_FLOPS    = 4,
     CPU_UTIL                 = 5,
     CUDA_EVENT               = 6,
-    CUPTI_ACTIVITY           = 7,
-    CUPTI_COUNTERS           = 8,
-    DATA_RSS                 = 9,
-    GPERF_CPU_PROFILER       = 10,
-    GPERF_HEAP_PROFILER      = 11,
-    GPU_ROOFLINE_DP_FLOPS    = 12,
-    GPU_ROOFLINE_FLOPS       = 13,
-    GPU_ROOFLINE_HP_FLOPS    = 14,
-    GPU_ROOFLINE_SP_FLOPS    = 15,
-    MONOTONIC_CLOCK          = 16,
-    MONOTONIC_RAW_CLOCK      = 17,
-    NUM_IO_IN                = 18,
-    NUM_IO_OUT               = 19,
-    NUM_MAJOR_PAGE_FAULTS    = 20,
-    NUM_MINOR_PAGE_FAULTS    = 21,
-    NUM_MSG_RECV             = 22,
-    NUM_MSG_SENT             = 23,
-    NUM_SIGNALS              = 24,
-    NUM_SWAP                 = 25,
-    NVTX_MARKER              = 26,
-    PAGE_RSS                 = 27,
-    PAPI_ARRAY               = 28,
-    PEAK_RSS                 = 29,
-    PRIORITY_CONTEXT_SWITCH  = 30,
-    PROCESS_CPU_CLOCK        = 31,
-    PROCESS_CPU_UTIL         = 32,
-    READ_BYTES               = 33,
-    WALL_CLOCK               = 34,
-    STACK_RSS                = 35,
-    SYS_CLOCK                = 36,
-    THREAD_CPU_CLOCK         = 37,
-    THREAD_CPU_UTIL          = 38,
-    TRIP_COUNT               = 39,
-    USER_CLOCK               = 40,
-    VIRTUAL_MEMORY           = 41,
-    VOLUNTARY_CONTEXT_SWITCH = 42,
-    WRITTEN_BYTES            = 43,
-    TIMEMORY_COMPONENTS_END  = 44
+    CUDA_PROFILER            = 7,
+    CUPTI_ACTIVITY           = 8,
+    CUPTI_COUNTERS           = 9,
+    DATA_RSS                 = 10,
+    GPERF_CPU_PROFILER       = 11,
+    GPERF_HEAP_PROFILER      = 12,
+    GPU_ROOFLINE_DP_FLOPS    = 13,
+    GPU_ROOFLINE_FLOPS       = 14,
+    GPU_ROOFLINE_HP_FLOPS    = 15,
+    GPU_ROOFLINE_SP_FLOPS    = 16,
+    LIKWID_NVMON             = 17,
+    LIKWID_PERFMON           = 18,
+    MONOTONIC_CLOCK          = 19,
+    MONOTONIC_RAW_CLOCK      = 20,
+    NUM_IO_IN                = 21,
+    NUM_IO_OUT               = 22,
+    NUM_MAJOR_PAGE_FAULTS    = 23,
+    NUM_MINOR_PAGE_FAULTS    = 24,
+    NUM_MSG_RECV             = 25,
+    NUM_MSG_SENT             = 26,
+    NUM_SIGNALS              = 27,
+    NUM_SWAP                 = 28,
+    NVTX_MARKER              = 29,
+    PAGE_RSS                 = 30,
+    PAPI_ARRAY               = 31,
+    PEAK_RSS                 = 32,
+    PRIORITY_CONTEXT_SWITCH  = 33,
+    PROCESS_CPU_CLOCK        = 34,
+    PROCESS_CPU_UTIL         = 35,
+    READ_BYTES               = 36,
+    STACK_RSS                = 37,
+    SYS_CLOCK                = 38,
+    TAU_MARKER               = 39,
+    THREAD_CPU_CLOCK         = 40,
+    THREAD_CPU_UTIL          = 41,
+    TRIP_COUNT               = 42,
+    USER_CLOCK               = 43,
+    USER_LIST_BUNDLE         = 44,
+    USER_TUPLE_BUNDLE        = 45,
+    VIRTUAL_MEMORY           = 46,
+    VOLUNTARY_CONTEXT_SWITCH = 47,
+    VTUNE_EVENT              = 48,
+    VTUNE_FRAME              = 49,
+    WALL_CLOCK               = 50,
+    WRITTEN_BYTES            = 51,
+    TIMEMORY_COMPONENTS_END  = 52
 };

@@ -182,7 +182,7 @@ class plot_parameters():
         self.max_value = 0.0
         self.log_xaxis = log_xaxis
         self.font_size = font_size
-        
+
     def __str__(self):
         _c = 'Image: {} = {}%, {} = {}, {} = {}, {} = {}'.format(
             'min %', self.min_percent,
@@ -487,22 +487,21 @@ def read(json_obj, plot_params=plot_parameters()):
     """
 
     # some fields
-    data0 = json_obj
-    nranks = len(data0['ranks']) if 'ranks' in data0 else 1
+    data = json_obj
+    nranks = len(data['ranks']) if 'ranks' in data else 1
     concurrency_sum = 0
     timemory_functions = nested_dict()
 
     print('num ranks = {}'.format(nranks))
 
-    data1 = data0['rank']
-    nthrd = data1['concurrency']    # concurrency
-    rdata = data1['data']           # rank data
-    ctype = rdata['type']           # collection type
-    cdesc = rdata['description']    # collection description
-    unitr = rdata['unit_repr']      # collection unit display repr
-    gdata = rdata['graph']          # graph data
+    # rank = data['rank']
+    nthrd = data['concurrency']    # concurrency
+    ctype = data['type']           # collection type
+    cdesc = data['description']    # collection description
+    unitr = data['unit_repr']      # collection unit display repr
+    gdata = data['graph']          # graph data
     ngraph = len(gdata)             # number of graph entries
-    roofl = rdata['roofline'] if 'roofline' in rdata else None
+    roofl = data['roofline'] if 'roofline' in data else None
 
     if roofl is not None:
         print(roofl)
@@ -527,9 +526,9 @@ def read(json_obj, plot_params=plot_parameters()):
         tfunc = timemory_data(tag, _data['entry'])
         if tfunc.laps == 0:
             continue
-        #if '_inst' in tfunc.func:
+        # if '_inst' in tfunc.func:
         #    continue
-        
+
         if not tag in timemory_functions:
             # create timemory_data object if doesn't exist yet
             timemory_functions[tag] = tfunc
@@ -587,9 +586,9 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
 
     if len(types) == 0 or (len(types) == 1 and len(types[0]) == 0):
         return False
-    
+
     print("Plot types: {}".format(types))
-    
+
     if ntics == 0:
         print('{} had no data less than the minimum time ({} {})'.format(
             filename, _type_min, _type_unit))
@@ -697,7 +696,7 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
         font = {'family': 'serif',
                 'color':  'black',
                 'weight': 'bold',
-                'size': 22,}
+                'size': 22, }
 
         plt.xlabel(_xlabel, **font)
         plt.title('"{}" Report for {}'.format(_desc.title(), title), **font)
