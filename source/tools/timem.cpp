@@ -293,17 +293,19 @@ getcharptr(const std::string& str)
 void
 explain(int ret, const char* pathname, char** argv)
 {
-#if defined(TIMEMORY_USE_LIBEXPLAIN)
     if(ret < 0)
+    {
+#if defined(TIMEMORY_USE_LIBEXPLAIN)
         fprintf(stderr, "%s\n", explain_execvp(pathname, argv));
 #else
-    fprintf(stderr, "Return code: %i : %s\n", ret, pathname);
-    int n = 0;
-    std::cerr << "Command: ";
-    while(argv[n] != nullptr)
-        std::cerr << argv[n++] << " ";
-    std::cerr << std::endl;
+        fprintf(stderr, "Return code: %i : %s\n", ret, pathname);
+        int n = 0;
+        std::cerr << "Command: ";
+        while(argv[n] != nullptr)
+            std::cerr << argv[n++] << " ";
+        std::cerr << std::endl;
 #endif
+    }
 }
 //--------------------------------------------------------------------------------------//
 
@@ -316,7 +318,7 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     // with file being executed the array pointer must be terminated by
     // NULL pointer
 
-    char** argv_list = (char **)malloc(sizeof(char **) *(argc));
+    char** argv_list = (char**) malloc(sizeof(char**) * (argc));
     for(uint64_t i = 0; i < argc - 1; i++)
         argv_list[i] = strdup(argv[i + 1]);
     argv_list[argc - 1] = nullptr;
@@ -324,13 +326,15 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     // launches the command with the shell, this is the default because it
     // enables aliases
     auto launch_using_shell = [&]() {
-        int      ret             = -1;
-        uint64_t argc_extra      = 3;
-        uint64_t argc_shell      = argc + argc_extra;
-        char**   argv_shell_list = (char **)malloc(sizeof(char **) *(argc_shell));
-        std::string    _shell          = getusershell();
+        int         ret             = -1;
+        uint64_t    argc_extra      = 3;
+        uint64_t    argc_shell      = argc + argc_extra;
+        char**      argv_shell_list = (char**) malloc(sizeof(char**) * (argc_shell));
+        std::string _shell          = tim::get_env<std::string>("SHELL", getusershell());
+
         if(debug())
             printf("using shell: %s\n", _shell.c_str());
+
         argv_shell_list[argc_shell - 1] = nullptr;
         if(_shell.length() > 0)
         {
@@ -338,10 +342,10 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
                 PRINT_HERE("%s", "");
 
             std::string _interactive = "-i";
-            std::string _command = "-c";
-            argv_shell_list[0]        = strdup(_shell.c_str());
-            argv_shell_list[1]        = strdup(_interactive.c_str());
-            argv_shell_list[2]        = strdup(_command.c_str());
+            std::string _command     = "-c";
+            argv_shell_list[0]       = strdup(_shell.c_str());
+            argv_shell_list[1]       = strdup(_interactive.c_str());
+            argv_shell_list[2]       = strdup(_command.c_str());
 
             if(debug())
                 PRINT_HERE("%s", "");
@@ -354,7 +358,7 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
                 if(debug())
                     PRINT_HERE("%llu", (unsigned long long) i);
 
-                std::string _arg = argv[i + 1];
+                std::string _arg                = argv[i + 1];
                 argv_shell_list[i + argc_extra] = strdup(_arg.c_str());
 
                 if(debug())
@@ -378,12 +382,14 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
                 explain(ret, argv_shell_list[0], argv_shell_list);
                 ret = execv(argv_shell_list[0], argv_shell_list);
             }
+
             if(ret != 0)
             {
                 PRINT_HERE("return code: %i", ret);
                 explain(ret, argv_shell_list[0], argv_shell_list);
                 ret = execve(argv_shell_list[0], argv_shell_list, environ);
             }
+
             if(debug())
                 PRINT_HERE("return code: %i", ret);
         }
