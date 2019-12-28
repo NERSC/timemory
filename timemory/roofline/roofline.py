@@ -47,7 +47,8 @@ FONT_COLOR = 'black'
 FONT_WEIGHT = 'bold'
 WARP_SIZE = 32
 
-__all__ = ['get_json_entry',
+__all__ = ['echo_dart_tag',
+           'get_json_entry',
            'ert_params',
            'ert_counter',
            'ert_data',
@@ -77,6 +78,16 @@ __all__ = ['get_json_entry',
 #           serializer:: make_nvp("grid_size", grid_size),
 #           serializer:: make_nvp("block_size", block_size),
 #           serializer: : make_nvp("shmem_size", shmem_size))
+
+
+#==============================================================================#
+#
+def echo_dart_tag(name, filepath, img_type):
+    """
+    Printing this string will upload the results to CDash when running CTest
+    """
+    print('<DartMeasurementFile name="{}" '.format(name) +
+          'type="image/{}">{}</DartMeasurementFile>'.format(img_type, filepath))
 
 
 #==============================================================================#
@@ -292,6 +303,7 @@ def get_peak_int_theo(_inst_peak):
     print(peak)
     return peak_ops
 
+
 #==============================================================================#
 #
 def get_peak_bandwidth(roof_data, band_labels):
@@ -378,7 +390,6 @@ def get_peak_bandwidth(roof_data, band_labels):
 
 #==============================================================================#
 #
-
 def get_theo_bandwidth_txns(txn_bandwidth):
 
     peak_bandwidths=[]
@@ -386,7 +397,6 @@ def get_theo_bandwidth_txns(txn_bandwidth):
     peak_bandwidths.append([float(txn_bandwidth[1]),"L2 GTXNs/s"])
     peak_bandwidths.append([float(txn_bandwidth[2]),"DRAM GTXNs/s"])
     return peak_bandwidths
-
 
 
 #==============================================================================#
@@ -532,8 +542,6 @@ def get_hotspots(op_data, ai_data):
 
 #==============================================================================#
 #
-
-
 def get_hotspots_integer(op_data, ai_data):
     """
     Get the hotspots information
@@ -763,7 +771,7 @@ class plot_parameters():
 #
 def plot_roofline(ai_data, op_data, band_labels, txn_bandwidths,inst_peak, _rtype, display=False, fname="roofline",
                   image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
-                  width=1600, height=1200, dpi=100):
+                  width=1600, height=1200, dpi=100, echo_dart=False):
     """
     Plot the roofline
     """
@@ -919,3 +927,6 @@ def plot_roofline(ai_data, op_data, band_labels, txn_bandwidths,inst_peak, _rtyp
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname)
         plt.close()
+        if echo_dart:
+            bfname = os.path.basename(fname)
+            echo_dart_tag(bfname, imgfname, image_type)
