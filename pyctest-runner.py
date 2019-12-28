@@ -199,17 +199,32 @@ def run_pyctest():
     if args.extra_optimizations:
         pyct.BUILD_NAME = "{} OPT".format(pyct.BUILD_NAME)
 
+    if args.arch:
+        pyct.BUILD_NAME = "{} ARCH".format(pyct.BUILD_NAME)
+
     if not args.no_mpi:
         pyct.BUILD_NAME = "{} MPI".format(pyct.BUILD_NAME)
 
     if not args.no_papi:
         pyct.BUILD_NAME = "{} PAPI".format(pyct.BUILD_NAME)
 
-    if args.arch:
-        pyct.BUILD_NAME = "{} ARCH".format(pyct.BUILD_NAME)
-
     if args.cuda:
         pyct.BUILD_NAME = "{} CUDA".format(pyct.BUILD_NAME)
+
+    if args.cupti:
+        pyct.BUILD_NAME = "{} CUPTI".format(pyct.BUILD_NAME)
+
+    if args.caliper:
+        pyct.BUILD_NAME = "{} CALIPER".format(pyct.BUILD_NAME)
+
+    if args.gotcha:
+        pyct.BUILD_NAME = "{} GOTCHA".format(pyct.BUILD_NAME)
+
+    if args.upcxx:
+        pyct.BUILD_NAME = "{} UPCXX".format(pyct.BUILD_NAME)
+
+    if args.tau:
+        pyct.BUILD_NAME = "{} TAU".format(pyct.BUILD_NAME)
 
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
