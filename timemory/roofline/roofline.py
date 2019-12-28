@@ -913,7 +913,7 @@ def plot_roofline(ai_data, op_data, band_labels, txn_bandwidths,inst_peak, _rtyp
     #try:
     #    from adjustText import adjust_text
     print(labels)
-    pylab.legend(plotted_spots,labels,prop={'size': 20})
+    pylab.legend(plotted_spots,labels,prop={'size': (FONT_SIZE - 2)})
 
     #plt.legend(labels)
     if display:
