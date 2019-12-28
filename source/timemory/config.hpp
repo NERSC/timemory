@@ -101,8 +101,10 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
         enable_signal_detection(enabled_signals);
     }
 
+    settings::store_command_line(argc, argv);
+
     auto _manager = manager::instance();
-    consume_parameters(argc, _manager);
+    consume_parameters(_manager);
 }
 
 //--------------------------------------------------------------------------------------//

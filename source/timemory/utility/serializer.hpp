@@ -62,8 +62,8 @@
 
 //--------------------------------------------------------------------------------------//
 
-using setting_parse_callback_t     = std::function<void()>;
-using setting_parse_callback_vec_t = std::vector<setting_parse_callback_t>;
+using setting_callback_t     = std::function<void()>;
+using setting_callback_vec_t = std::vector<setting_callback_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -71,15 +71,15 @@ namespace tim
 {
 #if defined(TIMEMORY_EXTERN_INIT)
 
-extern setting_parse_callback_vec_t&
+extern setting_callback_vec_t&
 get_parse_callbacks();
 
 #else
 
-inline setting_parse_callback_vec_t&
+inline setting_callback_vec_t&
 get_parse_callbacks()
 {
-    static setting_parse_callback_vec_t _instance;
+    static setting_callback_vec_t _instance;
     return _instance;
 }
 

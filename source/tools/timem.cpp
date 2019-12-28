@@ -306,6 +306,14 @@ explain(int ret, const char* pathname, char** argv)
         std::cerr << std::endl;
 #endif
     }
+    else if(debug())
+    {
+        int n = 0;
+        std::cerr << "Command: ";
+        while(argv[n] != nullptr)
+            std::cerr << argv[n++] << " ";
+        std::cerr << std::endl;
+    }
 }
 //--------------------------------------------------------------------------------------//
 
@@ -318,17 +326,20 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     // with file being executed the array pointer must be terminated by
     // NULL pointer
 
-    char** argv_list = (char**) malloc(sizeof(char**) * (argc));
+    std::stringstream shell_cmd;
+    char**            argv_list = (char**) malloc(sizeof(char**) * (argc));
     for(uint64_t i = 0; i < argc - 1; i++)
+    {
         argv_list[i] = strdup(argv[i + 1]);
+        shell_cmd << argv[i + 1] << " ";
+    }
     argv_list[argc - 1] = nullptr;
 
     // launches the command with the shell, this is the default because it
     // enables aliases
     auto launch_using_shell = [&]() {
         int         ret             = -1;
-        uint64_t    argc_extra      = 3;
-        uint64_t    argc_shell      = argc + argc_extra;
+        uint64_t    argc_shell      = 5;
         char**      argv_shell_list = (char**) malloc(sizeof(char**) * (argc_shell));
         std::string _shell          = tim::get_env<std::string>("SHELL", getusershell());
 
@@ -346,33 +357,13 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
             argv_shell_list[0]       = strdup(_shell.c_str());
             argv_shell_list[1]       = strdup(_interactive.c_str());
             argv_shell_list[2]       = strdup(_command.c_str());
+            argv_shell_list[3]       = strdup(shell_cmd.str().c_str());
+            argv_shell_list[4]       = nullptr;
 
             if(debug())
                 PRINT_HERE("%s", "");
 
-            for(uint64_t i = 0; i < argc - 1; ++i)
-            {
-                if(argv[i + 1] == nullptr)
-                    continue;
-
-                if(debug())
-                    PRINT_HERE("%llu", (unsigned long long) i);
-
-                std::string _arg                = argv[i + 1];
-                argv_shell_list[i + argc_extra] = strdup(_arg.c_str());
-
-                if(debug())
-                    PRINT_HERE("%llu", (unsigned long long) i);
-            }
-
-            if(debug())
-                PRINT_HERE("%s", "");
-
-            argv_shell_list[argc_shell - 1] = nullptr;
-
-            if(debug())
-                PRINT_HERE("%s", "");
-
+            explain(0, argv_shell_list[0], argv_shell_list);
             ret = execvp(argv_shell_list[0], argv_shell_list);
             explain(ret, argv_shell_list[0], argv_shell_list);
 

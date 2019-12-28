@@ -199,8 +199,6 @@ if(${PROJECT_NAME}_MASTER_PROJECT)
 endif()
 
 # timemory options
-add_option(TIMEMORY_USE_EXCEPTIONS
-    "Signal handler throws exceptions (default: exit)" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_EXTERN_INIT
     "Do initialization in library instead of headers" OFF)
 add_option(TIMEMORY_USE_MPI

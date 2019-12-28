@@ -59,16 +59,12 @@ extern "C"
 #    define TIMEMORY_DEFAULT_ENABLED true
 #endif
 
-#define TIMEMORY_ENV_STATIC_ACCESSOR_CALLBACK(FUNC, ENV_VAR)                             \
+#define TIMEMORY_ENV_STATIC_ACCESSOR_CALLBACK(TYPE, FUNC, ENV_VAR, INIT)                 \
     static auto _generate = []() {                                                       \
-        if(std::string(ENV_VAR).empty())                                                 \
-            return false;                                                                \
         auto _parse = []() { FUNC() = tim::get_env(ENV_VAR, FUNC()); };                  \
         get_parse_callbacks().push_back(_parse);                                         \
-        return true;                                                                     \
-    };                                                                                   \
-    static bool _once = _generate();                                                     \
-    ::tim::consume_parameters(_once);
+        return get_env<TYPE>(ENV_VAR, INIT);                                             \
+    };
 
 #if defined(TIMEMORY_EXTERN_INIT)
 
@@ -80,15 +76,15 @@ extern "C"
 #    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
         static TYPE& FUNC()                                                              \
         {                                                                                \
-            static TYPE instance = INIT;                                                 \
-            return instance;                                                             \
+            static TYPE* instance = new TYPE(INIT);                                      \
+            return *instance;                                                            \
         }
 
 #    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                      \
         static TYPE& FUNC()                                                              \
         {                                                                                \
-            TIMEMORY_ENV_STATIC_ACCESSOR_CALLBACK(FUNC, ENV_VAR)                         \
-            static TYPE instance = get_env<TYPE>(ENV_VAR, INIT);                         \
+            TIMEMORY_ENV_STATIC_ACCESSOR_CALLBACK(TYPE, FUNC, ENV_VAR, INIT)             \
+            static TYPE instance = _generate();                                          \
             return instance;                                                             \
         }
 
@@ -468,7 +464,7 @@ tim_api struct settings
         auto& _cmdline = command_line();
         _cmdline.clear();
         for(int i = 0; i < argc; ++i)
-            _cmdline.push_back(argv[i]);
+            _cmdline.push_back(std::string(argv[i]));
     }
 
     //----------------------------------------------------------------------------------//
