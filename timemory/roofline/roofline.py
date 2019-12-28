@@ -869,7 +869,8 @@ def plot_roofline(ai_data, op_data, band_labels, txn_bandwidths,inst_peak, _rtyp
             y_min, y_max = plt.ylim()
             Dx = dx * fig_x / (log(x_max) - log(x_min))
             Dy = dy * fig_y / (log(y_max) - log(y_min))
-            angle = (180.0/pi)*numpy.arctan(Dy / Dx / 1.25)
+            fdiv = 1.0
+            angle = (180.0/pi) * numpy.arctan(Dy / Dx / fdiv)
 
             if _nitr == 0:
                 text(x_text, y_text, "%.2f %s" % (band[0], band[1]),
