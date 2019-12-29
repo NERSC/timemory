@@ -2,7 +2,8 @@
 
 ## Cross-Language Support: C, C++, CUDA, and Python
 
-It is very common for Python projects to implement expensive routines in C or C++. Implementing a timemory auto-tuple in any combination of these languages will produce one combined report for all the languages (provided each language links to the same library).
+It is very common for Python projects to implement expensive routines in C or C++. Implementing a timemory auto-tuple in any combination
+of these languages will produce one combined report for all the languages (provided each language links to the same library).
 However, this is a feature of timemory. Timemory can be used in standalone C, C++, or Python projects.
 
 ## Multithreading

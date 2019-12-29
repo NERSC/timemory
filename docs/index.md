@@ -30,38 +30,55 @@
 
 ## Why Use timemory?
 
-__*Timemory is arguably the most customizable performance analysis and tuning API available while maintaining a very low overhead.*__
+- __*Timemory is arguably the most customizable performance measurement and analysis API available*__
+- __*High-performance*__: very low overhead when enabled and borderline negligible runtime disabled
+- Ability to arbitrarily switch and combine different measurement types anywhere in application
+- Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
+    - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 
-- __*Direct access*__ to performance analysis data in Python and C++
+### Support for Multiple Instrumentation Marker APIs
+
+- NVTX for Nsight-Systems and NVprof
+- [LIKWID](https://github.com/RRZE-HPC/likwid)
+- [Caliper](https://github.com/LLNL/Caliper)
+- [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
+- ittnotify (Intel VTune and Advisor)
+
+### Create Your Own Performance and Analysis Tools
+
+- Written in C++
+- Direct access to performance analysis data in Python and C++
+- Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
+    - Flexible and easily extensible interface: no data type restrictions in custom components
+
+### Generic Bundling of Multiple Tools
+
+- CPU hardware counters via PAPI
+- NVIDIA GPU hardware counters via CUPTI
+- NVIDIA GPU tracing via CUPTI
+- Generating a Roofline for performance-critical sections on the CPU and NVIDIA GPUs
+- Memory usage
+- Tool insertiong around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
+- Wall-clock, cpu-clock, system-clock timing
+- Number of bytes read/written to file-system (and rate)
+- Number of context switches
+- Trip counts
+- CUDA kernel runtime(s)
+
+### Powerful GOTCHA Extensions
+
+- [GOTCHA](https://github.com/LLNL/GOTCHA) is an API for LD_PRELOAD
+    - Significantly simplify existing implementations
+- Scoped GOTCHA
+- Use gotcha component to replace external function calls with own instrumentation
+- Use gotcha component to instrument external library calls
+
+### Multi-language Support
+
 - Variadic interface to all the utilities from C code
 - Variadic interface to all the utilities from C++ code
 - Variadic interface to all the utilities from Python code
     - Includes context-managers and decorators
-- __*Create your own components*__: any one-time measurement or start/stop paradigm can be wrapped with timemory
-    - Flexible and easily extensible interface: __*no data type restrictions in custom components*__
-- __*High-performance*__: template meta-programming and lambdas result in extensive inlining
-- Ability to arbitrarily switch and combine different measurement types anywhere in application
-- Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
-    - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
-- Arbitrarily add support for:
-    - __*CPU hardware counters*__ via PAPI
-    - __*NVIDIA GPU hardware counters*__ via CUPTI
-    - __*NVIDIA GPU tracing*__ via CUPTI
-    - Generating a __*Roofline*__ for performance-critical sections on the CPU and NVIDIA GPUs
-    - Marker forwarding to NVTX for Nsight-Systems and NVprof
-    - Marker forwarding to [LIKWID](https://github.com/RRZE-HPC/likwid)
-    - Marker forwarding to [Caliper](https://github.com/LLNL/Caliper)
-        - Includes marker forwarding to [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
-        - Includes marker forwarding to Intel VTune and Advisor
-    - Memory usage
-    - Tool insertiong around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
-        - Many more possible!
-    - Wall-clock, cpu-clock, system-clock timing
-    - Number of bytes read/written to file-system (and rate)
-    - Number of context switches
-    - Trip counts
-    - CUDA kernel runtime(s)
-    - [GOTCHA](https://github.com/LLNL/GOTCHA) wrappers around external library function calls
 
 ## Table of contents
 
