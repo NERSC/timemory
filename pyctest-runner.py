@@ -159,7 +159,6 @@ def run_pyctest():
         "BUILD_SHARED_LIBS": "ON" if "shared" in args.build_libs else "OFF",
         "BUILD_STATIC_LIBS": "ON" if "static" in args.build_libs else "OFF",
         "TIMEMORY_BUILD_C": "OFF" if args.no_c else "ON",
-        "TIMEMORY_BUILD_MPIP": "ON" if args.mpip else "OFF",
         "TIMEMORY_BUILD_GTEST": "OFF" if args.no_gtest else "ON",
         "TIMEMORY_BUILD_TOOLS": "ON" if args.tools else "OFF",
         "TIMEMORY_BUILD_PYTHON": "OFF" if args.no_python else "ON",
@@ -186,6 +185,9 @@ def run_pyctest():
         "USE_CALIPER": "ON" if args.caliper else "OFF",
     }
 
+    if not args.no_mpi:
+        build_opts["TIMEMORY_BUILD_MPIP"] = "ON" if args.mpip else "OFF"
+
     if not args.no_c:
         pyct.BUILD_NAME = "{} C".format(pyct.BUILD_NAME)
 
@@ -197,22 +199,37 @@ def run_pyctest():
     if args.extra_optimizations:
         pyct.BUILD_NAME = "{} OPT".format(pyct.BUILD_NAME)
 
+    if args.arch:
+        pyct.BUILD_NAME = "{} ARCH".format(pyct.BUILD_NAME)
+
     if not args.no_mpi:
         pyct.BUILD_NAME = "{} MPI".format(pyct.BUILD_NAME)
 
     if not args.no_papi:
         pyct.BUILD_NAME = "{} PAPI".format(pyct.BUILD_NAME)
 
-    if args.arch:
-        pyct.BUILD_NAME = "{} ARCH".format(pyct.BUILD_NAME)
-
     if args.cuda:
         pyct.BUILD_NAME = "{} CUDA".format(pyct.BUILD_NAME)
+
+    if args.cupti:
+        pyct.BUILD_NAME = "{} CUPTI".format(pyct.BUILD_NAME)
+
+    if args.caliper:
+        pyct.BUILD_NAME = "{} CALIPER".format(pyct.BUILD_NAME)
+
+    if args.gotcha:
+        pyct.BUILD_NAME = "{} GOTCHA".format(pyct.BUILD_NAME)
+
+    if args.upcxx:
+        pyct.BUILD_NAME = "{} UPCXX".format(pyct.BUILD_NAME)
+
+    if args.tau:
+        pyct.BUILD_NAME = "{} TAU".format(pyct.BUILD_NAME)
 
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
         components = "profiler" if args.profile == "cpu" else "tcmalloc"
-        build_opts["TIMEMORY_GPERF_COMPONENTS"] = components
+        build_opts["TIMEMORY_gperftools_COMPONENTS"] = components
         pyct.BUILD_NAME = "{} {}".format(
             pyct.BUILD_NAME, args.profile.upper())
 
@@ -331,6 +348,18 @@ def run_pyctest():
         return _cmd
 
     #--------------------------------------------------------------------------#
+    # construct a command
+    #
+    def construct_roofline_command(cmd, dir, extra_opts=[]):
+        _cmd = [sys.executable, '-m', 'timemory.roofline', '-e',
+                '-D', dir, '--format', 'png']
+        _cmd.extend(extra_opts)
+        _cmd.extend(['--'])
+        _cmd.extend(cmd)
+        return _cmd
+
+
+    #--------------------------------------------------------------------------#
     # create tests
     #
 
@@ -347,13 +376,6 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cpu-roofline"),
-              construct_command(["./ex_cpu_roofline"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
-
     pyct.test(construct_name("test-cxx-overhead"),
               construct_command(["./ex_cxx_overhead"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -362,7 +384,7 @@ def run_pyctest():
                "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("test-cuda-event"),
-              construct_command(["./ex_cuda_event"], args),
+              ["./ex_cuda_event"],
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
@@ -405,13 +427,6 @@ def run_pyctest():
 
     pyct.test(construct_name("test-c-minimal-library"),
               construct_command(["./ex_c_minimal_library"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
-
-    pyct.test(construct_name("test-cpu-roofline.sp"),
-              construct_command(["./ex_cpu_roofline.sp"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
@@ -501,12 +516,29 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
+    pyct.test(construct_name("test-cpu-roofline"),
+              construct_roofline_command(["./ex_cpu_roofline"], 'cpu-roofline',
+                                         ['-t', 'cpu_roofline']),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "900",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("test-cpu-roofline.sp"),
+              construct_roofline_command(["./ex_cpu_roofline.sp"], 'cpu-roofline.sp',
+                                         ['-t', 'cpu_roofline']),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "900",
+               "ENVIRONMENT": test_env})
+
     if args.cupti:
         pyct.test(construct_name("test-gpu-roofline"),
-                  construct_command(["./ex_gpu_roofline"], args),
+                  construct_roofline_command(["./ex_gpu_roofline"], 'gpu-roofline',
+                                             ['-t', 'gpu_roofline']),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
-                   "TIMEOUT": "300",
+                   "TIMEOUT": "900",
                    "ENVIRONMENT": test_env})
 
     pyct.generate_config(pyct.BINARY_DIRECTORY)

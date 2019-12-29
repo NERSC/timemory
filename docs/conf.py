@@ -47,9 +47,10 @@ sp.run(["cmake",
         "-DENABLE_DOXYGEN_LATEX_DOCS=OFF", "-DENABLE_DOXYGEN_MAN_DOCS=OFF",
         _srcdir])
 sp.run(["cmake", "--build", os.getcwd(), "--target", "doc"])
-if os.path.exists(_doxdir):
-    shutil.rmtree(_doxdir)
-shutil.copytree(_doxbin, _doxdir)
+# if os.path.exists(_doxdir):
+#    shutil.rmtree(_doxdir)
+if not os.path.exists(_doxdir):
+    shutil.copytree(_doxbin, _doxdir)
 
 install('mkdocs-cinder')
 # install('mkdocs-inspired')

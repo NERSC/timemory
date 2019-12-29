@@ -60,8 +60,8 @@ run-verbose apt-get -y install clang-${CLANG_VERSION} libc++-dev libc++abi-dev
 
 DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
     libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \
-    emacs-nox vim-nox"
-CUDA_VER=$(dpkg --get-selections | grep cuda-cudart- | awk '{print $1}' | head -n 1 | sed 's/cuda-cudart-//g')
+    emacs-nox vim-nox firefox"
+CUDA_VER=$(dpkg --get-selections | grep cuda-cudart- | awk '{print $1}' | tail -n 1 | sed 's/cuda-cudart-//g' | sed 's/dev-//g')
 
 #-----------------------------------------------------------------------------#
 #
@@ -165,6 +165,8 @@ bash miniconda.sh -b -p /opt/conda
 export PATH="/opt/conda/bin:${PATH}"
 conda config --set always_yes yes --set changeps1 yes
 conda update -c defaults -n base conda
-conda install -n base -c defaults -c conda-forge python=3.6 pyctest cmake scikit-build numpy matplotlib pillow
+conda install -n base -c defaults -c conda-forge python=3.6 pyctest cmake scikit-build numpy matplotlib pillow ipykernel jupyter
+source activate
+python -m ipykernel install --name base --display-name base
 conda clean -a -y
 conda config --set always_yes no

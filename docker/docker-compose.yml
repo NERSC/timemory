@@ -7,9 +7,10 @@ version: "3.3"
 
 services:
   #--------------------------------------------------------------------------#
-  # TiMemory development container
-  timemory-dev:
-    image: jrmadsen/timemory:dev
+  # timemory development container w/ CUDA 10.0
+  #
+  timemory-dev-10-0:
+    image: jrmadsen/timemory:cuda-10.0
     stdin_open: true
     tty: true
     build:
@@ -25,9 +26,10 @@ services:
         ENABLE_DISPLAY: "1"
 
   #--------------------------------------------------------------------------#
-  # TiMemory development container
-  timemory-dev-edge:
-    image: jrmadsen/timemory:dev-edge
+  # timemory development container w/ CUDA 10.1
+  #
+  timemory-dev-10-1:
+    image: jrmadsen/timemory:cuda-10.1
     stdin_open: true
     tty: true
     build:
@@ -43,7 +45,8 @@ services:
         ENABLE_DISPLAY: "1"
 
   #--------------------------------------------------------------------------#
-  # TiMemory development container
+  # timemory development container w/ CUDA 10.2
+  #
   timemory-latest:
     image: jrmadsen/timemory:latest
     stdin_open: true
@@ -53,9 +56,9 @@ services:
       dockerfile: Dockerfile
       args:
         BASE_IMG: "nvidia/cuda"
-        BASE_TAG: "latest"
+        BASE_TAG: "10.2-devel-ubuntu18.04"
         COMPILER_TYPE: "gcc"
-        GCC_VERSION: "9"
+        GCC_VERSION: "8"
         CLANG_VERSION: "9"
         REQUIRE_CUDA_VERSION: "10.1"
         ENABLE_DISPLAY: "1"

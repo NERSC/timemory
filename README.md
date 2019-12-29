@@ -25,9 +25,12 @@
 | PyPi           | `pip install timemory`                            |
 | Anaconda Cloud | `conda install -c jrmadsen timemory`              |
 
+
+Timemory is a performance measurement and analysis framework.
+
 ## Why Use timemory?
 
-- __*Timemory is arguably the most customizable performance analysis and tuning API available*__
+- __*Timemory is arguably the most customizable performance measurement and analysis API available*__
 - __*High-performance*__: very low overhead when enabled and borderline negligible runtime disabled
 - Ability to arbitrarily switch and combine different measurement types anywhere in application
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
@@ -106,11 +109,14 @@ you want to measure and run your code: initialization and output are automated.
 
 ## Profiling and timemory
 
-Timemory is not a full profiler and is intended to supplement profilers, not be used in lieu of profiling,
-which are important for _discovering where to place timemory markers_.
+Timemory is not a full profiler (yet). The ultimate goal is to create a customizable profiler.
+Currently, timemory supports explicit instrumentation (i.e. minor modifications to source code)
+and explicit wrapping of dynamically-linked functions.
+Using profilers are currently important for _discovering where to place timemory markers_ or
+_which dynamically function calls to wrap with GOTCHA_.
 The library provides an easy-to-use method for always-on general HPC analysis metrics
 (i.e. timing, memory usage, etc.) with the same or less overhead than if these metrics were to
-records and stored in a custom solution (there is zero polymorphism) and, for C++ code, extensively
+records and stored in a custom solution and, for C++ code, extensively
 inlined.
 Functionally, the overhead is non-existant: sampling profilers (e.g. gperftools, VTune)
 at standard sampling rates barely notice the presence of timemory unless it is been

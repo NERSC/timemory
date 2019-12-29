@@ -34,6 +34,7 @@
 #    include "timemory/timemory.hpp"
 #else
 #    include "timemory/compat/timemory_c.h"
+#    include "timemory/version.h"
 
 #    define TIMEMORY_SETTINGS_INIT TIMEMORY_C_SETTINGS_INIT
 #    define TIMEMORY_INIT(...) TIMEMORY_C_INIT(__VA_ARGS__)

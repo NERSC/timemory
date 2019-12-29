@@ -18,6 +18,14 @@ where `Size` is the maximum number of external functions to be wrapped,
 `Diff` is an optional template parameter for differentiating `gotcha` components with equivalent `Size` and `Tools`
 parameters but wrap different functions. Note: the `Tools` type cannot contain other `gotcha` components.
 
+### Use Cases
+
+The `gotcha` component in timemory can provide either of the following functionalities:
+
+1. Scoped instrumentation around external dynamically-linked function calls
+2. Wholesale replacement of external dynamically-linked function calls
+
+
 ## Traditional GOTCHA in C
 
 Writing a traditional GOTCHA wrapper in C requires a bit of work and the recommended methods require
@@ -77,7 +85,59 @@ A GOTCHA wrapper with timemory can be defined in a single line of code and there
 macros provided that eliminate the need for specifying the function signature (return-type and
 arguments) due to the ability for templates to extract these parameters.
 
-## GOTCHA Example
+## Function Replacement with GOTCHA Example
+
+Suppose that an application is spending a signifincant amount of run-time calling the standard math library
+double-precision `exp` function and you would like to investigate whether using single-precision `expf` is an
+acceptable substitute in certain regions. Instead of writing the [full specification](#traditional-gotcha-in-c)
+shown previously and manually enabling and disabling the wrapper in the region of interest, you can use timemory.
+
+Provided below is the full component specification require to implement the replacement function.
+
+```cpp
+// NOTE: declared in tim::component::
+struct exp_intercept : public base<exp_intercept, void>
+{
+    double operator()(double val)
+    { return expf(static_cast<float>(val)); }
+};
+```
+
+When the `exp_intercept` component is _appropriately_ configured within a `gotcha` component,
+whenever `double exp(double)` is invoked, timemory will (via the GOTCHA library) redirect this function call to
+`double exp_intercept::operator()(double)` -- and within this function, the replaced call to `expf` is implemented.
+Configuring the `gotcha` component is slightly different, however. The goal of this component is __*optimization*__
+instead of __*measurement or analysis*__ so the `gotcha` component is specified as such:
+
+```cpp
+using empty_t      = component_tuple<>;
+using exp_gotcha_t = gotcha<1, empty_t, exp_intercept>;
+```
+
+In other words, we define a `gotcha` component with an empty set of measurement/analysis components and
+then we specify _a component_ as the third template parameter. The _combination_ of an empty measurement/analysis
+collection as the second template parameter and a component as the third template parameter trigger a special
+optimized wrapper around the original function call which is explicitly designed to minimize the overhead of
+the redirection to the wrapper.
+
+All that remains is implementing the initializer that specifies which functions are wrapped by the `gotcha` component:
+
+```cpp
+__attribute__((constructor))
+void init_gotcha()
+{
+    exp_gotcha_t::get_initializer() = [=]()
+    { TIMEMORY_C_GOTCHA(exp_gotcha_t, 0, exp); };
+}
+```
+
+In the above, using the constructor attribute (only available with certain compilers) creates a function
+that is automatically executed before main starts. Since this function configured the gotcha within a call-back,
+instead of explicitly invoking `TIMEMORY_C_GOTCHA`, the gotcha wrapper is not activated during this function,
+meaning that the redirection of `exp` to `expf` is explicitly tied to the allocation of
+at least one instance of `exp_gotcha_t`.
+
+## Instrumentation with GOTCHA Example
 
 > Reference: [source/tests/gotcha_tests.cpp](https://github.com/NERSC/timemory/blob/master/source/tests/gotcha_tests.cpp)
 

@@ -36,10 +36,10 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 //
-setting_parse_callback_vec_t&
+setting_callback_vec_t&
 get_parse_callbacks()
 {
-    static setting_parse_callback_vec_t _instance;
+    static setting_callback_vec_t _instance;
     return _instance;
 }
 

@@ -68,6 +68,7 @@ The components in the "resource usage" category are provided by POSIX `rusage` (
 
 | C++ (object)         | C (enum)             | Python (enum)                            |
 | -------------------- | -------------------- | ---------------------------------------- |
+| **`cuda_profiler`**  | **`CUDA_PROFILE`**   | **`timemory.components.cuda_profiler`**  |
 | **`cuda_event`**     | **`CUDA_EVENT`**     | **`timemory.components.cuda_event`**     |
 | **`nvtx_marker`**    | **`NVTX_MARKER`**    | **`timemory.components.nvtx_marker`**    |
 | **`cupti_counters`** | **`CUPTI_COUNTERS`** | **`timemory.components.cupti_counters`** |
@@ -77,8 +78,9 @@ The components in the "resource usage" category are provided by POSIX `rusage` (
 
 ## gperftools Components
 
-The gperftools components provide the ability to start and stop the gperftools CPU profiler and heap profiler. These components depend on the
-available of the gperftools "profiler" and "tcmalloc" library and headers, respectively.
+The gperftools components provide the ability to start and stop the gperftools CPU profiler and heap profiler.
+These components depend on the available of the gperftools "profiler" and "tcmalloc" library
+and headers, respectively.
 
 | C++ (object)              | C (enum)                  | Python (enum)                                 |
 | ------------------------- | ------------------------- | --------------------------------------------- |
@@ -96,18 +98,45 @@ available of the gperftools "profiler" and "tcmalloc" library and headers, respe
 
 ## External Instrumentation Components
 
-These components provide tools similar to timemory but are commonly used to enable their service/features through the timemory interface.
-The primary benefit to using these instrumentations through timemory is the __*optional*__ support for these instrumentation toolkits
-via template filtering and/or CMake COMPONENTS.
-There is planned support for features from [LIKWID](https://github.com/RRZE-HPC/likwid).
+These components provide tools similar to timemory but are commonly used to enable their
+service/features through the timemory interface.
+The primary benefit to using these instrumentations through timemory is the __*optional*__ support
+for these instrumentation toolkits via template filtering and/or CMake COMPONENTS.
 
-The `caliper` component provides integration and access to the [Caliper Toolkit](https://github.com/LLNL/Caliper)
-([documentation](https://software.llnl.gov/Caliper/index.html)). Caliper is a flexible application introspection system that provide numerous similar tools
-to timemory and many others including, but not limited to timing, memory, annotation, MPI, CUDA, PAPI call-stack unwinding, sampling.
+| C++ (object)         | C (enum)             | Python (enum)                            |
+| -------------------- | -------------------- | ---------------------------------------- |
+| **`caliper`**        | **`CALIPER`**        | **`timemory.components.caliper`**        |
+| **`tau_marker`**     | **`TAU_MARKER`**     | **`timemory.components.tau_marker`**     |
+| **`vtune_event`**    | **`VTUNE_EVENT`**    | **`timemory.components.vtune_event`**    |
+| **`vtune_frame`**    | **`VTUNE_FRAME`**    | **`timemory.components.vtune_frame`**    |
+| **`likwid_perfmon`** | **`LIKWID_PERFMON`** | **`timemory.components.likwid_perfmon`** |
+| **`likwid_nvmon`**   | **`LIKWID_NVMON`**   | **`timemory.components.likwid_nvmon`**   |
 
-| C++ (object)  | C (enum)      | Python (enum)                     |
-| ------------- | ------------- | --------------------------------- |
-| **`caliper`** | **`CALIPER`** | **`timemory.components.caliper`** |
+### [LIKWID](https://github.com/RRZE-HPC/likwid)
+
+ Likwid is a toolsuite of command line applications
+ for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9
+ processors on the Linux operating system.
+ It consists of:
+
+- likwid-topology: print thread, cache and NUMA topology
+- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD and ARMv8 processors
+- likwid-powermeter: read out RAPL Energy information and get info about Turbo mode steps
+- likwid-pin: pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors)
+- likwid-bench: Micro benchmarking platform
+- likwid-features: Print and manipulate cpu features like hardware prefetchers
+- likwid-genTopoCfg: Dumps topology information to a file
+- likwid-mpirun: Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supports Intel MPI, OpenMPI, MPICH and SLURM)
+- likwid-perfscope: Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics using gnuplot
+- likwid-memsweeper: Sweep memory of NUMA domains and evict cachelines from the last level cache
+- likwid-setFrequencies: Tool to control the CPU and Uncore frequencies (x86 only)
+
+### [Caliper Toolkit](https://github.com/LLNL/Caliper)
+
+Caliper is a flexible application introspection system that provide numerous similar tools to timemory
+and many others including, but not limited to timing, memory, annotation, MPI, CUDA, PAPI,
+call-stack unwinding, sampling.
+
 
 ## GOTCHA Components
 

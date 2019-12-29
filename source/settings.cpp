@@ -46,15 +46,15 @@ using strvector_t = ::tim::settings::strvector_t;
 #    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
         TYPE& tim::settings::FUNC()                                                      \
         {                                                                                \
-            static TYPE instance = INIT;                                                 \
-            return instance;                                                             \
+            static TYPE* instance = new TYPE(INIT);                                      \
+            return *instance;                                                            \
         }
 
 #    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                      \
         TYPE& tim::settings::FUNC()                                                      \
         {                                                                                \
-            TIMEMORY_ENV_STATIC_ACCESSOR_CALLBACK(FUNC, ENV_VAR)                         \
-            static TYPE instance = get_env<TYPE>(ENV_VAR, INIT);                         \
+            TIMEMORY_ENV_STATIC_ACCESSOR_CALLBACK(TYPE, FUNC, ENV_VAR, INIT)             \
+            static TYPE instance = _generate();                                          \
             return instance;                                                             \
         }
 
