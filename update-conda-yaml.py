@@ -15,9 +15,9 @@ def read_file(fname):
     return content
 
 def main(new_git_rev):
-    content = read_file("meta.yaml")
+    content = read_file("recipe/meta.yaml")
 
-    fm = open("meta.yaml", "w")
+    fm = open("recipe/meta.yaml", "w")
     old_git_rev = ""
     for l in content:
         lstrip = l.strip().strip("-").strip("\t")
