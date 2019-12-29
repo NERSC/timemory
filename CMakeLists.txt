@@ -81,7 +81,7 @@ foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
 endforeach()
 
 configure_file(${PROJECT_SOURCE_DIR}/source/timemory/version.h.in
-    ${PROJECT_BINARY_DIR}/source/timemory/_version.h @ONLY)
+    ${PROJECT_SOURCE_DIR}/source/timemory/version.h @ONLY)
 
 # execute_process(
 #    COMMAND ${CMAKE_COMMAND} -E copy_if_different

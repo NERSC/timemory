@@ -152,6 +152,9 @@ struct dummy
 
 #else
 
+// versioning header
+#    include "timemory/version.h"
+
 #    include "timemory/components.hpp"
 #    include "timemory/manager.hpp"
 #    include "timemory/settings.hpp"
