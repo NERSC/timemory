@@ -17,6 +17,8 @@ class Timemory(CMakePackage):
 
     version('master', branch='master', submodules=True)
     version('develop', branch='develop', submodules=True)
+    version('3.0.0', commit='b36b1673b2c6b7ff3126d8261bef0f8f176c7beb',
+            submodules=True)
 
     variant('python', default=True, description='Enable Python support')
     variant('mpi', default=False, description='Enable MPI support')
@@ -49,16 +51,18 @@ class Timemory(CMakePackage):
     depends_on('caliper', when='+caliper')
     depends_on('gperftools', when='+gperftools')
 
+    conflicts('+cupti', when='~cuda', msg='CUPTI requires CUDA')
+
     def cmake_args(self):
         spec = self.spec
 
-        # Use spack install of Caliper instead of internal build
+        # Use spack install of Caliper and/or GOTCHA
+        # instead of internal submodule build
         args = [
             '-DTIMEMORY_BUILD_GOTCHA=OFF',
             '-DTIMEMORY_BUILD_CALIPER=OFF',
             '-DTIMEMORY_BUILD_TOOLS=ON',
-            '-DTIMEMORY_BUILD_GTEST=OFF',
-            '-DTIMEMORY_BUILD_EXAMPLES=OFF',
+            '-DTIMEMORY_BUILD_TESTING=OFF',
             '-DTIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON',
             '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON',
         ]
@@ -66,9 +70,11 @@ class Timemory(CMakePackage):
         if '+python' in spec:
             args.append('-DPYTHON_EXECUTABLE={0}'.format(
                 spec['python'].command.path))
+            args.append('-DTIMEMORY_USE_PYTHON=ON')
             args.append('-DTIMEMORY_BUILD_PYTHON=ON')
             args.append('-DTIMEMORY_TLS_MODEL=global-dynamic')
         else:
+            args.append('-DTIMEMORY_USE_PYTHON=OFF')
             args.append('-DTIMEMORY_BUILD_PYTHON=OFF')
 
         if '+caliper' in spec:
