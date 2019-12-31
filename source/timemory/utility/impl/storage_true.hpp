@@ -837,6 +837,7 @@ void
 storage<Type, true>::merge(this_type* itr)
 {
     using pre_order_iterator = typename graph_t::pre_order_iterator;
+    using sibling_iterator   = typename graph_t::sibling_iterator;
 
     // don't merge self
     if(itr == this)
@@ -893,11 +894,20 @@ storage<Type, true>::merge(this_type* itr)
             if(graph().is_valid(_nitr.begin()) && _nitr.begin())
             {
                 if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> worker is merging", Type::label().c_str());
+                    PRINT_HERE("[%s]> worker is merging %i records into %i records",
+                               Type::label().c_str(), (int) itr->size(),
+                               (int) this->size());
                 pre_order_iterator _pos   = _titr;
-                pre_order_iterator _other = _nitr.begin();
-                graph().append_child(_pos, _other);
+                sibling_iterator   _other = _nitr;
+                for(auto sitr = _other.begin(); sitr != _other.end(); ++sitr)
+                {
+                    pre_order_iterator pitr = sitr;
+                    graph().append_child(_pos, pitr);
+                }
                 _merged = true;
+                if(settings::debug() || settings::verbose() > 2)
+                    PRINT_HERE("[%s]> master has %i records", Type::label().c_str(),
+                               (int) this->size());
                 break;
             }
 
