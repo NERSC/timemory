@@ -47,11 +47,8 @@ inline component_tuple<Types...>::component_tuple()
 : m_store(false)
 , m_flat(false)
 , m_is_pushed(false)
-, m_print_prefix(true)
-, m_print_laps(true)
 , m_laps(0)
 , m_hash(0)
-, m_key("")
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -63,17 +60,13 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
-, m_print_prefix(true)
-, m_print_laps(true)
 , m_laps(0)
 , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
-, m_key(key)
 , m_data(data_type{})
 {
     if(settings::enabled())
         _func(*this);
-    // compute_width(key);
-    set_object_prefix(m_key);
+    set_object_prefix(key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -86,17 +79,13 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
-, m_print_prefix(true)
-, m_print_laps(true)
 , m_laps(0)
 , m_hash(loc.get_hash())
-, m_key(loc.get_id())
 , m_data(data_type())
 {
     if(settings::enabled())
         _func(*this);
-    // compute_width(m_key);
-    set_object_prefix(m_key);
+    set_object_prefix(loc.get_id());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -119,7 +108,7 @@ component_tuple<Types...>::~component_tuple()
     pop();
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // insert into graph
 //
 template <typename... Types>
@@ -129,18 +118,18 @@ component_tuple<Types...>::push()
     if(m_store && !m_is_pushed)
     {
         // reset the data
-        apply<void>::access<reset_t>(m_data);
+        apply_v::access<reset_t>(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
         if(m_flat)
-            apply<void>::access<insert_node_t<scope::flat>>(m_data, m_hash);
+            apply_v::access<insert_node_t<scope::flat>>(m_data, m_hash);
         else
-            apply<void>::access<insert_node_t<scope::process>>(m_data, m_hash);
+            apply_v::access<insert_node_t<scope::process>>(m_data, m_hash);
     }
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // pop out of graph
 //
 template <typename... Types>
@@ -150,35 +139,39 @@ component_tuple<Types...>::pop()
     if(m_store && m_is_pushed)
     {
         // set the current node to the parent node
-        apply<void>::access<pop_node_t>(m_data);
+        apply_v::access<pop_node_t>(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = false;
     }
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // measure functions
 //
 template <typename... Types>
 inline void
 component_tuple<Types...>::measure()
 {
-    apply<void>::access<measure_t>(m_data);
+    apply_v::access<measure_t>(m_data);
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // start/stop functions
 //
 template <typename... Types>
 inline void
 component_tuple<Types...>::start()
 {
+    using priority_start_t = operation_t<operation::priority_start>;
+    using standard_start_t = operation_t<operation::standard_start>;
+    using delayed_start_t  = operation_t<operation::delayed_start>;
     push();
     // increment laps
     ++m_laps;
     // start components
-    apply<void>::access<prior_start_t>(m_data);
-    apply<void>::access<stand_start_t>(m_data);
+    apply_v::access<priority_start_t>(m_data);
+    apply_v::access<standard_start_t>(m_data);
+    apply_v::access<delayed_start_t>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -187,14 +180,18 @@ template <typename... Types>
 inline void
 component_tuple<Types...>::stop()
 {
+    using priority_stop_t = operation_t<operation::priority_stop>;
+    using standard_stop_t = operation_t<operation::standard_stop>;
+    using delayed_stop_t  = operation_t<operation::delayed_stop>;
     // stop components
-    apply<void>::access<prior_stop_t>(m_data);
-    apply<void>::access<stand_stop_t>(m_data);
+    apply_v::access<priority_stop_t>(m_data);
+    apply_v::access<standard_stop_t>(m_data);
+    apply_v::access<delayed_stop_t>(m_data);
     // pop them off the running stack
     pop();
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // recording
 //
 template <typename... Types>
@@ -202,22 +199,22 @@ inline typename component_tuple<Types...>::this_type&
 component_tuple<Types...>::record()
 {
     ++m_laps;
-    apply<void>::access<record_t>(m_data);
+    apply_v::access<record_t>(m_data);
     return *this;
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // reset data
 //
 template <typename... Types>
 inline void
 component_tuple<Types...>::reset()
 {
-    apply<void>::access<reset_t>(m_data);
+    apply_v::access<reset_t>(m_data);
     m_laps = 0;
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // get data
 //
 template <typename... Types>
@@ -226,11 +223,11 @@ component_tuple<Types...>::get() const
 {
     const_cast<this_type&>(*this).stop();
     data_value_type _ret_data;
-    apply<void>::access2<get_data_t>(m_data, _ret_data);
+    apply_v::access2<get_data_t>(m_data, _ret_data);
     return _ret_data;
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // reset data
 //
 template <typename... Types>
@@ -239,18 +236,18 @@ component_tuple<Types...>::get_labeled() const
 {
     const_cast<this_type&>(*this).stop();
     data_label_type _ret_data;
-    apply<void>::access2<get_data_t>(m_data, _ret_data);
+    apply_v::access2<get_data_t>(m_data, _ret_data);
     return _ret_data;
 }
 
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // this_type operators
 //
 template <typename... Types>
 inline typename component_tuple<Types...>::this_type&
 component_tuple<Types...>::operator-=(const this_type& rhs)
 {
-    apply<void>::access2<minus_t>(m_data, rhs.m_data);
+    apply_v::access2<minus_t>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -261,7 +258,7 @@ template <typename... Types>
 inline typename component_tuple<Types...>::this_type&
 component_tuple<Types...>::operator-=(this_type& rhs)
 {
-    apply<void>::access2<minus_t>(m_data, rhs.m_data);
+    apply_v::access2<minus_t>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -272,7 +269,7 @@ template <typename... Types>
 inline typename component_tuple<Types...>::this_type&
 component_tuple<Types...>::operator+=(const this_type& rhs)
 {
-    apply<void>::access2<plus_t>(m_data, rhs.m_data);
+    apply_v::access2<plus_t>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }
@@ -283,7 +280,7 @@ template <typename... Types>
 inline typename component_tuple<Types...>::this_type&
 component_tuple<Types...>::operator+=(this_type& rhs)
 {
-    apply<void>::access2<plus_t>(m_data, rhs.m_data);
+    apply_v::access2<plus_t>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }
@@ -294,7 +291,7 @@ template <typename... Types>
 inline void
 component_tuple<Types...>::print_storage()
 {
-    apply<void>::type_access<operation::print_storage, data_type>();
+    apply_v::type_access<operation::print_storage, data_type>();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -327,25 +324,16 @@ component_tuple<Types...>::laps() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline uint64_t&
-component_tuple<Types...>::hash()
+inline std::string
+component_tuple<Types...>::key() const
 {
-    return m_hash;
+    return get_hash_ids()->find(m_hash)->second;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline std::string&
-component_tuple<Types...>::key()
-{
-    return m_key;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline const uint64_t&
+inline uint64_t
 component_tuple<Types...>::hash() const
 {
     return m_hash;
@@ -354,19 +342,11 @@ component_tuple<Types...>::hash() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline const std::string&
-component_tuple<Types...>::key() const
-{
-    return m_key;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
 inline void
 component_tuple<Types...>::rekey(const string_t& _key)
 {
-    compute_width(m_key = _key);
+    m_hash = add_hash_id(_key);
+    compute_width(_key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -426,7 +406,7 @@ template <typename... Types>
 inline void
 component_tuple<Types...>::update_width() const
 {
-    compute_width(m_key);
+    compute_width(key());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -452,7 +432,7 @@ template <typename... Types>
 inline void
 component_tuple<Types...>::set_object_prefix(const string_t& _key) const
 {
-    apply<void>::access<set_prefix_t>(m_data, _key);
+    apply_v::access<set_prefix_t>(m_data, _key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -461,7 +441,7 @@ template <typename... Types>
 inline void
 component_tuple<Types...>::init_storage()
 {
-    apply<void>::type_access<operation::init_storage, data_type>();
+    apply_v::type_access<operation::init_storage, data_type>();
 }
 
 //--------------------------------------------------------------------------------------//

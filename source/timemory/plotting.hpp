@@ -100,8 +100,8 @@ _plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
                           jname, "-t", "\"" + _prefix, descript + "\"", "-o", odir);
         if(echo_dart)
             cmd += " -e";
-        int ret = std::system(cmd.c_str());
-        if(ret != 0)
+        int sysret = std::system(cmd.c_str());
+        if(sysret != 0)
         {
             auto msg =
                 TIMEMORY_JOIN("", "Error generating plots with command: '", cmd, "'");

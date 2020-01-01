@@ -85,6 +85,9 @@ template <typename _Tp>
 struct standard_start;
 
 template <typename _Tp>
+struct delayed_start;
+
+template <typename _Tp>
 struct stop;
 
 template <typename _Tp>
@@ -92,6 +95,9 @@ struct priority_stop;
 
 template <typename _Tp>
 struct standard_stop;
+
+template <typename _Tp>
+struct delayed_stop;
 
 template <typename _Tp>
 struct mark_begin;

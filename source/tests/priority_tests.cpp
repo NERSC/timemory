@@ -40,13 +40,13 @@ using namespace tim::component;
 
 // make different types to access and change traits individually
 
-template <size_t Idx>
-struct test_clock : public base<test_clock<Idx>>
+template <size_t Idx, bool StartSleep, bool StopSleep>
+struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
 {
     using ratio_t    = std::nano;
     using value_type = int64_t;
-    using this_type  = test_clock<Idx>;
-    using base_type  = base<test_clock<Idx>, value_type>;
+    using this_type  = test_clock<Idx, StartSleep, StopSleep>;
+    using base_type  = base<this_type, value_type>;
     using string_t   = std::string;
 
     // since this is a template class, need these statements
@@ -77,12 +77,16 @@ struct test_clock : public base<test_clock<Idx>>
 
     void start()
     {
+        if(StartSleep)
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         set_started();
         value = record();
     }
 
     void stop()
     {
+        if(StopSleep)
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         auto tmp = record();
         accum += (tmp - value);
         value = tmp;
@@ -90,8 +94,8 @@ struct test_clock : public base<test_clock<Idx>>
     }
 };
 
-using priority_start_wc = test_clock<0>;
-using priority_stop_wc  = test_clock<1>;
+using priority_start_wc = test_clock<0, false, true>;
+using priority_stop_wc  = test_clock<1, true, false>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -112,10 +116,10 @@ template <>
 struct uses_timing_units<priority_stop_wc> : public std::true_type
 {};
 template <>
-struct start_priority<priority_start_wc> : public std::true_type
+struct start_priority<priority_start_wc> : public std::integral_constant<int, -64>
 {};
 template <>
-struct stop_priority<priority_stop_wc> : public std::true_type
+struct stop_priority<priority_stop_wc> : public std::integral_constant<int, -64>
 {};
 }  // namespace trait
 }  // namespace tim
@@ -125,10 +129,9 @@ struct stop_priority<priority_stop_wc> : public std::true_type
 using tuple_t =
     tim::component_tuple<wall_clock, cpu_clock, priority_start_wc, priority_stop_wc>;
 
-using prior_start_t = tuple_t::prior_start_t;
-using prior_stop_t  = tuple_t::prior_stop_t;
-using stand_start_t = tuple_t::stand_start_t;
-using stand_stop_t  = tuple_t::stand_stop_t;
+using plus_t  = typename tuple_t::operation_t<tim::operation::plus>;
+using start_t = typename tuple_t::operation_t<tim::operation::start>;
+using stop_t  = typename tuple_t::operation_t<tim::operation::stop>;
 
 using apply_v = tim::apply<void>;
 
@@ -167,6 +170,10 @@ protected:
 
 TEST_F(priority_tests, simple_check)
 {
+    std::cout << "plus  : " << tim::demangle<plus_t>() << "\n";
+    std::cout << "start : " << tim::demangle<start_t>() << "\n";
+    std::cout << "stop  : " << tim::demangle<stop_t>() << "\n";
+
     tuple_t t(details::get_test_name(), true);
 
     // start/stop all to check laps
@@ -223,43 +230,17 @@ TEST_F(priority_tests, simple_check)
 
 TEST_F(priority_tests, start_stop)
 {
-    // lambdas to ensure inline
-    auto priority_start = [](tuple_t& t) { apply_v::access<prior_start_t>(t.data()); };
-    auto priority_stop  = [](tuple_t& t) { apply_v::access<prior_stop_t>(t.data()); };
-    auto standard_start = [](tuple_t& t) { apply_v::access<stand_start_t>(t.data()); };
-    auto standard_stop  = [](tuple_t& t) { apply_v::access<stand_stop_t>(t.data()); };
+    std::cout << "plus  : " << tim::demangle<plus_t>() << "\n";
+    std::cout << "start : " << tim::demangle<start_t>() << "\n";
+    std::cout << "stop  : " << tim::demangle<stop_t>() << "\n";
 
     tuple_t t(details::get_test_name(), true);
 
-    // start/stop all to check laps
     t.start();
+
+    do_sleep(500);  // TOTAL TIME: 0.50 seconds
+
     t.stop();
-
-    t.get<wall_clock>().start();
-
-    do_sleep(250);  // TOTAL TIME: 0.25 seconds
-
-    priority_start(t);
-
-    do_sleep(250);  // TOTAL TIME: 0.50 seconds
-
-    standard_start(t);
-
-    do_sleep(500);  // TOTAL TIME: 1.00 seconds
-
-    priority_stop(t);
-
-    do_sleep(125);  // TOTAL TIME: 1.125 seconds
-
-    standard_stop(t);
-
-    do_sleep(125);  // TOTAL TIME: 1.25 seconds
-
-    t.get<wall_clock>().stop();
-
-    // t.start();
-    // details::consume(500);
-    // t.stop();
 
     auto& native_wc = t.get<wall_clock>();
     auto& pstart_wc = t.get<priority_start_wc>();
@@ -273,13 +254,13 @@ TEST_F(priority_tests, start_stop)
     std::cout << t << std::endl;
     printf("\n");
 
-    double native_exp = 1.25;
-    double pstart_exp = 0.875;
+    double native_exp = 1.0;
+    double pstart_exp = 1.5;
     double pstop_exp  = 0.5;
 
+    ASSERT_NEAR(native_exp, native_wc.get(), 0.125);
     ASSERT_NEAR(pstart_exp, pstart_wc.get(), 0.125);
     ASSERT_NEAR(pstop_exp, pstop_wc.get(), 0.125);
-    ASSERT_NEAR(native_exp, native_wc.get(), 0.125);
 }
 
 //--------------------------------------------------------------------------------------//

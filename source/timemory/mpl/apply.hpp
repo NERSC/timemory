@@ -133,6 +133,86 @@ struct apply<void>
     using _Ret = void;
 
     //----------------------------------------------------------------------------------//
+
+    template <typename _Tp>
+    struct out_of_order_T;
+
+    template <template <typename, typename...> class _Operator, typename _Type,
+              typename... _Types>
+    struct out_of_order_T<_Operator<_Type, _Types...>>
+    {
+        template <typename _Tp, typename _Tail>
+        struct get_index_of;
+
+        template <typename _Tp, typename... _Tail>
+        struct get_index_of<_Tp, std::tuple<_Tp, _Tail...>>
+        {
+            static constexpr int value = 0;
+        };
+
+        template <typename _Tp, typename... _Tail>
+        struct get_index_of<_Tp, std::tuple<_Tp*, _Tail...>>
+        {
+            static constexpr int value = 0;
+        };
+
+        template <typename _Tp, typename Head, typename... Tail>
+        struct get_index_of<_Tp, std::tuple<Head, Tail...>>
+        {
+            static constexpr int value =
+                1 + get_index_of<_Tp, std::tuple<Tail...>>::value;
+        };
+
+        template <typename _Tp, typename... Tail>
+        struct get_index_of<_Tp, std::tuple<Tail...>>
+        {
+            static_assert(sizeof...(Tail) != 0, "Error! Type not found!");
+        };
+
+        template <typename _Tuple, typename... _Args>
+        static void access(_Tuple&& __t, _Args&&... __args)
+        {
+            using _TupleT = decay_t<_Tuple>;
+            static_assert(std::tuple_size<_TupleT>::value != 0, "Error! tuple_size = 0");
+            constexpr int _N = get_index_of<_Type, _TupleT>::value;
+            using _Tp        = decltype(std::get<_N>(__t));
+            _Operator<_Type, _Types...>(std::forward<_Tp>(std::get<_N>(__t)),
+                                        std::forward<_Args>(__args)...);
+        }
+    };
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access>
+    struct out_of_order;
+
+    template <typename _Access, typename... _AccessT>
+    struct out_of_order<std::tuple<_Access, _AccessT...>>
+    {
+        template <typename _Tuple, typename... _Args>
+        static void access(_Tuple&& __t, _Args&&... __args)
+        {
+            out_of_order_T<_Access>::template access<_Tuple, _Args...>(
+                std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+        }
+    };
+
+    template <typename _AccessA, typename _AccessB, typename... _AccessT>
+    struct out_of_order<std::tuple<_AccessA, _AccessB, _AccessT...>>
+    {
+        template <typename _Tuple, typename... _Args>
+        static void access(_Tuple&& __t, _Args&&... __args)
+        {
+            out_of_order_T<_AccessA>::template access<_Tuple, _Args...>(
+                std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+
+            out_of_order<std::tuple<_AccessB, _AccessT...>>::template access<_Tuple,
+                                                                             _Args...>(
+                std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+        }
+    };
+
+    //----------------------------------------------------------------------------------//
     //  invoke a function with a tuple
     //
     template <typename _Fn, typename _Tuple, size_t... _Idx>
@@ -699,6 +779,18 @@ struct apply<void>
     template <typename _Access, typename _Tuple, typename... _Args,
               std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N > 0), int> = 0>
+    static void out_of_order(_Tuple&& __t, _Args&&... __args)
+    {
+        using OutOfOrder_t = internal::apply<void>::out_of_order<_Access>;
+        OutOfOrder_t::template access<_Tuple, _Args...>(std::forward<_Tuple>(__t),
+                                                        std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _Tuple, typename... _Args,
+              std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N > 0), int> = 0>
     static void access_with_indices(_Tuple&& __t, _Args&&... __args)
     {
         internal::apply<void>::template apply_access_with_indices<0, _N - 1, _Access,
@@ -765,6 +857,14 @@ struct apply<void>
               std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
               enable_if_t<(_N == 0), int> = 0>
     static void access(_Tuple&&, _Args&&...)
+    {}
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _Tuple, typename... _Args,
+              std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static void out_of_order(_Tuple&&, _Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//

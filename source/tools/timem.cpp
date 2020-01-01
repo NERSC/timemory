@@ -106,7 +106,7 @@ class custom_component_tuple : public component_tuple<Types...>
     static std::string label();
 
 public:
-    custom_component_tuple(const string_t& key)
+    explicit custom_component_tuple(const string_t& key)
     : component_tuple<Types...>(key, true, true)
     {}
 
@@ -117,7 +117,7 @@ public:
         std::stringstream ssp;
         std::stringstream ssd;
         auto&&            data  = obj.m_data;
-        auto&&            key   = obj.m_key;
+        auto&&            key   = obj.key();
         auto&&            width = obj.output_width();
 
         apply<void>::access<apply_stop_t>(data);
@@ -282,14 +282,6 @@ parent_process(pid_t pid)
 
 //--------------------------------------------------------------------------------------//
 
-char*
-getcharptr(const std::string& str)
-{
-    return const_cast<char*>(str.c_str());
-}
-
-//--------------------------------------------------------------------------------------//
-
 void
 explain(int ret, const char* pathname, char** argv)
 {
@@ -315,6 +307,7 @@ explain(int ret, const char* pathname, char** argv)
         std::cerr << std::endl;
     }
 }
+
 //--------------------------------------------------------------------------------------//
 
 declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)

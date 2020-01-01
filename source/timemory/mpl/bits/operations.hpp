@@ -423,7 +423,7 @@ struct echo_measurement
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
-        auto _unit  = Type::display_unit();
+        auto _unit  = Type::get_display_unit();
         auto name   = generate_name(prefix, _unit);
         auto _data  = obj.get();
 

@@ -77,7 +77,8 @@ class component_list
 
 public:
     // clang-format off
-    template <typename... _Types> struct filtered {};
+    template <typename... _Types>                                   struct filtered;
+    template <template <typename...> class _Op, typename... _Types> struct opfiltered;
     // clang-format on
 
     template <template <typename...> class _TypeL, typename... _Types>
@@ -88,38 +89,38 @@ public:
         using type_tuple     = std::tuple<_Types...>;
         using reference_type = std::tuple<_Types...>;
 
-        // clang-format off
         template <typename _Archive>
-        using serialize_t        = _TypeL<operation::pointer_operator<_Types, operation::serialization<_Types, _Archive>>...>;
+        using serialize_t = _TypeL<operation::pointer_operator<
+            _Types, operation::serialization<_Types, _Archive>>...>;
         template <typename _Scope>
-        using insert_node_t      = _TypeL<operation::pointer_operator<_Types, operation::insert_node<_Types, _Scope>>...>;
-        using pop_node_t         = _TypeL<operation::pointer_operator<_Types, operation::pop_node<_Types>>...>;
-        using measure_t          = _TypeL<operation::pointer_operator<_Types, operation::measure<_Types>>...>;
-        using record_t           = _TypeL<operation::pointer_operator<_Types, operation::record<_Types>>...>;
-        using reset_t            = _TypeL<operation::pointer_operator<_Types, operation::reset<_Types>>...>;
-        using plus_t             = _TypeL<operation::pointer_operator<_Types, operation::plus<_Types>>...>;
-        using minus_t            = _TypeL<operation::pointer_operator<_Types, operation::minus<_Types>>...>;
-        using multiply_t         = _TypeL<operation::pointer_operator<_Types, operation::multiply<_Types>>...>;
-        using divide_t           = _TypeL<operation::pointer_operator<_Types, operation::divide<_Types>>...>;
-        using prior_start_t      = _TypeL<operation::pointer_operator<_Types, operation::priority_start<_Types>>...>;
-        using prior_stop_t       = _TypeL<operation::pointer_operator<_Types, operation::priority_stop<_Types>>...>;
-        using stand_start_t      = _TypeL<operation::pointer_operator<_Types, operation::standard_start<_Types>>...>;
-        using stand_stop_t       = _TypeL<operation::pointer_operator<_Types, operation::standard_stop<_Types>>...>;
-        using mark_begin_t       = _TypeL<operation::pointer_operator<_Types, operation::mark_begin<_Types>>...>;
-        using mark_end_t         = _TypeL<operation::pointer_operator<_Types, operation::mark_end<_Types>>...>;
-        using construct_t        = _TypeL<operation::pointer_operator<_Types, operation::construct<_Types>>...>;
-        using audit_t        = _TypeL<operation::pointer_operator<_Types, operation::audit<_Types>>...>;
-        using set_prefix_t       = _TypeL<operation::pointer_operator<_Types, operation::set_prefix<_Types>>...>;
-        using get_data_t         = _TypeL<operation::pointer_operator<_Types, operation::get_data<_Types>>...>;
-        using print_t            = _TypeL<operation::print<_Types>...>;
-        using pointer_count_t    = _TypeL<operation::pointer_counter<_Types>...>;
-        using deleter_t          = _TypeL<operation::pointer_deleter<_Types>...>;
-        using copy_t             = _TypeL<operation::copy<_Types>...>;
-        using auto_type          = auto_list<_Types...>;
-        // clang-format on
+        using insert_node_t = _TypeL<operation::pointer_operator<
+            _Types, operation::insert_node<_Types, _Scope>>...>;
+        using pop_node_t =
+            _TypeL<operation::pointer_operator<_Types, operation::pop_node<_Types>>...>;
+        using reset_t =
+            _TypeL<operation::pointer_operator<_Types, operation::reset<_Types>>...>;
+        using construct_t =
+            _TypeL<operation::pointer_operator<_Types, operation::construct<_Types>>...>;
+        using set_prefix_t =
+            _TypeL<operation::pointer_operator<_Types, operation::set_prefix<_Types>>...>;
+        using print_t         = _TypeL<operation::print<_Types>...>;
+        using pointer_count_t = _TypeL<operation::pointer_counter<_Types>...>;
+        using deleter_t       = _TypeL<operation::pointer_deleter<_Types>...>;
+        using copy_t          = _TypeL<operation::copy<_Types>...>;
+        using auto_type       = auto_list<_Types...>;
+    };
+
+    template <template <typename...> class _OpType, template <typename...> class _TypeL,
+              typename... _Types>
+    struct opfiltered<_OpType, _TypeL<_Types...>>
+    {
+        using type = _TypeL<operation::pointer_operator<_Types, _OpType<_Types>>...>;
     };
 
     using impl_unique_concat_type = available_tuple<concat<Types...>>;
+
+    template <template <typename...> class _OpType>
+    using operation_t = typename opfiltered<_OpType, impl_unique_concat_type>::type;
 
 public:
     using string_t            = std::string;
@@ -133,6 +134,7 @@ public:
     using data_value_type     = get_data_value_t<reference_type>;
     using data_label_type     = get_data_label_t<reference_type>;
     using captured_location_t = source_location::captured;
+    using apply_v             = apply<void>;
 
     // used by gotcha
     using component_type = this_type;
@@ -161,24 +163,10 @@ public:
     template <typename _Scope>
     using insert_node_t   = typename filtered<impl_unique_concat_type>::template insert_node_t<_Scope>;
     using pop_node_t      = typename filtered<impl_unique_concat_type>::pop_node_t;
-    using measure_t       = typename filtered<impl_unique_concat_type>::measure_t;
-    using record_t        = typename filtered<impl_unique_concat_type>::record_t;
     using reset_t         = typename filtered<impl_unique_concat_type>::reset_t;
-    using plus_t          = typename filtered<impl_unique_concat_type>::plus_t;
-    using minus_t         = typename filtered<impl_unique_concat_type>::minus_t;
-    using multiply_t      = typename filtered<impl_unique_concat_type>::multiply_t;
-    using divide_t        = typename filtered<impl_unique_concat_type>::divide_t;
     using print_t         = typename filtered<impl_unique_concat_type>::print_t;
-    using prior_start_t   = typename filtered<impl_unique_concat_type>::prior_start_t;
-    using prior_stop_t    = typename filtered<impl_unique_concat_type>::prior_stop_t;
-    using stand_start_t   = typename filtered<impl_unique_concat_type>::stand_start_t;
-    using stand_stop_t    = typename filtered<impl_unique_concat_type>::stand_stop_t;
-    using mark_begin_t    = typename filtered<impl_unique_concat_type>::mark_begin_t;
-    using mark_end_t      = typename filtered<impl_unique_concat_type>::mark_end_t;
     using construct_t     = typename filtered<impl_unique_concat_type>::construct_t;
-    using audit_t     = typename filtered<impl_unique_concat_type>::audit_t;
     using set_prefix_t    = typename filtered<impl_unique_concat_type>::set_prefix_t;
-    using get_data_t      = typename filtered<impl_unique_concat_type>::get_data_t;
     using pointer_count_t = typename filtered<impl_unique_concat_type>::pointer_count_t;
     using deleter_t       = typename filtered<impl_unique_concat_type>::deleter_t;
     using copy_t          = typename filtered<impl_unique_concat_type>::copy_t;
@@ -231,10 +219,8 @@ public:
     inline data_type&       data();
     inline const data_type& data() const;
     inline int64_t          laps() const;
-    inline uint64_t&        hash();
-    inline string_t&        key();
-    inline const uint64_t&  hash() const;
-    inline const string_t&  key() const;
+    inline string_t         key() const;
+    inline uint64_t         hash() const;
     inline void             rekey(const string_t&);
     inline bool&            store();
     inline const bool&      store() const;
@@ -245,7 +231,7 @@ public:
     template <typename... _Args>
     void construct(_Args&&... _args)
     {
-        apply<void>::access<construct_t>(m_data, std::forward<_Args>(_args)...);
+        apply_v::access<construct_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -255,7 +241,8 @@ public:
     template <typename... _Args>
     void mark_begin(_Args&&... _args)
     {
-        apply<void>::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...);
+        using mark_begin_t = operation_t<operation::mark_begin>;
+        apply_v::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -265,7 +252,8 @@ public:
     template <typename... _Args>
     void mark_end(_Args&&... _args)
     {
-        apply<void>::access<mark_end_t>(m_data, std::forward<_Args>(_args)...);
+        using mark_end_t = operation_t<operation::mark_end>;
+        apply_v::access<mark_end_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -274,7 +262,8 @@ public:
     template <typename... _Args>
     void audit(_Args&&... _args)
     {
-        apply<void>::access<audit_t>(m_data, std::forward<_Args>(_args)...);
+        using audit_t = operation_t<operation::audit>;
+        apply_v::access<audit_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -291,28 +280,32 @@ public:
     template <typename _Op>
     this_type& operator-=(_Op&& rhs)
     {
-        apply<void>::access<minus_t>(m_data, std::forward<_Op>(rhs));
+        using minus_t = operation_t<operation::minus>;
+        apply_v::access<minus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator+=(_Op&& rhs)
     {
-        apply<void>::access<plus_t>(m_data, std::forward<_Op>(rhs));
+        using plus_t = operation_t<operation::plus>;
+        apply_v::access<plus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
-        apply<void>::access<multiply_t>(m_data, std::forward<_Op>(rhs));
+        using multiply_t = operation_t<operation::multiply>;
+        apply_v::access<multiply_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
-        apply<void>::access<divide_t>(m_data, std::forward<_Op>(rhs));
+        using divide_t = operation_t<operation::divide>;
+        apply_v::access<divide_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
@@ -346,46 +339,73 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    //
+    template <bool PrintPrefix = true, bool PrintLaps = true>
+    void print(std::ostream& os) const
     {
-        obj.compute_width(obj.key());
+        using priority_stop_t = operation_t<operation::priority_stop>;
+        using standard_stop_t = operation_t<operation::standard_stop>;
+        using delayed_stop_t  = operation_t<operation::delayed_stop>;
+
+        compute_width(key());
         uint64_t count = 0;
-        apply<void>::access<pointer_count_t>(obj.m_data, std::ref(count));
+        apply_v::access<pointer_count_t>(m_data, std::ref(count));
         if(count < 1)
-            return os;
+            return;
         // stop, if not already stopped
-        apply<void>::access<prior_stop_t>(obj.m_data);
-        apply<void>::access<stand_stop_t>(obj.m_data);
+        apply_v::access<priority_stop_t>(m_data);
+        apply_v::access<standard_stop_t>(m_data);
+        apply_v::access<delayed_stop_t>(m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
-        apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
         if(ss_data.str().length() > 0)
         {
-            if(obj.m_print_prefix)
+            if(PrintPrefix)
             {
-                obj.update_width();
+                auto _key = get_hash_ids()->find(m_hash)->second;
+                update_width();
                 std::stringstream ss_id;
-                ss_id << obj.get_prefix() << " " << std::left << obj.m_key;
+                ss_id << get_prefix() << " " << std::left << _key;
                 ss_prefix << std::setw(output_width()) << std::left << ss_id.str()
                           << " : ";
                 os << ss_prefix.str();
             }
             os << ss_data.str();
-            if(obj.laps() > 0 && obj.m_print_laps)
-                os << " [laps: " << obj.m_laps << "]";
+            if(laps() > 0 && PrintLaps)
+                os << " [laps: " << m_laps << "]";
         }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    {
+        obj.print<true, true>(os);
         return os;
     }
 
     //----------------------------------------------------------------------------------//
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version)
+    void serialize(Archive& ar, const unsigned int)
     {
-        ar(cereal::make_nvp("key", m_key), cereal::make_nvp("laps", m_laps));
-        ar.setNextName("data");
-        ar.startNode();
-        apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
-        ar.finishNode();
+        std::string _key   = "";
+        auto        keyitr = get_hash_ids()->find(m_hash);
+        if(keyitr != get_hash_ids()->end())
+            _key = keyitr->second;
+
+        ar(cereal::make_nvp("hash", m_hash), cereal::make_nvp("key", _key),
+           cereal::make_nvp("laps", m_laps));
+
+        if(keyitr == get_hash_ids()->end())
+        {
+            auto _hash = add_hash_id(_key);
+            if(_hash != m_hash)
+                PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
+                           (unsigned long long) _hash, (unsigned long long) m_hash);
+        }
+
+        ar(cereal::make_nvp("data", m_data));
     }
 
 public:
@@ -531,20 +551,18 @@ protected:
     void set_object_prefix(_Tp* obj) const
     {
         using _PrefixOp = operation::pointer_operator<_Tp, operation::set_prefix<_Tp>>;
-        _PrefixOp(obj, m_key);
+        auto _key       = get_hash_ids()->find(m_hash)->second;
+        _PrefixOp(obj, _key);
     }
 
 protected:
     // objects
-    bool              m_store        = false;
-    bool              m_flat         = false;
-    bool              m_is_pushed    = false;
-    bool              m_print_prefix = true;
-    bool              m_print_laps   = true;
-    int32_t           m_laps         = 0;
-    uint64_t          m_hash         = 0;
-    string_t          m_key          = "";
-    mutable data_type m_data         = data_type();
+    bool              m_store     = false;
+    bool              m_flat      = false;
+    bool              m_is_pushed = false;
+    int32_t           m_laps      = 0;
+    uint64_t          m_hash      = 0;
+    mutable data_type m_data      = data_type();
 };
 
 //--------------------------------------------------------------------------------------//

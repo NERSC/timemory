@@ -99,6 +99,31 @@ DoWork::execute_fp8(int64_t nitr)
 
 //--------------------------------------------------------------------------------------//
 
+void
+DoWork::execute_fp(int64_t nitr, std::vector<float> fvals,
+                   const std::deque<double>& dvals)
+{
+    float fret = 0.0;
+    for(const auto& itr : fvals)
+    {
+        fret += ext::work<float>(
+            nitr, [](float val) -> float { return cosf(val); },
+            [&](float val, int64_t i) -> float { return val + itr * i; });
+    }
+    std::get<0>(m_tuple) = fret;
+
+    double dret = 0.0;
+    for(const auto& itr : dvals)
+    {
+        dret += ext::work<double>(
+            nitr, [](double val) -> double { return cos(val); },
+            [&](double val, int64_t i) -> double { return val + itr * i; });
+    }
+    std::get<1>(m_tuple) = dret;
+}
+
+//--------------------------------------------------------------------------------------//
+
 std::tuple<float, double>
 DoWork::get() const
 {

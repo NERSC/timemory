@@ -347,19 +347,19 @@ struct priority_start
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up                                          = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
+    template <typename _Up                                               = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value >= 0), int> = 0>
+    explicit priority_start(base_type&)
+    {}
+
+    template <typename _Up                                              = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value < 0), int> = 0>
     explicit priority_start(base_type& obj)
     {
         static thread_local auto _init = init_storage<_Tp>::get();
         consume_parameters(_init);
         obj.start();
     }
-
-    template <typename _Up                                                   = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
-    explicit priority_start(base_type&)
-    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -371,14 +371,38 @@ struct standard_start
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up                                          = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
+    template <typename _Up                                               = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value != 0), int> = 0>
     explicit standard_start(base_type&)
     {}
 
-    template <typename _Up                                                   = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
+    template <typename _Up                                               = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == 0), int> = 0>
     explicit standard_start(base_type& obj)
+    {
+        static thread_local auto _init = init_storage<_Tp>::get();
+        consume_parameters(_init);
+        obj.start();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct delayed_start
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                               = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value <= 0), int> = 0>
+    explicit delayed_start(base_type&)
+    {}
+
+    template <typename _Up                                              = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value > 0), int> = 0>
+    explicit delayed_start(base_type& obj)
     {
         static thread_local auto _init = init_storage<_Tp>::get();
         consume_parameters(_init);
@@ -395,11 +419,7 @@ struct stop
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit stop(base_type& obj)
-    {
-        obj.stop();
-        // obj.activate_noop();
-    }
+    explicit stop(base_type& obj) { obj.stop(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -411,17 +431,17 @@ struct priority_stop
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value), int> = 0>
+    template <typename _Up                                              = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value >= 0), int> = 0>
+    explicit priority_stop(base_type&)
+    {}
+
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value < 0), int> = 0>
     explicit priority_stop(base_type& obj)
     {
         obj.stop();
     }
-
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
-    explicit priority_stop(base_type&)
-    {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -433,14 +453,36 @@ struct standard_stop
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value), int> = 0>
+    template <typename _Up                                              = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value != 0), int> = 0>
     explicit standard_stop(base_type&)
     {}
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
+    template <typename _Up                                              = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == 0), int> = 0>
     explicit standard_stop(base_type& obj)
+    {
+        obj.stop();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct delayed_stop
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                              = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value <= 0), int> = 0>
+    explicit delayed_stop(base_type&)
+    {}
+
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value > 0), int> = 0>
+    explicit delayed_stop(base_type& obj)
     {
         obj.stop();
     }
