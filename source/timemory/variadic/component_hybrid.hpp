@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019, The Regents of the University of California,
+// Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -143,9 +143,6 @@ public:
     , m_list(key, store, flat)
     {
         _func(*this);
-        m_tuple.m_print_laps  = false;
-        m_list.m_print_laps   = false;
-        m_list.m_print_prefix = false;
     }
 
     template <typename _Func = init_func_t>
@@ -156,9 +153,6 @@ public:
     , m_list(loc, store, flat)
     {
         _func(*this);
-        m_tuple.m_print_laps  = false;
-        m_list.m_print_laps   = false;
-        m_list.m_print_prefix = false;
     }
 
     ~component_hybrid() {}
@@ -199,15 +193,15 @@ public:
     const list_type&  get_rhs() const { return m_list; }
 
 public:
-    inline int64_t laps() const { return m_tuple.laps(); }
-
-    string_t& key() { return m_tuple.key(); }
-
-    const string_t& key() const { return m_tuple.key(); }
-    void            rekey(const string_t& _key) { m_tuple.rekey(_key); }
-
-    bool&       store() { return m_tuple.store(); }
-    const bool& store() const { return m_tuple.store(); }
+    inline int64_t  laps() const { return m_tuple.laps(); }
+    inline string_t key() const { return m_tuple.key(); }
+    inline uint64_t hash() const { return m_tuple.hash(); }
+    inline bool     store() const { return m_tuple.store(); }
+    inline void     rekey(const string_t& _key)
+    {
+        m_tuple.rekey(_key);
+        m_list.rekey(_key);
+    }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -438,8 +432,8 @@ public:
     {
         std::stringstream tss, lss;
 
-        tss << obj.m_tuple;
-        lss << obj.m_list;
+        obj.m_tuple.template print<true, false>(tss);
+        obj.m_list.template print<false, false>(lss);
 
         if(tss.str().length() > 0)
             os << tss.str();
@@ -456,10 +450,10 @@ public:
 
     //----------------------------------------------------------------------------------//
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version)
+    void serialize(Archive& ar, const unsigned int)
     {
-        m_tuple.serialize(ar, version);
-        m_list.serialize(ar, version);
+        ar(cereal::make_nvp("tuple", m_tuple));
+        ar(cereal::make_nvp("list", m_list));
     }
 
     //----------------------------------------------------------------------------------//

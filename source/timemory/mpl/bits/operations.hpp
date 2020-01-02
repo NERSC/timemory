@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2019, The Regents of the University of California,
+//  Copyright (c) 2020, The Regents of the University of California,
 //  through Lawrence Berkeley National Laboratory (subject to receipt of any
 //  required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -423,7 +423,7 @@ struct echo_measurement
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
-        auto _unit  = Type::display_unit();
+        auto _unit  = Type::get_display_unit();
         auto name   = generate_name(prefix, _unit);
         auto _data  = obj.get();
 

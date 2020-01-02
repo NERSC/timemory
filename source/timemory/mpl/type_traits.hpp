@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2019, The Regents of the University of California,
+//  Copyright (c) 2020, The Regents of the University of California,
 //  through Lawrence Berkeley National Laboratory (subject to receipt of any
 //  required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -121,7 +121,7 @@ struct custom_laps_printing : std::false_type
 /// other types.
 ///
 template <typename _Tp>
-struct start_priority : std::false_type
+struct start_priority : std::integral_constant<int, 0>
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -129,7 +129,7 @@ struct start_priority : std::false_type
 /// other types.
 ///
 template <typename _Tp>
-struct stop_priority : std::false_type
+struct stop_priority : std::integral_constant<int, 0>
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -358,6 +358,7 @@ struct record_max<component::virtual_memory> : std::true_type
 //                              ARRAY SERIALIZATION
 //
 //--------------------------------------------------------------------------------------//
+
 #if defined(TIMEMORY_USE_PAPI)
 template <int... EventTypes>
 struct array_serialization<component::papi_tuple<EventTypes...>> : std::true_type
@@ -371,35 +372,33 @@ template <>
 struct array_serialization<component::cupti_counters> : std::true_type
 {};
 #endif
+
 //--------------------------------------------------------------------------------------//
 //
 //                              START PRIORITY
 //
 //--------------------------------------------------------------------------------------//
-#if defined(TIMEMORY_USE_CUPTI)
-/// component::cuda_event should be stopped before other types
+
+#if defined(TIMEMORY_USE_CUDA)
+/// component::cuda_event should be started after other types
 template <>
-struct start_priority<component::cupti_activity> : std::true_type
+struct start_priority<component::cuda_event> : std::integral_constant<int, 256>
 {};
 #endif
+
 //--------------------------------------------------------------------------------------//
 //
 //                              STOP PRIORITY
 //
 //--------------------------------------------------------------------------------------//
+
 #if defined(TIMEMORY_USE_CUDA)
 /// component::cuda_event should be stopped before other types
 template <>
-struct stop_priority<component::cuda_event> : std::true_type
+struct stop_priority<component::cuda_event> : std::integral_constant<int, -256>
 {};
 #endif
 
-#if defined(TIMEMORY_USE_CUPTI)
-/// component::cuda_event should be stopped before other types
-template <>
-struct stop_priority<component::cupti_activity> : std::true_type
-{};
-#endif
 //--------------------------------------------------------------------------------------//
 //
 //                              CUSTOM UNIT PRINTING

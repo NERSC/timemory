@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019, The Regents of the University of California,
+// Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -258,6 +258,8 @@ public:
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
     static void configure(bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Head>().c_str());
+
         configure<_Head>(_flat);
         configure<_Tail...>(_flat);
     }
@@ -371,6 +373,8 @@ public:
               enable_if_t<(_Toolset::is_component), char>              = 0>
     void insert(bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+
         internal_init<_Toolset>();
 
         using _Toolset_t = auto_tuple<_Toolset>;
@@ -399,6 +403,8 @@ public:
               enable_if_t<!(_Toolset::is_component), char>             = 0>
     void insert(bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+
         internal_init();
 
         auto _start = [=](const std::string& _prefix) {
@@ -427,6 +433,8 @@ public:
               enable_if_t<!(_Toolset::is_component), char>             = 0>
     void insert(_InitFunc&& _init, bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+
         internal_init();
 
         auto _start = [=](const std::string& _prefix) {
@@ -455,6 +463,8 @@ public:
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
     void insert(bool _flat = settings::flat_profile())
     {
+        DEBUG_PRINT_HERE("%s", demangle<_Head>().c_str());
+
         configure<_Head>(_flat);
         configure<_Tail...>(_flat);
     }

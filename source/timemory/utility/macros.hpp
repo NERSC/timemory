@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2019, The Regents of the University of California,
+//  Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -118,6 +118,16 @@
 #ifndef CXX17
 #    if __cplusplus > 201402L  // C++17
 #        define CXX17
+#    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(CONSTEXPR_IF)
+#    if defined(CXX17)
+#        define CONSTEXPR_IF constexpr
+#    else
+#        define CONSTEXPR_IF
 #    endif
 #endif
 

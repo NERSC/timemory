@@ -24,7 +24,7 @@ def install(package):
 # -- Project information -----------------------------------------------------
 
 
-project = 'TiMemory'
+project = 'timemory'
 copyright = '2019, Jonathan R. Madsen'
 author = 'Jonathan R. Madsen'
 
@@ -41,8 +41,6 @@ _sitedir = os.path.realpath(os.path.join(os.getcwd(), "..", "site"))
 
 if not os.path.exists(_bindir):
     os.makedirs(_bindir)
-
-if not os.path.exists(_doxdir):
     os.chdir(_bindir)
     sp.run(["cmake",
             "-DTIMEMORY_BUILD_DOCS=ON", "-DENABLE_DOXYGEN_HTML_DOCS=ON",

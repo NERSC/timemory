@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019, The Regents of the University of California,
+// Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -49,7 +49,7 @@ using gotcha_hybrid_t = tim::auto_hybrid<gotcha_tuple_t, gotcha_list_t>;
 // create gotcha types for various bundles of functions
 using mpi_gotcha_t    = tim::component::gotcha<1, gotcha_hybrid_t>;
 using work_gotcha_t   = tim::component::gotcha<1, gotcha_hybrid_t, int>;
-using memfun_gotcha_t = tim::component::gotcha<3, gotcha_tuple_t>;
+using memfun_gotcha_t = tim::component::gotcha<5, gotcha_tuple_t>;
 
 using comp_t  = component_tuple<real_clock, cpu_clock, peak_rss>;
 using tuple_t = component_tuple<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
@@ -483,6 +483,12 @@ TEST_F(gotcha_tests, member_functions)
 
             TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, 2, &DoWork::execute_fp8);
         }
+        {
+            using func_t = decltype(&DoWork::execute_fp);
+            print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::execute_fp));
+
+            TIMEMORY_CXX_GOTCHA(memfun_gotcha_t, 3, &DoWork::execute_fp);
+        }
     };
 
     float  fsum = 0.0;
@@ -492,29 +498,77 @@ TEST_F(gotcha_tests, member_functions)
 
         DoWork dw(pair_type(0.25, 0.5));
 
-        auto _nitr = nitr / 8;
-        for(int i = 0; i < _nitr; ++i)
+        auto    _nitr = nitr / 10;
+        int64_t ntot  = 0;
+        for(int i = 0; i < _nitr; i += 10)
         {
+            ntot += 10;
             if(i >= (_nitr - 10))
             {
-                dw.execute_fp4(1000);
-                dw.execute_fp8(1000);
+                for(int j = 0; j < 10; ++j)
+                {
+                    dw.execute_fp4(1000);
+                    dw.execute_fp8(1000);
+                    auto ret = dw.get();
+                    fsum += std::get<0>(ret);
+                    dsum += std::get<1>(ret);
+                }
             }
             else
             {
-                auto        _fp4 = [&]() { dw.execute_fp4(1000); };
-                auto        _fp8 = [&]() { dw.execute_fp8(1000); };
+                auto _fp4 = [&]() {
+                    for(int j = 0; j < 10; ++j)
+                    {
+                        dw.execute_fp4(1000);
+                        auto ret = dw.get();
+                        fsum += std::get<0>(ret);
+                    }
+                };
+
+                auto _fp8 = [&]() {
+                    for(int j = 0; j < 10; ++j)
+                    {
+                        dw.execute_fp8(1000);
+                        auto ret = dw.get();
+                        dsum += std::get<1>(ret);
+                    }
+                };
+
                 std::thread t4(_fp4);
                 std::thread t8(_fp8);
 
                 t4.join();
                 t8.join();
             }
-
-            auto ret = dw.get();
-            fsum += std::get<0>(ret);
-            dsum += std::get<1>(ret);
         }
+
+        int rank = tim::dmp::rank();
+        if(rank == 0)
+        {
+            printf("\n");
+            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+        }
+
+        float  fsum2 = 0.0;
+        double dsum2 = 0.0;
+        for(int64_t i = 0; i < ntot; ++i)
+        {
+            dw.execute_fp(1000, { 0.25 }, { 0.5 });
+            auto ret = dw.get();
+            fsum2 += std::get<0>(ret);
+            dsum2 += std::get<1>(ret);
+        }
+
+        if(rank == 0)
+        {
+            printf("\n");
+            printf("[%i]> single-precision sum2 = %8.2f\n", rank, fsum2);
+            printf("[%i]> double-precision sum2 = %8.2f\n", rank, dsum2);
+        }
+
+        ASSERT_NEAR(fsum2, fsum, tolerance);
+        ASSERT_NEAR(dsum2, dsum, tolerance);
     }
 
     auto rank = tim::mpi::rank();
@@ -537,9 +591,9 @@ TEST_F(gotcha_tests, member_functions)
     auto real_final_size = real_storage->get().size();
     printf("[final]> wall-clock storage size: %li\n", (long int) real_final_size);
 
-    ASSERT_NEAR(fsum, -302122.44, tolerance);
-    ASSERT_NEAR(dsum, +110193.87, tolerance);
-    ASSERT_EQ(real_final_size, 4 + real_init_size);
+    ASSERT_NEAR(fsum, -241718.61, tolerance);
+    ASSERT_NEAR(dsum, +88155.09, tolerance);
+    ASSERT_EQ(real_final_size, 5 + real_init_size);
 }
 
 //======================================================================================//

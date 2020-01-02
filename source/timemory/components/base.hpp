@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2019, The Regents of the University of California,
+//  Copyright (c) 2020, The Regents of the University of California,
 //  through Lawrence Berkeley National Laboratory (subject to receipt of any
 //  required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -522,11 +522,14 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                _storage->pop();
-                _storage->stack_pop(&rhs);
+                if(_storage)
+                {
+                    _storage->pop();
+                    _storage->stack_pop(&rhs);
 
-                auto _end_depth = _storage->depth();
-                depth_change    = (_beg_depth > _end_depth);
+                    auto _end_depth = _storage->depth();
+                    depth_change    = (_beg_depth > _end_depth);
+                }
             }
             obj.is_running = false;
             is_on_stack    = false;

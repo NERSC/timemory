@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019, The Regents of the University of California,
+// Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -31,6 +31,19 @@
 
 namespace tim
 {
+//======================================================================================//
+//
+///     \class type_list
+///     \brief lightweight tuple-alternative for meta-programming logic
+//
+//======================================================================================//
+
+template <typename... _Tp>
+struct type_list
+{};
+
+//--------------------------------------------------------------------------------------//
+
 namespace impl
 {
 //======================================================================================//
@@ -71,6 +84,11 @@ struct tuple_concat<std::tuple<Ts0...>, std::tuple<Ts1...>, Rest...>
 //--------------------------------------------------------------------------------------//
 
 }  // namespace impl
+
+//--------------------------------------------------------------------------------------//
+
+template <bool _Val, typename _Lhs, typename _Rhs>
+using conditional_t = typename std::conditional<_Val, _Lhs, _Rhs>::type;
 
 //--------------------------------------------------------------------------------------//
 
@@ -265,8 +283,8 @@ using operation_filter_true =
 template <typename _Tp>
 struct get_data_tuple_type
 {
-    using type = typename std::conditional<(std::is_fundamental<_Tp>::value), _Tp,
-                                           decltype(std::declval<_Tp>().get())>::type;
+    using type = conditional_t<(std::is_fundamental<_Tp>::value), _Tp,
+                               decltype(std::declval<_Tp>().get())>;
 };
 
 template <typename... _ImplTypes>
@@ -328,19 +346,18 @@ template <typename In, typename Out>
 struct remove_duplicates;
 
 template <typename Out>
-struct remove_duplicates<std::tuple<>, Out>
+struct remove_duplicates<type_list<>, Out>
 {
     using type = Out;
 };
 
 template <typename In, typename... InTail, typename... Out>
-struct remove_duplicates<std::tuple<In, InTail...>, std::tuple<Out...>>
+struct remove_duplicates<type_list<In, InTail...>, type_list<Out...>>
 {
-    using type = typename std::conditional<
-        !(is_one_of<In, std::tuple<Out...>>::value),
-        typename remove_duplicates<std::tuple<InTail...>, std::tuple<Out..., In>>::type,
-        typename remove_duplicates<std::tuple<InTail...>,
-                                   std::tuple<Out...>>::type>::type;
+    using type = conditional_t<
+        !(is_one_of<In, type_list<Out...>>::value),
+        typename remove_duplicates<type_list<InTail...>, type_list<Out..., In>>::type,
+        typename remove_duplicates<type_list<InTail...>, type_list<Out...>>::type>;
 };
 
 template <typename In, typename Out>
@@ -363,6 +380,111 @@ struct unique<InTuple<In...>, OutTuple<Out...>>
     using tuple_type = typename convert<InTuple<In...>, OutTuple<>>::type;
     using dupl_type  = typename remove_duplicates<tuple_type, OutTuple<>>::type;
     using type       = typename convert<dupl_type, InTuple<>>::type;
+};
+
+//======================================================================================//
+
+template <template <typename> class _Prio, typename _Beg, typename _Tp, typename _End>
+struct sortT;
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class _Prio, typename _Tuple, typename _Beg = type_list<>,
+          typename _End = type_list<>>
+using sort = typename sortT<_Prio, _Tuple, _Beg, _End>::type;
+
+//--------------------------------------------------------------------------------------//
+//  Initiate recursion (zeroth sort operation)
+//
+template <template <typename> class _Prio, typename _In, typename... _InT>
+struct sortT<_Prio, type_list<_In, _InT...>, type_list<>, type_list<>>
+{
+    using type =
+        typename sortT<_Prio, type_list<_InT...>, type_list<>, type_list<_In>>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//  Initiate recursion (zeroth sort operation)
+//
+template <template <typename> class _Prio, typename _In, typename... _InT>
+struct sortT<_Prio, type_list<type_list<_In, _InT...>>, type_list<>, type_list<>>
+{
+    using type =
+        typename sortT<_Prio, type_list<_InT...>, type_list<>, type_list<_In>>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//  Terminate recursion (last sort operation)
+//
+template <template <typename> class _Prio, typename... _BegT, typename... _EndT>
+struct sortT<_Prio, type_list<>, type_list<_BegT...>, type_list<_EndT...>>
+{
+    using type = type_list<_BegT..., _EndT...>;
+};
+
+//--------------------------------------------------------------------------------------//
+//  If no current end, transfer begin to end ()
+//
+template <template <typename> class _Prio, typename _In, typename... _InT,
+          typename... _BegT>
+struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>, type_list<>>
+{
+    using type = typename sortT<_Prio, type_list<_In, _InT...>, type_list<>,
+                                type_list<_BegT...>>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+//  Specialization for first sort operation
+//
+template <template <typename> class _Prio, typename _In, typename _Tp, typename... _InT>
+struct sortT<_Prio, type_list<_In, _InT...>, type_list<>, type_list<_Tp>>
+{
+    static constexpr bool value = (_Prio<_In>::value < _Prio<_Tp>::value);
+
+    using type = conditional_t<
+        (value),
+        typename sortT<_Prio, type_list<_InT...>, type_list<>, type_list<_In, _Tp>>::type,
+        typename sortT<_Prio, type_list<_InT...>, type_list<>,
+                       type_list<_Tp, _In>>::type>;
+};
+
+//--------------------------------------------------------------------------------------//
+//  Specialization for second sort operation
+//
+template <template <typename> class _Prio, typename _In, typename _Ta, typename _Tb,
+          typename... _BegT, typename... _InT>
+struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>, type_list<_Ta, _Tb>>
+{
+    static constexpr bool iavalue = (_Prio<_In>::value < _Prio<_Ta>::value);
+    static constexpr bool ibvalue = (_Prio<_In>::value < _Prio<_Tb>::value);
+    static constexpr bool abvalue = (_Prio<_Ta>::value <= _Prio<_Tb>::value);
+
+    using type = conditional_t<
+        (iavalue),
+        typename sortT<
+            _Prio, type_list<_InT...>, sort<_Prio, type_list<_BegT..., _In>>,
+            conditional_t<(abvalue), type_list<_Ta, _Tb>, type_list<_Tb, _Ta>>>::type,
+        typename sortT<
+            _Prio, type_list<_InT...>, sort<_Prio, type_list<_BegT..., _Ta>>,
+            conditional_t<(ibvalue), type_list<_In, _Tb>, type_list<_Tb, _In>>>::type>;
+};
+
+//--------------------------------------------------------------------------------------//
+//  Specialization for all other sort operations after first and second
+//
+template <template <typename> class _Prio, typename _In, typename _Tp, typename... _InT,
+          typename... _BegT, typename... _EndT>
+struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>,
+             type_list<_Tp, _EndT...>>
+{
+    static constexpr bool value = (_Prio<_In>::value < _Prio<_Tp>::value);
+
+    using type = conditional_t<
+        (value),
+        typename sortT<_Prio, type_list<_InT...>, type_list<>,
+                       type_list<_BegT..., _In, _Tp, _EndT...>>::type,
+        typename sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT..., _Tp>,
+                       type_list<_EndT...>>::type>;
 };
 
 //======================================================================================//
@@ -409,10 +531,10 @@ using is_one_of_integral = typename impl::is_one_of_integral<_Types>;
 //======================================================================================//
 
 template <typename T>
-using remove_duplicates = typename impl::unique<T, std::tuple<>>::type;
+using remove_duplicates = typename impl::unique<T, type_list<>>::type;
 
 template <typename T>
-using unique = typename impl::unique<T, std::tuple<>>::type;
+using unique = typename impl::unique<T, type_list<>>::type;
 
 template <typename T, typename U>
 using convert = typename impl::convert<T, U>::type;
@@ -458,5 +580,20 @@ using get_data_value_t = typename impl::template get_data_tuple<_Tuple>::value_t
 /// get the tuple of pair of descriptor and value
 template <typename _Tuple>
 using get_data_label_t = typename impl::template get_data_tuple<_Tuple>::label_type;
+
+//======================================================================================//
+//
+//      sort
+//
+//======================================================================================//
+namespace mpl
+{
+template <template <typename> class _Prio, typename _Tuple, typename _Beg = type_list<>,
+          typename _End = type_list<>>
+using sort = convert<
+    typename impl::sortT<_Prio, convert<_Tuple, type_list<>>, convert<_Beg, type_list<>>,
+                         convert<_End, type_list<>>>::type,
+    std::tuple<>>;
+}  // namespace mpl
 
 }  // namespace tim

@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019, The Regents of the University of California,
+// Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -48,15 +48,14 @@ component_list<Types...>::component_list()
 : m_store(false)
 , m_flat(false)
 , m_is_pushed(false)
-, m_print_prefix(true)
-, m_print_laps(true)
 , m_laps(0)
 , m_hash(0)
-, m_key("")
 {
-    apply<void>::set_value(m_data, nullptr);
+    apply_v::set_value(m_data, nullptr);
 }
 
+//--------------------------------------------------------------------------------------//
+//
 template <typename... Types>
 template <typename _Func>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
@@ -64,18 +63,14 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
-, m_print_prefix(true)
-, m_print_laps(true)
 , m_laps(0)
 , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
-, m_key(key)
 {
-    apply<void>::set_value(m_data, nullptr);
+    apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
         _func(*this);
-        // compute_width(m_key);
-        set_object_prefix(m_key);
+        set_object_prefix(key);
     }
 }
 
@@ -89,18 +84,14 @@ component_list<Types...>::component_list(const captured_location_t& loc,
 : m_store(store && settings::enabled())
 , m_flat(flat)
 , m_is_pushed(false)
-, m_print_prefix(true)
-, m_print_laps(true)
 , m_laps(0)
 , m_hash(loc.get_hash())
-, m_key(loc.get_id())
 {
-    apply<void>::set_value(m_data, nullptr);
+    apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
         _func(*this);
-        // compute_width(m_key);
-        set_object_prefix(m_key);
+        set_object_prefix(loc.get_id());
     }
 }
 
@@ -110,7 +101,7 @@ template <typename... Types>
 component_list<Types...>::~component_list()
 {
     pop();
-    apply<void>::access<deleter_t>(m_data);
+    apply_v::access<deleter_t>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -120,13 +111,11 @@ component_list<Types...>::component_list(const this_type& rhs)
 : m_store(rhs.m_store)
 , m_flat(rhs.m_flat)
 , m_is_pushed(rhs.m_is_pushed)
-, m_print_prefix(rhs.m_print_prefix)
-, m_print_laps(rhs.m_print_laps)
 , m_laps(rhs.m_laps)
-, m_key(rhs.m_key)
+, m_hash(rhs.m_hash)
 {
-    apply<void>::set_value(m_data, nullptr);
-    apply<void>::access2<copy_t>(m_data, rhs.m_data);
+    apply_v::set_value(m_data, nullptr);
+    apply_v::access2<copy_t>(m_data, rhs.m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -137,15 +126,13 @@ component_list<Types...>::operator=(const this_type& rhs)
 {
     if(this != &rhs)
     {
-        m_store        = rhs.m_store;
-        m_flat         = rhs.m_flat;
-        m_is_pushed    = rhs.m_is_pushed;
-        m_print_prefix = rhs.m_print_prefix;
-        m_print_laps   = rhs.m_print_laps;
-        m_laps         = rhs.m_laps;
-        m_key          = rhs.m_key;
-        apply<void>::access<deleter_t>(m_data);
-        apply<void>::access2<copy_t>(m_data, rhs.m_data);
+        m_store     = rhs.m_store;
+        m_flat      = rhs.m_flat;
+        m_is_pushed = rhs.m_is_pushed;
+        m_laps      = rhs.m_laps;
+        m_hash      = rhs.m_hash;
+        apply_v::access<deleter_t>(m_data);
+        apply_v::access2<copy_t>(m_data, rhs.m_data);
     }
     return *this;
 }
@@ -170,18 +157,18 @@ inline void
 component_list<Types...>::push()
 {
     uint64_t count = 0;
-    apply<void>::access<pointer_count_t>(m_data, std::ref(count));
+    apply_v::access<pointer_count_t>(m_data, std::ref(count));
     if(m_store && !m_is_pushed && count > 0)
     {
         // reset data
-        apply<void>::access<reset_t>(m_data);
+        apply_v::access<reset_t>(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
         if(m_flat)
-            apply<void>::access<insert_node_t<scope::flat>>(m_data, m_hash);
+            apply_v::access<insert_node_t<scope::flat>>(m_data, m_hash);
         else
-            apply<void>::access<insert_node_t<scope::process>>(m_data, m_hash);
+            apply_v::access<insert_node_t<scope::process>>(m_data, m_hash);
     }
 }
 
@@ -195,7 +182,7 @@ component_list<Types...>::pop()
     if(m_store && m_is_pushed)
     {
         // set the current node to the parent node
-        apply<void>::access<pop_node_t>(m_data);
+        apply_v::access<pop_node_t>(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = false;
     }
@@ -208,7 +195,8 @@ template <typename... Types>
 void
 component_list<Types...>::measure()
 {
-    apply<void>::access<measure_t>(m_data);
+    using measure_t = operation_t<operation::measure>;
+    apply_v::access<measure_t>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -218,11 +206,15 @@ template <typename... Types>
 void
 component_list<Types...>::start()
 {
+    using priority_start_t = operation_t<operation::priority_start>;
+    using standard_start_t = operation_t<operation::standard_start>;
+    using delayed_start_t  = operation_t<operation::delayed_start>;
     push();
     ++m_laps;
     // start components
-    apply<void>::access<prior_start_t>(m_data);
-    apply<void>::access<stand_start_t>(m_data);
+    apply_v::access<priority_start_t>(m_data);
+    apply_v::access<standard_start_t>(m_data);
+    apply_v::access<delayed_start_t>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -231,9 +223,13 @@ template <typename... Types>
 void
 component_list<Types...>::stop()
 {
+    using priority_stop_t = operation_t<operation::priority_stop>;
+    using standard_stop_t = operation_t<operation::standard_stop>;
+    using delayed_stop_t  = operation_t<operation::delayed_stop>;
     // stop components
-    apply<void>::access<prior_stop_t>(m_data);
-    apply<void>::access<stand_stop_t>(m_data);
+    apply_v::access<priority_stop_t>(m_data);
+    apply_v::access<standard_stop_t>(m_data);
+    apply_v::access<delayed_stop_t>(m_data);
     // pop them off the running stack
     pop();
 }
@@ -245,8 +241,9 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::record()
 {
+    using record_t = operation_t<operation::record>;
     ++m_laps;
-    apply<void>::access<record_t>(m_data);
+    apply_v::access<record_t>(m_data);
     return *this;
 }
 
@@ -257,7 +254,7 @@ template <typename... Types>
 void
 component_list<Types...>::reset()
 {
-    apply<void>::access<reset_t>(m_data);
+    apply_v::access<reset_t>(m_data);
     m_laps = 0;
 }
 
@@ -268,9 +265,10 @@ template <typename... Types>
 typename component_list<Types...>::data_value_type
 component_list<Types...>::get() const
 {
+    using get_data_t = operation_t<operation::get_data>;
     const_cast<this_type&>(*this).stop();
     data_value_type _ret_data;
-    apply<void>::access2<get_data_t>(m_data, _ret_data);
+    apply_v::access2<get_data_t>(m_data, _ret_data);
     return _ret_data;
 }
 
@@ -281,9 +279,10 @@ template <typename... Types>
 typename component_list<Types...>::data_label_type
 component_list<Types...>::get_labeled() const
 {
+    using get_data_t = operation_t<operation::get_data>;
     const_cast<this_type&>(*this).stop();
     data_label_type _ret_data;
-    apply<void>::access2<get_data_t>(m_data, _ret_data);
+    apply_v::access2<get_data_t>(m_data, _ret_data);
     return _ret_data;
 }
 
@@ -294,7 +293,8 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator-=(const this_type& rhs)
 {
-    apply<void>::access2<minus_t>(m_data, rhs.m_data);
+    using minus_t = operation_t<operation::minus>;
+    apply_v::access2<minus_t>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -305,7 +305,8 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator-=(this_type& rhs)
 {
-    apply<void>::access2<minus_t>(m_data, rhs.m_data);
+    using minus_t = operation_t<operation::minus>;
+    apply_v::access2<minus_t>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -316,7 +317,8 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator+=(const this_type& rhs)
 {
-    apply<void>::access2<plus_t>(m_data, rhs.m_data);
+    using plus_t = operation_t<operation::plus>;
+    apply_v::access2<plus_t>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }
@@ -327,7 +329,8 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator+=(this_type& rhs)
 {
-    apply<void>::access2<plus_t>(m_data, rhs.m_data);
+    using plus_t = operation_t<operation::plus>;
+    apply_v::access2<plus_t>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }
@@ -338,7 +341,7 @@ template <typename... Types>
 void
 component_list<Types...>::print_storage()
 {
-    apply<void>::type_access<operation::print_storage, reference_type>();
+    apply_v::type_access<operation::print_storage, reference_type>();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -371,25 +374,16 @@ component_list<Types...>::laps() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline uint64_t&
-component_list<Types...>::hash()
+inline std::string
+component_list<Types...>::key() const
 {
-    return m_hash;
+    return get_hash_ids()->find(m_hash)->second;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline std::string&
-component_list<Types...>::key()
-{
-    return m_key;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline const uint64_t&
+inline uint64_t
 component_list<Types...>::hash() const
 {
     return m_hash;
@@ -398,19 +392,11 @@ component_list<Types...>::hash() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline const std::string&
-component_list<Types...>::key() const
-{
-    return m_key;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
 inline void
 component_list<Types...>::rekey(const string_t& _key)
 {
-    compute_width(m_key = _key);
+    m_hash = add_hash_id(_key);
+    compute_width(_key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -470,7 +456,7 @@ template <typename... Types>
 inline void
 component_list<Types...>::update_width() const
 {
-    compute_width(m_key);
+    compute_width(key());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -508,7 +494,7 @@ template <typename... Types>
 inline void
 component_list<Types...>::set_object_prefix(const string_t& key)
 {
-    apply<void>::access<set_prefix_t>(m_data, key);
+    apply_v::access<set_prefix_t>(m_data, key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -517,7 +503,7 @@ template <typename... Types>
 inline void
 component_list<Types...>::init_storage()
 {
-    apply<void>::type_access<operation::init_storage, reference_type>();
+    apply_v::type_access<operation::init_storage, reference_type>();
 }
 
 //--------------------------------------------------------------------------------------//

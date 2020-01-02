@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019, The Regents of the University of California,
+// Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -157,7 +157,10 @@ insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
 
 template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
           template <typename, typename...> class _Container, typename _Intp,
-          typename... _ExtraArgs>
+          typename... _ExtraArgs,
+          typename std::enable_if<(std::is_integral<_Intp>::value ||
+                                   std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
+                                  int>::type>
 void
 insert(_Bundle<_Idx, _Type>& obj, const _Container<_Intp, _ExtraArgs...>& components)
 {

@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2019, The Regents of the University of California,
+//  Copyright (c) 2020, The Regents of the University of California,
 //  through Lawrence Berkeley National Laboratory (subject to receipt of any
 //  required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -85,6 +85,9 @@ template <typename _Tp>
 struct standard_start;
 
 template <typename _Tp>
+struct delayed_start;
+
+template <typename _Tp>
 struct stop;
 
 template <typename _Tp>
@@ -92,6 +95,9 @@ struct priority_stop;
 
 template <typename _Tp>
 struct standard_stop;
+
+template <typename _Tp>
+struct delayed_stop;
 
 template <typename _Tp>
 struct mark_begin;

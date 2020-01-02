@@ -1,4 +1,4 @@
-# Copyright 2013-2019 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2020 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -18,6 +18,8 @@ class Timemory(CMakePackage):
     version('master', branch='master', submodules=True)
     version('develop', branch='develop', submodules=True)
     version('3.0.0', commit='b36b1673b2c6b7ff3126d8261bef0f8f176c7beb',
+            submodules=True)
+    version('3.0.1', commit='a5bb58b5e4d44b71f699f536ad1b56722f213ce6',
             submodules=True)
 
     variant('python', default=True, description='Enable Python support')

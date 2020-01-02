@@ -72,15 +72,13 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--caliper", help="TIMEMORY_USE_CALIPER=ON",
                         default=False, action='store_true')
-    parser.add_argument("--no-papi", help="TIMEMORY_USE_PAPI=OFF",
+    parser.add_argument("--likwid", help="TIMEMORY_USE_LIKWID=ON",
                         default=False, action='store_true')
-    parser.add_argument("--no-mpi", help="TIMEMORY_USE_MPI=OFF",
+    parser.add_argument("--papi", help="TIMEMORY_USE_PAPI=ON",
                         default=False, action='store_true')
-    parser.add_argument("--no-python", help="TIMEMORY_BUILD_PYTHON=OFF",
+    parser.add_argument("--mpi", help="TIMEMORY_USE_MPI=ON",
                         default=False, action='store_true')
-    parser.add_argument("--no-c", help="TIMEMORY_BUILD_C=OFF",
-                        default=False, action='store_true')
-    parser.add_argument("--no-gtest", help="TIMEMORY_BUILD_GTEST=OFF",
+    parser.add_argument("--python", help="TIMEMORY_BUILD_PYTHON=ON",
                         default=False, action='store_true')
     parser.add_argument("--extra-optimizations",
                         help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
@@ -114,7 +112,7 @@ def configure():
             pyct.BINARY_DIRECTORY, "CMakeCache.txt"))
 
     if platform.system() != "Linux":
-        args.no_papi = True
+        args.papi = False
 
     os.environ["PYCTEST_TESTING"] = "ON"
 
@@ -158,40 +156,36 @@ def run_pyctest():
     build_opts = {
         "BUILD_SHARED_LIBS": "ON" if "shared" in args.build_libs else "OFF",
         "BUILD_STATIC_LIBS": "ON" if "static" in args.build_libs else "OFF",
-        "TIMEMORY_BUILD_C": "OFF" if args.no_c else "ON",
-        "TIMEMORY_BUILD_GTEST": "OFF" if args.no_gtest else "ON",
         "TIMEMORY_BUILD_TOOLS": "ON" if args.tools else "OFF",
-        "TIMEMORY_BUILD_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
+        "TIMEMORY_BUILD_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON" if args.extra_optimizations else "OFF",
-        "TIMEMORY_USE_MPI": "OFF" if args.no_mpi else "ON",
+        "TIMEMORY_USE_MPI": "ON" if args.mpi else "OFF",
         "TIMEMORY_USE_TAU": "ON" if args.tau else "OFF",
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
-        "TIMEMORY_USE_PAPI": "OFF" if args.no_papi else "ON",
+        "TIMEMORY_USE_PAPI": "ON" if args.papi else "OFF",
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
         "TIMEMORY_USE_GPERF": "OFF",
         "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
-        "TIMEMORY_USE_PYTHON": "OFF" if args.no_python else "ON",
+        "TIMEMORY_USE_LIKWID": "ON" if args.likwid else "OFF",
         "TIMEMORY_USE_GOTCHA": "ON" if args.gotcha else "OFF",
+        "TIMEMORY_USE_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
-        "USE_PAPI": "OFF" if args.no_papi else "ON",
-        "USE_MPI": "OFF" if args.no_mpi else "ON",
+        "USE_PAPI": "ON" if args.papi else "OFF",
+        "USE_MPI": "ON" if args.mpi else "OFF",
         "USE_CALIPER": "ON" if args.caliper else "OFF",
     }
 
-    if not args.no_mpi:
+    if args.mpi and args.tools:
         build_opts["TIMEMORY_BUILD_MPIP"] = "ON" if args.mpip else "OFF"
 
-    if not args.no_c:
-        pyct.BUILD_NAME = "{} C".format(pyct.BUILD_NAME)
-
-    if not args.no_python:
+    if args.python:
         pyver = "{}.{}.{}".format(
             sys.version_info[0], sys.version_info[1], sys.version_info[2])
         pyct.BUILD_NAME = "{} PY-{}".format(pyct.BUILD_NAME, pyver)
@@ -202,10 +196,10 @@ def run_pyctest():
     if args.arch:
         pyct.BUILD_NAME = "{} ARCH".format(pyct.BUILD_NAME)
 
-    if not args.no_mpi:
+    if args.mpi:
         pyct.BUILD_NAME = "{} MPI".format(pyct.BUILD_NAME)
 
-    if not args.no_papi:
+    if args.papi:
         pyct.BUILD_NAME = "{} PAPI".format(pyct.BUILD_NAME)
 
     if args.cuda:
@@ -226,6 +220,9 @@ def run_pyctest():
     if args.tau:
         pyct.BUILD_NAME = "{} TAU".format(pyct.BUILD_NAME)
 
+    if args.likwid:
+        pyct.BUILD_NAME = "{} LIKWID".format(pyct.BUILD_NAME)
+
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
         components = "profiler" if args.profile == "cpu" else "tcmalloc"
@@ -244,8 +241,6 @@ def run_pyctest():
         if gcov_exe is not None:
             pyct.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
-            build_opts["TIMEMORY_USE_CALIPER"] = "OFF"
-            build_opts["TIMEMORY_BUILD_CALIPER"] = "OFF"
             pyct.BUILD_NAME = "{} COV".format(pyct.BUILD_NAME)
             if pyct.BUILD_TYPE != "Debug":
                 warnings.warn(
@@ -342,8 +337,6 @@ def run_pyctest():
                                   clobber=clobber_notes)
                     # make sure all subsequent iterations don't clobber
                     clobber_notes = False
-        # else:
-        #    _cmd.append("{}/timem".format(pyct.BINARY_DIRECTORY))
         _cmd.extend(cmd)
         return _cmd
 
@@ -358,193 +351,204 @@ def run_pyctest():
         _cmd.extend(cmd)
         return _cmd
 
-
     #--------------------------------------------------------------------------#
     # create tests
     #
-
     test_env = ";".join(["CPUPROFILE_FREQUENCY=200",
                          "CPUPROFILE_REALTIME=1",
                          "CALI_CONFIG_PROFILE=runtime-report",
                          "TIMEMORY_DART_OUTPUT=ON",
                          "TIMEMORY_DART_COUNT=1"])
 
-    pyct.test(construct_name("test-optional-off"),
+    pyct.test(construct_name("ex-optional-off"),
               construct_command(["./ex_optional_off"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-overhead"),
+    pyct.test(construct_name("ex-cxx-overhead"),
               construct_command(["./ex_cxx_overhead"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cuda-event"),
-              ["./ex_cuda_event"],
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.cuda:
+        pyct.test(construct_name("ex-cuda-event"),
+                  ["./ex_cuda_event"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-minimal"),
+    pyct.test(construct_name("ex-cxx-minimal"),
               construct_command(["./ex_cxx_minimal"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-minimal-library-overload"),
+    pyct.test(construct_name("ex-c-minimal-library-overload"),
               construct_command(["./ex_c_minimal_library_overload"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-timing"),
+    pyct.test(construct_name("ex-c-timing"),
               construct_command(["./ex_c_timing"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-minimal-library"),
+    pyct.test(construct_name("ex-cxx-minimal-library"),
               construct_command(["./ex_cxx_minimal_library"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-optional-on"),
+    pyct.test(construct_name("ex-optional-on"),
               construct_command(["./ex_optional_on"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-minimal-library"),
+    pyct.test(construct_name("ex-c-minimal-library"),
               construct_command(["./ex_c_minimal_library"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-ert"),
+    pyct.test(construct_name("ex-ert"),
               construct_command(["./ex_ert"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-tuple"),
+    pyct.test(construct_name("ex-cxx-tuple"),
               construct_command(["./ex_cxx_tuple"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-gotcha-mpi"),
+    pyct.test(construct_name("ex-gotcha-mpi"),
               construct_command(["./ex_gotcha_mpi"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-python-caliper"),
-              construct_command(["./ex_python_caliper"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.python:
+        pyct.test(construct_name("ex-python-caliper"),
+                  construct_command(["./ex_python_caliper"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-caliper"),
+    pyct.test(construct_name("ex-caliper"),
               construct_command(["./ex_caliper"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-minimal"),
+    pyct.test(construct_name("ex-c-minimal"),
               construct_command(["./ex_c_minimal"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-minimal-library-overload"),
+    pyct.test(construct_name("ex-cxx-minimal-library-overload"),
               construct_command(["./ex_cxx_minimal_library_overload"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-basic"),
+    pyct.test(construct_name("ex-cxx-basic"),
               construct_command(["./ex_cxx_basic"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-python-minimal"),
-              construct_command(["./ex_python_minimal"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "480",
-               "ENVIRONMENT": test_env})
+    if args.python:
+        pyct.test(construct_name("ex-python-minimal"),
+                  construct_command(["./ex_python_minimal"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "480",
+                   "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-gotcha"),
+    pyct.test(construct_name("ex-gotcha"),
               construct_command(["./ex_gotcha"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-likwid"),
-              construct_command(["./ex_likwid"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.likwid:
+        pyct.test(construct_name("ex-likwid"),
+                  construct_command(["./ex_likwid"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-python-likwid"),
-              construct_command(["./ex_python_likwid"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+        if args.python:
+            pyct.test(construct_name("ex-python-likwid"),
+                      construct_command(["./ex_python_likwid"], args),
+                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                       "LABELS": pyct.PROJECT_NAME,
+                       "TIMEOUT": "300",
+                       "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cpu-roofline"),
-              construct_roofline_command(["./ex_cpu_roofline"], 'cpu-roofline',
-                                         ['-t', 'cpu_roofline']),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "900",
-               "ENVIRONMENT": test_env})
-
-    pyct.test(construct_name("test-cpu-roofline.sp"),
-              construct_roofline_command(["./ex_cpu_roofline.sp"], 'cpu-roofline.sp',
-                                         ['-t', 'cpu_roofline']),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "900",
-               "ENVIRONMENT": test_env})
-
-    if args.cupti:
-        pyct.test(construct_name("test-gpu-roofline"),
-                  construct_roofline_command(["./ex_gpu_roofline"], 'gpu-roofline',
-                                             ['-t', 'gpu_roofline']),
+    if not args.python:
+        pyct.test(construct_name("ex-cpu-roofline"),
+                  construct_roofline_command(["./ex_cpu_roofline"], 'cpu-roofline',
+                                             ['-t', 'cpu_roofline']),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "900",
                    "ENVIRONMENT": test_env})
 
+        pyct.test(construct_name("ex-cpu-roofline.sp"),
+                  construct_roofline_command(["./ex_cpu_roofline.sp"], 'cpu-roofline.sp',
+                                             ['-t', 'cpu_roofline']),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "900",
+                   "ENVIRONMENT": test_env})
+
+        if args.cupti:
+            pyct.test(construct_name("ex-gpu-roofline"),
+                      construct_roofline_command(["./ex_gpu_roofline"], 'gpu-roofline',
+                                                 ['-t', 'gpu_roofline']),
+                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                       "LABELS": pyct.PROJECT_NAME,
+                       "TIMEOUT": "900",
+                       "ENVIRONMENT": test_env})
+
     pyct.generate_config(pyct.BINARY_DIRECTORY)
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
     if not args.generate:
         pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
+        if args.coverage:
+            script = os.path.join(pyct.SOURCE_DIRECTORY, "cmake",
+                                  "Scripts", "submit-coverage.sh")
+            cov = pyct.command([script, pyct.BINARY_DIRECTORY])
+            cov.SetWorkingDirectory(pyct.SOURCE_DIRECTORY)
+            cov.Execute()
+            print("{}".format(cov.Output()))
 
 
 #------------------------------------------------------------------------------#

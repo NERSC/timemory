@@ -1,7 +1,7 @@
 #!@PYTHON_EXECUTABLE@
 # MIT License
 #
-# Copyright (c) 2019, The Regents of the University of California,
+# Copyright (c) 2020, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 #
@@ -36,7 +36,7 @@ import warnings
 import importlib
 
 __author__ = "Jonathan Madsen"
-__copyright__ = "Copyright 2019, The Regents of the University of California"
+__copyright__ = "Copyright 2020, The Regents of the University of California"
 __credits__ = ["Jonathan Madsen"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"

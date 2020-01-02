@@ -1,8 +1,8 @@
 {% set name = "timemory" %}
-{% set version = "3.0.0.1" %}
+{% set version = "3.0.1" %}
 {% set file_ext = "tar.gz" %}
 {% set hash_type = "sha256" %}
-{% set hash_value = "cc13cebf7737d3cd8f3e95bfbf923b8aca5b60c74c991e021a7d3eb809f3b368" %}
+{% set hash_value = "a4ee67e20fb8536d2c08d643514229a34fe4e748029dc54cf916a3eca5c09417" %}
 
 package:
   name: '{{ name|lower }}'

@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019, The Regents of the University of California,
+// Copyright (c) 2020, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -184,11 +184,12 @@ public:
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
-    inline bool            store() const { return m_temporary_object.store(); }
-    inline data_type       data() const { return m_temporary_object.data(); }
-    inline int64_t         laps() const { return m_temporary_object.laps(); }
-    inline const string_t& key() const { return m_temporary_object.key(); }
-    inline void            rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    inline bool      store() const { return m_temporary_object.store(); }
+    inline data_type data() const { return m_temporary_object.data(); }
+    inline int64_t   laps() const { return m_temporary_object.laps(); }
+    inline string_t  key() const { return m_temporary_object.key(); }
+    inline uint64_t  hash() const { return m_temporary_object.hash(); }
+    inline void      rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     tuple_type&       get_tuple() { return m_temporary_object.get_tuple(); }

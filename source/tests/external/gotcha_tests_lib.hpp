@@ -28,6 +28,8 @@
 #include <ostream>
 #include <tuple>
 #include <utility>
+#include <vector>
+#include <deque>
 
 namespace ext
 {
@@ -43,6 +45,7 @@ public:
 
     void                      execute_fp4(int64_t);
     void                      execute_fp8(int64_t);
+    void execute_fp(int64_t, std::vector<float>, const std::deque<double>&);
     std::tuple<float, double> get() const;
 
     friend std::ostream& operator<<(std::ostream& os, const DoWork& obj)
