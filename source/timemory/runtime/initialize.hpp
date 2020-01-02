@@ -157,7 +157,10 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
 
 template <template <typename...> class _CompList, typename... _CompTypes,
           template <typename, typename...> class _Container, typename _Intp,
-          typename... _ExtraArgs>
+          typename... _ExtraArgs,
+          typename std::enable_if<(std::is_integral<_Intp>::value ||
+                                   std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
+                                  int>::type>
 void
 initialize(_CompList<_CompTypes...>&               obj,
            const _Container<_Intp, _ExtraArgs...>& components)

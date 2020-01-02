@@ -183,12 +183,16 @@ configure(const TIMEMORY_COMPONENT& comp)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Bundle, template <typename, typename...> class _Container,
-          typename _Intp, typename... _ExtraArgs>
+          typename _Intp, typename... _ExtraArgs,
+          typename std::enable_if<(std::is_integral<_Intp>::value ||
+                                   std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
+                                  int>::type>
 void
 configure(const _Container<_Intp, _ExtraArgs...>& components)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
+
     for(auto itr : components)
         configure<_Bundle>(static_cast<TIMEMORY_COMPONENT>(itr));
 }

@@ -46,12 +46,17 @@ using lock_t         = std::unique_lock<mutex_t>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
-using custom_bundle_t = user_bundle<0, native_tag>;
-using auto_bundle_t   = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
-using comp_bundle_t   = typename auto_bundle_t::component_type;
-using bundle0_t       = tim::auto_tuple<wall_clock, cpu_util>;
-using bundle1_t       = tim::auto_list<cpu_clock, peak_rss>;
-using bundle2_t       = tim::auto_tuple<custom_bundle_t>;
+struct bundle_testing
+{};
+
+using auto_bundle_t = tim::auto_tuple<user_tuple_bundle, user_list_bundle>;
+using comp_bundle_t = typename auto_bundle_t::component_type;
+using bundle0_t     = tim::auto_tuple<wall_clock, cpu_util>;
+using bundle1_t     = tim::auto_list<cpu_clock, peak_rss>;
+
+using custom_bundle_t      = user_bundle<0, bundle_testing>;
+using auto_custom_bundle_t = tim::auto_tuple<custom_bundle_t>;
+using comp_custom_bundle_t = typename auto_custom_bundle_t::component_type;
 
 //--------------------------------------------------------------------------------------//
 
@@ -112,7 +117,9 @@ protected:
         pr_size_orig = tim::storage<peak_rss>::instance()->size();
         ret          = 0;
 
+        custom_bundle_t::reset();
         user_list_bundle::reset();
+        user_tuple_bundle::reset();
 
         auto bundle1_init = [](bundle1_t& _bundle) {
             if(details::get_test_name() != "bundle_0" &&
@@ -183,8 +190,10 @@ TEST_F(user_bundle_tests, bundle_1)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(user_bundle_tests, bundle_2)
+TEST_F(user_bundle_tests, comp_bundle)
 {
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
     {
         comp_bundle_t _instance(details::get_test_name(), true);
         _instance.get<user_tuple_bundle>().clear();
@@ -248,7 +257,9 @@ TEST_F(user_bundle_tests, bundle_init_func)
 
 TEST_F(user_bundle_tests, bundle_insert)
 {
-    auto init_func = [](bundle2_t& al) {
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
+    auto init_func = [](auto_custom_bundle_t& al) {
         std::vector<std::string> _init   = { "wall_clock", "cpu_clock" };
         auto&                    _bundle = al.get<custom_bundle_t>();
         tim::insert(_bundle, _init);
@@ -256,12 +267,12 @@ TEST_F(user_bundle_tests, bundle_insert)
     };
 
     {
-        bundle2_t _one(details::get_test_name(), false, false, init_func);
+        auto_custom_bundle_t _one(details::get_test_name(), false, false, init_func);
         ret += details::fibonacci(35);
     }
 
     {
-        bundle2_t _two(details::get_test_name(), false, false, init_func);
+        auto_custom_bundle_t _two(details::get_test_name(), false, false, init_func);
         ret += details::fibonacci(35);
     }
 
@@ -282,14 +293,16 @@ TEST_F(user_bundle_tests, bundle_insert)
 
 TEST_F(user_bundle_tests, bundle_configure)
 {
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
     std::initializer_list<std::string> _init = { "wall_clock", "cpu_clock" };
     tim::configure<custom_bundle_t>(_init);
     tim::configure<custom_bundle_t>({ CPU_UTIL, PEAK_RSS });
 
     {
-        bundle2_t _one(details::get_test_name());
+        auto_custom_bundle_t _one(details::get_test_name());
         ret += details::fibonacci(35);
-        bundle2_t _two(details::get_test_name());
+        auto_custom_bundle_t _two(details::get_test_name());
         ret += details::fibonacci(35);
     }
 
@@ -299,6 +312,140 @@ TEST_F(user_bundle_tests, bundle_configure)
     auto cu_n = cu_size_orig + 2;
     auto cc_n = cc_size_orig + 2;
     auto pr_n = pr_size_orig + 2;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, bundle_configure_ext)
+{
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
+    custom_bundle_t::reset();
+    tim::configure<custom_bundle_t>({ CALIPER,
+                                      CPU_CLOCK,
+                                      CPU_UTIL,
+                                      DATA_RSS,
+                                      LIKWID_NVMON,
+                                      LIKWID_PERFMON,
+                                      MONOTONIC_CLOCK,
+                                      MONOTONIC_RAW_CLOCK,
+                                      NUM_IO_IN,
+                                      NUM_IO_OUT,
+                                      NUM_MAJOR_PAGE_FAULTS,
+                                      NUM_MINOR_PAGE_FAULTS,
+                                      NUM_SIGNALS,
+                                      NUM_SWAP,
+                                      NVTX_MARKER,
+                                      PAGE_RSS,
+                                      PEAK_RSS,
+                                      PRIORITY_CONTEXT_SWITCH,
+                                      PROCESS_CPU_CLOCK,
+                                      PROCESS_CPU_UTIL,
+                                      READ_BYTES,
+                                      STACK_RSS,
+                                      SYS_CLOCK,
+                                      TAU_MARKER,
+                                      THREAD_CPU_CLOCK,
+                                      THREAD_CPU_UTIL,
+                                      TRIP_COUNT,
+                                      USER_CLOCK,
+                                      VIRTUAL_MEMORY,
+                                      VOLUNTARY_CONTEXT_SWITCH,
+                                      VTUNE_EVENT,
+                                      VTUNE_FRAME,
+                                      WALL_CLOCK,
+                                      WRITTEN_BYTES });
+
+    {
+        auto_custom_bundle_t _one(details::get_test_name());
+        ret += details::fibonacci(35);
+        auto_custom_bundle_t _two(details::get_test_name());
+        ret += details::fibonacci(35);
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 2;
+    auto cu_n = cu_size_orig + 2;
+    auto cc_n = cc_size_orig + 2;
+    auto pr_n = pr_size_orig + 2;
+
+    ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
+    ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
+    ASSERT_EQ(tim::storage<cpu_clock>::instance()->size(), cc_n);
+    ASSERT_EQ(tim::storage<peak_rss>::instance()->size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(user_bundle_tests, bundle_insert_ext)
+{
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
+    using comp_vec_t = std::set<TIMEMORY_COMPONENT>;
+
+    custom_bundle_t::reset();
+    comp_vec_t compenum = { CALIPER,
+                            CPU_CLOCK,
+                            CPU_UTIL,
+                            DATA_RSS,
+                            LIKWID_NVMON,
+                            LIKWID_PERFMON,
+                            MONOTONIC_CLOCK,
+                            MONOTONIC_RAW_CLOCK,
+                            NUM_IO_IN,
+                            NUM_IO_OUT,
+                            NUM_MAJOR_PAGE_FAULTS,
+                            NUM_MINOR_PAGE_FAULTS,
+                            NUM_SIGNALS,
+                            NUM_SWAP,
+                            NVTX_MARKER,
+                            PAGE_RSS,
+                            PEAK_RSS,
+                            PRIORITY_CONTEXT_SWITCH,
+                            PROCESS_CPU_CLOCK,
+                            PROCESS_CPU_UTIL,
+                            READ_BYTES,
+                            STACK_RSS,
+                            SYS_CLOCK,
+                            TAU_MARKER,
+                            THREAD_CPU_CLOCK,
+                            THREAD_CPU_UTIL,
+                            TRIP_COUNT,
+                            USER_CLOCK,
+                            VIRTUAL_MEMORY,
+                            VOLUNTARY_CONTEXT_SWITCH,
+                            VTUNE_EVENT,
+                            VTUNE_FRAME,
+                            WALL_CLOCK,
+                            WRITTEN_BYTES };
+
+    {
+        comp_custom_bundle_t _one(details::get_test_name());
+        comp_custom_bundle_t _two(details::get_test_name());
+        tim::insert(_one.get<custom_bundle_t>(), compenum);
+
+        _one.start();
+        ret += details::fibonacci(35);
+
+        _two.start();
+        ret += details::fibonacci(35);
+
+        _two.stop();
+        _one.stop();
+    }
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 1;
 
     ASSERT_EQ(tim::storage<wall_clock>::instance()->size(), wc_n);
     ASSERT_EQ(tim::storage<cpu_util>::instance()->size(), cu_n);
