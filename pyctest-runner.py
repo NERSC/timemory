@@ -360,147 +360,148 @@ def run_pyctest():
                          "TIMEMORY_DART_OUTPUT=ON",
                          "TIMEMORY_DART_COUNT=1"])
 
-    pyct.test(construct_name("test-optional-off"),
+    pyct.test(construct_name("ex-optional-off"),
               construct_command(["./ex_optional_off"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-overhead"),
+    pyct.test(construct_name("ex-cxx-overhead"),
               construct_command(["./ex_cxx_overhead"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cuda-event"),
-              ["./ex_cuda_event"],
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.cuda:
+        pyct.test(construct_name("ex-cuda-event"),
+                  ["./ex_cuda_event"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-minimal"),
+    pyct.test(construct_name("ex-cxx-minimal"),
               construct_command(["./ex_cxx_minimal"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-minimal-library-overload"),
+    pyct.test(construct_name("ex-c-minimal-library-overload"),
               construct_command(["./ex_c_minimal_library_overload"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-timing"),
+    pyct.test(construct_name("ex-c-timing"),
               construct_command(["./ex_c_timing"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-minimal-library"),
+    pyct.test(construct_name("ex-cxx-minimal-library"),
               construct_command(["./ex_cxx_minimal_library"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-optional-on"),
+    pyct.test(construct_name("ex-optional-on"),
               construct_command(["./ex_optional_on"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-minimal-library"),
+    pyct.test(construct_name("ex-c-minimal-library"),
               construct_command(["./ex_c_minimal_library"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-ert"),
+    pyct.test(construct_name("ex-ert"),
               construct_command(["./ex_ert"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "600",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-tuple"),
+    pyct.test(construct_name("ex-cxx-tuple"),
               construct_command(["./ex_cxx_tuple"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-gotcha-mpi"),
+    pyct.test(construct_name("ex-gotcha-mpi"),
               construct_command(["./ex_gotcha_mpi"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-python-caliper"),
+    pyct.test(construct_name("ex-python-caliper"),
               construct_command(["./ex_python_caliper"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-caliper"),
+    pyct.test(construct_name("ex-caliper"),
               construct_command(["./ex_caliper"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-c-minimal"),
+    pyct.test(construct_name("ex-c-minimal"),
               construct_command(["./ex_c_minimal"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-minimal-library-overload"),
+    pyct.test(construct_name("ex-cxx-minimal-library-overload"),
               construct_command(["./ex_cxx_minimal_library_overload"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-cxx-basic"),
+    pyct.test(construct_name("ex-cxx-basic"),
               construct_command(["./ex_cxx_basic"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-python-minimal"),
+    pyct.test(construct_name("ex-python-minimal"),
               construct_command(["./ex_python_minimal"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "480",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-gotcha"),
+    pyct.test(construct_name("ex-gotcha"),
               construct_command(["./ex_gotcha"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-likwid"),
+    pyct.test(construct_name("ex-likwid"),
               construct_command(["./ex_likwid"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("test-python-likwid"),
+    pyct.test(construct_name("ex-python-likwid"),
               construct_command(["./ex_python_likwid"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
@@ -508,7 +509,7 @@ def run_pyctest():
                "ENVIRONMENT": test_env})
 
     if not args.python:
-        pyct.test(construct_name("test-cpu-roofline"),
+        pyct.test(construct_name("ex-cpu-roofline"),
                   construct_roofline_command(["./ex_cpu_roofline"], 'cpu-roofline',
                                              ['-t', 'cpu_roofline']),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -516,7 +517,7 @@ def run_pyctest():
                    "TIMEOUT": "900",
                    "ENVIRONMENT": test_env})
 
-        pyct.test(construct_name("test-cpu-roofline.sp"),
+        pyct.test(construct_name("ex-cpu-roofline.sp"),
                   construct_roofline_command(["./ex_cpu_roofline.sp"], 'cpu-roofline.sp',
                                              ['-t', 'cpu_roofline']),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
@@ -525,7 +526,7 @@ def run_pyctest():
                    "ENVIRONMENT": test_env})
 
         if args.cupti:
-            pyct.test(construct_name("test-gpu-roofline"),
+            pyct.test(construct_name("ex-gpu-roofline"),
                       construct_roofline_command(["./ex_gpu_roofline"], 'gpu-roofline',
                                                  ['-t', 'gpu_roofline']),
                       {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
