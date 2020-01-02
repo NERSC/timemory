@@ -445,12 +445,13 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("ex-python-caliper"),
-              construct_command(["./ex_python_caliper"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.python:
+        pyct.test(construct_name("ex-python-caliper"),
+                  construct_command(["./ex_python_caliper"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("ex-caliper"),
               construct_command(["./ex_caliper"], args),
@@ -480,12 +481,13 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("ex-python-minimal"),
-              construct_command(["./ex_python_minimal"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "480",
-               "ENVIRONMENT": test_env})
+    if args.python:
+        pyct.test(construct_name("ex-python-minimal"),
+                  construct_command(["./ex_python_minimal"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "480",
+                   "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("ex-gotcha"),
               construct_command(["./ex_gotcha"], args),
@@ -494,19 +496,21 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("ex-likwid"),
-              construct_command(["./ex_likwid"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.likwid:
+        pyct.test(construct_name("ex-likwid"),
+                  construct_command(["./ex_likwid"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("ex-python-likwid"),
-              construct_command(["./ex_python_likwid"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+        if args.python:
+            pyct.test(construct_name("ex-python-likwid"),
+                      construct_command(["./ex_python_likwid"], args),
+                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                       "LABELS": pyct.PROJECT_NAME,
+                       "TIMEOUT": "300",
+                       "ENVIRONMENT": test_env})
 
     if not args.python:
         pyct.test(construct_name("ex-cpu-roofline"),
@@ -538,6 +542,13 @@ def run_pyctest():
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
     if not args.generate:
         pyct.run(pyct.ARGUMENTS, pyct.BINARY_DIRECTORY)
+        if args.coverage:
+            script = os.path.join(pyct.SOURCE_DIRECTORY, "cmake",
+                                  "Scripts", "submit-coverage.sh")
+            cov = pyct.command([script, pyct.BINARY_DIRECTORY])
+            cov.SetWorkingDirectory(pyct.SOURCE_DIRECTORY)
+            cov.Execute()
+            print("{}".format(cov.Output()))
 
 
 #------------------------------------------------------------------------------#
