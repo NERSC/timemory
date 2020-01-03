@@ -140,7 +140,7 @@ public:
         {
             static constexpr size_t idx = 3;
             std::stringstream       ssval;
-            ssval << _val;
+            ssval << std::boolalpha << _val;
             current_stream->at(idx) = ssval.str();
         }
         current_stream = nullptr;
