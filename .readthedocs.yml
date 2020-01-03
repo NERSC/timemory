@@ -1,7 +1,5 @@
 
-formats:
-  - htmlzip
-  - epub
+formats: []
 
 conda:
   file: docs/environment.yml

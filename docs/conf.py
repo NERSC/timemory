@@ -41,13 +41,18 @@ _sitedir = os.path.realpath(os.path.join(os.getcwd(), "..", "site"))
 
 if not os.path.exists(_bindir):
     os.makedirs(_bindir)
-    os.chdir(_bindir)
-    sp.run(["cmake",
-            "-DTIMEMORY_BUILD_DOCS=ON", "-DENABLE_DOXYGEN_HTML_DOCS=ON",
-            "-DENABLE_DOXYGEN_LATEX_DOCS=OFF", "-DENABLE_DOXYGEN_MAN_DOCS=OFF",
-            _srcdir])
-    sp.run(["cmake", "--build", os.getcwd(), "--target", "doc"])
-    shutil.copytree(_doxbin, _doxdir)
+    
+os.chdir(_bindir)
+sp.run(["cmake",
+        "-DTIMEMORY_BUILD_DOCS=ON", "-DENABLE_DOXYGEN_HTML_DOCS=ON",
+        "-DENABLE_DOXYGEN_LATEX_DOCS=OFF", "-DENABLE_DOXYGEN_MAN_DOCS=OFF",
+        _srcdir])
+sp.run(["cmake", "--build", os.getcwd(), "--target", "doc"])
+
+if os.path.exists(_doxdir):
+    shutil.rmtree(_doxdir)
+    
+shutil.copytree(_doxbin, _doxdir)
 
 install('mkdocs-cinder')
 # install('mkdocs-inspired')
