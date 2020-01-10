@@ -198,22 +198,25 @@ public:
 
 public:
     template <typename _Tp>
-    strvec_t get_labels(const _Tp& _data)
-    {
-        return get_labels_sfinae(_data, 0);
-    }
-
-    template <typename _Tp>
     auto get_labels_sfinae(const _Tp& _data, int)
         -> decltype(_data.label_array(), strvec_t())
     {
-        return _data.label_array();
+        strvec_t _ret;
+        for(const auto& itr : _data.label_array())
+            _ret.push_back(itr);
+        return _ret;
     }
 
     template <typename _Tp>
     auto get_labels_sfinae(const _Tp&, long) -> strvec_t
     {
         return strvec_t{ _Tp::get_label() };
+    }
+
+    template <typename _Tp>
+    strvec_t get_labels(const _Tp& _data)
+    {
+        return get_labels_sfinae(_data, 0);
     }
 
 public:
@@ -467,15 +470,22 @@ public:
     print_statistics(const Type& _obj, stream& _os, const _Self& _self,
                      const _Sp<_Vp>& _stats, uint64_t _laps)
     {
+        bool use_mean = get_env<bool>("TIMEMORY_PRINT_MEAN", false);
+        bool use_min =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_max =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
+
         auto _min  = _stats.get_min();
         auto _max  = _stats.get_max();
-        // auto _mean = _stats.get_sum() / _laps;
-        // _os << zip(_obj.get(), _self, _min, _max);
+        auto _mean = _stats.get_sum() / _laps;
+
         _os << _obj.get();
         _os << _self;
-        _os << _min;
-        _os << _max;
-        //_os << zip(_obj.get(), _self);
+        if(use_mean)
+            _os << _mean;
+        if(use_min)
+            _os << _min;
+        if(use_max)
+            _os << _max;
     }
 
     template <typename _Self, typename _Vp, typename _Up = _Tp,
@@ -498,9 +508,16 @@ public:
               enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
     static void get_header(stream& os, const _Sp<_Vp>&)
     {
-        // os << "MEAN";
-        os << "MIN";
-        os << "MAX";
+        bool use_mean = get_env<bool>("TIMEMORY_PRINT_MEAN", false);
+        bool use_min =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_max =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
+
+        if(use_mean)
+            os << "MEAN";
+        if(use_min)
+            os << "MIN";
+        if(use_max)
+            os << "MAX";
     }
 
     template <typename _Vp, typename _Up = _Tp,
