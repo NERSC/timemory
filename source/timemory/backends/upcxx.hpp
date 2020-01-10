@@ -31,7 +31,8 @@
 #pragma once
 
 #include "timemory/settings.hpp"
-#include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
+#include "timemory/utility/macros.hpp"  // macro definitions w/ no internal deps
+#include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
 #include <algorithm>

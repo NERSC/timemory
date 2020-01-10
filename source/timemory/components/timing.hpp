@@ -34,7 +34,22 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
+
+//======================================================================================//
+
+TIMEMORY_STATISTICS_TYPE(component::wall_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::system_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::user_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::cpu_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::monotonic_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::monotonic_raw_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::thread_cpu_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::process_cpu_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::cpu_util, double)
+TIMEMORY_STATISTICS_TYPE(component::process_cpu_util, double)
+TIMEMORY_STATISTICS_TYPE(component::thread_cpu_util, double)
 
 //======================================================================================//
 
@@ -69,9 +84,10 @@ extern template struct base<thread_cpu_util, std::pair<int64_t, int64_t>>;
 // the epoch.
 struct wall_clock : public base<wall_clock, int64_t>
 {
-    using ratio_t    = std::nano;
-    using value_type = int64_t;
-    using base_type  = base<wall_clock, value_type>;
+    using ratio_t           = std::nano;
+    using value_type        = int64_t;
+    using base_type         = base<wall_clock, value_type>;
+    using statistics_policy = policy::record_statistics<wall_clock>;
 
     static std::string label() { return "wall"; }
     static std::string description() { return "wall time"; }

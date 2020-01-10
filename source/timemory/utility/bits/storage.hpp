@@ -45,18 +45,15 @@ template <typename _Tp>
 void
 tim::generic_serialization(const std::string& fname, const _Tp& obj)
 {
-    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-    std::ofstream         ofs(fname.c_str());
+    std::ofstream ofs(fname.c_str());
     if(ofs)
     {
         // ensure json write final block during destruction before the file is closed
-        //                                  args: precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
-        cereal::JSONOutputArchive          oa(ofs, opts);
-        oa.setNextName("timemory");
-        oa.startNode();
-        oa(cereal::make_nvp("data", obj));
-        oa.finishNode();
+        auto oa = trait::output_archive<_Tp>::get(ofs);
+        oa->setNextName("timemory");
+        oa->startNode();
+        (*oa)(cereal::make_nvp("data", obj));
+        oa->finishNode();
     }
     if(ofs)
         ofs << std::endl;

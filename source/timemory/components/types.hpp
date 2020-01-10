@@ -63,7 +63,7 @@ template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 // generic static polymorphic base class
-template <typename _Tp, typename value_type = int64_t>
+template <typename _Tp, typename _ValueType = int64_t>
 struct base;
 
 // holder that provides nothing
@@ -104,6 +104,8 @@ struct num_signals;
 struct voluntary_context_switch;
 struct priority_context_switch;
 struct virtual_memory;
+struct user_mode_time;
+struct kernel_mode_time;
 
 // filesystem
 struct read_bytes;
@@ -116,12 +118,13 @@ struct likwid_nvmon;
 struct tau_marker;
 
 // vtune
+struct vtune_profiler;
 struct vtune_frame;
 struct vtune_event;
 
 // cuda
-struct cuda_event;
 struct cuda_profiler;
+struct cuda_event;
 struct nvtx_marker;
 using cuda_nvtx = nvtx_marker;
 
@@ -170,6 +173,9 @@ struct user_bundle;
 // reserved
 using user_tuple_bundle = user_bundle<10101, native_tag>;
 using user_list_bundle  = user_bundle<11011, native_tag>;
+
+// requires gotcha
+struct malloc_gotcha;
 
 }  // namespace component
 }  // namespace tim

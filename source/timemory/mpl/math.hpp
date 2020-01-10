@@ -38,6 +38,8 @@
 #include <utility>
 #include <vector>
 
+#include "timemory/mpl/types.hpp"
+
 //======================================================================================//
 
 namespace tim
@@ -325,6 +327,238 @@ struct compute<std::pair<_Lhs, _Rhs>>
     {
         lhs_compute_type::percent_diff(_ret.first, _lhs.first, _rhs.first);
         rhs_compute_type::percent_diff(_ret.second, _lhs.second, _rhs.second);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct compute<std::tuple<_Types...>>
+{
+    using type                   = std::tuple<_Types...>;
+    static constexpr size_t size = sizeof...(_Types);
+
+    struct impl
+    {
+        //------------------------------------------------------------------------------//
+        //  per-element max
+        //
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static void max(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+        {
+            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
+            std::get<_Idx>(_ret) =
+                compute_type::max(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+        }
+
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        static void max(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+        {
+            max<_Tuple, _Idx>(_ret, _lhs, _rhs);
+            max<_Tuple, _Nt...>(_ret, _lhs, _rhs);
+        }
+
+        template <typename _Tuple, size_t... _Idx>
+        static void max(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
+                        index_sequence<_Idx...>)
+        {
+            max<_Tuple, _Idx...>(_ret, _lhs, _rhs);
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element min
+        //
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static void min(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+        {
+            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
+            std::get<_Idx>(_ret) =
+                compute_type::min(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+        }
+
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        static void min(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+        {
+            min<_Tuple, _Idx>(_ret, _lhs, _rhs);
+            min<_Tuple, _Nt...>(_ret, _lhs, _rhs);
+        }
+
+        template <typename _Tuple, size_t... _Idx>
+        static void min(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
+                        index_sequence<_Idx...>)
+        {
+            min<_Tuple, _Idx...>(_ret, _lhs, _rhs);
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element addition
+        //
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static void plus(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
+            compute_type::plus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+        }
+
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        static void plus(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            plus<_Tuple, _Idx>(_lhs, _rhs);
+            plus<_Tuple, _Nt...>(_lhs, _rhs);
+        }
+
+        template <typename _Tuple, size_t... _Idx>
+        static void plus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
+        {
+            plus<_Tuple, _Idx...>(_lhs, _rhs);
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element subtraction
+        //
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static void minus(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
+            compute_type::minus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+        }
+
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        static void minus(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            minus<_Tuple, _Idx>(_lhs, _rhs);
+            minus<_Tuple, _Nt...>(_lhs, _rhs);
+        }
+
+        template <typename _Tuple, size_t... _Idx>
+        static void minus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
+        {
+            minus<_Tuple, _Idx...>(_lhs, _rhs);
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element multiplication
+        //
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static void multiply(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
+            compute_type::multiply(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+        }
+
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        static void multiply(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            multiply<_Tuple, _Idx>(_lhs, _rhs);
+            multiply<_Tuple, _Nt...>(_lhs, _rhs);
+        }
+
+        template <typename _Tuple, size_t... _Idx>
+        static void multiply(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
+        {
+            multiply<_Tuple, _Idx...>(_lhs, _rhs);
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element division
+        //
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static void divide(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
+            compute_type::divide(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
+        }
+
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        static void divide(_Tuple& _lhs, const _Tuple& _rhs)
+        {
+            divide<_Tuple, _Idx>(_lhs, _rhs);
+            divide<_Tuple, _Nt...>(_lhs, _rhs);
+        }
+
+        template <typename _Tuple, size_t... _Idx>
+        static void divide(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
+        {
+            divide<_Tuple, _Idx...>(_lhs, _rhs);
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element percent diff
+        //
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+        {
+            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
+            compute_type::percent_diff(std::get<_Idx>(_ret), std::get<_Idx>(_lhs),
+                                       std::get<_Idx>(_rhs));
+        }
+
+        template <typename _Tuple, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
+        {
+            percent_diff<_Tuple, _Idx>(_ret, _lhs, _rhs);
+            percent_diff<_Tuple, _Nt...>(_ret, _lhs, _rhs);
+        }
+
+        template <typename _Tuple, size_t... _Idx>
+        static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
+                                 index_sequence<_Idx...>)
+        {
+            percent_diff<_Tuple, _Idx...>(_ret, _lhs, _rhs);
+        }
+    };
+
+    static type max(const type& _lhs, const type& _rhs)
+    {
+        type _ret;
+        impl::template max<type>(_ret, _lhs, _rhs, make_index_sequence<size>{});
+        return _ret;
+    }
+
+    static type min(const type& _lhs, const type& _rhs)
+    {
+        type _ret;
+        impl::template min<type>(_ret, _lhs, _rhs, make_index_sequence<size>{});
+        return _ret;
+    }
+
+    static void plus(type& _lhs, const type& _rhs)
+    {
+        impl::template plus<type>(_lhs, _rhs, make_index_sequence<size>{});
+    }
+
+    static void minus(type& _lhs, const type& _rhs)
+    {
+        impl::template minus<type>(_lhs, _rhs, make_index_sequence<size>{});
+    }
+
+    static void multiply(type& _lhs, const type& _rhs)
+    {
+        impl::template multiply<type>(_lhs, _rhs, make_index_sequence<size>{});
+    }
+
+    static void divide(type& _lhs, const type& _rhs)
+    {
+        impl::template divide<type>(_lhs, _rhs, make_index_sequence<size>{});
+    }
+
+    static void percent_diff(type& _ret, const type& _lhs, const type& _rhs)
+    {
+        impl::template percent_diff<type>(_ret, _lhs, _rhs, make_index_sequence<size>{});
     }
 };
 

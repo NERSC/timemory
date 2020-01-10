@@ -46,6 +46,12 @@
 #include <string>
 #include <vector>
 
+//======================================================================================//
+
+TIMEMORY_STATISTICS_TYPE(component::cupti_activity, double)
+
+//======================================================================================//
+
 namespace tim
 {
 namespace component

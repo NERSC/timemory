@@ -22,225 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/timemory.hpp"
-
-// C includes
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
-#if defined(TIMEMORY_USE_LIBEXPLAIN)
-#    include <libexplain/execvp.h>
-#endif
-
-#if defined(_UNIX)
-#    include <unistd.h>
-extern "C"
-{
-    extern char** environ;
-}
-#endif
-
-// C++ includes
-#include <chrono>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
-#include <thread>
-#include <vector>
-
-//--------------------------------------------------------------------------------------//
-
-#if defined(__GNUC__) || defined(__clang__)
-#    define declare_attribute(attr) __attribute__((attr))
-#elif defined(_WIN32)
-#    define declare_attribute(attr) __declspec(attr)
-#endif
-
-template <typename _Tp>
-using vector_t = std::vector<_Tp>;
-using string_t = std::string;
-
-template <typename _Tp>
-using vector_t = std::vector<_Tp>;
-using string_t = std::string;
-
-using namespace tim::component;
-
-//--------------------------------------------------------------------------------------//
-// create a custom component tuple printer
-//
-namespace tim
-{
-//--------------------------------------------------------------------------------------//
-//
-template <typename _Tp>
-struct custom_print
-{
-    using value_type = typename _Tp::value_type;
-    using base_type  = component::base<_Tp, value_type>;
-
-    custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj, std::ostream& os,
-                 bool /*endline*/)
-    {
-        std::stringstream ss;
-        if(_N == 0)
-            ss << std::endl;
-        ss << "    " << obj << std::endl;
-        os << ss.str();
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-class custom_component_tuple : public component_tuple<Types...>
-{
-    using apply_stop_t  = modifiers<operation::stop, Types...>;
-    using apply_print_t = modifiers<custom_print, Types...>;
-
-    static std::string label();
-
-public:
-    explicit custom_component_tuple(const string_t& key)
-    : component_tuple<Types...>(key, true, true)
-    {}
-
-    //----------------------------------------------------------------------------------//
-    friend std::ostream& operator<<(std::ostream&                           os,
-                                    const custom_component_tuple<Types...>& obj)
-    {
-        std::stringstream ssp;
-        std::stringstream ssd;
-        auto&&            data  = obj.m_data;
-        auto&&            key   = obj.key();
-        auto&&            width = obj.output_width();
-
-        apply<void>::access<apply_stop_t>(data);
-        apply<void>::access_with_indices<apply_print_t>(data, std::ref(ssd), false);
-
-        ssp << std::setw(width) << std::left << key;
-        os << ssp.str() << ssd.str();
-
-        return os;
-    }
-};
-
-}  // namespace tim
-
-//--------------------------------------------------------------------------------------//
-//
-//
-using comp_tuple_t = tim::custom_component_tuple<
-    real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss, num_io_in,
-    num_io_out, num_minor_page_faults, num_major_page_faults, num_signals,
-    voluntary_context_switch, priority_context_switch, read_bytes, written_bytes>;
-
-//--------------------------------------------------------------------------------------//
-
-comp_tuple_t*&
-get_measure()
-{
-    static comp_tuple_t* _instance = nullptr;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-bool
-use_shell()
-{
-    static bool _instance = tim::get_env("TIMEM_USE_SHELL", true);
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-bool
-debug()
-{
-    static bool _instance = tim::get_env("TIMEM_DEBUG", false);
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-std::string&
-command()
-{
-    static std::string _instance;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-std::string
-tim::custom_component_tuple<Types...>::label()
-{
-    return command();
-}
-
-//--------------------------------------------------------------------------------------//
-
-declare_attribute(noreturn) void failed_fork()
-{
-    printf("failure forking, error occured\n");
-    exit(EXIT_FAILURE);
-}
+#include "timem.hpp"
 
 //--------------------------------------------------------------------------------------//
 
 void
-parent_process(pid_t pid)
+parent_process(pid_t pid, int status)
 {
-    // a positive number is returned for the pid of parent process
-    // getppid() returns process id of parent of calling process
+    int ret = diagnose_status(status);
 
-    // the parent process calls waitpid() on the child
-    // waitpid() system call suspends execution of
-    // calling process until a child specified by pid
-    // argument has changed state
-    // see wait() man page for all the flags or options
-    // used here
-
-    int status;
-    int ret = 0;
-
-    if(waitpid(pid, &status, 0) > 0)
-    {
-        get_measure()->stop();
-
-        if(WIFEXITED(status) && !WEXITSTATUS(status))
-        {
-            ret = 0;
-        }
-        else if(WIFEXITED(status) && WEXITSTATUS(status))
-        {
-            ret = WEXITSTATUS(status);
-            if(ret == 127)
-            {
-                printf("execv failed\n");
-            }
-            else
-            {
-                printf("program terminated with a non-zero status: %i\n", ret);
-            }
-        }
-        else
-        {
-            printf("program terminated abnormally.\n");
-            ret = -1;
-        }
-    }
-    else
-    {
-        printf("waitpid() failed\n");
-    }
+    if((debug() && verbose() > 1) || verbose() > 2)
+        std::cerr << "[AFTER STOP][" << pid << "]> " << *get_measure() << std::endl;
 
     std::stringstream _oss;
     _oss << "\n" << *get_measure() << std::flush;
@@ -254,58 +46,30 @@ parent_process(pid_t pid)
             std::ofstream ofs(fname.c_str());
             if(ofs)
             {
-                printf("[timem]> Outputting '%s'...\n", fname.c_str());
+                fprintf(stderr, "[timem]> Outputting '%s'...\n", fname.c_str());
                 ofs << _oss.str();
                 ofs.close();
             }
             else
             {
-                std::cout << "[timem]>  opening output file '" << fname << "'...\n";
-                std::cout << _oss.str();
+                std::cerr << "[timem]>  opening output file '" << fname << "'...\n";
+                std::cerr << _oss.str();
             }
         }
 
         if(tim::settings::json_output())
         {
             auto jname = tim::settings::compose_output_filename(label, ".json");
-            printf("[timem]> Outputting '%s'...\n", jname.c_str());
+            fprintf(stderr, "[timem]> Outputting '%s'...\n", jname.c_str());
             tim::generic_serialization(jname, *get_measure());
         }
     }
     else
     {
-        std::cout << _oss.str() << std::endl;
+        std::cerr << _oss.str() << std::endl;
     }
 
     exit(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-explain(int ret, const char* pathname, char** argv)
-{
-    if(ret < 0)
-    {
-#if defined(TIMEMORY_USE_LIBEXPLAIN)
-        fprintf(stderr, "%s\n", explain_execvp(pathname, argv));
-#else
-        fprintf(stderr, "Return code: %i : %s\n", ret, pathname);
-        int n = 0;
-        std::cerr << "Command: ";
-        while(argv[n] != nullptr)
-            std::cerr << argv[n++] << " ";
-        std::cerr << std::endl;
-#endif
-    }
-    else if(debug())
-    {
-        int n = 0;
-        std::cerr << "Command: ";
-        while(argv[n] != nullptr)
-            std::cerr << argv[n++] << " ";
-        std::cerr << std::endl;
-    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -328,16 +92,15 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     }
     argv_list[argc - 1] = nullptr;
 
-    // launches the command with the shell, this is the default because it
-    // enables aliases
+    // launches the command with the shell, this is the default because it enables aliases
     auto launch_using_shell = [&]() {
         int         ret             = -1;
         uint64_t    argc_shell      = 5;
-        char**      argv_shell_list = (char**) malloc(sizeof(char**) * (argc_shell));
+        char**      argv_shell_list = new char*[argc];
         std::string _shell          = tim::get_env<std::string>("SHELL", getusershell());
 
-        if(debug())
-            printf("using shell: %s\n", _shell.c_str());
+        if(debug() || verbose() > 0)
+            fprintf(stderr, "using shell: %s\n", _shell.c_str());
 
         argv_shell_list[argc_shell - 1] = nullptr;
         if(_shell.length() > 0)
@@ -358,6 +121,7 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 
             explain(0, argv_shell_list[0], argv_shell_list);
             ret = execvp(argv_shell_list[0], argv_shell_list);
+            // ret = execv(argv_shell_list[0], argv_shell_list);
             explain(ret, argv_shell_list[0], argv_shell_list);
 
             if(ret != 0)
@@ -381,9 +145,10 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
         {
             fprintf(stderr, "getusershell failed!\n");
         }
+
         if(debug())
             PRINT_HERE("%s", "");
-        // delete[] argv_shell_list;
+
         return ret;
     };
 
@@ -436,9 +201,11 @@ int
 main(int argc, char** argv)
 {
     // disable banner if not specified
-    setenv("TIMEMORY_BANNER", "OFF", 0);
+    // setenv("TIMEMORY_BANNER", "OFF", 0);
+    master_pid() = getpid();
 
     // set some defaults
+    tim::settings::banner()      = false;
     tim::settings::file_output() = false;
     tim::settings::scientific()  = false;
     tim::settings::width()       = 12;
@@ -452,6 +219,9 @@ main(int argc, char** argv)
     tim::settings::suppress_parsing() = true;
     tim::settings::auto_output()      = false;
     tim::settings::output_prefix()    = "";
+
+    tim::manager::get_storage<comp_tuple_t>::initialize();
+    tim::manager::instance()->set_write_metadata(-1);
 
     auto compose_prefix = [&]() {
         std::stringstream ss;
@@ -470,21 +240,25 @@ main(int argc, char** argv)
         get_measure()          = new comp_tuple_t(compose_prefix());
         get_measure()->start();
         get_measure()->stop();
-        std::cout << "\n" << *get_measure() << std::flush;
+        std::cerr << "\n" << *get_measure() << std::flush;
         exit(EXIT_SUCCESS);
     }
 
     tim::get_rusage_type() = RUSAGE_CHILDREN;
-    get_measure()          = new comp_tuple_t(compose_prefix());
+    pid_t pid              = fork();
 
-    get_measure()->start();
-
-    pid_t pid = fork();
+    if(pid != 0)
+    {
+        worker_pid()          = pid;
+        tim::get_rusage_pid() = pid;
+        get_measure()         = new comp_tuple_t(compose_prefix());
+    }
 
     uint64_t nargs = static_cast<uint64_t>(argc);
     if(pid == -1)  // pid == -1 means error occured
     {
-        failed_fork();
+        puts("failure forking, error occured!");
+        exit(EXIT_FAILURE);
     }
     else if(pid == 0)  // pid == 0 means child process created
     {
@@ -492,8 +266,139 @@ main(int argc, char** argv)
     }
     else  // means parent process
     {
-        parent_process(pid);
+        // struct sigaction& sa = timem_signal_action();
+        struct sigaction timem_sa;
+        struct sigaction orig_sa;
+
+        // Install timer_handler as the signal handler for TIMEM_SIGNAL.
+
+        memset(&timem_sa, 0, sizeof(timem_sa));
+        // sigfillset(&timem_sa.sa_mask);
+        // sigdelset(&timem_sa.sa_mask, TIMEM_SIGNAL);
+
+        timem_sa.sa_handler   = &sampler;
+        timem_sa.sa_sigaction = &sampler;
+        timem_sa.sa_flags     = SA_RESTART | SA_SIGINFO;
+
+        sigaction(TIMEM_SIGNAL, &timem_sa, &orig_sa);
+
+        // itimerval& _timer = timem_itimer();
+        struct itimerval _timer;
+
+        /// \param TIMEM_SAMPLE_DELAY
+        /// \brief Environment variable, expressed in seconds, that sets the length
+        /// of time the timem executable waits before starting sampling of the relevant
+        /// measurements (components that read from child process status files)
+        ///
+        double fdelay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 0.001);
+
+        /// \param TIMEM_SAMPLE_FREQ
+        /// \brief Environment variable, expressed in 1/seconds, that sets the frequency
+        /// that the timem executable samples the relevant measurements (components
+        /// that read from child process status files)
+        ///
+        double frate = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 2.0);
+
+        double ffreq = 1.0 / frate;
+
+        int delay_sec  = (fdelay * 1.0e6) / 1000000.;
+        int delay_usec = int(fdelay * 1.0e6) % 1000000;
+
+        int freq_sec  = (ffreq * 1.0e6) / 1000000.;
+        int freq_usec = int(ffreq * 1.0e6) % 1000000;
+
+        if(debug() || verbose() > 0)
+        {
+            fprintf(stderr, "timem sampler delay     : %i sec + %i usec\n", delay_sec,
+                    delay_usec);
+            fprintf(stderr, "timem sampler frequency : %i sec + %i usec\n", freq_sec,
+                    freq_usec);
+        }
+
+        // Configure the timer to expire after designated delay...
+        _timer.it_value.tv_sec  = delay_sec;
+        _timer.it_value.tv_usec = delay_usec;
+
+        // ... and every designated interval after that
+        _timer.it_interval.tv_sec  = freq_sec;
+        _timer.it_interval.tv_usec = freq_usec;
+
+        get_measure()->start();
+
+        // start the interval timer
+        int itimer_stat = setitimer(TIMEM_ITIMER, &_timer, nullptr);
+
+        if(debug())
+            fprintf(stderr, "Sample configuration return value: %i\n", itimer_stat);
+
+        // pause until first interrupt delivered
+        pause();
+
+        // loop while the errno is not EINTR (interrupt) and status designates
+        // it was stopped because of TIMEM_SIGNAL
+        int status = 0;
+        int errval = 0;
+        do
+        {
+            status = 0;
+            errval = waitpid_eintr(status);
+        } while(errval == EINTR && diagnose_status(status, debug()) == TIMEM_SIGNAL);
+
+        if((debug() && verbose() > 1) || verbose() > 2)
+            std::cerr << "[BEFORE STOP][" << pid << "]> " << *get_measure() << std::endl;
+
+        get_measure()->stop();
+
+        parent_process(pid, status);
     }
 
     delete get_measure();
 }
+
+//--------------------------------------------------------------------------------------//
+
+// signal(TIMEM_SIGNAL, SIG_IGN);
+// signal(SIGTERM, SIG_IGN);
+/*
+struct sigaction sa;
+sigset_t mask;
+
+sa.sa_handler = &dummy_sampler; // Intercept and ignore TIMEM_SIGNAL
+sa.sa_sigaction = &dummy_sampler;
+sa.sa_flags = SA_RESTART; // Remove the handler after first signal
+sigfillset(&sa.sa_mask);
+sigaction(TIMEM_SIGNAL, &sa, NULL);
+sigaction(SIGTERM, &sa, NULL);
+
+// Get the current signal mask
+// sigprocmask(0, NULL, &mask);
+
+// Unblock TIMEM_SIGNAL
+// sigdelset(&mask, TIMEM_SIGNAL);
+*/
+
+/*
+// struct sigaction& sa = timem_signal_action();
+struct sigaction sa;
+
+// Install timer_handler as the signal handler for TIMEM_SIGNAL.
+memset(&sa, 0, sizeof(sa));
+sa.sa_handler = &dummy_sampler;
+sa.sa_sigaction = &sampler;
+// sa.sa_flags = SA_RESTART;
+sigaction(TIMEM_SIGNAL, &sa, nullptr);
+
+// itimerval& _timer = timem_itimer();
+struct itimerval _timer;
+
+// Configure the timer to expire after 500 msec...
+_timer.it_value.tv_sec  = 2;
+_timer.it_value.tv_usec = 50000;
+
+// ... and every 500 msec after that
+_timer.it_interval.tv_sec  = 0;
+_timer.it_interval.tv_usec = 50000;
+
+int ret = setitimer(ITIMER_REAL, &_timer, nullptr);
+fprintf(stderr, "Sample configuration return value: %i\n", ret);
+*/

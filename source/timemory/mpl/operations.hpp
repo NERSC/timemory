@@ -33,6 +33,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
@@ -50,8 +51,6 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-
 namespace operation
 {
 //--------------------------------------------------------------------------------------//
@@ -64,6 +63,7 @@ struct init_storage
     using base_type    = typename Type::base_type;
     using string_t     = std::string;
     using storage_type = storage<Type>;
+    using this_type    = init_storage<_Tp>;
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(trait::is_available<_Up>::value), char> = 0>
@@ -123,6 +123,12 @@ struct init_storage
         };
         static thread_local auto _instance = _lambda();
         return _instance;
+    }
+
+    static void init()
+    {
+        static thread_local auto _init = this_type::get();
+        consume_parameters(_init);
     }
 };
 
@@ -214,9 +220,7 @@ struct insert_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type& obj, const uint64_t& _hash)
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
-
+        init_storage<_Tp>::init();
         obj.insert_node(_Scope{}, _hash);
     }
 
@@ -313,12 +317,47 @@ struct measure
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit measure(base_type& obj)
+    explicit measure(Type& obj)
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
+        init_storage<_Tp>::init();
         obj.measure();
     }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct sample
+{
+    static constexpr bool enable = trait::sampler<_Tp>::value;
+    using EmptyT                 = std::tuple<>;
+    using Type                   = _Tp;
+    using value_type             = typename Type::value_type;
+    using base_type              = typename Type::base_type;
+    using this_type              = sample<_Tp>;
+    using data_type = conditional_t<enable, decltype(std::declval<_Tp>().get()), EmptyT>;
+
+    sample()              = default;
+    ~sample()             = default;
+    sample(const sample&) = default;
+    sample(sample&&)      = default;
+    sample& operator=(const sample&) = default;
+    sample& operator=(sample&&) = default;
+
+    template <typename _Up, enable_if_t<(std::is_same<_Up, this_type>::value), int> = 0>
+    explicit sample(Type& obj, _Up data)
+    {
+        init_storage<_Tp>::init();
+        obj.sample();
+        data.value = obj.get();
+        obj.add_sample(std::move(data));
+    }
+
+    template <typename _Up, enable_if_t<!(std::is_same<_Up, this_type>::value), int> = 0>
+    explicit sample(Type&, _Up)
+    {}
+
+    data_type value;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -332,8 +371,7 @@ struct start
 
     explicit start(base_type& obj)
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
+        init_storage<_Tp>::init();
         obj.start();
     }
 };
@@ -356,8 +394,7 @@ struct priority_start
               enable_if_t<(trait::start_priority<_Up>::value < 0), int> = 0>
     explicit priority_start(base_type& obj)
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
+        init_storage<_Tp>::init();
         obj.start();
     }
 };
@@ -380,8 +417,7 @@ struct standard_start
               enable_if_t<(trait::start_priority<_Up>::value == 0), int> = 0>
     explicit standard_start(base_type& obj)
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
+        init_storage<_Tp>::init();
         obj.start();
     }
 };
@@ -404,8 +440,7 @@ struct delayed_start
               enable_if_t<(trait::start_priority<_Up>::value > 0), int> = 0>
     explicit delayed_start(base_type& obj)
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
+        init_storage<_Tp>::init();
         obj.start();
     }
 };
@@ -497,35 +532,41 @@ struct mark_begin
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up                                                       = _Tp,
-              enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
-    explicit mark_begin(Type& obj)
+    template <typename... _Args>
+    explicit mark_begin(Type& obj, _Args&&... _args)
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
-        obj.mark_begin();
+        mark_begin_sfinae(obj, std::forward<_Args>(_args)...);
     }
 
-    template <typename _Up                                                        = _Tp,
-              enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
-    explicit mark_begin(Type&)
-    {}
-
-    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int>                     = 0,
-              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    mark_begin(Type& obj, _Args&&... _args)
+private:
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of supports args and an implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto mark_begin_sfinae_impl(_Up& obj, int, _Args&&... _args)
+        -> decltype(obj.mark_begin(std::forward<_Args>(_args)...), void())
     {
-        static thread_local auto _init = init_storage<_Tp>::get();
-        consume_parameters(_init);
         obj.mark_begin(std::forward<_Args>(_args)...);
     }
 
-    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
-              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    mark_begin(Type&, _Args&&...)
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of !supports_args and no implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto mark_begin_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
     {}
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename _Up, typename... _Args>
+    auto mark_begin_sfinae(_Up& obj, _Args&&... _args)
+        -> decltype(mark_begin_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    {
+        mark_begin_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
 };
 
 //--------------------------------------------------------------------------------------//
@@ -537,33 +578,41 @@ struct mark_end
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up                                                       = _Tp,
-              enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
-    explicit mark_end(Type& obj)
+    template <typename... _Args>
+    explicit mark_end(Type& obj, _Args&&... _args)
     {
-        obj.mark_end();
+        mark_end_sfinae(obj, std::forward<_Args>(_args)...);
     }
 
-    template <typename _Up                                                        = _Tp,
-              enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
-    explicit mark_end(Type&)
-    {}
-
-    // mark_end(Type& obj) { obj.mark_end(); }
-
-    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int>                     = 0,
-              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    mark_end(Type& obj, _Args&&... _args)
+private:
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of supports args and an implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto mark_end_sfinae_impl(_Up& obj, int, _Args&&... _args)
+        -> decltype(obj.mark_end(std::forward<_Args>(_args)...), void())
     {
         obj.mark_end(std::forward<_Args>(_args)...);
     }
 
-    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
-              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    mark_end(Type&, _Args&&...)
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of !supports_args and no implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto mark_end_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
     {}
+
+    //----------------------------------------------------------------------------------//
+    //  Wrapper that calls one of two above
+    //
+    template <typename _Up, typename... _Args>
+    auto mark_end_sfinae(_Up& obj, _Args&&... _args)
+        -> decltype(mark_end_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    {
+        mark_end_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
 };
 
 //--------------------------------------------------------------------------------------//
@@ -571,14 +620,14 @@ struct mark_end
 /// \class operation::audit
 ///
 /// \brief The purpose of this operation class is for a component to provide some extra
-/// customization within a GOTCHA function.
+/// customization within a GOTCHA function. It allows a GOTCHA component to inspect
+/// the arguments and the return type of a wrapped function. To add support to a
+/// component, define `void audit(std::string, context, <Args...>)`. The first argument is
+/// the function name (possibly mangled), the second is either type \class audit::incoming
+/// or \class audit::outgoing, and the remaining arguments are the corresponding types
 ///
-/// It will require overloading `tim::trait::supports_args`:
-///   `template <> trait::supports_args<MyType, std::tuple<string, _Args...>> : true_type`
-/// where `_Args...` are the GOTCHA function arguments. The string will be the function
-/// name (possibly mangled). One such purpose may be to create a custom component
-/// that intercepts a malloc and uses the arguments to get the exact allocation
-/// size.
+/// One such purpose may be to create a custom component that intercepts a malloc and
+/// uses the arguments to get the exact allocation size.
 ///
 template <typename _Tp>
 struct audit
@@ -586,28 +635,6 @@ struct audit
     using Type       = _Tp;
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
-
-    /*
-    //----------------------------------------------------------------------------------//
-    //  Explicit support provided
-    //
-    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    audit(Type& obj, _Args&&... _args)
-    {
-        obj.audit(std::forward<_Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Implicit support provided
-    //
-    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
-    audit(Type& obj, _Args&&... _args)
-    {
-        audit_sfinae(obj, std::forward<_Args>(_args)...);
-    }
-    */
 
     template <typename... _Args>
     audit(Type& obj, _Args&&... _args)

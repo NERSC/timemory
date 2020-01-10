@@ -45,6 +45,10 @@
 
 //======================================================================================//
 
+TIMEMORY_VARIADIC_STATISTICS_TYPE(component::cpu_roofline, std::vector<double>, typename)
+
+//======================================================================================//
+
 namespace tim
 {
 namespace component
@@ -91,6 +95,9 @@ struct cpu_roofline
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
     using record_type  = std::function<value_type()>;
+
+    using unit_type         = typename trait::units<this_type>::type;
+    using display_unit_type = typename trait::units<this_type>::display_type;
 
     using device_t    = device::cpu;
     using count_type  = wall_clock;
@@ -159,11 +166,14 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static int event_set() { return *_event_set_ptr(); }
+    static int event_set() { return (_event_set_ptr()) ? (*_event_set_ptr()) : -1; }
 
     //----------------------------------------------------------------------------------//
 
-    static const event_type& events() { return *_events_ptr(); }
+    static event_type events()
+    {
+        return (_events_ptr()) ? (*_events_ptr()) : event_type{};
+    }
 
     //----------------------------------------------------------------------------------//
 
@@ -367,7 +377,43 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static int64_t unit() { return 1; }
+    static unit_type unit()
+    {
+        return (event_mode() == MODE::OP) ? (1.0 / count_type::unit()) : 1.0;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static display_unit_type display_unit()
+    {
+        display_unit_type _units{};
+        auto              labels = label_array();
+        for(size_type i = 0; i < labels.size(); ++i)
+        {
+            std::stringstream ss;
+            ss << labels[i];
+            if(ss.str().length() == 0)
+            {
+                _units.push_back("");
+            }
+            else
+            {
+                if(event_mode() == MODE::OP)
+                    ss << "/" << count_type::display_unit();
+                _units.push_back(ss.str());
+            }
+        }
+
+        return _units;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static unit_type get_unit() { return unit(); }
+
+    //----------------------------------------------------------------------------------//
+
+    static display_unit_type get_display_unit() { return display_unit(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -387,26 +433,6 @@ struct cpu_roofline
         return "CPU Roofline " + get_type_string() + " " +
                std::string((event_mode() == MODE::OP) ? "Counters"
                                                       : "Arithmetic Intensity");
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static std::string display_unit()
-    {
-        std::stringstream ss;
-        ss << "(";
-        auto labels = _label_array();
-
-        for(size_type i = 0; i < labels.size(); ++i)
-        {
-            ss << labels[i];
-            if(i + 1 < labels.size())
-                ss << " + ";
-        }
-        ss << ")";
-        if(event_mode() == MODE::OP)
-            ss << " / " << count_type::display_unit();
-        return ss.str();
     }
 
     //----------------------------------------------------------------------------------//
@@ -440,7 +466,32 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    double get() const { return get_counted() / get_elapsed(); }
+    std::vector<double> get() const
+    {
+        auto                _n = size() + 1;
+        std::vector<double> _data(_n, 0.0);
+        const auto&         obj = (is_transient) ? accum : value;
+
+        if(event_mode() == MODE::OP)
+        {
+            if(!(obj.second > 0.0))
+                return _data;
+        }
+
+        for(size_t i = 0; i < obj.first.size(); ++i)
+        {
+            _data[i] += static_cast<double>(obj.first[i]);
+            _data.back() += static_cast<double>(obj.first[i]);
+        }
+
+        if(event_mode() == MODE::OP)
+        {
+            for(auto& itr : _data)
+                itr /= obj.second;
+        }
+
+        return _data;
+    }
 
     //----------------------------------------------------------------------------------//
 
@@ -583,21 +634,14 @@ public:
     //
     //==================================================================================//
 
-    double get_display() const
-    {
-        auto& obj = (accum.second > 0) ? accum : value;
-        if(obj.second == 0)
-            return 0.0;
-        double _sum = 0.0;
-        for(auto itr = begin(); itr != end(); ++itr)
-            _sum += static_cast<double>(*itr);
-        return (event_mode() == MODE::OP) ? (_sum / obj.second) : _sum;
-    }
+    std::vector<double> get_display() const { return get(); }
 
     //----------------------------------------------------------------------------------//
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        using namespace tim::stl_overload::vector_ostream;
+
         // output the time
         auto&             _obj = (obj.accum.second > 0) ? obj.accum : obj.value;
         std::stringstream sst;
@@ -616,23 +660,41 @@ public:
             sst << " " << t_label;
         sst << ", ";
 
-        // output the roofline metric
-        auto _value = obj.get_display();
-        auto _label = this_type::get_label();
-        auto _disp  = this_type::display_unit();
         auto _prec  = count_type::get_precision();
         auto _width = this_type::get_width();
         auto _flags = count_type::get_format_flags();
 
-        std::stringstream ss_value;
-        std::stringstream ss_extra;
-        ss_value.setf(_flags);
-        ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
-        if(!_disp.empty())
-            ss_extra << " " << _disp;
-        else if(!_label.empty())
-            ss_extra << " " << _label;
-        os << sst.str() << ss_value.str() << ss_extra.str();
+        // output the roofline metric
+        auto _value = obj.get();
+        auto _label = this_type::label_array();
+        auto _disp  = this_type::display_unit();
+
+#if defined(DEBUG)
+        if(settings::debug())
+        {
+            std::cout << "value: " << _value << std::endl;
+            std::cout << "label: " << _label << std::endl;
+            std::cout << "displ: " << _disp << std::endl;
+        }
+#endif
+        assert(_value.size() <= _label.size());
+        assert(_value.size() <= _disp.size());
+
+        auto n = _label.size();
+        for(size_t i = 0; i < n; ++i)
+        {
+            std::stringstream ss_value;
+            std::stringstream ss_extra;
+            ss_value.setf(_flags);
+            ss_value << std::setw(_width) << std::setprecision(_prec) << _value.at(i);
+            if(!_disp.at(i).empty())
+                ss_extra << " " << _disp.at(i);
+            else if(!_label.at(i).empty())
+                ss_extra << " " << _label.at(i);
+            os << sst.str() << ss_value.str() << ss_extra.str();
+            if(i + 1 < n)
+                os << ", ";
+        }
 
         return os;
     }
@@ -675,7 +737,9 @@ public:
     {
         strvec_t arr;
         for(const auto& itr : events())
-            arr.push_back(papi::get_event_info(itr).short_descr);
+            arr.push_back(papi::get_event_info(itr).symbol);
+        arr.push_back("TOTAL");
+        // arr.push_back(papi::get_event_info(itr).short_descr);
         return arr;
     }
 

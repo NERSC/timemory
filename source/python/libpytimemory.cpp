@@ -256,6 +256,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::class_<component_list_t>         comp_list(tim, "component_tuple");
     py::class_<auto_timer_decorator>     timer_decorator(tim, "timer_decorator");
     py::class_<component_list_decorator> comp_decorator(tim, "component_decorator");
+    py::class_<pycomponent_bundle>       comp_bundle(tim, "component_bundle");
     py::class_<rss_usage_t>              rss_usage(tim, "rss_usage");
     py::class_<pytim::settings>          settings(tim, "settings");
 
@@ -594,6 +595,52 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
                         py::return_value_policy::automatic);
     //----------------------------------------------------------------------------------//
+
+    auto configure_pybundle = [](py::list _args) {
+        std::set<TIMEMORY_COMPONENT> components;
+        for(auto itr : _args)
+        {
+            std::string        _sitr = "";
+            TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
+            try
+            {
+                _sitr = itr.cast<std::string>();
+                _citr = tim::enumerate_component(_sitr);
+            } catch(...)
+            {
+                PRINT_HERE("%s", "arg was not string");
+            }
+            if(_citr == TIMEMORY_COMPONENTS_END)
+            {
+                try
+                {
+                    _citr = itr.cast<TIMEMORY_COMPONENT>();
+                } catch(...)
+                {
+                    PRINT_HERE("%s", "arg was not enum");
+                }
+            }
+            if(_citr != TIMEMORY_COMPONENTS_END)
+                components.insert(_citr);
+        }
+        pycomponent_bundle::configure(components);
+    };
+
+    //==================================================================================//
+    //
+    //                      Component bundle
+    //
+    //==================================================================================//
+    comp_bundle.def(py::init(&pytim::init::component_bundle), "Initialization",
+                    py::arg("func"), py::arg("file"), py::arg("line"),
+                    py::return_value_policy::take_ownership);
+    //----------------------------------------------------------------------------------//
+    comp_bundle.def("start", &pycomponent_bundle::start, "Start the bundle");
+    //----------------------------------------------------------------------------------//
+    comp_bundle.def("stop", &pycomponent_bundle::stop, "Stop the bundle");
+    //----------------------------------------------------------------------------------//
+    comp_bundle.def_static("configure", configure_pybundle,
+                           "Configure the profiler types");
 
     //==================================================================================//
     //

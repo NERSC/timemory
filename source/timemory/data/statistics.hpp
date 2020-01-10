@@ -43,8 +43,10 @@
 
 #include "timemory/data/functional.hpp"
 #include "timemory/mpl/math.hpp"
+#include "timemory/mpl/stl_overload.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
+#include "timemory/utility/stream.hpp"
 
 namespace tim
 {
@@ -63,14 +65,14 @@ public:
     inline statistics(const statistics&) = default;
     inline statistics(statistics&&)      = default;
 
-    inline statistics(const value_type& val)
+    inline explicit statistics(const value_type& val)
     : m_cnt(0)
     , m_sum(val)
     , m_min(val)
     , m_max(val)
     {}
 
-    inline statistics(value_type&& val)
+    inline explicit statistics(value_type&& val)
     : m_cnt(0)
     , m_sum(std::move(val))
     , m_min(m_sum)
@@ -82,44 +84,22 @@ public:
 
     statistics& operator=(const value_type& val)
     {
+        m_cnt = 1;
         m_sum = val;
-        if(m_cnt == 0)
-            m_min = val;
-        else
-            m_min = compute_type::min(m_min, val);
-        m_max = compute_type::max(m_max, val);
+        m_min = val;
+        m_max = val;
         return *this;
     }
 
 public:
     // Accumulated values
+    inline int64_t           get_count() const { return m_cnt; }
     inline const value_type& get_min() const { return m_min; }
     inline const value_type& get_max() const { return m_max; }
     inline const value_type& get_sum() const { return m_sum; }
 
-    // Conversion
-    inline operator const value_type&() const { return m_sum; }
-    inline operator value_type&() { return m_sum; }
-
     // Modifications
     inline void reset();
-
-    inline statistics& get_min(const value_type& val)
-    {
-        m_sum = compute_type::min(m_sum, val);
-        if(m_cnt == 0)
-            m_min = val;
-        else
-            m_min = compute_type::min(m_min, val);
-        return *this;
-    }
-
-    inline statistics& get_max(const value_type& val)
-    {
-        m_sum = compute_type::max(m_sum, val);
-        m_max = compute_type::max(m_max, val);
-        return *this;
-    }
 
 public:
     // Operators (value_type)
@@ -127,10 +107,15 @@ public:
     {
         compute_type::plus(m_sum, val);
         if(m_cnt == 0)
+        {
             m_min = val;
+            m_max = val;
+        }
         else
+        {
             m_min = compute_type::min(m_min, val);
-        m_max = compute_type::max(m_max, val);
+            m_max = compute_type::max(m_max, val);
+        }
         ++m_cnt;
         return *this;
     }
@@ -165,10 +150,15 @@ public:
     {
         m_sum += rhs.m_sum;
         if(m_cnt == 0)
+        {
             m_min = rhs.m_min;
+            m_max = rhs.m_max;
+        }
         else
+        {
             m_min = compute_type::min(m_min, rhs.m_min);
-        m_max = compute_type::max(m_max, rhs.m_max);
+            m_max = compute_type::max(m_max, rhs.m_max);
+        }
         m_cnt += rhs.m_cnt;
         return *this;
     }
@@ -184,7 +174,8 @@ public:
     // friend operator for output
     friend std::ostream& operator<<(std::ostream& os, const statistics& obj)
     {
-        os << obj.get_sum() << " " << obj.get_min() << " " << obj.get_max();
+        os << (obj.get_sum() / obj.get_count()) << " " << obj.get_min() << " "
+           << obj.get_max();
         return os;
     }
 

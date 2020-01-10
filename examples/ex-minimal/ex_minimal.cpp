@@ -25,20 +25,73 @@
 #include <cstdio>
 #include <cstdlib>
 
+//--------------------------------------------------------------------------------------//
+// include these headers for pre-declaration w/o instantiation
+//
+#include "timemory/components/types.hpp"
+#include "timemory/mpl/type_traits.hpp"
+
+//
+// configure these two types to always record statistics
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes,
+                               std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, std::false_type)
+
+//
+// include the rest of the code
+//
 #include <timemory/timemory.hpp>
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+//
+// shorthand
+//
+using namespace tim::component;
+using namespace tim;
 
-int main(int argc, char** argv)
+//
+// bundle of tools
+//
+using tuple_t = auto_tuple<wall_clock, written_bytes, cpu_clock>;
+
+//--------------------------------------------------------------------------------------//
+
+long
+fib(long n)
 {
+    return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
+
+//--------------------------------------------------------------------------------------//
+
+int
+main(int argc, char** argv)
+{
+    settings::destructor_report() = true;
+    tim::timemory_init(argc, argv);
+
+    int  nitr = (argc > 2) ? atoi(argv[2]) : 5;
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
-    TIMEMORY_AUTO_TIMER("total");
-    long ans = fib(nfib);
+    for(int i = 0; i < nitr; ++i)
+    {
+        TIMEMORY_MARKER(tuple_t, "total");
+        long ans = fib(nfib);
 
-    TIMEMORY_BLANK_AUTO_TIMER("nested");
-    ans += fib(nfib + 1);
+        TIMEMORY_BLANK_MARKER(tuple_t, "nested");
+        ans += fib(nfib + 1);
 
-    printf("Answer = %li\n", ans);
+        if(i % 2 == 0)
+        {
+            TIMEMORY_BASIC_MARKER(tuple_t, "occasional");
+            ans += fib(nfib - 1);
+        }
+
+        printf("Answer = %li\n", ans);
+    }
+
     return EXIT_SUCCESS;
 }
+
+//--------------------------------------------------------------------------------------//

@@ -144,7 +144,7 @@ main(int argc, char** argv)
             run_ert<double, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
     } else  // num_gpus >= 1
     {
-#    if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
+#    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
         // execute the half-precision ERT calculations
         for(auto nthread : cpu_num_threads)
             for(auto nstream : gpu_num_streams)

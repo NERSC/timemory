@@ -259,7 +259,7 @@ main(int argc, char** argv)
     tim::settings::memory_precision()  = 3;
     tim::settings::width()             = 10;
     tim::settings::timing_precision()  = 6;
-    tim::dmp::initialize(&argc, &argv);
+    tim::timemory_init(&argc, &argv);
     tim::settings::cout_output() = false;
     tim::print_env();
 
@@ -349,10 +349,12 @@ main(int argc, char** argv)
               << " KB, max cache size: " << (max_size / tim::units::kilobyte) << " KB\n"
               << std::endl;
 
+    int ret = 0;
+
     if(!tim::settings::enabled())
     {
         printf("timemory was disabled.\n");
-        return EXIT_SUCCESS;
+        ret = EXIT_SUCCESS;
     }
     else if(tim::settings::flat_profile())
     {
@@ -361,7 +363,7 @@ main(int argc, char** argv)
             (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_size;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
-        return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
+        ret = (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else
     {
@@ -369,10 +371,10 @@ main(int argc, char** argv)
             (tim::storage<real_clock>::instance()->size() - 5) * auto_tuple_size - 4;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
-        return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
+        ret = (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
-    tim::dmp::finalize();
+    tim::timemory_finalize();
 
-    return 0;
+    return ret;
 }

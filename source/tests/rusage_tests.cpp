@@ -155,11 +155,11 @@ string_t
 get_info(const read_bytes& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(read_bytes::get_unit());
+    auto           _unit = std::get<0>(read_bytes::get_unit());
     ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
-       << read_bytes::get_display_unit()
+       << std::get<0>(read_bytes::get_display_unit())
        << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
-       << read_bytes::get_display_unit() << std::endl;
+       << std::get<0>(read_bytes::get_display_unit()) << std::endl;
     return ss.str();
 }
 
@@ -167,11 +167,11 @@ string_t
 get_info(const written_bytes& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(written_bytes::get_unit());
+    auto           _unit = std::get<0>(written_bytes::get_unit());
     ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
-       << written_bytes::get_display_unit()
+       << std::get<0>(written_bytes::get_display_unit())
        << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
-       << written_bytes::get_display_unit() << std::endl;
+       << std::get<0>(written_bytes::get_display_unit()) << std::endl;
     return ss.str();
 }
 

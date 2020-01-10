@@ -15,6 +15,7 @@ enable_testing()
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
 add_interface_library(timemory-extern-init)
+add_interface_library(timemory-statistics)
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
@@ -69,6 +70,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-upcxx
     timemory-threading
     #
+    timemory-statistics
+    #
     timemory-papi
     #
     timemory-cuda
@@ -77,11 +80,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cupti
     timemory-cudart-device
     #
-    timemory-all-gperftools
-    timemory-gperftools
     timemory-gperftools-cpu
     timemory-gperftools-heap
-    timemory-gperftools-static
     #
     timemory-caliper
     timemory-gotcha
@@ -92,6 +92,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
+    timemory-statistics
     timemory-papi
     timemory-cuda
     timemory-cudart
@@ -107,6 +108,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-threading
+    timemory-statistics
     timemory-papi-static
     timemory-cuda
     timemory-cudart-static
@@ -282,11 +284,18 @@ target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
 if(NOT WIN32)
     target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
-    if(TIMEMORY_USE_EXTERN_INIT)
-        # target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
-    endif()
 endif()
 
+#----------------------------------------------------------------------------------------#
+#
+#                        timemory statistics
+#
+#----------------------------------------------------------------------------------------#
+
+target_compile_definitions(timemory-statistics INTERFACE TIMEMORY_USE_STATISTICS)
+if(TIMEMORY_USE_STATISTICS)
+    target_link_libraries(timemory-headers INTERFACE timemory-statistics)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #
@@ -353,7 +362,7 @@ if(NOT WIN32)
 endif()
 
 find_library(PTHREADS_LIBRARY pthread)
-find_package(Threads QUIET)
+find_package(Threads QUIET ${TIMEMORY_FIND_REQUIREMENT})
 
 if(Threads_FOUND)
     target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
@@ -387,7 +396,7 @@ if(TIMEMORY_USE_MPI)
         set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
     endif()
 
-    find_package(MPI)
+    find_package(MPI ${TIMEMORY_FIND_REQUIREMENT})
 else()
     set(MPI_FOUND OFF)
 endif()
@@ -465,7 +474,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_UPCXX)
-    find_package(UPCXX QUIET)
+    find_package(UPCXX QUIET ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(UPCXX_FOUND)
@@ -583,7 +592,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-find_package(PAPI QUIET)
+find_package(PAPI QUIET ${TIMEMORY_FIND_REQUIREMENT})
 
 if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
     target_link_libraries(timemory-papi INTERFACE papi-shared)
@@ -633,8 +642,8 @@ if(TIMEMORY_USE_CUDA)
     set(PROJECT_USE_CUDA_OPTION                 TIMEMORY_USE_CUDA)
     set(PROJECT_CUDA_DEFINITION                 TIMEMORY_USE_CUDA)
     set(PROJECT_CUDA_INTERFACE_PREFIX           timemory)
-    set(PROJECT_CUDA_DISABLE_HALF2_OPTION       TIMEMORY_DISABLE_CUDA_HALF2)
-    set(PROJECT_CUDA_DISABLE_HALF2_DEFINITION   TIMEMORY_DISABLE_CUDA_HALF2)
+    set(PROJECT_CUDA_DISABLE_HALF2_OPTION       TIMEMORY_DISABLE_CUDA_HALF)
+    set(PROJECT_CUDA_DISABLE_HALF2_DEFINITION   TIMEMORY_DISABLE_CUDA_HALF)
 
     include(CUDAConfig)
 
@@ -656,7 +665,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_CUPTI)
-    find_package(CUPTI)
+    find_package(CUPTI ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(CUPTI_FOUND)
@@ -694,7 +703,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_NVTX)
-    find_package(NVTX QUIET)
+    find_package(NVTX QUIET ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
@@ -817,9 +826,9 @@ if(TIMEMORY_USE_GPERF)
         INTERFACE               timemory-tcmalloc-minimal
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "threading-optimized malloc replacement"
-        FIND_ARGS               QUIET COMPONENTS tcmalloc)
+        FIND_ARGS               QUIET COMPONENTS tcmalloc_minimal)
 
-    if(TIMEMORY_GPERF_STATIC)
+    if(TIMEMORY_USE_GPERF_STATIC)
         # set local overloads
         set(gperftools_PREFER_SHARED OFF)
         set(gperftools_PREFER_STATIC ON)
@@ -869,7 +878,7 @@ if(TIMEMORY_BUILD_CALIPER)
     set(caliper_DIR ${CMAKE_INSTALL_PREFIX})
 else()
     if(TIMEMORY_USE_CALIPER)
-        find_package(caliper QUIET)
+        find_package(caliper QUIET ${TIMEMORY_FIND_REQUIREMENT})
     endif()
 endif()
 
@@ -916,7 +925,7 @@ if(UNIX AND NOT APPLE)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
         list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha gotcha-include)
     elseif(TIMEMORY_USE_GOTCHA)
-        find_package(gotcha QUIET)
+        find_package(gotcha QUIET ${TIMEMORY_FIND_REQUIREMENT})
         set(TIMEMORY_BUILD_GOTCHA OFF)
     else()
         set(gotcha_FOUND OFF)
@@ -945,7 +954,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_LIKWID)
-    find_package(LIKWID)
+    find_package(LIKWID ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(LIKWID_FOUND)
@@ -965,7 +974,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_VTUNE)
-    find_package(ittnotify)
+    find_package(ittnotify ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(ittnotify_FOUND)
@@ -985,7 +994,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_TAU)
-    find_package(TAU QUIET)
+    find_package(TAU QUIET ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(TAU_FOUND)

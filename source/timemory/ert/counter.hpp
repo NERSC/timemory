@@ -325,6 +325,7 @@ serialize(std::string fname, exec_data<_Counter>& obj)
     {
         dmp::barrier();
 
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_UPCXX)
         //------------------------------------------------------------------------------//
         //  Used to convert a result to a serialization
         //
@@ -351,8 +352,10 @@ serialize(std::string fname, exec_data<_Counter>& obj)
             }
             return ret;
         };
+#endif
 
 #if defined(TIMEMORY_USE_MPI)
+
         auto str_ret = send_serialize(obj);
 
         if(dmp_rank == 0)
@@ -409,25 +412,22 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         std::ofstream ofs(fname.c_str());
         if(ofs)
         {
-            // ensure json write final block during destruction
-            // before the file is closed
-            //  Option args: precision, spacing, indent size
-            cereal::JSONOutputArchive::Options opts(12, space, 2);
-            cereal::JSONOutputArchive          oa(ofs, opts);
-            oa.setNextName("timemory");
-            oa.startNode();
-            oa.setNextName("ranks");
-            oa.startNode();
-            oa.makeArray();
+            // ensure json write final block during destruction before the file is closed
+            auto oa = trait::output_archive<_Counter>::get(ofs);
+            oa->setNextName("timemory");
+            oa->startNode();
+            oa->setNextName("ranks");
+            oa->startNode();
+            oa->makeArray();
             for(uint64_t i = 0; i < results.size(); ++i)
             {
-                oa.startNode();
-                oa(cereal::make_nvp("rank", i),
-                   cereal::make_nvp("roofline", results.at(i)));
-                oa.finishNode();
+                oa->startNode();
+                (*oa)(cereal::make_nvp("rank", i),
+                      cereal::make_nvp("roofline", results.at(i)));
+                oa->finishNode();
             }
-            oa.finishNode();
-            oa.finishNode();
+            oa->finishNode();
+            oa->finishNode();
         }
         if(ofs)
             ofs << std::endl;

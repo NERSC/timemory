@@ -66,14 +66,14 @@ endif()
 #----------------------------------------------------------------------------------------#
 # Build, link, and install exe
 #
-add_executable(timem timem.cpp)
+add_executable(timem timem.cpp timem.hpp)
 
 target_link_libraries(timem PRIVATE
     timemory-compile-options
     timemory-arch
     timemory-vector
     timemory-headers
-    timemory-papi
+    # timemory-papi
     timem-libexplain)
 
 set_target_properties(timem PROPERTIES

@@ -181,7 +181,7 @@ main(int argc, char** argv)
     check_const(l);
     std::cout << std::endl;
 
-    tim::dmp::finalize();
+    tim::timemory_finalize();
 
     return 0;
 }

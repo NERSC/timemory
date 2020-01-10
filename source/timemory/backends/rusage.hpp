@@ -125,6 +125,10 @@ int64_t
 get_bytes_written();
 int64_t
 get_virt_mem();
+int64_t
+get_user_mode_time();
+int64_t
+get_kernel_mode_time();
 
 //--------------------------------------------------------------------------------------//
 

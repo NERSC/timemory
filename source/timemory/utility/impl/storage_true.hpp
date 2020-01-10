@@ -36,6 +36,7 @@
 #include "timemory/mpl/bits/operations.hpp"
 #include "timemory/mpl/impl/math.hpp"
 #include "timemory/mpl/math.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/base_storage.hpp"
@@ -44,6 +45,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
+#include "timemory/utility/stream.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -89,9 +91,51 @@ public:
     friend struct result_node;
     friend struct graph_node;
 
+    using strvector_t = std::vector<string_t>;
+    using EmptyT      = std::tuple<>;
+
+    static constexpr bool record_statistics_v = trait::record_statistics<Type>::value;
+
 protected:
     template <typename _Tp>
     struct write_serialization;
+
+    template <typename _Type, bool _WithStat = trait::record_statistics<_Type>::value>
+    struct storage_data;
+
+    template <typename _Type>
+    struct storage_data<_Type, false>
+    {
+        using type         = typename trait::statistics<_Type>::type;
+        using stats_policy = policy::record_statistics<_Type, type>;
+        using stats_type   = typename stats_policy::statistics_type;
+        using node_type    = std::tuple<uint64_t, Type, int64_t, stats_type>;
+        using result_type  = std::tuple<uint64_t, Type, string_t, int64_t, uint64_t,
+                                       strvector_t, stats_type>;
+    };
+
+    template <typename _Type>
+    struct storage_data<_Type, true>
+    {
+        using type         = typename trait::statistics<_Type>::type;
+        using stats_policy = policy::record_statistics<_Type, type>;
+        using stats_type   = typename stats_policy::statistics_type;
+        using node_type    = std::tuple<uint64_t, Type, int64_t, stats_type>;
+        using result_type  = std::tuple<uint64_t, Type, string_t, int64_t, uint64_t,
+                                       strvector_t, stats_type>;
+    };
+
+    template <typename _Tp>
+    using storage_stats_t = typename storage_data<_Tp>::stats_type;
+
+    template <typename _Tp>
+    using storage_stats_policy_t = typename storage_data<_Tp>::stats_policy_type;
+
+    template <typename _Tp>
+    using storage_node_t = typename storage_data<_Tp>::node_type;
+
+    template <typename _Tp>
+    using storage_result_t = typename storage_data<_Tp>::result_type;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -103,12 +147,11 @@ public:
     using singleton_t    = singleton<this_type, smart_pointer>;
     using pointer        = typename singleton_t::pointer;
     using auto_lock_t    = typename singleton_t::auto_lock_t;
-    using node_tuple_t   = std::tuple<uint64_t, Type, int64_t>;
+    using node_type      = storage_node_t<Type>;
+    using stats_type     = storage_stats_t<Type>;
+    using result_type    = storage_result_t<Type>;
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
-    using strvector_t    = std::vector<string_t>;
-    using result_tuple_t =
-        std::tuple<uint64_t, Type, string_t, int64_t, uint64_t, strvector_t>;
 
     friend struct impl::storage_deleter<this_type>;
     friend struct write_serialization<this_type>;
@@ -167,13 +210,13 @@ public:
     //      Result returned from get()
     //
     //----------------------------------------------------------------------------------//
-    struct result_node : public result_tuple_t
+    struct result_node : public result_type
     {
-        using base_type = result_tuple_t;
+        using base_type = result_type;
 
         result_node() = default;
         result_node(base_type&& _base)
-        : result_tuple_t(std::forward<base_type>(_base))
+        : base_type(std::forward<base_type>(_base))
         {}
         ~result_node()                  = default;
         result_node(const result_node&) = default;
@@ -187,6 +230,7 @@ public:
         int64_t&     depth() { return std::get<3>(*this); }
         uint64_t&    rolling_hash() { return std::get<4>(*this); }
         strvector_t& hierarchy() { return std::get<5>(*this); }
+        stats_type&  stats() { return std::get<6>(*this); }
 
         const uint64_t&    hash() const { return std::get<0>(*this); }
         const Type&        data() const { return std::get<1>(*this); }
@@ -194,6 +238,7 @@ public:
         const int64_t&     depth() const { return std::get<3>(*this); }
         const uint64_t&    rolling_hash() const { return std::get<4>(*this); }
         const strvector_t& hierarchy() const { return std::get<5>(*this); }
+        const stats_type&  stats() const { return std::get<6>(*this); }
     };
 
     //----------------------------------------------------------------------------------//
@@ -201,26 +246,28 @@ public:
     //      Storage type in graph
     //
     //----------------------------------------------------------------------------------//
-    struct graph_node : public node_tuple_t
+    struct graph_node : public node_type
     {
         using this_type       = graph_node;
-        using base_type       = node_tuple_t;
+        using base_type       = node_type;
         using data_value_type = typename Type::value_type;
         using data_base_type  = typename Type::base_type;
         using string_t        = std::string;
 
-        uint64_t& id() { return std::get<0>(*this); }
-        Type&     obj() { return std::get<1>(*this); }
-        int64_t&  depth() { return std::get<2>(*this); }
+        uint64_t&   id() { return std::get<0>(*this); }
+        Type&       obj() { return std::get<1>(*this); }
+        int64_t&    depth() { return std::get<2>(*this); }
+        stats_type& stats() { return std::get<3>(*this); }
 
-        const uint64_t& id() const { return std::get<0>(*this); }
-        const Type&     obj() const { return std::get<1>(*this); }
-        const int64_t&  depth() const { return std::get<2>(*this); }
+        const uint64_t&   id() const { return std::get<0>(*this); }
+        const Type&       obj() const { return std::get<1>(*this); }
+        const int64_t&    depth() const { return std::get<2>(*this); }
+        const stats_type& stats() const { return std::get<3>(*this); }
 
         string_t get_prefix() const { return master_instance()->get_prefix(*this); }
 
         graph_node()
-        : base_type(0, Type(), 0)
+        : base_type(0, Type(), 0, stats_type{})
         {}
 
         explicit graph_node(base_type&& _base)
@@ -228,7 +275,7 @@ public:
         {}
 
         graph_node(const uint64_t& _id, const Type& _obj, int64_t _depth)
-        : base_type(_id, _obj, _depth)
+        : base_type(_id, _obj, _depth, stats_type{})
         {}
 
         ~graph_node() {}
@@ -240,16 +287,37 @@ public:
 
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
 
+        template <typename _Tp                                         = stats_type,
+                  enable_if_t<(std::is_same<_Tp, EmptyT>::value), int> = 0>
         graph_node& operator+=(const graph_node& rhs)
         {
-            auto&       _obj = obj();
-            const auto& _rhs = rhs.obj();
+            std::stringstream ss;
+            ss << std::boolalpha << record_statistics_v;
+            PRINT_HERE("%s", ss.str().c_str());
+            auto&       _obj   = obj();
+            auto&       _stats = stats();
+            const auto& _rhs   = rhs.obj();
             _obj += _rhs;
             _obj.plus(_rhs);
+            policy::record_statistics<Type>::apply(_stats, _obj);
             return *this;
         }
 
-        size_t data_size() const { return sizeof(Type) + 2 * sizeof(int64_t); }
+        template <typename _Tp                                          = stats_type,
+                  enable_if_t<!(std::is_same<_Tp, EmptyT>::value), int> = 0>
+        graph_node& operator+=(const graph_node& rhs)
+        {
+            std::stringstream ss;
+            ss << std::boolalpha << record_statistics_v;
+            PRINT_HERE("%s", ss.str().c_str());
+            auto&       _obj   = obj();
+            auto&       _stats = stats();
+            const auto& _rhs   = rhs.obj();
+            _obj += _rhs;
+            _obj.plus(_rhs);
+            policy::record_statistics<Type>::apply(_stats, _obj);
+            return *this;
+        }
 
         friend std::ostream& operator<<(std::ostream& os, const graph_node& obj)
         {
@@ -816,10 +884,8 @@ storage<Type, true>::merge()
     for(auto& itr : m_children)
         merge(itr);
 
-    // create lock but don't immediately lock
+    // create lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-    // lock if not already owned
     if(!l.owns_lock())
         l.lock();
 
@@ -849,11 +915,8 @@ storage<Type, true>::merge(this_type* itr)
 
     itr->stack_clear();
 
-    // create lock but don't immediately lock
-    // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
+    // create lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-    // lock if not already owned
     if(!l.owns_lock())
         l.lock();
 
@@ -1003,6 +1066,7 @@ storage<Type, true>::get()
                     auto        _depth   = itr->depth() - (_min + 1);
                     auto        _prefix  = _compute_modified_prefix(*itr);
                     auto        _rolling = itr->id();
+                    auto        _stats   = itr->stats();
                     auto        _parent  = graph_t::parent(itr);
                     strvector_t _hierarchy;
                     if(_parent && _parent->depth() > _min)
@@ -1019,8 +1083,9 @@ storage<Type, true>::get()
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());
                     _hierarchy.push_back(get_prefix(*itr));
-                    result_node _entry(result_tuple_t{ itr->id(), itr->obj(), _prefix,
-                                                       _depth, _rolling, _hierarchy });
+                    result_node _entry(result_type{ itr->id(), itr->obj(), _prefix,
+                                                    _depth, _rolling, _hierarchy,
+                                                    _stats });
                     _list.push_back(_entry);
                 }
             }
@@ -1257,9 +1322,8 @@ storage<Type, true>::internal_print()
     if(!m_initialized && !m_finalized)
         return;
 
-    auto                  requires_json = trait::requires_json<Type>::value;
-    auto                  label         = Type::label();
-    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    auto requires_json = trait::requires_json<Type>::value;
+    auto label         = Type::label();
 
     if(!singleton_t::is_master(this))
     {
@@ -1351,9 +1415,11 @@ storage<Type, true>::internal_print()
         }
 #endif
 
-        int64_t _width     = Type::get_width();
+        settings::indent_width<Type, 0>(Type::get_width());
+        settings::indent_width<Type, 1>(4);
+        settings::indent_width<Type, 2>(4);
+
         int64_t _max_depth = 0;
-        int64_t _max_laps  = 0;
         // find the max width
         for(const auto mitr : _dmp_results)
         {
@@ -1364,26 +1430,24 @@ storage<Type, true>::internal_print()
                 const auto& itr_depth  = itr.depth();
                 if(itr_depth < 0 || itr_depth > settings::max_depth())
                     continue;
-                int64_t _len = itr_prefix.length();
-                _width       = std::max(_len, _width);
-                _max_depth   = std::max<int64_t>(_max_depth, itr_depth);
-                _max_laps    = std::max<int64_t>(_max_laps, itr_obj.nlaps());
+                _max_depth = std::max<int64_t>(_max_depth, itr_depth);
+                // find global max
+                settings::indent_width<Type, 0>(itr_prefix.length());
+                settings::indent_width<Type, 1>(std::log10(itr_obj.nlaps()) + 1);
+                settings::indent_width<Type, 2>(std::log10(itr_depth) + 1);
             }
         }
 
-        int64_t              _width_laps  = std::log10(_max_laps) + 1;
-        int64_t              _width_depth = std::log10(_max_depth) + 1;
-        std::vector<int64_t> _widths      = { _width, _width_laps, _width_depth };
+        // int64_t             _pwidth = settings::indent_width<Type, 0>();
+        // int64_t             _lwidth = settings::indent_width<Type, 1>();
+        // int64_t             _dwidth = settings::indent_width<Type, 2>();
+        // std::vector<size_t> _widths = { _pwidth, _lwidth, _dwidth };
+        // consume_parameters(_widths);
 
         // return type of get() function
         using get_return_type = decltype(std::declval<const Type>().get());
 
-        auto_lock_t flk(type_mutex<std::ofstream>(), std::defer_lock);
         auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
-
-        if(!flk.owns_lock())
-            flk.lock();
-
         if(!slk.owns_lock())
             slk.lock();
 
@@ -1408,26 +1472,24 @@ storage<Type, true>::internal_print()
                     std::ofstream ofs(jname.c_str());
                     if(ofs)
                     {
-                        // ensure json write final block during destruction
+                        // ensure write final block during destruction
                         // before the file is closed
-                        //  Option args: precision, spacing, indent size
-                        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
-                        cereal::JSONOutputArchive          oa(ofs, opts);
-                        oa.setNextName("timemory");
-                        oa.startNode();
-                        oa.setNextName("ranks");
-                        oa.startNode();
-                        oa.makeArray();
+                        auto oa = trait::output_archive<Type>::get(ofs);
+                        oa->setNextName("timemory");
+                        oa->startNode();
+                        oa->setNextName("ranks");
+                        oa->startNode();
+                        oa->makeArray();
                         for(uint64_t i = 0; i < _dmp_results.size(); ++i)
                         {
-                            oa.startNode();
-                            oa(cereal::make_nvp("rank", i));
-                            oa(cereal::make_nvp("concurrency", num_instances));
-                            serial_write_t::serialize(*this, oa, 1, _dmp_results.at(i));
-                            oa.finishNode();
+                            oa->startNode();
+                            (*oa)(cereal::make_nvp("rank", i));
+                            (*oa)(cereal::make_nvp("concurrency", num_instances));
+                            serial_write_t::serialize(*this, *oa, 1, _dmp_results.at(i));
+                            oa->finishNode();
                         }
-                        oa.finishNode();
-                        oa.finishNode();
+                        oa->finishNode();
+                        oa->finishNode();
                     }
                     if(ofs)
                         ofs << std::endl;
@@ -1475,15 +1537,26 @@ storage<Type, true>::internal_print()
             printf("\n");
         }
 
+        auto stream_fmt   = Type::get_format_flags();
+        auto stream_width = Type::get_width();
+        auto stream_prec  = Type::get_precision();
+
+        stream _stream('|', '-', stream_fmt, stream_width, stream_prec);
         for(auto itr = _results.begin(); itr != _results.end(); ++itr)
         {
-            auto& itr_obj    = std::get<1>(*itr);
-            auto& itr_prefix = std::get<2>(*itr);
-            auto& itr_depth  = std::get<3>(*itr);
+            auto& itr_obj    = itr->data();
+            auto& itr_prefix = itr->prefix();
+            auto& itr_depth  = itr->depth();
+            auto  itr_laps   = itr_obj.nlaps();
 
             if(itr_depth < 0 || itr_depth > settings::max_depth())
                 continue;
-            std::stringstream _pss;
+
+            // counts the number of non-exclusive values
+            int64_t nexclusive = 0;
+            // the sum of the exclusive values
+            get_return_type exclusive_values;
+
             // if we are not at the bottom of the call stack (i.e. completely
             // inclusive)
             if(itr_depth < _max_depth)
@@ -1492,17 +1565,17 @@ storage<Type, true>::internal_print()
                 auto eitr = itr;
                 std::advance(eitr, 1);
                 // counts the number of non-exclusive values
-                int64_t nexclusive = 0;
+                nexclusive = 0;
                 // the sum of the exclusive values
-                get_return_type exclusive_values;
+                exclusive_values = get_return_type();
                 // continue while not at end of graph until first sibling is
                 // encountered
                 if(eitr != _results.end())
                 {
-                    auto eitr_depth = std::get<3>(*eitr);
+                    auto eitr_depth = eitr->depth();
                     while(eitr_depth != itr_depth)
                     {
-                        auto& eitr_obj = std::get<1>(*eitr);
+                        auto& eitr_obj = eitr->data();
 
                         // if one level down, this is an exclusive value
                         if(eitr_depth == itr_depth + 1)
@@ -1520,32 +1593,30 @@ storage<Type, true>::internal_print()
                         ++eitr;
                         if(eitr == _results.end())
                             break;
-                        eitr_depth = std::get<3>(*eitr);
-                    }
-                    // if there were exclusive values encountered
-                    if(nexclusive > 0 && trait::is_available<Type>::value)
-                    {
-                        math::print_percentage(
-                            _pss,
-                            math::compute_percentage(exclusive_values, itr_obj.get()));
+                        eitr_depth = eitr->depth();
                     }
                 }
             }
 
-            auto _laps = itr_obj.nlaps();
+            auto itr_self  = math::compute_percentage(exclusive_values, itr_obj.get());
+            auto itr_stats = itr->stats();
 
-            std::stringstream _oss;
-            operation::print<Type>(itr_obj, _oss, itr_prefix, _laps, itr_depth, _widths,
-                                   true, _pss.str());
-            // for(const auto& itr : itr->hierarchy())
-            //    _oss << itr << "//";
-            // _oss << "\n";
+            bool _first = std::distance(_results.begin(), itr) == 0;
+            if(_first)
+            {
+                operation::print_header<Type>(itr_obj, _stream, itr_stats);
+                _stream.add_row();
+            }
 
-            if(cout != nullptr)
-                *cout << _oss.str() << std::flush;
-            if(fout != nullptr)
-                *fout << _oss.str() << std::flush;
+            operation::print<Type>(itr_obj, _stream, itr_prefix, itr_laps, itr_depth,
+                                   itr_self, itr_stats);
+            _stream.add_row();
         }
+
+        if(cout != nullptr)
+            *cout << _stream << std::flush;
+        if(fout != nullptr)
+            *fout << _stream << std::flush;
 
         if(fout)
         {
@@ -1611,8 +1682,8 @@ storage<Type, true>::serialize_me(std::false_type, Archive& ar,
 
     ar(cereal::make_nvp("type", Type::label()),
        cereal::make_nvp("description", Type::description()),
-       cereal::make_nvp("unit_value", Type::unit()),
-       cereal::make_nvp("unit_repr", Type::display_unit()));
+       cereal::make_nvp("unit_value", Type::get_unit()),
+       cereal::make_nvp("unit_repr", Type::get_display_unit()));
     Type::extra_serialization(ar, version);
     ar.setNextName("graph");
     ar.startNode();

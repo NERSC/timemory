@@ -26,77 +26,12 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 #include <tuple>
 
 namespace tim
 {
-//======================================================================================//
-//
-///     \class type_list
-///     \brief lightweight tuple-alternative for meta-programming logic
-//
-//======================================================================================//
-
-template <typename... _Tp>
-struct type_list
-{};
-
-//--------------------------------------------------------------------------------------//
-
-namespace impl
-{
-//======================================================================================//
-//
-//      tuple concatenation
-//
-//======================================================================================//
-
-template <typename... Types>
-struct tuple_concat
-{
-    using type = std::tuple<Types...>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <>
-struct tuple_concat<>
-{
-    using type = std::tuple<>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Ts>
-struct tuple_concat<std::tuple<Ts...>>
-{
-    using type = std::tuple<Ts...>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Ts0, typename... Ts1, typename... Rest>
-struct tuple_concat<std::tuple<Ts0...>, std::tuple<Ts1...>, Rest...>
-: tuple_concat<std::tuple<Ts0..., Ts1...>, Rest...>
-{};
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace impl
-
-//--------------------------------------------------------------------------------------//
-
-template <bool _Val, typename _Lhs, typename _Rhs>
-using conditional_t = typename std::conditional<_Val, _Lhs, _Rhs>::type;
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Ts>
-using tuple_concat_t = typename impl::tuple_concat<Ts...>::type;
-
-//--------------------------------------------------------------------------------------//
-
 namespace impl
 {
 //======================================================================================//
@@ -360,15 +295,7 @@ struct remove_duplicates<type_list<In, InTail...>, type_list<Out...>>
         typename remove_duplicates<type_list<InTail...>, type_list<Out...>>::type>;
 };
 
-template <typename In, typename Out>
-struct convert;
-
-template <template <typename...> class InTuple, typename... In,
-          template <typename...> class OutTuple, typename... Out>
-struct convert<InTuple<In...>, OutTuple<Out...>>
-{
-    using type = OutTuple<In...>;
-};
+//--------------------------------------------------------------------------------------//
 
 template <typename In, typename Out>
 struct unique;
@@ -377,9 +304,9 @@ template <template <typename...> class InTuple, typename... In,
           template <typename...> class OutTuple, typename... Out>
 struct unique<InTuple<In...>, OutTuple<Out...>>
 {
-    using tuple_type = typename convert<InTuple<In...>, OutTuple<>>::type;
+    using tuple_type = convert_t<InTuple<In...>, OutTuple<>>;
     using dupl_type  = typename remove_duplicates<tuple_type, OutTuple<>>::type;
-    using type       = typename convert<dupl_type, InTuple<>>::type;
+    using type       = convert_t<dupl_type, InTuple<>>;
 };
 
 //======================================================================================//
@@ -494,27 +421,6 @@ struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>,
 //======================================================================================//
 
 ///
-/// get the index of a type in expansion
-///
-template <typename _Tp, typename Type>
-struct index_of;
-
-template <typename _Tp, template <typename...> class _Tuple, typename... Types>
-struct index_of<_Tp, _Tuple<_Tp, Types...>>
-{
-    static constexpr std::size_t value = 0;
-};
-
-template <typename _Tp, typename Head, template <typename...> class _Tuple,
-          typename... Tail>
-struct index_of<_Tp, _Tuple<Head, Tail...>>
-{
-    static constexpr std::size_t value = 1 + index_of<_Tp, _Tuple<Tail...>>::value;
-};
-
-//======================================================================================//
-
-///
 /// check if type is in expansion
 ///
 template <typename _Tp, typename _Types>
@@ -535,9 +441,6 @@ using remove_duplicates = typename impl::unique<T, type_list<>>::type;
 
 template <typename T>
 using unique = typename impl::unique<T, type_list<>>::type;
-
-template <typename T, typename U>
-using convert = typename impl::convert<T, U>::type;
 
 //======================================================================================//
 //
@@ -586,14 +489,50 @@ using get_data_label_t = typename impl::template get_data_tuple<_Tuple>::label_t
 //      sort
 //
 //======================================================================================//
+
 namespace mpl
 {
 template <template <typename> class _Prio, typename _Tuple, typename _Beg = type_list<>,
           typename _End = type_list<>>
-using sort = convert<
-    typename impl::sortT<_Prio, convert<_Tuple, type_list<>>, convert<_Beg, type_list<>>,
-                         convert<_End, type_list<>>>::type,
-    std::tuple<>>;
+using sort = convert_t<typename impl::sortT<_Prio, convert_t<_Tuple, type_list<>>,
+                                            convert_t<_Beg, type_list<>>,
+                                            convert_t<_End, type_list<>>>::type,
+                       std::tuple<>>;
+
 }  // namespace mpl
+
+template <typename _Tp, typename _Op>
+struct negative_priority;
+
+template <typename _Tp, typename _Op>
+struct positive_priority;
+
+template <typename _Tp, template <typename> class _Op>
+struct negative_priority<_Tp, _Op<_Tp>>
+{
+    static constexpr bool value = (_Op<_Tp>::value < 0);
+};
+
+template <typename _Tp, template <typename> class _Op>
+struct positive_priority<_Tp, _Op<_Tp>>
+{
+    static constexpr bool value = (_Op<_Tp>::value > 0);
+};
+
+template <typename _Tp>
+struct negative_start_priority : negative_priority<_Tp, trait::start_priority<_Tp>>
+{};
+
+template <typename _Tp>
+struct positive_start_priority : positive_priority<_Tp, trait::start_priority<_Tp>>
+{};
+
+template <typename _Tp>
+struct negative_stop_priority : negative_priority<_Tp, trait::stop_priority<_Tp>>
+{};
+
+template <typename _Tp>
+struct positive_stop_priority : positive_priority<_Tp, trait::stop_priority<_Tp>>
+{};
 
 }  // namespace tim

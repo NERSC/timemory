@@ -33,6 +33,10 @@
 
 //======================================================================================//
 
+TIMEMORY_VARIADIC_STATISTICS_TYPE(component::papi_tuple, std::vector<double>, int)
+
+//======================================================================================//
+
 namespace tim
 {
 namespace component

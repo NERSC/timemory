@@ -65,6 +65,9 @@ inline void
 tim::timemory_init(int argc, char** argv, const std::string& _prefix,
                    const std::string& _suffix)
 {
+    if(settings::debug() || settings::verbose() > 3)
+        PRINT_HERE("%s", "");
+
     std::string exe_name = argv[0];
 
     while(exe_name.find("\\") != std::string::npos)
@@ -149,6 +152,9 @@ tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
 inline void
 tim::timemory_finalize()
 {
+    if(settings::debug() || settings::verbose() > 3)
+        PRINT_HERE("%s", "");
+
     if(settings::enable_signal_handler() && settings::debug())
         PRINT_HERE("%s", "disabling signal detection...");
 

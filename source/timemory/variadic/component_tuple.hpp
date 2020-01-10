@@ -82,9 +82,13 @@ public:
     template <template <typename...> class _TypeL, typename... _Types>
     struct filtered<_TypeL<_Types...>>
     {
-        using this_type  = component_tuple<_Types...>;
-        using data_type  = std::tuple<_Types...>;
-        using type_tuple = std::tuple<_Types...>;
+        template <typename T>
+        using sample_type_t = typename T::sample_type;
+
+        using this_type   = component_tuple<_Types...>;
+        using data_type   = std::tuple<_Types...>;
+        using type_tuple  = std::tuple<_Types...>;
+        using sample_type = std::tuple<sample_type_t<_Types>...>;
 
         template <typename _Archive>
         using serialize_t = _TypeL<operation::serialization<Types, _Archive>...>;
@@ -117,8 +121,9 @@ public:
 
     using impl_unique_concat_type = available_tuple<concat<Types...>>;
 
-    template <template <typename...> class _OpType>
-    using operation_t = typename opfiltered<_OpType, impl_unique_concat_type>::type;
+    template <template <typename...> class _OpType,
+              typename _Tuple = impl_unique_concat_type>
+    using operation_t = typename opfiltered<_OpType, _Tuple>::type;
 
 public:
     using string_t            = std::string;
@@ -126,6 +131,7 @@ public:
     using this_type           = component_tuple<Types...>;
     using data_type           = typename filtered<impl_unique_concat_type>::data_type;
     using type_tuple          = typename filtered<impl_unique_concat_type>::type_tuple;
+    using sample_type         = typename filtered<impl_unique_concat_type>::sample_type;
     using string_hash         = std::hash<string_t>;
     using init_func_t         = std::function<void(this_type&)>;
     using data_value_type     = get_data_value_t<data_type>;
@@ -191,6 +197,7 @@ public:
     explicit component_tuple(const string_t& key, const bool& store = false,
                              const bool& flat = settings::flat_profile(),
                              const _Func&     = get_initializer());
+
     template <typename _Func = init_func_t>
     explicit component_tuple(const captured_location_t& loc, const bool& store = false,
                              const bool& flat = settings::flat_profile(),
@@ -223,6 +230,7 @@ public:
     inline void             push();
     inline void             pop();
     void                    measure();
+    void                    sample();
     void                    start();
     void                    stop();
     this_type&              record();
@@ -376,16 +384,8 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using priority_stop_t = operation_t<operation::priority_stop>;
-        using standard_stop_t = operation_t<operation::standard_stop>;
-        using delayed_stop_t  = operation_t<operation::delayed_stop>;
-
         if(size() == 0)
             return;
-        // stop, if not already stopped
-        apply_v::access<priority_stop_t>(m_data);
-        apply_v::access<standard_stop_t>(m_data);
-        apply_v::access<delayed_stop_t>(m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
         apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);

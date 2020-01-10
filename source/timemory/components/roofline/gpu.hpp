@@ -53,6 +53,10 @@
 
 //======================================================================================//
 
+TIMEMORY_VARIADIC_STATISTICS_TYPE(component::gpu_roofline, std::vector<double>, typename)
+
+//======================================================================================//
+
 namespace tim
 {
 namespace component

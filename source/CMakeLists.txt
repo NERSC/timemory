@@ -95,8 +95,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
 #
+set(_PRIVATE_INTERFACES )
 set(_EXTERN_INIT TIMEMORY_EXTERN_INIT)
 set(_EXTERN_TEMP TIMEMORY_EXTERN_TEMPLATES)
+
 if(WIN32)
     set(_EXTERN_INIT )
     set(_EXTERN_TEMP )

@@ -28,6 +28,7 @@
 #include "timemory/components/gotcha.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
 
 #if defined(TIMEMORY_USE_CUDA)
@@ -38,60 +39,18 @@
 #include <string>
 #include <tuple>
 
-namespace tim
-{
-//
-// clang-format off
-namespace component { struct malloc_gotcha; }
-// clang-format on
-//
 //======================================================================================//
 
-namespace trait
+TIMEMORY_STATISTICS_TYPE(component::malloc_gotcha, double)
+
+//======================================================================================//
+
+namespace tim
 {
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t>>
-: std::true_type
-{};
-
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t, size_t>>
-: std::true_type
-{};
-
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, void*>>
-: std::true_type
-{};
-
-#if defined(TIMEMORY_USE_CUDA)
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, void**, size_t>>
-: std::true_type
-{};
-
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, cuda::error_t>>
-: std::true_type
-{};
-#endif
-
-template <>
-struct uses_memory_units<component::malloc_gotcha> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::malloc_gotcha> : std::true_type
-{};
-
-template <>
-struct requires_prefix<component::malloc_gotcha> : std::true_type
-{};
-
-}  // namespace trait
-
 namespace component
 {
+//======================================================================================//
+//
 struct malloc_gotcha : base<malloc_gotcha, double>
 {
 #if defined(TIMEMORY_USE_CUDA)
@@ -102,13 +61,11 @@ struct malloc_gotcha : base<malloc_gotcha, double>
     static constexpr uintmax_t num_alloc = 2;
 #endif
 
-    // clang-format off
     using value_type   = double;
     using this_type    = malloc_gotcha;
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
     using string_hash  = std::hash<std::string>;
-    // clang-format on
 
     // formatting
     static const short precision = 3;
@@ -127,54 +84,23 @@ struct malloc_gotcha : base<malloc_gotcha, double>
     using base_type::set_stopped;
     using base_type::value;
 
-public:
-    template <typename... _Types>
+    template <typename _Type>
     struct gotcha_spec;
 
-    template <typename... _Types, template <typename...> class _Tuple>
-    struct gotcha_spec<_Tuple<_Types...>>
-    {
-        using gotcha_component_type = _Tuple<_Types..., this_type>;
-        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
-        using component_type        = _Tuple<_Types..., gotcha_type>;
+    template <typename _Type>
+    using gotcha_type = typename gotcha_spec<_Type>::gotcha_type;
 
-        static std::function<void()>& get_initializer()
-        {
-            static std::function<void()> _lambda = []() {
-                /*
-#if defined(TIMEMORY_USE_CUDA)
-                TIMEMORY_C_GOTCHA(gotcha_type, 0, malloc);
-                TIMEMORY_C_GOTCHA(gotcha_type, 1, calloc);
-                TIMEMORY_C_GOTCHA(gotcha_type, 2, cudaMalloc);
-                TIMEMORY_C_GOTCHA(gotcha_type, 3, free);
-                TIMEMORY_C_GOTCHA(gotcha_type, 4, cudaFree);
-#else
-                TIMEMORY_C_GOTCHA(gotcha_type, 0, malloc);
-                TIMEMORY_C_GOTCHA(gotcha_type, 1, calloc);
-                TIMEMORY_C_GOTCHA(gotcha_type, 2, free);
-#endif
-                */
-            };
-            return _lambda;
-        }
-    };
+    template <typename _Type>
+    using component_type = typename gotcha_spec<_Type>::component_type;
 
-    template <typename... _LhsTypes, typename... _RhsTypes,
-              template <typename...> class _Lhs, template <typename...> class _Rhs,
-              template <typename, typename> class _Hybrid>
-    struct gotcha_spec<_Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>>
-    {
-        using gotcha_component_type = _Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>;
-        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
-        using component_type =
-            _Hybrid<_Lhs<_LhsTypes..., gotcha_type>, _Rhs<_RhsTypes...>>;
+    template <typename _Type>
+    using gotcha_component_type = typename gotcha_spec<_Type>::gotcha_component_type;
 
-        static std::function<void()>& get_initializer()
-        {
-            static std::function<void()> _lambda = []() {};
-            return _lambda;
-        }
-    };
+public:
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Type>
+    static void configure();
 
     //----------------------------------------------------------------------------------//
 
@@ -245,8 +171,12 @@ public:
 
     void audit(const std::string& fname, size_t nbytes)
     {
+        DEBUG_PRINT_HERE("%s(%i)", fname.c_str(), (int) nbytes);
+
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
+
+        DEBUG_PRINT_HERE("hash: %lu, index: %i", (unsigned long) _hash, (int) idx);
 
         if(idx > get_hash_array().size())
         {
@@ -261,6 +191,7 @@ public:
             // malloc
             value = (nbytes);
             accum += (nbytes);
+            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
         }
         else
         {
@@ -275,6 +206,8 @@ public:
 
     void audit(const std::string& fname, size_t nmemb, size_t size)
     {
+        DEBUG_PRINT_HERE("%s(%i, %i)", fname.c_str(), (int) nmemb, (int) size);
+
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
 
@@ -291,6 +224,7 @@ public:
             // calloc
             value = (nmemb * size);
             accum += (nmemb * size);
+            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
         }
         else
         {
@@ -305,8 +239,11 @@ public:
 
     void audit(const std::string& fname, void* ptr)
     {
+        DEBUG_PRINT_HERE("%s(%p)", fname.c_str(), ptr);
+
         if(!ptr)
             return;
+
         auto _hash = string_hash()(fname);
         auto idx   = get_index(_hash);
 
@@ -320,7 +257,10 @@ public:
 
         // malloc
         if(idx < num_alloc)
+        {
             get_allocation_map()[ptr] = value;
+            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+        }
         else
         {
             auto itr = get_allocation_map().find(ptr);
@@ -328,6 +268,7 @@ public:
             {
                 value = itr->second;
                 accum += itr->second;
+                DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
                 get_allocation_map().erase(itr);
             }
             else
@@ -490,6 +431,26 @@ private:
         return _instance;
     }
 
+public:
+    template <typename... _Types, template <typename...> class _Tuple>
+    struct gotcha_spec<_Tuple<_Types...>>
+    {
+        using gotcha_component_type = _Tuple<_Types..., this_type>;
+        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
+        using component_type        = _Tuple<_Types..., gotcha_type>;
+    };
+
+    template <typename... _LhsTypes, typename... _RhsTypes,
+              template <typename...> class _Lhs, template <typename...> class _Rhs,
+              template <typename, typename> class _Hybrid>
+    struct gotcha_spec<_Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>>
+    {
+        using gotcha_component_type = _Hybrid<_Lhs<_LhsTypes...>, _Rhs<_RhsTypes...>>;
+        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
+        using component_type =
+            _Hybrid<_Lhs<_LhsTypes..., gotcha_type>, _Rhs<_RhsTypes...>>;
+    };
+
 private:
     uintmax_t   prefix_hash = string_hash()("");
     uintmax_t   prefix_idx  = std::numeric_limits<uintmax_t>::max();
@@ -498,6 +459,58 @@ private:
     void** m_last_addr = nullptr;
 #endif
 };
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Type>
+inline void
+malloc_gotcha::configure()
+{
+    using _gotcha_spec_t = gotcha_spec<_Type>;
+    using _gotcha_type   = typename _gotcha_spec_t::gotcha_type;
+
+    using malloc_type = decltype(malloc);
+    using calloc_type = decltype(calloc);
+    using free_type   = decltype(free);
+
+    using malloc_traits = function_traits<malloc_type>;
+    using calloc_traits = function_traits<calloc_type>;
+    using free_traits   = function_traits<free_type>;
+
+    _gotcha_type::get_initializer() = []() {
+        //
+        //
+        _gotcha_type::template instrument<
+            0, typename malloc_traits::result_type,
+            typename malloc_traits::call_type>::generate("malloc");
+
+        _gotcha_type::template instrument<
+            1, typename calloc_traits::result_type,
+            typename calloc_traits::call_type>::generate("calloc");
+
+#if defined(TIMEMORY_USE_CUDA)
+        _gotcha_type::template instrument<2, cudaError_t, void**, size_t>::generate(
+            "cudaMalloc");
+
+        static constexpr size_t free_idx = 3;
+#else
+        static constexpr size_t free_idx = 2;
+#endif
+
+        _gotcha_type::template instrument<
+            free_idx, typename free_traits::result_type,
+            typename free_traits::call_type>::generate("free");
+
+#if defined(TIMEMORY_USE_CUDA)
+        using cuda_free_type   = decltype(cudaFree);
+        using cuda_free_traits = function_traits<cuda_free_type>;
+
+        _gotcha_type::template instrument<
+            4, typename cuda_free_traits::result_type,
+            typename cuda_free_traits::call_type>::generate("cudaFree");
+#endif
+    };
+}
 
 }  // namespace component
 

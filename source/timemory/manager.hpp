@@ -113,6 +113,9 @@ public:
         m_json_files[_label].insert(_file);
     }
 
+    /// \fn set_write_metadata
+    /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
+    void    set_write_metadata(short v) { m_write_metadata = v; }
     void    write_metadata(const char* = "");
     int32_t get_rank() const { return m_rank; }
 
@@ -284,9 +287,6 @@ private:
     template <typename... _Types>
     struct filtered_get_storage
     {
-        using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
-        static constexpr auto spacing = indent::space;
-
         static std::string serialize(pointer_t _manager = pointer_t(nullptr))
         {
             if(_manager.get() == nullptr)
@@ -295,19 +295,18 @@ private:
                 return "";
             std::stringstream ss;
             {
-                // args: precision, spacing, indent size
-                cereal::JSONOutputArchive::Options opts(12, spacing, 4);
-                cereal::JSONOutputArchive          oa(ss, opts);
-                oa.setNextName("timemory");
-                oa.startNode();
+                using archive_type = trait::output_archive<manager>::type;
+                auto oa            = trait::output_archive<manager>::get(ss);
+                oa->setNextName("timemory");
+                oa->startNode();
                 {
-                    oa.setNextName("ranks");
-                    oa.startNode();
-                    oa.makeArray();
-                    _manager->_serialize<decltype(oa), _Types...>(oa);
-                    oa.finishNode();
+                    oa->setNextName("ranks");
+                    oa->startNode();
+                    oa->makeArray();
+                    _manager->_serialize<archive_type, _Types...>(*oa);
+                    oa->finishNode();
                 }
-                oa.finishNode();
+                oa->finishNode();
             }
             return ss.str();
         }
@@ -425,11 +424,12 @@ private:
     /// number of timing manager instances
     static std::atomic<int32_t>& f_manager_instance_count();
     /// notifies that it is finalizing
-    bool m_is_finalizing = false;
+    bool  m_is_finalizing  = false;
+    short m_write_metadata = 0;
     /// instance id
     int32_t         m_instance_count;
     int32_t         m_rank;
-    string_t        m_metadata_fname;
+    string_t        m_metadata_prefix = "";
     std::thread::id m_thread_id;
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
@@ -473,6 +473,70 @@ private:
 #    else
 #        define __library_dtor__
 #    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_EXTERN_INIT)
+
+static ::tim::manager*
+timemory_manager_master_instance()
+{
+    using manager_t     = tim::manager;
+    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+    return _pinst.first.get();
+}
+
+extern "C"
+{
+    __library_ctor__ static void timemory_library_constructor()
+    {
+        auto _debug   = tim::settings::debug();
+        auto _verbose = tim::settings::verbose();
+
+        if(_debug || _verbose > 3)
+            printf("[%s]> initializing...\n", __FUNCTION__);
+
+        auto        _inst        = timemory_manager_master_instance();
+        static auto _dir         = tim::settings::output_path();
+        static auto _prefix      = tim::settings::output_prefix();
+        static auto _time_output = tim::settings::time_output();
+        static auto _time_format = tim::settings::time_format();
+        tim::consume_parameters(_inst, _dir, _prefix, _time_output, _time_format);
+
+        static auto              _master = tim::manager::master_instance();
+        static thread_local auto _worker = tim::manager::instance();
+
+        if(!_master)
+            _master = tim::manager::master_instance();
+
+        if(_worker != _master)
+            printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
+                   (void*) _master.get(), (void*) _worker.get());
+
+#    if defined(DEBUG)
+        if(_debug || _verbose > 3)
+            printf("[%s]> initializing storage...\n", __FUNCTION__);
+#    endif
+
+        // initialize storage
+        tim::manager::get_storage<tim::component::wall_clock>::initialize(_master);
+    }
+
+    __library_dtor__ static void timemory_library_destructor()
+    {
+        auto _debug   = tim::settings::debug();
+        auto _verbose = tim::settings::verbose();
+
+        if(_debug || _verbose > 3)
+            printf("[%s]> finalizing...\n", __FUNCTION__);
+
+        auto _master = timemory_manager_master_instance();
+        if(_master)
+            _master->finalize();
+    }
+}
+
 #endif
 
 //--------------------------------------------------------------------------------------//

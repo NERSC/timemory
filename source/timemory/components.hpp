@@ -50,6 +50,7 @@
 
 // gotcha components
 #if defined(TIMEMORY_USE_GOTCHA)
+#    include "timemory/components/derived/malloc_gotcha.hpp"
 #    include "timemory/components/gotcha.hpp"
 #endif
 
@@ -92,6 +93,7 @@
 #if defined(TIMEMORY_USE_VTUNE)
 #    include "timemory/components/vtune/event.hpp"
 #    include "timemory/components/vtune/frame.hpp"
+#    include "timemory/components/vtune/profiler.hpp"
 #endif
 
 #include "timemory/backends/cuda.hpp"
@@ -109,3 +111,34 @@
 // #include "timemory/runtime/configure.hpp"
 // #include "timemory/runtime/insert.hpp"
 // #include "timemory/runtime/initialize.hpp"
+
+//======================================================================================//
+//
+//      default statistics (requires the components to be defined before implementing)
+//
+//======================================================================================//
+
+#include "timemory/mpl/policy.hpp"
+
+namespace tim
+{
+namespace policy
+{
+//--------------------------------------------------------------------------------------//
+//
+template <typename _Comp, typename _Tp>
+inline void
+record_statistics<_Comp, _Tp>::apply(statistics<_Tp>& _stat, const _Comp& _obj)
+{
+    using result_type = decltype(std::declval<_Comp>().get());
+    static_assert(std::is_same<result_type, _Tp>::value,
+                  "Error! The default implementation of "
+                  "'policy::record_statistics<Component, T>::apply' requires 'T' to be "
+                  "the same type as the return type from 'Component::get()'");
+
+    _stat += _obj.get();
+}
+
+//--------------------------------------------------------------------------------------//
+}  // namespace policy
+}  // namespace tim

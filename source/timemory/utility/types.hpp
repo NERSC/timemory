@@ -34,6 +34,15 @@
 
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
+// use this function to get rid of "unused parameter" warnings
+template <typename... _Args>
+void
+consume_parameters(_Args&&...)
+{}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp, typename _Deleter>
 class singleton;
 
@@ -88,19 +97,41 @@ namespace cupti { struct result; }
 
 namespace scope
 {
-// flat-scope storage
+/// \class flat
+/// \brief Dummy struct to designate flat (no hierarchy) storage
 struct flat
 {};
 
-// thread-scoped storage
+/// \class thread
+/// \brief Dummy struct to designate thread-scoped storage
 struct thread
 {};
 
-// process-scoped storage
+/// \class process
+/// \brief Dummy struct to designate process-scoped storage
 struct process
 {};
 
 }  // namespace scope
+
+namespace audit
+{
+/// \class incoming
+/// \brief Used by component audit member function to designate the
+/// parameters being passed are incoming (e.g. before a gotcha wrappee is invoked)
+///
+struct incoming
+{};
+
+/// \class outgoing
+/// \brief Used by component audit member function to designate the
+/// parameters being passed are outgoing (e.g. the return value from a gotcha wrappee)
+///
+// audit the return type
+struct outgoing
+{};
+
+}  // namespace audit
 
 //--------------------------------------------------------------------------------------//
 

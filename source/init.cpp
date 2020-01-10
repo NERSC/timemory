@@ -50,8 +50,12 @@ namespace tim
 env_settings*
 env_settings::instance()
 {
-    static env_settings* _instance = new env_settings();
-    return _instance;
+    static std::atomic<int>           _count;
+    static env_settings*              _instance = new env_settings();
+    static thread_local int           _id       = _count++;
+    static thread_local env_settings* _local =
+        (_id == 0) ? _instance : new env_settings(_instance, _id);
+    return _local;
 }
 
 //--------------------------------------------------------------------------------------//

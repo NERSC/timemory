@@ -63,6 +63,7 @@
 #include "timemory/backends/dmp.hpp"
 #include "timemory/enum.h"
 #include "timemory/manager.hpp"
+#include "timemory/runtime/configure.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
@@ -79,12 +80,17 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
+struct pytim_project
+{};
+using pybundle_t = tim::component::user_bundle<0, pytim_project>;
+
 using auto_timer_t = tim::auto_timer;
 
 using auto_usage_t =
     tim::auto_tuple<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
                     voluntary_context_switch, priority_context_switch>;
-using auto_list_t = tim::complete_auto_list_t;
+using auto_list_t        = tim::complete_auto_list_t;
+using component_bundle_t = tim::component_tuple<pybundle_t>;
 
 using tim_timer_t       = typename auto_timer_t::component_type;
 using rss_usage_t       = typename auto_usage_t::component_type;
@@ -108,6 +114,52 @@ public:
 
 protected:
     manager_t* m_manager;
+};
+
+//======================================================================================//
+
+class pycomponent_bundle
+{
+public:
+    pycomponent_bundle(component_bundle_t* _ptr = nullptr)
+    : m_ptr(_ptr)
+    {}
+
+    ~pycomponent_bundle()
+    {
+        if(m_ptr)
+            m_ptr->stop();
+        delete m_ptr;
+    }
+
+    pycomponent_bundle& operator=(component_bundle_t* _ptr)
+    {
+        if(m_ptr)
+            delete m_ptr;
+        m_ptr = _ptr;
+        return *this;
+    }
+
+    void start()
+    {
+        if(m_ptr)
+            m_ptr->start();
+    }
+
+    void stop()
+    {
+        if(m_ptr)
+            m_ptr->stop();
+    }
+
+    template <typename... _Args>
+    static void configure(_Args&&... _args)
+    {
+        tim::configure<pybundle_t>(std::forward<_Args>(_args)...);
+    }
+
+private:
+    component_bundle_t* m_ptr = nullptr;
 };
 
 //======================================================================================//
@@ -339,6 +391,21 @@ component_decorator(py::list components, const std::string& key)
         return _ptr;
 
     return &(*_ptr = create_component_list(key, components_enum_to_vec(components)));
+}
+
+//----------------------------------------------------------------------------//
+
+pycomponent_bundle*
+component_bundle(const std::string& func, const std::string& file, const int line)
+{
+    using mode   = tim::source_location::mode;
+    auto&& _loc  = tim::source_location(mode::full, func.c_str(), line, file.c_str());
+    auto&& _flat = tim::settings::flat_profile();
+
+    auto&& _obj = (tim::settings::enabled())
+                      ? new component_bundle_t(_loc.get_captured(), true, _flat)
+                      : nullptr;
+    return new pycomponent_bundle(_obj);
 }
 
 //--------------------------------------------------------------------------------------//

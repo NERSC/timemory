@@ -37,6 +37,7 @@
 
 namespace tim
 {
+TIMEMORY_INSTANTIATE_EXTERN_INIT(vtune_profiler)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(vtune_event)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(vtune_frame)
 
@@ -44,6 +45,7 @@ namespace component
 {
 //
 //
+template struct base<vtune_profiler, void>;
 template struct base<vtune_event, void>;
 template struct base<vtune_frame, void>;
 //

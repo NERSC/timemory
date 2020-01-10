@@ -38,6 +38,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
@@ -441,20 +442,28 @@ tim_api struct settings
 
     //----------------------------------------------------------------------------------//
 
-    static string_t get_output_prefix()
+    static string_t get_output_prefix(bool fake = false)
     {
-        auto dir = output_path();
-        if(time_output())
+        static auto& _dir         = output_path();
+        static auto& _prefix      = output_prefix();
+        static auto& _time_output = time_output();
+        static auto& _time_format = time_format();
+
+        if(_time_output)
         {
-            if(dir.length() > 0 && dir[dir.length() - 1] != '/')
-                dir += "/";
+            if(_dir.length() > 0 && _dir[_dir.length() - 1] != '/')
+                _dir += "/";
             // ensure that all output files use same local datetime
-            static auto _local_datetime = get_local_datetime(time_format().c_str());
-            dir += _local_datetime;
+            static auto _local_datetime = get_local_datetime(_time_format.c_str());
+            _dir += _local_datetime;
         }
-        auto ret = makedir(dir);
-        return (ret == 0) ? filepath::osrepr(dir + string_t("/") + output_prefix())
-                          : filepath::osrepr(string_t("./") + output_prefix());
+
+        if(!fake && (debug() || verbose() > 2))
+            PRINT_HERE("creating output directory: '%s'", _dir.c_str());
+
+        auto ret = (fake) ? 0 : makedir(_dir);
+        return (ret == 0) ? filepath::osrepr(_dir + string_t("/") + _prefix)
+                          : filepath::osrepr(string_t("./") + _prefix);
     }
 
     //----------------------------------------------------------------------------------//
@@ -471,9 +480,27 @@ tim_api struct settings
 
     static string_t compose_output_filename(const string_t& _tag, string_t _ext,
                                             bool          _mpi_init = false,
-                                            const int32_t _mpi_rank = -1)
+                                            const int32_t _mpi_rank = -1,
+                                            bool fake = false, std::string _explicit = "")
     {
-        auto _prefix      = get_output_prefix();
+        auto _prefix = (_explicit.length() > 0) ? _explicit : get_output_prefix(fake);
+
+        // if just caching this static variable return
+        if(fake)
+            return "";
+
+        auto only_ascii = [](char c) { return !isascii(c); };
+
+        _prefix.erase(std::remove_if(_prefix.begin(), _prefix.end(), only_ascii),
+                      _prefix.end());
+
+        if(_explicit.length() > 0)
+        {
+            auto ret = makedir(_prefix);
+            if(ret != 0)
+                _prefix = filepath::osrepr(string_t("./"));
+        }
+
         auto _rank_suffix = (_mpi_init && _mpi_rank >= 0)
                                 ? (string_t("_") + std::to_string(_mpi_rank))
                                 : string_t("");
@@ -616,6 +643,40 @@ tim_api struct settings
 #else
         return std::vector<std::string>();
 #endif
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _Idx = 0>
+    static int64_t indent_width(int64_t _w = settings::width())
+    {
+        static std::atomic<int64_t> _instance(_w);
+        _instance.store(std::max<int64_t>(_instance.load(), _w));
+        return _instance.load();
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Tp, size_t _Idx = 0>
+    static int64_t indent_width(int64_t _w = indent_width<_Idx>())
+    {
+        static std::atomic<int64_t> _instance(_w);
+        _instance.store(std::max<int64_t>(_instance.load(), _w));
+        return _instance.load();
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Tp>
+    static size_t data_width(int64_t _idx, int64_t _w)
+    {
+        static std::vector<int64_t> _instance;
+        static std::recursive_mutex _mtx;
+        auto_lock_t                 lk(_mtx);
+        if(_idx >= (int64_t) _instance.size())
+            _instance.resize(_idx + 1, _w);
+        _instance[_idx] = std::max<int64_t>(_instance[_idx], _w);
+        return _instance[_idx];
     }
 
     //----------------------------------------------------------------------------------//

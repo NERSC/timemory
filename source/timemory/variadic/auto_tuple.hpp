@@ -96,16 +96,16 @@ public:
 public:
     template <typename _Func = init_func_t>
     explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
-                        bool report_at_exit = false,
+                        bool report_at_exit = settings::destructor_report(),
                         const _Func&        = this_type::get_initializer());
 
     template <typename _Func = init_func_t>
     explicit auto_tuple(const captured_location_t&, bool flat = settings::flat_profile(),
-                        bool report_at_exit = false,
+                        bool report_at_exit = settings::destructor_report(),
                         const _Func&        = this_type::get_initializer());
 
     explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                        bool report_at_exit = false);
+                        bool report_at_exit = settings::destructor_report());
     inline ~auto_tuple();
 
     // copy and move
@@ -125,10 +125,15 @@ public:
     inline operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_tuple
-    inline void record()
+    inline void measure()
     {
         if(m_enabled)
-            m_temporary_object.record();
+            m_temporary_object.measure();
+    }
+    inline void sample()
+    {
+        if(m_enabled)
+            m_temporary_object.sample();
     }
     inline void start()
     {

@@ -251,11 +251,8 @@ protected:
     {
         itr->stack_clear();
 
-        // create lock but don't immediately lock
-        // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
+        // create lock
         auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-        // lock if not already owned
         if(!l.owns_lock())
             l.lock();
 

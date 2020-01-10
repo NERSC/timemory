@@ -36,6 +36,10 @@
 
 //======================================================================================//
 
+TIMEMORY_TEMPLATE_STATISTICS_TYPE(component::papi_array, std::vector<double>, size_t)
+
+//======================================================================================//
+
 namespace tim
 {
 namespace component
@@ -58,7 +62,7 @@ template <size_t MaxNumEvents>
 struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>>
 {
-    using size_type         = std::size_t;
+    using size_type         = size_t;
     using event_list        = std::vector<int>;
     using value_type        = std::array<long long, MaxNumEvents>;
     using entry_type        = typename value_type::value_type;
@@ -217,7 +221,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    std::size_t size() { return events.size(); }
+    size_t size() { return events.size(); }
 
     //----------------------------------------------------------------------------------//
 
