@@ -51,6 +51,8 @@ component_list<Types...>::component_list()
 , m_laps(0)
 , m_hash(0)
 {
+    if(settings::enabled())
+        init_storage();
     apply_v::set_value(m_data, nullptr);
 }
 
@@ -69,6 +71,7 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
+        init_storage();
         _func(*this);
         set_object_prefix(key);
     }
@@ -90,6 +93,7 @@ component_list<Types...>::component_list(const captured_location_t& loc,
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
+        init_storage();
         _func(*this);
         set_object_prefix(loc.get_id());
     }
@@ -536,7 +540,12 @@ template <typename... Types>
 inline void
 component_list<Types...>::init_storage()
 {
-    apply_v::type_access<operation::init_storage, reference_type>();
+    static auto _execute = []() {
+        apply_v::type_access<operation::init_storage, reference_type>();
+        return true;
+    };
+    static thread_local bool _once = _execute();
+    consume_parameters(_once);
 }
 
 //--------------------------------------------------------------------------------------//

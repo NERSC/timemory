@@ -99,12 +99,53 @@ combine(_Tp& lhs, const _Tp& rhs)
 //
 //--------------------------------------------------------------------------------------//
 
+template <typename _Tp, typename _Ret = _Tp,
+          typename std::enable_if<!(std::is_class<_Tp>::value), int>::type    = 0,
+          typename std::enable_if<!(std::is_integral<_Tp>::value), int>::type = 0>
+_Ret
+compute_percentage(const _Tp& lhs, const _Tp& rhs)
+{
+    auto ret = (rhs > 0) ? ((1.0 - (lhs / rhs)) * 100.0) : 0.0;
+    return (ret > 0) ? ret : _Ret(0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Ret = _Tp,
+          typename std::enable_if<!(std::is_class<_Tp>::value), int>::type   = 0,
+          typename std::enable_if<(std::is_integral<_Tp>::value), int>::type = 0>
+auto
+compute_percentage(const _Tp& lhs, const _Tp& rhs) -> double
+{
+    double _lhs = lhs;
+    double _rhs = rhs;
+    double ret  = (rhs > 0) ? ((1.0 - (_lhs / _rhs)) * 100.0) : 0.0;
+    return (ret > 0) ? ret : 0.0;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types, size_t... _Idx>
+void
+compute_percentage(std::tuple<_Types...>& _ret, const std::tuple<_Types...>& _lhs,
+                   const std::tuple<_Types...>& _rhs, index_sequence<_Idx...>)
+{
+    using init_list_t = std::initializer_list<int>;
+    auto&& _tmp       = init_list_t{ (std::get<_Idx>(_ret) = compute_percentage(
+                                    std::get<_Idx>(_lhs), std::get<_Idx>(_rhs)),
+                                0)... };
+    consume_parameters(_tmp);
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Types>
 std::tuple<_Types...>
 compute_percentage(const std::tuple<_Types...>& _lhs, const std::tuple<_Types...>& _rhs)
 {
+    constexpr size_t      _N = sizeof...(_Types);
     std::tuple<_Types...> _ret;
-    apply<void>::percent_diff(_ret, _lhs, _rhs);
+    compute_percentage(_ret, _lhs, _rhs, make_index_sequence<_N>{});
     return _ret;
 }
 
@@ -122,11 +163,13 @@ compute_percentage(const _Container<_Tp, _ExtraArgs...>& lhs,
 {
     auto             len = std::min(lhs.size(), rhs.size());
     _Container<_Ret> perc(len, 0.0);
+
     for(decltype(len) i = 0; i < len; ++i)
-    {
-        if(rhs[i] > 0)
-            perc[i] = (1.0 - (lhs[i] / rhs[i])) * 100.0;
-    }
+        perc[i] = _Ret{};
+
+    for(decltype(len) i = 0; i < len; ++i)
+        perc[i] = compute_percentage(lhs[i], rhs[i]);
+
     return perc;
 }
 
@@ -140,24 +183,13 @@ compute_percentage(const std::map<_Key, _Mapped, _ExtraArgs...>& lhs,
     std::map<_Key, _Mapped, _ExtraArgs...> perc;
     for(auto itr : lhs)
     {
-        if(rhs.find(itr.first) != rhs.end())
-        {
-            auto ritr = rhs.find(itr.first)->second;
-            if(itr.second > 0)
-                perc[itr.first] = (1.0 - (itr.second / ritr)) * 100.0;
-        }
+        auto ritr = rhs.find(itr.first);
+        if(ritr != rhs.end())
+            perc[itr.first] = compute_percentage(itr.second, ritr->second);
+        else
+            perc[itr.first] = _Mapped{};
     }
     return perc;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Ret = _Tp,
-          typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
-_Ret
-compute_percentage(_Tp& lhs, const _Tp& rhs)
-{
-    return (rhs > 0) ? ((1.0 - (lhs / rhs)) * 100.0) : 0.0;
 }
 
 //--------------------------------------------------------------------------------------//

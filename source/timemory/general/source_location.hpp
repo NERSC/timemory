@@ -62,9 +62,10 @@ public:
     //
     enum class mode : short
     {
-        blank = 0,
-        basic = 1,
-        full  = 2
+        blank    = 0,
+        basic    = 1,
+        full     = 2,
+        complete = 3
     };
 
     //==================================================================================//
@@ -93,7 +94,7 @@ public:
         friend class source_location;
         result_type m_result = result_type("", 0);
 
-        template <typename... _Args>
+        template <typename... _Args, enable_if_t<(sizeof...(_Args) > 0), int> = 0>
         captured& set(const source_location& obj, _Args&&... _args)
         {
             switch(obj.m_mode)
@@ -106,13 +107,26 @@ public:
                 }
                 case mode::basic:
                 case mode::full:
+                case mode::complete:
                 {
                     auto&& _suffix = join_type::join("", std::forward<_Args>(_args)...);
-                    auto   _tmp    = join_type::join("/", obj.m_prefix.c_str(), _suffix);
-                    m_result       = result_type(_tmp, add_hash_id(_tmp));
+                    if(_suffix.empty())
+                        m_result = result_type(obj.m_prefix, add_hash_id(obj.m_prefix));
+                    else
+                    {
+                        auto _tmp = join_type::join("/", obj.m_prefix.c_str(), _suffix);
+                        m_result  = result_type(_tmp, add_hash_id(_tmp));
+                    }
                     break;
                 }
             }
+            return *this;
+        }
+
+        template <typename... _Args, enable_if_t<(sizeof...(_Args) == 0), int> = 0>
+        captured& set(const source_location& obj, _Args&&...)
+        {
+            m_result = result_type(obj.m_prefix, add_hash_id(obj.m_prefix));
             return *this;
         }
     };
@@ -148,7 +162,10 @@ public:
         {
             case mode::blank: break;
             case mode::basic: compute_data(_func); break;
-            case mode::full: compute_data(_func, _line, _fname); break;
+            case mode::complete:
+            case mode::full:
+                compute_data(_func, _line, _fname, m_mode == mode::full);
+                break;
         }
     }
 
@@ -178,8 +195,9 @@ public:
                 break;
             }
             case mode::full:
+            case mode::complete:
             {
-                compute_data(_func, _line, _fname);
+                compute_data(_func, _line, _fname, m_mode == mode::full);
                 // label and hash
                 auto&& _label = (_arg) ? _join(_arg) : std::string(m_prefix);
                 auto&& _hash  = add_hash_id(_label);
@@ -216,8 +234,9 @@ public:
                 break;
             }
             case mode::full:
+            case mode::complete:
             {
-                compute_data(_func, _line, _fname);
+                compute_data(_func, _line, _fname, m_mode == mode::full);
                 // label and hash
                 auto&& _label = _join(_arg);
                 auto&& _hash  = add_hash_id(_label);
@@ -243,7 +262,7 @@ protected:
 
     //----------------------------------------------------------------------------------//
     //
-    void compute_data(const char* _func, int _line, const char* _fname)
+    void compute_data(const char* _func, int _line, const char* _fname, bool shorten)
     {
 #if defined(_WINDOWS)
         static const char delim = '\\';
@@ -251,9 +270,26 @@ protected:
         static const char delim = '/';
 #endif
         std::string _filename(_fname);
-        if(_filename.find(delim) != std::string::npos)
-            _filename = _filename.substr(_filename.find_last_of(delim) + 1).c_str();
-        m_prefix = join_type::join("", _func, "@", _filename, ":", _line);
+        if(shorten)
+        {
+            if(_filename.find(delim) != std::string::npos)
+                _filename = _filename.substr(_filename.find_last_of(delim) + 1).c_str();
+        }
+
+        if(_line < 0)
+        {
+            if(_filename.length() > 0)
+                m_prefix = join_type::join("", _func, "@", _filename);
+            else
+                m_prefix = _func;
+        }
+        else
+        {
+            if(_filename.length() > 0)
+                m_prefix = join_type::join("", _func, "@", _filename, ":", _line);
+            else
+                m_prefix = join_type::join("", _func, ":", _line);
+        }
     }
 
 public:

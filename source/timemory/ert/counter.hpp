@@ -316,9 +316,8 @@ serialize(std::string fname, exec_data<_Counter>& obj)
 {
     using exec_data_vec_t = std::vector<exec_data<_Counter>>;
 
-    int  dmp_rank = dmp::rank();
-    int  dmp_size = dmp::size();
-    auto space    = cereal::JSONOutputArchive::Options::IndentChar::space;
+    int dmp_rank = dmp::rank();
+    int dmp_size = dmp::size();
 
     exec_data_vec_t results(dmp_size);
     if(dmp::is_initialized())
@@ -326,6 +325,8 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         dmp::barrier();
 
 #if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_UPCXX)
+        auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+
         //------------------------------------------------------------------------------//
         //  Used to convert a result to a serialization
         //

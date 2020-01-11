@@ -143,7 +143,7 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
            const std::string& default_env)
 {
     auto env_result = tim::get_env(env_var, default_env);
-    initialize(obj, enumerate_components(tim::delimit(env_result)));
+    ::tim::initialize(obj, enumerate_components(tim::delimit(env_result)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -162,7 +162,7 @@ insert(_Bundle<_Idx, _Type>& obj, const std::string& env_var,
        const std::string& default_env)
 {
     auto env_result = tim::get_env(env_var, default_env);
-    insert(obj, enumerate_components(tim::delimit(env_result)));
+    ::tim::insert(obj, enumerate_components(tim::delimit(env_result)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -172,7 +172,7 @@ inline void
 configure(const std::string& env_var, const std::string& default_env)
 {
     auto env_result = tim::get_env(env_var, default_env);
-    configure<_Bundle>(enumerate_components(tim::delimit(env_result)));
+    ::tim::configure<_Bundle>(enumerate_components(tim::delimit(env_result)));
 }
 
 //--------------------------------------------------------------------------------------//

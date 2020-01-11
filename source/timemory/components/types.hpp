@@ -222,7 +222,7 @@ TIMEMORY_PROPERTY_SPECIALIZATION(caliper, CALIPER, "caliper", "cali")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_clock, CPU_CLOCK, "cpu_clock")
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_clock, CPU_CLOCK, "cpu_clock", "")
 
 //--------------------------------------------------------------------------------------//
 
@@ -243,27 +243,27 @@ TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_sp_flops, CPU_ROOFLINE_SP_FLOPS,
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, CPU_UTIL, "cpu_util")
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, CPU_UTIL, "cpu_util", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cuda_event, CUDA_EVENT, "cuda_event")
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_event, CUDA_EVENT, "cuda_event", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cuda_profiler, CUDA_PROFILER, "cuda_profiler")
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_profiler, CUDA_PROFILER, "cuda_profiler", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, CUPTI_ACTIVITY, "cupti_activity")
+TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, CUPTI_ACTIVITY, "cupti_activity", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, CUPTI_COUNTERS, "cupti_counters")
+TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, CUPTI_COUNTERS, "cupti_counters", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(data_rss, DATA_RSS, "data_rss")
+TIMEMORY_PROPERTY_SPECIALIZATION(data_rss, DATA_RSS, "data_rss", "")
 
 //--------------------------------------------------------------------------------------//
 
@@ -309,54 +309,54 @@ TIMEMORY_PROPERTY_SPECIALIZATION(likwid_perfmon, LIKWID_PERFMON, "likwid_perfmon
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, MONOTONIC_CLOCK, "monotonic_clock")
+TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, MONOTONIC_CLOCK, "monotonic_clock", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_raw_clock, MONOTONIC_RAW_CLOCK,
-                                 "monotonic_raw_clock")
+                                 "monotonic_raw_clock", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, NUM_IO_IN, "num_io_in")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, NUM_IO_IN, "num_io_in", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, NUM_IO_OUT, "num_io_out")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, NUM_IO_OUT, "num_io_out", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(num_major_page_faults, NUM_MAJOR_PAGE_FAULTS,
-                                 "num_major_page_faults")
+                                 "num_major_page_faults", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(num_minor_page_faults, NUM_MINOR_PAGE_FAULTS,
-                                 "num_minor_page_faults")
+                                 "num_minor_page_faults", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(num_msg_recv, NUM_MSG_RECV, "num_msg_recv")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_msg_recv, NUM_MSG_RECV, "num_msg_recv", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(num_msg_sent, NUM_MSG_SENT, "num_msg_sent")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_msg_sent, NUM_MSG_SENT, "num_msg_sent", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(num_signals, NUM_SIGNALS, "num_signals")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_signals, NUM_SIGNALS, "num_signals", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(num_swap, NUM_SWAP, "num_swap")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_swap, NUM_SWAP, "num_swap", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx")
+TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(page_rss, PAGE_RSS, "page_rss")
+TIMEMORY_PROPERTY_SPECIALIZATION(page_rss, PAGE_RSS, "page_rss", "")
 
 //--------------------------------------------------------------------------------------//
 
@@ -365,89 +365,92 @@ TIMEMORY_PROPERTY_SPECIALIZATION(papi_array_t, PAPI_ARRAY, "papi_array_t", "papi
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(peak_rss, PEAK_RSS, "peak_rss")
+TIMEMORY_PROPERTY_SPECIALIZATION(peak_rss, PEAK_RSS, "peak_rss", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(priority_context_switch, PRIORITY_CONTEXT_SWITCH,
-                                 "priority_context_switch")
+                                 "priority_context_switch", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_clock, PROCESS_CPU_CLOCK,
-                                 "process_cpu_clock")
+                                 "process_cpu_clock", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, PROCESS_CPU_UTIL, "process_cpu_util")
+TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, PROCESS_CPU_UTIL, "process_cpu_util",
+                                 "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(read_bytes, READ_BYTES, "read_bytes")
+TIMEMORY_PROPERTY_SPECIALIZATION(read_bytes, READ_BYTES, "read_bytes", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(stack_rss, STACK_RSS, "stack_rss")
+TIMEMORY_PROPERTY_SPECIALIZATION(stack_rss, STACK_RSS, "stack_rss", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock")
+TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TAU_MARKER, "tau_marker", "tau")
+TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TAU_MARKER, "tau_marker", "tau", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, THREAD_CPU_CLOCK, "thread_cpu_clock")
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, THREAD_CPU_CLOCK, "thread_cpu_clock",
+                                 "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, THREAD_CPU_UTIL, "thread_cpu_util")
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, THREAD_CPU_UTIL, "thread_cpu_util", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(trip_count, TRIP_COUNT, "trip_count")
+TIMEMORY_PROPERTY_SPECIALIZATION(trip_count, TRIP_COUNT, "trip_count", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(user_clock, USER_CLOCK, "user_clock")
+TIMEMORY_PROPERTY_SPECIALIZATION(user_clock, USER_CLOCK, "user_clock", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle")
+TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle",
+                                 "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
-                                 "user_tuple_bundle")
+                                 "user_tuple_bundle", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(virtual_memory, VIRTUAL_MEMORY, "virtual_memory")
+TIMEMORY_PROPERTY_SPECIALIZATION(virtual_memory, VIRTUAL_MEMORY, "virtual_memory", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(voluntary_context_switch, VOLUNTARY_CONTEXT_SWITCH,
-                                 "voluntary_context_switch")
+                                 "voluntary_context_switch", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_event, VTUNE_EVENT, "vtune_event")
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_event, VTUNE_EVENT, "vtune_event", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, VTUNE_FRAME, "vtune_frame")
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, VTUNE_FRAME, "vtune_frame", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
-                                 "virtual_clock")
+                                 "virtual_clock", "")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, WRITTEN_BYTES, "written_bytes",
-                                 "write_bytes")
+                                 "write_bytes", "")
 
 //--------------------------------------------------------------------------------------//
 //

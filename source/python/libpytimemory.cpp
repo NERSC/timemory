@@ -602,26 +602,33 @@ PYBIND11_MODULE(libpytimemory, tim)
         {
             std::string        _sitr = "";
             TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
+
             try
             {
                 _sitr = itr.cast<std::string>();
-                _citr = tim::enumerate_component(_sitr);
+                if(_sitr.length() > 0)
+                    _citr = tim::enumerate_component(_sitr);
+                else
+                    continue;
             } catch(...)
-            {
-                PRINT_HERE("%s", "arg was not string");
-            }
+            {}
+
             if(_citr == TIMEMORY_COMPONENTS_END)
             {
                 try
                 {
                     _citr = itr.cast<TIMEMORY_COMPONENT>();
                 } catch(...)
-                {
-                    PRINT_HERE("%s", "arg was not enum");
-                }
+                {}
             }
+
             if(_citr != TIMEMORY_COMPONENTS_END)
                 components.insert(_citr);
+            else
+            {
+                PRINT_HERE("%s", "ignoring argument that failed casting to either "
+                                 "'timemory.component' and string");
+            }
         }
         pycomponent_bundle::configure(components);
     };
@@ -633,6 +640,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
     comp_bundle.def(py::init(&pytim::init::component_bundle), "Initialization",
                     py::arg("func"), py::arg("file"), py::arg("line"),
+                    py::arg("extra") = py::list(),
                     py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     comp_bundle.def("start", &pycomponent_bundle::start, "Start the bundle");

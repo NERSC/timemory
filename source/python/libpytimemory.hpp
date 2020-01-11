@@ -396,14 +396,26 @@ component_decorator(py::list components, const std::string& key)
 //----------------------------------------------------------------------------//
 
 pycomponent_bundle*
-component_bundle(const std::string& func, const std::string& file, const int line)
+component_bundle(const std::string& func, const std::string& file, const int line,
+                 py::list args)
 {
-    using mode   = tim::source_location::mode;
-    auto&& _loc  = tim::source_location(mode::full, func.c_str(), line, file.c_str());
-    auto&& _flat = tim::settings::flat_profile();
+    std::string sargs = "";
+    for(auto itr : args)
+    {
+        try
+        {
+            auto v = itr.cast<std::string>();
+            sargs  = (sargs.empty()) ? v : TIMEMORY_JOIN("/", sargs, v);
+        } catch(...)
+        {}
+    }
+    using mode = tim::source_location::mode;
 
+    auto&& _flat = tim::settings::flat_profile();
+    auto&& _loc =
+        tim::source_location(mode::complete, func.c_str(), line, file.c_str(), sargs);
     auto&& _obj = (tim::settings::enabled())
-                      ? new component_bundle_t(_loc.get_captured(), true, _flat)
+                      ? new component_bundle_t(_loc.get_captured(sargs), true, _flat)
                       : nullptr;
     return new pycomponent_bundle(_obj);
 }

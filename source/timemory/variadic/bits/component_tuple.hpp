@@ -32,7 +32,6 @@
 
 #include "timemory/manager.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/variadic/component_tuple.hpp"
 
 //======================================================================================//
 //
@@ -49,7 +48,10 @@ inline component_tuple<Types...>::component_tuple()
 , m_is_pushed(false)
 , m_laps(0)
 , m_hash(0)
-{}
+{
+    if(settings::enabled())
+        init_storage();
+}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -65,8 +67,11 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
 , m_data(data_type{})
 {
     if(settings::enabled())
+    {
+        init_storage();
         _func(*this);
-    set_object_prefix(key);
+        set_object_prefix(key);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -84,8 +89,11 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
 , m_data(data_type())
 {
     if(settings::enabled())
+    {
+        init_storage();
         _func(*this);
-    set_object_prefix(loc.get_id());
+        set_object_prefix(loc.get_id());
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -473,7 +481,12 @@ template <typename... Types>
 inline void
 component_tuple<Types...>::init_storage()
 {
-    apply_v::type_access<operation::init_storage, data_type>();
+    static auto _execute = []() {
+        apply_v::type_access<operation::init_storage, data_type>();
+        return true;
+    };
+    static thread_local bool _once = _execute();
+    consume_parameters(_once);
 }
 
 //--------------------------------------------------------------------------------------//

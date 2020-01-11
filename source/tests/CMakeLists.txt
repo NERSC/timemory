@@ -34,8 +34,6 @@ if(TIMEMORY_USE_VTUNE)
     list(APPEND HYBRID_COMPONENTS timemory-vtune)
 endif()
 
-message(STATUS "[${PROJECT_NAME}] hybrid test components: ${HYBRID_COMPONENTS}")
-
 set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)

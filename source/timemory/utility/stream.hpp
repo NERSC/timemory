@@ -171,7 +171,7 @@ public:
         auto _len = v.length() + 2;
         if(_len % 2 == 0)
             _len += 1;
-        m_width.at(_idx) = std::max<int>(m_width.at(_idx), _len);
+        m_width.at(_idx)        = std::max<int>(m_width.at(_idx), _len);
         m_value.back().at(_idx) = v;
         m_index += 1;
     }
@@ -189,6 +189,7 @@ public:
         : m_value(std::forward<_Tp>(_val))
         {}
         operator _Tp() const { return m_value; }
+
     private:
         _Tp m_value;
     };

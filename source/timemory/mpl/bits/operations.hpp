@@ -471,8 +471,8 @@ public:
                      const _Sp<_Vp>& _stats, uint64_t _laps)
     {
         bool use_mean = get_env<bool>("TIMEMORY_PRINT_MEAN", false);
-        bool use_min =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_max =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_min  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_max  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
 
         auto _min  = _stats.get_min();
         auto _max  = _stats.get_max();
@@ -509,8 +509,8 @@ public:
     static void get_header(stream& os, const _Sp<_Vp>&)
     {
         bool use_mean = get_env<bool>("TIMEMORY_PRINT_MEAN", false);
-        bool use_min =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_max =  get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_min  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_max  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
 
         if(use_mean)
             os << "MEAN";

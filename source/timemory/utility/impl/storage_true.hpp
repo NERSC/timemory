@@ -464,7 +464,7 @@ public:
     virtual bool global_init() final
     {
         static auto _lambda = [&]() {
-            if(!m_is_master)
+            if(!m_is_master && master_instance())
                 master_instance()->global_init();
             if(m_is_master)
                 Type::global_init(this);
@@ -481,7 +481,7 @@ public:
     virtual bool thread_init() final
     {
         static auto _lambda = [&]() {
-            if(!m_is_master)
+            if(!m_is_master && master_instance())
                 master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
@@ -499,7 +499,7 @@ public:
     virtual bool data_init() final
     {
         static auto _lambda = [&]() {
-            if(!m_is_master)
+            if(!m_is_master && master_instance())
                 master_instance()->data_init();
             bool _global_init = global_init();
             bool _thread_init = thread_init();
@@ -515,15 +515,67 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    const graph_data_t& data() const { return _data(); }
-    const graph_t&      graph() const { return _data().graph(); }
-    int64_t             depth() const { return (is_finalizing()) ? 0 : _data().depth(); }
+    const graph_data_t& data() const
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+            consume_parameters(_init);
+        }
+        return _data();
+    }
+
+    const graph_t& graph() const
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+            consume_parameters(_init);
+        }
+        return _data().graph();
+    }
+
+    int64_t depth() const
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+            consume_parameters(_init);
+        }
+        return (is_finalizing()) ? 0 : _data().depth();
+    }
 
     //----------------------------------------------------------------------------------//
     //
-    graph_data_t& data() { return _data(); }
-    iterator&     current() { return _data().current(); }
-    graph_t&      graph() { return _data().graph(); }
+    graph_data_t& data()
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = data_init();
+            consume_parameters(_init);
+        }
+        return _data();
+    }
+
+    graph_t& graph()
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = data_init();
+            consume_parameters(_init);
+        }
+        return _data().graph();
+    }
+
+    iterator& current()
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = data_init();
+            consume_parameters(_init);
+        }
+        return _data().current();
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -637,9 +689,9 @@ public:
                           int> = 0>
     iterator insert(const Type& obj, uint64_t hash_id)
     {
-        static bool _global_init = global_init();
-        static bool _thread_init = thread_init();
-        static bool _data_init   = data_init();
+        static bool              _global_init = global_init();
+        static thread_local bool _thread_init = thread_init();
+        static bool              _data_init   = data_init();
         consume_parameters(_global_init, _thread_init, _data_init);
 
         auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
@@ -837,29 +889,47 @@ storage<Type, true>::_data()
 {
     using object_base_t = typename Type::base_type;
 
-    if(m_graph_data_instance == nullptr && !m_is_master)
-    {
-        static bool _data_init = master_instance()->data_init();
-        consume_parameters(_data_init);
-
-        auto         m = *master_instance()->current();
-        graph_node_t node(m.id(), object_base_t::dummy(), m.depth());
-        m_graph_data_instance          = new graph_data_t(node);
-        m_graph_data_instance->depth() = m.depth();
-        if(m_node_ids.size() == 0)
-            m_node_ids[0][0] = m_graph_data_instance->current();
-    }
-    else if(m_graph_data_instance == nullptr)
+    if(m_graph_data_instance == nullptr)
     {
         auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
-        if(!lk.owns_lock())
-            lk.lock();
 
-        std::string _prefix = "> [tot] total";
-        add_hash_id(_prefix);
-        graph_node_t node(0, object_base_t::dummy(), 0);
-        m_graph_data_instance          = new graph_data_t(node);
-        m_graph_data_instance->depth() = 0;
+        if(!m_is_master && master_instance())
+        {
+            static bool _data_init = master_instance()->data_init();
+            auto        m          = master_instance()->current();
+            consume_parameters(_data_init);
+
+            if(!lk.owns_lock())
+                lk.lock();
+
+            if(m)
+            {
+                graph_node_t node(m->id(), object_base_t::dummy(), m->depth());
+                if(!m_graph_data_instance)
+                    m_graph_data_instance = new graph_data_t(node);
+                m_graph_data_instance->depth() = m->depth();
+            }
+            else
+            {
+                graph_node_t node(0, object_base_t::dummy(), 0);
+                if(!m_graph_data_instance)
+                    m_graph_data_instance = new graph_data_t(node);
+                m_graph_data_instance->depth() = 0;
+            }
+        }
+        else
+        {
+            if(!lk.owns_lock())
+                lk.lock();
+
+            std::string _prefix = "> [tot] total";
+            add_hash_id(_prefix);
+            graph_node_t node(0, object_base_t::dummy(), 0);
+            if(!m_graph_data_instance)
+                m_graph_data_instance = new graph_data_t(node);
+            m_graph_data_instance->depth() = 0;
+        }
+
         if(m_node_ids.size() == 0)
             m_node_ids[0][0] = m_graph_data_instance->current();
     }

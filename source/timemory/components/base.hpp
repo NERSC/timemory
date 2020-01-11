@@ -770,9 +770,9 @@ public:
             _instance |= (std::ios_base::scientific);
         };
 
-        if(settings::scientific() ||
-           (timing_category_v && settings::timing_scientific()) ||
-           (memory_category_v && settings::memory_scientific()))
+        if(!percent_units_v && (settings::scientific() ||
+                                (timing_category_v && settings::timing_scientific()) ||
+                                (memory_category_v && settings::memory_scientific())))
             _set_scientific();
 
         return _instance;
