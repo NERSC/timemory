@@ -370,7 +370,8 @@ template <typename... _Types>
 const tuple<_Types...>
 operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
 {
-    ::tim::stl_overload::tuple_math::minus(lhs, rhs);
+    constexpr size_t _N = sizeof...(_Types);
+    ::tim::stl_overload::tuple_math::minus(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 }  // namespace std

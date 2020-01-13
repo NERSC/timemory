@@ -479,14 +479,11 @@ public:
     print_statistics(const Type&, utility::stream& _os, const _Self&,
                      const _Sp<_Vp>& _stats, uint64_t)
     {
-        bool use_mean   = get_env<bool>("TIMEMORY_PRINT_MEAN", true);
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
         bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
 
-        if(use_mean)
-            utility::write_entry(_os, "MEAN", _stats.get_mean());
         if(use_min)
             utility::write_entry(_os, "MIN", _stats.get_min());
         if(use_max)
@@ -512,7 +509,6 @@ public:
               enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
     static void get_header(utility::stream& _os, const _Sp<_Vp>&)
     {
-        bool use_mean   = get_env<bool>("TIMEMORY_PRINT_MEAN", true);
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
@@ -522,8 +518,6 @@ public:
         auto _width = _Tp::get_width();
         auto _prec  = _Tp::get_precision();
 
-        if(use_mean)
-            utility::write_header(_os, "MEAN", _flags, _width, _prec);
         if(use_min)
             utility::write_header(_os, "MIN", _flags, _width, _prec);
         if(use_max)
@@ -559,16 +553,18 @@ struct print_header : public common_utils
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print_header(const Type& _obj, utility::stream& _os, const _Stats& _stats)
     {
-        auto _labels  = get_labels(_obj);
-        auto _display = get_display_units(_obj);
+        auto _labels = get_labels(_obj);
+        // auto _display = get_display_units(_obj);
 
+        _os.set_prefix_begin();
         utility::write_header(_os, "LABEL");
         utility::write_header(_os, "COUNT");
         utility::write_header(_os, "DEPTH");
+        _os.set_prefix_end();
 
-        auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
-            return tim::apply<std::string>::join("", _lhs, " [", _rhs, "]");
-        };
+        // auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
+        //    return tim::apply<std::string>::join("", _lhs, " [", _rhs, "]");
+        // };
 
         auto ios_fixed = std::ios_base::fixed;
         auto ios_dec   = std::ios_base::dec;
@@ -580,12 +576,23 @@ struct print_header : public common_utils
         auto w_value   = _Tp::get_width();
         auto p_value   = _Tp::get_precision();
 
-        for(size_t i = 0; i < _labels.size(); ++i)
+        utility::write_header(_os, "METRIC");
+        utility::write_header(_os, "UNITS");
+        utility::write_header(_os, "SUM", f_value, w_value, p_value);
+        utility::write_header(_os, "MEAN", f_value, w_value, p_value);
+        print_statistics<_Tp>::get_header(_os, _stats);
+        utility::write_header(_os, "% SELF", f_self, w_self, p_self);
+
+        _os.insert_break();
+        for(size_t i = 0; i < _labels.size() - 1; ++i)
         {
-            auto _label = _opzip(_labels.at(i), _display.at(i));
-            utility::write_header(_os, _label, f_value, w_value, p_value);
-            utility::write_header(_os, "% SELF", f_self, w_self, p_self);
+            utility::write_header(_os, "METRIC");
+            utility::write_header(_os, "UNITS");
+            utility::write_header(_os, "SUM", f_value, w_value, p_value);
+            utility::write_header(_os, "MEAN", f_value, w_value, p_value);
             print_statistics<_Tp>::get_header(_os, _stats);
+            utility::write_header(_os, "% SELF", f_self, w_self, p_self);
+            _os.insert_break();
         }
     }
 
@@ -636,20 +643,18 @@ struct print
     print(const Type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const _Vp& _self, const _Stats& _stats)
     {
-        auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
-            return tim::apply<std::string>::join("", _lhs, " [", _rhs, "]");
-        };
-
-        auto _labels = mpl::zip(_opzip, common_utils::get_labels(_obj),
-                                common_utils::get_display_units(_obj));
+        auto _labels = common_utils::get_labels(_obj);
+        auto _units  = common_utils::get_display_units(_obj);
 
         utility::write_entry(_os, "LABEL", _prefix);
         utility::write_entry(_os, "COUNT", _laps);
         utility::write_entry(_os, "DEPTH", _depth);
-
-        utility::write_entry(_os, _labels, _obj.get());
-        utility::write_entry(_os, "% SELF", _self);
+        utility::write_entry(_os, "METRIC", _labels);
+        utility::write_entry(_os, "UNITS", _units);
+        utility::write_entry(_os, "SUM", _obj.get());
+        utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
         print_statistics<_Tp>(_obj, _os, _self, _stats, _laps);
+        utility::write_entry(_os, "% SELF", _self);
     }
 
     //----------------------------------------------------------------------------------//

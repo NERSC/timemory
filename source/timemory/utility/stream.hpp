@@ -34,6 +34,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -76,6 +77,7 @@ struct stream_entry
     string_t get() const { return m_value; }
 
     bool         center() const { return m_center; }
+    bool         left() const { return m_left; }
     int          row() const { return m_row; }
     int          width() const { return m_width; }
     int          column() const { return m_column; }
@@ -83,6 +85,7 @@ struct stream_entry
     format_flags flags() const { return m_format; }
 
     void center(bool v) { m_center = v; }
+    void left(bool v) { m_left = v; }
     void row(int v) { m_row = v; }
     void width(int v) { m_width = v; }
     void column(int v) { m_column = v; }
@@ -108,6 +111,7 @@ struct stream_entry
 
 protected:
     bool         m_center    = false;
+    bool         m_left      = false;
     int          m_row       = 0;
     int          m_column    = 0;
     int          m_width     = 0;
@@ -142,7 +146,7 @@ write_entry(_Stream& ss, const _Tp& obj)
     }
     else
     {
-        if(obj.column() == 0)
+        if(obj.column() == 0 || obj.left())
         {
             stringstream_t _ss;
             _ss << std::left << itr;
@@ -151,7 +155,7 @@ write_entry(_Stream& ss, const _Tp& obj)
         }
         else
         {
-            ss << std::setw(obj.width() - 2) << std::right << itr;
+            ss << std::right << std::setw(obj.width() - 2) << itr;
         }
     }
 }
@@ -192,12 +196,23 @@ struct header : base::stream_entry
 struct entry : base::stream_entry
 {
     template <typename _Tp>
-    explicit entry(_Tp&& _val, header& _hdr, bool _center = false)
+    explicit entry(_Tp&& _val, header& _hdr, bool _center = false, bool _left = false)
     : base::stream_entry(_hdr)
     , m_hdr(&_hdr)
     {
         m_center = _center;
+        m_left   = _left;
         base::stream_entry::operator()(std::forward<_Tp>(_val));
+    }
+
+    explicit entry(std::string&& _val, header& _hdr, bool _center = false,
+                   bool _left = true)
+    : base::stream_entry(_hdr)
+    , m_hdr(&_hdr)
+    {
+        m_center = _center;
+        m_left   = _left;
+        base::stream_entry::operator()(std::forward<std::string>(_val));
     }
 
     entry(const entry& _rhs)
@@ -229,6 +244,9 @@ private:
 
 struct stream
 {
+    template <typename T>
+    using set_t = std::set<T>;
+
     template <typename K, typename M>
     using map_t = std::map<K, M>;
 
@@ -251,6 +269,7 @@ struct stream
 
     using header_map_t = vector_t<header_pair_t>;
     using entry_map_t  = vector_t<entry_pair_t>;
+    using break_set_t  = set_t<int>;
 
 public:
     explicit stream(char _delim = '|', char _fill = '-', format_flags _fmt = {},
@@ -261,6 +280,9 @@ public:
     , m_width(_width)
     , m_precision(_prec)
     , m_rows(0)
+    , m_cols(0)
+    , m_prefix_begin(0)
+    , m_prefix_end(0)
     , m_format(_fmt)
     {}
 
@@ -325,6 +347,21 @@ public:
         return idx;
     }
 
+    void set_prefix_begin(int val = -1)
+    {
+        m_prefix_begin = (val < 0) ? ((int) m_order.size()) : val;
+    }
+
+    void set_prefix_end(int val = -1)
+    {
+        m_prefix_end = (val < 0) ? ((int) m_order.size()) : val;
+    }
+
+    void insert_break(int val = -1)
+    {
+        m_break.insert((val < 0) ? ((int) m_order.size()) : val);
+    }
+
     void operator()(header _hdr)
     {
         if(_hdr.get().empty())
@@ -380,8 +417,11 @@ public:
 
         obj.write_separator(ss);
 
+        int64_t norder_col = 0;
         for(const auto& itr : obj.m_order)
         {
+            int64_t col = ++norder_col;
+
             stringstream_t _ss;
             auto           _key    = itr;
             auto           _offset = offset[_key]++;
@@ -397,6 +437,9 @@ public:
                 base::write_entry(_ss, hitr);
             }
             ss << obj.delim() << ' ' << _ss.str() << ' ';
+
+            if(obj.m_break.count(col) > 0)
+                break;
         }
 
         // end the line
@@ -404,12 +447,24 @@ public:
 
         obj.write_separator(ss);
 
+        auto write_empty = [&](stringstream_t& _ss, int64_t _hidx, int64_t _offset) {
+            const auto& _hitr  = obj.m_headers[_hidx].second;
+            auto        _hsize = _hitr.size();
+            const auto& _hdr   = _hitr.at(_offset % _hsize);
+            _ss << obj.delim() << ' ' << std::setw(_hdr.width() - 2) << "" << ' ';
+        };
+
         offset.clear();
 
         for(int i = 0; i < obj.m_rows; ++i)
         {
+            bool just_broke = false;
+            norder_col      = 0;
             for(const auto& itr : obj.m_order)
             {
+                just_broke  = false;
+                int64_t col = ++norder_col;
+
                 stringstream_t _ss;
                 auto           _key    = itr;
                 auto           _offset = offset[_key]++;
@@ -419,10 +474,7 @@ public:
 
                 if(_eidx < 0 && _hidx >= 0)
                 {
-                    const auto& _hitr  = obj.m_headers[_hidx].second;
-                    auto        _hsize = _hitr.size();
-                    const auto& _hdr   = _hitr.at(_offset % _hsize);
-                    ss << obj.delim() << ' ' << std::setw(_hdr.width() - 2) << "" << ' ';
+                    write_empty(ss, _hidx, _offset);
                     continue;
                 }
 
@@ -435,8 +487,17 @@ public:
 
                 base::write_entry(_ss, _itr);
                 ss << obj.delim() << ' ' << _ss.str() << ' ';
+
+                if(col < (int64_t) obj.m_order.size() && obj.m_break.count(col) > 0)
+                {
+                    ss << obj.m_delim << '\n';
+                    just_broke = true;
+                    for(auto j = obj.m_prefix_begin; j < obj.m_prefix_end; ++j)
+                        write_empty(ss, j, 0);
+                }
             }
-            ss << obj.m_delim << '\n';
+            if(!just_broke)
+                ss << obj.m_delim << '\n';
 
             if((i + 1) < obj.m_rows && (i % 10) == 9)
                 obj.write_separator(ss);
@@ -455,8 +516,10 @@ public:
         stringstream_t       ss;
         ss.fill(m_fill);
 
+        int64_t norder_col = 0;
         for(const auto& _key : m_order)
         {
+            int64_t        col = ++norder_col;
             stringstream_t _ss;
             auto           _offset = offset[_key]++;
             auto           _hidx   = index(_key, m_headers);
@@ -466,6 +529,8 @@ public:
             const auto& _hdr   = _hitr.at(_offset % _hsize);
             auto        _w     = _hdr.width();
             ss << m_delim << std::setw(_w) << "";
+            if(m_break.count(col) > 0)
+                break;
         }
 
         ss << m_delim << '\n';
@@ -508,18 +573,21 @@ public:
     }
 
 private:
-    bool         m_center    = false;
-    char         m_fill      = '-';
-    char         m_delim     = '|';
-    int          m_width     = 0;
-    int          m_precision = 0;
-    int          m_rows      = 0;
-    int          m_cols      = 0;
-    format_flags m_format    = {};
-    string_t     m_name      = "";
-    header_map_t m_headers   = {};
-    entry_map_t  m_entries   = {};
-    order_map_t  m_order     = {};
+    bool         m_center       = false;
+    char         m_fill         = '-';
+    char         m_delim        = '|';
+    int          m_width        = 0;
+    int          m_precision    = 0;
+    int          m_rows         = 0;
+    int          m_cols         = 0;
+    int64_t      m_prefix_begin = 0;
+    int64_t      m_prefix_end   = 0;
+    format_flags m_format       = {};
+    string_t     m_name         = "";
+    header_map_t m_headers      = {};
+    entry_map_t  m_entries      = {};
+    order_map_t  m_order        = {};
+    break_set_t  m_break        = {};
 };
 
 //--------------------------------------------------------------------------------------//
@@ -571,11 +639,31 @@ write_entry(stream& _os, const std::string& _label, const _Tp& _value)
 
 //--------------------------------------------------------------------------------------//
 
+void
+write_entry(stream& _os, const std::string& _label, const std::string& _value)
+{
+    _os.set_name(_label);
+    _os(entry(_value, _os.get_header(_label, 0), false, true));
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 void
 write_entry(stream& _os, const std::vector<std::string>& _label, const _Tp& _value)
 {
     write_entry(_os, _label.front(), _value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+void
+write_entry(stream& _os, const std::string& _label,
+            const std::vector<std::string>& _value)
+{
+    for(const auto& itr : _value)
+        write_entry(_os, _label, itr);
 }
 
 //--------------------------------------------------------------------------------------//

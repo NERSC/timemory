@@ -37,6 +37,7 @@
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes,
                                std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::read_bytes, std::true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, std::false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::papi_array_t, std::true_type)
 
@@ -54,8 +55,7 @@ using namespace tim;
 //
 // bundle of tools
 //
-using tuple_t = auto_tuple<wall_clock, cpu_clock, written_bytes>;
-// using tuple_t = auto_tuple<written_bytes>;
+using tuple_t = auto_tuple<wall_clock, cpu_clock, read_bytes, written_bytes>;
 
 //--------------------------------------------------------------------------------------//
 

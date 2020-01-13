@@ -83,8 +83,11 @@ struct zip
         m_value = _func(_lhs, _rhs);
     }
 
-    operator _Tp() const { return m_value; }
-    operator _Tp&() { return m_value; }
+    operator type() const { return m_value; }
+    operator type&() { return m_value; }
+
+    const type& get() const { return m_value; }
+    type&       get() { return m_value; }
 
 private:
     type m_value;
@@ -110,6 +113,9 @@ struct zip<std::string>
     operator type() const { return m_value; }
     operator type&() { return m_value; }
 
+    const type& get() const { return m_value; }
+    type&       get() { return m_value; }
+
 private:
     type m_value;
 };
@@ -127,6 +133,9 @@ struct zip<std::array<_Tp, _N>> : std::array<_Tp, _N>
         for(size_t i = 0; i < _N; ++i)
             (*this)[i] = _func(_lhs.at(i), _rhs.at(i));
     }
+
+    const type& get() const { return static_cast<const type&>(*this); }
+    type&       get() { return static_cast<type&>(*this); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -144,6 +153,9 @@ struct zip<std::vector<_Tp, _Alloc...>> : std::vector<_Tp, _Alloc...>
         for(size_t i = 0; i < std::min(_lhs.size(), _rhs.size()); ++i)
             push_back(_func(_lhs.at(i), _rhs.at(i)));
     }
+
+    const type& get() const { return static_cast<const type&>(*this); }
+    type&       get() { return static_cast<type&>(*this); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -158,6 +170,9 @@ struct zip<_Tuple<_Types...>> : _Tuple<_Types...>
     zip(_Func&& _func, const type& _lhs, const type& _rhs)
     : type(zipper(std::forward<_Func>(_func), _lhs, _rhs, make_index_sequence<size>{}))
     {}
+
+    const type& get() const { return static_cast<const type&>(*this); }
+    type&       get() { return static_cast<type&>(*this); }
 };
 
 }  // namespace zip_impl

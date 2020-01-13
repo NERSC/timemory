@@ -663,6 +663,17 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         };
     }
 
+    static std::vector<std::string> display_unit_array()
+    {
+        return std::vector<std::string>{ std::get<0>(get_display_unit()),
+                                         std::get<1>(get_display_unit()) };
+    }
+
+    static std::vector<std::string> label_array()
+    {
+        return std::vector<std::string>{ label(), "read_rate" };
+    }
+
     static display_unit_type display_unit()
     {
         return display_unit_type{ "KB", "KB/sec" };
@@ -825,7 +836,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 
     static std::vector<std::string> label_array()
     {
-        return std::vector<std::string>{ label(), "rate" };
+        return std::vector<std::string>{ label(), "written_rate" };
     }
 
     static display_unit_type display_unit()
