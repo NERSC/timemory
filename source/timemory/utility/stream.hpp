@@ -199,20 +199,22 @@ struct entry : base::stream_entry
     explicit entry(_Tp&& _val, header& _hdr, bool _center = false, bool _left = false)
     : base::stream_entry(_hdr)
     , m_hdr(&_hdr)
+    , m_permit_empty(false)
     {
         m_center = _center;
         m_left   = _left;
         base::stream_entry::operator()(std::forward<_Tp>(_val));
     }
 
-    explicit entry(std::string&& _val, header& _hdr, bool _center = false,
+    explicit entry(const std::string& _val, header& _hdr, bool _center = false,
                    bool _left = true)
     : base::stream_entry(_hdr)
     , m_hdr(&_hdr)
+    , m_permit_empty(true)
     {
         m_center = _center;
         m_left   = _left;
-        base::stream_entry::operator()(std::forward<std::string>(_val));
+        base::stream_entry::operator()(_val);
     }
 
     entry(const entry& _rhs)
@@ -225,10 +227,12 @@ struct entry : base::stream_entry
     entry& operator=(const entry&) = default;
     entry& operator=(entry&&) = default;
 
+    bool         permit_empty() const { return m_permit_empty; }
     int          width() const { return m_hdr->width(); }
     int          precision() const { return m_hdr->precision(); }
     format_flags flags() const { return m_hdr->flags(); }
 
+    void permit_empty(bool v) const { m_permit_empty = v; }
     void width(int v) { m_hdr->width(v); }
     void precision(int v) { m_hdr->precision(v); }
     void setf(format_flags v) { m_hdr->setf(v); }
@@ -237,7 +241,8 @@ struct entry : base::stream_entry
     header&       get_header() { return *m_hdr; }
 
 private:
-    header* m_hdr = nullptr;
+    header* m_hdr          = nullptr;
+    bool    m_permit_empty = false;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -381,7 +386,7 @@ public:
 
     void operator()(entry _obj)
     {
-        if(_obj.get().empty())
+        if(_obj.get().empty() && !_obj.permit_empty())
             throw std::runtime_error("Entry has no value");
 
         auto _w = std::max<int>(m_width, _obj.get().length() + 2);
