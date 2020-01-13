@@ -232,7 +232,7 @@ struct entry : base::stream_entry
     int          precision() const { return m_hdr->precision(); }
     format_flags flags() const { return m_hdr->flags(); }
 
-    void permit_empty(bool v) const { m_permit_empty = v; }
+    void permit_empty(bool v) { m_permit_empty = v; }
     void width(int v) { m_hdr->width(v); }
     void precision(int v) { m_hdr->precision(v); }
     void setf(format_flags v) { m_hdr->setf(v); }
@@ -644,7 +644,7 @@ write_entry(stream& _os, const std::string& _label, const _Tp& _value)
 
 //--------------------------------------------------------------------------------------//
 
-void
+inline void
 write_entry(stream& _os, const std::string& _label, const std::string& _value)
 {
     _os.set_name(_label);
