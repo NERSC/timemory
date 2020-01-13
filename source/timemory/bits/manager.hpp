@@ -443,6 +443,7 @@ manager::get_communicator_group()
 //======================================================================================//
 //  non-template version
 //
+template <typename... _Types, tim::enable_if_t<(sizeof...(_Types) == 0), int>>
 inline void
 tim::settings::initialize_storage()
 {
@@ -450,22 +451,22 @@ tim::settings::initialize_storage()
     // THIS CAUSES SUPER-LONG COMPILE TIMES BECAUSE IT ALWAYS GETS INSTANTIATED
     //
 
-    // using _Tuple = available_tuple<tim::complete_tuple_t>;
-    // manager::get_storage<_Tuple>::initialize();
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    manager::get_storage<tuple_type>::initialize();
 
-    throw std::runtime_error(
-        "tim::settings::initialize_storage() without tuple of types has been disabled "
-        "because it causes extremely long compile times!");
+    // throw std::runtime_error(
+    //    "tim::settings::initialize_storage() without tuple of types has been disabled "
+    //    "because it causes extremely long compile times!");
 }
 
 //--------------------------------------------------------------------------------------//
 //  template version
 //
-template <typename _Tuple>
+template <typename... _Types, tim::enable_if_t<(sizeof...(_Types) > 0), int>>
 void
 tim::settings::initialize_storage()
 {
-    manager::get_storage<_Tuple>::initialize();
+    manager::get_storage<_Types...>::initialize();
 }
 
 //--------------------------------------------------------------------------------------//

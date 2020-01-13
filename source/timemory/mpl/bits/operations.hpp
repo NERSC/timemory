@@ -38,6 +38,7 @@
 #include "timemory/mpl/stl_overload.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/mpl/zip.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/serializer.hpp"
 
@@ -71,52 +72,53 @@ struct common_utils
 
 public:
     template <typename _Tp>
-    size_t get_distance(const _Tp& _data)
+    static size_t get_distance(const _Tp& _data)
     {
         return get_distance_sfinae(_data);
     }
 
     template <typename _Tp>
-    auto get_distance_sfinae(const _Tp& _data, int)
-        -> decltype(std::distance(_data.begin(), _data.end()), void())
+    static auto get_distance_sfinae(const _Tp& _data, int)
+        -> decltype(std::distance(_data.begin(), _data.end()), size_t())
     {
         return std::distance(_data.begin(), _data.end());
     }
 
     template <typename _Tp>
-    auto get_distance_sfinae(const _Tp&, long) -> size_t
+    static auto get_distance_sfinae(const _Tp&, long) -> size_t
     {
         return size_t(1);
     }
 
     template <typename _Tp>
-    auto get_distance_sfinae(const _Tp& _data) -> decltype(get_distance_sfinae(_data, 0))
+    static auto get_distance_sfinae(const _Tp& _data)
+        -> decltype(get_distance_sfinae(_data, 0))
     {
         return get_distance_sfinae(_data, 0);
     }
 
 public:
-    template <typename _Tp, enable_if_t<(std::is_fundamental<_Tp>::value), int> = 0>
-    _Tp get_entry(const _Tp& _data, size_t)
+    template <typename _Tp, enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+    static _Tp get_entry(const _Tp& _data, size_t)
     {
         return _data;
     }
 
-    template <typename _Tp, enable_if_t<!(std::is_fundamental<_Tp>::value), int> = 0>
-    auto get_entry(const _Tp& _data, size_t _idx)
+    template <typename _Tp, enable_if_t<!(std::is_arithmetic<_Tp>::value), int> = 0>
+    static auto get_entry(const _Tp& _data, size_t _idx)
         -> decltype(get_entry_sfinae_(_data, _idx))
     {
         return get_entry_sfinae_<_Tp>(_data, _idx);
     }
 
     template <typename _Tp, size_t _Idx>
-    _Tp get_entry(const _Tp& _data, size_t)
+    static _Tp get_entry(const _Tp& _data, size_t)
     {
         return _data;
     }
 
     template <typename _Tp>
-    auto get_entry_sfinae(const _Tp& _data, int, size_t _idx)
+    static auto get_entry_sfinae(const _Tp& _data, int, size_t _idx)
         -> decltype(_data.begin(), typename _Tp::value_type())
     {
         auto sz  = std::distance(_data.begin(), _data.end());
@@ -127,21 +129,23 @@ public:
     }
 
     template <typename _Tp>
-    _Tp get_entry_sfinae(const _Tp& _data, long, size_t)
+    static _Tp get_entry_sfinae(const _Tp& _data, long, size_t)
     {
         return _data;
     }
 
     template <typename _Tp>
-    auto get_entry_sfinae_(const _Tp& _data, size_t _idx)
+    static auto get_entry_sfinae_(const _Tp& _data, size_t _idx)
         -> decltype(get_entry_sfinae(_data, 0, _idx))
     {
         return get_entry_sfinae<_Tp>(_data, 0, _idx);
     }
 
+public:
     template <typename _Tp, typename _Wp, typename _Pp>
-    void write(std::vector<std::stringstream*>& _os, std::ios_base::fmtflags _format,
-               const _Tp& _data, const _Wp& _width, const _Pp& _prec)
+    static void write(std::vector<std::stringstream*>& _os,
+                      std::ios_base::fmtflags _format, const _Tp& _data,
+                      const _Wp& _width, const _Pp& _prec)
     {
         size_t num_data = get_distance(_data);
 
@@ -158,9 +162,9 @@ public:
     }
 
     template <typename... _Tp, size_t... _Idx, typename _Wp, typename _Pp>
-    void write(std::vector<std::stringstream*>& _os, std::ios_base::fmtflags _format,
-               const std::tuple<_Tp...>& _data, const _Wp& _width, const _Pp& _prec,
-               index_sequence<_Idx...>)
+    static void write(std::vector<std::stringstream*>& _os,
+                      std::ios_base::fmtflags _format, const std::tuple<_Tp...>& _data,
+                      const _Wp& _width, const _Pp& _prec, index_sequence<_Idx...>)
     {
         using init_list_type = std::initializer_list<int>;
         auto&& ret           = init_list_type{ (
@@ -169,8 +173,9 @@ public:
     }
 
     template <typename... _Tp, typename _Wp, typename _Pp>
-    void write(std::vector<std::stringstream*>& _os, std::ios_base::fmtflags _format,
-               const std::tuple<_Tp...>& _data, const _Wp& _width, const _Pp& _prec)
+    static void write(std::vector<std::stringstream*>& _os,
+                      std::ios_base::fmtflags _format, const std::tuple<_Tp...>& _data,
+                      const _Wp& _width, const _Pp& _prec)
     {
         constexpr size_t _N = sizeof...(_Tp);
         write(_os, _format, _data, _width, _prec, make_index_sequence<_N>{});
@@ -178,27 +183,27 @@ public:
 
 public:
     template <typename _Tp>
-    int64_t get_size(const _Tp& _data)
+    static int64_t get_size(const _Tp& _data)
     {
         return get_labels_sfinae(_data, 0);
     }
 
     template <typename _Tp>
-    auto get_size_sfinae(const _Tp& _data, int)
+    static auto get_size_sfinae(const _Tp& _data, int)
         -> decltype(_data.label_array(), int64_t())
     {
         return _data.label_array().size();
     }
 
     template <typename _Tp>
-    auto get_size_sfinae(const _Tp&, long) -> int64_t
+    static auto get_size_sfinae(const _Tp&, long) -> int64_t
     {
         return 1;
     }
 
 public:
     template <typename _Tp>
-    auto get_labels_sfinae(const _Tp& _data, int)
+    static auto get_labels_sfinae(const _Tp& _data, int)
         -> decltype(_data.label_array(), strvec_t())
     {
         strvec_t _ret;
@@ -208,26 +213,26 @@ public:
     }
 
     template <typename _Tp>
-    auto get_labels_sfinae(const _Tp&, long) -> strvec_t
+    static auto get_labels_sfinae(const _Tp&, long) -> strvec_t
     {
         return strvec_t{ _Tp::get_label() };
     }
 
     template <typename _Tp>
-    strvec_t get_labels(const _Tp& _data)
+    static strvec_t get_labels(const _Tp& _data)
     {
         return get_labels_sfinae(_data, 0);
     }
 
 public:
     template <typename T>
-    strvec_t as_string_vec(const T& _data)
+    static strvec_t as_string_vec(const T& _data)
     {
         return strvec_t{ _data };
     }
 
     template <typename _Tp>
-    std::string as_string(const _Tp& _obj)
+    static std::string as_string(const _Tp& _obj)
     {
         std::stringstream ss;
         ss << _obj;
@@ -235,7 +240,7 @@ public:
     }
 
     template <typename... T, size_t... _Idx>
-    strvec_t as_string_vec(const std::tuple<T...>& _obj, index_sequence<_Idx...>)
+    static strvec_t as_string_vec(const std::tuple<T...>& _obj, index_sequence<_Idx...>)
     {
         using init_list_type = std::initializer_list<std::string>;
         auto&& ret           = init_list_type{ (as_string(std::get<_Idx>(_obj)))... };
@@ -243,49 +248,53 @@ public:
     }
 
     template <typename... T>
-    strvec_t as_string_vec(const std::tuple<T...>& _obj)
+    static strvec_t as_string_vec(const std::tuple<T...>& _obj)
     {
         constexpr size_t _N = sizeof...(T);
         return as_string_vec(_obj, make_index_sequence<_N>{});
     }
 
+public:
     template <typename _Tp>
-    strvec_t get_display_units(const _Tp& _data)
-    {
-        return get_display_units_sfinae(_data, 0);
-    }
-
-    template <typename _Tp>
-    auto get_display_units_sfinae(const _Tp& _data, int)
+    static auto get_display_units_sfinae(const _Tp& _data, int)
         -> decltype(_data.display_unit_array(), strvec_t())
     {
-        return _data.display_unit_array();
+        strvec_t _ret;
+        for(const auto& itr : _data.display_unit_array())
+            _ret.push_back(itr);
+        return _ret;
     }
 
     template <typename _Tp>
-    auto get_display_units_sfinae(const _Tp&, long) -> strvec_t
+    static auto get_display_units_sfinae(const _Tp&, long) -> strvec_t
     {
         return as_string_vec(_Tp::get_display_unit());
+    }
+
+    template <typename _Tp>
+    static strvec_t get_display_units(const _Tp& _data)
+    {
+        return get_display_units_sfinae(_data, 0);
     }
 
 public:
     using sizevector_t = std::vector<size_t>;
 
     template <typename _Tp>
-    sizevector_t get_widths(const _Tp& _data)
+    static sizevector_t get_widths(const _Tp& _data)
     {
         return get_widths_sfinae(_data, 0);
     }
 
     template <typename _Tp>
-    auto get_widths_sfinae(const _Tp& _data, int)
+    static auto get_widths_sfinae(const _Tp& _data, int)
         -> decltype(_data.width_array(), sizevector_t())
     {
         return _data.width_array();
     }
 
     template <typename _Tp>
-    auto get_widths_sfinae(const _Tp&, long) -> sizevector_t
+    static auto get_widths_sfinae(const _Tp&, long) -> sizevector_t
     {
         return sizevector_t{ _Tp::get_width() };
     }
@@ -467,65 +476,70 @@ public:
 public:
     template <typename _Self, template <typename> class _Sp, typename _Vp,
               typename _Up = _Tp, enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
-    print_statistics(const Type& _obj, stream& _os, const _Self& _self,
-                     const _Sp<_Vp>& _stats, uint64_t _laps)
+    print_statistics(const Type&, utility::stream& _os, const _Self&,
+                     const _Sp<_Vp>& _stats, uint64_t)
     {
-        bool use_mean = get_env<bool>("TIMEMORY_PRINT_MEAN", false);
-        bool use_min  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_max  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_mean   = get_env<bool>("TIMEMORY_PRINT_MEAN", true);
+        bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
+        bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
 
-        auto _min  = _stats.get_min();
-        auto _max  = _stats.get_max();
-        auto _mean = _stats.get_sum() / _laps;
-
-        _os << _obj.get();
-        _os << _self;
         if(use_mean)
-            _os << _mean;
+            utility::write_entry(_os, "MEAN", _stats.get_mean());
         if(use_min)
-            _os << _min;
+            utility::write_entry(_os, "MIN", _stats.get_min());
         if(use_max)
-            _os << _max;
+            utility::write_entry(_os, "MAX", _stats.get_max());
+        if(use_var)
+            utility::write_entry(_os, "VAR", _stats.get_variance());
+        if(use_stddev)
+            utility::write_entry(_os, "STDDEV", _stats.get_stddev());
     }
 
     template <typename _Self, typename _Vp, typename _Up = _Tp,
               enable_if_t<!(stats_enabled<_Up, _Vp>::value), int> = 0>
-    print_statistics(const Type& _obj, stream& _os, const _Self& _self, const _Vp&,
-                     uint64_t)
-    {
-        _os << zip(_obj.get(), _self);
-    }
+    print_statistics(const Type&, utility::stream&, const _Self&, const _Vp&, uint64_t)
+    {}
 
     template <typename _Self>
-    print_statistics(const Type& _obj, stream& _os, const _Self& _self,
+    print_statistics(const Type&, utility::stream&, const _Self&,
                      const statistics<std::tuple<>>&, uint64_t)
-    {
-        _os << zip(_obj.get(), _self);
-    }
+    {}
 
 public:
     template <template <typename> class _Sp, typename _Vp, typename _Up = _Tp,
               enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
-    static void get_header(stream& os, const _Sp<_Vp>&)
+    static void get_header(utility::stream& _os, const _Sp<_Vp>&)
     {
-        bool use_mean = get_env<bool>("TIMEMORY_PRINT_MEAN", false);
-        bool use_min  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_max  = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_mean   = get_env<bool>("TIMEMORY_PRINT_MEAN", true);
+        bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
+        bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
+        bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
+
+        auto _flags = _Tp::get_format_flags();
+        auto _width = _Tp::get_width();
+        auto _prec  = _Tp::get_precision();
 
         if(use_mean)
-            os << "MEAN";
+            utility::write_header(_os, "MEAN", _flags, _width, _prec);
         if(use_min)
-            os << "MIN";
+            utility::write_header(_os, "MIN", _flags, _width, _prec);
         if(use_max)
-            os << "MAX";
+            utility::write_header(_os, "MAX", _flags, _width, _prec);
+        if(use_var)
+            utility::write_header(_os, "VAR", _flags, _width, _prec);
+        if(use_stddev)
+            utility::write_header(_os, "STDDEV", _flags, _width, _prec);
     }
 
     template <typename _Vp, typename _Up = _Tp,
               enable_if_t<!(stats_enabled<_Up, _Vp>::value), int> = 0>
-    static void get_header(stream&, _Vp&)
+    static void get_header(utility::stream&, _Vp&)
     {}
 
-    static void get_header(stream&, const statistics<std::tuple<>>&) {}
+    static void get_header(utility::stream&, const statistics<std::tuple<>>&) {}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -543,34 +557,41 @@ struct print_header : public common_utils
     //
     template <typename _Stats, typename _Up = _Tp,
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print_header(const Type& _obj, stream& _os, const _Stats& _stats)
+    print_header(const Type& _obj, utility::stream& _os, const _Stats& _stats)
     {
         auto _labels  = get_labels(_obj);
         auto _display = get_display_units(_obj);
 
-        _os << "LABEL";
-        _os << "COUNT";
-        _os << "DEPTH";
+        utility::write_header(_os, "LABEL");
+        utility::write_header(_os, "COUNT");
+        utility::write_header(_os, "DEPTH");
+
+        auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
+            return tim::apply<std::string>::join("", _lhs, " [", _rhs, "]");
+        };
+
+        auto ios_fixed = std::ios_base::fixed;
+        auto ios_dec   = std::ios_base::dec;
+        auto ios_showp = std::ios_base::showpoint;
+        auto f_self    = ios_fixed | ios_dec | ios_showp;
+        int  w_self    = 8;
+        int  p_self    = 1;
+        auto f_value   = _Tp::get_format_flags();
+        auto w_value   = _Tp::get_width();
+        auto p_value   = _Tp::get_precision();
 
         for(size_t i = 0; i < _labels.size(); ++i)
         {
-            auto              _l = _labels.at(i % _labels.size());
-            auto              _d = _display.at(i % _display.size());
-            std::stringstream _hdrl;
-            _hdrl << _l;
-            if(_d.length() > 0)
-                _hdrl << " [" << _d << "]";
-            _os << _hdrl.str();
-        }
-        for(size_t i = 0; i < _labels.size(); ++i)
-            _os << "% SELF";
-        for(size_t i = 0; i < _labels.size(); ++i)
+            auto _label = _opzip(_labels.at(i), _display.at(i));
+            utility::write_header(_os, _label, f_value, w_value, p_value);
+            utility::write_header(_os, "% SELF", f_self, w_self, p_self);
             print_statistics<_Tp>::get_header(_os, _stats);
+        }
     }
 
-    template <typename _Up                                 = _Tp, typename... _Args,
+    template <typename... _Args, typename _Up = _Tp,
               enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    print_header(const Type&, stream&, _Args&&...)
+    print_header(const Type&, utility::stream&, _Args&&...)
     {}
 };
 
@@ -612,12 +633,22 @@ struct print
 
     template <typename _Vp, typename _Stats, typename _Up = _Tp,
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print(const Type& _obj, stream& _os, const string_t& _prefix, int64_t _laps,
+    print(const Type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const _Vp& _self, const _Stats& _stats)
     {
-        _os << _prefix;
-        _os << _laps;
-        _os << _depth;
+        auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
+            return tim::apply<std::string>::join("", _lhs, " [", _rhs, "]");
+        };
+
+        auto _labels = mpl::zip(_opzip, common_utils::get_labels(_obj),
+                                common_utils::get_display_units(_obj));
+
+        utility::write_entry(_os, "LABEL", _prefix);
+        utility::write_entry(_os, "COUNT", _laps);
+        utility::write_entry(_os, "DEPTH", _depth);
+
+        utility::write_entry(_os, _labels, _obj.get());
+        utility::write_entry(_os, "% SELF", _self);
         print_statistics<_Tp>(_obj, _os, _self, _stats, _laps);
     }
 
@@ -749,12 +780,13 @@ struct echo_measurement<_Tp, true> : public common_utils
     {
         if(settings::dart_label())
         {
-            return (_unit.length() > 0 && _unit != "%") ? join("//", Type::label(), _unit)
-                                                        : Type::label();
+            return (_unit.length() > 0 && _unit != "%")
+                       ? join("//", Type::get_label(), _unit)
+                       : Type::get_label();
         }
 
         auto _extra = join("/", std::forward<_Args>(_args)...);
-        auto _label = uppercase(Type::label());
+        auto _label = uppercase(Type::get_label());
         _unit       = replace(_unit, "", { " " });
         string_t _name =
             (_extra.length() > 0) ? join("//", _extra, _prefix) : join("//", _prefix);

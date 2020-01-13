@@ -86,8 +86,8 @@ struct get_availability
         bool     is_available = trait::is_available<Type>::value;
         bool     file_output  = generates_output<Type>::value;
         auto     name         = demangle<Type>();
-        auto     label        = (file_output) ? Type::label() : std::string("");
-        auto     description  = Type::description();
+        auto     label        = (file_output) ? Type::get_label() : std::string("");
+        auto     description  = Type::get_description();
         auto     data_type    = demangle<value_type>();
         string_t enum_type    = component::properties<Type>::enum_string();
         string_t id_type      = component::properties<Type>::id();

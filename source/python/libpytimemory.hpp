@@ -80,8 +80,7 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-struct pytim_project
-{};
+struct pytim_project;
 using pybundle_t = tim::component::user_bundle<0, pytim_project>;
 
 using auto_timer_t = tim::auto_timer;

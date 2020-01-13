@@ -56,7 +56,13 @@ set_target_properties(libpytimemory PROPERTIES
     PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
     ${EXTRA_PROPERTIES})
 
-foreach(_SUBMODULE plotting mpi_support util ert roofline)
+set(PYTHON_SUBMODULE_FOLDERS
+    ert gperftools mpi_support plotting profiler roofline util)
+
+set(PYTHON_SUBMODULE_FILES
+    common options signals units)
+
+foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
     set(BINARY_DIR ${CMAKE_BINARY_DIR}/timemory/${_SUBMODULE})
 
@@ -129,12 +135,14 @@ endforeach(_TYPE exe c cxx)
 #
 configure_file(${PROJECT_SOURCE_DIR}/timemory/__init__.py.in
     ${CMAKE_BINARY_DIR}/timemory/__init__.py @ONLY)
+
 install(FILES ${CMAKE_BINARY_DIR}/timemory/__init__.py
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 
-foreach(PYLIB_SUBMODULE common options signals units)
+foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
     configure_file(${PROJECT_SOURCE_DIR}/timemory/${PYLIB_SUBMODULE}.py
         ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
+
     install(FILES ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 endforeach()
@@ -142,37 +150,6 @@ endforeach()
 # Python library target
 install(TARGETS libpytimemory
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
-
-#----------------------------------------------------------------------------
-# Python testing
-#
-set(TEST_FILES
-    __init__.py
-    __main__.py
-    tests.py
-    timemory_test.py
-    simple_test.py
-    nested_test.py
-    array_test.py)
-
-foreach(_FILE ${TEST_FILES})
-    # only copy *_test.py files to binary directory
-    #if("${_FILE}" MATCHES "_test.py")
-    #    if(${PROJECT_NAME}_MASTER_PROJECT)
-    #        configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-    #            ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
-    #    endif()
-    #endif()
-
-    # copy to binary: timemory/tests/${_FILE}
-    configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-        ${CMAKE_BINARY_DIR}/timemory/tests/${_FILE} @ONLY)
-
-    # install them though
-    install(FILES ${CMAKE_BINARY_DIR}/timemory/tests/${_FILE}
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/tests)
-
-endforeach()
 
 #----------------------------------------------------------------------------
 # Python tools

@@ -27,6 +27,7 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"

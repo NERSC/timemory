@@ -32,274 +32,31 @@
 #include <utility>
 #include <vector>
 
+#include "timemory/mpl/bits/types.hpp"
 #include "timemory/mpl/math.hpp"
-#include "timemory/utility/stream.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/utility/types.hpp"
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-
-/// the namespace is provided to hide stl overload from global namespace but provide
-/// a method of using the namespace without a "using namespace tim;"
+/// \namespace tim::stl_overload
+/// \brief the namespace is provided to hide stl overload from global namespace but
+/// provide a method of using the namespace without a "using namespace tim;"
 namespace stl_overload
 {
-//--------------------------------------------------------------------------------------//
-//
-//      tuple printer
-//
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct tuple_printer
+namespace ostream
 {
-    using size_type = ::std::size_t;
-    tuple_printer(size_type _N, size_type _Ntot, const _Tp& obj, ::std::ostream& os)
-    {
-        os << ((_N == 0) ? "(" : "") << obj << ((_N + 1 == _Ntot) ? ")" : ",");
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-namespace impl_details
-{
-//----------------------------------------------------------------------------------//
-
-template <size_t _N, size_t _Nt, typename _Access, typename _Tuple, typename... _Args,
-          typename std::enable_if<(_N == _Nt), char>::type = 0>
-static void
-impl_with_indices(_Tuple&& __t, _Args&&... __args)
-{
-    // call constructor
-    using Type       = decltype(std::get<_N>(__t));
-    using AccessType = typename std::tuple_element<_N, _Access>::type;
-    AccessType(_N, _Nt + 1, std::forward<Type>(std::get<_N>(__t)),
-               std::forward<_Args>(__args)...);
-}
-
-//----------------------------------------------------------------------------------//
-
-template <size_t _N, size_t _Nt, typename _Access, typename _Tuple, typename... _Args,
-          typename std::enable_if<(_N < _Nt), char>::type = 0>
-static void
-impl_with_indices(_Tuple&& __t, _Args&&... __args)
-{
-    // call constructor
-    using Type       = decltype(std::get<_N>(__t));
-    using AccessType = typename std::tuple_element<_N, _Access>::type;
-    AccessType(_N, _Nt + 1, std::forward<Type>(std::get<_N>(__t)),
-               std::forward<_Args>(__args)...);
-    // recursive call
-    impl_with_indices<_N + 1, _Nt, _Access, _Tuple, _Args...>(
-        std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
-}
-
-//----------------------------------------------------------------------------------//
-
-template <typename _Access, typename _Tuple, typename... _Args,
-          std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
-          enable_if_t<(_N > 0), int> = 0>
-static void
-with_indices(_Tuple&& __t, _Args&&... __args)
-{
-    impl_with_indices<0, _N - 1, _Access, _Tuple, _Args...>(
-        std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
-}
-
-//----------------------------------------------------------------------------------//
-//  per-element addition
-//
-template <typename _Tuple, size_t _Idx, size_t... _Nt,
-          enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-static void
-impl_plus(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    std::get<_Idx>(_lhs) += std::get<_Idx>(_rhs);
-}
-
-template <typename _Tuple, size_t _Idx, size_t... _Nt,
-          enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-static void
-impl_plus(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    impl_plus<_Tuple, _Idx>(_lhs, _rhs);
-    impl_plus<_Tuple, _Nt...>(_lhs, _rhs);
-}
-
-template <typename _Tuple, size_t... _Idx>
-static void
-impl_plus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-{
-    impl_plus<_Tuple, _Idx...>(_lhs, _rhs);
-}
-
-template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
-static void
-plus(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    impl_plus<_Tuple>(_lhs, _rhs, make_index_sequence<_N>{});
-}
-
-//----------------------------------------------------------------------------------//
-//  per-element subtraction
-//
-template <typename _Tuple, size_t _Idx, size_t... _Nt,
-          enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-static void
-impl_minus(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    std::get<_Idx>(_lhs) -= std::get<_Idx>(_rhs);
-}
-
-template <typename _Tuple, size_t _Idx, size_t... _Nt,
-          enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-static void
-impl_minus(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    impl_minus<_Tuple, _Idx>(_lhs, _rhs);
-    impl_minus<_Tuple, _Nt...>(_lhs, _rhs);
-}
-
-template <typename _Tuple, size_t... _Idx>
-static void
-impl_minus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-{
-    impl_minus<_Tuple, _Idx...>(_lhs, _rhs);
-}
-
-template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
-static void
-minus(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    impl_minus<_Tuple>(_lhs, _rhs, make_index_sequence<_N>{});
-}
-
-//----------------------------------------------------------------------------------//
-//  per-element multiplication
-//
-template <typename _Tuple, size_t _Idx, size_t... _Nt,
-          enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-static void
-impl_multiply(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    using value_type = decay_t<decltype(std::get<_Idx>(_lhs))>;
-    math::compute<value_type>::multiply(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-    // std::get<_Idx>(_lhs) *= std::get<_Idx>(_rhs);
-}
-
-template <typename _Tuple, size_t _Idx, size_t... _Nt,
-          enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-static void
-impl_multiply(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    impl_multiply<_Tuple, _Idx>(_lhs, _rhs);
-    impl_multiply<_Tuple, _Nt...>(_lhs, _rhs);
-}
-
-template <typename _Tuple, size_t... _Idx>
-static void
-impl_multiply(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-{
-    impl_multiply<_Tuple, _Idx...>(_lhs, _rhs);
-}
-
-template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
-static void
-multiply(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    impl_multiply<_Tuple>(_lhs, _rhs, make_index_sequence<_N>{});
-}
-
-//----------------------------------------------------------------------------------//
-//  per-element division
-//
-/*
-template <typename _Tuple, size_t _Idx, size_t... _Nt,
-          enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-static void
-impl_divide(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    using value_type = decay_t<decltype(std::get<_Idx>(_lhs))>;
-    math::compute<value_type>::divide(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-}
-
-template <typename _Tuple, size_t... _Idx>
-static void
-impl_divide(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    using value_type = decay_t<decltype(std::get<_Idx>(_lhs))>;
-    impl_divide<_Tuple, _Idx>(_lhs, _rhs);
-    impl_divide<_Tuple, _Nt...>(_lhs, _rhs);
-}
-*/
-
-template <typename _Tuple, size_t... _Idx>
-static void
-impl_divide(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret =
-        init_list_type{ (math::compute<decay_t<decltype(std::get<_Idx>(_lhs))>>::divide(
-                             std::get<_Idx>(_lhs), std::get<_Idx>(_rhs)),
-                         0)... };
-    consume_parameters(ret);
-    // impl_divide<_Tuple, _Idx...>(_lhs, _rhs);
-}
-
-template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
-static void
-divide(_Tuple& _lhs, const _Tuple& _rhs)
-{
-    impl_divide<_Tuple>(_lhs, _rhs, make_index_sequence<_N>{});
-}
-
-//----------------------------------------------------------------------------------//
-}  // namespace impl_details
-
+/// \namespace tim::stl_overload::ostream
+/// \brief the namespace provides overloads to output complex data types w/ streams
 //--------------------------------------------------------------------------------------//
 //
 //      operator <<
 //
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-::std::ostream&
-operator<<(::std::ostream& os, const ::std::tuple<_Types...>& p)
-{
-    using apply_t = ::std::tuple<tuple_printer<_Types>...>;
-    stl_overload::impl_details::with_indices<apply_t>(p, std::ref(os));
-    return os;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-//      operator <<
-//
-//--------------------------------------------------------------------------------------//
-
-namespace vector_ostream
-{
-template <typename _Tp, typename... _Extra>
-::std::ostream&
-operator<<(::std::ostream& os, const ::std::vector<_Tp, _Extra...>& p)
-{
-    std::stringstream ss;
-    ss.setf(os.flags());
-    ss << "(";
-    for(size_t i = 0; i < p.size(); ++i)
-        ss << p.at(i) << ((i + 1 < p.size()) ? "," : "");
-    ss << ")";
-    os << ss.str();
-    return os;
-}
-}  // namespace vector_ostream
-
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename U>
-::std::ostream&
-operator<<(::std::ostream& os, const ::std::pair<T, U>& p)
+std::ostream&
+operator<<(std::ostream& os, const std::pair<T, U>& p)
 {
     os << "(" << p.first << "," << p.second << ")";
     return os;
@@ -307,45 +64,42 @@ operator<<(::std::ostream& os, const ::std::pair<T, U>& p)
 
 //--------------------------------------------------------------------------------------//
 //
-//      operator <<
-//
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename... _Extra>
-::std::vector<std::string, _Extra...>&
-operator<<(::std::vector<std::string, _Extra...>& os, const T& p)
+template <typename... _Types>
+std::ostream&
+operator<<(std::ostream& os, const std::tuple<_Types...>& p)
 {
-    std::stringstream _ss;
-    _ss << p;
-    os.push_back(_ss.str());
+    constexpr size_t _N = sizeof...(_Types);
+    tuple_printer(p, os, make_index_sequence<_N>{});
     return os;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, typename... _Extra>
-::std::vector<std::string, _Extra...>&
-operator<<(::std::vector<std::string, _Extra...>& os, const ::std::tuple<_Types...>& p)
+template <typename _Tp, typename... _Extra>
+std::ostream&
+operator<<(std::ostream& os, const std::vector<_Tp, _Extra...>& p)
 {
-    using apply_t = ::std::tuple<tuple_printer<_Types>...>;
-    stl_overload::impl_details::with_indices<apply_t>(p, std::ref(os));
+    os << "(";
+    for(size_t i = 0; i < p.size(); ++i)
+        os << p.at(i) << ((i + 1 < p.size()) ? "," : "");
+    os << ")";
     return os;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename T, typename U, typename... _Extra>
-::std::vector<std::string, _Extra...>&
-operator<<(::std::vector<std::string, _Extra...>& os, const ::std::pair<T, U>& p)
+template <typename _Tp, size_t _N>
+std::ostream&
+operator<<(std::ostream& os, const std::array<_Tp, _N>& p)
 {
-    std::stringstream _lhs, _rhs;
-    _lhs << p.first;
-    _rhs << p.second;
-    os.push_back(_lhs.str());
-    os.push_back(_rhs.str());
-    os << "(" << p.first << "," << p.second << ")";
+    os << "(";
+    for(size_t i = 0; i < p.size(); ++i)
+        os << p.at(i) << ((i + 1 < p.size()) ? "," : "");
+    os << ")";
     return os;
 }
+
+}  // namespace ostream
 
 //--------------------------------------------------------------------------------------//
 //
@@ -354,28 +108,18 @@ operator<<(::std::vector<std::string, _Extra...>& os, const ::std::pair<T, U>& p
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, size_t _N>
-::std::array<_Tp, _N>&
-operator+=(::std::array<_Tp, _N>& lhs, const ::std::array<_Tp, _N>& rhs)
+std::array<_Tp, _N>&
+operator+=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    stl_overload::impl_details::plus(lhs, rhs);
-    return lhs;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-::std::tuple<_Types...>&
-operator+=(::std::tuple<_Types...>& lhs, const ::std::tuple<_Types...>& rhs)
-{
-    stl_overload::impl_details::plus(lhs, rhs);
+    array_math::plus(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, typename _Rhs>
-::std::pair<_Lhs, _Rhs>&
-operator+=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
+std::pair<_Lhs, _Rhs>&
+operator+=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
     lhs.first += rhs.first;
     lhs.second += rhs.second;
@@ -385,12 +129,26 @@ operator+=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _Extra>
-::std::vector<_Tp, _Extra...>&
-operator+=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra...>& rhs)
+std::vector<_Tp, _Extra...>&
+operator+=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
 {
-    const auto _N = ::std::min(lhs.size(), rhs.size());
-    for(size_t i = 0; i < _N; ++i)
+    const auto _L = lhs.size();
+    const auto _R = rhs.size();
+    if(_L < _R)
+        lhs.resize(_R, _Tp{});
+    for(size_t i = 0; i < _R; ++i)
         lhs[i] += rhs[i];
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+std::tuple<_Types...>&
+operator+=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
+{
+    constexpr size_t _N = sizeof...(_Types);
+    tuple_math::plus(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
@@ -401,28 +159,18 @@ operator+=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra..
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, size_t _N>
-::std::array<_Tp, _N>&
-operator-=(::std::array<_Tp, _N>& lhs, const ::std::array<_Tp, _N>& rhs)
+std::array<_Tp, _N>&
+operator-=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    stl_overload::impl_details::minus(lhs, rhs);
-    return lhs;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-::std::tuple<_Types...>&
-operator-=(::std::tuple<_Types...>& lhs, const ::std::tuple<_Types...>& rhs)
-{
-    stl_overload::impl_details::minus(lhs, rhs);
+    array_math::minus(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, typename _Rhs>
-::std::pair<_Lhs, _Rhs>&
-operator-=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
+std::pair<_Lhs, _Rhs>&
+operator-=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
     lhs.first -= rhs.first;
     lhs.second -= rhs.second;
@@ -432,12 +180,23 @@ operator-=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _Extra>
-::std::vector<_Tp, _Extra...>&
-operator-=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra...>& rhs)
+std::vector<_Tp, _Extra...>&
+operator-=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
 {
-    const auto _N = ::std::min(lhs.size(), rhs.size());
+    const auto _N = std::min(lhs.size(), rhs.size());
     for(size_t i = 0; i < _N; ++i)
         lhs[i] -= rhs[i];
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+std::tuple<_Types...>&
+operator-=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
+{
+    constexpr size_t _N = sizeof...(_Types);
+    tuple_math::minus(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
@@ -448,28 +207,18 @@ operator-=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra..
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, size_t _N>
-::std::array<_Tp, _N>&
-operator*=(::std::array<_Tp, _N>& lhs, const ::std::array<_Tp, _N>& rhs)
+std::array<_Tp, _N>&
+operator*=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    stl_overload::impl_details::multiply(lhs, rhs);
-    return lhs;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-::std::tuple<_Types...>&
-operator*=(::std::tuple<_Types...>& lhs, const ::std::tuple<_Types...>& rhs)
-{
-    stl_overload::impl_details::multiply(lhs, rhs);
+    array_math::multiply(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, typename _Rhs>
-::std::pair<_Lhs, _Rhs>&
-operator*=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
+std::pair<_Lhs, _Rhs>&
+operator*=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
     lhs.first *= rhs.first;
     lhs.second *= rhs.second;
@@ -479,12 +228,23 @@ operator*=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _Extra>
-::std::vector<_Tp, _Extra...>&
-operator*=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra...>& rhs)
+std::vector<_Tp, _Extra...>&
+operator*=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
 {
-    const auto _N = ::std::min(lhs.size(), rhs.size());
+    const auto _N = std::min(lhs.size(), rhs.size());
     for(size_t i = 0; i < _N; ++i)
         lhs[i] *= rhs[i];
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+std::tuple<_Types...>&
+operator*=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
+{
+    constexpr size_t _N = sizeof...(_Types);
+    tuple_math::multiply(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
@@ -495,28 +255,18 @@ operator*=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra..
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, size_t _N>
-::std::array<_Tp, _N>&
-operator/=(::std::array<_Tp, _N>& lhs, const ::std::array<_Tp, _N>& rhs)
+std::array<_Tp, _N>&
+operator/=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    stl_overload::impl_details::divide(lhs, rhs);
-    return lhs;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-::std::tuple<_Types...>&
-operator/=(::std::tuple<_Types...>& lhs, const ::std::tuple<_Types...>& rhs)
-{
-    stl_overload::impl_details::divide(lhs, rhs);
+    array_math::divide(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, typename _Rhs>
-::std::pair<_Lhs, _Rhs>&
-operator/=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
+std::pair<_Lhs, _Rhs>&
+operator/=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
     lhs.first /= rhs.first;
     lhs.second /= rhs.second;
@@ -526,12 +276,23 @@ operator/=(::std::pair<_Lhs, _Rhs>& lhs, const ::std::pair<_Lhs, _Rhs>& rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _Extra>
-::std::vector<_Tp, _Extra...>&
-operator/=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra...>& rhs)
+std::vector<_Tp, _Extra...>&
+operator/=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
 {
-    const auto _N = ::std::min(lhs.size(), rhs.size());
+    const auto _N = std::min(lhs.size(), rhs.size());
     for(size_t i = 0; i < _N; ++i)
         lhs[i] /= rhs[i];
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+std::tuple<_Types...>&
+operator/=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
+{
+    constexpr size_t _N = sizeof...(_Types);
+    tuple_math::divide(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
@@ -542,38 +303,20 @@ operator/=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra..
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, size_t _N, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::array<_Lhs, _N>&
-operator*=(::std::array<_Lhs, _N>& lhs, _Rhs rhs)
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+std::array<_Lhs, _N>&
+operator*=(std::array<_Lhs, _N>& lhs, const _Rhs& rhs)
 {
-    for(auto& itr : lhs)
-        itr *= static_cast<_Lhs>(rhs);
+    array_math::multiply(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::tuple<_Lhs...>&
-operator*=(::std::tuple<_Lhs...>& lhs, _Rhs rhs)
-{
-    using input_type     = ::std::tuple<_Lhs...>;
-    using init_list_type = std::initializer_list<int>;
-
-    auto&& ret =
-        init_list_type{ (std::get<index_of<_Lhs, input_type>::value>(lhs) *= rhs, 0)... };
-    consume_parameters(ret);
-
-    return lhs;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::pair<_Lhs, _Rhs>&
-operator*=(::std::pair<_Lhs, _Rhs>& lhs, _Rhs rhs)
+template <typename _Lhs, typename _Rhs, typename _Arith,
+          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int>>
+std::pair<_Lhs, _Rhs>&
+operator*=(std::pair<_Lhs, _Rhs>& lhs, const _Arith& rhs)
 {
     lhs.first *= rhs;
     lhs.second *= rhs;
@@ -583,12 +326,24 @@ operator*=(::std::pair<_Lhs, _Rhs>& lhs, _Rhs rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, typename _Rhs, typename... _Extra,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::vector<_Lhs, _Extra...>&
-operator*=(::std::vector<_Lhs, _Extra...>& lhs, _Rhs rhs)
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+std::vector<_Lhs, _Extra...>&
+operator*=(std::vector<_Lhs, _Extra...>& lhs, const _Rhs& rhs)
 {
     for(auto& itr : lhs)
         itr *= static_cast<_Lhs>(rhs);
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Lhs, typename _Rhs,
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+std::tuple<_Lhs...>&
+operator*=(std::tuple<_Lhs...>& lhs, const _Rhs& rhs)
+{
+    constexpr size_t _N = sizeof...(_Lhs);
+    tuple_math::multiply(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
@@ -599,38 +354,20 @@ operator*=(::std::vector<_Lhs, _Extra...>& lhs, _Rhs rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, size_t _N, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::array<_Lhs, _N>&
-operator/=(::std::array<_Lhs, _N>& lhs, _Rhs rhs)
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+std::array<_Lhs, _N>&
+operator/=(std::array<_Lhs, _N>& lhs, const _Rhs& rhs)
 {
-    for(auto& itr : lhs)
-        itr /= static_cast<_Lhs>(rhs);
+    array_math::divide(lhs, rhs, make_index_sequence<_N>{});
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::tuple<_Lhs...>&
-operator/=(::std::tuple<_Lhs...>& lhs, _Rhs rhs)
-{
-    using input_type     = ::std::tuple<_Lhs...>;
-    using init_list_type = std::initializer_list<int>;
-
-    auto&& ret =
-        init_list_type{ (std::get<index_of<_Lhs, input_type>::value>(lhs) /= rhs, 0)... };
-    consume_parameters(ret);
-
-    return lhs;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::pair<_Lhs, _Rhs>&
-operator/=(::std::pair<_Lhs, _Rhs>& lhs, _Rhs rhs)
+template <typename _Lhs, typename _Rhs, typename _Arith,
+          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int>>
+std::pair<_Lhs, _Rhs>&
+operator/=(std::pair<_Lhs, _Rhs>& lhs, const _Arith& rhs)
 {
     lhs.first /= rhs;
     lhs.second /= rhs;
@@ -640,9 +377,9 @@ operator/=(::std::pair<_Lhs, _Rhs>& lhs, _Rhs rhs)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, typename _Rhs, typename... _Extra,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::vector<_Lhs, _Extra...>&
-operator/=(::std::vector<_Lhs, _Extra...>& lhs, _Rhs rhs)
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+std::vector<_Lhs, _Extra...>&
+operator/=(std::vector<_Lhs, _Extra...>& lhs, const _Rhs& rhs)
 {
     for(auto& itr : lhs)
         itr /= static_cast<_Lhs>(rhs);
@@ -650,85 +387,37 @@ operator/=(::std::vector<_Lhs, _Extra...>& lhs, _Rhs rhs)
 }
 
 //--------------------------------------------------------------------------------------//
-//
-//      operator * (fundamental)
-//
-//--------------------------------------------------------------------------------------//
-
-template <typename _Lhs, size_t _N, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::array<_Lhs, _N> operator*(::std::array<_Lhs, _N> lhs, _Rhs rhs)
-{
-    return (lhs *= rhs);
-}
-
-//--------------------------------------------------------------------------------------//
 
 template <typename... _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::tuple<_Lhs...> operator*(::std::tuple<_Lhs...> lhs, _Rhs rhs)
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+std::tuple<_Lhs...>&
+operator/=(std::tuple<_Lhs...>& lhs, const _Rhs& rhs)
 {
-    return (lhs *= rhs);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::pair<_Lhs, _Rhs> operator*(::std::pair<_Lhs, _Rhs> lhs, _Rhs rhs)
-{
-    return (lhs *= rhs);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Lhs, typename _Rhs, typename... _Extra,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::vector<_Lhs, _Extra...> operator*(::std::vector<_Lhs, _Extra...> lhs, _Rhs rhs)
-{
-    return (lhs *= rhs);
+    constexpr size_t _N = sizeof...(_Lhs);
+    tuple_math::divide(lhs, rhs, make_index_sequence<_N>{});
+    return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 //
+//      operator * (fundamental)
 //      operator / (fundamental)
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, size_t _N, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::array<_Lhs, _N>
-operator/(::std::array<_Lhs, _N> lhs, _Rhs rhs)
+template <typename _Lhs, typename _Rhs,
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+_Lhs operator*(_Lhs lhs, const _Rhs& rhs)
 {
-    return (lhs /= rhs);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::tuple<_Lhs...>
-operator/(::std::tuple<_Lhs...> lhs, _Rhs rhs)
-{
-    return (lhs /= rhs);
+    return (lhs *= rhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Lhs, typename _Rhs,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::pair<_Lhs, _Rhs>
-operator/(::std::pair<_Lhs, _Rhs> lhs, _Rhs rhs)
-{
-    return (lhs /= rhs);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Lhs, typename _Rhs, typename... _Extra,
-          enable_if_t<(std::is_fundamental<_Rhs>::value), int> = 0>
-::std::vector<_Lhs, _Extra...>
-operator/(::std::vector<_Lhs, _Extra...> lhs, _Rhs rhs)
+          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int>>
+_Lhs
+operator/(_Lhs lhs, const _Rhs& rhs)
 {
     return (lhs /= rhs);
 }

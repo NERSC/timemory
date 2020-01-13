@@ -40,6 +40,7 @@ add_interface_library(timemory-likwid)
 add_interface_library(timemory-vtune)
 add_interface_library(timemory-tau)
 add_interface_library(timemory-python)
+add_interface_library(timemory-plotting)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-gperftools-compile-options)
@@ -88,7 +89,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
-    timemory-python)
+    timemory-python
+    timemory-plotting)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -104,6 +106,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
+    timemory-plotting
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -118,6 +121,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
+    timemory-plotting
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)
@@ -505,19 +509,72 @@ endif()
 #                               PyBind11
 #
 #----------------------------------------------------------------------------------------#
-if(TIMEMORY_USE_PYTHON)
-    if(NOT TIMEMORY_BUILD_PYTHON)
-        find_package(pybind11 REQUIRED)
-        if(NOT PYTHON_EXECUTABLE)
-            find_package(PythonInterp REQUIRED)
-            find_package(PythonLibs REQUIRED)
-        endif()
+# if using is enable but not internal pybind11 distribution
+if(TIMEMORY_USE_PYTHON AND NOT TIMEMORY_BUILD_PYTHON)
+
+    find_package(pybind11 ${TIMEMORY_FIND_REQUIREMENT})
+
+    if(NOT pybind11_FOUND)
+        set(TIMEMORY_USE_PYTHON OFF)
+        set(TIMEMORY_BUILD_PYTHON OFF)
+    else()
+        set(TIMEMORY_PYTHON_VERSION "${PYBIND11_PYTHON_VERSION}" CACHE STRING
+            "Python version for timemory")
     endif()
+
+    if(NOT "${TIMEMORY_PYTHON_VERSION}" MATCHES "${PYBIND11_PYTHON_VERSION}*")
+        message(STATUS "TIMEMORY_PYTHON_VERSION is set to ${TIMEMORY_PYTHON_VERSION}")
+        message(STATUS "PYBIND11_PYTHON_VERSION is set to ${PYBIND11_PYTHON_VERSION}")
+        message(FATAL_ERROR "Mismatched 'TIMEMORY_PYTHON_VERSION' and 'PYBIND11_PYTHON_VERSION'")
+    endif()
+
+endif()
+
+# if using python find interpretor and libraries. If either not found, disable.
+if(TIMEMORY_USE_PYTHON)
+    # display version
+    add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory")
+
+    # if TIMEMORY_PYTHON_VERSION specified, set to desired python version
+    set(_PYVERSION ${TIMEMORY_PYTHON_VERSION})
+
+    # if TIMEMORY_PYTHON_VERSION is not set but PYBIND11_PYTHON_VERSION is
+    if("${_PYVERSION}" STREQUAL "" AND PYBIND11_PYTHON_VERSION)
+        set(_PYVERSION ${PYBIND11_PYTHON_VERSION})
+    endif()
+
+    # if python version was specifed, do exact match
+    if(_PYVERSION)
+        find_package(PythonInterp "${_PYVERSION}" EXACT ${TIMEMORY_FIND_REQUIREMENT})
+    else()
+        find_package(PythonInterp ${TIMEMORY_FIND_REQUIREMENT})
+    endif()
+
+    # set TIMEMORY_PYTHON_VERSION if we have the python version
+    if(PYTHON_VERSION_STRING)
+        set(TIMEMORY_PYTHON_VERSION "${PYTHON_VERSION_STRING}" CACHE STRING
+            "Python version for timemory")
+    endif()
+
+    # make sure the library version is an exact match for the Python executable
+    find_package(PythonLibs "${TIMEMORY_PYTHON_VERSION}" EXACT ${TIMEMORY_FIND_REQUIREMENT})
+
+    # if either not found, disable
+    if(NOT PythonInterp_FOUND OR NOT PythonLibs_FOUND)
+        set(TIMEMORY_USE_PYTHON OFF)
+        set(TIMEMORY_BUILD_PYTHON OFF)
+    else()
+        add_feature(PYTHON_EXECUTABLE "Python executable")
+        target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING
+            TIMEMORY_PYTHON_PLOTTER="${PYTHON_EXECUTABLE}")
+        target_link_libraries(timemory-headers INTERFACE timemory-plotting)
+    endif()
+
 elseif(NOT TIMEMORY_USE_PYTHON)
     set(TIMEMORY_BUILD_PYTHON OFF)
 endif()
 
-if(TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)
+if(TIMEMORY_USE_PYTHON)
 
     # C++ standard
     if(NOT WIN32 AND NOT "${PYBIND11_CPP_STANDARD}" STREQUAL "-std=c++${CMAKE_CXX_STANDARD}")
@@ -527,7 +584,7 @@ if(TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)
 
     set(PYBIND11_INSTALL ON CACHE BOOL "Enable Pybind11 installation")
 
-    if(NOT TIMEMORY_USE_PYTHON OR NOT pybind11_FOUND)
+    if(TIMEMORY_BUILD_PYTHON AND NOT TARGET pybind11)
         # checkout PyBind11 if not checked out
         checkout_git_submodule(RECURSIVE
             RELATIVE_PATH external/pybind11
@@ -536,9 +593,7 @@ if(TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)
             REPO_BRANCH master)
 
         # add PyBind11 to project
-        if(NOT TARGET pybind11)
-            add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
-        endif()
+        add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
     endif()
 
 
@@ -554,6 +609,12 @@ if(TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)
     add_feature(PYBIND11_CPP_STANDARD "PyBind11 C++ standard")
     add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
 
+    if(NOT "${TIMEMORY_PYTHON_VERSION}" MATCHES "${PYBIND11_PYTHON_VERSION}*")
+        message(STATUS "TIMEMORY_PYTHON_VERSION is set to ${TIMEMORY_PYTHON_VERSION}")
+        message(STATUS "PYBIND11_PYTHON_VERSION is set to ${PYBIND11_PYTHON_VERSION}")
+        message(FATAL_ERROR "Mismatched 'TIMEMORY_PYTHON_VERSION' and 'PYBIND11_PYTHON_VERSION'")
+    endif()
+
     execute_process(COMMAND ${PYTHON_EXECUTABLE}
         -c "import time ; print('{} {}'.format(time.ctime(), time.tzname[0]))"
         OUTPUT_VARIABLE TIMEMORY_INSTALL_DATE
@@ -568,7 +629,7 @@ if(TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)
             ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
     endif()
 
-    if(NOT TIMEMORY_USE_PYTHON OR NOT pybind11_FOUND)
+    if(TIMEMORY_BUILD_PYTHON)
         target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
         target_include_directories(timemory-python SYSTEM INTERFACE
             ${PYTHON_INCLUDE_DIRS}

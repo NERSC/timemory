@@ -87,8 +87,8 @@ def try_plot():
 
         do_plot_max = True if len(args.plot_max) > 0 else False
 
-        print('Files: {}'.format(args.files))
-        print('Titles: {}'.format(args.titles))
+        # print('Files: {}'.format(args.files))
+        # print('Titles: {}'.format(args.titles))
 
         params = _plotting.plot_parameters(min_percent=args.min_percent,
                                            img_dpi=args.img_dpi,
@@ -126,8 +126,8 @@ def try_plot():
                     _data.title = args.titles[i] + _rtitle
                 _data.plot_params = params
                 _data.mpi_size = nranks
-                print('### --> Processing "{}" from "{}"...'.format(_data.title,
-                                                                    args.files[i]))
+                # print('### --> Processing "{}" from "{}"...'.format(_data.title,
+                #                                                    args.files[i]))
                 if not j in data.keys():
                     data[j] = [_data]
                 else:
@@ -155,7 +155,7 @@ def try_plot():
         print('Exception - {}'.format(e))
         sys.exit(1)
 
-    print('Done - {}'.format(sys.argv[0]))
+    # print('Done - {}'.format(sys.argv[0]))
     sys.exit(0)
 
 

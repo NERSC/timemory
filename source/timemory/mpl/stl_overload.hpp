@@ -42,6 +42,8 @@ namespace tim
 {
 namespace stl_overload
 {
+namespace ostream
+{
 //--------------------------------------------------------------------------------------//
 //
 //      operator <<
@@ -57,6 +59,22 @@ operator<<(::std::ostream&, const ::std::pair<T, U>&);
 template <typename... _Types>
 ::std::ostream&
 operator<<(::std::ostream&, const ::std::tuple<_Types...>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename... _Extra>
+::std::ostream&
+operator<<(::std::ostream&, const ::std::vector<_Tp, _Extra...>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, size_t _N>
+::std::ostream&
+operator<<(::std::ostream&, const ::std::array<_Tp, _N>&);
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace ostream
 
 //--------------------------------------------------------------------------------------//
 //

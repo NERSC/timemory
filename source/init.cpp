@@ -30,6 +30,7 @@
 #include "timemory/components.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/plotting.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"

@@ -703,7 +703,7 @@ struct apply<void>
     template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
     static void plus(_Tuple& _lhs, const _Tuple& _rhs) noexcept
     {
-        return stl_overload::impl_details::plus(_lhs, _rhs);
+        return stl_overload::tuple_math::plus(_lhs, _rhs, make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//
@@ -712,7 +712,7 @@ struct apply<void>
     template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
     static void minus(_Tuple& _lhs, const _Tuple& _rhs) noexcept
     {
-        return stl_overload::impl_details::minus(_lhs, _rhs);
+        return stl_overload::tuple_math::minus(_lhs, _rhs, make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//

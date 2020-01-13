@@ -71,9 +71,11 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, auto_output, "TIMEMORY_AUTO_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, cout_output, "TIMEMORY_COUT_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, file_output, "TIMEMORY_FILE_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, text_output, "TIMEMORY_TEXT_OUTPUT", true)
-TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_output, "TIMEMORY_DART_OUTPUT", false)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, time_output, "TIMEMORY_TIME_OUTPUT", false)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, plot_output, "TIMEMORY_PLOT_OUTPUT",
+                             TIMEMORY_DEFAULT_PLOTTING)
 
 // general settings
 TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
@@ -114,7 +116,7 @@ TIMEMORY_ENV_STATIC_ACCESSOR(string_t, dart_type, "TIMEMORY_DART_TYPE", "")
 /// only echo this many dart tags
 TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 1)
 /// echo the category, not the identifier
-TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_label, "TIMEMORY_DART_LABEL", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_label, "TIMEMORY_DART_LABEL", true)
 
 /// enable thread affinity
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY", false)
@@ -335,7 +337,8 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPOR
 //----------------------------------------------------------------------------------//
 
 /// default setting for python invocation when plotting from C++ code
-TIMEMORY_ENV_STATIC_ACCESSOR(string_t, python_exe, "TIMEMORY_PYTHON_EXE", "python")
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, python_exe, "TIMEMORY_PYTHON_EXE",
+                             TIMEMORY_PYTHON_PLOTTER)
 
 //----------------------------------------------------------------------------------//
 //     Command line

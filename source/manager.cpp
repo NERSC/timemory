@@ -79,9 +79,11 @@ extern "C"
             printf("[%s]> initializing storage...\n", __FUNCTION__);
 #    endif
 
+        std::atexit(tim::timemory_finalize);
         // initialize storage
-        using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-        tim::manager::get_storage<tuple_type>::initialize(_master);
+        tim::settings::initialize_storage();
+        // using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+        // tim::manager::get_storage<tuple_type>::initialize(_master);
     }
 
     __library_dtor__ static void timemory_library_destructor()

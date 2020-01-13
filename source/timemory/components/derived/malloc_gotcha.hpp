@@ -181,7 +181,7 @@ public:
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
                        fname.c_str());
             return;
         }
@@ -197,7 +197,7 @@ public:
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::label().c_str(), fname.c_str(),
+                       this_type::get_label().c_str(), fname.c_str(),
                        (long long unsigned) _hash);
         }
     }
@@ -214,7 +214,7 @@ public:
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
                        fname.c_str());
             return;
         }
@@ -230,7 +230,7 @@ public:
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::label().c_str(), fname.c_str(),
+                       this_type::get_label().c_str(), fname.c_str(),
                        (long long unsigned) _hash);
         }
     }
@@ -250,7 +250,7 @@ public:
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
                        fname.c_str());
             return;
         }
@@ -275,7 +275,7 @@ public:
             {
                 if(settings::verbose() > 1 || settings::debug())
                     printf("[%s]> free of unknown pointer size: %p\n",
-                           this_type::label().c_str(), ptr);
+                           this_type::get_label().c_str(), ptr);
             }
         }
     }
@@ -294,7 +294,7 @@ public:
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
                        fname.c_str());
             return;
         }
@@ -310,7 +310,7 @@ public:
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::label().c_str(), fname.c_str(),
+                       this_type::get_label().c_str(), fname.c_str(),
                        (long long unsigned) _hash);
         }
     }
@@ -325,7 +325,7 @@ public:
         if(idx > get_hash_array().size())
         {
             if(settings::verbose() > 1 || settings::debug())
-                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                printf("[%s]> unknown function: '%s'\n", this_type::get_label().c_str(),
                        fname.c_str());
             return;
         }
@@ -347,7 +347,7 @@ public:
         {
             if(settings::verbose() > 1 || settings::debug())
                 printf("[%s]> skipped function '%s with hash %llu'\n",
-                       this_type::label().c_str(), fname.c_str(),
+                       this_type::get_label().c_str(), fname.c_str(),
                        (long long unsigned) _hash);
         }
     }

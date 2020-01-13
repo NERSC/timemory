@@ -60,6 +60,18 @@ extern "C"
 #    define TIMEMORY_DEFAULT_ENABLED true
 #endif
 
+#if !defined(TIMEMORY_PYTHON_PLOTTER)
+#    define TIMEMORY_PYTHON_PLOTTER "python"
+#endif
+
+#if !defined(TIMEMORY_DEFAULT_PLOTTING)
+#    if defined(TIMEMORY_USE_PLOTTING)
+#        define TIMEMORY_DEFAULT_PLOTTING true
+#    else
+#        define TIMEMORY_DEFAULT_PLOTTING false
+#    endif
+#endif
+
 #define TIMEMORY_ENV_STATIC_ACCESSOR_CALLBACK(TYPE, FUNC, ENV_VAR, INIT)                 \
     static auto _generate = []() {                                                       \
         auto _parse = []() { FUNC() = tim::get_env(ENV_VAR, FUNC()); };                  \
@@ -130,9 +142,11 @@ tim_api struct settings
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, cout_output, "TIMEMORY_COUT_OUTPUT", true)
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, file_output, "TIMEMORY_FILE_OUTPUT", true)
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, text_output, "TIMEMORY_TEXT_OUTPUT", true)
-    TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", false)
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, json_output, "TIMEMORY_JSON_OUTPUT", true)
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_output, "TIMEMORY_DART_OUTPUT", false)
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, time_output, "TIMEMORY_TIME_OUTPUT", false)
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, plot_output, "TIMEMORY_PLOT_OUTPUT",
+                                 TIMEMORY_DEFAULT_PLOTTING)
 
     // general settings
     TIMEMORY_ENV_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
@@ -179,7 +193,7 @@ tim_api struct settings
     /// only echo this many dart tags
     TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 1)
     /// echo the category, not the identifier
-    TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_label, "TIMEMORY_DART_LABEL", true)
+    TIMEMORY_ENV_STATIC_ACCESSOR(bool, dart_label, "TIMEMORY_DART_LABEL", true)
 
     /// enable thread affinity
     TIMEMORY_ENV_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY", false)
@@ -408,7 +422,8 @@ tim_api struct settings
     //----------------------------------------------------------------------------------//
 
     /// default setting for python invocation when plotting from C++ code
-    TIMEMORY_ENV_STATIC_ACCESSOR(string_t, python_exe, "TIMEMORY_PYTHON_EXE", "python")
+    TIMEMORY_ENV_STATIC_ACCESSOR(string_t, python_exe, "TIMEMORY_PYTHON_EXE",
+                                 TIMEMORY_PYTHON_PLOTTER)
 
     //----------------------------------------------------------------------------------//
     //     Command line
@@ -518,9 +533,12 @@ tim_api struct settings
     //----------------------------------------------------------------------------------//
 
     /// initialize the storage of the specified types
+    template <typename... _Types,
+              typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
     static void initialize_storage();
 
-    template <typename _Tuple>
+    template <typename... _Types,
+              typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
     static void initialize_storage();
 
     //----------------------------------------------------------------------------------//
@@ -549,6 +567,7 @@ tim_api struct settings
         _TRY_CATCH_NVP("TIMEMORY_JSON_OUTPUT", json_output)
         _TRY_CATCH_NVP("TIMEMORY_DART_OUTPUT", dart_output)
         _TRY_CATCH_NVP("TIMEMORY_TIME_OUTPUT", time_output)
+        _TRY_CATCH_NVP("TIMEMORY_PLOT_OUTPUT", plot_output)
         _TRY_CATCH_NVP("TIMEMORY_VERBOSE", verbose)
         _TRY_CATCH_NVP("TIMEMORY_DEBUG", debug)
         _TRY_CATCH_NVP("TIMEMORY_BANNER", banner)

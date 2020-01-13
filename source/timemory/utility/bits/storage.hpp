@@ -102,7 +102,7 @@ tim::impl::storage<Type, true>::get_shared_manager()
                 _instance->reset(this);
             }
         };
-        m_manager->add_finalizer(Type::label(), std::move(_finalize), _is_master);
+        m_manager->add_finalizer(Type::get_label(), std::move(_finalize), _is_master);
     }
 }
 
@@ -128,7 +128,7 @@ tim::impl::storage<Type, false>::get_shared_manager()
                 _instance->reset(this);
             }
         };
-        m_manager->add_finalizer(Type::label(), std::move(_finalize), _is_master);
+        m_manager->add_finalizer(Type::get_label(), std::move(_finalize), _is_master);
     }
 }
 

@@ -519,8 +519,7 @@ extern "C"
             printf("[%s]> initializing storage...\n", __FUNCTION__);
 #    endif
 
-        // initialize storage
-        tim::manager::get_storage<tim::component::wall_clock>::initialize(_master);
+        std::atexit(tim::timemory_finalize);
     }
 
     __library_dtor__ static void timemory_library_destructor()

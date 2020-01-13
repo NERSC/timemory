@@ -28,8 +28,9 @@
 #include <iostream>
 #include <random>
 #include <thread>
-#include <timemory/timemory.hpp>
 #include <vector>
+
+#include <timemory/timemory.hpp>
 
 //--------------------------------------------------------------------------------------//
 
@@ -43,6 +44,21 @@ get_test_name()
 {
     return ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
+
+// this function consumes approximately "n" milliseconds of real time
+inline void
+do_sleep(long n)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(n));
+}
+
+// this function consumes an unknown number of cpu resources
+inline long
+fibonacci(long n)
+{
+    return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
+}
+
 }  // namespace details
 
 //--------------------------------------------------------------------------------------//
@@ -60,7 +76,20 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+
+    tim::settings::verbose()     = 0;
+    tim::settings::debug()       = false;
+    tim::settings::json_output() = true;
+    tim::timemory_init(&argc, &argv);
+    tim::settings::dart_output() = false;
+    tim::settings::dart_count()  = 1;
+    tim::settings::banner()      = false;
+
+    auto ret = RUN_ALL_TESTS();
+
+    tim::timemory_finalize();
+
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------//

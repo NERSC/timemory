@@ -68,6 +68,12 @@ struct compute
 {
     using type = _Tp;
 
+    static type abs(const type& _val) { return std::abs(_val); }
+
+    static type sqr(const type& _val) { return _val * _val; }
+
+    static type sqrt(const type& _val) { return std::sqrt(_val); }
+
     static type max(const type& _lhs, const type& _rhs)
     {
         return (_rhs < _lhs) ? _lhs : _rhs;
@@ -103,6 +109,27 @@ struct compute<std::vector<_Tp, _Extra...>>
     using type         = std::vector<_Tp, _Extra...>;
     using value_type   = typename type::value_type;
     using compute_type = compute<value_type>;
+
+    static type abs(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::abs(itr);
+        return _val;
+    }
+
+    static type sqrt(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::sqrt(itr);
+        return _val;
+    }
+
+    static type sqr(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::sqr(itr);
+        return _val;
+    }
 
     static uint64_t size(const type& _lhs, const type& _rhs)
     {
@@ -170,6 +197,27 @@ struct compute<std::deque<_Tp, _Extra...>>
     using value_type   = typename type::value_type;
     using compute_type = compute<value_type>;
 
+    static type abs(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::abs(itr);
+        return _val;
+    }
+
+    static type sqrt(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::sqrt(itr);
+        return _val;
+    }
+
+    static type sqr(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::sqr(itr);
+        return _val;
+    }
+
     static uint64_t size(const type& _lhs, const type& _rhs)
     {
         return std::min<uint64_t>(_lhs.size(), _rhs.size());
@@ -231,6 +279,27 @@ struct compute<std::array<_Tp, _N>>
     using value_type   = typename type::value_type;
     using compute_type = compute<value_type>;
 
+    static type abs(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::abs(itr);
+        return _val;
+    }
+
+    static type sqrt(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::sqrt(itr);
+        return _val;
+    }
+
+    static type sqr(type _val)
+    {
+        for(auto& itr : _val)
+            itr = compute_type::sqr(itr);
+        return _val;
+    }
+
     static type max(const type& _lhs, const type& _rhs)
     {
         type _ret;
@@ -287,6 +356,24 @@ struct compute<std::pair<_Lhs, _Rhs>>
     using lhs_compute_type = compute<_Lhs>;
     using rhs_compute_type = compute<_Rhs>;
 
+    static type abs(const type& _val)
+    {
+        return type{ lhs_compute_type::abs(_val.first),
+                     rhs_compute_type::abs(_val.second) };
+    }
+
+    static type sqrt(const type& _val)
+    {
+        return type{ lhs_compute_type::sqrt(_val.first),
+                     rhs_compute_type::sqrt(_val.second) };
+    }
+
+    static type sqr(const type& _val)
+    {
+        return type{ lhs_compute_type::sqr(_val.first),
+                     rhs_compute_type::sqr(_val.second) };
+    }
+
     static type max(const type& _lhs, const type& _rhs)
     {
         return type{ lhs_compute_type::max(_lhs.first, _rhs.first),
@@ -340,6 +427,54 @@ struct compute<std::tuple<_Types...>>
 
     struct impl
     {
+        //------------------------------------------------------------------------------//
+        //  per-element abs
+        //
+        template <typename _Tuple, size_t... _Idx>
+        static _Tuple abs(_Tuple _ret, index_sequence<_Idx...>)
+        {
+            using init_list_type = std::initializer_list<int>;
+            auto&& tmp           = init_list_type{ (
+                std::get<_Idx>(_ret) =
+                    compute<decay_t<decltype(std::get<_Idx>(_ret))>>::abs(
+                        std::get<_Idx>(_ret)),
+                0)... };
+            consume_parameters(tmp);
+            return _ret;
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element sqrt
+        //
+        template <typename _Tuple, size_t... _Idx>
+        static _Tuple sqrt(_Tuple _ret, index_sequence<_Idx...>)
+        {
+            using init_list_type = std::initializer_list<int>;
+            auto&& tmp           = init_list_type{ (
+                std::get<_Idx>(_ret) =
+                    compute<decay_t<decltype(std::get<_Idx>(_ret))>>::sqrt(
+                        std::get<_Idx>(_ret)),
+                0)... };
+            consume_parameters(tmp);
+            return _ret;
+        }
+
+        //------------------------------------------------------------------------------//
+        //  per-element sqr
+        //
+        template <typename _Tuple, size_t... _Idx>
+        static _Tuple sqr(_Tuple _ret, index_sequence<_Idx...>)
+        {
+            using init_list_type = std::initializer_list<int>;
+            auto&& tmp           = init_list_type{ (
+                std::get<_Idx>(_ret) =
+                    compute<decay_t<decltype(std::get<_Idx>(_ret))>>::sqr(
+                        std::get<_Idx>(_ret)),
+                0)... };
+            consume_parameters(tmp);
+            return _ret;
+        }
+
         //------------------------------------------------------------------------------//
         //  per-element max
         //
@@ -521,6 +656,21 @@ struct compute<std::tuple<_Types...>>
             percent_diff<_Tuple, _Idx...>(_ret, _lhs, _rhs);
         }
     };
+
+    static type abs(const type& _ret)
+    {
+        return impl::template abs<type>(_ret, make_index_sequence<size>{});
+    }
+
+    static type sqrt(const type& _ret)
+    {
+        return impl::template sqrt<type>(_ret, make_index_sequence<size>{});
+    }
+
+    static type sqr(const type& _ret)
+    {
+        return impl::template sqr<type>(_ret, make_index_sequence<size>{});
+    }
 
     static type max(const type& _lhs, const type& _rhs)
     {

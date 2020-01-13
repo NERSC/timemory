@@ -63,6 +63,30 @@
 
 namespace tim
 {
+//======================================================================================//
+//      plotting declaration
+//
+namespace plotting
+{
+//--------------------------------------------------------------------------------------//
+//
+template <typename... _Types, typename... _Args,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+void
+plot(_Args&&...);
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... _Types, typename... _Args,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+void
+plot(_Args&&...);
+
+}  // namespace plotting
+
+//======================================================================================//
+//      implementation
+//
 namespace impl
 {
 template <typename StorageType, typename Type,
@@ -349,7 +373,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     storage()
-    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::label())
+    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
     {
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -1003,7 +1027,7 @@ storage<Type, true>::merge(this_type* itr)
     if(itr && itr->is_initialized() && !this->is_initialized())
     {
         PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
-                   Type::label().c_str());
+                   Type::get_label().c_str());
         graph().insert_subgraph_after(_data().head(), itr->data().head());
         m_initialized = itr->m_initialized;
         m_finalized   = itr->m_finalized;
@@ -1028,7 +1052,7 @@ storage<Type, true>::merge(this_type* itr)
             {
                 if(settings::debug() || settings::verbose() > 2)
                     PRINT_HERE("[%s]> worker is merging %i records into %i records",
-                               Type::label().c_str(), (int) itr->size(),
+                               Type::get_label().c_str(), (int) itr->size(),
                                (int) this->size());
                 pre_order_iterator _pos   = _titr;
                 sibling_iterator   _other = _nitr;
@@ -1039,7 +1063,7 @@ storage<Type, true>::merge(this_type* itr)
                 }
                 _merged = true;
                 if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> master has %i records", Type::label().c_str(),
+                    PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
                                (int) this->size());
                 break;
             }
@@ -1047,7 +1071,7 @@ storage<Type, true>::merge(this_type* itr)
             if(!_merged)
             {
                 if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> worker is not merged!", Type::label().c_str());
+                    PRINT_HERE("[%s]> worker is not merged!", Type::get_label().c_str());
                 ++_nitr;
                 if(graph().is_valid(_nitr) && _nitr)
                 {
@@ -1062,7 +1086,7 @@ storage<Type, true>::merge(this_type* itr)
     if(!_merged)
     {
         if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("[%s]> worker is not merged!", Type::label().c_str());
+            PRINT_HERE("[%s]> worker is not merged!", Type::get_label().c_str());
         pre_order_iterator _nitr(itr->data().head());
         ++_nitr;
         if(!graph().is_valid(_nitr))
@@ -1393,7 +1417,7 @@ storage<Type, true>::internal_print()
         return;
 
     auto requires_json = trait::requires_json<Type>::value;
-    auto label         = Type::label();
+    auto label         = Type::get_label();
 
     if(!singleton_t::is_master(this))
     {
@@ -1408,8 +1432,9 @@ storage<Type, true>::internal_print()
         bool _json_forced = requires_json;
         bool _file_output = settings::file_output();
         bool _cout_output = settings::cout_output();
-        bool _json_output = settings::json_output() || _json_forced;
-        bool _text_output = settings::text_output();
+        bool _json_output = (settings::json_output() || _json_forced) && _file_output;
+        bool _text_output = settings::text_output() && _file_output;
+        bool _plot_output = settings::plot_output() && _json_output;
 
         // if the graph wasn't ever initialized, exit
         if(!m_graph_data_instance)
@@ -1441,8 +1466,7 @@ storage<Type, true>::internal_print()
                    (int) _dmp_results.size());
 
         // bool return_nonzero_mpi = (dmp::using_mpi() && !settings::mpi_output_per_node()
-        // &&
-        //                           !settings::mpi_output_per_rank());
+        // && !settings::mpi_output_per_rank());
 
         if(_dmp_results.size() > 0)
         {
@@ -1527,7 +1551,7 @@ storage<Type, true>::internal_print()
         //--------------------------------------------------------------------------//
         // output to json file
         //
-        if((_file_output && _json_output) || _json_forced)
+        if(_json_output)
         {
             printf("\n");
             auto jname = settings::compose_output_filename(label, ".json");
@@ -1565,6 +1589,12 @@ storage<Type, true>::internal_print()
                         ofs << std::endl;
                     ofs.close();
                 }
+            }
+
+            if(_plot_output)
+            {
+                plotting::plot<Type>(Type::get_label(), settings::output_path(),
+                                     settings::dart_output(), jname);
             }
         }
         else if(_file_output && _text_output)
@@ -1611,7 +1641,7 @@ storage<Type, true>::internal_print()
         auto stream_width = Type::get_width();
         auto stream_prec  = Type::get_precision();
 
-        stream _stream('|', '-', stream_fmt, stream_width, stream_prec);
+        utility::stream _stream('|', '-', stream_fmt, stream_width, stream_prec);
         for(auto itr = _results.begin(); itr != _results.end(); ++itr)
         {
             auto& itr_obj    = itr->data();
@@ -1625,7 +1655,7 @@ storage<Type, true>::internal_print()
             // counts the number of non-exclusive values
             int64_t nexclusive = 0;
             // the sum of the exclusive values
-            get_return_type exclusive_values;
+            get_return_type exclusive_values{};
 
             // if we are not at the bottom of the call stack (i.e. completely
             // inclusive)
@@ -1673,13 +1703,11 @@ storage<Type, true>::internal_print()
 
             bool _first = std::distance(_results.begin(), itr) == 0;
             if(_first)
-            {
                 operation::print_header<Type>(itr_obj, _stream, itr_stats);
-                _stream.add_row();
-            }
 
             operation::print<Type>(itr_obj, _stream, itr_prefix, itr_laps, itr_depth,
                                    itr_self, itr_stats);
+
             _stream.add_row();
         }
 
@@ -1750,8 +1778,8 @@ storage<Type, true>::serialize_me(std::false_type, Archive& ar,
     if(graph_list.size() == 0)
         return;
 
-    ar(cereal::make_nvp("type", Type::label()),
-       cereal::make_nvp("description", Type::description()),
+    ar(cereal::make_nvp("type", Type::get_label()),
+       cereal::make_nvp("description", Type::get_description()),
        cereal::make_nvp("unit_value", Type::get_unit()),
        cereal::make_nvp("unit_repr", Type::get_display_unit()));
     Type::extra_serialization(ar, version);
@@ -1762,7 +1790,10 @@ storage<Type, true>::serialize_me(std::false_type, Archive& ar,
     {
         ar.startNode();
         ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
-           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()));
+           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
+           cereal::make_nvp("rolling_hash", itr.rolling_hash()),
+           cereal::make_nvp("heirarchy", itr.hierarchy()),
+           cereal::make_nvp("stats", itr.stats()));
         ar.finishNode();
     }
     ar.finishNode();
@@ -1798,7 +1829,10 @@ storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned in
     {
         ar.startNode();
         ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
-           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()));
+           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
+           cereal::make_nvp("rolling_hash", itr.rolling_hash()),
+           cereal::make_nvp("heirarchy", itr.hierarchy()),
+           cereal::make_nvp("stats", itr.stats()));
         ar.finishNode();
     }
     ar.finishNode();

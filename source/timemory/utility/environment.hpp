@@ -412,6 +412,28 @@ print_env(std::ostream& os = std::cout)
 
 //--------------------------------------------------------------------------------------//
 
+#if defined(_MACOS) || (defined(_LINUX) && (_POSIX_C_SOURCE >= 200112L))
+
+template <typename _Tp>
+void
+set_env(const std::string& env_var, const _Tp& _val, int override = 0)
+{
+    std::stringstream ss_val;
+    ss_val << _val;
+    setenv(env_var.c_str(), ss_val.str().c_str(), override);
+}
+
+#else
+
+template <typename... _Args>
+void
+set_env(_Args&&...)
+{}
+
+#endif
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//

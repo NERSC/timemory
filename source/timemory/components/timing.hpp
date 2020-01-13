@@ -96,7 +96,7 @@ struct wall_clock : public base<wall_clock, int64_t>
     double get_display() const { return get(); }
     double get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val) / ratio_t::den * get_unit();
     }
 
@@ -138,7 +138,7 @@ struct system_clock : public base<system_clock>
     static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -174,7 +174,7 @@ struct user_clock : public base<user_clock>
     static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -210,7 +210,7 @@ struct cpu_clock : public base<cpu_clock>
     static value_type  record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -246,7 +246,7 @@ struct monotonic_clock : public base<monotonic_clock>
     }
     double get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -283,7 +283,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     }
     double get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -318,7 +318,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
@@ -352,7 +352,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
     static value_type  record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }

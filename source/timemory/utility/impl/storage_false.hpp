@@ -119,7 +119,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     storage()
-    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::label())
+    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
     {
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);

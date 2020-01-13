@@ -188,7 +188,7 @@ add_option(TIMEMORY_FORCE_GPERF_PYTHON
 add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
 add_option(TIMEMORY_REQUIRE_PACKAGES
-    "All find_package(...) uses REQUIRED" OFF NO_FEATURE)
+    "All find_package(...) use REQUIRED" OFF)
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)

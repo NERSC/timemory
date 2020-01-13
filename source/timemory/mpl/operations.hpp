@@ -890,7 +890,7 @@ struct get_data
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     get_data(const Type& _obj, LabeledDataType& _dst)
     {
-        _dst = LabeledDataType(Type::label(), _obj.get());
+        _dst = LabeledDataType(Type::get_label(), _obj.get());
     }
 
     //----------------------------------------------------------------------------------//

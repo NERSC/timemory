@@ -24,17 +24,38 @@
 
 #include <cstdio>
 #include <cstdlib>
+
+//--------------------------------------------------------------------------------------//
+// include these headers for pre-declaration w/o instantiation
+//
+#include "timemory/components/types.hpp"
+#include "timemory/mpl/type_traits.hpp"
+
+//
+// configure these two types to always record statistics
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes,
+                               std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, std::false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::papi_array_t, std::true_type)
+
+//
+// include the rest of the code
+//
 #include <timemory/timemory.hpp>
 
 //
 // shorthand
 //
 using namespace tim::component;
+using namespace tim;
 
 //
 // bundle of tools
 //
-using tuple_t = tim::auto_tuple<wall_clock, cpu_clock>;
+using tuple_t = auto_tuple<wall_clock, cpu_clock, written_bytes>;
+// using tuple_t = auto_tuple<written_bytes>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -49,7 +70,7 @@ fib(long n)
 int
 main(int argc, char** argv)
 {
-    tim::settings::destructor_report() = true;
+    settings::destructor_report() = true;
     tim::timemory_init(argc, argv);
 
     long nfib = (argc > 1) ? atol(argv[1]) : 40;

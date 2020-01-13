@@ -640,7 +640,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        using namespace tim::stl_overload::vector_ostream;
+        using namespace tim::stl_overload::ostream;
 
         // output the time
         auto&             _obj = (obj.accum.second > 0) ? obj.accum : obj.value;

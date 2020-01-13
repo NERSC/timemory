@@ -349,7 +349,8 @@ public:
     //----------------------------------------------------------------------------------//
     // value type operators
     //
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
+    template <typename U                                       = value_type,
+              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
     {
         value += rhs;
@@ -357,7 +358,8 @@ public:
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
+    template <typename U                                       = value_type,
+              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator-=(const value_type& rhs)
     {
         value -= rhs;
@@ -365,7 +367,8 @@ public:
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
+    template <typename U                                       = value_type,
+              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator*=(const value_type& rhs)
     {
         value *= rhs;
@@ -373,7 +376,8 @@ public:
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
+    template <typename U                                       = value_type,
+              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator/=(const value_type& rhs)
     {
         value /= rhs;
@@ -384,25 +388,29 @@ public:
     //----------------------------------------------------------------------------------//
     // value type operators
     //
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
+    template <typename U                                        = value_type,
+              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator+=(rhs);
     }
 
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
+    template <typename U                                        = value_type,
+              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
     Type& operator-=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator-=(rhs);
     }
 
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
+    template <typename U                                        = value_type,
+              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
     Type& operator*=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator*=(rhs);
     }
 
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
+    template <typename U                                        = value_type,
+              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
     Type& operator/=(const value_type& rhs)
     {
         return static_cast<Type&>(*this).operator/=(rhs);
@@ -453,6 +461,7 @@ public:
     }
 
     const int64_t&    nlaps() const { return laps; }
+    const int64_t&    get_laps() const { return laps; }
     const value_type& get_value() const { return value; }
     const accum_type& get_accum() const { return accum; }
     const bool&       get_is_transient() const { return is_transient; }
@@ -535,7 +544,8 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                stats_policy_type::apply(stats, rhs);
+                if(record_statistics_v)
+                    stats_policy_type::apply(stats, rhs);
             }
             else if(is_flat)
             {
@@ -544,7 +554,8 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                stats_policy_type::apply(stats, rhs);
+                if(record_statistics_v)
+                    stats_policy_type::apply(stats, rhs);
 
                 _storage->stack_pop(&rhs);
             }
@@ -556,7 +567,8 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                stats_policy_type::apply(stats, rhs);
+                if(record_statistics_v)
+                    stats_policy_type::apply(stats, rhs);
 
                 if(_storage)
                 {
@@ -666,16 +678,19 @@ private:
     static void append_impl(std::false_type, graph_iterator, const Type&);
 
 public:
+    using fmtflags = std::ios_base::fmtflags;
+
     static constexpr bool timing_category_v = trait::is_timing_category<Type>::value;
     static constexpr bool memory_category_v = trait::is_memory_category<Type>::value;
     static constexpr bool timing_units_v    = trait::uses_timing_units<Type>::value;
     static constexpr bool memory_units_v    = trait::uses_memory_units<Type>::value;
     static constexpr bool percent_units_v   = trait::uses_percent_units<Type>::value;
-
-    static const short precision = (memory_units_v || percent_units_v) ? 1 : 3;
-    static const short width     = (memory_units_v || percent_units_v) ? 6 : 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static constexpr auto ios_fixed         = std::ios_base::fixed;
+    static constexpr auto ios_decimal       = std::ios_base::dec;
+    static constexpr auto ios_showpoint     = std::ios_base::showpoint;
+    static const short    precision         = (percent_units_v) ? 1 : 3;
+    static const short    width             = (percent_units_v) ? 6 : 8;
+    static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
 
     template <typename _Up = Type, typename _Unit = typename trait::units<_Up>::type,
               enable_if_t<(std::is_same<_Unit, int64_t>::value), int> = 0>
@@ -975,6 +990,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
 
     int64_t nlaps() const { return 0; }
+    int64_t get_laps() const { return 0; }
 
     void* get() { return nullptr; }
 
@@ -1029,6 +1045,27 @@ protected:
     bool is_transient = false;
 
 public:
+    //
+    // components with void data types do not use label()/get_label()
+    // to generate an output filename so provide a default one from
+    // (potentially demangled) typeid(Type).name() and strip out
+    // namespace and any template parameters + replace any spaces
+    // with underscores
+    //
+    static std::string label()
+    {
+        std::string _label = demangle<Type>();
+        if(_label.find(':') != std::string::npos)
+            _label = _label.substr(_label.find_last_of(':'));
+        if(_label.find('<') != std::string::npos)
+            _label = _label.substr(0, _label.find_first_of('<'));
+        while(_label.find(' ') != std::string::npos)
+            _label = _label.replace(_label.find(' '), 1, "_");
+        while(_label.find("__") != std::string::npos)
+            _label = _label.replace(_label.find("__"), 2, "_");
+        return _label;
+    }
+
     static std::string get_label()
     {
         static std::string _instance = Type::label();

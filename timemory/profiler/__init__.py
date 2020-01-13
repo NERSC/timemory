@@ -39,7 +39,7 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
-from . import tests
-from .tests import *
+__all__ = ['profiler']
 
-__all__ = ['tests', 'run']
+from . import profiler
+from .profiler import *
