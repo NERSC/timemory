@@ -370,7 +370,7 @@ template <typename... _Types>
 const tuple<_Types...>
 operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
 {
-    ::tim::stl_overload::mpl::minus(lhs, rhs);
+    ::tim::stl_overload::tuple_math::minus(lhs, rhs);
     return lhs;
 }
 }  // namespace std
