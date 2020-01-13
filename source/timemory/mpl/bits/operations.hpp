@@ -806,33 +806,26 @@ struct echo_measurement<_Tp, true> : public common_utils
     //
     struct impl
     {
-        template <typename _Tuple, size_t _Idx, size_t... _Nt, typename... _Args,
+        template <typename _Tuple, typename... _Args, size_t _Idx, size_t... _Nt,
                   enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
         static std::string name_generator(const string_t& _prefix, _Tuple _units,
-                                          _Args&&... _args)
+                                          _Args&&... _args, index_sequence<_Idx, _Nt...>)
         {
             return generate_name(_prefix, std::get<_Idx>(_units),
                                  std::forward<_Args>(_args)...);
         }
 
-        template <typename _Tuple, size_t _Idx, size_t... _Nt, typename... _Args,
+        template <typename _Tuple, typename... _Args, size_t _Idx, size_t... _Nt,
                   enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
         static std::string name_generator(const string_t& _prefix, _Tuple _units,
-                                          _Args&&... _args)
+                                          _Args&&... _args, index_sequence<_Idx, _Nt...>)
         {
-            return join(",",
-                        name_generator<_Tuple, _Idx>(_prefix, _units,
-                                                     std::forward<_Args>(_args)...),
-                        name_generator<_Tuple, _Nt...>(_prefix, _units,
-                                                       std::forward<_Args>(_args)...));
-        }
-
-        template <typename _Tuple, size_t... _Idx, typename... _Args>
-        static std::string name_generator(const string_t& _prefix, _Tuple _units,
-                                          _Args&&... _args, index_sequence<_Idx...>)
-        {
-            return name_generator<_Tuple, _Idx...>(_prefix, _units,
-                                                   std::forward<_Args>(_args)...);
+            return join(
+                ",",
+                name_generator<_Tuple>(_prefix, _units, std::forward<_Args>(_args)...,
+                                       index_sequence<_Idx>{}),
+                name_generator<_Tuple>(_prefix, _units, std::forward<_Args>(_args)...),
+                index_sequence<_Nt...>{});
         }
     };
 

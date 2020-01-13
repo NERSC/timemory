@@ -533,9 +533,13 @@ tim_api struct settings
     //----------------------------------------------------------------------------------//
 
     /// initialize the storage of the specified types
-    template <typename... _Types,
-              typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+#if defined(_WINDOWS)
     static void initialize_storage();
+#else
+    template <typename... _Types,
+              typename std::enable_if<(sizeof...(_Types) == 0), char>::type = 0>
+    static void initialize_storage();
+#endif
 
     template <typename... _Types,
               typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>

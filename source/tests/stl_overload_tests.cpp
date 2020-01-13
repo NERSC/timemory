@@ -104,8 +104,8 @@ TEST_F(stl_overload_tests, divide)
     array_type  array_op  = { int_op, int_op };
     pair_type   pair_op   = { vector_op, array_op };
 
-    tuple_type init_v  = { int_v, real_v, pair_v };
-    tuple_type init_op = { int_op, real_op, pair_op };
+    tuple_type init_v{ int_v, real_v, pair_v };
+    tuple_type init_op{ int_op, real_op, pair_op };
 
     tuple_type same_ret = init_v / init_op;
     tuple_type fund_ret = init_v / 2;
@@ -161,8 +161,8 @@ TEST_F(stl_overload_tests, multiply)
     array_type  array_op  = { int_op, int_op };
     pair_type   pair_op   = { vector_op, array_op };
 
-    tuple_type init_v  = { int_v, real_v, pair_v };
-    tuple_type init_op = { int_op, real_op, pair_op };
+    tuple_type init_v{ int_v, real_v, pair_v };
+    tuple_type init_op{ int_op, real_op, pair_op };
 
     tuple_type same_ret = init_v * init_op;
     tuple_type fund_ret = init_v * 2;
@@ -249,8 +249,8 @@ TEST_F(stl_overload_tests, statistics)
         std::cout << ss.str();
     };
 
-    tuple_type init_v  = { int_v, real_v, pair_v };
-    tuple_type init_op = { int_op, real_op, pair_op };
+    tuple_type init_v{ int_v, real_v, pair_v };
+    tuple_type init_op{ int_op, real_op, pair_op };
 
     statistics<tuple_type> stat_v;
 

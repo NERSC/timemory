@@ -443,7 +443,7 @@ manager::get_communicator_group()
 //======================================================================================//
 //  non-template version
 //
-template <typename... _Types, tim::enable_if_t<(sizeof...(_Types) == 0), int>>
+#if defined(_WINDOWS)
 inline void
 tim::settings::initialize_storage()
 {
@@ -458,11 +458,21 @@ tim::settings::initialize_storage()
     //    "tim::settings::initialize_storage() without tuple of types has been disabled "
     //    "because it causes extremely long compile times!");
 }
+#else
+template <typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) == 0), char>::type>
+void
+tim::settings::initialize_storage()
+{
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    manager::get_storage<tuple_type>::initialize();
+}
+#endif
 
 //--------------------------------------------------------------------------------------//
 //  template version
 //
-template <typename... _Types, tim::enable_if_t<(sizeof...(_Types) > 0), int>>
+template <typename... _Types, typename std::enable_if<(sizeof...(_Types) > 0), int>::type>
 void
 tim::settings::initialize_storage()
 {
