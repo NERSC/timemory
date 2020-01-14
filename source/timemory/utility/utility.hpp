@@ -33,6 +33,7 @@
 
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
+#include "timemory/utility/utility.hpp"
 
 // C library
 #include <cctype>

@@ -555,6 +555,10 @@ struct print_header : public common_utils
     {
         auto _labels = get_labels(_obj);
         // auto _display = get_display_units(_obj);
+        // std::cout << "[" << demangle<_Tp>() << "]> labels: ";
+        // for(const auto& itr : _labels)
+        //    std::cout << "'" << itr << "' ";
+        // std::cout << "\n";
 
         _os.set_prefix_begin();
         utility::write_header(_os, "LABEL");

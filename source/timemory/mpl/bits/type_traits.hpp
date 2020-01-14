@@ -164,6 +164,15 @@ struct units<component::cpu_roofline<_Types...>>
 };
 
 //--------------------------------------------------------------------------------------//
+/*
+template <>
+struct units<component::cupti_counters>
+{
+    using type         = std::vector<double>;
+    using display_type = std::string;
+};
+*/
+//--------------------------------------------------------------------------------------//
 
 }  // namespace trait
 }  // namespace tim

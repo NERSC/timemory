@@ -364,11 +364,17 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
             if(!contains(entry))
                 arr.push_back(entry);
         };
-        auto profiler = get_profiler();
-        for(const auto& itr : profiler->get_event_names())
-            insert(itr);
-        for(const auto& itr : profiler->get_metric_names())
-            insert(itr);
+        auto _labels = _get_labels();
+        if(_labels)
+        {
+            for(const auto& itr : *_labels)
+                insert(itr);
+        }
+        // auto profiler = get_profiler();
+        // for(const auto& itr : profiler->get_event_names())
+        //     insert(itr);
+        // for(const auto& itr : profiler->get_metric_names())
+        //     insert(itr);
         return arr;
     }
 

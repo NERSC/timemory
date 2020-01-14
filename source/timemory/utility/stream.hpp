@@ -461,6 +461,12 @@ public:
 
         offset.clear();
 
+        // printf("num rows: %i\n", (int) obj.m_rows);
+        // std::cout << "num breaks: ";
+        // for(const auto& itr : obj.m_break)
+        //    std::cout << itr << " ";
+        // std::cout << "\n";
+
         for(int i = 0; i < obj.m_rows; ++i)
         {
             bool just_broke = false;
@@ -480,19 +486,23 @@ public:
                 if(_eidx < 0 && _hidx >= 0)
                 {
                     write_empty(ss, _hidx, _offset);
-                    continue;
+                }
+                else
+                {
+                    assert(_hidx >= 0);
+                    assert(_eidx >= 0);
+
+                    const auto& _eitr  = obj.m_entries[_eidx].second;
+                    auto        _esize = _eitr.size();
+                    const auto& _itr   = _eitr.at(_offset % _esize);
+
+                    base::write_entry(_ss, _itr);
+                    ss << obj.delim() << ' ' << _ss.str() << ' ';
                 }
 
-                assert(_hidx >= 0);
-                assert(_eidx >= 0);
-
-                const auto& _eitr  = obj.m_entries[_eidx].second;
-                auto        _esize = _eitr.size();
-                const auto& _itr   = _eitr.at(_offset % _esize);
-
-                base::write_entry(_ss, _itr);
-                ss << obj.delim() << ' ' << _ss.str() << ' ';
-
+                // printf("column: %i, order size: %i, count: %i\n", col,
+                // obj.m_order.size(),
+                //       obj.m_break.count(col));
                 if(col < (int64_t) obj.m_order.size() && obj.m_break.count(col) > 0)
                 {
                     ss << obj.m_delim << '\n';

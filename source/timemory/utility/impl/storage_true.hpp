@@ -747,6 +747,8 @@ public:
     template <typename _Vp>
     void append(const secondary_data_t<_Vp>& _secondary)
     {
+        using stats_policy_type = policy::record_statistics<Type>;
+
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
         static bool _data_init   = data_init();
@@ -774,6 +776,9 @@ public:
             // if so, then update
             _nitr->second->obj() += std::get<2>(_secondary);
             _nitr->second->obj().laps += 1;
+            auto& _stats = _nitr->second->stats();
+            if(record_statistics_v)
+                stats_policy_type::apply(_stats, _nitr->second->obj());
         }
         else
         {
@@ -782,6 +787,10 @@ public:
             _tmp += std::get<2>(_secondary);
             _tmp.laps = 1;
             graph_node_t _node(_hash, _tmp, _depth);
+            _node.stats() += _tmp.get();
+            auto& _stats = _node.stats();
+            if(record_statistics_v)
+                stats_policy_type::apply(_stats, _tmp);
             m_node_ids[_depth][_hash] = _data().emplace_child(_itr, _node);
         }
     }

@@ -436,7 +436,6 @@ using namespace stl_overload;
 
 namespace std
 {
-
 #if defined(_WINDOWS)
 
 template <typename _Lhs, typename _Rhs>
@@ -453,8 +452,7 @@ const tuple<_Types...>
 operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
 {
     constexpr size_t _N = sizeof...(_Types);
-    ::tim::stl_overload::tuple_math::minus(lhs, rhs,
-                                           ::tim::make_index_sequence<_N>{});
+    ::tim::stl_overload::tuple_math::minus(lhs, rhs, ::tim::make_index_sequence<_N>{});
     return lhs;
 }
 
