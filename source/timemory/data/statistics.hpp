@@ -269,4 +269,13 @@ min(::tim::statistics<_Tp> lhs, const _Tp& rhs)
 }
 
 //--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+::tim::statistics<tuple<>>&
+operator+=(::tim::statistics<tuple<>>& _lhs, const _Tp&)
+{
+    return _lhs;
+}
+
+//--------------------------------------------------------------------------------------//
 }  // namespace std

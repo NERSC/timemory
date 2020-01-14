@@ -94,15 +94,15 @@ operator+=(::std::pair<_Lhs, _Rhs>&, const ::std::pair<_Lhs, _Rhs>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-::std::tuple<_Types...>&
-operator+=(::std::tuple<_Types...>&, const ::std::tuple<_Types...>&);
-
-//--------------------------------------------------------------------------------------//
-
 template <typename _Tp, typename... _Extra>
 ::std::vector<_Tp, _Extra...>&
 operator+=(::std::vector<_Tp, _Extra...>&, const ::std::vector<_Tp, _Extra...>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+::std::tuple<_Types...>&
+operator+=(::std::tuple<_Types...>&, const ::std::tuple<_Types...>&);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -354,6 +354,7 @@ operator/(::std::vector<_Tp, _Extra...> lhs, const ::std::vector<_Tp, _Extra...>
 
 #include "timemory/mpl/bits/stl_overload.hpp"
 
+/*
 #if defined(_WINDOWS)
 namespace std
 {
@@ -376,3 +377,14 @@ operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
 }
 }  // namespace std
 #endif
+*/
+
+namespace std
+{
+template <typename _Tp>
+tuple<>&
+operator+=(tuple<>& _lhs, const _Tp&)
+{
+    return _lhs;
+}
+}
