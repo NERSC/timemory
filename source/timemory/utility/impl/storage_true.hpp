@@ -263,6 +263,12 @@ public:
         const uint64_t&    rolling_hash() const { return std::get<4>(*this); }
         const strvector_t& hierarchy() const { return std::get<5>(*this); }
         const stats_type&  stats() const { return std::get<6>(*this); }
+
+        // this is for compatibility with a graph_node
+        uint64_t&       id() { return std::get<0>(*this); }
+        Type&           obj() { return std::get<1>(*this); }
+        const uint64_t& id() const { return std::get<0>(*this); }
+        const Type&     obj() const { return std::get<1>(*this); }
     };
 
     //----------------------------------------------------------------------------------//
@@ -1232,8 +1238,9 @@ storage<Type, true>::get()
             }
             else
             {
-                std::get<1>(*citr) += std::get<1>(itr);
-                std::get<1>(*citr).plus(std::get<1>(itr));
+                citr->data() += itr.data();
+                citr->data().plus(itr.data());
+                citr->stats() += itr.stats();
             }
         }
         return _combined;

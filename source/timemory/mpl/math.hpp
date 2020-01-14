@@ -713,6 +713,28 @@ struct compute<std::tuple<_Types...>>
 };
 
 //--------------------------------------------------------------------------------------//
+/// \class tim::math::compute<std::tuple<>>
+/// \brief this specialization exists for statistics<tuple<>> which is the default
+/// type when statistics have not been enabled
+///
+template <>
+struct compute<std::tuple<>>
+{
+    using type = std::tuple<>;
+
+    static type abs(const type&) { return type{}; }
+    static type sqr(const type&) { return type{}; }
+    static type sqrt(const type&) { return type{}; }
+    static type max(const type&, const type&) { return type{}; }
+    static type min(const type&, const type&) { return type{}; }
+    static void plus(type&, const type&) {}
+    static void minus(type&, const type&) {}
+    static void multiply(type&, const type&) {}
+    static void divide(type&, const type&) {}
+    static void percent_diff(type&, const type&, const type&) {}
+};
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace math
 }  // namespace tim
