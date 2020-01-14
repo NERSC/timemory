@@ -431,3 +431,40 @@ using namespace stl_overload;
 //======================================================================================//
 
 }  // namespace tim
+
+//======================================================================================//
+
+namespace std
+{
+
+#if defined(_WINDOWS)
+
+template <typename _Lhs, typename _Rhs>
+const pair<_Lhs, _Rhs>
+operator-(pair<_Lhs, _Rhs> lhs, const pair<_Lhs, _Rhs>& rhs)
+{
+    lhs.first -= rhs.first;
+    lhs.second -= rhs.second;
+    return lhs;
+}
+
+template <typename... _Types>
+const tuple<_Types...>
+operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
+{
+    constexpr size_t _N = sizeof...(_Types);
+    ::tim::stl_overload::tuple_math::minus(lhs, rhs,
+                                           ::tim::make_index_sequence<_N>{});
+    return lhs;
+}
+
+#endif
+
+template <typename _Tp>
+tuple<>&
+operator+=(tuple<>& _lhs, const _Tp&)
+{
+    return _lhs;
+}
+
+}  // namespace std
