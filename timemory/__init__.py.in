@@ -80,7 +80,6 @@ try:
     from . import libpytimemory
     from . import plotting
     from . import roofline
-    from . import tests
     from . import mpi_support
     from . import util
     from . import options
