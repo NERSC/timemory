@@ -133,7 +133,7 @@ try:
 
     # print("{}".format(sys.argv[:]))
     args = copy.copy(sys.argv)
-    while len(args) > 0 and args[0][0] == '-':
+    while len(args) > 0 and len(args[0]) > 0 and args[0][0] == '-':
         args.pop(0)
     # print("{}".format(args))
     if len(args) == 0:
