@@ -453,9 +453,20 @@ TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, WRITTEN_BYTES, "written_bytes",
                                  "write_bytes", "")
 
 //--------------------------------------------------------------------------------------//
-//
-//--------------------------------------------------------------------------------------//
 }  // namespace component
 }  // namespace tim
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_DECLARE_COMPONENT)
+#    define TIMEMORY_DECLARE_COMPONENT(NAME)                                             \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        struct NAME;                                                                     \
+        }                                                                                \
+        }
+#endif
 
 //======================================================================================//
