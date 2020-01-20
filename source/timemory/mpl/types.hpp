@@ -260,8 +260,6 @@ struct print_storage;
 template <typename _Tp, typename _Archive>
 struct serialization;
 
-// template <typename _Tp>
-// struct echo_measurement;
 template <typename _Tp, bool _Enabled = trait::echo_enabled<_Tp>::value>
 struct echo_measurement;
 
@@ -277,6 +275,84 @@ struct pointer_deleter;
 template <typename _Tp>
 struct pointer_counter;
 
+namespace finalize
+{
+namespace storage
+{
+template <typename Type, bool has_data>
+struct get;
+
+template <typename Type, bool has_data>
+struct mpi_get;
+
+template <typename Type, bool has_data>
+struct upc_get;
+
+template <typename Type, bool has_data>
+struct dmp_get;
+
+template <typename Type>
+struct get<Type, true>
+{
+    static constexpr bool has_data = true;
+    using storage_type             = impl::storage<Type, has_data>;
+    using result_type              = typename storage_type::result_array_t;
+    using distrib_type             = typename storage_type::dmp_result_t;
+    using result_node              = typename storage_type::result_node;
+    using graph_type               = typename storage_type::graph_t;
+    using graph_node               = typename storage_type::graph_node;
+    using hierarchy_type           = typename storage_type::uintvector_t;
+
+    get(storage_type&, result_type&);
+};
+
+template <typename Type>
+struct mpi_get<Type, true>
+{
+    static constexpr bool has_data = true;
+    using storage_type             = impl::storage<Type, has_data>;
+    using result_type              = typename storage_type::result_array_t;
+    using distrib_type             = typename storage_type::dmp_result_t;
+    using result_node              = typename storage_type::result_node;
+    using graph_type               = typename storage_type::graph_t;
+    using graph_node               = typename storage_type::graph_node;
+    using hierarchy_type           = typename storage_type::uintvector_t;
+
+    mpi_get(storage_type&, distrib_type&);
+};
+
+template <typename Type>
+struct upc_get<Type, true>
+{
+    static constexpr bool has_data = true;
+    using storage_type             = impl::storage<Type, has_data>;
+    using result_type              = typename storage_type::result_array_t;
+    using distrib_type             = typename storage_type::dmp_result_t;
+    using result_node              = typename storage_type::result_node;
+    using graph_type               = typename storage_type::graph_t;
+    using graph_node               = typename storage_type::graph_node;
+    using hierarchy_type           = typename storage_type::uintvector_t;
+
+    upc_get(storage_type&, distrib_type&);
+};
+
+template <typename Type>
+struct dmp_get<Type, true>
+{
+    static constexpr bool has_data = true;
+    using storage_type             = impl::storage<Type, has_data>;
+    using result_type              = typename storage_type::result_array_t;
+    using distrib_type             = typename storage_type::dmp_result_t;
+    using result_node              = typename storage_type::result_node;
+    using graph_type               = typename storage_type::graph_t;
+    using graph_node               = typename storage_type::graph_node;
+    using hierarchy_type           = typename storage_type::uintvector_t;
+
+    dmp_get(storage_type&, distrib_type&);
+};
+
+}  // namespace storage
+}  // namespace finalize
 }  // namespace operation
 
 //======================================================================================//
@@ -541,6 +617,35 @@ struct convert<InTuple<In...>, OutTuple<Out...>>
 
 //======================================================================================//
 
+template <typename _Tp>
+struct get_index_sequence
+{
+    static constexpr auto size  = 0;
+    static constexpr auto value = std::tuple<>{};
+    using type                  = std::tuple<>;
+};
+
+template <typename _Lhs, typename _Rhs>
+struct get_index_sequence<std::pair<_Lhs, _Rhs>>
+{
+    static constexpr auto size  = 2;
+    static constexpr auto value = index_sequence<0, 1>{};
+    using type                  = index_sequence<0, 1>;
+};
+
+template <typename... _Types>
+struct get_index_sequence<std::tuple<_Types...>>
+{
+    static constexpr auto size  = std::tuple_size<std::tuple<_Types...>>::value;
+    static constexpr auto value = make_index_sequence<size>{};
+    using type                  = decltype(make_index_sequence<size>{});
+};
+
+template <typename _Tp>
+using get_index_sequence_t = typename get_index_sequence<decay_t<_Tp>>::type;
+
+//======================================================================================//
+
 template <typename T, typename U>
 using convert_t = typename impl::convert<T, U>::type;
 
@@ -548,11 +653,289 @@ using convert_t = typename impl::convert<T, U>::type;
 
 namespace mpl
 {
+//--------------------------------------------------------------------------------------//
+
 template <typename _Out, typename _In>
 auto
 convert(const _In& _in) -> decltype(impl::convert<_In, _Out>::apply(_in))
 {
     return impl::convert<_In, _Out>::apply(_in);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Func, typename _End = std::function<void()>>
+auto
+iterate(_Tp& _val, _Func&& _func, _End&& _end = []() {})
+    -> decltype(std::begin(_val), _Tp())
+{
+    for(auto itr = std::begin(_val); itr != std::end(_val); ++itr)
+        _func(*itr);
+    _end();
+    return _val;
+}
+
+template <typename _Tp, typename _Func, typename _End = std::function<void()>>
+auto
+iterate(_Tp& _val, _Func&& _func, _End&& _end = []() {})
+    -> decltype(_func(_val), std::vector<_Tp>())
+{
+    _func(_val);
+    _end();
+    return std::vector<_Tp>({ _val });
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Func>
+auto
+transform(_Tp& _val, _Func&& _func, std::tuple<>) -> decltype(_func(_val), void())
+{
+    _func(_val);
+}
+
+template <typename _Tp, typename _Func>
+auto
+transform(_Tp& _val, _Func&& _func, std::tuple<>) -> decltype(std::begin(_val), void())
+{
+    for(auto& itr : _val)
+        transform(itr, std::forward<_Func>(_func),
+                  get_index_sequence<decay_t<decltype(itr)>>::value);
+}
+
+template <typename _Tp, typename _Func>
+_Tp
+transform(_Tp _val, _Func&& _func)
+{
+    auto index = get_index_sequence<decay_t<_Tp>>::value;
+    transform(_val, std::forward<_Func>(_func), index);
+    return _val;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Func>
+auto
+unary_op(const _Tp& _lhs, _Func&& _func, std::tuple<>) -> decltype(_func(_lhs), _Tp())
+{
+    return _func(_lhs);
+}
+
+template <typename _Tp, typename _Func>
+auto
+unary_op(const _Tp& _lhs, _Func&& _func, std::tuple<>)
+    -> decltype(std::begin(_lhs), _Tp())
+{
+    auto _n = get_size(_lhs);
+    _Tp  _ret{};
+    resize(_ret, _n);
+
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto itr  = std::begin(_ret) + i;
+        *itr      = unary_op(*litr, std::forward<_Func>(_func),
+                        get_index_sequence<decay_t<decltype(*itr)>>::value);
+    }
+    return _ret;
+}
+
+template <typename _Tp, typename _Func>
+_Tp
+unary_op(const _Tp& _lhs, _Func&& _func)
+{
+    auto index = get_index_sequence<decay_t<_Tp>>::value;
+    return unary_op(_lhs, std::forward<_Func>(_func), index);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Func>
+auto
+binary_op(const _Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
+    -> decltype(_func(_lhs, _rhs), _Tp())
+{
+    return _func(_lhs, _rhs);
+}
+
+template <typename _Tp, typename _Func>
+auto
+binary_op(const _Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
+    -> decltype(std::begin(_lhs), _Tp())
+{
+    auto _nl    = get_size(_lhs);
+    auto _nr    = get_size(_rhs);
+    using Int_t = decltype(_nl);
+    assert(_nl == _nr);
+
+    auto _n = std::min<Int_t>(_nl, _nr);
+    _Tp  _ret{};
+    resize(_ret, _n);
+
+    for(Int_t i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        auto itr  = std::begin(_ret) + i;
+        *itr      = binary_op(*litr, *ritr, std::forward<_Func>(_func),
+                         get_index_sequence<decay_t<decltype(*itr)>>::value);
+    }
+    return _ret;
+}
+
+template <typename _Tp, typename _Func>
+_Tp
+binary_op(const _Tp& _lhs, const _Tp& _rhs, _Func&& _func)
+{
+    auto index = get_index_sequence<decay_t<_Tp>>::value;
+    return binary_op(_lhs, _rhs, std::forward<_Func>(_func), index);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Func>
+auto
+binary_set(_Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
+    -> decltype(_func(_lhs, _rhs), void())
+{
+    _func(_lhs, _rhs);
+}
+
+template <typename _Tp, typename _Func>
+auto
+binary_set(_Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
+    -> decltype(std::begin(_lhs), void())
+{
+    auto _n = get_size(_rhs);
+    resize(_lhs, _n);
+
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        binary_set(*litr, *ritr, std::forward<_Func>(_func),
+                   get_index_sequence<decay_t<decltype(*litr)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Func>
+void
+binary_set(_Tp& _lhs, const _Tp& _rhs, _Func&& _func)
+{
+    auto index = get_index_sequence<decay_t<_Tp>>::value;
+    binary_set(_lhs, _rhs, std::forward<_Func>(_func), index);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp,
+          typename std::enable_if<(std::is_arithmetic<_Tp>::value), int>::type = 0>
+constexpr auto
+get_size(const _Tp&, std::tuple<>) -> size_t
+{
+    return 1;
+}
+
+template <typename _Tp>
+auto
+get_size(const _Tp& _val, std::tuple<>) -> decltype(_val.size(), size_t())
+{
+    return _val.size();
+}
+
+template <typename _Tp, size_t... _Idx>
+constexpr auto
+get_size(const _Tp& _val, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_val), size_t())
+{
+    return std::tuple_size<_Tp>::value;
+}
+
+template <typename _Tp>
+auto
+get_size(const _Tp& _val)
+    -> decltype(get_size(_val, get_index_sequence<decay_t<_Tp>>::value))
+{
+    return get_size(_val, get_index_sequence<decay_t<_Tp>>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+auto
+resize(T&, ...) -> void
+{}
+
+template <typename T>
+auto
+resize(T& _targ, size_t _n) -> decltype(_targ.resize(_n), void())
+{
+    _targ.resize(_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+struct identity
+{
+    using type = T;
+};
+
+template <typename T>
+using identity_t = typename identity<T>::type;
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+void
+assign(_Tp& _targ, const _Tp& _val, ...)
+{
+    _targ = _val;
+}
+
+template <typename _Tp, typename _Vp, typename ValueType = typename _Tp::value_type>
+auto
+assign(_Tp& _targ, const _Vp& _val, std::tuple<>) -> decltype(_targ[0], void())
+{
+    auto _n = get_size(_val);
+    resize(_targ, _n);
+    for(decltype(_n) i = 0; i < _n; ++i)
+        assign(_targ[i], *(_val.begin() + i),
+               get_index_sequence<decay_t<ValueType>>::value);
+}
+
+template <typename _Tp, size_t... _Idx>
+auto
+assign(_Tp& _targ, const _Tp& _val, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_val), void())
+{
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (assign(std::get<_Idx>(_targ), std::get<_Idx>(_val),
+                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_targ))>>::value),
+           0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Vp, size_t... _Idx,
+          enable_if_t<!(std::is_same<_Tp, _Vp>::value), int> = 0>
+auto
+assign(_Tp& _targ, const _Vp& _val, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_targ) = *std::begin(_val), void())
+{
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (assign(std::get<_Idx>(_targ), *(std::begin(_val) + _Idx),
+                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_targ))>>::value),
+           0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Vp>
+void
+assign(_Tp& _targ, const _Vp& _val)
+{
+    assign(_targ, _val, get_index_sequence<decay_t<_Tp>>::value);
 }
 
 }  // namespace mpl

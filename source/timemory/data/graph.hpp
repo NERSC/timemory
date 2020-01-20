@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file utility/graph.hpp
- * \headerfile utility/graph.hpp "timemory/utility/graph.hpp"
+/** \file data/graph.hpp
+ * \headerfile data/graph.hpp "timemory/data/graph.hpp"
  * Arbitrary Graph / Tree (i.e. binary-tree but not binary)
  */
 
@@ -1271,7 +1271,9 @@ graph<T, AllocatorT>::prepend_child(iter position, T&& x)
 
     graph_node* tmp = m_alloc.allocate(1, 0);
     m_alloc.construct(tmp);
-    std::swap(tmp->data, std::move(x));
+    // std::swap(tmp->data, std::forward<T>(x));
+    auto _x = std::move(x);
+    std::swap(tmp->data, _x);
 
     tmp->first_child = 0;
     tmp->last_child  = 0;

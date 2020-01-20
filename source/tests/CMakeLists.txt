@@ -38,6 +38,15 @@ set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
 
+find_package(OpenMP)
+if(OpenMP_FOUND)
+    add_timemory_google_test(threading_tests
+        DISCOVER_TESTS
+        SOURCES         threading_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                        timemory-analysis-tools OpenMP::OpenMP_CXX)
+endif()
+
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS
     SOURCES         stl_overload_tests.cpp

@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <deque>
 #include <limits>
@@ -64,651 +65,780 @@ is_finite(const _Tp& val)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+_Tp abs(_Tp);
+
+template <typename _Tp>
+_Tp sqrt(_Tp);
+
+template <typename _Tp>
+_Tp
+pow(_Tp, double);
+
+template <typename _Tp>
+_Tp sqr(_Tp);
+
+template <typename _Tp>
+_Tp sqr(_Tp);
+
+template <typename _Tp>
+_Tp
+min(const _Tp&, const _Tp&);
+
+template <typename _Tp>
+_Tp
+max(const _Tp&, const _Tp&);
+
+template <typename _Tp, typename _Up = _Tp>
+void
+plus(_Tp&, const _Up&);
+
+template <typename _Tp, typename _Up = _Tp>
+void
+minus(_Tp&, const _Up&);
+
+template <typename _Tp, typename _Up = _Tp>
+void
+multiply(_Tp&, const _Up&);
+
+template <typename _Tp, typename _Up = _Tp>
+void
+divide(_Tp&, const _Up&);
+
+template <typename _Tp>
+_Tp
+percent_diff(const _Tp&, const _Tp&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp,
+          typename std::enable_if<(std::is_arithmetic<_Tp>::value), int>::type = 0>
+auto
+abs(_Tp _val, std::tuple<>) -> decltype(std::abs(_val), _Tp())
+{
+    return std::abs(_val);
+}
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+auto
+abs(_Tp _val, std::tuple<>, ...) -> decltype(std::begin(_val), _Tp())
+{
+    for(auto& itr : _val)
+        itr = abs(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
+    return _val;
+}
+
+template <typename _Tp, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+abs(_Tp _val, std::tuple<>) -> decltype(std::begin(_val), _Tp())
+{
+    for(auto& itr : _val)
+        itr.second =
+            abs(itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+    return _val;
+}
+
+template <template <typename...> class _Tuple, typename... _Types, size_t... _Idx>
+auto
+abs(_Tuple<_Types...> _val, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_val), _Tuple<_Types...>())
+{
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp =
+        init_list_t({ (std::get<_Idx>(_val) = abs(std::get<_Idx>(_val)), 0)... });
+    consume_parameters(tmp);
+    return _val;
+}
+
+template <typename _Tp>
+_Tp
+abs(_Tp _val)
+{
+    return abs(_val, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp,
+          typename std::enable_if<(std::is_arithmetic<_Tp>::value), int>::type = 0>
+auto
+sqrt(_Tp _val, std::tuple<>) -> decltype(std::sqrt(_val), _Tp())
+{
+    return std::sqrt(_val);
+}
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+auto
+sqrt(_Tp _val, std::tuple<>, ...) -> decltype(std::begin(_val), _Tp())
+{
+    for(auto& itr : _val)
+        itr = sqrt(itr, get_index_sequence<decay_t<decltype(itr)>>::value);
+    return _val;
+}
+
+template <typename _Tp, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+sqrt(_Tp _val, std::tuple<>) -> decltype(std::begin(_val), _Tp())
+{
+    for(auto& itr : _val)
+        itr.second =
+            sqrt(itr.second, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+    return _val;
+}
+
+template <template <typename...> class _Tuple, typename... _Types, size_t... _Idx>
+auto
+sqrt(_Tuple<_Types...> _val, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_val), _Tuple<_Types...>())
+{
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp =
+        init_list_t({ (std::get<_Idx>(_val) = sqrt(std::get<_Idx>(_val)), 0)... });
+    consume_parameters(tmp);
+    return _val;
+}
+
+template <typename _Tp>
+_Tp
+sqrt(_Tp _val)
+{
+    return sqrt(_val, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp,
+          typename std::enable_if<(std::is_arithmetic<_Tp>::value), int>::type = 0>
+auto
+pow(_Tp _val, double _m, std::tuple<>) -> decltype(std::pow(_val, _m), _Tp())
+{
+    return std::pow(_val, _m);
+}
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+auto
+pow(_Tp _val, double _m, std::tuple<>, ...) -> decltype(std::begin(_val), _Tp())
+{
+    for(auto& itr : _val)
+        itr = pow(itr, _m, get_index_sequence<decay_t<decltype(itr)>>::value);
+    return _val;
+}
+
+template <typename _Tp, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+pow(_Tp _val, double _m, std::tuple<>) -> decltype(std::begin(_val), _Tp())
+{
+    for(auto& itr : _val)
+        itr.second =
+            pow(itr.second, _m, get_index_sequence<decay_t<decltype(itr.second)>>::value);
+    return _val;
+}
+
+template <template <typename...> class _Tuple, typename... _Types, size_t... _Idx>
+auto
+pow(_Tuple<_Types...> _val, double _m, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_val), _Tuple<_Types...>())
+{
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp =
+        init_list_t({ (std::get<_Idx>(_val) = pow(std::get<_Idx>(_val), _m), 0)... });
+    consume_parameters(tmp);
+    return _val;
+}
+
+template <typename _Tp>
+_Tp
+pow(_Tp _val, double _m)
+{
+    return pow(_val, _m, get_index_sequence<_Tp>::value);
+}
+
+template <typename _Tp>
+_Tp
+sqr(_Tp _val)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    return pow(_val, 2.0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+_Tp
+min(_Tp _lhs, _Tp _rhs, std::tuple<>)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    return (_rhs > _lhs) ? _lhs : _rhs;
+}
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+auto
+min(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, ...)
+    -> decltype(std::begin(_lhs), _Tp())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _nl    = mpl::get_size(_lhs);
+    auto _nr    = mpl::get_size(_rhs);
+    using Int_t = decltype(_nl);
+    assert(_nl == _nr);
+
+    auto _n = std::min<Int_t>(_nl, _nr);
+    _Tp  _ret{};
+    mpl::resize(_ret, _n);
+
+    for(Int_t i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        auto itr  = std::begin(_ret) + i;
+        *itr      = min(*litr, *ritr, get_index_sequence<decay_t<decltype(*itr)>>::value);
+    }
+    return _ret;
+}
+
+template <typename _Tp, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+min(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), _Tp())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _nl    = mpl::get_size(_lhs);
+    auto _nr    = mpl::get_size(_rhs);
+    using Int_t = decltype(_nl);
+    assert(_nl == _nr);
+
+    auto _n = std::min<Int_t>(_nl, _nr);
+    _Tp  _ret{};
+    mpl::resize(_ret, _n);
+
+    for(Int_t i = 0; i < _n; ++i)
+    {
+        auto litr   = std::begin(_lhs) + i;
+        auto ritr   = std::begin(_rhs) + i;
+        auto itr    = std::begin(_ret) + i;
+        itr->second = min(litr->second, ritr->second,
+                          get_index_sequence<decay_t<decltype(itr->second)>>::value);
+    }
+    return _ret;
+}
+
+template <typename _Tp, size_t... _Idx>
+auto
+min(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_lhs), _Tp())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    _Tp _ret{};
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (std::get<_Idx>(_ret) =
+               min(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                   get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value),
+           0)... });
+    consume_parameters(tmp);
+    return _ret;
+}
+
+template <typename _Tp>
+_Tp
+min(const _Tp& _lhs, const _Tp& _rhs)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    return min(_lhs, _rhs, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+_Tp
+max(_Tp _lhs, _Tp _rhs, std::tuple<>)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    return (_rhs < _lhs) ? _lhs : _rhs;
+}
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+auto
+max(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, ...)
+    -> decltype(std::begin(_lhs), _Tp())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _nl    = mpl::get_size(_lhs);
+    auto _nr    = mpl::get_size(_rhs);
+    using Int_t = decltype(_nl);
+    assert(_nl == _nr);
+
+    auto _n = std::min<Int_t>(_nl, _nr);
+    _Tp  _ret{};
+    mpl::resize(_ret, _n);
+
+    for(Int_t i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        auto itr  = std::begin(_ret) + i;
+        *itr      = max(*litr, *ritr, get_index_sequence<decay_t<decltype(*itr)>>::value);
+    }
+    return _ret;
+}
+
+template <typename _Tp, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+max(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), _Tp())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _nl    = mpl::get_size(_lhs);
+    auto _nr    = mpl::get_size(_rhs);
+    using Int_t = decltype(_nl);
+    assert(_nl == _nr);
+
+    auto _n = std::min<Int_t>(_nl, _nr);
+    _Tp  _ret{};
+    mpl::resize(_ret, _n);
+
+    for(Int_t i = 0; i < _n; ++i)
+    {
+        auto litr   = std::begin(_lhs) + i;
+        auto ritr   = std::begin(_rhs) + i;
+        auto itr    = std::begin(_ret) + i;
+        itr->second = max(litr->second, ritr->second,
+                          get_index_sequence<decay_t<decltype(itr->second)>>::value);
+    }
+    return _ret;
+}
+
+template <typename _Tp, size_t... _Idx>
+auto
+max(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_lhs), _Tp())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    _Tp _ret{};
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (std::get<_Idx>(_ret) =
+               max(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                   get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value),
+           0)... });
+    consume_parameters(tmp);
+    return _ret;
+}
+
+template <typename _Tp>
+_Tp
+max(const _Tp& _lhs, const _Tp& _rhs)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    return max(_lhs, _rhs, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Up,
+          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+void
+plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    _lhs += _rhs;
+}
+
+template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
+auto
+plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _n = mpl::get_size(_rhs);
+    if(mpl::get_size(_lhs) < _n)
+        mpl::resize(_lhs, _n);
+
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        plus(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+
+    for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
+    {
+        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        if(ritr == std::end(_rhs))
+            continue;
+        plus(litr->second, ritr->second,
+             get_index_sequence<decay_t<decltype(litr->second)>>::value);
+    }
+
+    for(auto ritr = std::begin(_rhs); ritr != std::end(_rhs); ++ritr)
+    {
+        auto litr = std::find(std::begin(_lhs), std::end(_lhs), ritr->first);
+        if(litr == std::end(_lhs))
+            continue;
+        _lhs[ritr->first] = ritr->second;
+    }
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx>
+auto
+plus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (plus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
+           0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Up>
+void
+plus(_Tp& _lhs, const _Up& _rhs)
+{
+    plus(_lhs, _rhs, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Up,
+          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+void
+minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    _lhs -= _rhs;
+}
+
+template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
+auto
+minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _n = mpl::get_size(_rhs);
+    if(mpl::get_size(_lhs) < _n)
+        mpl::resize(_lhs, _n);
+
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        minus(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+
+    for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
+    {
+        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        if(ritr == std::end(_rhs))
+            continue;
+        minus(litr->second, ritr->second,
+              get_index_sequence<decay_t<decltype(litr->second)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx>
+auto
+minus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (minus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
+           0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Up>
+void
+minus(_Tp& _lhs, const _Up& _rhs)
+{
+    minus(_lhs, _rhs, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Up,
+          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+void
+multiply(_Tp& _lhs, _Up _rhs, std::tuple<>)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    _lhs *= _rhs;
+}
+
+template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
+auto
+multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...)
+    -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _n = mpl::get_size(_rhs);
+    if(mpl::get_size(_lhs) < _n)
+        mpl::resize(_lhs, _n);
+
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        multiply(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+
+    for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
+    {
+        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        if(ritr == std::end(_rhs))
+            continue;
+        multiply(litr->second, ritr->second,
+                 get_index_sequence<decay_t<decltype(litr->second)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx>
+auto
+multiply(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (multiply(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                    get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
+           0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Up>
+void
+multiply(_Tp& _lhs, const _Up& _rhs)
+{
+    multiply(_lhs, _rhs, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Up,
+          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+void
+divide(_Tp& _lhs, _Up _rhs, std::tuple<>)
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    _lhs *= _rhs;
+}
+
+template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
+auto
+divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...)
+    -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _n = mpl::get_size(_rhs);
+    if(mpl::get_size(_lhs) < _n)
+        mpl::resize(_lhs, _n);
+
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        divide(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+
+    for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
+    {
+        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        if(ritr == std::end(_rhs))
+            continue;
+        divide(litr->second, ritr->second,
+               get_index_sequence<decay_t<decltype(litr->second)>>::value);
+    }
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx>
+auto
+divide(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (divide(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
+           0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Up>
+void
+divide(_Tp& _lhs, const _Up& _rhs)
+{
+    divide(_lhs, _rhs, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
+_Tp
+percent_diff(_Tp _lhs, _Tp _rhs, std::tuple<>)
+{
+    constexpr _Tp _zero    = _Tp(0.0);
+    constexpr _Tp _one     = _Tp(1.0);
+    constexpr _Tp _hundred = _Tp(100.0);
+    return (_rhs > _zero) ? ((_one - (_lhs / _rhs)) * _hundred) : _zero;
+}
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+auto
+percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, ...)
+    -> decltype(std::begin(_lhs), _Tp())
+{
+    auto _nl    = mpl::get_size(_lhs);
+    auto _nr    = mpl::get_size(_rhs);
+    using Int_t = decltype(_nl);
+    assert(_nl == _nr);
+
+    auto _n = std::min<Int_t>(_nl, _nr);
+    _Tp  _ret{};
+    mpl::resize(_ret, _n);
+
+    // initialize
+    for(auto& itr : _ret)
+        itr = _Vp{};
+
+    // compute
+    for(Int_t i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        auto ritr = std::begin(_rhs) + i;
+        auto itr  = std::begin(_ret) + i;
+        *itr      = percent_diff(*litr, *ritr,
+                            get_index_sequence<decay_t<decltype(*itr)>>::value);
+    }
+    return _ret;
+}
+
+template <typename _Tp, typename _Kp = typename _Tp::key_type,
+          typename _Mp = typename _Tp::mapped_type>
+auto
+percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>)
+    -> decltype(std::begin(_lhs), _Tp())
+{
+    assert(_lhs.size() == _rhs.size());
+    _Tp _ret{};
+    for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
+    {
+        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        if(ritr == std::end(_rhs))
+        {
+            _ret[litr->second] = _Mp{};
+        }
+        else
+        {
+            _ret[litr->second] =
+                percent_diff(litr->second, ritr->second,
+                             get_index_sequence<decay_t<decltype(litr->second)>>::value);
+        }
+    }
+    return _ret;
+}
+
+template <typename _Tp, size_t... _Idx>
+auto
+percent_diff(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>)
+    -> decltype(std::get<0>(_lhs), _Tp())
+{
+    _Tp _ret{};
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (std::get<_Idx>(_ret) = percent_diff(
+               std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+               get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value),
+           0)... });
+    consume_parameters(tmp);
+    return _ret;
+}
+
+template <typename _Tp>
+_Tp
+percent_diff(const _Tp& _lhs, const _Tp& _rhs)
+{
+    return percent_diff(_lhs, _rhs, get_index_sequence<_Tp>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Up = _Tp>
 struct compute
 {
-    using type = _Tp;
+    using type       = _Tp;
+    using value_type = _Up;
 
-    static type abs(const type& _val) { return std::abs(_val); }
-
-    static type sqr(const type& _val) { return _val * _val; }
-
-    static type sqrt(const type& _val) { return std::sqrt(_val); }
-
-    static type max(const type& _lhs, const type& _rhs)
+    static type abs(const type& _v) { return ::tim::math::abs(_v); }
+    static type sqr(const type& _v) { return ::tim::math::sqr(_v); }
+    static type sqrt(const type& _v) { return ::tim::math::sqrt(_v); }
+    static type min(const type& _l, const type& _r) { return ::tim::math::min(_l, _r); }
+    static type max(const type& _l, const type& _r) { return ::tim::math::max(_l, _r); }
+    static type percent_diff(const type& _l, const type& _r)
     {
-        return (_rhs < _lhs) ? _lhs : _rhs;
+        return ::tim::math::percent_diff(_l, _r);
     }
 
-    static type min(const type& _lhs, const type& _rhs)
+    template <typename V = value_type>
+    static void plus(type& _l, const V& _r)
     {
-        return (_rhs > _lhs) ? _lhs : _rhs;
+        ::tim::math::plus(_l, _r);
     }
 
-    static void plus(type& _lhs, const type& _rhs) { _lhs += _rhs; }
-
-    static void minus(type& _lhs, const type& _rhs) { _lhs -= _rhs; }
-
-    static void multiply(type& _lhs, const type& _rhs) { _lhs *= _rhs; }
-
-    static void divide(type& _lhs, const type& _rhs) { _lhs /= _rhs; }
-
-    static void percent_diff(type& _ret, const type& _lhs, const type& _rhs)
+    template <typename V = value_type>
+    static void minus(type& _l, const V& _r)
     {
-        static constexpr _Tp _zero    = _Tp(0.0);
-        static constexpr _Tp _one     = _Tp(1.0);
-        static constexpr _Tp _hundred = _Tp(100.0);
-        _ret = (_rhs > 0) ? (_one - (_lhs / _rhs)) * _hundred : _zero;
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename... _Extra>
-struct compute<std::vector<_Tp, _Extra...>>
-{
-    using type         = std::vector<_Tp, _Extra...>;
-    using value_type   = typename type::value_type;
-    using compute_type = compute<value_type>;
-
-    static type abs(type _val)
-    {
-        for(auto& itr : _val)
-            itr = compute_type::abs(itr);
-        return _val;
+        ::tim::math::minus(_l, _r);
     }
 
-    static type sqrt(type _val)
+    template <typename V = value_type>
+    static void multiply(type& _l, const V& _r)
     {
-        for(auto& itr : _val)
-            itr = compute_type::sqrt(itr);
-        return _val;
+        ::tim::math::multiply(_l, _r);
     }
 
-    static type sqr(type _val)
+    template <typename V = value_type>
+    static void divide(type& _l, const V& _r)
     {
-        for(auto& itr : _val)
-            itr = compute_type::sqr(itr);
-        return _val;
-    }
-
-    static uint64_t size(const type& _lhs, const type& _rhs)
-    {
-        return std::min<uint64_t>(_lhs.size(), _rhs.size());
-    }
-
-    static type max(const type& _lhs, const type& _rhs)
-    {
-        type _ret(_lhs.size());
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            _ret[i] = compute_type::max(_lhs[i], _rhs[i]);
-        return _ret;
-    }
-
-    static type min(const type& _lhs, const type& _rhs)
-    {
-        type _ret(_lhs.size());
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            _ret[i] = compute_type::min(_lhs[i], _rhs[i]);
-        return _ret;
-    }
-
-    static void plus(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::plus(_lhs[i], _rhs[i]);
-    }
-
-    static void minus(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::minus(_lhs[i], _rhs[i]);
-    }
-
-    static void multiply(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::multiply(_lhs[i], _rhs[i]);
-    }
-
-    static void divide(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::divide(_lhs[i], _rhs[i]);
-    }
-
-    static void percent_diff(type& _ret, const type& _lhs, const type& _rhs)
-    {
-        uint64_t _n = size();
-        if(_n >= _ret.size())
-            _ret.resize(_n);
-
-        // in case there are nested types
-        for(uint64_t i = 0; i < _n; ++i)
-            compute_type::percent_diff(_ret[i], _lhs[i], _rhs[i]);
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename... _Extra>
-struct compute<std::deque<_Tp, _Extra...>>
-{
-    using type         = std::vector<_Tp, _Extra...>;
-    using value_type   = typename type::value_type;
-    using compute_type = compute<value_type>;
-
-    static type abs(type _val)
-    {
-        for(auto& itr : _val)
-            itr = compute_type::abs(itr);
-        return _val;
-    }
-
-    static type sqrt(type _val)
-    {
-        for(auto& itr : _val)
-            itr = compute_type::sqrt(itr);
-        return _val;
-    }
-
-    static type sqr(type _val)
-    {
-        for(auto& itr : _val)
-            itr = compute_type::sqr(itr);
-        return _val;
-    }
-
-    static uint64_t size(const type& _lhs, const type& _rhs)
-    {
-        return std::min<uint64_t>(_lhs.size(), _rhs.size());
-    }
-
-    static type max(const type& _lhs, const type& _rhs)
-    {
-        type _ret(_lhs.size());
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            _ret[i] = compute_type::max(_lhs[i], _rhs[i]);
-        return _ret;
-    }
-
-    static type min(const type& _lhs, const type& _rhs)
-    {
-        type _ret(_lhs.size());
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            _ret[i] = compute_type::min(_lhs[i], _rhs[i]);
-        return _ret;
-    }
-
-    static void plus(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::plus(_lhs[i], _rhs[i]);
-    }
-
-    static void minus(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::minus(_lhs[i], _rhs[i]);
-    }
-
-    static void multiply(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::multiply(_lhs[i], _rhs[i]);
-    }
-
-    static void divide(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::divide(_lhs[i], _rhs[i]);
-    }
-
-    static void percent_diff(type& _ret, const type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < size(_lhs, _rhs); ++i)
-            compute_type::percent_diff(_ret[i], _lhs[i], _rhs[i]);
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, size_t _N>
-struct compute<std::array<_Tp, _N>>
-{
-    using type         = std::array<_Tp, _N>;
-    using value_type   = typename type::value_type;
-    using compute_type = compute<value_type>;
-
-    static type abs(type _val)
-    {
-        for(auto& itr : _val)
-            itr = compute_type::abs(itr);
-        return _val;
-    }
-
-    static type sqrt(type _val)
-    {
-        for(auto& itr : _val)
-            itr = compute_type::sqrt(itr);
-        return _val;
-    }
-
-    static type sqr(type _val)
-    {
-        for(auto& itr : _val)
-            itr = compute_type::sqr(itr);
-        return _val;
-    }
-
-    static type max(const type& _lhs, const type& _rhs)
-    {
-        type _ret;
-        for(uint64_t i = 0; i < _N; ++i)
-            _ret[i] = compute_type::max(_lhs[i], _rhs[i]);
-        return _ret;
-    }
-
-    static type min(const type& _lhs, const type& _rhs)
-    {
-        type _ret;
-        for(uint64_t i = 0; i < _N; ++i)
-            _ret[i] = compute_type::min(_lhs[i], _rhs[i]);
-        return _ret;
-    }
-
-    static void plus(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < _N; ++i)
-            compute_type::plus(_lhs[i], _rhs[i]);
-    }
-
-    static void minus(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < _N; ++i)
-            compute_type::minus(_lhs[i], _rhs[i]);
-    }
-
-    static void multiply(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < _N; ++i)
-            compute_type::multiply(_lhs[i], _rhs[i]);
-    }
-
-    static void divide(type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < _N; ++i)
-            compute_type::divide(_lhs[i], _rhs[i]);
-    }
-
-    static void percent_diff(type& _ret, const type& _lhs, const type& _rhs)
-    {
-        for(uint64_t i = 0; i < _N; ++i)
-            compute_type::percent_diff(_ret[i], _lhs[i], _rhs[i]);
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Lhs, typename _Rhs>
-struct compute<std::pair<_Lhs, _Rhs>>
-{
-    using type             = std::pair<_Lhs, _Rhs>;
-    using lhs_compute_type = compute<_Lhs>;
-    using rhs_compute_type = compute<_Rhs>;
-
-    static type abs(const type& _val)
-    {
-        return type{ lhs_compute_type::abs(_val.first),
-                     rhs_compute_type::abs(_val.second) };
-    }
-
-    static type sqrt(const type& _val)
-    {
-        return type{ lhs_compute_type::sqrt(_val.first),
-                     rhs_compute_type::sqrt(_val.second) };
-    }
-
-    static type sqr(const type& _val)
-    {
-        return type{ lhs_compute_type::sqr(_val.first),
-                     rhs_compute_type::sqr(_val.second) };
-    }
-
-    static type max(const type& _lhs, const type& _rhs)
-    {
-        return type{ lhs_compute_type::max(_lhs.first, _rhs.first),
-                     rhs_compute_type::max(_lhs.second, _rhs.second) };
-    }
-
-    static type min(const type& _lhs, const type& _rhs)
-    {
-        return type{ lhs_compute_type::min(_lhs.first, _rhs.first),
-                     rhs_compute_type::min(_lhs.second, _rhs.second) };
-    }
-
-    static void plus(type& _lhs, const type& _rhs)
-    {
-        lhs_compute_type::plus(_lhs.first, _rhs.first);
-        rhs_compute_type::plus(_lhs.second, _rhs.second);
-    }
-
-    static void minus(type& _lhs, const type& _rhs)
-    {
-        lhs_compute_type::minus(_lhs.first, _rhs.first);
-        rhs_compute_type::minus(_lhs.second, _rhs.second);
-    }
-
-    static void multiply(type& _lhs, const type& _rhs)
-    {
-        lhs_compute_type::multiply(_lhs.first, _rhs.first);
-        rhs_compute_type::multiply(_lhs.second, _rhs.second);
-    }
-
-    static void divide(type& _lhs, const type& _rhs)
-    {
-        lhs_compute_type::divide(_lhs.first, _rhs.first);
-        rhs_compute_type::divide(_lhs.second, _rhs.second);
-    }
-
-    static void percent_diff(type& _ret, const type& _lhs, const type& _rhs)
-    {
-        lhs_compute_type::percent_diff(_ret.first, _lhs.first, _rhs.first);
-        rhs_compute_type::percent_diff(_ret.second, _lhs.second, _rhs.second);
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-struct compute<std::tuple<_Types...>>
-{
-    using type                   = std::tuple<_Types...>;
-    static constexpr size_t size = sizeof...(_Types);
-
-    struct impl
-    {
-        //------------------------------------------------------------------------------//
-        //  per-element abs
-        //
-        template <typename _Tuple, size_t... _Idx>
-        static _Tuple abs(_Tuple _ret, index_sequence<_Idx...>)
-        {
-            using init_list_type = std::initializer_list<int>;
-            auto&& tmp           = init_list_type{ (
-                std::get<_Idx>(_ret) =
-                    compute<decay_t<decltype(std::get<_Idx>(_ret))>>::abs(
-                        std::get<_Idx>(_ret)),
-                0)... };
-            consume_parameters(tmp);
-            return _ret;
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element sqrt
-        //
-        template <typename _Tuple, size_t... _Idx>
-        static _Tuple sqrt(_Tuple _ret, index_sequence<_Idx...>)
-        {
-            using init_list_type = std::initializer_list<int>;
-            auto&& tmp           = init_list_type{ (
-                std::get<_Idx>(_ret) =
-                    compute<decay_t<decltype(std::get<_Idx>(_ret))>>::sqrt(
-                        std::get<_Idx>(_ret)),
-                0)... };
-            consume_parameters(tmp);
-            return _ret;
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element sqr
-        //
-        template <typename _Tuple, size_t... _Idx>
-        static _Tuple sqr(_Tuple _ret, index_sequence<_Idx...>)
-        {
-            using init_list_type = std::initializer_list<int>;
-            auto&& tmp           = init_list_type{ (
-                std::get<_Idx>(_ret) =
-                    compute<decay_t<decltype(std::get<_Idx>(_ret))>>::sqr(
-                        std::get<_Idx>(_ret)),
-                0)... };
-            consume_parameters(tmp);
-            return _ret;
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element max
-        //
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static void max(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-        {
-            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
-            std::get<_Idx>(_ret) =
-                compute_type::max(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-        }
-
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static void max(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-        {
-            max<_Tuple, _Idx>(_ret, _lhs, _rhs);
-            max<_Tuple, _Nt...>(_ret, _lhs, _rhs);
-        }
-
-        template <typename _Tuple, size_t... _Idx>
-        static void max(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
-                        index_sequence<_Idx...>)
-        {
-            max<_Tuple, _Idx...>(_ret, _lhs, _rhs);
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element min
-        //
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static void min(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-        {
-            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
-            std::get<_Idx>(_ret) =
-                compute_type::min(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-        }
-
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static void min(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-        {
-            min<_Tuple, _Idx>(_ret, _lhs, _rhs);
-            min<_Tuple, _Nt...>(_ret, _lhs, _rhs);
-        }
-
-        template <typename _Tuple, size_t... _Idx>
-        static void min(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
-                        index_sequence<_Idx...>)
-        {
-            min<_Tuple, _Idx...>(_ret, _lhs, _rhs);
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element addition
-        //
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static void plus(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
-            compute_type::plus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-        }
-
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static void plus(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            plus<_Tuple, _Idx>(_lhs, _rhs);
-            plus<_Tuple, _Nt...>(_lhs, _rhs);
-        }
-
-        template <typename _Tuple, size_t... _Idx>
-        static void plus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-        {
-            plus<_Tuple, _Idx...>(_lhs, _rhs);
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element subtraction
-        //
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static void minus(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
-            compute_type::minus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-        }
-
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static void minus(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            minus<_Tuple, _Idx>(_lhs, _rhs);
-            minus<_Tuple, _Nt...>(_lhs, _rhs);
-        }
-
-        template <typename _Tuple, size_t... _Idx>
-        static void minus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-        {
-            minus<_Tuple, _Idx...>(_lhs, _rhs);
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element multiplication
-        //
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static void multiply(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
-            compute_type::multiply(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-        }
-
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static void multiply(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            multiply<_Tuple, _Idx>(_lhs, _rhs);
-            multiply<_Tuple, _Nt...>(_lhs, _rhs);
-        }
-
-        template <typename _Tuple, size_t... _Idx>
-        static void multiply(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-        {
-            multiply<_Tuple, _Idx...>(_lhs, _rhs);
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element division
-        //
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static void divide(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
-            compute_type::divide(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-        }
-
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static void divide(_Tuple& _lhs, const _Tuple& _rhs)
-        {
-            divide<_Tuple, _Idx>(_lhs, _rhs);
-            divide<_Tuple, _Nt...>(_lhs, _rhs);
-        }
-
-        template <typename _Tuple, size_t... _Idx>
-        static void divide(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
-        {
-            divide<_Tuple, _Idx...>(_lhs, _rhs);
-        }
-
-        //------------------------------------------------------------------------------//
-        //  per-element percent diff
-        //
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-        {
-            using compute_type = compute<decay_t<decltype(std::get<_Idx>(_lhs))>>;
-            compute_type::percent_diff(std::get<_Idx>(_ret), std::get<_Idx>(_lhs),
-                                       std::get<_Idx>(_rhs));
-        }
-
-        template <typename _Tuple, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-        {
-            percent_diff<_Tuple, _Idx>(_ret, _lhs, _rhs);
-            percent_diff<_Tuple, _Nt...>(_ret, _lhs, _rhs);
-        }
-
-        template <typename _Tuple, size_t... _Idx>
-        static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
-                                 index_sequence<_Idx...>)
-        {
-            percent_diff<_Tuple, _Idx...>(_ret, _lhs, _rhs);
-        }
-    };
-
-    static type abs(const type& _ret)
-    {
-        return impl::template abs<type>(_ret, make_index_sequence<size>{});
-    }
-
-    static type sqrt(const type& _ret)
-    {
-        return impl::template sqrt<type>(_ret, make_index_sequence<size>{});
-    }
-
-    static type sqr(const type& _ret)
-    {
-        return impl::template sqr<type>(_ret, make_index_sequence<size>{});
-    }
-
-    static type max(const type& _lhs, const type& _rhs)
-    {
-        type _ret;
-        impl::template max<type>(_ret, _lhs, _rhs, make_index_sequence<size>{});
-        return _ret;
-    }
-
-    static type min(const type& _lhs, const type& _rhs)
-    {
-        type _ret;
-        impl::template min<type>(_ret, _lhs, _rhs, make_index_sequence<size>{});
-        return _ret;
-    }
-
-    static void plus(type& _lhs, const type& _rhs)
-    {
-        impl::template plus<type>(_lhs, _rhs, make_index_sequence<size>{});
-    }
-
-    static void minus(type& _lhs, const type& _rhs)
-    {
-        impl::template minus<type>(_lhs, _rhs, make_index_sequence<size>{});
-    }
-
-    static void multiply(type& _lhs, const type& _rhs)
-    {
-        impl::template multiply<type>(_lhs, _rhs, make_index_sequence<size>{});
-    }
-
-    static void divide(type& _lhs, const type& _rhs)
-    {
-        impl::template divide<type>(_lhs, _rhs, make_index_sequence<size>{});
-    }
-
-    static void percent_diff(type& _ret, const type& _lhs, const type& _rhs)
-    {
-        impl::template percent_diff<type>(_ret, _lhs, _rhs, make_index_sequence<size>{});
+        ::tim::math::divide(_l, _r);
     }
 };
 
@@ -727,11 +857,12 @@ struct compute<std::tuple<>>
     static type sqrt(const type&) { return type{}; }
     static type max(const type&, const type&) { return type{}; }
     static type min(const type&, const type&) { return type{}; }
+    static type percent_diff(const type&, const type&) { return type{}; }
+
     static void plus(type&, const type&) {}
     static void minus(type&, const type&) {}
     static void multiply(type&, const type&) {}
     static void divide(type&, const type&) {}
-    static void percent_diff(type&, const type&, const type&) {}
 };
 
 //--------------------------------------------------------------------------------------//

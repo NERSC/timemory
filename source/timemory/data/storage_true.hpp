@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/utility/impl/storage_true.hpp
- * \headerfile utility/impl/storage_true.hpp "timemory/utility/impl/storage_true.hpp"
+/** \file timemory/data/storage_true.hpp
+ * \headerfile data/storage_true.hpp "timemory/data/storage_true.hpp"
  * Defines storage implementation when the data type is not void
  *
  */
@@ -33,15 +33,14 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/data/base_storage.hpp"
+#include "timemory/data/graph.hpp"
+#include "timemory/data/graph_data.hpp"
 #include "timemory/mpl/bits/operations.hpp"
-#include "timemory/mpl/impl/math.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
-#include "timemory/utility/base_storage.hpp"
-#include "timemory/utility/graph.hpp"
-#include "timemory/utility/graph_data.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -115,8 +114,9 @@ public:
     friend struct result_node;
     friend struct graph_node;
 
-    using strvector_t = std::vector<string_t>;
-    using EmptyT      = std::tuple<>;
+    using strvector_t  = std::vector<string_t>;
+    using uintvector_t = std::vector<uint64_t>;
+    using EmptyT       = std::tuple<>;
 
     static constexpr bool record_statistics_v = trait::record_statistics<Type>::value;
 
@@ -124,42 +124,20 @@ protected:
     template <typename _Tp>
     struct write_serialization;
 
-    template <typename _Type, bool _WithStat = trait::record_statistics<_Type>::value>
-    struct storage_data;
-
-    template <typename _Type>
-    struct storage_data<_Type, false>
+    struct storage_data
     {
-        using type         = typename trait::statistics<_Type>::type;
-        using stats_policy = policy::record_statistics<_Type, type>;
+        using type         = typename trait::statistics<Type>::type;
+        using stats_policy = policy::record_statistics<Type, type>;
         using stats_type   = typename stats_policy::statistics_type;
         using node_type    = std::tuple<uint64_t, Type, int64_t, stats_type>;
         using result_type  = std::tuple<uint64_t, Type, string_t, int64_t, uint64_t,
-                                       strvector_t, stats_type>;
+                                       uintvector_t, stats_type>;
     };
 
-    template <typename _Type>
-    struct storage_data<_Type, true>
-    {
-        using type         = typename trait::statistics<_Type>::type;
-        using stats_policy = policy::record_statistics<_Type, type>;
-        using stats_type   = typename stats_policy::statistics_type;
-        using node_type    = std::tuple<uint64_t, Type, int64_t, stats_type>;
-        using result_type  = std::tuple<uint64_t, Type, string_t, int64_t, uint64_t,
-                                       strvector_t, stats_type>;
-    };
-
-    template <typename _Tp>
-    using storage_stats_t = typename storage_data<_Tp>::stats_type;
-
-    template <typename _Tp>
-    using storage_stats_policy_t = typename storage_data<_Tp>::stats_policy_type;
-
-    template <typename _Tp>
-    using storage_node_t = typename storage_data<_Tp>::node_type;
-
-    template <typename _Tp>
-    using storage_result_t = typename storage_data<_Tp>::result_type;
+    using storage_stats_t        = typename storage_data::stats_type;
+    using storage_stats_policy_t = typename storage_data::stats_policy;
+    using storage_node_t         = typename storage_data::node_type;
+    using storage_result_t       = typename storage_data::result_type;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -171,14 +149,18 @@ public:
     using singleton_t    = singleton<this_type, smart_pointer>;
     using pointer        = typename singleton_t::pointer;
     using auto_lock_t    = typename singleton_t::auto_lock_t;
-    using node_type      = storage_node_t<Type>;
-    using stats_type     = storage_stats_t<Type>;
-    using result_type    = storage_result_t<Type>;
+    using node_type      = storage_node_t;
+    using stats_type     = storage_stats_t;
+    using result_type    = storage_result_t;
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
 
     friend struct impl::storage_deleter<this_type>;
     friend struct write_serialization<this_type>;
+    friend struct operation::finalize::storage::get<Type, true>;
+    friend struct operation::finalize::storage::mpi_get<Type, true>;
+    friend struct operation::finalize::storage::upc_get<Type, true>;
+    friend struct operation::finalize::storage::dmp_get<Type, true>;
     friend class tim::manager;
 
 public:
@@ -248,21 +230,21 @@ public:
         result_node& operator=(const result_node&) = default;
         result_node& operator=(result_node&&) = default;
 
-        uint64_t&    hash() { return std::get<0>(*this); }
-        Type&        data() { return std::get<1>(*this); }
-        string_t&    prefix() { return std::get<2>(*this); }
-        int64_t&     depth() { return std::get<3>(*this); }
-        uint64_t&    rolling_hash() { return std::get<4>(*this); }
-        strvector_t& hierarchy() { return std::get<5>(*this); }
-        stats_type&  stats() { return std::get<6>(*this); }
+        uint64_t&     hash() { return std::get<0>(*this); }
+        Type&         data() { return std::get<1>(*this); }
+        string_t&     prefix() { return std::get<2>(*this); }
+        int64_t&      depth() { return std::get<3>(*this); }
+        uint64_t&     rolling_hash() { return std::get<4>(*this); }
+        uintvector_t& hierarchy() { return std::get<5>(*this); }
+        stats_type&   stats() { return std::get<6>(*this); }
 
-        const uint64_t&    hash() const { return std::get<0>(*this); }
-        const Type&        data() const { return std::get<1>(*this); }
-        const string_t&    prefix() const { return std::get<2>(*this); }
-        const int64_t&     depth() const { return std::get<3>(*this); }
-        const uint64_t&    rolling_hash() const { return std::get<4>(*this); }
-        const strvector_t& hierarchy() const { return std::get<5>(*this); }
-        const stats_type&  stats() const { return std::get<6>(*this); }
+        const uint64_t&     hash() const { return std::get<0>(*this); }
+        const Type&         data() const { return std::get<1>(*this); }
+        const string_t&     prefix() const { return std::get<2>(*this); }
+        const int64_t&      depth() const { return std::get<3>(*this); }
+        const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
+        const uintvector_t& hierarchy() const { return std::get<5>(*this); }
+        const stats_type&   stats() const { return std::get<6>(*this); }
 
         // this is for compatibility with a graph_node
         uint64_t&       id() { return std::get<0>(*this); }
@@ -317,49 +299,10 @@ public:
 
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
 
-        template <typename _Tp                                         = stats_type,
-                  enable_if_t<(std::is_same<_Tp, EmptyT>::value), int> = 0>
-        graph_node& operator+=(const graph_node& rhs)
+        static Type get_dummy()
         {
-            std::stringstream ss;
-            ss << std::boolalpha << record_statistics_v;
-            PRINT_HERE("%s", ss.str().c_str());
-            auto&       _obj   = obj();
-            auto&       _stats = stats();
-            const auto& _rhs   = rhs.obj();
-            _obj += _rhs;
-            _obj.plus(_rhs);
-            policy::record_statistics<Type>::apply(_stats, _obj);
-            return *this;
-        }
-
-        template <typename _Tp                                          = stats_type,
-                  enable_if_t<!(std::is_same<_Tp, EmptyT>::value), int> = 0>
-        graph_node& operator+=(const graph_node& rhs)
-        {
-            std::stringstream ss;
-            ss << std::boolalpha << record_statistics_v;
-            PRINT_HERE("%s", ss.str().c_str());
-            auto&       _obj   = obj();
-            auto&       _stats = stats();
-            const auto& _rhs   = rhs.obj();
-            _obj += _rhs;
-            _obj.plus(_rhs);
-            policy::record_statistics<Type>::apply(_stats, _obj);
-            return *this;
-        }
-
-        friend std::ostream& operator<<(std::ostream& os, const graph_node& obj)
-        {
-            std::stringstream ss;
-            auto              _prefix = obj.get_prefix();
-            static auto       _w      = _prefix.length();
-            _w                        = std::max(_w, _prefix.length());
-            ss << "id = " << std::setw(24) << obj.id() << ", depth = " << std::setw(4)
-               << obj.depth() << ", label = " << std::setw(_w) << std::left
-               << obj.get_prefix();
-            os << ss.str();
-            return os;
+            using object_base_t = typename Type::base_type;
+            return object_base_t::dummy();
         }
     };
 
@@ -611,26 +554,27 @@ public:
     //
     inline bool     empty() const { return (_data().graph().size() <= 1); }
     inline size_t   size() const { return _data().graph().size() - 1; }
-    inline iterator pop() { return _data().pop_graph(); }
+    inline iterator pop()
+    {
+        auto itr = _data().pop_graph();
+        // if data has popped all the way up to the zeroth (relative) depth
+        // then worker threads should insert a new dummy at the current
+        // master thread id and depth. Be aware, this changes 'm_current' inside
+        // the data graph
+        //
+        if(_data().at_sea_level())
+            _data().add_dummy();
+        return itr;
+    }
 
     result_array_t get();
     dmp_result_t   mpi_get();
     dmp_result_t   upc_get();
     dmp_result_t   dmp_get()
     {
-        auto fallback_get = [&]() { return dmp_result_t(1, get()); };
-
-#if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)
-        return (mpi::is_initialized())
-                   ? mpi_get()
-                   : ((upc::is_initialized()) ? upc_get() : fallback_get());
-#elif defined(TIMEMORY_USE_UPCXX)
-        return (upc::is_initialized()) ? upc_get() : fallback_get();
-#elif defined(TIMEMORY_USE_MPI)
-        return (mpi::is_initialized()) ? mpi_get() : fallback_get();
-#else
-        return fallback_get();
-#endif
+        dmp_result_t _ret;
+        operation::finalize::storage::dmp_get<Type, true>(*this, _ret);
+        return _ret;
     }
 
     const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
@@ -806,6 +750,7 @@ protected:
     void     merge(this_type* itr);
     string_t get_prefix(const graph_node&);
     string_t get_prefix(iterator _node) { return get_prefix(*_node); }
+    string_t get_prefix(const uint64_t& _id);
 
 protected:
     //----------------------------------------------------------------------------------//
@@ -920,6 +865,28 @@ storage<Type, true>::get_prefix(const graph_node& node)
     return _ret;
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename Type>
+std::string
+storage<Type, true>::get_prefix(const uint64_t& id)
+{
+    auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, id);
+    if(_ret.find("unknown-hash=") == 0)
+    {
+        if(!m_is_master)
+        {
+            auto _master = singleton_t::master_instance();
+            return _master->get_prefix(id);
+        }
+        else
+        {
+            return get_hash_identifier(id);
+        }
+    }
+    return _ret;
+}
+
 //======================================================================================//
 
 template <typename Type>
@@ -935,25 +902,30 @@ storage<Type, true>::_data()
         if(!m_is_master && master_instance())
         {
             static bool _data_init = master_instance()->data_init();
-            auto        m          = master_instance()->current();
+            auto&       m          = master_instance()->data();
             consume_parameters(_data_init);
 
             if(!lk.owns_lock())
                 lk.lock();
 
-            if(m)
+            if(m.current())
             {
-                graph_node_t node(m->id(), object_base_t::dummy(), m->depth());
+                auto         _current = m.current();
+                auto         _id      = _current->id();
+                auto         _depth   = _current->depth();
+                graph_node_t node(_id, object_base_t::dummy(), _depth);
                 if(!m_graph_data_instance)
-                    m_graph_data_instance = new graph_data_t(node);
-                m_graph_data_instance->depth() = m->depth();
+                    m_graph_data_instance = new graph_data_t(node, _depth, &m);
+                m_graph_data_instance->depth()     = _depth;
+                m_graph_data_instance->sea_level() = _depth;
             }
             else
             {
                 graph_node_t node(0, object_base_t::dummy(), 0);
                 if(!m_graph_data_instance)
-                    m_graph_data_instance = new graph_data_t(node);
-                m_graph_data_instance->depth() = 0;
+                    m_graph_data_instance = new graph_data_t(node, 0, nullptr);
+                m_graph_data_instance->depth()     = 0;
+                m_graph_data_instance->sea_level() = 0;
             }
         }
         else
@@ -965,8 +937,9 @@ storage<Type, true>::_data()
             add_hash_id(_prefix);
             graph_node_t node(0, object_base_t::dummy(), 0);
             if(!m_graph_data_instance)
-                m_graph_data_instance = new graph_data_t(node);
-            m_graph_data_instance->depth() = 0;
+                m_graph_data_instance = new graph_data_t(node, 0, nullptr);
+            m_graph_data_instance->depth()     = 0;
+            m_graph_data_instance->sea_level() = 0;
         }
 
         if(m_node_ids.size() == 0)
@@ -976,6 +949,8 @@ storage<Type, true>::_data()
     m_initialized = true;
     return *m_graph_data_instance;
 }
+
+//======================================================================================//
 
 //======================================================================================//
 
@@ -1057,19 +1032,105 @@ storage<Type, true>::merge(this_type* itr)
     if(itr->size() == 0 || !itr->data().has_head())
         return;
 
-    bool _merged = false;
-    for(auto _titr = graph().begin(); _titr != graph().end(); ++_titr)
+    int64_t num_merged     = 0;
+    auto    inverse_insert = itr->data().get_inverse_insert();
+
+    for(auto entry : inverse_insert)
     {
-        if(_titr && itr->data().has_head() && *_titr == *itr->data().head())
+        auto master_entry = data().find(entry.second);
+        if(master_entry != data().end())
         {
-            typename graph_t::pre_order_iterator _nitr(itr->data().head());
+            pre_order_iterator pitr(entry.second);
+
+            if(itr->graph().is_valid(pitr) && pitr)
+            {
+                if(settings::debug() || settings::verbose() > 2)
+                    PRINT_HERE("[%s]> worker is merging %i records into %i records",
+                               Type::get_label().c_str(), (int) itr->size(),
+                               (int) this->size());
+
+                pre_order_iterator pos = master_entry;
+
+                if(*pos == *pitr)
+                {
+                    // auto prefix = get_prefix(pitr->id());
+                    // PRINT_HERE("%s %s", "Merging!", prefix.c_str());
+
+                    ++num_merged;
+                    sibling_iterator other = pitr;
+                    for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
+                    {
+                        pre_order_iterator pchild = sitr;
+                        if(pchild->obj().nlaps() == 0)
+                            continue;
+                        // auto prefix = get_prefix(pchild->id());
+                        // PRINT_HERE("%s %s", "Appending child!", prefix.c_str());
+                        // graph().prepend_child(pos, pchild);
+                        graph().append_child(pos, pchild);
+                    }
+                }
+                else
+                {
+                    // auto prefix = get_prefix(pitr->id());
+                    // PRINT_HERE("%s %s", "Continuing past dummy!", prefix.c_str());
+                }
+
+                if(settings::debug() || settings::verbose() > 2)
+                    PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
+                               (int) this->size());
+
+                itr->graph().erase_children(entry.second);
+                itr->graph().erase(entry.second);
+            }
+            else
+            {
+                // std::stringstream ss;
+                // ss << std::boolalpha << "valid: " << (itr->graph().is_valid(pitr))
+                //    << ", begin: " << (static_cast<bool>(pitr.begin()));
+                // PRINT_HERE("Bookmark invalid: %s", ss.str().c_str());
+            }
+        }
+        else
+        {
+            // PRINT_HERE("Missing bookmark on master: '%s' @ %lu",
+            //            get_prefix(entry.second->id()).c_str(), entry.second->depth());
+        }
+    }
+
+    int64_t merge_size = static_cast<int64_t>(inverse_insert.size());
+    if(num_merged != merge_size)
+    {
+        int64_t           diff = merge_size - num_merged;
+        std::stringstream ss;
+        ss << "Testing error! Missing " << diff << " merge points. The worker thread "
+           << "contained " << merge_size << " bookmarks but only merged " << num_merged
+           << " nodes!";
+
+        PRINT_HERE("%s", ss.str().c_str());
+
+#if defined(TIMEMORY_TESTING)
+        throw std::runtime_error(ss.str());
+#endif
+    }
+
+    /*
+    for(auto mitr = graph().begin(); mitr != graph().end(); ++mitr)
+    {
+        if(!itr->data().has_head())
+            break;
+
+        if(mitr && *mitr == *itr->data().head())
+        {
+            pre_order_iterator _nitr(itr->data().head());
+
             if(graph().is_valid(_nitr.begin()) && _nitr.begin())
             {
                 if(settings::debug() || settings::verbose() > 2)
                     PRINT_HERE("[%s]> worker is merging %i records into %i records",
                                Type::get_label().c_str(), (int) itr->size(),
                                (int) this->size());
-                pre_order_iterator _pos   = _titr;
+
+                pre_order_iterator _pos   = mitr;
                 sibling_iterator   _other = _nitr;
                 for(auto sitr = _other.begin(); sitr != _other.end(); ++sitr)
                 {
@@ -1077,28 +1138,17 @@ storage<Type, true>::merge(this_type* itr)
                     graph().append_child(_pos, pitr);
                 }
                 _merged = true;
+
                 if(settings::debug() || settings::verbose() > 2)
                     PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
                                (int) this->size());
                 break;
             }
 
-            if(!_merged)
-            {
-                if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> worker is not merged!", Type::get_label().c_str());
-                ++_nitr;
-                if(graph().is_valid(_nitr) && _nitr)
-                {
-                    graph().append_child(_titr, _nitr);
-                    _merged = true;
-                    break;
-                }
-            }
         }
-    }
+    }*/
 
-    if(!_merged)
+    if(num_merged == 0)
     {
         if(settings::debug() || settings::verbose() > 2)
             PRINT_HERE("[%s]> worker is not merged!", Type::get_label().c_str());
@@ -1118,135 +1168,9 @@ template <typename Type>
 typename storage<Type, true>::result_array_t
 storage<Type, true>::get()
 {
-    //------------------------------------------------------------------------------//
-    //
-    //  Compute the node prefix
-    //
-    //------------------------------------------------------------------------------//
-    auto _get_node_prefix = [&]() {
-        if(!m_node_init)
-            return std::string(">>> ");
-
-        // prefix spacing
-        static uint16_t width = 1;
-        if(m_node_size > 9)
-            width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
-        std::stringstream ss;
-        ss.fill('0');
-        ss << "|" << std::setw(width) << m_node_rank << ">>> ";
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //
-    //  Compute the indentation
-    //
-    //------------------------------------------------------------------------------//
-    // fix up the prefix based on the actual depth
-    auto _compute_modified_prefix = [&](const graph_node& itr) {
-        std::string _prefix      = get_prefix(itr);
-        std::string _indent      = "";
-        std::string _node_prefix = _get_node_prefix();
-
-        int64_t _depth = itr.depth() - 1;
-        if(_depth > 0)
-        {
-            for(int64_t ii = 0; ii < _depth - 1; ++ii)
-                _indent += "  ";
-            _indent += "|_";
-        }
-
-        return _node_prefix + _indent + _prefix;
-    };
-
-    // convert graph to a vector
-    auto convert_graph = [&]() {
-        result_array_t _list;
-        {
-            // the head node should always be ignored
-            int64_t _min = std::numeric_limits<int64_t>::max();
-            for(const auto& itr : graph())
-                _min = std::min<int64_t>(_min, itr.depth());
-
-            for(auto itr = graph().begin(); itr != graph().end(); ++itr)
-            {
-                if(itr->depth() > _min)
-                {
-                    auto        _depth   = itr->depth() - (_min + 1);
-                    auto        _prefix  = _compute_modified_prefix(*itr);
-                    auto        _rolling = itr->id();
-                    auto        _stats   = itr->stats();
-                    auto        _parent  = graph_t::parent(itr);
-                    strvector_t _hierarchy;
-                    if(_parent && _parent->depth() > _min)
-                    {
-                        while(_parent)
-                        {
-                            _hierarchy.push_back(get_prefix(*_parent));
-                            _rolling += _parent->id();
-                            _parent = graph_t::parent(_parent);
-                            if(!_parent || !(_parent->depth() > _min))
-                                break;
-                        }
-                    }
-                    if(_hierarchy.size() > 1)
-                        std::reverse(_hierarchy.begin(), _hierarchy.end());
-                    _hierarchy.push_back(get_prefix(*itr));
-                    result_node _entry(result_type{ itr->id(), itr->obj(), _prefix,
-                                                    _depth, _rolling, _hierarchy,
-                                                    _stats });
-                    _list.push_back(_entry);
-                }
-            }
-        }
-
-        bool _thread_scope_only = trait::thread_scope_only<Type>::value;
-        if(!settings::collapse_threads() || _thread_scope_only)
-            return _list;
-
-        result_array_t _combined;
-
-        //--------------------------------------------------------------------------//
-        //
-        auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
-            return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
-                    std::get<2>(_lhs) == std::get<2>(_rhs) &&
-                    std::get<3>(_lhs) == std::get<3>(_rhs) &&
-                    std::get<4>(_lhs) == std::get<4>(_rhs));
-        };
-
-        //--------------------------------------------------------------------------//
-        //
-        auto _exists = [&](const result_node& _lhs) {
-            for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
-            {
-                if(_equiv(_lhs, *itr))
-                    return itr;
-            }
-            return _combined.end();
-        };
-
-        //--------------------------------------------------------------------------//
-        //  collapse duplicates
-        //
-        for(const auto& itr : _list)
-        {
-            auto citr = _exists(itr);
-            if(citr == _combined.end())
-            {
-                _combined.push_back(itr);
-            }
-            else
-            {
-                citr->data() += itr.data();
-                citr->data().plus(itr.data());
-                citr->stats() += itr.stats();
-            }
-        }
-        return _combined;
-    };
-
-    return convert_graph();
+    result_array_t _ret;
+    operation::finalize::storage::get<Type, true>(*this, _ret);
+    return _ret;
 }
 
 //======================================================================================//
@@ -1255,88 +1179,9 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
-#if !defined(TIMEMORY_USE_MPI)
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory not using MPI");
-
-    return dmp_result_t(1, get());
-#else
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory using MPI");
-
-    // not yet implemented
-    // auto comm =
-    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
-    auto comm = mpi::comm_world_v;
-    mpi::barrier(comm);
-
-    int mpi_rank = mpi::rank(comm);
-    int mpi_size = mpi::size(comm);
-    // int mpi_rank = m_node_rank;
-    // int mpi_size = m_node_size;
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert a result to a serialization
-    //
-    auto send_serialize = [&](const result_array_t& src) {
-        std::stringstream ss;
-        {
-            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
-            cereal::JSONOutputArchive::Options opt(16, space, 0);
-            cereal::JSONOutputArchive oa(ss);
-            oa(cereal::make_nvp("data", src));
-        }
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert the serialization to a result
-    //
-    auto recv_serialize = [&](const std::string& src) {
-        result_array_t ret;
-        std::stringstream ss;
-        ss << src;
-        {
-            cereal::JSONInputArchive ia(ss);
-            ia(cereal::make_nvp("data", ret));
-            if(settings::debug())
-                printf("[RECV: %i]> data size: %lli\n", mpi_rank,
-                       (long long int) ret.size());
-        }
-        return ret;
-    };
-
-    dmp_result_t results(mpi_size);
-
-    auto ret = get();
-    auto str_ret = send_serialize(ret);
-
-    if(mpi_rank == 0)
-    {
-        for(int i = 1; i < mpi_size; ++i)
-        {
-            std::string str;
-            if(settings::debug())
-                printf("[RECV: %i]> starting %i\n", mpi_rank, i);
-            mpi::recv(str, i, 0, comm);
-            if(settings::debug())
-                printf("[RECV: %i]> completed %i\n", mpi_rank, i);
-            results[i] = recv_serialize(str);
-        }
-        results[mpi_rank] = ret;
-    }
-    else
-    {
-        if(settings::debug())
-            printf("[SEND: %i]> starting\n", mpi_rank);
-        mpi::send(str_ret, 0, 0, comm);
-        if(settings::debug())
-            printf("[SEND: %i]> completed\n", mpi_rank);
-        return dmp_result_t(1, ret);
-    }
-
-    return results;
-#endif
+    dmp_result_t _ret;
+    operation::finalize::storage::mpi_get<Type, true>(*this, _ret);
+    return _ret;
 }
 
 //======================================================================================//
@@ -1345,80 +1190,9 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
-#if !defined(TIMEMORY_USE_UPCXX)
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory not using UPC++");
-
-    return dmp_result_t(1, get());
-#else
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory using UPC++");
-
-    upc::barrier();
-
-    int upc_rank = upc::rank();
-    int upc_size = upc::size();
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert a result to a serialization
-    //
-    auto send_serialize = [=](const result_array_t& src) {
-        std::stringstream ss;
-        {
-            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
-            cereal::JSONOutputArchive::Options opt(16, space, 0);
-            cereal::JSONOutputArchive oa(ss);
-            oa(cereal::make_nvp("data", src));
-        }
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert the serialization to a result
-    //
-    auto recv_serialize = [=](const std::string& src) {
-        result_array_t ret;
-        std::stringstream ss;
-        ss << src;
-        {
-            cereal::JSONInputArchive ia(ss);
-            ia(cereal::make_nvp("data", ret));
-        }
-        return ret;
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Function executed on remote node
-    //
-    auto remote_serialize = [=]() {
-        return send_serialize(this_type::master_instance()->get());
-    };
-
-    dmp_result_t results(upc_size);
-
-    //------------------------------------------------------------------------------//
-    //  Combine on master rank
-    //
-    if(upc_rank == 0)
-    {
-        for(int i = 1; i < upc_size; ++i)
-        {
-            upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
-            while(!fut.ready())
-                upcxx::progress();
-            fut.wait();
-            results[i] = recv_serialize(fut.result());
-        }
-        results[upc_rank] = get();
-    }
-
-    upcxx::barrier(upcxx::world());
-
-    if(upc_rank != 0)
-        return dmp_result_t(1, get());
-    else
-        return results;
-#endif
+    dmp_result_t _ret;
+    operation::finalize::storage::upc_get<Type, true>(*this, _ret);
+    return _ret;
 }
 
 //======================================================================================//
@@ -1515,7 +1289,7 @@ storage<Type, true>::internal_print()
                 {
                     if(i == 0)
                         std::cout << " :: ";
-                    std::cout << _hierarchy[i];
+                    std::cout << get_prefix(_hierarchy[i]);
                     if(i + 1 < _hierarchy.size())
                         std::cout << "/";
                 }
@@ -1548,14 +1322,9 @@ storage<Type, true>::internal_print()
             }
         }
 
-        // int64_t             _pwidth = settings::indent_width<Type, 0>();
-        // int64_t             _lwidth = settings::indent_width<Type, 1>();
-        // int64_t             _dwidth = settings::indent_width<Type, 2>();
-        // std::vector<size_t> _widths = { _pwidth, _lwidth, _dwidth };
-        // consume_parameters(_widths);
-
         // return type of get() function
         using get_return_type = decltype(std::declval<const Type>().get());
+        using compute_type    = math::compute<get_return_type>;
 
         auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
         if(!slk.owns_lock())
@@ -1683,7 +1452,7 @@ storage<Type, true>::internal_print()
                 // counts the number of non-exclusive values
                 nexclusive = 0;
                 // the sum of the exclusive values
-                exclusive_values = get_return_type();
+                exclusive_values = get_return_type{};
                 // continue while not at end of graph until first sibling is
                 // encountered
                 if(eitr != _results.end())
@@ -1701,7 +1470,7 @@ storage<Type, true>::internal_print()
                             if(nexclusive == 0)
                                 exclusive_values = eitr_obj.get();
                             else
-                                math::combine(exclusive_values, eitr_obj.get());
+                                compute_type::plus(exclusive_values, eitr_obj.get());
                             // increment. beyond 0 vs. 1, this value plays no role
                             ++nexclusive;
                         }
@@ -1714,7 +1483,7 @@ storage<Type, true>::internal_print()
                 }
             }
 
-            auto itr_self  = math::compute_percentage(exclusive_values, itr_obj.get());
+            auto itr_self  = compute_type::percent_diff(exclusive_values, itr_obj.get());
             auto itr_stats = itr->stats();
 
             bool _first = std::distance(_results.begin(), itr) == 0;
@@ -1765,9 +1534,12 @@ storage<Type, true>::internal_print()
                 if(settings::dart_count() > 0 && _nitr >= settings::dart_count())
                     continue;
 
-                auto& itr_obj       = itr.data();
-                auto& itr_hierarchy = itr.hierarchy();
-                operation::echo_measurement<Type>(itr_obj, itr_hierarchy);
+                auto&       itr_obj       = itr.data();
+                auto&       itr_hierarchy = itr.hierarchy();
+                strvector_t str_hierarchy{};
+                for(const auto& hitr : itr_hierarchy)
+                    str_hierarchy.push_back(get_prefix(hitr));
+                operation::echo_measurement<Type>(itr_obj, str_hierarchy);
                 ++_nitr;
             }
         }

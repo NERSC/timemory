@@ -58,6 +58,8 @@ struct statistics
 public:
     using value_type   = _Tp;
     using compute_type = math::compute<_Tp>;
+    template <typename V>
+    using compute_value_t = math::compute<_Tp, V>;
 
 public:
     inline statistics()                  = default;

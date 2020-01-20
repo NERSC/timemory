@@ -59,8 +59,8 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/utility/impl/storage_false.hpp"
-#include "timemory/utility/impl/storage_true.hpp"
+#include "timemory/data/storage_false.hpp"
+#include "timemory/data/storage_true.hpp"
 
 //--------------------------------------------------------------------------------------//
 

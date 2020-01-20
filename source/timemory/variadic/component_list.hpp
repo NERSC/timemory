@@ -44,6 +44,7 @@
 
 #include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
+#include "timemory/data/storage.hpp"
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
@@ -51,7 +52,6 @@
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/storage.hpp"
 #include "timemory/variadic/types.hpp"
 
 //======================================================================================//

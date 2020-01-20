@@ -43,7 +43,7 @@ namespace math
 //      Combining daughter data
 //
 //--------------------------------------------------------------------------------------//
-
+/*
 template <typename... _Types>
 void
 combine(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
@@ -92,13 +92,13 @@ combine(_Tp& lhs, const _Tp& rhs)
 {
     lhs += rhs;
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 //
 //      Computing percentage that excludes daughters
 //
 //--------------------------------------------------------------------------------------//
-
+/*
 template <typename _Tp, typename _Ret = _Tp,
           typename std::enable_if<!(std::is_class<_Tp>::value), int>::type    = 0,
           typename std::enable_if<!(std::is_integral<_Tp>::value), int>::type = 0>
@@ -191,13 +191,13 @@ compute_percentage(const std::map<_Key, _Mapped, _ExtraArgs...>& lhs,
     }
     return perc;
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 //
 //      Printing percentage that excludes daughters
 //
 //--------------------------------------------------------------------------------------//
-
+/*
 template <
     typename _Tp, typename... _ExtraArgs,
     template <typename, typename...> class _Container,
@@ -275,6 +275,6 @@ print_percentage(std::ostream& os, const _Tp& obj)
     ss << "%)";
     os << ss.str();
 }
-
+*/
 }  // namespace math
 }  // namespace tim

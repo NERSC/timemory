@@ -1065,6 +1065,11 @@ struct pointer_counter
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/data/statistics.hpp"
+#include "timemory/mpl/math.hpp"
+
+//--------------------------------------------------------------------------------------//
+
 inline tim::component::cpu_clock
 operator+(const tim::component::user_clock&   _user,
           const tim::component::system_clock& _sys)

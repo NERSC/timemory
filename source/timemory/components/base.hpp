@@ -32,12 +32,12 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/data/statistics.hpp"
+#include "timemory/data/storage.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/storage.hpp"
 
 //======================================================================================//
 
@@ -104,6 +104,10 @@ private:
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
     friend struct operation::sample<_Tp>;
+    friend struct operation::finalize::storage::get<_Tp, implements_storage_v>;
+    // friend struct operation::finalize::storage::mpi_get<_Tp>;
+    // friend struct operation::finalize::storage::upc_get<_Tp>;
+    // friend struct operation::finalize::storage::dmp_get<_Tp>;
 
     template <typename _Up, typename _Scope>
     friend struct operation::insert_node;
@@ -191,9 +195,11 @@ public:
         is_on_stack  = false;
         is_transient = false;
         is_flat      = false;
+        depth_change = false;
         laps         = 0;
-        value        = value_type();
-        accum        = value_type();
+        value        = value_type{};
+        accum        = value_type{};
+        samples      = sample_type{};
     }
 
     //----------------------------------------------------------------------------------//
@@ -214,30 +220,26 @@ public:
     //----------------------------------------------------------------------------------//
     // start
     //
-    bool start()
+    void start()
     {
         if(!is_running)
         {
-            ++laps;
-            static_cast<Type&>(*this).start();
             set_started();
-            return true;
+            static_cast<Type&>(*this).start();
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    bool stop()
+    void stop()
     {
         if(is_running)
         {
-            static_cast<Type&>(*this).stop();
             set_stopped();
-            return true;
+            ++laps;
+            static_cast<Type&>(*this).stop();
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -658,8 +660,8 @@ protected:
     bool             is_flat      = false;
     bool             depth_change = false;
     int64_t          laps         = 0;
-    value_type       value        = value_type();
-    accum_type       accum        = accum_type();
+    value_type       value        = value_type{};
+    accum_type       accum        = accum_type{};
     sample_list_type samples      = sample_type{};
     graph_iterator   graph_itr    = graph_iterator{ nullptr };
 
@@ -934,29 +936,25 @@ public:
     //----------------------------------------------------------------------------------//
     // start
     //
-    bool start()
+    void start()
     {
         if(!is_running)
         {
             set_started();
             static_cast<Type&>(*this).start();
-            return true;
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    bool stop()
+    void stop()
     {
         if(is_running)
         {
-            static_cast<Type&>(*this).stop();
             set_stopped();
-            return true;
+            static_cast<Type&>(*this).stop();
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//

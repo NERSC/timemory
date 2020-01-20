@@ -30,6 +30,10 @@
 
 #pragma once
 
+// define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs in bits/papi.hpp
+// cause problems
+
+#include "timemory/backends/bits/papi.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -49,13 +53,6 @@
 #    if defined(_UNIX)
 #        include <pthread.h>
 #    endif
-#else
-
-// define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs cause problems
-#    if !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
-#        include "timemory/backends/bits/papi.hpp"
-#    endif  // !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
-
 #endif
 
 // int EventSet = PAPI_NULL;
@@ -85,10 +82,13 @@ namespace papi
 {
 //--------------------------------------------------------------------------------------//
 
-using tid_t        = std::thread::id;
-using string_t     = std::string;
-using event_info_t = PAPI_event_info_t;
-using ulong_t      = unsigned long int;
+using tid_t            = std::thread::id;
+using string_t         = std::string;
+using event_info_t     = PAPI_event_info_t;
+using ulong_t          = unsigned long int;
+using strvec_t         = std::vector<string_t>;
+using boolvec_t        = std::vector<bool>;
+using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -776,6 +776,75 @@ detach(int event_set)
 #else
     consume_parameters(event_set);
 #endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+query_event(int event)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    return (PAPI_query_event(event) == PAPI_OK);
+#else
+    consume_parameters(event);
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline hwcounter_info_t
+available_events_info()
+{
+    hwcounter_info_t evts{};
+
+#if defined(TIMEMORY_USE_PAPI)
+    init();
+    if(working())
+    {
+        for(int i = 0; i < PAPI_END_idx; ++i)
+        {
+            PAPI_event_info_t info;
+            auto              ret = PAPI_get_event_info(i, &info);
+            if(ret != PAPI_OK)
+            {
+                working() = false;
+                break;
+            }
+
+            auto as_string = [](char* cstr) {
+                auto              n = strlen(cstr);
+                std::stringstream ss;
+                for(decltype(n) i = 0; i < n; ++i)
+                {
+                    ss << cstr[i];
+                    if(cstr[i] == '\0')
+                        break;
+                }
+                return ss.str();
+            };
+
+            std::get<0>(evts).push_back(as_string(info.symbol));
+            std::get<1>(evts).push_back(query_event(i));
+            std::get<2>(evts).push_back(as_string(info.short_descr));
+            std::get<3>(evts).push_back(as_string(info.long_descr));
+        }
+    }
+#endif
+    if(!working())
+    {
+        for(int i = 0; i < TIMEMORY_PAPI_PRESET_EVENTS; ++i)
+        {
+            if(get_timemory_papi_presets()[i].symbol == NULL)
+                continue;
+            std::get<0>(evts).push_back(get_timemory_papi_presets()[i].symbol);
+            std::get<1>(evts).push_back(false);
+            std::get<2>(evts).push_back(get_timemory_papi_presets()[i].short_descr);
+            std::get<3>(evts).push_back(get_timemory_papi_presets()[i].long_descr);
+        }
+    }
+
+    return evts;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -32,7 +32,7 @@
 
 #if defined(TIMEMORY_EXTERN_INIT) && !defined(TIMEMORY_BUILD_EXTERN_INIT)
 #    include "timemory/components/types.hpp"
-#    include "timemory/utility/storage.hpp"
+#    include "timemory/data/storage.hpp"
 
 namespace tim
 {

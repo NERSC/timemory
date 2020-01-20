@@ -222,33 +222,6 @@ struct apply<void>
     }
 
     //----------------------------------------------------------------------------------//
-    //  per-element percent difference calculation
-    //
-    template <typename _Tuple, size_t _Idx, size_t... _Nt,
-              enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-    static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-    {
-        using value_type = decay_t<decltype(std::get<_Idx>(_ret))>;
-        math::compute<value_type>::percent_diff(
-            std::get<_Idx>(_ret), std::get<_Idx>(_lhs), std::get<_Idx>(_rhs));
-    }
-
-    template <typename _Tuple, size_t _Idx, size_t... _Nt,
-              enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-    static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs)
-    {
-        percent_diff<_Tuple, _Idx>(_ret, _lhs, _rhs);
-        percent_diff<_Tuple, _Nt...>(_ret, _lhs, _rhs);
-    }
-
-    template <typename _Tuple, size_t... _Idx>
-    static void percent_diff(_Tuple& _ret, const _Tuple& _lhs, const _Tuple& _rhs,
-                             index_sequence<_Idx...>)
-    {
-        percent_diff<_Tuple, _Idx...>(_ret, _lhs, _rhs);
-    }
-
-    //----------------------------------------------------------------------------------//
     // temporary construction
     //
     template <typename _Type, typename... _Args>
@@ -722,8 +695,7 @@ struct apply<void>
     static void percent_diff(_Tuple& _ret, const _Tuple& _lhs,
                              const _Tuple& _rhs) noexcept
     {
-        internal::apply<_Ret>::template percent_diff<_Tuple>(_ret, _lhs, _rhs,
-                                                             make_index_sequence<_N>{});
+        _ret = math::compute<_Tuple>::percent_diff(_lhs, _rhs);
     }
 
     //----------------------------------------------------------------------------------//

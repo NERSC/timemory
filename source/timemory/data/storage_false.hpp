@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/utility/impl/storage_false.hpp
- * \headerfile utility/impl/storage_false.hpp "timemory/utility/impl/storage_false.hpp"
+/** \file timemory/data/storage_false.hpp
+ * \headerfile data/storage_false.hpp "timemory/data/storage_false.hpp"
  * Defines storage implementation when the data type is void
  *
  */
@@ -31,10 +31,10 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/data/base_storage.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
-#include "timemory/utility/base_storage.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -66,6 +66,13 @@ public:
 
     friend class tim::manager;
     friend struct impl::storage_deleter<this_type>;
+
+    using result_node    = std::tuple<>;
+    using graph_t        = std::tuple<>;
+    using graph_node     = std::tuple<>;
+    using dmp_result_t   = std::vector<std::tuple<>>;
+    using result_array_t = std::vector<std::tuple<>>;
+    using uintvector_t   = std::vector<uint64_t>;
 
 public:
     using iterator       = void*;

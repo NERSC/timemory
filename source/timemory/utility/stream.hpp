@@ -57,8 +57,8 @@ struct stream_entry
     using stringstream_t = std::stringstream;
     using format_flags   = std::ios_base::fmtflags;
 
-    stream_entry(int _row = -1, int _col = -1, format_flags _fmt = {}, int _width = 0,
-                 int _prec = 0, bool _center = false)
+    explicit stream_entry(int _row = -1, int _col = -1, format_flags _fmt = {},
+                          int _width = 0, int _prec = 0, bool _center = false)
     : m_center(_center)
     , m_row(_row)
     , m_column(_col)
@@ -95,7 +95,7 @@ struct stream_entry
     void operator()(const string_t& val) { m_value = val; }
 
     template <typename _Tp>
-    void operator()(const _Tp& val)
+    void construct(const _Tp& val)
     {
         stringstream_t ss;
         ss.setf(m_format);
@@ -179,15 +179,15 @@ struct header : base::stream_entry
                     int _prec = 0, bool _center = true)
     : base::stream_entry(0, -1, _fmt, _width, _prec, _center)
     {
-        base::stream_entry::operator()(_val);
+        base::stream_entry::construct(_val);
     }
 
     template <typename _Tp>
-    explicit header(_Tp&& _val, format_flags _fmt = {}, int _width = 0, int _prec = 0,
+    explicit header(const _Tp& _val, format_flags _fmt, int _width, int _prec,
                     bool _center = true)
     : base::stream_entry(0, -1, _fmt, _width, _prec, _center)
     {
-        base::stream_entry::operator()(std::forward<_Tp>(_val));
+        base::stream_entry::construct(std::forward<_Tp>(_val));
     }
 };
 
@@ -203,7 +203,7 @@ struct entry : base::stream_entry
     {
         m_center = _center;
         m_left   = _left;
-        base::stream_entry::operator()(std::forward<_Tp>(_val));
+        base::stream_entry::construct(std::forward<_Tp>(_val));
     }
 
     explicit entry(const std::string& _val, header& _hdr, bool _center = false,
@@ -214,7 +214,7 @@ struct entry : base::stream_entry
     {
         m_center = _center;
         m_left   = _left;
-        base::stream_entry::operator()(_val);
+        base::stream_entry::construct(_val);
     }
 
     entry(const entry& _rhs)
@@ -581,10 +581,68 @@ public:
         return m_headers[idx].second[_n];
     }
 
+    /// \fn stream::add_row()
+    /// \brief indicate that a row of data has been finished
     int add_row()
     {
         m_cols = 0;
         return ++m_rows;
+    }
+
+    /// \fn stream::sort(sorter, keys, exclude)
+    /// \brief Provide a \param sorter functor that operates on all or a specific
+    /// set of header keys. If \param keys is empty, all header keys are sorted.
+    /// If \param keys is non-empty, the sorted keys are placed at the front of the
+    /// container and any remaining keys not list in \param exclude will be added to the
+    /// end of the container in the order consistent with the origial construction
+    void sort(const std::function<bool(const std::string&, const std::string&)>& sorter,
+              std::vector<std::string>     keys    = {},
+              const std::set<std::string>& exclude = {})
+    {
+        // if no keys were provided, add all of them
+        if(keys.empty())
+            for(const auto& itr : m_headers)
+                keys.push_back(itr.first);
+
+        // the new headers
+        header_map_t _headers{};
+
+        // sort the keys
+        std::sort(keys.begin(), keys.end(), sorter);
+
+        // generate the new layout in the order specified
+        for(const auto& itr : keys)
+        {
+            bool found = false;
+            for(auto hitr = m_headers.begin(); hitr != m_headers.end(); ++hitr)
+            {
+                if(hitr->first == itr)
+                {
+                    _headers.resize(_headers.size() + 1);
+                    _headers.back() = header_pair_t{ hitr->first, hitr->second };
+                    // remove entry
+                    m_headers.erase(hitr);
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                PRINT_HERE("Warning! Expected header tag '%s' not found when sorting",
+                           itr.c_str());
+        }
+
+        // insert any remaining not excluded
+        for(const auto& itr : m_headers)
+        {
+            if(exclude.count(itr.first) == 0)
+            {
+                _headers.resize(_headers.size() + 1);
+                _headers.back() = header_pair_t{ itr.first, itr.second };
+            }
+        }
+
+        // set the new headers
+        m_headers = _headers;
     }
 
 private:
@@ -636,10 +694,11 @@ struct header_stream
 
 template <typename... _Args>
 void
-write_header(stream& _os, const std::string& _label, _Args&&... _args)
+write_header(stream& _os, const std::string& _label, std::ios_base::fmtflags _fmt = {},
+             int _width = 0, int _prec = 0, bool _center = true)
 {
     _os.set_name(_label);
-    _os(header(_label, std::forward<_Args>(_args)...));
+    _os(header(_label, _fmt, _width, _prec, _center));
 }
 
 //--------------------------------------------------------------------------------------//

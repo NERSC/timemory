@@ -690,34 +690,44 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
         return tuple_type(-1, strvec_t(), strvec_t());
     }
 
-    // handle events
-    strvec_t    _events       = std::get<1>(_init);
+    strvec_t _events  = std::get<1>(_init);
+    strvec_t _metrics = std::get<2>(_init);
+
+    // provide defaults events
+    if(_events.empty())
+    {
+        _events = { "active_warps", "active_cycles", "global_load", "global_store" };
+    }
+
+    // provide default metrics
+    if(_metrics.empty())
+    {
+        _metrics = { "inst_per_warp", "branch_efficiency", "gld_efficiency",
+                     "gst_efficiency", "warp_execution_efficiency" };
+    }
+
     const auto& _avail_events = get_available_events(devid);
-    auto        _find_event   = [&_avail_events, devid](const string_t& evt) {
+    const auto& _avail_metric = get_available_metrics(devid);
+
+    std::set<std::string> _discarded_events{};
+    std::set<std::string> _discarded_metrics{};
+
+    // handle events
+    auto _find_event = [&_avail_events, &_discarded_events, devid](const string_t& evt) {
         bool nf = (std::find(std::begin(_avail_events), std::end(_avail_events), evt) ==
                    std::end(_avail_events));
         if(nf)
-        {
-            fprintf(stderr,
-                    "[cupti_counters]> Removing unavailable event '%s' on device %i...\n",
-                    evt.c_str(), devid);
-        }
+            _discarded_events.insert(evt);
         return nf;
     };
 
     // handle metrics
-    strvec_t    _metrics      = std::get<2>(_init);
-    const auto& _avail_metric = get_available_metrics(devid);
-    auto        _find_metric  = [&_avail_metric, devid](const string_t& met) {
+    auto _find_metric = [&_avail_metric, &_discarded_metrics,
+                         devid](const string_t& met) {
         bool nf = (std::find(std::begin(_avail_metric), std::end(_avail_metric), met) ==
                    std::end(_avail_metric));
         if(nf)
-        {
-            fprintf(stderr,
-                    "[cupti_counters]> Removing unavailable metric '%s' on device "
-                    "%i...\n",
-                    met.c_str(), devid);
-        }
+            _discarded_metrics.insert(met);
         return nf;
     };
 
@@ -727,6 +737,35 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
 
     _metrics.erase(std::remove_if(std::begin(_metrics), std::end(_metrics), _find_metric),
                    std::end(_metrics));
+
+    // check to see if any requested events are actually metrics
+    for(const auto& itr : _discarded_events)
+    {
+        bool is_metric = _find_metric(itr);
+        if(is_metric)
+            _metrics.push_back(itr);
+        else
+        {
+            fprintf(stderr,
+                    "[cupti_counters]> Removing unavailable event '%s' on device %i...\n",
+                    itr.c_str(), devid);
+        }
+    }
+
+    // check to see if any requested metrics are actually events
+    for(const auto& itr : _discarded_metrics)
+    {
+        bool is_event = _find_event(itr);
+        if(is_event)
+            _events.push_back(itr);
+        else
+        {
+            fprintf(
+                stderr,
+                "[cupti_counters]> Removing unavailable metric '%s' on device %i...\n",
+                itr.c_str(), devid);
+        }
+    }
 
     // determine total
     return tuple_type(devid, _events, _metrics);

@@ -36,10 +36,10 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/data/base_storage.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/utility/base_storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/utility.hpp"

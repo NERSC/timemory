@@ -994,6 +994,335 @@ struct echo_measurement<_Tp, true> : public common_utils
 
 //--------------------------------------------------------------------------------------//
 
+namespace finalize
+{
+namespace storage
+{
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+get<Type, true>::get(storage_type& data, result_type& ret)
+{
+    //------------------------------------------------------------------------------//
+    //
+    //  Compute the node prefix
+    //
+    //------------------------------------------------------------------------------//
+    auto _get_node_prefix = [&]() {
+        if(!data.m_node_init)
+            return std::string(">>> ");
+
+        // prefix spacing
+        static uint16_t width = 1;
+        if(data.m_node_size > 9)
+            width = std::max(width, (uint16_t)(log10(data.m_node_size) + 1));
+        std::stringstream ss;
+        ss.fill('0');
+        ss << "|" << std::setw(width) << data.m_node_rank << ">>> ";
+        return ss.str();
+    };
+
+    //------------------------------------------------------------------------------//
+    //
+    //  Compute the indentation
+    //
+    //------------------------------------------------------------------------------//
+    // fix up the prefix based on the actual depth
+    auto _compute_modified_prefix = [&](const graph_node& itr) {
+        std::string _prefix      = data.get_prefix(itr);
+        std::string _indent      = "";
+        std::string _node_prefix = _get_node_prefix();
+
+        int64_t _depth = itr.depth() - 1;
+        if(_depth > 0)
+        {
+            for(int64_t ii = 0; ii < _depth - 1; ++ii)
+                _indent += "  ";
+            _indent += "|_";
+        }
+
+        return _node_prefix + _indent + _prefix;
+    };
+
+    // convert graph to a vector
+    auto convert_graph = [&]() {
+        result_type _list;
+        {
+            // the head node should always be ignored
+            int64_t _min = std::numeric_limits<int64_t>::max();
+            for(const auto& itr : data.graph())
+                _min = std::min<int64_t>(_min, itr.depth());
+
+            for(auto itr = data.graph().begin(); itr != data.graph().end(); ++itr)
+            {
+                if(itr->depth() > _min)
+                {
+                    auto _depth     = itr->depth() - (_min + 1);
+                    auto _prefix    = _compute_modified_prefix(*itr);
+                    auto _rolling   = itr->id();
+                    auto _stats     = itr->stats();
+                    auto _parent    = graph_type::parent(itr);
+                    auto _hierarchy = hierarchy_type{};
+                    if(_parent && _parent->depth() > _min)
+                    {
+                        while(_parent)
+                        {
+                            _hierarchy.push_back(_parent->id());
+                            _rolling += _parent->id();
+                            _parent = graph_type::parent(_parent);
+                            if(!_parent || !(_parent->depth() > _min))
+                                break;
+                        }
+                    }
+                    if(_hierarchy.size() > 1)
+                        std::reverse(_hierarchy.begin(), _hierarchy.end());
+                    _hierarchy.push_back(itr->id());
+                    auto&& _entry = result_node({ itr->id(), itr->obj(), _prefix, _depth,
+                                                  _rolling, _hierarchy, _stats });
+                    _list.push_back(_entry);
+                }
+            }
+        }
+
+        bool _thread_scope_only = trait::thread_scope_only<Type>::value;
+        if(!settings::collapse_threads() || _thread_scope_only)
+            return _list;
+
+        result_type _combined;
+
+        //--------------------------------------------------------------------------//
+        //
+        auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
+            return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
+                    std::get<2>(_lhs) == std::get<2>(_rhs) &&
+                    std::get<3>(_lhs) == std::get<3>(_rhs) &&
+                    std::get<4>(_lhs) == std::get<4>(_rhs));
+        };
+
+        //--------------------------------------------------------------------------//
+        //
+        auto _exists = [&](const result_node& _lhs) {
+            for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
+            {
+                if(_equiv(_lhs, *itr))
+                    return itr;
+            }
+            return _combined.end();
+        };
+
+        //--------------------------------------------------------------------------//
+        //  collapse duplicates
+        //
+        for(const auto& itr : _list)
+        {
+            auto citr = _exists(itr);
+            if(citr == _combined.end())
+            {
+                _combined.push_back(itr);
+            }
+            else
+            {
+                citr->data() += itr.data();
+                citr->data().plus(itr.data());
+                citr->stats() += itr.stats();
+            }
+        }
+        return _combined;
+    };
+
+    ret = convert_graph();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type>
+mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
+{
+#if !defined(TIMEMORY_USE_MPI)
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory not using MPI");
+
+    results = distrib_type(1, data->get());
+#else
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory using MPI");
+
+    // not yet implemented
+    // auto comm =
+    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
+    auto comm = mpi::comm_world_v;
+    mpi::barrier(comm);
+
+    int mpi_rank = mpi::rank(comm);
+    int mpi_size = mpi::size(comm);
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert a result to a serialization
+    //
+    auto send_serialize = [&](const result_type& src) {
+        std::stringstream ss;
+        {
+            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+            cereal::JSONOutputArchive::Options opt(16, space, 0);
+            cereal::JSONOutputArchive          oa(ss);
+            oa(cereal::make_nvp("data", src));
+        }
+        return ss.str();
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert the serialization to a result
+    //
+    auto recv_serialize = [&](const std::string& src) {
+        result_type       ret;
+        std::stringstream ss;
+        ss << src;
+        {
+            cereal::JSONInputArchive ia(ss);
+            ia(cereal::make_nvp("data", ret));
+            if(settings::debug())
+                printf("[RECV: %i]> data size: %lli\n", mpi_rank,
+                       (long long int) ret.size());
+        }
+        return ret;
+    };
+
+    results = distrib_type(mpi_size);
+
+    auto ret     = data.get();
+    auto str_ret = send_serialize(ret);
+
+    if(mpi_rank == 0)
+    {
+        for(int i = 1; i < mpi_size; ++i)
+        {
+            std::string str;
+            if(settings::debug())
+                printf("[RECV: %i]> starting %i\n", mpi_rank, i);
+            mpi::recv(str, i, 0, comm);
+            if(settings::debug())
+                printf("[RECV: %i]> completed %i\n", mpi_rank, i);
+            results[i] = recv_serialize(str);
+        }
+        results[mpi_rank] = ret;
+    }
+    else
+    {
+        if(settings::debug())
+            printf("[SEND: %i]> starting\n", mpi_rank);
+        mpi::send(str_ret, 0, 0, comm);
+        if(settings::debug())
+            printf("[SEND: %i]> completed\n", mpi_rank);
+        results = distrib_type(1, ret);
+    }
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type>
+upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
+{
+#if !defined(TIMEMORY_USE_UPCXX)
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory not using UPC++");
+
+    results = distrib_type(1, data.get());
+#else
+    if(settings::debug())
+        PRINT_HERE("%s", "timemory using UPC++");
+
+    upc::barrier();
+
+    int upc_rank = upc::rank();
+    int upc_size = upc::size();
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert a result to a serialization
+    //
+    auto send_serialize = [=](const result_type& src) {
+        std::stringstream ss;
+        {
+            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
+            cereal::JSONOutputArchive::Options opt(16, space, 0);
+            cereal::JSONOutputArchive          oa(ss);
+            oa(cereal::make_nvp("data", src));
+        }
+        return ss.str();
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Used to convert the serialization to a result
+    //
+    auto recv_serialize = [=](const std::string& src) {
+        result_type       ret;
+        std::stringstream ss;
+        ss << src;
+        {
+            cereal::JSONInputArchive ia(ss);
+            ia(cereal::make_nvp("data", ret));
+        }
+        return ret;
+    };
+
+    //------------------------------------------------------------------------------//
+    //  Function executed on remote node
+    //
+    auto remote_serialize = [=]() {
+        return send_serialize(storage_type::master_instance()->get());
+    };
+
+    distrib_type results(upc_size);
+
+    //------------------------------------------------------------------------------//
+    //  Combine on master rank
+    //
+    if(upc_rank == 0)
+    {
+        for(int i = 1; i < upc_size; ++i)
+        {
+            upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
+            while(!fut.ready())
+                upcxx::progress();
+            fut.wait();
+            results[i] = recv_serialize(fut.result());
+        }
+        results[upc_rank] = get();
+    }
+
+    upcxx::barrier(upcxx::world());
+
+    if(upc_rank != 0)
+        results = distrib_type(1, get());
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+dmp_get<Type, true>::dmp_get(storage_type& data, distrib_type& results)
+{
+    auto fallback_get = [&]() { return distrib_type(1, data.get()); };
+
+#if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)
+    results = (mpi::is_initialized())
+                  ? data.mpi_get()
+                  : ((upc::is_initialized()) ? data.upc_get() : fallback_get());
+#elif defined(TIMEMORY_USE_UPCXX)
+    results = (upc::is_initialized()) ? data.upc_get() : fallback_get();
+#elif defined(TIMEMORY_USE_MPI)
+    results = (mpi::is_initialized()) ? data.mpi_get() : fallback_get();
+#else
+    results = fallback_get();
+#endif
+}
+
+}  // namespace storage
+
+}  // namespace finalize
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace operation
 
 //--------------------------------------------------------------------------------------//

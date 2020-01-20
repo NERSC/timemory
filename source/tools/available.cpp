@@ -95,9 +95,16 @@ struct get_availability
         auto     itr          = ids_set.begin();
         string_t db           = (markdown) ? "`\"" : "\"";
         string_t de           = (markdown) ? "\"`" : "\"";
-        string_t ids_str      = TIMEMORY_JOIN("", TIMEMORY_JOIN("", db, *itr++, de));
+        while(itr->empty())
+            ++itr;
+        string_t ids_str = "";
+        if(itr != ids_set.end())
+            ids_str = TIMEMORY_JOIN("", TIMEMORY_JOIN("", db, *itr++, de));
         for(; itr != ids_set.end(); ++itr)
-            ids_str = TIMEMORY_JOIN("  ", ids_str, TIMEMORY_JOIN("", db, *itr, de));
+        {
+            if(!itr->empty())
+                ids_str = TIMEMORY_JOIN("  ", ids_str, TIMEMORY_JOIN("", db, *itr, de));
+        }
 
         return info_type{ name, is_available,
                           str_vec_t{ label, enum_type, id_type, ids_str, description,
@@ -201,8 +208,9 @@ banner(_IntArray _breaks, std::array<bool, _N> _use, char filler = '-', char del
 
 //--------------------------------------------------------------------------------------//
 
-static constexpr size_t num_component_options = 6;
-static constexpr size_t num_settings_options  = 0;
+static constexpr size_t num_component_options  = 6;
+static constexpr size_t num_settings_options   = 0;
+static constexpr size_t num_hw_counter_options = 0;
 
 template <size_t _N = num_component_options>
 void
@@ -214,6 +222,12 @@ void
 write_settings_info(std::ostream&, const array_t<bool, _N>& = array_t<bool, _N>{},
                     const array_t<bool, _N>&     = array_t<bool, _N>{},
                     const array_t<string_t, _N>& = array_t<string_t, _N>{});
+
+template <size_t _N = num_hw_counter_options>
+void
+write_hw_counter_info(std::ostream&, const array_t<bool, _N>& = array_t<bool, _N>{},
+                      const array_t<bool, _N>&     = array_t<bool, _N>{},
+                      const array_t<string_t, _N>& = array_t<string_t, _N>{});
 
 //--------------------------------------------------------------------------------------//
 
@@ -235,6 +249,7 @@ usage()
         { "-S", "--settings", "", "Display the runtime settings" },
         { "-C", "--components", "", "Only display the components data" },
         { "-M", "--markdown", "", "Write data in markdown" },
+        { "-H", "--hw-counters", "", "Write the available hardware counters" },
         { "", "", "", "" },
     };
 
@@ -298,8 +313,9 @@ main(int argc, char** argv)
     use_mark[ALIAS] = true;
     use_mark[FNAME] = false;
 
-    bool include_settings   = false;
-    bool include_components = false;
+    bool include_settings    = false;
+    bool include_components  = false;
+    bool include_hw_counters = false;
 
     std::string file = "";
     for(int i = 1; i < argc; ++i)
@@ -333,11 +349,16 @@ main(int argc, char** argv)
             markdown = true;
             padding  = 6;
         }
+        else if(_arg == "-H" || _arg == "--hw-counters")
+        {
+            include_hw_counters = true;
+            padding             = 6;
+        }
         else
             usage();
     }
 
-    if(!include_components && !include_settings)
+    if(!include_components && !include_settings && !include_hw_counters)
     {
         include_components = true;
     }
@@ -361,6 +382,9 @@ main(int argc, char** argv)
 
     if(include_settings)
         write_settings_info(*os);
+
+    if(include_hw_counters)
+        write_hw_counter_info(*os);
 
     return 0;
 }
@@ -536,6 +560,128 @@ write_settings_info(std::ostream& os, const array_t<bool, _N>&, const array_t<bo
             write_entry(os, itr.at(i), _w, _center.at(i), _mark.at(i));
         }
         os << "\n";
+    }
+
+    if(!markdown)
+        os << banner(_widths, _wusing, '-');
+
+    os << "\n" << std::flush;
+    // os << banner(total_width, '-') << std::flush;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _N>
+void
+write_hw_counter_info(std::ostream& os, const array_t<bool, _N>&,
+                      const array_t<bool, _N>&, const array_t<string_t, _N>&)
+{
+    static_assert(_N >= num_hw_counter_options,
+                  "Error! Too few hw counter options + fields");
+
+    using width_type = array_t<int64_t, 4>;
+    using width_bool = array_t<bool, 4>;
+
+    tim::cupti::device_t device;
+
+#if defined(TIMEMORY_USE_CUPTI)
+    CUDA_DRIVER_API_CALL(cuInit(0));
+    CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
+#endif
+
+    auto _cupti_events  = tim::cupti::available_events_info(device);
+    auto _cupti_metrics = tim::cupti::available_metrics_info(device);
+    auto _papi_events   = tim::papi::available_events_info();
+
+    using hwcounter_info_t = tim::papi::hwcounter_info_t;
+    auto fields =
+        std::vector<hwcounter_info_t>{ _papi_events, _cupti_events, _cupti_metrics };
+    auto                 subcategories = std::vector<std::string>{ "CPU", "GPU", "" };
+    array_t<string_t, 4> _labels       = { "HARDWARE COUNTER", "AVAILABLE", "SUMMARY",
+                                     "DESCRIPTION" };
+    array_t<bool, 4>     _center       = { false, true, false, false };
+
+    width_type _widths;
+    width_bool _wusing;
+    width_bool _mark = { false, true, false, false };
+    for(size_t i = 0; i < _widths.size(); ++i)
+    {
+        _widths.at(i) = _labels.at(i).length() + padding;
+        _wusing.at(i) = true;
+    }
+
+    for(const auto& itr : fields)
+    {
+        auto nsize = std::get<0>(itr).size();
+        for(size_t i = 0; i < nsize; ++i)
+        {
+            auto _len0    = std::get<0>(itr).at(i).length() + padding;
+            auto _len1    = 6 + padding;
+            auto _len2    = std::get<2>(itr).at(i).length() + padding;
+            auto _len3    = std::get<3>(itr).at(i).length() + padding;
+            _widths.at(0) = std::max<uint64_t>(_widths.at(0), _len0);
+            _widths.at(1) = std::max<uint64_t>(_widths.at(1), _len1);
+            _widths.at(2) = std::max<uint64_t>(_widths.at(2), _len2);
+            _widths.at(3) = std::max<uint64_t>(_widths.at(3), _len3);
+        }
+    }
+
+    if(!markdown)
+        os << banner(_widths, _wusing, '-');
+    os << global_delim;
+
+    for(size_t i = 0; i < _labels.size(); ++i)
+    {
+        auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
+        write_entry(os, _labels.at(i), _w, true, false);
+    }
+    os << "\n" << banner(_widths, _wusing, '-');
+
+    size_t nitr = 0;
+    for(const auto& itr : fields)
+    {
+        auto idx = nitr++;
+
+        if(idx < subcategories.size())
+        {
+            if(!markdown && idx != 0)
+                os << banner(_widths, _wusing, '-');
+            if(subcategories.at(idx).length() > 0)
+            {
+                os << global_delim;
+                write_entry(os, subcategories.at(idx), _widths.at(0) - 1, true,
+                            _mark.at(0));
+                write_entry(os, "", _widths.at(1), _center.at(1), _mark.at(1));
+                write_entry(os, "", _widths.at(2), _center.at(2), _mark.at(2));
+                write_entry(os, "", _widths.at(3), _center.at(3), _mark.at(3));
+                os << "\n";
+                if(!markdown)
+                    os << banner(_widths, _wusing, '-');
+            }
+        }
+        else
+        {
+            if(!markdown)
+                os << banner(_widths, _wusing, '-');
+        }
+
+        auto nsize = std::get<0>(itr).size();
+        for(size_t i = 0; i < nsize; ++i)
+        {
+            os << global_delim;
+
+            auto _e0 = std::get<0>(itr).at(i);
+            auto _e1 = std::get<1>(itr).at(i);
+            auto _e2 = std::get<2>(itr).at(i);
+            auto _e3 = std::get<3>(itr).at(i);
+
+            write_entry(os, _e0, _widths.at(0) - 1, _center.at(0), _mark.at(0));
+            write_entry(os, _e1, _widths.at(1), _center.at(1), _mark.at(1));
+            write_entry(os, _e2, _widths.at(2), _center.at(2), _mark.at(2));
+            write_entry(os, _e3, _widths.at(3), _center.at(3), _mark.at(3));
+
+            os << "\n";
+        }
     }
 
     if(!markdown)

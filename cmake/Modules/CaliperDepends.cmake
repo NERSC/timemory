@@ -5,17 +5,18 @@
 #
 
 # caliper uses PAPI high-level API so do not enable by default
-set(WITH_PAPI       OFF                   CACHE BOOL "Enable PAPI in Caliper")
-set(WITH_MPI        OFF                   CACHE BOOL "Enable MPI in Caliper")
-set(WITH_CUPTI      ${TIMEMORY_USE_CUPTI} CACHE BOOL "Enable CUPTI in Caliper")
-set(WITH_CALLPATH   OFF                   CACHE BOOL "Enable libunwind in Caliper")
+set(WITH_PAPI       OFF     CACHE BOOL "Enable PAPI in Caliper")
+set(WITH_MPI        OFF     CACHE BOOL "Enable MPI in Caliper")
+set(WITH_CUPTI      OFF     CACHE BOOL "Enable CUPTI in Caliper")
+set(WITH_CALLPATH   OFF     CACHE BOOL "Enable libunwind in Caliper")
 # set(WITH_TAU        OFF)
 # set(WITH_NVPROF     ${TIMEMORY_USE_CUDA})
 
 if(TIMEMORY_USE_CUPTI)
-    set(CUPTI_PREFIX      ${CUPTI_ROOT_DIR}         CACHE PATH      "CUpti root directory")
-    set(CUPTI_INCLUDE_DIR ${CUDA_cupti_INCLUDE_DIR} CACHE PATH      "CUpti include directory")
-    set(CUPTI_LIBRARY     ${CUDA_cupti_LIBRARY}     CACHE FILEPATH  "CUpti library")
+    set(WITH_CUPTI OFF)
+    # set(CUPTI_PREFIX      ${CUPTI_ROOT_DIR}         CACHE PATH      "CUpti root directory")
+    # set(CUPTI_INCLUDE_DIR ${CUDA_cupti_INCLUDE_DIR} CACHE PATH      "CUpti include directory")
+    # set(CUPTI_LIBRARY     ${CUDA_cupti_LIBRARY}     CACHE FILEPATH  "CUpti library")
 endif()
 
 find_path(LIBUNWIND_INCLUDE_DIR
