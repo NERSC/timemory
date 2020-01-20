@@ -366,7 +366,7 @@ timemory_stack_backtrace(std::ostream& os)
     for(size_type j = 0; j < nptrs; ++j)
     {
         // print the back-trace numver
-        _oss << "[" << std::setw(nwidth) << nptrs - j - 1 << "/" << std::setw(nwidth)
+        _oss << "[" << std::setw(nwidth) << (nptrs - j - 1) << "/" << std::setw(nwidth)
              << nptrs << "] : ";
 
         // loop over fields
@@ -378,7 +378,7 @@ timemory_stack_backtrace(std::ostream& os)
             _ss << std::setw(mwidth) << std::left
                 << ((i < dmang_buf.at(j).size()) ? dmang_buf.at(j).at(i)
                                                  : std::string(" "));
-            _oss << _ss.str() << "  ";
+            _oss << tim::demangle(_ss.str()) << "  ";
             // std::cout << _ss.str() << "  ";
         }
         _oss << std::endl;

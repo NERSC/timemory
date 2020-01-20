@@ -729,7 +729,6 @@ percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, ...)
     auto _nl    = mpl::get_size(_lhs);
     auto _nr    = mpl::get_size(_rhs);
     using Int_t = decltype(_nl);
-    assert(_nl == _nr);
 
     auto _n = std::min<Int_t>(_nl, _nr);
     _Tp  _ret{};
