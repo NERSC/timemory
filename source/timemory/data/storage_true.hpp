@@ -230,6 +230,12 @@ public:
         result_node& operator=(const result_node&) = default;
         result_node& operator=(result_node&&) = default;
 
+        result_node(uint64_t _hash, const Type& _data, const string_t& _prefix,
+                    int64_t _depth, uint64_t _rolling, const uintvector_t& _hierarchy,
+                    const stats_type& _stats)
+        : base_type(_hash, _data, _prefix, _depth, _rolling, _hierarchy, _stats)
+        {}
+
         uint64_t&     hash() { return std::get<0>(*this); }
         Type&         data() { return std::get<1>(*this); }
         string_t&     prefix() { return std::get<2>(*this); }

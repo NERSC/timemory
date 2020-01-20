@@ -1077,8 +1077,8 @@ get<Type, true>::get(storage_type& data, result_type& ret)
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());
                     _hierarchy.push_back(itr->id());
-                    auto&& _entry = result_node({ itr->id(), itr->obj(), _prefix, _depth,
-                                                  _rolling, _hierarchy, _stats });
+                    auto&& _entry = result_node(itr->id(), itr->obj(), _prefix, _depth,
+                                                _rolling, _hierarchy, _stats);
                     _list.push_back(_entry);
                 }
             }
@@ -1142,7 +1142,7 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using MPI");
 
-    results = distrib_type(1, data->get());
+    results = distrib_type(1, data.get());
 #else
     if(settings::debug())
         PRINT_HERE("%s", "timemory using MPI");
