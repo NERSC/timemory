@@ -1778,15 +1778,32 @@ tim::cupti::available_events_info(CUdevice device)
                                           eventName));
 
         CUPTI_CALL(cuptiEventGetAttribute(
-            eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &ssize, eventShortDesc));
+            eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &lsize, eventShortDesc));
 
+        auto as_string = [](char* cstr, size_t len)
+        {
+            std::stringstream ss;
+            for(size_t i = 0; i < len; ++i)
+	    {
+		if(cstr[i] == '\0')
+		    ss << ' ';
+		else
+                    ss << cstr[i];
+	    }
+            return ss.str();
+        };
+        std::string short_desc = as_string(eventShortDesc, lsize);
+	lsize = __CUPTI_PROFILER_NAME_LONG;
+	
         CUPTI_CALL(cuptiEventGetAttribute(
-            eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &ssize, eventLongDesc));
+            eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &lsize, eventLongDesc));
+
+        std::string long_desc = as_string(eventLongDesc, lsize);
 
         std::get<0>(event_info).push_back(eventName);
         std::get<1>(event_info).push_back(true);
-        std::get<2>(event_info).push_back(eventShortDesc);
-        std::get<3>(event_info).push_back(eventLongDesc);
+        std::get<2>(event_info).push_back(short_desc);
+        std::get<3>(event_info).push_back(long_desc);
     }
 
     free(domainIdArray);
@@ -1823,6 +1840,21 @@ tim::cupti::available_metrics_info(CUdevice device)
         char metricLongDesc[__CUPTI_PROFILER_NAME_LONG];
 
         size_t ssize = __CUPTI_PROFILER_NAME_SHORT;
+	size_t lsize = __CUPTI_PROFILER_NAME_LONG;
+	
+	auto as_string = [](char* cstr, size_t len)
+        {
+            std::stringstream ss;
+	    len = std::min<size_t>(len, strlen(cstr));
+            for(size_t i = 0; i < len; ++i)
+            {
+                if(cstr[i] == '\0')
+                    ss << ' ';
+                else
+                    ss << cstr[i];
+            }
+            return ss.str();
+        };
 
         CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_NAME,
                                            &ssize, (void*) &metricName));
@@ -1830,16 +1862,19 @@ tim::cupti::available_metrics_info(CUdevice device)
         std::get<0>(metric_info).push_back(metricName);
 
         CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
-                                           CUPTI_METRIC_ATTR_SHORT_DESCRIPTION, &ssize,
+                                           CUPTI_METRIC_ATTR_SHORT_DESCRIPTION, &lsize,
                                            (void*) &metricShortDesc));
 
-        std::get<2>(metric_info).push_back(metricShortDesc);
-
+	auto short_desc = as_string(metricShortDesc, lsize);
+        std::get<2>(metric_info).push_back(short_desc);
+	lsize = __CUPTI_PROFILER_NAME_LONG;
+	
         CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
-                                           CUPTI_METRIC_ATTR_LONG_DESCRIPTION, &ssize,
+                                           CUPTI_METRIC_ATTR_LONG_DESCRIPTION, &lsize,
                                            (void*) &metricLongDesc));
 
-        std::get<3>(metric_info).push_back(metricLongDesc);
+	auto long_desc = as_string(metricLongDesc, lsize);
+        std::get<3>(metric_info).push_back(long_desc);
 
         ssize = sizeof(CUpti_MetricValueKind);
         CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_VALUE_KIND,
