@@ -799,18 +799,15 @@ available_events_info()
     hwcounter_info_t evts{};
 
 #if defined(TIMEMORY_USE_PAPI)
-    init();
+    details::init_library();
     if(working())
     {
         for(int i = 0; i < PAPI_END_idx; ++i)
         {
             PAPI_event_info_t info;
-            auto              ret = PAPI_get_event_info(i, &info);
+            auto              ret = PAPI_get_event_info((i | PAPI_PRESET_MASK), &info);
             if(ret != PAPI_OK)
-            {
-                working() = false;
-                break;
-            }
+                continue;
 
             auto as_string = [](char* cstr) {
                 auto              n = strlen(cstr);
@@ -825,13 +822,13 @@ available_events_info()
             };
 
             std::get<0>(evts).push_back(as_string(info.symbol));
-            std::get<1>(evts).push_back(query_event(i));
+            std::get<1>(evts).push_back(query_event((i | PAPI_PRESET_MASK)));
             std::get<2>(evts).push_back(as_string(info.short_descr));
             std::get<3>(evts).push_back(as_string(info.long_descr));
         }
     }
 #endif
-    if(!working())
+    if(!working() || std::get<0>(evts).empty())
     {
         for(int i = 0; i < TIMEMORY_PAPI_PRESET_EVENTS; ++i)
         {
