@@ -210,7 +210,7 @@ banner(_IntArray _breaks, std::array<bool, _N> _use, char filler = '-', char del
 
 static constexpr size_t num_component_options  = 6;
 static constexpr size_t num_settings_options   = 0;
-static constexpr size_t num_hw_counter_options = 0;
+static constexpr size_t num_hw_counter_options = 4;
 
 template <size_t _N = num_component_options>
 void
@@ -384,7 +384,7 @@ main(int argc, char** argv)
         write_settings_info(*os);
 
     if(include_hw_counters)
-        write_hw_counter_info(*os);
+        write_hw_counter_info(*os, { true, true, true, options[DESC] });
 
     return 0;
 }
@@ -573,7 +573,7 @@ write_settings_info(std::ostream& os, const array_t<bool, _N>&, const array_t<bo
 
 template <size_t _N>
 void
-write_hw_counter_info(std::ostream& os, const array_t<bool, _N>&,
+write_hw_counter_info(std::ostream& os, const array_t<bool, _N>& options,
                       const array_t<bool, _N>&, const array_t<string_t, _N>&)
 {
     static_assert(_N >= num_hw_counter_options,
@@ -607,7 +607,7 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, _N>&,
     for(size_t i = 0; i < _widths.size(); ++i)
     {
         _widths.at(i) = _labels.at(i).length() + padding;
-        _wusing.at(i) = true;
+        _wusing.at(i) = options[i];
     }
 
     for(const auto& itr : fields)
@@ -633,7 +633,8 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, _N>&,
     for(size_t i = 0; i < _labels.size(); ++i)
     {
         auto _w = _widths.at(i) - ((i == 0) ? 1 : 0);
-        write_entry(os, _labels.at(i), _w, true, false);
+        if(options[i])
+            write_entry(os, _labels.at(i), _w, true, false);
     }
     os << "\n" << banner(_widths, _wusing, '-');
 
@@ -649,11 +650,15 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, _N>&,
             if(subcategories.at(idx).length() > 0)
             {
                 os << global_delim;
-                write_entry(os, subcategories.at(idx), _widths.at(0) - 1, true,
-                            _mark.at(0));
-                write_entry(os, "", _widths.at(1), _center.at(1), _mark.at(1));
-                write_entry(os, "", _widths.at(2), _center.at(2), _mark.at(2));
-                write_entry(os, "", _widths.at(3), _center.at(3), _mark.at(3));
+                if(options[0])
+                    write_entry(os, subcategories.at(idx), _widths.at(0) - 1, true,
+                                _mark.at(0));
+                if(options[1])
+                    write_entry(os, "", _widths.at(1), _center.at(1), _mark.at(1));
+                if(options[2])
+                    write_entry(os, "", _widths.at(2), _center.at(2), _mark.at(2));
+                if(options[3])
+                    write_entry(os, "", _widths.at(3), _center.at(3), _mark.at(3));
                 os << "\n";
                 if(!markdown)
                     os << banner(_widths, _wusing, '-');
@@ -675,10 +680,14 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, _N>&,
             auto _e2 = std::get<2>(itr).at(i);
             auto _e3 = std::get<3>(itr).at(i);
 
-            write_entry(os, _e0, _widths.at(0) - 1, _center.at(0), _mark.at(0));
-            write_entry(os, _e1, _widths.at(1), _center.at(1), _mark.at(1));
-            write_entry(os, _e2, _widths.at(2), _center.at(2), _mark.at(2));
-            write_entry(os, _e3, _widths.at(3), _center.at(3), _mark.at(3));
+            if(options[0])
+                write_entry(os, _e0, _widths.at(0) - 1, _center.at(0), _mark.at(0));
+            if(options[1])
+                write_entry(os, _e1, _widths.at(1), _center.at(1), _mark.at(1));
+            if(options[2])
+                write_entry(os, _e2, _widths.at(2), _center.at(2), _mark.at(2));
+            if(options[3])
+                write_entry(os, _e3, _widths.at(3), _center.at(3), _mark.at(3));
 
             os << "\n";
         }
