@@ -1272,7 +1272,7 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
         return send_serialize(storage_type::master_instance()->get());
     };
 
-    distrib_type results(upc_size);
+    results.resize(upc_size);
 
     //------------------------------------------------------------------------------//
     //  Combine on master rank
@@ -1287,13 +1287,13 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
             fut.wait();
             results[i] = recv_serialize(fut.result());
         }
-        results[upc_rank] = get();
+        results[upc_rank] = data.get();
     }
 
     upcxx::barrier(upcxx::world());
 
     if(upc_rank != 0)
-        results = distrib_type(1, get());
+        results = distrib_type(1, data.get());
 #endif
 }
 
