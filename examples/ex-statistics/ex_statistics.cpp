@@ -31,6 +31,10 @@
 #include <timemory/timemory.hpp>
 
 //
+// all types use compact json
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_json, void, std::false_type)
+//
 // configure these two types to always record statistics
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::true_type)
@@ -38,7 +42,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes,
                                std::true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::read_bytes, std::true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, std::false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::papi_array_t, std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, component::monotonic_clock, std::true_type)
 
 //
 // shorthand
@@ -49,7 +53,8 @@ using namespace tim;
 //
 // bundle of tools
 //
-using tuple_t = auto_tuple<wall_clock, cpu_clock, read_bytes, written_bytes>;
+using tuple_t = auto_tuple<wall_clock, monotonic_clock, cpu_clock, read_bytes,
+                           written_bytes, peak_rss, current_peak_rss>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -70,6 +75,11 @@ main(int argc, char** argv)
     long nfib = (argc > 1) ? atol(argv[1]) : 40;
     int  nitr = (argc > 2) ? atoi(argv[2]) : 10;
 
+    std::random_device              rd;
+    std::mt19937                    gen(rd());
+    std::uniform_int_distribution<> size_dist(50000, 1000000);
+    std::uniform_int_distribution<> value_dist(0, 1000000);
+
     for(int i = 0; i < nitr; ++i)
     {
         TIMEMORY_MARKER(tuple_t, "total");
@@ -78,7 +88,12 @@ main(int argc, char** argv)
         TIMEMORY_BLANK_MARKER(tuple_t, "nested/", i % 5);
         ans += fib(nfib + (i % 3));
 
-        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 2, tuple_t, "occasional/", i);
+        // allocate some memory
+        std::vector<int32_t> v(size_dist(gen), value_dist(gen));
+        // use the memory
+        ans *= v.at(value_dist(gen) % v.size());
+
+        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 2, tuple_t, "occasional/", i % 2);
         ans += fib(nfib - 1);
 
         printf("Answer = %li\n", ans);

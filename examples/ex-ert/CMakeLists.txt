@@ -21,7 +21,7 @@ project(timemory-ERT-Example LANGUAGES CXX)
 option(USE_CUDA "Enable CUDA" ${_USE_CUDA})
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
-set(COMPONENTS cxx compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
+set(COMPONENTS compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
 
 if(USE_CUDA)
     check_language(CUDA)
@@ -47,4 +47,18 @@ if(USE_CUDA)
         LANGUAGE CUDA
         LINKER_LANGUAGE CUDA)
     target_compile_definitions(ex_ert PRIVATE USE_CUDA)
+endif()
+
+find_package(Kokkos QUIET)
+if(Kokkos_FOUND)
+    add_executable(ex_ert_kokkos ex_ert_kokkos.cpp)
+    target_link_libraries(ex_ert_kokkos timemory-ert-example Kokkos::kokkos)
+    install(TARGETS ex_ert_kokkos DESTINATION bin)
+
+    if(USE_CUDA)
+        set_source_files_properties(ex_ert_kokkos.cpp PROPERTIES
+            LANGUAGE CUDA
+            LINKER_LANGUAGE CUDA)
+	target_compile_definitions(ex_ert_kokkos PRIVATE USE_CUDA)
+    endif()
 endif()
