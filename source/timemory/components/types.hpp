@@ -25,7 +25,7 @@
 /** \file components/types.hpp
  * \headerfile components/types.hpp "timemory/components/types.hpp"
  *
- * This is a pre-declaration of all the component structs.
+ * This is a declaration of all the component structs.
  * Care should be taken to make sure that this includes a minimal
  * number of additional headers.
  *
@@ -38,6 +38,7 @@
 #include <string>
 #include <type_traits>
 
+#include "timemory/api.hpp"
 #include "timemory/backends/cuda.hpp"
 #include "timemory/components/properties.hpp"
 
@@ -54,10 +55,6 @@ namespace tim
 //
 namespace component
 {
-// this is a type for tagging native types
-struct native_tag
-{};
-
 // define this short-hand from C++14 for C++11
 template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
@@ -90,6 +87,7 @@ struct thread_cpu_util;
 
 // resource usage
 struct peak_rss;
+struct current_peak_rss;
 struct page_rss;
 struct stack_rss;
 struct data_rss;
@@ -167,12 +165,12 @@ using gpu_roofline_dp_flops = gpu_roofline<double>;
 using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
 using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
 
-template <size_t _Idx, typename _Tag = native_tag>
+template <size_t _Idx, typename _Tag = api::native_tag>
 struct user_bundle;
 
 // reserved
-using user_tuple_bundle = user_bundle<10101, native_tag>;
-using user_list_bundle  = user_bundle<11011, native_tag>;
+using user_tuple_bundle = user_bundle<10101, api::native_tag>;
+using user_list_bundle  = user_bundle<11011, api::native_tag>;
 
 // requires gotcha
 struct malloc_gotcha;
@@ -467,6 +465,23 @@ TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, WRITTEN_BYTES, "written_bytes",
         struct NAME;                                                                     \
         }                                                                                \
         }
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_TOOLSET_ALIAS)
+#    define TIMEMORY_TOOLSET_ALIAS(NAME, WRAPPER, ...)                                   \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        namespace aliases                                                                \
+        {                                                                                \
+        using NAME = WRAPPER<__VA_ARGS__>;                                               \
+        }                                                                                \
+        }                                                                                \
+        }                                                                                \
+        using tim::component::aliases::NAME;
 #endif
 
 //======================================================================================//

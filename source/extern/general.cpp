@@ -27,6 +27,7 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
@@ -50,4 +51,39 @@ template struct base<gperf_heap_profiler, void>;
 //
 //
 }  // namespace component
+
+namespace operation
+{
+//
+//
+template struct init_storage<component::trip_count>;
+template struct construct<component::trip_count>;
+template struct set_prefix<component::trip_count>;
+template struct insert_node<component::trip_count>;
+template struct pop_node<component::trip_count>;
+template struct record<component::trip_count>;
+template struct reset<component::trip_count>;
+template struct measure<component::trip_count>;
+template struct sample<component::trip_count>;
+template struct start<component::trip_count>;
+template struct priority_start<component::trip_count>;
+template struct standard_start<component::trip_count>;
+template struct delayed_start<component::trip_count>;
+template struct stop<component::trip_count>;
+template struct priority_stop<component::trip_count>;
+template struct standard_stop<component::trip_count>;
+template struct delayed_stop<component::trip_count>;
+template struct mark_begin<component::trip_count>;
+template struct mark_end<component::trip_count>;
+template struct audit<component::trip_count>;
+template struct plus<component::trip_count>;
+template struct minus<component::trip_count>;
+template struct multiply<component::trip_count>;
+template struct divide<component::trip_count>;
+template struct get_data<component::trip_count>;
+template struct copy<component::trip_count>;
+//
+//
+}  // namespace operation
+
 }  // namespace tim

@@ -107,48 +107,56 @@ operator<<(std::ostream& os, const std::array<_Tp, _N>& p)
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
+template <typename _Tp, size_t _N, typename _Other>
 std::array<_Tp, _N>&
 operator+=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    array_math::plus(lhs, rhs, make_index_sequence<_N>{});
+    math::plus(lhs, rhs);
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
+
+template <typename _Lhs, typename _Rhs, typename _Other>
+std::pair<_Lhs, _Rhs>&
+operator+=(std::pair<_Lhs, _Rhs>& lhs, const _Other& rhs)
+{
+    math::plus(lhs, rhs);
+    return lhs;
+}
 
 template <typename _Lhs, typename _Rhs>
 std::pair<_Lhs, _Rhs>&
 operator+=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
-    lhs.first += rhs.first;
-    lhs.second += rhs.second;
+    math::plus(lhs, rhs);
     return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
+template <typename _Tp, typename... _Extra, typename _Other>
 std::vector<_Tp, _Extra...>&
-operator+=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
+operator+=(std::vector<_Tp, _Extra...>& lhs, const _Other& rhs)
 {
-    const auto _L = lhs.size();
-    const auto _R = rhs.size();
-    if(_L < _R)
-        lhs.resize(_R, _Tp{});
-    for(size_t i = 0; i < _R; ++i)
-        lhs[i] += rhs[i];
-    return lhs;
+    math::plus(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
+
+template <typename... _Types, typename _Other>
+std::tuple<_Types...>&
+operator+=(std::tuple<_Types...>& lhs, const _Other& rhs)
+{
+    math::plus(lhs, rhs);
+    return lhs;
+}
 
 template <typename... _Types>
 std::tuple<_Types...>&
 operator+=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
 {
-    constexpr size_t _N = sizeof...(_Types);
-    tuple_math::plus(lhs, rhs, make_index_sequence<_N>{});
+    math::plus(lhs, rhs);
     return lhs;
 }
 

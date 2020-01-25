@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstring>  // memcpy
 #include <limits>
 
 #if defined(TIMEMORY_USE_CUDA)

@@ -98,18 +98,13 @@ namespace cupti { struct result; }
 namespace scope
 {
 /// \class flat
-/// \brief Dummy struct to designate flat (no hierarchy) storage
+/// \brief Dummy struct to designates flat (no hierarchy) storage
 struct flat
 {};
 
 /// \class thread
-/// \brief Dummy struct to designate thread-scoped storage
-struct thread
-{};
-
-/// \class process
-/// \brief Dummy struct to designate process-scoped storage
-struct process
+/// \brief Dummy struct to designates tree (hierarchical) storage
+struct tree
 {};
 
 }  // namespace scope

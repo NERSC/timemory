@@ -34,6 +34,7 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/utility/serializer.hpp"
 
 #include <type_traits>
 
@@ -47,6 +48,8 @@ namespace tim
 {
 template <typename _Tp>
 struct statistics;
+
+class manager;
 
 namespace trait
 {
@@ -286,6 +289,14 @@ struct echo_enabled : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait the configures whether JSON output uses pretty print. If set to false_type
+/// then the JSON will be compact
+///
+template <typename T>
+struct pretty_json : std::true_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// trait the configures output archive type
 ///
 template <typename _Tp>
@@ -303,17 +314,133 @@ struct input_archive
 template <typename _Tp>
 struct output_archive
 {
-    using type    = cereal::JSONOutputArchive;
-    using pointer = std::shared_ptr<type>;
+    using subtype =
+        conditional_t<(!pretty_json<_Tp>::value || !pretty_json<void>::value) &&
+                          !std::is_same<_Tp, manager>::value,
+                      cereal::MinimalJsonWriter, cereal::PrettyJsonWriter>;
+    using type        = cereal::BaseJSONOutputArchive<subtype>;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 2;
+        return value;
+    }
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
 
     static pointer get(std::ostream& os)
     {
-        constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+        constexpr auto spacing = option_type::IndentChar::space;
         //  Option args: precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
+        option_type opts(precision(), spacing, indent_length());
         return std::make_shared<type>(os, opts);
     }
 };
+
+//--------------------------------------------------------------------------------------//
+/// explicit specialization for PrettyJSONOutputArchive
+///
+template <>
+struct output_archive<cereal::PrettyJSONOutputArchive>
+{
+    using subtype     = cereal::PrettyJsonWriter;
+    using type        = cereal::PrettyJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 2;
+        return value;
+    }
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        option_type opts(precision(), indent_type(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// explicit specialization for MinimalJSONOutputArchive
+///
+template <>
+struct output_archive<cereal::MinimalJSONOutputArchive>
+{
+    using subtype     = cereal::MinimalJsonWriter;
+    using type        = cereal::MinimalJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 0;
+        return value;
+    }
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        //  The last two options are meaningless for the minimal writer
+        option_type opts(precision(), indent_type(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait the configures type to always flat_storage the call-tree
+///
+template <typename _Tp>
+struct flat_storage : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait the configures type to not report the accumulated value (useful if meaningless)
+///
+template <typename _Tp>
+struct report_sum : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait the configures type to not report the mean value (useful if meaningless)
+///
+template <typename _Tp>
+struct report_mean : true_type
+{};
 
 //--------------------------------------------------------------------------------------//
 
@@ -410,6 +537,20 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::virtual_memory, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
+//                              REPORT SUM
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_sum, component::current_peak_rss, false_type)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              REPORT MEAN
+//
+//--------------------------------------------------------------------------------------//
+
+//--------------------------------------------------------------------------------------//
+//
 //                              SAMPLER
 //
 //--------------------------------------------------------------------------------------//
@@ -456,6 +597,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, component::cuda_event,
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::written_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::current_peak_rss,
+                               true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::cupti_counters, true_type)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::gpu_roofline, true_type,
                                typename)
@@ -491,6 +634,8 @@ TIMEMORY_DEFINE_TEMPLATE_TRAIT(array_serialization, component::papi_array, true_
                                size_t)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::papi_tuple, true_type, int)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::cupti_counters, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::read_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::written_bytes, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -807,3 +952,5 @@ struct requires_prefix<component::user_bundle<_Idx, _Type>> : true_type
 //======================================================================================//
 
 #include "timemory/mpl/bits/type_traits.hpp"
+
+//======================================================================================//

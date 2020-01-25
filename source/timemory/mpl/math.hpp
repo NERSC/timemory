@@ -718,7 +718,8 @@ percent_diff(_Tp _lhs, _Tp _rhs, std::tuple<>)
     constexpr _Tp _zero    = _Tp(0.0);
     constexpr _Tp _one     = _Tp(1.0);
     constexpr _Tp _hundred = _Tp(100.0);
-    return (_rhs > _zero) ? ((_one - (_lhs / _rhs)) * _hundred) : _zero;
+    _Tp&&         _pdiff   = (_rhs > _zero) ? ((_one - (_lhs / _rhs)) * _hundred) : _zero;
+    return (_pdiff < _zero) ? _zero : _pdiff;
 }
 
 template <typename _Tp, typename _Vp = typename _Tp::value_type>

@@ -94,11 +94,10 @@ public:
         using sample_type    = std::tuple<sample_type_t<_Types>...>;
 
         template <typename _Archive>
-        using serialize_t = _TypeL<operation::pointer_operator<
+        using serialize_t   = _TypeL<operation::pointer_operator<
             _Types, operation::serialization<_Types, _Archive>>...>;
-        template <typename _Scope>
-        using insert_node_t = _TypeL<operation::pointer_operator<
-            _Types, operation::insert_node<_Types, _Scope>>...>;
+        using insert_node_t = _TypeL<
+            operation::pointer_operator<_Types, operation::insert_node<_Types>>...>;
         using pop_node_t =
             _TypeL<operation::pointer_operator<_Types, operation::pop_node<_Types>>...>;
         using reset_t =
@@ -166,8 +165,7 @@ public:
     // clang-format off
     template <typename _Archive>
     using serialize_t     = typename filtered<impl_unique_concat_type>::template serialize_t<_Archive>;
-    template <typename _Scope>
-    using insert_node_t   = typename filtered<impl_unique_concat_type>::template insert_node_t<_Scope>;
+    using insert_node_t   = typename filtered<impl_unique_concat_type>::insert_node_t;
     using pop_node_t      = typename filtered<impl_unique_concat_type>::pop_node_t;
     using reset_t         = typename filtered<impl_unique_concat_type>::reset_t;
     using print_t         = typename filtered<impl_unique_concat_type>::print_t;
@@ -182,12 +180,12 @@ public:
     component_list();
 
     template <typename _Func = init_func_t>
-    explicit component_list(const string_t& key, const bool& store = false,
+    explicit component_list(const string_t& key, const bool& store = true,
                             const bool& flat = settings::flat_profile(),
                             const _Func&     = get_initializer());
 
     template <typename _Func = init_func_t>
-    explicit component_list(const captured_location_t& loc, const bool& store = false,
+    explicit component_list(const captured_location_t& loc, const bool& store = true,
                             const bool& flat = settings::flat_profile(),
                             const _Func&     = get_initializer());
 

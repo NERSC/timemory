@@ -41,10 +41,14 @@
 //======================================================================================//
 
 // clang-format off
-namespace tim { namespace alias { using tuple_f8_f8_t = std::tuple<double, double>; } }
+namespace tim { namespace alias {
+using tuple_f8_f8_t = std::tuple<double, double>;
+using pair_f8_f8_t = std::pair<double, double>;
+} }
 // clang-format on
 
 TIMEMORY_STATISTICS_TYPE(component::peak_rss, double)
+TIMEMORY_STATISTICS_TYPE(component::current_peak_rss, tim::alias::pair_f8_f8_t)
 TIMEMORY_STATISTICS_TYPE(component::page_rss, double)
 TIMEMORY_STATISTICS_TYPE(component::stack_rss, double)
 TIMEMORY_STATISTICS_TYPE(component::data_rss, double)
@@ -80,6 +84,7 @@ namespace component
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<peak_rss>;
+extern template struct base<current_peak_rss, std::pair<int64_t, int64_t>>;
 extern template struct base<page_rss>;
 extern template struct base<stack_rss>;
 extern template struct base<data_rss>;
@@ -175,7 +180,7 @@ struct page_rss : public base<page_rss, int64_t>
     }
 };
 
-using current_rss = page_rss;
+// using current_peak_rss = page_rss;
 
 //--------------------------------------------------------------------------------------//
 /// \class stack_rss
@@ -679,6 +684,13 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         return display_unit_type{ "KB", "KB/sec" };
     }
 
+    static std::tuple<double, double> unit_array() { return unit(); }
+
+    static std::vector<std::string> description_array()
+    {
+        return std::vector<std::string>{ "Number of bytes read", "Rate of bytes read" };
+    }
+
     static value_type record()
     {
         return value_type(get_bytes_read(), timer_type::record());
@@ -842,6 +854,14 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
     static display_unit_type display_unit()
     {
         return display_unit_type{ "KB", "KB/sec" };
+    }
+
+    static std::tuple<double, double> unit_array() { return unit(); }
+
+    static std::vector<std::string> description_array()
+    {
+        return std::vector<std::string>{ "Number of bytes written",
+                                         "Rate of bytes written" };
     }
 
     static value_type record()
@@ -1080,6 +1100,123 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
             value = std::move(tmp);
         }
         set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// \class current_peak_rss
+/// \brief
+/// this struct extracts the high-water mark of the resident set size (RSS) at start
+/// and stop. RSS is current amount of memory in RAM.
+//
+struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64_t>>
+{
+    using unit_type         = std::pair<int64_t, int64_t>;
+    using display_unit_type = std::pair<std::string, std::string>;
+    using result_type       = std::pair<double, double>;
+    using this_type         = current_peak_rss;
+
+    static std::string label() { return "current_peak_rss"; }
+    static std::string description() { return "current resident set size"; }
+    static int64_t     record() { return get_peak_rss(); }
+
+    void start()
+    {
+        set_started();
+        value.first = record();
+    }
+
+    void stop()
+    {
+        value = value_type{ value.first, record() };
+        accum = std::max(accum, value);
+        set_stopped();
+    }
+
+    std::string get_display() const
+    {
+        std::stringstream ss, ssv, ssr;
+        auto              _prec  = base_type::get_precision();
+        auto              _width = base_type::get_width();
+        auto              _flags = base_type::get_format_flags();
+        auto              _disp  = get_display_unit();
+
+        auto _val = get();
+
+        ssv.setf(_flags);
+        ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
+        if(!std::get<0>(_disp).empty())
+            ssv << " " << std::get<0>(_disp);
+
+        ssr.setf(_flags);
+        ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
+        if(!std::get<1>(_disp).empty())
+            ssr << " " << std::get<1>(_disp);
+
+        ss << ssv.str() << ", " << ssr.str();
+        return ss.str();
+    }
+
+    result_type get() const
+    {
+        result_type data = (is_transient) ? accum : value;
+        data.first /= get_unit().first;
+        data.second /= get_unit().second;
+        return data;
+    }
+
+    static std::pair<double, double> unit()
+    {
+        return std::pair<double, double>{ units::megabyte, units::megabyte };
+    }
+
+    static std::vector<std::string> display_unit_array()
+    {
+        return std::vector<std::string>{ get_display_unit().first,
+                                         get_display_unit().second };
+    }
+
+    static std::vector<std::string> label_array()
+    {
+        return std::vector<std::string>{ "start peak rss", " stop peak rss" };
+    }
+
+    static display_unit_type display_unit() { return display_unit_type{ "MB", "MB" }; }
+
+    static std::pair<double, double> unit_array() { return unit(); }
+
+    static std::vector<std::string> description_array()
+    {
+        return std::vector<std::string>{ "Resident set size at start",
+                                         "Resident set size at stop" };
+    }
+
+    static unit_type get_unit()
+    {
+        static auto  _instance = this_type::unit();
+        static auto& _mem      = _instance;
+
+        if(settings::memory_units().length() > 0)
+        {
+            _mem.first  = std::get<1>(units::get_memory_unit(settings::memory_units()));
+            _mem.second = std::get<1>(units::get_memory_unit(settings::memory_units()));
+        }
+
+        return _mem;
+    }
+
+    static display_unit_type get_display_unit()
+    {
+        static display_unit_type _instance = this_type::display_unit();
+        static auto&             _mem      = _instance;
+
+        if(settings::memory_units().length() > 0)
+        {
+            _mem.first  = std::get<0>(units::get_memory_unit(settings::memory_units()));
+            _mem.second = std::get<0>(units::get_memory_unit(settings::memory_units()));
+        }
+
+        return _mem;
     }
 };
 

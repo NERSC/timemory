@@ -25,7 +25,7 @@
 /** \file timemory/variadic/types.hpp
  * \headerfile timemory/variadic/types.hpp "timemory/variadic/types.hpp"
  *
- * This is a pre-declaration of all the variadic wrappers.
+ * This is a declaration of all the variadic wrappers.
  * Care should be taken to make sure that this includes a minimal
  * number of additional headers. Also provides concat of types
  *

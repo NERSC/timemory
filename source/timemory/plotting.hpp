@@ -97,7 +97,12 @@ _plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
     if(_prefix.empty())
         _prefix = _Tp::get_description();
 
+    auto libctor = get_env<std::string>("TIMEMORY_LIBRARY_CTOR", "1");
+    auto libdtor = get_env<std::string>("TIMEMORY_LIBRARY_DTOR", "1");
+
     set_env("TIMEMORY_BANNER", "OFF");
+    set_env("TIMEMORY_LIBRARY_CTOR", "0", 1);
+    set_env("TIMEMORY_LIBRARY_DTOR", "0", 1);
 
     if(std::system(nullptr))
     {
@@ -124,6 +129,9 @@ _plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
             fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL("").c_str(), msg.c_str());
         }
     }
+
+    set_env("TIMEMORY_LIBRARY_CTOR", libctor, 1);
+    set_env("TIMEMORY_LIBRARY_DTOR", libdtor, 1);
 }
 
 //--------------------------------------------------------------------------------------//

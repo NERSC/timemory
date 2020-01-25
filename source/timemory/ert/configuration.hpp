@@ -280,9 +280,11 @@ struct executor
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _Counter>;
-    using counter_type       = counter<_Device, _Tp, _Counter>;
-    using this_type          = executor<_Device, _Tp, _Counter>;
+    using device_type        = _Device;
+    using value_type         = _Tp;
+    using configuration_type = configuration<device_type, value_type, _Counter>;
+    using counter_type       = counter<device_type, value_type, _Counter>;
+    using this_type          = executor<device_type, value_type, _Counter>;
     using callback_type      = std::function<void(counter_type&)>;
     using ert_data_t         = exec_data<_Counter>;
 
@@ -389,9 +391,11 @@ struct executor<device::gpu, _Tp, _Counter>
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using configuration_type = configuration<_Device, _Tp, _Counter>;
-    using counter_type       = counter<_Device, _Tp, _Counter>;
-    using this_type          = executor<_Device, _Tp, _Counter>;
+    using device_type        = device::gpu;
+    using value_type         = _Tp;
+    using configuration_type = configuration<device_type, value_type, _Counter>;
+    using counter_type       = counter<device_type, value_type, _Counter>;
+    using this_type          = executor<device_type, value_type, _Counter>;
     using callback_type      = std::function<void(counter_type&)>;
     using ert_data_t         = exec_data<_Counter>;
 

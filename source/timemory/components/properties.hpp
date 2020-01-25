@@ -32,6 +32,9 @@
 
 #include "timemory/enum.h"
 
+#include <string>
+#include <unordered_set>
+
 namespace tim
 {
 namespace component

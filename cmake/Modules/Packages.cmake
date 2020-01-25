@@ -56,6 +56,9 @@ add_interface_library(timemory-cpu-roofline)
 add_interface_library(timemory-gpu-roofline)
 add_interface_library(timemory-roofline-options)
 
+add_interface_library(timemory-dyninst)
+add_interface_library(timemory-kokkos)
+
 set(_DMP_LIBRARIES)
 
 if(TIMEMORY_USE_MPI)
@@ -90,7 +93,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-vtune
     timemory-tau
     timemory-python
-    timemory-plotting)
+    timemory-plotting
+    timemory-kokkos)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -107,6 +111,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-vtune
     timemory-tau
     timemory-plotting
+    timemory-kokkos
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -122,6 +127,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-vtune
     timemory-tau
     timemory-plotting
+    timemory-kokkos
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)
@@ -545,7 +551,7 @@ if(TIMEMORY_USE_PYTHON)
 
     # if python version was specifed, do exact match
     if(_PYVERSION)
-        find_package(PythonInterp "${_PYVERSION}" EXACT ${TIMEMORY_FIND_REQUIREMENT})
+        find_package(PythonInterp "${_PYVERSION}" ${TIMEMORY_FIND_REQUIREMENT})
     else()
         find_package(PythonInterp ${TIMEMORY_FIND_REQUIREMENT})
     endif()
@@ -557,12 +563,13 @@ if(TIMEMORY_USE_PYTHON)
     endif()
 
     # make sure the library version is an exact match for the Python executable
-    find_package(PythonLibs "${TIMEMORY_PYTHON_VERSION}" EXACT ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(PythonLibs "${TIMEMORY_PYTHON_VERSION}" ${TIMEMORY_FIND_REQUIREMENT})
 
     # if either not found, disable
     if(NOT PythonInterp_FOUND OR NOT PythonLibs_FOUND)
         set(TIMEMORY_USE_PYTHON OFF)
         set(TIMEMORY_BUILD_PYTHON OFF)
+        inform_empty_interface(timemory-plotting "Python plotting from C++")
     else()
         add_feature(PYTHON_EXECUTABLE "Python executable")
         target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING
@@ -644,6 +651,7 @@ if(TIMEMORY_USE_PYTHON)
     endif()
 else()
     inform_empty_interface(timemory-python "Python embedded interpreter")
+    inform_empty_interface(timemory-plotting "Python plotting from C++")
 endif()
 
 
@@ -1097,6 +1105,50 @@ target_link_libraries(timemory-gpu-roofline INTERFACE
 generate_composite_interface(timemory-roofline
     timemory-cpu-roofline
     timemory-gpu-roofline)
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               Dyninst
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_DYNINST)
+    find_package(Dyninst ${TIMEMORY_FIND_REQUIREMENT})
+    set(_BOOST_COMPONENTS atomic system thread date_time)
+    set(TIMEMORY_BOOST_COMPONENTS "${_BOOST_COMPONENTS}" CACHE STRING "Boost components used by Dyninst in timemory")
+    find_package(Boost ${TIMEMORY_FIND_REQUIREMENT} COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
+endif()
+
+if(Dyninst_FOUND AND Boost_FOUND)
+    target_link_libraries(timemory-dyninst INTERFACE
+        ${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
+    target_include_directories(timemory-dyninst SYSTEM INTERFACE
+        ${DYNINST_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+    target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
+else()
+    set(TIMEMORY_USE_DYNINST OFF)
+    inform_empty_interface(timemory-dyninst "dyninst")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               Kokkos
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_KOKKOS)
+    find_package(Kokkos ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(Kokkos_FOUND)
+    target_link_libraries(timemory-kokkos INTERFACE Kokkos::kokkos)
+    target_compile_definitions(timemory-kokkos INTERFACE TIMEMORY_USE_KOKKOS)
+else()
+    set(TIMEMORY_USE_KOKKOS OFF)
+    inform_empty_interface(timemory-kokkos "Kokkos")
+endif()
 
 
 #----------------------------------------------------------------------------------------#

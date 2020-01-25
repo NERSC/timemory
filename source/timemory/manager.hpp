@@ -491,6 +491,10 @@ extern "C"
 {
     __library_ctor__ static void timemory_library_constructor()
     {
+        auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
+        if(!library_ctor)
+            return;
+
         auto _debug   = tim::settings::debug();
         auto _verbose = tim::settings::verbose();
 
@@ -524,6 +528,10 @@ extern "C"
 
     __library_dtor__ static void timemory_library_destructor()
     {
+        auto library_dtor = tim::get_env<bool>("TIMEMORY_LIBRARY_DTOR", true);
+        if(!library_dtor)
+            return;
+
         auto _debug   = tim::settings::debug();
         auto _verbose = tim::settings::verbose();
 

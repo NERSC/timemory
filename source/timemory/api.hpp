@@ -22,42 +22,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/ert/types.hpp
- * \headerfile timemory/ert/types.hpp "timemory/ert/types.hpp"
- * Provides declaration of types for ERT
+#pragma once
+
+/** \file timemory/api.hpp
+ * \headerfile timemory/api.hpp "timemory/api.hpp"
+ *
+ * This is a declaration of API types
  *
  */
 
-#pragma once
-
-// clang-format off
-namespace tim { namespace component { struct wall_clock; } }
-// clang-format on
-
 namespace tim
 {
-namespace ert
+namespace api
 {
-class thread_barrier;
-struct exec_params;
-
-template <typename _Tp = component::wall_clock>
-class exec_data;
-
-template <typename _Device, typename _Tp, typename _Counter = component::wall_clock>
-class counter;
-
-template <typename _Device, typename _Tp, typename _Counter>
-struct configuration;
-
-template <typename _Device, typename _Tp, typename _Counter>
-struct executor;
-
-template <typename _Executor>
-struct callback;
-
-}  // namespace ert
+// this is a type for tagging native types
+struct native_tag
+{};
+}  // namespace api
 }  // namespace tim
-
-// lightweight functions with no internal includes
-#include "timemory/ert/cache_size.hpp"

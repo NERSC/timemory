@@ -125,9 +125,9 @@
 
 #if !defined(CONSTEXPR_IF)
 #    if defined(CXX17)
-#        define CONSTEXPR_IF constexpr
+#        define IF_CONSTEXPR if constexpr
 #    else
-#        define CONSTEXPR_IF
+#        define IF_CONSTEXPR if
 #    endif
 #endif
 

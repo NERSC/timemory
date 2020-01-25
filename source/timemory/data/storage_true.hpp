@@ -118,8 +118,6 @@ public:
     using uintvector_t = std::vector<uint64_t>;
     using EmptyT       = std::tuple<>;
 
-    static constexpr bool record_statistics_v = trait::record_statistics<Type>::value;
-
 protected:
     template <typename _Tp>
     struct write_serialization;
@@ -401,7 +399,7 @@ public:
         m_initialized = true;
     }
 
-    virtual void finalize()
+    virtual void finalize() final
     {
         if(m_finalized)
             return;
@@ -427,13 +425,14 @@ public:
             PRINT_HERE("[%s]> finalizing...", m_label.c_str());
     }
 
-    void stack_clear()
+    virtual void stack_clear() final
     {
+        using Base                       = typename Type::base_type;
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            itr->stop();
-            itr->pop_node();
+            static_cast<Base*>(itr)->stop();
+            static_cast<Base*>(itr)->pop_node();
         }
         m_stack.clear();
     }
@@ -608,10 +607,8 @@ private:
 public:
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope  = scope::process,
-              enable_if_t<(std::is_same<_Scope, scope::process>::value ||
-                           std::is_same<_Scope, scope::thread>::value),
-                          int> = 0>
+    template <typename _Scope                                              = scope::tree,
+              enable_if_t<(std::is_same<_Scope, scope::tree>::value), int> = 0>
     iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
@@ -626,7 +623,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope = scope::process,
+    template <typename _Scope                                              = scope::tree,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
     {
@@ -663,10 +660,8 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope  = scope::process,
-              enable_if_t<(std::is_same<_Scope, scope::process>::value ||
-                           std::is_same<_Scope, scope::thread>::value),
-                          int> = 0>
+    template <typename _Scope                                              = scope::tree,
+              enable_if_t<(std::is_same<_Scope, scope::tree>::value), int> = 0>
     iterator insert(const Type& obj, uint64_t hash_id)
     {
         static bool              _global_init = global_init();
@@ -682,7 +677,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope = scope::process,
+    template <typename _Scope                                              = scope::tree,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     iterator insert(const Type& obj, uint64_t hash_id)
     {
@@ -733,8 +728,10 @@ public:
             _nitr->second->obj() += std::get<2>(_secondary);
             _nitr->second->obj().laps += 1;
             auto& _stats = _nitr->second->stats();
-            if(record_statistics_v)
+            IF_CONSTEXPR(trait::record_statistics<Type>::value)
+            {
                 stats_policy_type::apply(_stats, _nitr->second->obj());
+            }
         }
         else
         {
@@ -745,8 +742,10 @@ public:
             graph_node_t _node(_hash, _tmp, _depth);
             _node.stats() += _tmp.get();
             auto& _stats = _node.stats();
-            if(record_statistics_v)
+            IF_CONSTEXPR(trait::record_statistics<Type>::value)
+            {
                 stats_policy_type::apply(_stats, _tmp);
+            }
             m_node_ids[_depth][_hash] = _data().emplace_child(_itr, _node);
         }
     }
@@ -955,8 +954,6 @@ storage<Type, true>::_data()
     m_initialized = true;
     return *m_graph_data_instance;
 }
-
-//======================================================================================//
 
 //======================================================================================//
 
@@ -1224,6 +1221,9 @@ storage<Type, true>::internal_print()
     {
         merge();
         finalize();
+
+        if(!trait::is_available<Type>::get())
+            return;
 
         bool _json_forced = requires_json;
         bool _file_output = settings::file_output();
@@ -1609,7 +1609,7 @@ storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned in
 
     Type& obj           = _graph_list.front().data();
     auto  labels        = obj.label_array();
-    auto  descripts     = obj.descript_array();
+    auto  descripts     = obj.description_array();
     auto  units         = obj.unit_array();
     auto  display_units = obj.display_unit_array();
     ar(cereal::make_nvp("type", labels), cereal::make_nvp("description", descripts),
@@ -1680,33 +1680,33 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
     if(!m_data->graph().is_valid(current))
         _insert_child();
 
-    if((hash_id) == current->id())
+    // check children first because in general, child match is ideal
+    auto fchild = graph_t::child(current, 0);
+    if(m_data->graph().is_valid(fchild))
     {
-        return current;
-    }
-    else if(m_data->graph().is_valid(current))
-    {
-        // check siblings
-        for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
         {
-            // skip if current
-            if(itr == current)
-                continue;
-            // check hash id's
             if((hash_id) == itr->id())
                 return _update(itr);
         }
+    }
 
-        // check child
-        auto fchild = graph_t::child(current, 0);
-        if(m_data->graph().is_valid(fchild))
-        {
-            for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-            {
-                if((hash_id) == itr->id())
-                    return _update(itr);
-            }
-        }
+    // occasionally, we end up here because of some of the threading stuff that
+    // has to do with the head node. Protected against mis-matches in hierarchy
+    // because the actual hash includes the depth so "example" at depth 2
+    // has a different hash than "example" at depth 3.
+    if((hash_id) == current->id())
+        return current;
+
+    // check siblings
+    for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+    {
+        // skip if current
+        if(itr == current)
+            continue;
+        // check hash id's
+        if((hash_id) == itr->id())
+            return _update(itr);
     }
 
     return _insert_child();

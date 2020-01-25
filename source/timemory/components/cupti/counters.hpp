@@ -381,7 +381,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    static array_t<string_t> descript_array() { return label_array(); }
+    static array_t<string_t> description_array() { return label_array(); }
 
     //----------------------------------------------------------------------------------//
     // array of unit

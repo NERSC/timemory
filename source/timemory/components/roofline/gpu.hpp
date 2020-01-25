@@ -187,6 +187,8 @@ public:
         auto _get = [=]() {
             // check the standard variable
             std::string _env = aslc(settings::gpu_roofline_mode());
+            if(_env.empty())
+                _env = aslc(settings::roofline_mode());
             return (_env == "op" || _env == "hw" || _env == "counters")
                        ? MODE::COUNTERS
                        : ((_env == "ai" || _env == "ac" || _env == "activity")
@@ -402,7 +404,7 @@ public:
 
     static std::string label()
     {
-        if(settings::roofline_type_labels_gpu())
+        if(settings::roofline_type_labels_gpu() || settings::roofline_type_labels())
         {
             auto ret = std::string("gpu_roofline_") + get_type_string() + "_" +
                        get_mode_string();

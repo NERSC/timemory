@@ -161,11 +161,12 @@ public:
 
     virtual void stack_clear() final
     {
+        using Base                       = typename Type::base_type;
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            itr->stop();
-            itr->pop_node();
+            static_cast<Base*>(itr)->stop();
+            static_cast<Base*>(itr)->pop_node();
         }
         m_stack.clear();
     }

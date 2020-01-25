@@ -51,8 +51,8 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<user_bundle<10101, native_tag>, void>;
-extern template struct base<user_bundle<11011, native_tag>, void>;
+extern template struct base<user_bundle<10101, api::native_tag>, void>;
+extern template struct base<user_bundle<11011, api::native_tag>, void>;
 
 #endif
 

@@ -25,7 +25,7 @@
 /** \file mpl/bits/types.hpp
  * \headerfile mpl/bits/types.hpp "timemory/mpl/bits/types.hpp"
  *
- * This is a pre-declaration of the STL overload types
+ * This is a declaration of the STL overload types
  *
  */
 

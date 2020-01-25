@@ -8,7 +8,7 @@ set(COMPONENTS cxx compile-options analysis-tools OPTIONAL_COMPONENTS)
 option(USE_PAPI "Enable papi" OFF)
 option(USE_CALIPER "Enable caliper" OFF)
 option(USE_MPI "Enable MPI" OFF)
-option(USE_TAU "Enable TAU" OFFF)
+option(USE_TAU "Enable TAU" OFF)
 
 set(USE_PAPI_COMPONENTS papi)
 set(USE_CALIPER_COMPONENTS caliper)

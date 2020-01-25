@@ -43,8 +43,8 @@ namespace component
 {
 //
 //
-template struct base<user_bundle<10101, native_tag>, void>;
-template struct base<user_bundle<11011, native_tag>, void>;
+template struct base<user_bundle<10101, api::native_tag>, void>;
+template struct base<user_bundle<11011, api::native_tag>, void>;
 //
 //
 }  // namespace component

@@ -130,10 +130,8 @@ component_tuple<Types...>::push()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
-        if(m_flat)
-            apply_v::access<insert_node_t<scope::flat>>(m_data, m_hash);
-        else
-            apply_v::access<insert_node_t<scope::process>>(m_data, m_hash);
+        using insert_t = operation_t<operation::insert_node>;
+        apply_v::access<insert_t>(m_data, m_hash, m_flat);
     }
 }
 

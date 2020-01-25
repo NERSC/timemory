@@ -34,4 +34,7 @@ add_subdirectory(ex-ert)
 add_subdirectory(ex-cpu-roofline)
 add_subdirectory(ex-gpu-roofline)
 
+# Python related
+add_subdirectory(ex-python)
+
 cmake_policy(POP)

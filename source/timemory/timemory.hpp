@@ -150,6 +150,15 @@ struct dummy
 #    define TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE(...)
 #    define TIMEMORY_DEBUG_AUTO_BUNDLE(...)
 
+#    define TIMEMORY_TOOLSET_ALIAS(...)
+#    define TIMEMORY_DECLARE_COMPONENT(...)
+#    define TIMEMORY_STATISTICS_TYPE(...)
+#    define TIMEMORY_TEMPLATE_STATISTICS_TYPE(...)
+#    define TIMEMORY_VARIADIC_STATISTICS_TYPE(...)
+#    define TIMEMORY_DEFINE_CONCRETE_TRAIT(...)
+#    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(...)
+#    define TIMEMORY_DEFINE_VARIADIC_TRAIT(...)
+
 #else
 
 // versioning header

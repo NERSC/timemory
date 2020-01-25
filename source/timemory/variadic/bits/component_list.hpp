@@ -169,10 +169,7 @@ component_list<Types...>::push()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
-        if(m_flat)
-            apply_v::access<insert_node_t<scope::flat>>(m_data, m_hash);
-        else
-            apply_v::access<insert_node_t<scope::process>>(m_data, m_hash);
+        apply_v::access<insert_node_t>(m_data, m_hash, m_flat);
     }
 }
 

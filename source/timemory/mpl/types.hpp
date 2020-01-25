@@ -25,7 +25,7 @@
 /** \file mpl/types.hpp
  * \headerfile mpl/types.hpp "timemory/mpl/types.hpp"
  *
- * This is a pre-declaration of all the operation structs.
+ * This is a declaration of all the operation structs.
  * Care should be taken to make sure that this includes a minimal
  * number of additional headers.
  *
@@ -34,10 +34,13 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include <vector>
 
+#include "timemory/api.hpp"
 #include "timemory/utility/types.hpp"
 
 //======================================================================================//
@@ -153,6 +156,17 @@ struct input_archive;
 template <typename _Tp>
 struct output_archive;
 
+template <typename _Tp>
+struct pretty_json;
+
+template <typename _Tp>
+struct flat_storage;
+
+template <typename _Tp>
+struct report_sum;
+
+template <typename _Tp>
+struct report_mean;
 }  // namespace trait
 
 //======================================================================================//
@@ -170,7 +184,7 @@ struct construct;
 template <typename _Tp>
 struct set_prefix;
 
-template <typename _Tp, typename _Scope>
+template <typename _Tp>
 struct insert_node;
 
 template <typename _Tp>

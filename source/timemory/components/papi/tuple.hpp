@@ -363,7 +363,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    static array_t<std::string> descript_array()
+    static array_t<std::string> description_array()
     {
         array_t<std::string> arr;
         for(size_type i = 0; i < num_events; ++i)

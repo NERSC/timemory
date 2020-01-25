@@ -155,10 +155,10 @@ tim::timemory_finalize()
     if(settings::debug() || settings::verbose() > 3)
         PRINT_HERE("%s", "");
 
-    if(settings::enable_signal_handler() && settings::debug())
-        PRINT_HERE("%s", "disabling signal detection...");
+    // if(settings::enable_signal_handler() && settings::debug())
+    //    PRINT_HERE("%s", "disabling signal detection...");
 
-    disable_signal_detection();
+    // disable_signal_detection();
 
     if(settings::debug())
         PRINT_HERE("%s", "finalizing manager...");

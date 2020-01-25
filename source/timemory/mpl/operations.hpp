@@ -127,6 +127,9 @@ struct init_storage
 
     static void init()
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         static thread_local auto _init = this_type::get();
         consume_parameters(_init);
     }
@@ -196,6 +199,9 @@ struct set_prefix
               enable_if_t<(trait::requires_prefix<_Up>::value), int> = 0>
     set_prefix(Type& obj, const string_t& _prefix)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj.set_prefix(_prefix);
     }
 
@@ -207,7 +213,7 @@ struct set_prefix
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Scope>
+template <typename _Tp>
 struct insert_node
 {
     using Type       = _Tp;
@@ -215,13 +221,36 @@ struct insert_node
     using base_type  = typename Type::base_type;
 
     //----------------------------------------------------------------------------------//
-    //  has storage implementation
+    //  has run-time optional flat storage implementation
     //
-    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
-    explicit insert_node(base_type& obj, const uint64_t& _hash)
+    template <typename _Up = base_type, typename T = Type,
+              enable_if_t<!(trait::flat_storage<T>::value), char> = 0,
+              enable_if_t<(_Up::implements_storage_v), int>       = 0>
+    explicit insert_node(base_type& obj, const uint64_t& _hash, bool flat)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         init_storage<_Tp>::init();
-        obj.insert_node(_Scope{}, _hash);
+        if(flat)
+            obj.insert_node(scope::flat{}, _hash);
+        else
+            obj.insert_node(scope::tree{}, _hash);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  has compile-time fixed flat storage implementation
+    //
+    template <typename _Up = base_type, typename T = Type,
+              enable_if_t<(trait::flat_storage<T>::value), char> = 0,
+              enable_if_t<(_Up::implements_storage_v), int>      = 0>
+    explicit insert_node(base_type& obj, const uint64_t& _hash, bool)
+    {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        init_storage<_Tp>::init();
+        obj.insert_node(scope::flat{}, _hash);
     }
 
     //----------------------------------------------------------------------------------//
@@ -229,7 +258,7 @@ struct insert_node
     //
     template <typename _Up                                   = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
-    explicit insert_node(base_type&, const uint64_t&)
+    explicit insert_node(base_type&, const uint64_t&, bool)
     {}
 };
 
@@ -248,6 +277,9 @@ struct pop_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit pop_node(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj.pop_node();
     }
 
@@ -272,6 +304,9 @@ struct record
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     explicit record(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj.value = Type::record();
     }
 
@@ -279,6 +314,9 @@ struct record
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
     record(base_type& obj, const base_type& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj = std::max(obj, rhs);
     }
 
@@ -287,6 +325,9 @@ struct record
               enable_if_t<(is_enabled<_Up>::value), char>                = 0>
     record(base_type& obj, const base_type& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj += rhs;
     }
 
@@ -319,6 +360,9 @@ struct measure
 
     explicit measure(Type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         init_storage<_Tp>::init();
         obj.measure();
     }
@@ -347,6 +391,9 @@ struct sample
     template <typename _Up, enable_if_t<(std::is_same<_Up, this_type>::value), int> = 0>
     explicit sample(Type& obj, _Up data)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         init_storage<_Tp>::init();
         obj.sample();
         data.value = obj.get();
@@ -371,6 +418,9 @@ struct start
 
     explicit start(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         init_storage<_Tp>::init();
         obj.start();
     }
@@ -394,6 +444,9 @@ struct priority_start
               enable_if_t<(trait::start_priority<_Up>::value < 0), int> = 0>
     explicit priority_start(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         init_storage<_Tp>::init();
         obj.start();
     }
@@ -417,6 +470,9 @@ struct standard_start
               enable_if_t<(trait::start_priority<_Up>::value == 0), int> = 0>
     explicit standard_start(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         init_storage<_Tp>::init();
         obj.start();
     }
@@ -440,6 +496,9 @@ struct delayed_start
               enable_if_t<(trait::start_priority<_Up>::value > 0), int> = 0>
     explicit delayed_start(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         init_storage<_Tp>::init();
         obj.start();
     }
@@ -454,7 +513,13 @@ struct stop
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit stop(base_type& obj) { obj.stop(); }
+    explicit stop(base_type& obj)
+    {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        obj.stop();
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -475,6 +540,9 @@ struct priority_stop
               enable_if_t<(trait::stop_priority<_Up>::value < 0), int> = 0>
     explicit priority_stop(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj.stop();
     }
 };
@@ -497,6 +565,9 @@ struct standard_stop
               enable_if_t<(trait::stop_priority<_Up>::value == 0), int> = 0>
     explicit standard_stop(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj.stop();
     }
 };
@@ -519,6 +590,9 @@ struct delayed_stop
               enable_if_t<(trait::stop_priority<_Up>::value > 0), int> = 0>
     explicit delayed_stop(base_type& obj)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         obj.stop();
     }
 };
@@ -535,6 +609,9 @@ struct mark_begin
     template <typename... _Args>
     explicit mark_begin(Type& obj, _Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         mark_begin_sfinae(obj, std::forward<_Args>(_args)...);
     }
 
@@ -581,6 +658,9 @@ struct mark_end
     template <typename... _Args>
     explicit mark_end(Type& obj, _Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         mark_end_sfinae(obj, std::forward<_Args>(_args)...);
     }
 
@@ -639,6 +719,9 @@ struct audit
     template <typename... _Args>
     audit(Type& obj, _Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         audit_sfinae(obj, std::forward<_Args>(_args)...);
     }
 
@@ -737,12 +820,14 @@ struct plus
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    plus(Type& obj, const int64_t& rhs) { obj += rhs; }
-
     template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0,
               enable_if_t<(has_data<_Up>::value), char> = 0>
     plus(Type& obj, const Type& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        using namespace tim::stl_overload;
         obj.base_type::plus(rhs);
         obj = std::max(obj, rhs);
     }
@@ -752,6 +837,10 @@ struct plus
               enable_if_t<(has_data<_Up>::value), char>                  = 0>
     plus(Type& obj, const Type& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        using namespace tim::stl_overload;
         obj.base_type::plus(rhs);
         obj += rhs;
     }
@@ -776,14 +865,12 @@ struct minus
     using base_type  = typename Type::base_type;
 
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
-    minus(Type& obj, const int64_t& rhs)
-    {
-        obj -= rhs;
-    }
-
-    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     minus(Type& obj, const Type& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        using namespace tim::stl_overload;
         // ensures update to laps
         obj.base_type::minus(rhs);
         obj -= rhs;
@@ -807,12 +894,20 @@ struct multiply
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     multiply(Type& obj, const int64_t& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        using namespace tim::stl_overload;
         obj *= rhs;
     }
 
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     multiply(Type& obj, const Type& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        using namespace tim::stl_overload;
         obj *= rhs;
     }
 
@@ -834,12 +929,20 @@ struct divide
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     divide(Type& obj, const int64_t& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        using namespace tim::stl_overload;
         obj /= rhs;
     }
 
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     divide(Type& obj, const Type& rhs)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
+        using namespace tim::stl_overload;
         obj /= rhs;
     }
 
@@ -914,6 +1017,9 @@ struct serialization
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     serialization(const base_type& obj, _Archive& ar, const unsigned int)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         auto _data = static_cast<const Type&>(obj).get();
         ar(cereal::make_nvp("is_transient", obj.is_transient),
            cereal::make_nvp("laps", obj.laps), cereal::make_nvp("repr_data", _data),
@@ -991,6 +1097,9 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, _Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(obj)
             _Op(*obj, std::forward<_Args>(_args)...);
     }
@@ -999,6 +1108,9 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, _Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(obj)
             _Op(*obj, std::forward<_Args>(_args)...);
     }
@@ -1007,6 +1119,9 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, base_type* rhs, _Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(obj && rhs)
             _Op(*obj, *rhs, std::forward<_Args>(_args)...);
     }
@@ -1015,6 +1130,9 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, Type* rhs, _Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(obj && rhs)
             _Op(*obj, *rhs, std::forward<_Args>(_args)...);
     }
@@ -1050,6 +1168,9 @@ struct pointer_counter
 
     explicit pointer_counter(Type* obj, uint64_t& count)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(obj)
             ++count;
     }
@@ -1081,5 +1202,190 @@ operator+(const tim::component::user_clock&   _user,
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/mpl/bits/operations.hpp"
+
+#if defined(TIMEMORY_EXTERN_INIT)
+
+namespace tim
+{
+namespace operation
+{
+//
+//
+extern template struct init_storage<component::trip_count>;
+extern template struct construct<component::trip_count>;
+extern template struct set_prefix<component::trip_count>;
+extern template struct insert_node<component::trip_count>;
+extern template struct pop_node<component::trip_count>;
+extern template struct record<component::trip_count>;
+extern template struct reset<component::trip_count>;
+extern template struct measure<component::trip_count>;
+extern template struct sample<component::trip_count>;
+extern template struct start<component::trip_count>;
+extern template struct priority_start<component::trip_count>;
+extern template struct standard_start<component::trip_count>;
+extern template struct delayed_start<component::trip_count>;
+extern template struct stop<component::trip_count>;
+extern template struct priority_stop<component::trip_count>;
+extern template struct standard_stop<component::trip_count>;
+extern template struct delayed_stop<component::trip_count>;
+extern template struct mark_begin<component::trip_count>;
+extern template struct mark_end<component::trip_count>;
+extern template struct audit<component::trip_count>;
+extern template struct plus<component::trip_count>;
+extern template struct minus<component::trip_count>;
+extern template struct multiply<component::trip_count>;
+extern template struct divide<component::trip_count>;
+extern template struct get_data<component::trip_count>;
+extern template struct copy<component::trip_count>;
+
+extern template struct init_storage<component::wall_clock>;
+extern template struct construct<component::wall_clock>;
+extern template struct set_prefix<component::wall_clock>;
+extern template struct insert_node<component::wall_clock>;
+extern template struct pop_node<component::wall_clock>;
+extern template struct record<component::wall_clock>;
+extern template struct reset<component::wall_clock>;
+extern template struct measure<component::wall_clock>;
+extern template struct sample<component::wall_clock>;
+extern template struct start<component::wall_clock>;
+extern template struct priority_start<component::wall_clock>;
+extern template struct standard_start<component::wall_clock>;
+extern template struct delayed_start<component::wall_clock>;
+extern template struct stop<component::wall_clock>;
+extern template struct priority_stop<component::wall_clock>;
+extern template struct standard_stop<component::wall_clock>;
+extern template struct delayed_stop<component::wall_clock>;
+extern template struct mark_begin<component::wall_clock>;
+extern template struct mark_end<component::wall_clock>;
+extern template struct audit<component::wall_clock>;
+extern template struct plus<component::wall_clock>;
+extern template struct minus<component::wall_clock>;
+extern template struct multiply<component::wall_clock>;
+extern template struct divide<component::wall_clock>;
+extern template struct get_data<component::wall_clock>;
+extern template struct copy<component::wall_clock>;
+extern template struct print_statistics<component::wall_clock>;
+extern template struct print_header<component::wall_clock>;
+extern template struct print<component::wall_clock>;
+extern template struct print_storage<component::wall_clock>;
+extern template struct echo_measurement<component::wall_clock, true>;
+extern template struct finalize::storage::get<component::wall_clock, true>;
+extern template struct finalize::storage::mpi_get<component::wall_clock, true>;
+extern template struct finalize::storage::upc_get<component::wall_clock, true>;
+extern template struct finalize::storage::dmp_get<component::wall_clock, true>;
+
+extern template struct init_storage<component::cpu_clock>;
+extern template struct construct<component::cpu_clock>;
+extern template struct set_prefix<component::cpu_clock>;
+extern template struct insert_node<component::cpu_clock>;
+extern template struct pop_node<component::cpu_clock>;
+extern template struct record<component::cpu_clock>;
+extern template struct reset<component::cpu_clock>;
+extern template struct measure<component::cpu_clock>;
+extern template struct sample<component::cpu_clock>;
+extern template struct start<component::cpu_clock>;
+extern template struct priority_start<component::cpu_clock>;
+extern template struct standard_start<component::cpu_clock>;
+extern template struct delayed_start<component::cpu_clock>;
+extern template struct stop<component::cpu_clock>;
+extern template struct priority_stop<component::cpu_clock>;
+extern template struct standard_stop<component::cpu_clock>;
+extern template struct delayed_stop<component::cpu_clock>;
+extern template struct mark_begin<component::cpu_clock>;
+extern template struct mark_end<component::cpu_clock>;
+extern template struct audit<component::cpu_clock>;
+extern template struct plus<component::cpu_clock>;
+extern template struct minus<component::cpu_clock>;
+extern template struct multiply<component::cpu_clock>;
+extern template struct divide<component::cpu_clock>;
+extern template struct get_data<component::cpu_clock>;
+extern template struct copy<component::cpu_clock>;
+extern template struct print_statistics<component::cpu_clock>;
+extern template struct print_header<component::cpu_clock>;
+extern template struct print<component::cpu_clock>;
+extern template struct print_storage<component::cpu_clock>;
+extern template struct echo_measurement<component::cpu_clock, true>;
+extern template struct finalize::storage::get<component::cpu_clock, true>;
+extern template struct finalize::storage::mpi_get<component::cpu_clock, true>;
+extern template struct finalize::storage::upc_get<component::cpu_clock, true>;
+extern template struct finalize::storage::dmp_get<component::cpu_clock, true>;
+
+extern template struct init_storage<component::read_bytes>;
+extern template struct construct<component::read_bytes>;
+extern template struct set_prefix<component::read_bytes>;
+extern template struct insert_node<component::read_bytes>;
+extern template struct pop_node<component::read_bytes>;
+extern template struct record<component::read_bytes>;
+extern template struct reset<component::read_bytes>;
+extern template struct measure<component::read_bytes>;
+extern template struct sample<component::read_bytes>;
+extern template struct start<component::read_bytes>;
+extern template struct priority_start<component::read_bytes>;
+extern template struct standard_start<component::read_bytes>;
+extern template struct delayed_start<component::read_bytes>;
+extern template struct stop<component::read_bytes>;
+extern template struct priority_stop<component::read_bytes>;
+extern template struct standard_stop<component::read_bytes>;
+extern template struct delayed_stop<component::read_bytes>;
+extern template struct mark_begin<component::read_bytes>;
+extern template struct mark_end<component::read_bytes>;
+extern template struct audit<component::read_bytes>;
+extern template struct plus<component::read_bytes>;
+extern template struct minus<component::read_bytes>;
+extern template struct multiply<component::read_bytes>;
+extern template struct divide<component::read_bytes>;
+extern template struct get_data<component::read_bytes>;
+extern template struct copy<component::read_bytes>;
+extern template struct print_statistics<component::read_bytes>;
+extern template struct print_header<component::read_bytes>;
+extern template struct print<component::read_bytes>;
+extern template struct print_storage<component::read_bytes>;
+extern template struct echo_measurement<component::read_bytes, true>;
+extern template struct finalize::storage::get<component::read_bytes, true>;
+extern template struct finalize::storage::mpi_get<component::read_bytes, true>;
+extern template struct finalize::storage::upc_get<component::read_bytes, true>;
+extern template struct finalize::storage::dmp_get<component::read_bytes, true>;
+
+extern template struct init_storage<component::written_bytes>;
+extern template struct construct<component::written_bytes>;
+extern template struct set_prefix<component::written_bytes>;
+extern template struct insert_node<component::written_bytes>;
+extern template struct pop_node<component::written_bytes>;
+extern template struct record<component::written_bytes>;
+extern template struct reset<component::written_bytes>;
+extern template struct measure<component::written_bytes>;
+extern template struct sample<component::written_bytes>;
+extern template struct start<component::written_bytes>;
+extern template struct priority_start<component::written_bytes>;
+extern template struct standard_start<component::written_bytes>;
+extern template struct delayed_start<component::written_bytes>;
+extern template struct stop<component::written_bytes>;
+extern template struct priority_stop<component::written_bytes>;
+extern template struct standard_stop<component::written_bytes>;
+extern template struct delayed_stop<component::written_bytes>;
+extern template struct mark_begin<component::written_bytes>;
+extern template struct mark_end<component::written_bytes>;
+extern template struct audit<component::written_bytes>;
+extern template struct plus<component::written_bytes>;
+extern template struct minus<component::written_bytes>;
+extern template struct multiply<component::written_bytes>;
+extern template struct divide<component::written_bytes>;
+extern template struct get_data<component::written_bytes>;
+extern template struct copy<component::written_bytes>;
+extern template struct print_statistics<component::written_bytes>;
+extern template struct print_header<component::written_bytes>;
+extern template struct print<component::written_bytes>;
+extern template struct print_storage<component::written_bytes>;
+extern template struct echo_measurement<component::written_bytes, true>;
+extern template struct finalize::storage::get<component::written_bytes, true>;
+extern template struct finalize::storage::mpi_get<component::written_bytes, true>;
+extern template struct finalize::storage::upc_get<component::written_bytes, true>;
+extern template struct finalize::storage::dmp_get<component::written_bytes, true>;
+//
+//
+}  // namespace operation
+}  // namespace tim
+
+#endif
 
 //--------------------------------------------------------------------------------------//

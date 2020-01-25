@@ -139,6 +139,15 @@ namespace trait
 //--------------------------------------------------------------------------------------//
 
 template <>
+struct units<component::current_peak_rss>
+{
+    using type         = std::pair<double, double>;
+    using display_type = std::pair<std::string, std::string>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <>
 struct units<component::read_bytes>
 {
     using type         = std::tuple<double, double>;

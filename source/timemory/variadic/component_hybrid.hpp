@@ -136,7 +136,7 @@ public:
     {}
 
     template <typename _Func = init_func_t>
-    explicit component_hybrid(const string_t& key, const bool& store = false,
+    explicit component_hybrid(const string_t& key, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
     : m_tuple(key, store, flat)
@@ -146,7 +146,7 @@ public:
     }
 
     template <typename _Func = init_func_t>
-    explicit component_hybrid(const captured_location_t& loc, const bool& store = false,
+    explicit component_hybrid(const captured_location_t& loc, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
     : m_tuple(loc, store, flat)

@@ -26,10 +26,9 @@
 #include <cstdlib>
 
 //--------------------------------------------------------------------------------------//
-// include these headers for pre-declaration w/o instantiation
+// include these headers for declaration w/o instantiation
 //
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/type_traits.hpp"
+#include <timemory/timemory.hpp>
 
 //
 // configure these two types to always record statistics
@@ -40,11 +39,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes,
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::read_bytes, std::true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, std::false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::papi_array_t, std::true_type)
-
-//
-// include the rest of the code
-//
-#include <timemory/timemory.hpp>
 
 //
 // shorthand

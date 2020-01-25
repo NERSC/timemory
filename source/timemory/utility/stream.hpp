@@ -601,11 +601,11 @@ public:
     {
         // if no keys were provided, add all of them
         if(keys.empty())
-            for(const auto& itr : m_headers)
-                keys.push_back(itr.first);
+            for(const auto& itr : m_order)
+                keys.push_back(itr);
 
         // the new headers
-        header_map_t _headers{};
+        order_map_t _order{};
 
         // sort the keys
         std::sort(keys.begin(), keys.end(), sorter);
@@ -614,14 +614,13 @@ public:
         for(const auto& itr : keys)
         {
             bool found = false;
-            for(auto hitr = m_headers.begin(); hitr != m_headers.end(); ++hitr)
+            for(auto hitr = m_order.begin(); hitr != m_order.end(); ++hitr)
             {
-                if(hitr->first == itr)
+                if(*hitr == itr)
                 {
-                    _headers.resize(_headers.size() + 1);
-                    _headers.back() = header_pair_t{ hitr->first, hitr->second };
+                    _order.push_back(*hitr);
                     // remove entry
-                    m_headers.erase(hitr);
+                    m_order.erase(hitr);
                     found = true;
                     break;
                 }
@@ -632,17 +631,14 @@ public:
         }
 
         // insert any remaining not excluded
-        for(const auto& itr : m_headers)
+        for(const auto& itr : m_order)
         {
-            if(exclude.count(itr.first) == 0)
-            {
-                _headers.resize(_headers.size() + 1);
-                _headers.back() = header_pair_t{ itr.first, itr.second };
-            }
+            if(exclude.count(itr) == 0)
+                _order.push_back(itr);
         }
 
         // set the new headers
-        m_headers = _headers;
+        m_order = _order;
     }
 
 private:

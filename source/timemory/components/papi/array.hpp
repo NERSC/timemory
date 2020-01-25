@@ -361,7 +361,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    std::vector<std::string> descript_array() const
+    std::vector<std::string> description_array() const
     {
         std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)

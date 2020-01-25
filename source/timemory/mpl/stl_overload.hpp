@@ -82,27 +82,27 @@ operator<<(::std::ostream&, const ::std::array<_Tp, _N>&);
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
+template <typename _Tp, size_t _N, typename _Other>
 ::std::array<_Tp, _N>&
-operator+=(::std::array<_Tp, _N>&, const ::std::array<_Tp, _N>&);
+operator+=(::std::array<_Tp, _N>&, const _Other&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
+template <typename _Lhs, typename _Rhs, typename _Other>
 ::std::pair<_Lhs, _Rhs>&
-operator+=(::std::pair<_Lhs, _Rhs>&, const ::std::pair<_Lhs, _Rhs>&);
+operator+=(::std::pair<_Lhs, _Rhs>&, const _Other&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
+template <typename _Tp, typename... _Extra, typename _Other>
 ::std::vector<_Tp, _Extra...>&
-operator+=(::std::vector<_Tp, _Extra...>&, const ::std::vector<_Tp, _Extra...>&);
+operator+=(::std::vector<_Tp, _Extra...>&, const _Other&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... _Types, typename _Other>
 ::std::tuple<_Types...>&
-operator+=(::std::tuple<_Types...>&, const ::std::tuple<_Types...>&);
+operator+=(::std::tuple<_Types...>&, const _Other&);
 
 //--------------------------------------------------------------------------------------//
 //

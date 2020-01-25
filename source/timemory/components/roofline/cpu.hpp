@@ -196,6 +196,8 @@ struct cpu_roofline
         auto _get = [=]() {
             // check the standard variable
             std::string _env = aslc(settings::cpu_roofline_mode());
+            if(_env.empty())
+                _env = aslc(settings::roofline_mode());
             return (_env == "op" || _env == "hw" || _env == "counters")
                        ? MODE::OP
                        : ((_env == "ai" || _env == "ac" || _env == "activity")
@@ -419,7 +421,7 @@ struct cpu_roofline
 
     static std::string label()
     {
-        if(settings::roofline_type_labels_cpu())
+        if(settings::roofline_type_labels_cpu() || settings::roofline_type_labels())
             return std::string("cpu_roofline_") + get_type_string() + "_" +
                    get_mode_string();
         else

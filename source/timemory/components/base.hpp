@@ -33,6 +33,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/data/statistics.hpp"
 #include "timemory/data/storage.hpp"
+#include "timemory/mpl/math.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
@@ -61,7 +62,6 @@ struct base
 public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
     static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
-    static constexpr bool record_statistics_v  = trait::record_statistics<_Tp>::value;
     static constexpr bool is_sampler_v         = trait::sampler<_Tp>::value;
     static constexpr bool is_component_type    = false;
     static constexpr bool is_auto_type         = false;
@@ -73,8 +73,8 @@ public:
     using sample_type      = conditional_t<is_sampler_v, operation::sample<_Tp>, EmptyT>;
     using sample_list_type = conditional_t<is_sampler_v, vector_t<sample_type>, EmptyT>;
 
-    using this_type         = base<_Tp, _Value>;
-    using base_type         = this_type;
+    using this_type         = _Tp;
+    using base_type         = base<_Tp, _Value>;
     using unit_type         = typename trait::units<_Tp>::type;
     using display_unit_type = typename trait::units<_Tp>::display_type;
     using storage_type      = impl::storage<_Tp, implements_storage_v>;
@@ -109,7 +109,7 @@ private:
     // friend struct operation::finalize::storage::upc_get<_Tp>;
     // friend struct operation::finalize::storage::dmp_get<_Tp>;
 
-    template <typename _Up, typename _Scope>
+    template <typename _Up>
     friend struct operation::insert_node;
 
     template <typename _Up, typename Archive>
@@ -141,11 +141,11 @@ public:
 
     ~base() = default;
 
-    explicit base(const this_type&) = default;
-    explicit base(this_type&&)      = default;
+    explicit base(const base_type&) = default;
+    explicit base(base_type&&)      = default;
 
-    base& operator=(const this_type&) = default;
-    base& operator=(this_type&&) = default;
+    base& operator=(const base_type&) = default;
+    base& operator=(base_type&&) = default;
 
 public:
     static void global_init(storage_type*) {}
@@ -182,7 +182,7 @@ public:
     static void append(graph_iterator itr, const Type& rhs)
     {
         using has_secondary_type = typename trait::secondary_data<_Tp>::type;
-        this_type::append_impl<value_type>(has_secondary_type{}, itr, rhs);
+        base_type::append_impl<value_type>(has_secondary_type{}, itr, rhs);
     }
 
 public:
@@ -295,24 +295,25 @@ public:
     bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
     bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
 
-    // this_type operators
+    //----------------------------------------------------------------------------------//
+    // base_type operators
     //
-    Type& operator+=(const this_type& rhs)
+    Type& operator+=(const base_type& rhs)
     {
         return operator+=(static_cast<const Type&>(rhs));
     }
 
-    Type& operator-=(const this_type& rhs)
+    Type& operator-=(const base_type& rhs)
     {
         return operator-=(static_cast<const Type&>(rhs));
     }
 
-    Type& operator*=(const this_type& rhs)
+    Type& operator*=(const base_type& rhs)
     {
         return operator*=(static_cast<const Type&>(rhs));
     }
 
-    Type& operator/=(const this_type& rhs)
+    Type& operator/=(const base_type& rhs)
     {
         return operator/=(static_cast<const Type&>(rhs));
     }
@@ -322,100 +323,61 @@ public:
     //
     Type& operator+=(const Type& rhs)
     {
-        value += rhs.value;
-        accum += rhs.accum;
+        math::plus(value, rhs.value);
+        math::plus(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     Type& operator-=(const Type& rhs)
     {
-        value -= rhs.value;
-        accum -= rhs.accum;
+        math::minus(value, rhs.value);
+        math::minus(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     Type& operator*=(const Type& rhs)
     {
-        value *= rhs.value;
-        accum *= rhs.accum;
+        math::multiply(value, rhs.value);
+        math::multiply(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     Type& operator/=(const Type& rhs)
     {
-        value /= rhs.value;
-        accum /= rhs.accum;
+        math::divide(value, rhs.value);
+        math::divide(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
     // value type operators
     //
-    template <typename U                                       = value_type,
-              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
     {
-        value += rhs;
-        accum += rhs;
+        math::plus(value, rhs);
+        math::plus(accum, rhs);
         return static_cast<Type&>(*this);
     }
 
-    template <typename U                                       = value_type,
-              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator-=(const value_type& rhs)
     {
-        value -= rhs;
-        accum -= rhs;
+        math::minus(value, rhs);
+        math::minus(accum, rhs);
         return static_cast<Type&>(*this);
     }
 
-    template <typename U                                       = value_type,
-              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator*=(const value_type& rhs)
     {
-        value *= rhs;
-        accum *= rhs;
+        math::multiply(value, rhs);
+        math::multiply(accum, rhs);
         return static_cast<Type&>(*this);
     }
 
-    template <typename U                                       = value_type,
-              enable_if_t<(std::is_arithmetic<U>::value), int> = 0>
     Type& operator/=(const value_type& rhs)
     {
-        value /= rhs;
-        accum /= rhs;
+        math::divide(value, rhs);
+        math::divide(accum, rhs);
         return static_cast<Type&>(*this);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // value type operators
-    //
-    template <typename U                                        = value_type,
-              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
-    Type& operator+=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator+=(rhs);
-    }
-
-    template <typename U                                        = value_type,
-              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
-    Type& operator-=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator-=(rhs);
-    }
-
-    template <typename U                                        = value_type,
-              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
-    Type& operator*=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator*=(rhs);
-    }
-
-    template <typename U                                        = value_type,
-              enable_if_t<!(std::is_arithmetic<U>::value), int> = 0>
-    Type& operator/=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator/=(rhs);
     }
 
     //----------------------------------------------------------------------------------//
@@ -476,7 +438,7 @@ protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope, typename _Up = this_type,
+    template <typename _Scope, typename _Up = base_type,
               enable_if_t<(_Up::implements_storage_v), int>                 = 0,
               enable_if_t<!(std::is_same<_Scope, scope::flat>::value), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
@@ -495,7 +457,7 @@ protected:
         }
     }
 
-    template <typename _Scope, typename _Up = this_type,
+    template <typename _Scope, typename _Up = base_type,
               enable_if_t<(_Up::implements_storage_v), int>                = 0,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
@@ -512,7 +474,7 @@ protected:
         }
     }
 
-    template <typename _Scope, typename _Up = this_type,
+    template <typename _Scope, typename _Up = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t&)
     {
@@ -529,7 +491,7 @@ protected:
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
-    template <typename _Up = this_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     void pop_node()
     {
         using stats_policy_type = policy::record_statistics<Type>;
@@ -546,8 +508,10 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                if(record_statistics_v)
+                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
+                {
                     stats_policy_type::apply(stats, rhs);
+                }
             }
             else if(is_flat)
             {
@@ -556,8 +520,10 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                if(record_statistics_v)
+                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
+                {
                     stats_policy_type::apply(stats, rhs);
+                }
 
                 _storage->stack_pop(&rhs);
             }
@@ -569,8 +535,10 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
-                if(record_statistics_v)
+                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
+                {
                     stats_policy_type::apply(stats, rhs);
+                }
 
                 if(_storage)
                 {
@@ -586,7 +554,7 @@ protected:
         }
     }
 
-    template <typename _Up                                   = this_type,
+    template <typename _Up                                   = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void pop_node()
     {
@@ -637,14 +605,14 @@ protected:
     }
 
 protected:
-    void plus(const this_type& rhs)
+    void plus(const base_type& rhs)
     {
         laps += rhs.laps;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
 
-    void minus(const this_type& rhs)
+    void minus(const base_type& rhs)
     {
         laps -= rhs.laps;
         if(rhs.is_transient)
@@ -822,7 +790,6 @@ struct base<_Tp, void>
 public:
     static constexpr bool implements_storage_v = false;
     static constexpr bool has_secondary_data   = false;
-    static constexpr bool record_statistics_v  = false;
     static constexpr bool is_sampler_v         = trait::sampler<_Tp>::value;
     static constexpr bool is_component_type    = false;
     static constexpr bool is_auto_type         = false;
@@ -834,8 +801,8 @@ public:
     using sample_type      = EmptyT;
     using sample_list_type = EmptyT;
 
-    using this_type    = base<_Tp, value_type>;
-    using base_type    = this_type;
+    using this_type    = _Tp;
+    using base_type    = base<_Tp, value_type>;
     using storage_type = impl::storage<_Tp, implements_storage_v>;
 
 private:
@@ -858,7 +825,7 @@ private:
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
 
-    template <typename _Up, typename _Scope>
+    template <typename _Up>
     friend struct operation::insert_node;
 
     template <typename _Up, typename Archive>
@@ -875,10 +842,10 @@ public:
     {}
 
     ~base()                         = default;
-    explicit base(const this_type&) = default;
-    explicit base(this_type&&)      = default;
-    base& operator=(const this_type&) = default;
-    base& operator=(this_type&&) = default;
+    explicit base(const base_type&) = default;
+    explicit base(base_type&&)      = default;
+    base& operator=(const base_type&) = default;
+    base& operator=(base_type&&) = default;
 
 public:
     static void global_init(storage_type*) {}
@@ -985,7 +952,7 @@ public:
         is_transient = true;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
+    friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
     int64_t nlaps() const { return 0; }
     int64_t get_laps() const { return 0; }
@@ -996,7 +963,7 @@ private:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope = scope::process, typename... _Args>
+    template <typename _Scope = scope::tree, typename... _Args>
     void insert_node(const _Scope&, _Args&&...)
     {
         if(!is_on_stack)
@@ -1023,13 +990,13 @@ private:
     }
 
 protected:
-    void plus(const this_type& rhs)
+    void plus(const base_type& rhs)
     {
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
 
-    void minus(const this_type& rhs)
+    void minus(const base_type& rhs)
     {
         if(rhs.is_transient)
             is_transient = rhs.is_transient;

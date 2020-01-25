@@ -479,6 +479,9 @@ public:
     print_statistics(const Type&, utility::stream& _os, const _Self&,
                      const _Sp<_Vp>& _stats, uint64_t)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
@@ -509,6 +512,9 @@ public:
               enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
     static void get_header(utility::stream& _os, const _Sp<_Vp>&)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
         bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
@@ -553,6 +559,9 @@ struct print_header : public common_utils
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print_header(const Type& _obj, utility::stream& _os, const _Stats& _stats)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         auto _labels = get_labels(_obj);
         // auto _display = get_display_units(_obj);
         // std::cout << "[" << demangle<_Tp>() << "]> labels: ";
@@ -582,8 +591,10 @@ struct print_header : public common_utils
 
         utility::write_header(_os, "METRIC");
         utility::write_header(_os, "UNITS");
-        utility::write_header(_os, "SUM", f_value, w_value, p_value);
-        utility::write_header(_os, "MEAN", f_value, w_value, p_value);
+        if(trait::report_sum<Type>::value)
+            utility::write_header(_os, "SUM", f_value, w_value, p_value);
+        if(trait::report_mean<Type>::value)
+            utility::write_header(_os, "MEAN", f_value, w_value, p_value);
         print_statistics<_Tp>::get_header(_os, _stats);
         utility::write_header(_os, "% SELF", f_self, w_self, p_self);
 
@@ -592,8 +603,10 @@ struct print_header : public common_utils
         {
             utility::write_header(_os, "METRIC");
             utility::write_header(_os, "UNITS");
-            utility::write_header(_os, "SUM", f_value, w_value, p_value);
-            utility::write_header(_os, "MEAN", f_value, w_value, p_value);
+            if(trait::report_sum<Type>::value)
+                utility::write_header(_os, "SUM", f_value, w_value, p_value);
+            if(trait::report_mean<Type>::value)
+                utility::write_header(_os, "MEAN", f_value, w_value, p_value);
             print_statistics<_Tp>::get_header(_os, _stats);
             utility::write_header(_os, "% SELF", f_self, w_self, p_self);
             _os.insert_break();
@@ -622,6 +635,9 @@ struct print
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print(const Type& _obj, std::ostream& _os, bool _endline = false)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         std::stringstream ss;
         ss << _obj;
         if(_endline)
@@ -633,6 +649,9 @@ struct print
     print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
           bool _endline)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         std::stringstream ss;
         ss << _obj;
         if(_N + 1 < _Ntot)
@@ -647,6 +666,9 @@ struct print
     print(const Type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const _Vp& _self, const _Stats& _stats)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         auto _labels = common_utils::get_labels(_obj);
         auto _units  = common_utils::get_display_units(_obj);
 
@@ -655,8 +677,10 @@ struct print
         utility::write_entry(_os, "DEPTH", _depth);
         utility::write_entry(_os, "METRIC", _labels);
         utility::write_entry(_os, "UNITS", _units);
-        utility::write_entry(_os, "SUM", _obj.get());
-        utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
+        if(trait::report_sum<Type>::value)
+            utility::write_entry(_os, "SUM", _obj.get());
+        if(trait::report_mean<Type>::value)
+            utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
         print_statistics<_Tp>(_obj, _os, _self, _stats, _laps);
         utility::write_entry(_os, "% SELF", _self);
     }
@@ -667,6 +691,9 @@ struct print
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print(const Type* _obj, std::ostream& _os, bool _endline = false)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(_obj)
             print(*_obj, _os, _endline);
     }
@@ -675,6 +702,9 @@ struct print
     print(std::size_t _N, std::size_t _Ntot, const Type* _obj, std::ostream& _os,
           bool _endline)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(_obj)
             print(_N, _Ntot, *_obj, _os, _endline);
     }
@@ -684,6 +714,9 @@ struct print
           int64_t _depth, const widths_t& _output_widths, bool _endline,
           const string_t& _suffix = "")
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         if(_obj)
             print(*_obj, _os, _prefix, _laps, _depth, _output_widths, _endline, _suffix);
     }
@@ -742,6 +775,9 @@ struct print_storage
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print_storage()
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         auto _storage = tim::storage<_Tp>::noninit_instance();
         if(_storage)
         {
@@ -817,6 +853,14 @@ struct echo_measurement<_Tp, true> : public common_utils
     {
         template <typename _Tuple, typename... _Args, size_t _Idx, size_t... _Nt,
                   enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        static std::string name_generator(const string_t&, _Tuple, _Args&&...,
+                                          index_sequence<_Nt...>)
+        {
+            return "";
+        }
+
+        template <typename _Tuple, typename... _Args, size_t _Idx, size_t... _Nt,
+                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
         static std::string name_generator(const string_t& _prefix, _Tuple _units,
                                           _Args&&... _args, index_sequence<_Idx, _Nt...>)
         {
@@ -833,8 +877,8 @@ struct echo_measurement<_Tp, true> : public common_utils
                 ",",
                 name_generator<_Tuple>(_prefix, _units, std::forward<_Args>(_args)...,
                                        index_sequence<_Idx>{}),
-                name_generator<_Tuple>(_prefix, _units, std::forward<_Args>(_args)...),
-                index_sequence<_Nt...>{});
+                name_generator<_Tuple>(_prefix, _units, std::forward<_Args>(_args)...,
+                                       index_sequence<_Nt...>{}));
         }
     };
 
@@ -911,6 +955,26 @@ struct echo_measurement<_Tp, true> : public common_utils
     }
 
     //----------------------------------------------------------------------------------//
+    /// generate a measurement tag
+    ///
+    template <typename Lhs, typename Rhs, typename... _Extra>
+    static void generate_measurement(std::ostream& os, attributes_t attributes,
+                                     const std::pair<Lhs, Rhs>& value)
+    {
+        auto default_name = attributes["name"];
+        auto set_name     = [&](int i) {
+            std::stringstream ss;
+            ss << "INDEX_" << i << " ";
+            attributes["name"] = ss.str() + default_name;
+        };
+
+        set_name(0);
+        generate_measurement(os, attributes, value.first);
+        set_name(1);
+        generate_measurement(os, attributes, value.second);
+    }
+
+    //----------------------------------------------------------------------------------//
     /// generate the prefix
     ///
     static string_t generate_prefix(const strvec_t& hierarchy)
@@ -945,6 +1009,9 @@ struct echo_measurement<_Tp, true> : public common_utils
                           int>                            = 0>
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         auto prefix = generate_prefix(hierarchy);
         auto _unit  = Type::get_display_unit();
         auto name   = generate_name(prefix, _unit);
@@ -966,6 +1033,9 @@ struct echo_measurement<_Tp, true> : public common_utils
                           int>                            = 0>
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
+        if(!trait::is_available<_Tp>::get())
+            return;
+
         auto prefix = generate_prefix(hierarchy);
         auto _data  = obj.get();
 
@@ -1162,10 +1232,8 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
     auto send_serialize = [&](const result_type& src) {
         std::stringstream ss;
         {
-            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
-            cereal::JSONOutputArchive::Options opt(16, space, 0);
-            cereal::JSONOutputArchive          oa(ss);
-            oa(cereal::make_nvp("data", src));
+            auto oa = trait::output_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            (*oa)(cereal::make_nvp("data", src));
         }
         return ss.str();
     };
@@ -1178,8 +1246,8 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
         std::stringstream ss;
         ss << src;
         {
-            cereal::JSONInputArchive ia(ss);
-            ia(cereal::make_nvp("data", ret));
+            auto ia = trait::input_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            (*ia)(cereal::make_nvp("data", ret));
             if(settings::debug())
                 printf("[RECV: %i]> data size: %lli\n", mpi_rank,
                        (long long int) ret.size());
@@ -1243,10 +1311,8 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
     auto send_serialize = [=](const result_type& src) {
         std::stringstream ss;
         {
-            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
-            cereal::JSONOutputArchive::Options opt(16, space, 0);
-            cereal::JSONOutputArchive          oa(ss);
-            oa(cereal::make_nvp("data", src));
+            auto oa = trait::output_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            (*oa)(cereal::make_nvp("data", src));
         }
         return ss.str();
     };
@@ -1259,8 +1325,8 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
         std::stringstream ss;
         ss << src;
         {
-            cereal::JSONInputArchive ia(ss);
-            ia(cereal::make_nvp("data", ret));
+            auto ia = trait::input_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            (*ia)(cereal::make_nvp("data", ret));
         }
         return ret;
     };
