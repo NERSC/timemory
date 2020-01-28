@@ -437,7 +437,7 @@ template <typename _Lhs, typename _Rhs>
 const pair<_Lhs, _Rhs>
 operator-(pair<_Lhs, _Rhs> lhs, const pair<_Lhs, _Rhs>& rhs)
 {
-    math::minus(lhs, rhs);
+    ::tim::math::minus(lhs, rhs);
     return lhs;
 }
 
@@ -445,7 +445,7 @@ template <typename... _Types>
 const tuple<_Types...>
 operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
 {
-    math::minus(lhs, rhs);
+    ::tim::math::minus(lhs, rhs);
     return lhs;
 }
 
