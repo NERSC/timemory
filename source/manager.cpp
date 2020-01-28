@@ -54,8 +54,7 @@ timemory_manager_master_instance()
 
 extern "C"
 {
-    __library_ctor__
-    void timemory_library_constructor()
+    __library_ctor__ void timemory_library_constructor()
     {
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
         if(!library_ctor)

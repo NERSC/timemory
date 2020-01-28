@@ -837,8 +837,8 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
     static result_type unit()
     {
-        return result_type{ units::kilobyte,
-                            static_cast<double>(units::kilobyte) / units::sec };
+        return result_type{ { units::kilobyte,
+                              static_cast<double>(units::kilobyte) / units::sec } };
     }
 
     static std::vector<std::string> display_unit_array()
@@ -854,7 +854,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
     static display_unit_type display_unit()
     {
-        return display_unit_type{ "KB", "KB/sec" };
+        return display_unit_type{ { "KB", "KB/sec" } };
     }
 
     static std::array<double, 2> unit_array() { return unit(); }
@@ -867,7 +867,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
     static value_type record()
     {
-        return value_type{ get_bytes_written(), timer_type::record() };
+        return value_type{ { get_bytes_written(), timer_type::record() } };
     }
 
     std::string get_display() const
@@ -921,7 +921,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         if(!std::isfinite(rate))
             rate = 0.0;
 
-        return result_type{ data, rate };
+        return result_type{ { data, rate } };
     }
 
     void start()
