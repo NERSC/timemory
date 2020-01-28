@@ -61,7 +61,7 @@ get(pair<Lhs, Rhs>& p)
 
 template <size_t I, typename Lhs, typename Rhs,
           typename std::enable_if<(I == 1), int>::type = 0>
-const Lhs
+const Rhs
 get(const pair<Lhs, Rhs>& p)
 {
     return p.second;
@@ -69,7 +69,7 @@ get(const pair<Lhs, Rhs>& p)
 
 template <size_t I, typename Lhs, typename Rhs,
           typename std::enable_if<(I == 1), int>::type = 0>
-Lhs&
+Rhs&
 get(pair<Lhs, Rhs>& p)
 {
     return p.second;
