@@ -24,16 +24,23 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <random>
 
 //--------------------------------------------------------------------------------------//
 // include these headers for declaration w/o instantiation
 //
-#include <timemory/timemory.hpp>
+#include "timemory/mpl/types.hpp"
 
 //
 // all types use compact json
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_json, void, std::false_type)
+
+//--------------------------------------------------------------------------------------//
+// include rest of headers
+//
+#include <timemory/timemory.hpp>
+
 //
 // configure these two types to always record statistics
 //

@@ -87,7 +87,7 @@ operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_
 namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
-
+extern template base<cupti_counters, cupti::profiler::results_t>;
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -713,7 +713,7 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     std::set<std::string> _discarded_metrics{};
 
     // handle events
-    auto _find_event = [&_avail_events, &_discarded_events, devid](const string_t& evt) {
+    auto _find_event = [&_avail_events, &_discarded_events](const string_t& evt) {
         bool nf = (std::find(std::begin(_avail_events), std::end(_avail_events), evt) ==
                    std::end(_avail_events));
         if(nf)
@@ -722,8 +722,7 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     };
 
     // handle metrics
-    auto _find_metric = [&_avail_metric, &_discarded_metrics,
-                         devid](const string_t& met) {
+    auto _find_metric = [&_avail_metric, &_discarded_metrics](const string_t& met) {
         bool nf = (std::find(std::begin(_avail_metric), std::end(_avail_metric), met) ==
                    std::end(_avail_metric));
         if(nf)

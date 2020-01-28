@@ -27,6 +27,7 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -34,6 +35,13 @@
 #include "timemory/utility/utility.hpp"
 
 #if defined(TIMEMORY_USE_LIKWID)
+
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::likwid_perfmon, false)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::likwid_nvmon, false)
+
+//======================================================================================//
 
 namespace tim
 {

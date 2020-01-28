@@ -479,7 +479,7 @@ public:
     print_statistics(const Type&, utility::stream& _os, const _Self&,
                      const _Sp<_Vp>& _stats, uint64_t)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
@@ -512,7 +512,7 @@ public:
               enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
     static void get_header(utility::stream& _os, const _Sp<_Vp>&)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
@@ -559,7 +559,7 @@ struct print_header : public common_utils
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print_header(const Type& _obj, utility::stream& _os, const _Stats& _stats)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         auto _labels = get_labels(_obj);
@@ -635,7 +635,7 @@ struct print
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print(const Type& _obj, std::ostream& _os, bool _endline = false)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         std::stringstream ss;
@@ -649,7 +649,7 @@ struct print
     print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
           bool _endline)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         std::stringstream ss;
@@ -666,7 +666,7 @@ struct print
     print(const Type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const _Vp& _self, const _Stats& _stats)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         auto _labels = common_utils::get_labels(_obj);
@@ -691,7 +691,7 @@ struct print
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print(const Type* _obj, std::ostream& _os, bool _endline = false)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(_obj)
@@ -702,7 +702,7 @@ struct print
     print(std::size_t _N, std::size_t _Ntot, const Type* _obj, std::ostream& _os,
           bool _endline)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(_obj)
@@ -714,7 +714,7 @@ struct print
           int64_t _depth, const widths_t& _output_widths, bool _endline,
           const string_t& _suffix = "")
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(_obj)
@@ -775,7 +775,7 @@ struct print_storage
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print_storage()
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         auto _storage = tim::storage<_Tp>::noninit_instance();
@@ -851,7 +851,7 @@ struct echo_measurement<_Tp, true> : public common_utils
     //
     struct impl
     {
-        template <typename _Tuple, typename... _Args, size_t _Idx, size_t... _Nt,
+        template <typename _Tuple, typename... _Args, size_t... _Nt,
                   enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
         static std::string name_generator(const string_t&, _Tuple, _Args&&...,
                                           index_sequence<_Nt...>)
@@ -1009,7 +1009,7 @@ struct echo_measurement<_Tp, true> : public common_utils
                           int>                            = 0>
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         auto prefix = generate_prefix(hierarchy);
@@ -1033,7 +1033,7 @@ struct echo_measurement<_Tp, true> : public common_utils
                           int>                            = 0>
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         auto prefix = generate_prefix(hierarchy);

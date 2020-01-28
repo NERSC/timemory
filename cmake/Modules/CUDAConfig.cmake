@@ -6,6 +6,8 @@ get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 
 if("CUDA" IN_LIST LANGUAGES)
 
+    find_package(CUDA REQUIRED)
+
     target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
         ${PROJECT_USE_CUDA_OPTION})
     target_include_directories(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE

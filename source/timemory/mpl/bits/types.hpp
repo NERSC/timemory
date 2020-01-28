@@ -106,47 +106,27 @@ tuple_printer(const _Tuple<_Types...>& obj, std::ostream& os, index_sequence<_Id
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
+template <typename _Tp, size_t _N, typename _Other>
 std::array<_Tp, _N>&
-operator+=(std::array<_Tp, _N>&, const std::array<_Tp, _N>&);
-
-template <typename _Lhs, size_t _N, typename _Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-std::array<_Lhs, _N>&
-operator+=(std::array<_Lhs, _N>&, const _Rhs&);
+operator+=(std::array<_Tp, _N>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
+template <typename _Lhs, typename _Rhs, typename _Other>
 std::pair<_Lhs, _Rhs>&
-operator+=(std::pair<_Lhs, _Rhs>&, const std::pair<_Lhs, _Rhs>&);
-
-template <typename _Lhs, typename _Rhs, typename _Arith,
-          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int> = 0>
-std::pair<_Lhs, _Rhs>&
-operator+=(std::pair<_Lhs, _Rhs>&, const _Arith&);
+operator+=(std::pair<_Lhs, _Rhs>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
+template <typename _Tp, typename... _Extra, typename _Other>
 std::vector<_Tp, _Extra...>&
-operator+=(std::vector<_Tp, _Extra...>&, const std::vector<_Tp, _Extra...>&);
-
-template <typename _Lhs, typename _Rhs, typename... _Extra,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-std::vector<_Lhs, _Extra...>&
-operator+=(std::vector<_Lhs, _Extra...>&, const _Rhs&);
+operator+=(std::vector<_Tp, _Extra...>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... _Types, typename _Other>
 std::tuple<_Types...>&
-operator+=(std::tuple<_Types...>&, const std::tuple<_Types...>&);
-
-template <typename... _Lhs, typename _Rhs,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-std::tuple<_Lhs...>&
-operator+=(std::tuple<_Lhs...>&, const _Rhs&);
+operator+=(std::tuple<_Types...>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -312,226 +292,6 @@ template <typename _Lhs, typename _Rhs,
           enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
 _Lhs
 operator/(_Lhs, const _Rhs&);
-
-//--------------------------------------------------------------------------------------//
-//
-//      array math operation implementations
-//
-//--------------------------------------------------------------------------------------//
-
-namespace array_math
-{
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx>
-void
-plus(_Tuple<_Lhs, _N>& lhs, const _Tuple<_Rhs, _N>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) += std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx>
-void
-minus(_Tuple<_Lhs, _N>& lhs, const _Tuple<_Rhs, _N>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) -= std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx>
-void
-multiply(_Tuple<_Lhs, _N>& lhs, const _Tuple<_Rhs, _N>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) *= std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx>
-void
-divide(_Tuple<_Lhs, _N>& lhs, const _Tuple<_Rhs, _N>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) /= std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-plus(_Tuple<_Lhs, _N>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) += rhs, 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-minus(_Tuple<_Lhs, _N>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) -= rhs, 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-multiply(_Tuple<_Lhs, _N>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) *= rhs, 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename, size_t> class _Tuple, typename _Lhs, typename _Rhs,
-          size_t _N, size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-divide(_Tuple<_Lhs, _N>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) /= rhs, 0)... };
-    consume_parameters(ret);
-}
-
-}  // namespace array_math
-
-//--------------------------------------------------------------------------------------//
-//
-//      tuple math operation implementations
-//
-//--------------------------------------------------------------------------------------//
-
-namespace tuple_math
-{
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename... _Rhs,
-          size_t... _Idx>
-void
-plus(_Tuple<_Lhs...>& lhs, const _Tuple<_Rhs...>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) += std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename... _Rhs,
-          size_t... _Idx>
-void
-minus(_Tuple<_Lhs...>& lhs, const _Tuple<_Rhs...>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) -= std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename... _Rhs,
-          size_t... _Idx>
-void
-multiply(_Tuple<_Lhs...>& lhs, const _Tuple<_Rhs...>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) *= std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename... _Rhs,
-          size_t... _Idx>
-void
-divide(_Tuple<_Lhs...>& lhs, const _Tuple<_Rhs...>& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret = init_list_type{ (std::get<_Idx>(lhs) /= std::get<_Idx>(rhs), 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename _Rhs,
-          size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-plus(_Tuple<_Lhs...>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) += rhs, 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename _Rhs,
-          size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-minus(_Tuple<_Lhs...>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) -= rhs, 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename _Rhs,
-          size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-multiply(_Tuple<_Lhs...>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) *= rhs, 0)... };
-    consume_parameters(ret);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename...> class _Tuple, typename... _Lhs, typename _Rhs,
-          size_t... _Idx,
-          enable_if_t<(std::is_arithmetic<decay_t<_Rhs>>::value), int> = 0>
-void
-divide(_Tuple<_Lhs...>& lhs, const _Rhs& rhs, index_sequence<_Idx...>)
-{
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret           = init_list_type{ (std::get<_Idx>(lhs) /= rhs, 0)... };
-    consume_parameters(ret);
-}
-
-}  // namespace tuple_math
 
 }  // namespace stl_overload
 

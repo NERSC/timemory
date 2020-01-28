@@ -159,8 +159,8 @@ struct units<component::read_bytes>
 template <>
 struct units<component::written_bytes>
 {
-    using type         = std::tuple<double, double>;
-    using display_type = std::tuple<std::string, std::string>;
+    using type         = std::array<double, 2>;
+    using display_type = std::array<std::string, 2>;
 };
 
 //--------------------------------------------------------------------------------------//

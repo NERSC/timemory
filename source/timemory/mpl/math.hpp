@@ -40,6 +40,8 @@
 #include <vector>
 
 #include "timemory/mpl/types.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 //======================================================================================//
 
@@ -437,10 +439,9 @@ max(const _Tp& _lhs, const _Tp& _rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Up,
-          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
-void
-plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>)
+template <typename _Tp, typename _Up>
+auto
+plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(_lhs += _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _lhs += _rhs;
@@ -448,7 +449,7 @@ plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>)
 
 template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
 auto
-plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(std::begin(_lhs), void())
+plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, long) -> decltype(std::begin(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     auto _n = mpl::get_size(_rhs);
@@ -459,14 +460,14 @@ plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(std::begin(_lhs)
     {
         auto litr = std::begin(_lhs) + i;
         auto ritr = std::begin(_rhs) + i;
-        plus(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+        plus(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value, 0);
     }
 }
 
 template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
           typename _Mp = typename _Tp::mapped_type>
 auto
-plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
 
@@ -476,7 +477,7 @@ plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), voi
         if(ritr == std::end(_rhs))
             continue;
         plus(litr->second, ritr->second,
-             get_index_sequence<decay_t<decltype(litr->second)>>::value);
+             get_index_sequence<decay_t<decltype(litr->second)>>::value, 0);
     }
 
     for(auto ritr = std::begin(_rhs); ritr != std::end(_rhs); ++ritr)
@@ -490,14 +491,14 @@ plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), voi
 
 template <typename _Tp, typename _Up, size_t... _Idx>
 auto
-plus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+plus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     using init_list_t = std::initializer_list<int>;
     auto&& tmp        = init_list_t(
         { (plus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
+                get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
            0)... });
     consume_parameters(tmp);
 }
@@ -506,15 +507,14 @@ template <typename _Tp, typename _Up>
 void
 plus(_Tp& _lhs, const _Up& _rhs)
 {
-    plus(_lhs, _rhs, get_index_sequence<_Tp>::value);
+    plus(_lhs, _rhs, get_index_sequence<_Tp>::value, 0);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Up,
-          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
-void
-minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>)
+template <typename _Tp, typename _Up>
+auto
+minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(_lhs += _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _lhs -= _rhs;
@@ -522,7 +522,8 @@ minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>)
 
 template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
 auto
-minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(std::begin(_lhs), void())
+minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, long)
+    -> decltype(std::begin(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     auto _n = mpl::get_size(_rhs);
@@ -533,14 +534,14 @@ minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(std::begin(_lhs
     {
         auto litr = std::begin(_lhs) + i;
         auto ritr = std::begin(_rhs) + i;
-        minus(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+        minus(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value, 0);
     }
 }
 
 template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
           typename _Mp = typename _Tp::mapped_type>
 auto
-minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
 
@@ -550,20 +551,20 @@ minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), vo
         if(ritr == std::end(_rhs))
             continue;
         minus(litr->second, ritr->second,
-              get_index_sequence<decay_t<decltype(litr->second)>>::value);
+              get_index_sequence<decay_t<decltype(litr->second)>>::value, 0);
     }
 }
 
 template <typename _Tp, typename _Up, size_t... _Idx>
 auto
-minus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+minus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     using init_list_t = std::initializer_list<int>;
     auto&& tmp        = init_list_t(
         { (minus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
+                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
            0)... });
     consume_parameters(tmp);
 }
@@ -572,15 +573,14 @@ template <typename _Tp, typename _Up>
 void
 minus(_Tp& _lhs, const _Up& _rhs)
 {
-    minus(_lhs, _rhs, get_index_sequence<_Tp>::value);
+    minus(_lhs, _rhs, get_index_sequence<_Tp>::value, 0);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Up,
-          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
-void
-multiply(_Tp& _lhs, _Up _rhs, std::tuple<>)
+template <typename _Tp, typename _Up>
+auto
+multiply(_Tp& _lhs, _Up _rhs, std::tuple<>, int) -> decltype(_lhs *= _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _lhs *= _rhs;
@@ -588,8 +588,8 @@ multiply(_Tp& _lhs, _Up _rhs, std::tuple<>)
 
 template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
 auto
-multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...)
-    -> decltype(std::begin(_lhs), void())
+multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, long)
+    -> decltype((std::begin(_lhs), std::begin(_rhs)), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     auto _n = mpl::get_size(_rhs);
@@ -600,14 +600,31 @@ multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...)
     {
         auto litr = std::begin(_lhs) + i;
         auto ritr = std::begin(_rhs) + i;
-        multiply(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+        multiply(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value, 0);
+    }
+}
+
+template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
+          enable_if_t<(std::is_arithmetic<_Up>::value), int> = 0>
+auto
+multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, long)
+    -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _n = mpl::get_size(_lhs);
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        multiply(*litr, _rhs, get_index_sequence<decay_t<decltype(*litr)>>::value, 0);
     }
 }
 
 template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
-          typename _Mp = typename _Tp::mapped_type>
+          typename _Mp                                        = typename _Tp::mapped_type,
+          enable_if_t<!(std::is_arithmetic<_Up>::value), int> = 0>
 auto
-multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int)
+    -> decltype(std::begin(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
 
@@ -617,21 +634,53 @@ multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs),
         if(ritr == std::end(_rhs))
             continue;
         multiply(litr->second, ritr->second,
-                 get_index_sequence<decay_t<decltype(litr->second)>>::value);
+                 get_index_sequence<decay_t<decltype(litr->second)>>::value, 0);
     }
 }
 
-template <typename _Tp, typename _Up, size_t... _Idx>
+template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
+          typename _Mp                                       = typename _Tp::mapped_type,
+          enable_if_t<(std::is_arithmetic<_Up>::value), int> = 0>
 auto
-multiply(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int)
+    -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+
+    for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
+    {
+        multiply(litr->second, _rhs,
+                 get_index_sequence<decay_t<decltype(litr->second)>>::value, 0);
+    }
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx,
+          enable_if_t<!(std::is_arithmetic<_Up>::value), int> = 0>
+auto
+multiply(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (multiply(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                    get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
-           0)... });
+    auto&& tmp        = init_list_t({ (
+        multiply(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
+        0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx,
+          enable_if_t<(std::is_arithmetic<_Up>::value), int> = 0>
+auto
+multiply(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
+    -> decltype(std::get<0>(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t({ (
+        multiply(std::get<_Idx>(_lhs), _rhs,
+                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
+        0)... });
     consume_parameters(tmp);
 }
 
@@ -639,23 +688,23 @@ template <typename _Tp, typename _Up>
 void
 multiply(_Tp& _lhs, const _Up& _rhs)
 {
-    multiply(_lhs, _rhs, get_index_sequence<_Tp>::value);
+    multiply(_lhs, _rhs, get_index_sequence<_Tp>::value, 0);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Up,
-          enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
-void
-divide(_Tp& _lhs, _Up _rhs, std::tuple<>)
+template <typename _Tp, typename _Up>
+auto
+divide(_Tp& _lhs, _Up _rhs, std::tuple<>, int) -> decltype(_lhs /= _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
-    _lhs *= _rhs;
+    _lhs /= _rhs;
 }
 
-template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type>
+template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
+          enable_if_t<!(std::is_arithmetic<_Up>::value), int> = 0>
 auto
-divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...)
+divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, long)
     -> decltype(std::begin(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
@@ -667,14 +716,31 @@ divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...)
     {
         auto litr = std::begin(_lhs) + i;
         auto ritr = std::begin(_rhs) + i;
-        divide(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value);
+        divide(*litr, *ritr, get_index_sequence<decay_t<decltype(*litr)>>::value, 0);
+    }
+}
+
+template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
+          enable_if_t<(std::is_arithmetic<_Up>::value), int> = 0>
+auto
+divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, long)
+    -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    auto _n = mpl::get_size(_lhs);
+    for(decltype(_n) i = 0; i < _n; ++i)
+    {
+        auto litr = std::begin(_lhs) + i;
+        divide(*litr, _rhs, get_index_sequence<decay_t<decltype(*litr)>>::value, 0);
     }
 }
 
 template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
-          typename _Mp = typename _Tp::mapped_type>
+          typename _Mp                                        = typename _Tp::mapped_type,
+          enable_if_t<!(std::is_arithmetic<_Up>::value), int> = 0>
 auto
-divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), void())
+divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int)
+    -> decltype(std::begin(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
 
@@ -684,20 +750,52 @@ divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>) -> decltype(std::begin(_lhs), v
         if(ritr == std::end(_rhs))
             continue;
         divide(litr->second, ritr->second,
-               get_index_sequence<decay_t<decltype(litr->second)>>::value);
+               get_index_sequence<decay_t<decltype(litr->second)>>::value, 0);
     }
 }
 
-template <typename _Tp, typename _Up, size_t... _Idx>
+template <typename _Tp, typename _Up, typename _Kp = typename _Tp::key_type,
+          typename _Mp                                       = typename _Tp::mapped_type,
+          enable_if_t<(std::is_arithmetic<_Up>::value), int> = 0>
 auto
-divide(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>)
+divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int)
+    -> decltype(std::begin(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+
+    for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
+    {
+        divide(litr->second, _rhs,
+               get_index_sequence<decay_t<decltype(litr->second)>>::value, 0);
+    }
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx,
+          enable_if_t<!(std::is_arithmetic<_Up>::value), int> = 0>
+auto
+divide(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     using init_list_t = std::initializer_list<int>;
     auto&& tmp        = init_list_t(
         { (divide(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value),
+                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
+           0)... });
+    consume_parameters(tmp);
+}
+
+template <typename _Tp, typename _Up, size_t... _Idx,
+          enable_if_t<(std::is_arithmetic<_Up>::value), int> = 0>
+auto
+divide(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
+    -> decltype(std::get<0>(_lhs), void())
+{
+    static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
+    using init_list_t = std::initializer_list<int>;
+    auto&& tmp        = init_list_t(
+        { (divide(std::get<_Idx>(_lhs), _rhs,
+                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
            0)... });
     consume_parameters(tmp);
 }
@@ -706,7 +804,7 @@ template <typename _Tp, typename _Up>
 void
 divide(_Tp& _lhs, const _Up& _rhs)
 {
-    divide(_lhs, _rhs, get_index_sequence<_Tp>::value);
+    divide(_lhs, _rhs, get_index_sequence<_Tp>::value, 0);
 }
 
 //--------------------------------------------------------------------------------------//

@@ -65,6 +65,13 @@ struct sfinae_true : true_type
 ///
 template <typename _Tp>
 struct is_available : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies that an implementation (e.g. PAPI) is available
+///
+template <typename _Tp>
+struct runtime_enabled
 {
     static bool get() { return get_runtime_value(); }
     static void set(bool val) { get_runtime_value() = val; }
@@ -72,7 +79,7 @@ struct is_available : true_type
 private:
     static bool& get_runtime_value()
     {
-        static bool _instance = true;
+        static bool _instance = is_available<_Tp>::value;
         return _instance;
     }
 };

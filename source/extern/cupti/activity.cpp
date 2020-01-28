@@ -27,6 +27,7 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
@@ -36,6 +37,12 @@
 
 #if defined(TIMEMORY_USE_CUPTI)
 
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::cupti_activity, true)
+
+//======================================================================================//
+
 namespace tim
 {
 TIMEMORY_INSTANTIATE_EXTERN_INIT(cupti_activity)
@@ -44,7 +51,7 @@ namespace component
 {
 //
 //
-
+template struct base<cupti_activity, uint64_t>;
 //
 //
 }  // namespace component

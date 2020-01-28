@@ -35,9 +35,32 @@
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
 
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::peak_rss, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::page_rss, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::stack_rss, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::data_rss, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_io_in, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_io_out, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_major_page_faults, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_minor_page_faults, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_msg_recv, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_msg_sent, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_signals, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_swap, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::voluntary_context_switch, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::priority_context_switch, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::read_bytes, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::written_bytes, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::virtual_memory, true)
+
+//======================================================================================//
+
 namespace tim
 {
 TIMEMORY_INSTANTIATE_EXTERN_INIT(peak_rss)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(current_peak_rss)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(page_rss)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(stack_rss)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(data_rss)
@@ -60,6 +83,7 @@ namespace component
 //
 //
 template struct base<peak_rss>;
+template struct base<current_peak_rss, std::pair<int64_t, int64_t>>;
 template struct base<page_rss>;
 template struct base<stack_rss>;
 template struct base<data_rss>;
@@ -74,89 +98,9 @@ template struct base<num_signals>;
 template struct base<voluntary_context_switch>;
 template struct base<priority_context_switch>;
 template struct base<read_bytes, std::tuple<int64_t, int64_t>>;
-template struct base<written_bytes, std::tuple<int64_t, int64_t>>;
+template struct base<written_bytes, std::array<int64_t, 2>>;
 template struct base<virtual_memory>;
 //
 //
 }  // namespace component
-
-namespace operation
-{
-//
-//
-template struct init_storage<component::read_bytes>;
-template struct construct<component::read_bytes>;
-template struct set_prefix<component::read_bytes>;
-template struct insert_node<component::read_bytes>;
-template struct pop_node<component::read_bytes>;
-template struct record<component::read_bytes>;
-template struct reset<component::read_bytes>;
-template struct measure<component::read_bytes>;
-template struct sample<component::read_bytes>;
-template struct start<component::read_bytes>;
-template struct priority_start<component::read_bytes>;
-template struct standard_start<component::read_bytes>;
-template struct delayed_start<component::read_bytes>;
-template struct stop<component::read_bytes>;
-template struct priority_stop<component::read_bytes>;
-template struct standard_stop<component::read_bytes>;
-template struct delayed_stop<component::read_bytes>;
-template struct mark_begin<component::read_bytes>;
-template struct mark_end<component::read_bytes>;
-template struct audit<component::read_bytes>;
-template struct plus<component::read_bytes>;
-template struct minus<component::read_bytes>;
-template struct multiply<component::read_bytes>;
-template struct divide<component::read_bytes>;
-template struct get_data<component::read_bytes>;
-template struct copy<component::read_bytes>;
-template struct print_statistics<component::read_bytes>;
-template struct print_header<component::read_bytes>;
-template struct print<component::read_bytes>;
-template struct print_storage<component::read_bytes>;
-template struct echo_measurement<component::read_bytes, true>;
-template struct finalize::storage::get<component::read_bytes, true>;
-template struct finalize::storage::mpi_get<component::read_bytes, true>;
-template struct finalize::storage::upc_get<component::read_bytes, true>;
-template struct finalize::storage::dmp_get<component::read_bytes, true>;
-
-template struct init_storage<component::written_bytes>;
-template struct construct<component::written_bytes>;
-template struct set_prefix<component::written_bytes>;
-template struct insert_node<component::written_bytes>;
-template struct pop_node<component::written_bytes>;
-template struct record<component::written_bytes>;
-template struct reset<component::written_bytes>;
-template struct measure<component::written_bytes>;
-template struct sample<component::written_bytes>;
-template struct start<component::written_bytes>;
-template struct priority_start<component::written_bytes>;
-template struct standard_start<component::written_bytes>;
-template struct delayed_start<component::written_bytes>;
-template struct stop<component::written_bytes>;
-template struct priority_stop<component::written_bytes>;
-template struct standard_stop<component::written_bytes>;
-template struct delayed_stop<component::written_bytes>;
-template struct mark_begin<component::written_bytes>;
-template struct mark_end<component::written_bytes>;
-template struct audit<component::written_bytes>;
-template struct plus<component::written_bytes>;
-template struct minus<component::written_bytes>;
-template struct multiply<component::written_bytes>;
-template struct divide<component::written_bytes>;
-template struct get_data<component::written_bytes>;
-template struct copy<component::written_bytes>;
-template struct print_statistics<component::written_bytes>;
-template struct print_header<component::written_bytes>;
-template struct print<component::written_bytes>;
-template struct print_storage<component::written_bytes>;
-template struct echo_measurement<component::written_bytes, true>;
-template struct finalize::storage::get<component::written_bytes, true>;
-template struct finalize::storage::mpi_get<component::written_bytes, true>;
-template struct finalize::storage::upc_get<component::written_bytes, true>;
-template struct finalize::storage::dmp_get<component::written_bytes, true>;
-//
-//
-}  // namespace operation
-
 }  // namespace tim

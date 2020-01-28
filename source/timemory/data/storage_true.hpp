@@ -1222,7 +1222,7 @@ storage<Type, true>::internal_print()
         merge();
         finalize();
 
-        if(!trait::is_available<Type>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         bool _json_forced = requires_json;

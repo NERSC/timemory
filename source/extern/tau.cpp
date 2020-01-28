@@ -27,6 +27,7 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -34,6 +35,12 @@
 #include "timemory/utility/utility.hpp"
 
 #if defined(TIMEMORY_USE_TAU)
+
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::tau_marker, false)
+
+//======================================================================================//
 
 namespace tim
 {

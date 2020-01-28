@@ -44,6 +44,8 @@
 namespace tim { namespace alias {
 using tuple_f8_f8_t = std::tuple<double, double>;
 using pair_f8_f8_t = std::pair<double, double>;
+template <size_t N>
+using farray_t = std::array<double, N>;
 } }
 // clang-format on
 
@@ -63,7 +65,7 @@ TIMEMORY_STATISTICS_TYPE(component::num_signals, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::voluntary_context_switch, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::priority_context_switch, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::read_bytes, tim::alias::tuple_f8_f8_t)
-TIMEMORY_STATISTICS_TYPE(component::written_bytes, tim::alias::tuple_f8_f8_t)
+TIMEMORY_STATISTICS_TYPE(component::written_bytes, tim::alias::farray_t<2>)
 TIMEMORY_STATISTICS_TYPE(component::virtual_memory, double)
 
 //======================================================================================//
@@ -822,22 +824,21 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 /// \brief I/O counter: Attempt to count the number of bytes which this process caused to
 /// be sent to the storage layer. This is done at page-dirtying time.
 //
-struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
+struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 {
     using this_type   = written_bytes;
-    using value_type  = std::tuple<int64_t, int64_t>;
+    using value_type  = std::array<int64_t, 2>;
     using base_type   = base<this_type, value_type>;
     using timer_type  = wall_clock;
-    using result_type = std::tuple<double, double>;
+    using result_type = std::array<double, 2>;
 
     static std::string label() { return "written_bytes"; }
     static std::string description() { return "physical I/O writes"; }
 
-    static std::tuple<double, double> unit()
+    static result_type unit()
     {
-        return std::tuple<double, double>{
-            units::kilobyte, static_cast<double>(units::kilobyte) / units::sec
-        };
+        return result_type{ units::kilobyte,
+                            static_cast<double>(units::kilobyte) / units::sec };
     }
 
     static std::vector<std::string> display_unit_array()
@@ -856,7 +857,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         return display_unit_type{ "KB", "KB/sec" };
     }
 
-    static std::tuple<double, double> unit_array() { return unit(); }
+    static std::array<double, 2> unit_array() { return unit(); }
 
     static std::vector<std::string> description_array()
     {
@@ -866,7 +867,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 
     static value_type record()
     {
-        return value_type(get_bytes_written(), timer_type::record());
+        return value_type{ get_bytes_written(), timer_type::record() };
     }
 
     std::string get_display() const
@@ -920,7 +921,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         if(!std::isfinite(rate))
             rate = 0.0;
 
-        return result_type(data, rate);
+        return result_type{ data, rate };
     }
 
     void start()
@@ -1118,17 +1119,17 @@ struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64
 
     static std::string label() { return "current_peak_rss"; }
     static std::string description() { return "current resident set size"; }
-    static int64_t     record() { return get_peak_rss(); }
+    static value_type  record() { return value_type{ get_peak_rss(), 0 }; }
 
     void start()
     {
         set_started();
-        value.first = record();
+        value = record();
     }
 
     void stop()
     {
-        value = value_type{ value.first, record() };
+        value = value_type{ value.first, record().first };
         accum = std::max(accum, value);
         set_stopped();
     }

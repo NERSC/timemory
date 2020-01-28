@@ -27,6 +27,7 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
@@ -35,6 +36,14 @@
 #include "timemory/utility/utility.hpp"
 
 #if defined(TIMEMORY_USE_PAPI)
+
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::cpu_roofline_flops, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::cpu_roofline_sp_flops, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::cpu_roofline_dp_flops, true)
+
+//======================================================================================//
 
 namespace tim
 {

@@ -73,6 +73,9 @@ template <typename _Tp>
 struct is_available;
 
 template <typename _Tp>
+struct runtime_enabled;
+
+template <typename _Tp>
 struct record_max;
 
 template <typename _Tp>
@@ -305,6 +308,8 @@ struct upc_get;
 template <typename Type, bool has_data>
 struct dmp_get;
 
+//======================================================================================//
+
 template <typename Type>
 struct get<Type, true>
 {
@@ -319,6 +324,8 @@ struct get<Type, true>
 
     get(storage_type&, result_type&);
 };
+
+//--------------------------------------------------------------------------------------//
 
 template <typename Type>
 struct mpi_get<Type, true>
@@ -335,6 +342,8 @@ struct mpi_get<Type, true>
     mpi_get(storage_type&, distrib_type&);
 };
 
+//--------------------------------------------------------------------------------------//
+
 template <typename Type>
 struct upc_get<Type, true>
 {
@@ -350,6 +359,8 @@ struct upc_get<Type, true>
     upc_get(storage_type&, distrib_type&);
 };
 
+//--------------------------------------------------------------------------------------//
+
 template <typename Type>
 struct dmp_get<Type, true>
 {
@@ -364,6 +375,48 @@ struct dmp_get<Type, true>
 
     dmp_get(storage_type&, distrib_type&);
 };
+
+//======================================================================================//
+
+template <typename Type>
+struct get<Type, false>
+{
+    static constexpr bool has_data = false;
+    using storage_type             = impl::storage<Type, has_data>;
+    get(storage_type&) {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type>
+struct mpi_get<Type, false>
+{
+    static constexpr bool has_data = false;
+    using storage_type             = impl::storage<Type, has_data>;
+    mpi_get(storage_type&) {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type>
+struct upc_get<Type, false>
+{
+    static constexpr bool has_data = false;
+    using storage_type             = impl::storage<Type, has_data>;
+    upc_get(storage_type&) {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type>
+struct dmp_get<Type, false>
+{
+    static constexpr bool has_data = false;
+    using storage_type             = impl::storage<Type, has_data>;
+    dmp_get(storage_type&) {}
+};
+
+//======================================================================================//
 
 }  // namespace storage
 }  // namespace finalize

@@ -27,12 +27,20 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
+
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::user_tuple_bundle, false)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::user_list_bundle, false)
+
+//======================================================================================//
 
 namespace tim
 {

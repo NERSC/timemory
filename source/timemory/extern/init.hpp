@@ -43,6 +43,7 @@ namespace tim
 #    if defined(TIMEMORY_USE_CALIPER)
 TIMEMORY_DECLARE_EXTERN_INIT(caliper)
 #    endif
+TIMEMORY_DECLARE_EXTERN_INIT(current_peak_rss)
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_clock)
 #    if defined(TIMEMORY_USE_PAPI)
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_dp_flops)

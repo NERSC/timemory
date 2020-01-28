@@ -288,12 +288,36 @@ public:
     //----------------------------------------------------------------------------------//
     // comparison operators
     //
-    bool operator==(const this_type& rhs) const { return (load() == rhs.load()); }
-    bool operator<(const this_type& rhs) const { return (load() < rhs.load()); }
-    bool operator>(const this_type& rhs) const { return (load() > rhs.load()); }
-    bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
-    bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
-    bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator==(const this_type& rhs) const
+    {
+        return (load() == rhs.load());
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator<(const this_type& rhs) const
+    {
+        return (load() < rhs.load());
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator>(const this_type& rhs) const
+    {
+        return (load() > rhs.load());
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator!=(const this_type& rhs) const
+    {
+        return !(*this == rhs);
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator<=(const this_type& rhs) const
+    {
+        return !(*this > rhs);
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator>=(const this_type& rhs) const
+    {
+        return !(*this < rhs);
+    }
 
     //----------------------------------------------------------------------------------//
     // base_type operators
@@ -383,27 +407,27 @@ public:
     //----------------------------------------------------------------------------------//
     // friend operators
     //
-    friend Type operator+(const this_type& lhs, const this_type& rhs)
+    friend Type operator+(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) += rhs;
+        return this_type(static_cast<const Type&>(lhs)) += static_cast<const Type&>(rhs);
     }
 
-    friend Type operator-(const this_type& lhs, const this_type& rhs)
+    friend Type operator-(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) -= rhs;
+        return this_type(static_cast<const Type&>(lhs)) -= static_cast<const Type&>(rhs);
     }
 
-    friend Type operator*(const this_type& lhs, const this_type& rhs)
+    friend Type operator*(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) *= rhs;
+        return this_type(static_cast<const Type&>(lhs)) *= static_cast<const Type&>(rhs);
     }
 
-    friend Type operator/(const this_type& lhs, const this_type& rhs)
+    friend Type operator/(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) /= rhs;
+        return this_type(static_cast<const Type&>(lhs)) /= static_cast<const Type&>(rhs);
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    friend std::ostream& operator<<(std::ostream& os, const base_type& obj)
     {
         operation::base_printer<Type>(os, static_cast<const Type&>(obj));
         return os;

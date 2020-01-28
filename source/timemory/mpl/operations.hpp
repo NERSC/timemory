@@ -127,7 +127,7 @@ struct init_storage
 
     static void init()
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         static thread_local auto _init = this_type::get();
@@ -199,7 +199,7 @@ struct set_prefix
               enable_if_t<(trait::requires_prefix<_Up>::value), int> = 0>
     set_prefix(Type& obj, const string_t& _prefix)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj.set_prefix(_prefix);
@@ -228,7 +228,7 @@ struct insert_node
               enable_if_t<(_Up::implements_storage_v), int>       = 0>
     explicit insert_node(base_type& obj, const uint64_t& _hash, bool flat)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -246,7 +246,7 @@ struct insert_node
               enable_if_t<(_Up::implements_storage_v), int>      = 0>
     explicit insert_node(base_type& obj, const uint64_t& _hash, bool)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -277,7 +277,7 @@ struct pop_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit pop_node(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj.pop_node();
@@ -304,7 +304,7 @@ struct record
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     explicit record(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj.value = Type::record();
@@ -314,7 +314,7 @@ struct record
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
     record(base_type& obj, const base_type& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj = std::max(obj, rhs);
@@ -325,7 +325,7 @@ struct record
               enable_if_t<(is_enabled<_Up>::value), char>                = 0>
     record(base_type& obj, const base_type& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj += rhs;
@@ -360,7 +360,7 @@ struct measure
 
     explicit measure(Type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -391,7 +391,7 @@ struct sample
     template <typename _Up, enable_if_t<(std::is_same<_Up, this_type>::value), int> = 0>
     explicit sample(Type& obj, _Up data)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -418,7 +418,7 @@ struct start
 
     explicit start(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -444,7 +444,7 @@ struct priority_start
               enable_if_t<(trait::start_priority<_Up>::value < 0), int> = 0>
     explicit priority_start(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -470,7 +470,7 @@ struct standard_start
               enable_if_t<(trait::start_priority<_Up>::value == 0), int> = 0>
     explicit standard_start(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -496,7 +496,7 @@ struct delayed_start
               enable_if_t<(trait::start_priority<_Up>::value > 0), int> = 0>
     explicit delayed_start(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -515,7 +515,7 @@ struct stop
 
     explicit stop(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj.stop();
@@ -540,7 +540,7 @@ struct priority_stop
               enable_if_t<(trait::stop_priority<_Up>::value < 0), int> = 0>
     explicit priority_stop(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj.stop();
@@ -565,7 +565,7 @@ struct standard_stop
               enable_if_t<(trait::stop_priority<_Up>::value == 0), int> = 0>
     explicit standard_stop(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj.stop();
@@ -590,7 +590,7 @@ struct delayed_stop
               enable_if_t<(trait::stop_priority<_Up>::value > 0), int> = 0>
     explicit delayed_stop(base_type& obj)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         obj.stop();
@@ -609,7 +609,7 @@ struct mark_begin
     template <typename... _Args>
     explicit mark_begin(Type& obj, _Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         mark_begin_sfinae(obj, std::forward<_Args>(_args)...);
@@ -658,7 +658,7 @@ struct mark_end
     template <typename... _Args>
     explicit mark_end(Type& obj, _Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         mark_end_sfinae(obj, std::forward<_Args>(_args)...);
@@ -719,7 +719,7 @@ struct audit
     template <typename... _Args>
     audit(Type& obj, _Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         audit_sfinae(obj, std::forward<_Args>(_args)...);
@@ -824,7 +824,7 @@ struct plus
               enable_if_t<(has_data<_Up>::value), char> = 0>
     plus(Type& obj, const Type& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -837,7 +837,7 @@ struct plus
               enable_if_t<(has_data<_Up>::value), char>                  = 0>
     plus(Type& obj, const Type& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -867,7 +867,7 @@ struct minus
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     minus(Type& obj, const Type& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -894,7 +894,7 @@ struct multiply
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     multiply(Type& obj, const int64_t& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -904,7 +904,7 @@ struct multiply
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     multiply(Type& obj, const Type& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -929,7 +929,7 @@ struct divide
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     divide(Type& obj, const int64_t& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -939,7 +939,7 @@ struct divide
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     divide(Type& obj, const Type& rhs)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -1017,7 +1017,7 @@ struct serialization
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     serialization(const base_type& obj, _Archive& ar, const unsigned int)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         auto _data = static_cast<const Type&>(obj).get();
@@ -1097,7 +1097,7 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, _Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(obj)
@@ -1108,7 +1108,7 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, _Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(obj)
@@ -1119,7 +1119,7 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, base_type* rhs, _Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(obj && rhs)
@@ -1130,7 +1130,7 @@ struct pointer_operator
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, Type* rhs, _Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(obj && rhs)
@@ -1168,7 +1168,7 @@ struct pointer_counter
 
     explicit pointer_counter(Type* obj, uint64_t& count)
     {
-        if(!trait::is_available<_Tp>::get())
+        if(!trait::runtime_enabled<_Tp>::get())
             return;
 
         if(obj)
@@ -1203,188 +1203,209 @@ operator+(const tim::component::user_clock&   _user,
 
 #include "timemory/mpl/bits/operations.hpp"
 
+//--------------------------------------------------------------------------------------//
+
+#define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                     \
+    namespace tim                                                                        \
+    {                                                                                    \
+    namespace operation                                                                  \
+    {                                                                                    \
+    extern template struct init_storage<COMPONENT_NAME>;                                 \
+    extern template struct construct<COMPONENT_NAME>;                                    \
+    extern template struct set_prefix<COMPONENT_NAME>;                                   \
+    extern template struct insert_node<COMPONENT_NAME>;                                  \
+    extern template struct pop_node<COMPONENT_NAME>;                                     \
+    extern template struct record<COMPONENT_NAME>;                                       \
+    extern template struct reset<COMPONENT_NAME>;                                        \
+    extern template struct measure<COMPONENT_NAME>;                                      \
+    extern template struct sample<COMPONENT_NAME>;                                       \
+    extern template struct start<COMPONENT_NAME>;                                        \
+    extern template struct priority_start<COMPONENT_NAME>;                               \
+    extern template struct standard_start<COMPONENT_NAME>;                               \
+    extern template struct delayed_start<COMPONENT_NAME>;                                \
+    extern template struct stop<COMPONENT_NAME>;                                         \
+    extern template struct priority_stop<COMPONENT_NAME>;                                \
+    extern template struct standard_stop<COMPONENT_NAME>;                                \
+    extern template struct delayed_stop<COMPONENT_NAME>;                                 \
+    extern template struct mark_begin<COMPONENT_NAME>;                                   \
+    extern template struct mark_end<COMPONENT_NAME>;                                     \
+    extern template struct audit<COMPONENT_NAME>;                                        \
+    extern template struct plus<COMPONENT_NAME>;                                         \
+    extern template struct minus<COMPONENT_NAME>;                                        \
+    extern template struct multiply<COMPONENT_NAME>;                                     \
+    extern template struct divide<COMPONENT_NAME>;                                       \
+    extern template struct get_data<COMPONENT_NAME>;                                     \
+    extern template struct copy<COMPONENT_NAME>;                                         \
+    extern template struct echo_measurement<COMPONENT_NAME,                              \
+                                            trait::echo_enabled<COMPONENT_NAME>::value>; \
+    extern template struct finalize::storage::get<COMPONENT_NAME, HAS_DATA>;             \
+    extern template struct finalize::storage::mpi_get<COMPONENT_NAME, HAS_DATA>;         \
+    extern template struct finalize::storage::upc_get<COMPONENT_NAME, HAS_DATA>;         \
+    extern template struct finalize::storage::dmp_get<COMPONENT_NAME, HAS_DATA>;         \
+    }                                                                                    \
+    }
+
+//--------------------------------------------------------------------------------------//
+
+#define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                 \
+    namespace tim                                                                        \
+    {                                                                                    \
+    namespace operation                                                                  \
+    {                                                                                    \
+    template struct init_storage<COMPONENT_NAME>;                                        \
+    template struct construct<COMPONENT_NAME>;                                           \
+    template struct set_prefix<COMPONENT_NAME>;                                          \
+    template struct insert_node<COMPONENT_NAME>;                                         \
+    template struct pop_node<COMPONENT_NAME>;                                            \
+    template struct record<COMPONENT_NAME>;                                              \
+    template struct reset<COMPONENT_NAME>;                                               \
+    template struct measure<COMPONENT_NAME>;                                             \
+    template struct sample<COMPONENT_NAME>;                                              \
+    template struct start<COMPONENT_NAME>;                                               \
+    template struct priority_start<COMPONENT_NAME>;                                      \
+    template struct standard_start<COMPONENT_NAME>;                                      \
+    template struct delayed_start<COMPONENT_NAME>;                                       \
+    template struct stop<COMPONENT_NAME>;                                                \
+    template struct priority_stop<COMPONENT_NAME>;                                       \
+    template struct standard_stop<COMPONENT_NAME>;                                       \
+    template struct delayed_stop<COMPONENT_NAME>;                                        \
+    template struct mark_begin<COMPONENT_NAME>;                                          \
+    template struct mark_end<COMPONENT_NAME>;                                            \
+    template struct audit<COMPONENT_NAME>;                                               \
+    template struct plus<COMPONENT_NAME>;                                                \
+    template struct minus<COMPONENT_NAME>;                                               \
+    template struct multiply<COMPONENT_NAME>;                                            \
+    template struct divide<COMPONENT_NAME>;                                              \
+    template struct get_data<COMPONENT_NAME>;                                            \
+    template struct copy<COMPONENT_NAME>;                                                \
+    template struct echo_measurement<COMPONENT_NAME,                                     \
+                                     trait::echo_enabled<COMPONENT_NAME>::value>;        \
+    template struct finalize::storage::get<COMPONENT_NAME, HAS_DATA>;                    \
+    template struct finalize::storage::mpi_get<COMPONENT_NAME, HAS_DATA>;                \
+    template struct finalize::storage::upc_get<COMPONENT_NAME, HAS_DATA>;                \
+    template struct finalize::storage::dmp_get<COMPONENT_NAME, HAS_DATA>;                \
+    }                                                                                    \
+    }
+
+//--------------------------------------------------------------------------------------//
+
 #if defined(TIMEMORY_EXTERN_INIT)
 
-namespace tim
-{
-namespace operation
-{
+//======================================================================================//
+//  general
 //
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::trip_count, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gperf_cpu_profiler, false)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gperf_heap_profiler, false)
+
+//======================================================================================//
+//  rusage
 //
-extern template struct init_storage<component::trip_count>;
-extern template struct construct<component::trip_count>;
-extern template struct set_prefix<component::trip_count>;
-extern template struct insert_node<component::trip_count>;
-extern template struct pop_node<component::trip_count>;
-extern template struct record<component::trip_count>;
-extern template struct reset<component::trip_count>;
-extern template struct measure<component::trip_count>;
-extern template struct sample<component::trip_count>;
-extern template struct start<component::trip_count>;
-extern template struct priority_start<component::trip_count>;
-extern template struct standard_start<component::trip_count>;
-extern template struct delayed_start<component::trip_count>;
-extern template struct stop<component::trip_count>;
-extern template struct priority_stop<component::trip_count>;
-extern template struct standard_stop<component::trip_count>;
-extern template struct delayed_stop<component::trip_count>;
-extern template struct mark_begin<component::trip_count>;
-extern template struct mark_end<component::trip_count>;
-extern template struct audit<component::trip_count>;
-extern template struct plus<component::trip_count>;
-extern template struct minus<component::trip_count>;
-extern template struct multiply<component::trip_count>;
-extern template struct divide<component::trip_count>;
-extern template struct get_data<component::trip_count>;
-extern template struct copy<component::trip_count>;
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::peak_rss, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::page_rss, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::stack_rss, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::data_rss, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_io_in, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_io_out, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_major_page_faults, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_minor_page_faults, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_msg_recv, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_msg_sent, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_signals, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_swap, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::voluntary_context_switch, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::priority_context_switch, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::read_bytes, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::written_bytes, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::virtual_memory, true)
 
-extern template struct init_storage<component::wall_clock>;
-extern template struct construct<component::wall_clock>;
-extern template struct set_prefix<component::wall_clock>;
-extern template struct insert_node<component::wall_clock>;
-extern template struct pop_node<component::wall_clock>;
-extern template struct record<component::wall_clock>;
-extern template struct reset<component::wall_clock>;
-extern template struct measure<component::wall_clock>;
-extern template struct sample<component::wall_clock>;
-extern template struct start<component::wall_clock>;
-extern template struct priority_start<component::wall_clock>;
-extern template struct standard_start<component::wall_clock>;
-extern template struct delayed_start<component::wall_clock>;
-extern template struct stop<component::wall_clock>;
-extern template struct priority_stop<component::wall_clock>;
-extern template struct standard_stop<component::wall_clock>;
-extern template struct delayed_stop<component::wall_clock>;
-extern template struct mark_begin<component::wall_clock>;
-extern template struct mark_end<component::wall_clock>;
-extern template struct audit<component::wall_clock>;
-extern template struct plus<component::wall_clock>;
-extern template struct minus<component::wall_clock>;
-extern template struct multiply<component::wall_clock>;
-extern template struct divide<component::wall_clock>;
-extern template struct get_data<component::wall_clock>;
-extern template struct copy<component::wall_clock>;
-extern template struct print_statistics<component::wall_clock>;
-extern template struct print_header<component::wall_clock>;
-extern template struct print<component::wall_clock>;
-extern template struct print_storage<component::wall_clock>;
-extern template struct echo_measurement<component::wall_clock, true>;
-extern template struct finalize::storage::get<component::wall_clock, true>;
-extern template struct finalize::storage::mpi_get<component::wall_clock, true>;
-extern template struct finalize::storage::upc_get<component::wall_clock, true>;
-extern template struct finalize::storage::dmp_get<component::wall_clock, true>;
-
-extern template struct init_storage<component::cpu_clock>;
-extern template struct construct<component::cpu_clock>;
-extern template struct set_prefix<component::cpu_clock>;
-extern template struct insert_node<component::cpu_clock>;
-extern template struct pop_node<component::cpu_clock>;
-extern template struct record<component::cpu_clock>;
-extern template struct reset<component::cpu_clock>;
-extern template struct measure<component::cpu_clock>;
-extern template struct sample<component::cpu_clock>;
-extern template struct start<component::cpu_clock>;
-extern template struct priority_start<component::cpu_clock>;
-extern template struct standard_start<component::cpu_clock>;
-extern template struct delayed_start<component::cpu_clock>;
-extern template struct stop<component::cpu_clock>;
-extern template struct priority_stop<component::cpu_clock>;
-extern template struct standard_stop<component::cpu_clock>;
-extern template struct delayed_stop<component::cpu_clock>;
-extern template struct mark_begin<component::cpu_clock>;
-extern template struct mark_end<component::cpu_clock>;
-extern template struct audit<component::cpu_clock>;
-extern template struct plus<component::cpu_clock>;
-extern template struct minus<component::cpu_clock>;
-extern template struct multiply<component::cpu_clock>;
-extern template struct divide<component::cpu_clock>;
-extern template struct get_data<component::cpu_clock>;
-extern template struct copy<component::cpu_clock>;
-extern template struct print_statistics<component::cpu_clock>;
-extern template struct print_header<component::cpu_clock>;
-extern template struct print<component::cpu_clock>;
-extern template struct print_storage<component::cpu_clock>;
-extern template struct echo_measurement<component::cpu_clock, true>;
-extern template struct finalize::storage::get<component::cpu_clock, true>;
-extern template struct finalize::storage::mpi_get<component::cpu_clock, true>;
-extern template struct finalize::storage::upc_get<component::cpu_clock, true>;
-extern template struct finalize::storage::dmp_get<component::cpu_clock, true>;
-
-extern template struct init_storage<component::read_bytes>;
-extern template struct construct<component::read_bytes>;
-extern template struct set_prefix<component::read_bytes>;
-extern template struct insert_node<component::read_bytes>;
-extern template struct pop_node<component::read_bytes>;
-extern template struct record<component::read_bytes>;
-extern template struct reset<component::read_bytes>;
-extern template struct measure<component::read_bytes>;
-extern template struct sample<component::read_bytes>;
-extern template struct start<component::read_bytes>;
-extern template struct priority_start<component::read_bytes>;
-extern template struct standard_start<component::read_bytes>;
-extern template struct delayed_start<component::read_bytes>;
-extern template struct stop<component::read_bytes>;
-extern template struct priority_stop<component::read_bytes>;
-extern template struct standard_stop<component::read_bytes>;
-extern template struct delayed_stop<component::read_bytes>;
-extern template struct mark_begin<component::read_bytes>;
-extern template struct mark_end<component::read_bytes>;
-extern template struct audit<component::read_bytes>;
-extern template struct plus<component::read_bytes>;
-extern template struct minus<component::read_bytes>;
-extern template struct multiply<component::read_bytes>;
-extern template struct divide<component::read_bytes>;
-extern template struct get_data<component::read_bytes>;
-extern template struct copy<component::read_bytes>;
-extern template struct print_statistics<component::read_bytes>;
-extern template struct print_header<component::read_bytes>;
-extern template struct print<component::read_bytes>;
-extern template struct print_storage<component::read_bytes>;
-extern template struct echo_measurement<component::read_bytes, true>;
-extern template struct finalize::storage::get<component::read_bytes, true>;
-extern template struct finalize::storage::mpi_get<component::read_bytes, true>;
-extern template struct finalize::storage::upc_get<component::read_bytes, true>;
-extern template struct finalize::storage::dmp_get<component::read_bytes, true>;
-
-extern template struct init_storage<component::written_bytes>;
-extern template struct construct<component::written_bytes>;
-extern template struct set_prefix<component::written_bytes>;
-extern template struct insert_node<component::written_bytes>;
-extern template struct pop_node<component::written_bytes>;
-extern template struct record<component::written_bytes>;
-extern template struct reset<component::written_bytes>;
-extern template struct measure<component::written_bytes>;
-extern template struct sample<component::written_bytes>;
-extern template struct start<component::written_bytes>;
-extern template struct priority_start<component::written_bytes>;
-extern template struct standard_start<component::written_bytes>;
-extern template struct delayed_start<component::written_bytes>;
-extern template struct stop<component::written_bytes>;
-extern template struct priority_stop<component::written_bytes>;
-extern template struct standard_stop<component::written_bytes>;
-extern template struct delayed_stop<component::written_bytes>;
-extern template struct mark_begin<component::written_bytes>;
-extern template struct mark_end<component::written_bytes>;
-extern template struct audit<component::written_bytes>;
-extern template struct plus<component::written_bytes>;
-extern template struct minus<component::written_bytes>;
-extern template struct multiply<component::written_bytes>;
-extern template struct divide<component::written_bytes>;
-extern template struct get_data<component::written_bytes>;
-extern template struct copy<component::written_bytes>;
-extern template struct print_statistics<component::written_bytes>;
-extern template struct print_header<component::written_bytes>;
-extern template struct print<component::written_bytes>;
-extern template struct print_storage<component::written_bytes>;
-extern template struct echo_measurement<component::written_bytes, true>;
-extern template struct finalize::storage::get<component::written_bytes, true>;
-extern template struct finalize::storage::mpi_get<component::written_bytes, true>;
-extern template struct finalize::storage::upc_get<component::written_bytes, true>;
-extern template struct finalize::storage::dmp_get<component::written_bytes, true>;
+//======================================================================================//
+//  timing
 //
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::wall_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::system_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::user_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::monotonic_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::monotonic_raw_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::thread_cpu_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::process_cpu_clock, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_util, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::process_cpu_util, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::thread_cpu_util, true)
+
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::user_tuple_bundle, false)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::user_list_bundle, false)
+
+//======================================================================================//
+//  caliper
 //
-}  // namespace operation
-}  // namespace tim
+#    if defined(TIMEMORY_USE_CALIPER)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::caliper, false)
+#    endif
+
+//======================================================================================//
+//  papi
+//
+#    if defined(TIMEMORY_USE_PAPI)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::papi_array<8>, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::papi_array<16>, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::papi_array<32>, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_roofline_flops, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_roofline_sp_flops, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_roofline_dp_flops, true)
+#    endif
+
+//======================================================================================//
+//  cuda
+//
+#    if defined(TIMEMORY_USE_CUDA)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cuda_event, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cuda_profiler, false)
+#    endif
+
+//======================================================================================//
+//  NVTX
+//
+#    if defined(TIMEMORY_USE_NVTX)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::nvtx_marker, false)
+#    endif
+
+//======================================================================================//
+//  cupti
+//
+#    if defined(TIMEMORY_USE_CUPTI)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cupti_activity, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cupti_counters, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
+#    endif
+
+//======================================================================================//
+//  likwid
+//
+#    if defined(TIMEMORY_USE_LIKWID)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_perfmon, false)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_nvmon, false)
+#    endif
+
+//======================================================================================//
+//  tau
+//
+#    if defined(TIMEMORY_USE_TAU)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::tau_marker, false)
+#    endif
+
+//======================================================================================//
+//  vtune
+//
+#    if defined(TIMEMORY_USE_VTUNE)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_profiler, false)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_event, false)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_frame, false)
+#    endif
 
 #endif
 

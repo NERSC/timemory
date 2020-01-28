@@ -109,9 +109,9 @@ operator<<(std::ostream& os, const std::array<_Tp, _N>& p)
 
 template <typename _Tp, size_t _N, typename _Other>
 std::array<_Tp, _N>&
-operator+=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
+operator+=(std::array<_Tp, _N>& lhs, _Other&& rhs)
 {
-    math::plus(lhs, rhs);
+    math::plus(lhs, std::forward<_Other>(rhs));
     return lhs;
 }
 
@@ -119,17 +119,9 @@ operator+=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 
 template <typename _Lhs, typename _Rhs, typename _Other>
 std::pair<_Lhs, _Rhs>&
-operator+=(std::pair<_Lhs, _Rhs>& lhs, const _Other& rhs)
+operator+=(std::pair<_Lhs, _Rhs>& lhs, _Other&& rhs)
 {
-    math::plus(lhs, rhs);
-    return lhs;
-}
-
-template <typename _Lhs, typename _Rhs>
-std::pair<_Lhs, _Rhs>&
-operator+=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
-{
-    math::plus(lhs, rhs);
+    math::plus(lhs, std::forward<_Other>(rhs));
     return lhs;
 }
 
@@ -137,24 +129,17 @@ operator+=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 
 template <typename _Tp, typename... _Extra, typename _Other>
 std::vector<_Tp, _Extra...>&
-operator+=(std::vector<_Tp, _Extra...>& lhs, const _Other& rhs)
+operator+=(std::vector<_Tp, _Extra...>& lhs, _Other&& rhs)
 {
-    math::plus(lhs, rhs);
+    math::plus(lhs, std::forward<_Other>(rhs));
+    return lhs;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename... _Types, typename _Other>
 std::tuple<_Types...>&
-operator+=(std::tuple<_Types...>& lhs, const _Other& rhs)
-{
-    math::plus(lhs, rhs);
-    return lhs;
-}
-
-template <typename... _Types>
-std::tuple<_Types...>&
-operator+=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
+operator+=(std::tuple<_Types...>& lhs, _Other&& rhs)
 {
     math::plus(lhs, rhs);
     return lhs;
@@ -170,7 +155,7 @@ template <typename _Tp, size_t _N>
 std::array<_Tp, _N>&
 operator-=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    array_math::minus(lhs, rhs, make_index_sequence<_N>{});
+    math::minus(lhs, rhs);
     return lhs;
 }
 
@@ -180,8 +165,7 @@ template <typename _Lhs, typename _Rhs>
 std::pair<_Lhs, _Rhs>&
 operator-=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
-    lhs.first -= rhs.first;
-    lhs.second -= rhs.second;
+    math::minus(lhs, rhs);
     return lhs;
 }
 
@@ -191,9 +175,7 @@ template <typename _Tp, typename... _Extra>
 std::vector<_Tp, _Extra...>&
 operator-=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
 {
-    const auto _N = std::min(lhs.size(), rhs.size());
-    for(size_t i = 0; i < _N; ++i)
-        lhs[i] -= rhs[i];
+    math::minus(lhs, rhs);
     return lhs;
 }
 
@@ -203,8 +185,7 @@ template <typename... _Types>
 std::tuple<_Types...>&
 operator-=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
 {
-    constexpr size_t _N = sizeof...(_Types);
-    tuple_math::minus(lhs, rhs, make_index_sequence<_N>{});
+    math::minus(lhs, rhs);
     return lhs;
 }
 
@@ -218,7 +199,7 @@ template <typename _Tp, size_t _N>
 std::array<_Tp, _N>&
 operator*=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    array_math::multiply(lhs, rhs, make_index_sequence<_N>{});
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -228,8 +209,7 @@ template <typename _Lhs, typename _Rhs>
 std::pair<_Lhs, _Rhs>&
 operator*=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
-    lhs.first *= rhs.first;
-    lhs.second *= rhs.second;
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -239,9 +219,7 @@ template <typename _Tp, typename... _Extra>
 std::vector<_Tp, _Extra...>&
 operator*=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
 {
-    const auto _N = std::min(lhs.size(), rhs.size());
-    for(size_t i = 0; i < _N; ++i)
-        lhs[i] *= rhs[i];
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -251,8 +229,7 @@ template <typename... _Types>
 std::tuple<_Types...>&
 operator*=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
 {
-    constexpr size_t _N = sizeof...(_Types);
-    tuple_math::multiply(lhs, rhs, make_index_sequence<_N>{});
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -266,7 +243,7 @@ template <typename _Tp, size_t _N>
 std::array<_Tp, _N>&
 operator/=(std::array<_Tp, _N>& lhs, const std::array<_Tp, _N>& rhs)
 {
-    array_math::divide(lhs, rhs, make_index_sequence<_N>{});
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -276,8 +253,7 @@ template <typename _Lhs, typename _Rhs>
 std::pair<_Lhs, _Rhs>&
 operator/=(std::pair<_Lhs, _Rhs>& lhs, const std::pair<_Lhs, _Rhs>& rhs)
 {
-    lhs.first /= rhs.first;
-    lhs.second /= rhs.second;
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -287,9 +263,7 @@ template <typename _Tp, typename... _Extra>
 std::vector<_Tp, _Extra...>&
 operator/=(std::vector<_Tp, _Extra...>& lhs, const std::vector<_Tp, _Extra...>& rhs)
 {
-    const auto _N = std::min(lhs.size(), rhs.size());
-    for(size_t i = 0; i < _N; ++i)
-        lhs[i] /= rhs[i];
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -299,8 +273,7 @@ template <typename... _Types>
 std::tuple<_Types...>&
 operator/=(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
 {
-    constexpr size_t _N = sizeof...(_Types);
-    tuple_math::divide(lhs, rhs, make_index_sequence<_N>{});
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -315,7 +288,7 @@ template <typename _Lhs, size_t _N, typename _Rhs,
 std::array<_Lhs, _N>&
 operator*=(std::array<_Lhs, _N>& lhs, const _Rhs& rhs)
 {
-    array_math::multiply(lhs, rhs, make_index_sequence<_N>{});
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -326,8 +299,7 @@ template <typename _Lhs, typename _Rhs, typename _Arith,
 std::pair<_Lhs, _Rhs>&
 operator*=(std::pair<_Lhs, _Rhs>& lhs, const _Arith& rhs)
 {
-    lhs.first *= rhs;
-    lhs.second *= rhs;
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -338,8 +310,7 @@ template <typename _Lhs, typename _Rhs, typename... _Extra,
 std::vector<_Lhs, _Extra...>&
 operator*=(std::vector<_Lhs, _Extra...>& lhs, const _Rhs& rhs)
 {
-    for(auto& itr : lhs)
-        itr *= static_cast<_Lhs>(rhs);
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -350,8 +321,7 @@ template <typename... _Lhs, typename _Rhs,
 std::tuple<_Lhs...>&
 operator*=(std::tuple<_Lhs...>& lhs, const _Rhs& rhs)
 {
-    constexpr size_t _N = sizeof...(_Lhs);
-    tuple_math::multiply(lhs, rhs, make_index_sequence<_N>{});
+    math::multiply(lhs, rhs);
     return lhs;
 }
 
@@ -366,7 +336,7 @@ template <typename _Lhs, size_t _N, typename _Rhs,
 std::array<_Lhs, _N>&
 operator/=(std::array<_Lhs, _N>& lhs, const _Rhs& rhs)
 {
-    array_math::divide(lhs, rhs, make_index_sequence<_N>{});
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -377,8 +347,7 @@ template <typename _Lhs, typename _Rhs, typename _Arith,
 std::pair<_Lhs, _Rhs>&
 operator/=(std::pair<_Lhs, _Rhs>& lhs, const _Arith& rhs)
 {
-    lhs.first /= rhs;
-    lhs.second /= rhs;
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -389,8 +358,7 @@ template <typename _Lhs, typename _Rhs, typename... _Extra,
 std::vector<_Lhs, _Extra...>&
 operator/=(std::vector<_Lhs, _Extra...>& lhs, const _Rhs& rhs)
 {
-    for(auto& itr : lhs)
-        itr /= static_cast<_Lhs>(rhs);
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -401,8 +369,7 @@ template <typename... _Lhs, typename _Rhs,
 std::tuple<_Lhs...>&
 operator/=(std::tuple<_Lhs...>& lhs, const _Rhs& rhs)
 {
-    constexpr size_t _N = sizeof...(_Lhs);
-    tuple_math::divide(lhs, rhs, make_index_sequence<_N>{});
+    math::divide(lhs, rhs);
     return lhs;
 }
 
@@ -450,8 +417,7 @@ template <typename _Lhs, typename _Rhs>
 const pair<_Lhs, _Rhs>
 operator-(pair<_Lhs, _Rhs> lhs, const pair<_Lhs, _Rhs>& rhs)
 {
-    lhs.first -= rhs.first;
-    lhs.second -= rhs.second;
+    math::minus(lhs, rhs);
     return lhs;
 }
 
@@ -459,8 +425,7 @@ template <typename... _Types>
 const tuple<_Types...>
 operator-(tuple<_Types...> lhs, const tuple<_Types...>& rhs)
 {
-    constexpr size_t _N = sizeof...(_Types);
-    ::tim::stl_overload::tuple_math::minus(lhs, rhs, ::tim::make_index_sequence<_N>{});
+    math::minus(lhs, rhs);
     return lhs;
 }
 
