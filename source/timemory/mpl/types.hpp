@@ -188,6 +188,9 @@ template <typename _Tp>
 struct set_prefix;
 
 template <typename _Tp>
+struct set_flat_profile;
+
+template <typename _Tp>
 struct insert_node;
 
 template <typename _Tp>

@@ -696,6 +696,7 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
                 'size': 22, }
 
         plt.xlabel(_xlabel, **font)
+        title = title.replace(' "', '"').strip()
         plt.title('"{}" Report for {}'.format(_desc.title(), title), **font)
         if disp:
             print('Displaying plot...')

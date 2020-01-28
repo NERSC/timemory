@@ -101,6 +101,25 @@ struct stream_entry
         ss.setf(m_format);
         ss << std::setprecision(m_precision) << val;
         m_value = ss.str();
+        if(settings::max_width() > 0 && m_value.length() > (size_t) settings::max_width())
+        {
+            // while(m_value.find(' ') != std::string::npos)
+            //    m_value = m_value.replace(m_value.find(' '), 1, "");
+            // if(m_value.length() > (size_t) settings::max_width())
+
+            //
+            //  don't truncate and add ellipsis if max width is really small
+            //
+            if(settings::max_width() > 20)
+            {
+                m_value = m_value.substr(0, settings::max_width() - 3);
+                m_value += "...";
+            }
+            else
+            {
+                m_value = m_value.substr(0, settings::max_width());
+            }
+        }
     }
 
     friend bool operator<(const stream_entry& lhs, const stream_entry& rhs)

@@ -139,6 +139,7 @@ public:
     virtual void print()       = 0;
     virtual void cleanup()     = 0;
     virtual void stack_clear() = 0;
+    virtual void disable()     = 0;
     virtual void initialize()  = 0;
     virtual void finalize()    = 0;
 

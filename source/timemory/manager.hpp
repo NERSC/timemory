@@ -129,8 +129,8 @@ public:
     static void      max_depth(const int32_t& val) { settings::max_depth() = val; }
     static int32_t   max_depth() { return settings::max_depth(); }
     static int32_t   total_instance_count() { return f_manager_instance_count().load(); }
-
-    static void exit_hook();
+    static void      use_exit_hook(bool val) { f_use_exit_hook() = val; }
+    static void      exit_hook();
 
 private:
     //----------------------------------------------------------------------------------//
@@ -445,6 +445,11 @@ private:
 private:
     /// num-threads based on number of managers created
     static std::atomic<int32_t>& f_thread_counter();
+    static bool&                 f_use_exit_hook()
+    {
+        static bool _instance = true;
+        return _instance;
+    }
 };
 
 //======================================================================================//
@@ -541,6 +546,7 @@ extern "C"
         auto _master = timemory_manager_master_instance();
         if(_master)
             _master->finalize();
+        // tim::settings::enabled() = false;
     }
 }
 

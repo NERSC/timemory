@@ -265,14 +265,20 @@ manager::exit_hook()
     if(settings::debug())
         PRINT_HERE("%s", "finalizing...");
 
+    if(!manager::f_use_exit_hook())
+        return;
+
     try
     {
         auto master_count = f_manager_instance_count().load();
         if(master_count > 0)
         {
             auto master_manager = get_shared_ptr_pair_master_instance<manager>();
-            master_manager->write_metadata("manager::exit_hook");
-            master_manager.reset();
+            if(master_manager)
+            {
+                master_manager->write_metadata("manager::exit_hook");
+                master_manager.reset();
+            }
         }
         else
         {

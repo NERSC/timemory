@@ -390,6 +390,8 @@ public:
 
     void get_shared_manager();
 
+    virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
+
     virtual void initialize()
     {
         if(m_initialized)

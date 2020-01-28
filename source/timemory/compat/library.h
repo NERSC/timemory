@@ -90,6 +90,9 @@ extern "C"
     extern void timemory_init_library(int argc, char** argv);
     extern void timemory_finalize_library(void);
 
+    extern void timemory_pause(void);
+    extern void timemory_resume(void);
+
     extern void timemory_set_default(const char* components);
     extern void timemory_push_components(const char* components);
     extern void timemory_push_components_enum(int args, ...);

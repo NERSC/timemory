@@ -56,13 +56,14 @@ class storage<Type, false> : public base::storage
 public:
     //----------------------------------------------------------------------------------//
     //
-    using base_type     = base::storage;
-    using this_type     = storage<Type, false>;
-    using string_t      = std::string;
-    using smart_pointer = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
-    using singleton_t   = singleton<this_type, smart_pointer>;
-    using pointer       = typename singleton_t::pointer;
-    using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using base_type      = base::storage;
+    using component_type = Type;
+    using this_type      = storage<Type, false>;
+    using string_t       = std::string;
+    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
+    using singleton_t    = singleton<this_type, smart_pointer>;
+    using pointer        = typename singleton_t::pointer;
+    using auto_lock_t    = typename singleton_t::auto_lock_t;
 
     friend class tim::manager;
     friend struct impl::storage_deleter<this_type>;
@@ -170,6 +171,8 @@ public:
         }
         m_stack.clear();
     }
+
+    virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
 
     void initialize()
     {

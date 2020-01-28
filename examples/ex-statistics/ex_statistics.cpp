@@ -78,6 +78,7 @@ main(int argc, char** argv)
 {
     settings::destructor_report() = true;
     tim::timemory_init(argc, argv);
+    tim::enable_signal_detection();
 
     long nfib = (argc > 1) ? atol(argv[1]) : 40;
     int  nitr = (argc > 2) ? atoi(argv[2]) : 10;

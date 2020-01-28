@@ -64,7 +64,7 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
 endif()
 
 #----------------------------------------------------------------------------------------#
-# Build, link, and install exe
+# Build, link, and install timem
 #
 add_executable(timem timem.cpp timem.hpp)
 
@@ -81,3 +81,25 @@ set_target_properties(timem PROPERTIES
 
 # timem installation
 install(TARGETS timem DESTINATION bin)
+
+#----------------------------------------------------------------------------------------#
+# Build, link, and install timemory-run
+#
+if(TIMEMORY_USE_DYNINST)
+    add_executable(timemory-run timemory-run.cpp)
+
+    target_link_libraries(timemory-run PRIVATE
+        timemory-compile-options
+        timemory-arch
+        timemory-vector
+        timemory-headers
+        timemory-dyninst
+        timemory-cxx-shared)
+
+    set_target_properties(timemory-run PROPERTIES
+        INSTALL_RPATH_USE_LINK_PATH ON
+        # EXCLUDE_FROM_ALL ON
+    )
+
+    install(TARGETS timemory-run DESTINATION bin)
+endif()

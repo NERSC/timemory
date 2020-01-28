@@ -207,7 +207,67 @@ struct set_prefix
 
     template <typename _Up                                                    = _Tp,
               enable_if_t<(trait::requires_prefix<_Up>::value == false), int> = 0>
-    set_prefix(Type&, const string_t&)
+    set_prefix(Type& obj, const string_t& _prefix)
+    {
+        set_prefix_sfinae(obj, 0, _prefix);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  If the component has a set_prefix(const string_t&) member function
+    //
+    template <typename U = Type>
+    auto set_prefix_sfinae(U& obj, int, const string_t& _prefix)
+        -> decltype(obj.set_prefix(_prefix), void())
+    {
+        if(!trait::runtime_enabled<U>::get())
+            return;
+
+        obj.set_prefix(_prefix);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the component does not have a set_prefix(const string_t&) member function
+    //
+    template <typename U = Type>
+    auto set_prefix_sfinae(U&, long, const string_t&) -> decltype(void(), void())
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct set_flat_profile
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+    using string_t   = std::string;
+
+    set_flat_profile(Type& obj, bool flat)
+    {
+        if(!trait::runtime_enabled<Type>::get())
+            return;
+
+        set_flat_profile_sfinae(obj, 0, flat);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  If the component has a set_flat_profile(bool) member function
+    //
+    template <typename T = Type>
+    auto set_flat_profile_sfinae(T& obj, int, bool flat)
+        -> decltype(obj.set_flat_profile(flat), void())
+    {
+        obj.set_flat_profile(flat);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the component does not have a set_flat_profile(bool) member function
+    //
+    template <typename T = Type>
+    auto set_flat_profile_sfinae(T&, long, bool) -> decltype(void(), void())
     {}
 };
 

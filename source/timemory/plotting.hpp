@@ -116,10 +116,14 @@ _plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
             if(!exists)
                 return;
         }
+
         auto cmd = TIMEMORY_JOIN(" ", settings::python_exe(), "-m", "timemory.plotting",
                                  "-f", _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
         if(echo_dart)
             cmd += " -e";
+
+        if(settings::verbose() > 2 || settings::debug())
+            PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
 
         int sysret = std::system(cmd.c_str());
         if(sysret != 0)

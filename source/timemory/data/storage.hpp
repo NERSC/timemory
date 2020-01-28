@@ -148,23 +148,29 @@ struct tim::impl::storage_deleter : public std::default_delete<StorageType>
         if(this_tid == master_tid)
         {
             if(ptr)
+            {
+                // ptr->StorageType::disable();
                 ptr->StorageType::free_shared_manager();
+            }
             delete ptr;
         }
         else
         {
             if(master && ptr != master)
-            {
                 singleton_t::remove(ptr);
-            }
+
             if(ptr)
                 ptr->StorageType::free_shared_manager();
             delete ptr;
         }
+
         if(_printed_master && !_deleted_master)
         {
             if(master)
+            {
+                // master->StorageType::disable();
                 master->StorageType::free_shared_manager();
+            }
             delete master;
             _deleted_master = true;
         }

@@ -190,6 +190,7 @@ struct settings
     // general formatting
     TIMEMORY_MEMBER_STATIC_ACCESSOR(int16_t, precision, "TIMEMORY_PRECISION", -1)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(int16_t, width, "TIMEMORY_WIDTH", -1)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(int32_t, max_width, "TIMEMORY_MAX_WIDTH", 120)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, scientific, "TIMEMORY_SCIENTIFIC", false)
 
     // timing formatting
@@ -631,6 +632,7 @@ public:
         _TRY_CATCH_NVP("TIMEMORY_TIME_FORMAT", time_format)
         _TRY_CATCH_NVP("TIMEMORY_PRECISION", precision)
         _TRY_CATCH_NVP("TIMEMORY_WIDTH", width)
+        _TRY_CATCH_NVP("TIMEMORY_MAX_WIDTH", max_width)
         _TRY_CATCH_NVP("TIMEMORY_SCIENTIFIC", scientific)
         _TRY_CATCH_NVP("TIMEMORY_TIMING_PRECISION", timing_precision)
         _TRY_CATCH_NVP("TIMEMORY_TIMING_WIDTH", timing_width)

@@ -71,6 +71,8 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
         init_storage();
         _func(*this);
         set_object_prefix(key);
+        using set_flat_profile_t = operation_t<operation::set_flat_profile>;
+        apply_v::access<set_flat_profile_t>(m_data, flat);
     }
 }
 
@@ -93,6 +95,8 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
         init_storage();
         _func(*this);
         set_object_prefix(loc.get_id());
+        using set_flat_profile_t = operation_t<operation::set_flat_profile>;
+        apply_v::access<set_flat_profile_t>(m_data, flat);
     }
 }
 
