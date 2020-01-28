@@ -441,7 +441,7 @@ max(const _Tp& _lhs, const _Tp& _rhs)
 
 template <typename _Tp, typename _Up>
 auto
-plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(_lhs += _rhs, void())
+plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(_lhs += _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _lhs += _rhs;
@@ -514,7 +514,7 @@ plus(_Tp& _lhs, const _Up& _rhs)
 
 template <typename _Tp, typename _Up>
 auto
-minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(_lhs += _rhs, void())
+minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, ...) -> decltype(_lhs += _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _lhs -= _rhs;
@@ -580,7 +580,7 @@ minus(_Tp& _lhs, const _Up& _rhs)
 
 template <typename _Tp, typename _Up>
 auto
-multiply(_Tp& _lhs, _Up _rhs, std::tuple<>, int) -> decltype(_lhs *= _rhs, void())
+multiply(_Tp& _lhs, _Up _rhs, std::tuple<>, ...) -> decltype(_lhs *= _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _lhs *= _rhs;
@@ -695,7 +695,7 @@ multiply(_Tp& _lhs, const _Up& _rhs)
 
 template <typename _Tp, typename _Up>
 auto
-divide(_Tp& _lhs, _Up _rhs, std::tuple<>, int) -> decltype(_lhs /= _rhs, void())
+divide(_Tp& _lhs, _Up _rhs, std::tuple<>, ...) -> decltype(_lhs /= _rhs, void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _lhs /= _rhs;

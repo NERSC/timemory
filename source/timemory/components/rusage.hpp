@@ -50,7 +50,6 @@ using farray_t = std::array<double, N>;
 // clang-format on
 
 TIMEMORY_STATISTICS_TYPE(component::peak_rss, double)
-TIMEMORY_STATISTICS_TYPE(component::current_peak_rss, tim::alias::pair_f8_f8_t)
 TIMEMORY_STATISTICS_TYPE(component::page_rss, double)
 TIMEMORY_STATISTICS_TYPE(component::stack_rss, double)
 TIMEMORY_STATISTICS_TYPE(component::data_rss, double)
@@ -67,6 +66,9 @@ TIMEMORY_STATISTICS_TYPE(component::priority_context_switch, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::read_bytes, tim::alias::tuple_f8_f8_t)
 TIMEMORY_STATISTICS_TYPE(component::written_bytes, tim::alias::farray_t<2>)
 TIMEMORY_STATISTICS_TYPE(component::virtual_memory, double)
+TIMEMORY_STATISTICS_TYPE(component::user_mode_time, double)
+TIMEMORY_STATISTICS_TYPE(component::kernel_mode_time, double)
+TIMEMORY_STATISTICS_TYPE(component::current_peak_rss, tim::alias::pair_f8_f8_t)
 
 //======================================================================================//
 
@@ -103,6 +105,9 @@ extern template struct base<priority_context_switch>;
 extern template struct base<read_bytes, std::tuple<int64_t, int64_t>>;
 extern template struct base<written_bytes, std::tuple<int64_t, int64_t>>;
 extern template struct base<virtual_memory>;
+extern template struct base<user_mode_time>;
+extern template struct base<kernel_mode_time>;
+extern template struct base<current_peak_rss, std::pair<int64_t, int64_t>>;
 
 #endif
 

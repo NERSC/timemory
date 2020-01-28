@@ -24,6 +24,7 @@
 
 #define TIMEMORY_BUILD_EXTERN_INIT
 #define TIMEMORY_BUILD_EXTERN_TEMPLATE
+#define TIMEMORY_USE_UNMAINTAINED_RUSAGE
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
@@ -39,6 +40,8 @@
 
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::peak_rss, true)
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::page_rss, true)
+
+#if defined(_UNIX)
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::stack_rss, true)
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::data_rss, true)
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::num_io_in, true)
@@ -54,13 +57,16 @@ TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::priority_context_switch, true)
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::read_bytes, true)
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::written_bytes, true)
 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::virtual_memory, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::user_mode_time, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::kernel_mode_time, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::current_peak_rss, true)
+#endif
 
 //======================================================================================//
 
 namespace tim
 {
 TIMEMORY_INSTANTIATE_EXTERN_INIT(peak_rss)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(current_peak_rss)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(page_rss)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(stack_rss)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(data_rss)
@@ -77,13 +83,15 @@ TIMEMORY_INSTANTIATE_EXTERN_INIT(priority_context_switch)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(read_bytes)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(written_bytes)
 TIMEMORY_INSTANTIATE_EXTERN_INIT(virtual_memory)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(user_mode_time)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(kernel_mode_time)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(current_peak_rss)
 
 namespace component
 {
 //
 //
 template struct base<peak_rss>;
-template struct base<current_peak_rss, std::pair<int64_t, int64_t>>;
 template struct base<page_rss>;
 template struct base<stack_rss>;
 template struct base<data_rss>;
@@ -100,6 +108,9 @@ template struct base<priority_context_switch>;
 template struct base<read_bytes, std::tuple<int64_t, int64_t>>;
 template struct base<written_bytes, std::array<int64_t, 2>>;
 template struct base<virtual_memory>;
+template struct base<user_mode_time>;
+template struct base<kernel_mode_time>;
+template struct base<current_peak_rss, std::pair<int64_t, int64_t>>;
 //
 //
 }  // namespace component

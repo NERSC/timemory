@@ -262,6 +262,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // store a value
+    //
+    template <typename... _Args>
+    void store(_Args&&... _args)
+    {
+        using store_t = operation_t<operation::store>;
+        apply_v::access<store_t>(m_data, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>

@@ -465,57 +465,31 @@ as_string()
 
 //======================================================================================//
 //
-//                              Implicit testing for traits
+//                              Derived helper traits
 //
 //======================================================================================//
 
 namespace tim
 {
-namespace trait
-{
-//----------------------------------------------------------------------------------//
-//
-// https://stackoverflow.com/questions/257288/is-it-possible-to-write-a-template-to-check
-// -for-a-functions-existence
-namespace details
-{
-template <typename T, typename... Args>
-static auto
-test_audit_support(int)
-    -> sfinae_true<decltype(std::declval<T>().audit(std::declval<Args>()...))>;
-
-template <typename, typename... Args>
-static auto
-test_audit_support(long) -> false_type;
-}  // namespace details
-
-//----------------------------------------------------------------------------------//
-
-template <typename T, typename... Args>
-struct test_audit_support : decltype(details::test_audit_support<T, Args...>(0))
-{};
-
-}  // namespace trait
-
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 //
 //      determines if output is generated
 //
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Vp = typename _Tp::value_type>
+template <typename _Tp, typename _Vp>
 struct generates_output
 {
     static constexpr bool value = (!(std::is_same<_Vp, void>::value));
 };
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 //
 //      determines if storage should be implemented
 //
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Vp = typename _Tp::value_type>
+template <typename _Tp, typename _Vp>
 struct implements_storage
 {
     static constexpr bool value =
@@ -731,6 +705,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(split_serialization, component::gpu_roofline_dp_f
 //
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::cupti_activity, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::cupti_counters, true_type)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(secondary_data, component::gpu_roofline, true_type,
                                typename)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::gpu_roofline_flops, true_type)

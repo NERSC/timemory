@@ -756,6 +756,43 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct store
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename... _Args>
+    explicit store(Type& obj, _Args&&... _args)
+    {
+        if(!trait::runtime_enabled<_Tp>::get())
+            return;
+
+        store_sfinae(obj, 0, std::forward<_Args>(_args)...);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of supports args and an implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto store_sfinae(_Up& obj, int, _Args&&... _args)
+        -> decltype(obj.store(std::forward<_Args>(_args)...), void())
+    {
+        obj.store(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  The equivalent of !supports_args and no implementation provided
+    //
+    template <typename _Up, typename... _Args>
+    auto store_sfinae(_Up&, long, _Args&&...) -> decltype(void(), void())
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
 ///
 /// \class operation::audit
 ///

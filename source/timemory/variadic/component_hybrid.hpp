@@ -288,6 +288,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // store a value
+    //
+    template <typename... _Args>
+    void store(_Args&&... _args)
+    {
+        m_tuple.store(std::forward<_Args>(_args)...);
+        m_list.store(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // perform a auditd operation (typically for GOTCHA)
     //
     template <typename... _Args>

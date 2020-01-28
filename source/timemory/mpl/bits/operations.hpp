@@ -796,6 +796,68 @@ struct print_storage
 };
 
 //--------------------------------------------------------------------------------------//
+/// \class operation::add_secondary
+/// \brief
+/// component contains secondary data resembling the original data
+/// but should be another node entry in the graph. These types
+/// must provide a get_secondary() member function and that member function
+/// must return a pair-wise iterable container, e.g. std::map, of types:
+///     - std::string
+///     - value_type
+///
+template <typename _Tp>
+struct add_secondary
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+    using string_t   = std::string;
+
+    //----------------------------------------------------------------------------------//
+    // if secondary data explicitly specified
+    //
+    template <typename Storage, typename Iterator, typename Up = Type,
+              enable_if_t<(trait::secondary_data<Up>::value), int> = 0>
+    add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
+    {
+        using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
+        for(const auto& _data : _rhs.get_secondary())
+            _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
+    }
+
+    //----------------------------------------------------------------------------------//
+    // check if secondary data implicitly specified
+    //
+    template <typename Storage, typename Iterator, typename Up = Type,
+              enable_if_t<!(trait::secondary_data<Up>::value), int> = 0>
+    add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
+    {
+        add_secondary_sfinae(_storage, _itr, _rhs, 0);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  If the component has a set_prefix(const string_t&) member function
+    //
+    template <typename Storage, typename Iterator, typename Up = Type>
+    auto add_secondary_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int)
+        -> decltype(_rhs.get_secondary(), void())
+    {
+        using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
+        for(const auto& _data : _rhs.get_secondary())
+            _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the component does not have a set_prefix(const string_t&) member function
+    //
+    template <typename Storage, typename Iterator, typename Up = Type>
+    auto add_secondary_sfinae(Storage*, Iterator, const Up&, long)
+        -> decltype(void(), void())
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
 ///
 /// \class operation::echo_measurement
 ///

@@ -181,8 +181,9 @@ public:
     ///
     static void append(graph_iterator itr, const Type& rhs)
     {
-        using has_secondary_type = typename trait::secondary_data<_Tp>::type;
-        base_type::append_impl<value_type>(has_secondary_type{}, itr, rhs);
+        auto _storage = storage_type::instance();
+        if(_storage)
+            operation::add_secondary<Type>(_storage, itr, rhs);
     }
 
 public:
@@ -251,6 +252,11 @@ public:
     // mark a point in the execution, by default, this does nothing
     //
     void mark_end() {}
+
+    //----------------------------------------------------------------------------------//
+    // store a value, by default, this does nothing
+    //
+    void store() {}
 
     //----------------------------------------------------------------------------------//
     // set the firsts notify that start has been called
@@ -665,12 +671,6 @@ protected:
         return _instance;
     }
 
-private:
-    template <typename _Vp>
-    static void append_impl(std::true_type, graph_iterator, const Type&);
-    template <typename _Vp>
-    static void append_impl(std::false_type, graph_iterator, const Type&);
-
 public:
     using fmtflags = std::ios_base::fmtflags;
 
@@ -1069,37 +1069,6 @@ public:
 };
 
 //----------------------------------------------------------------------------------//
-/// type contains secondary data resembling the original data
-/// but should be another node entry in the graph. These types
-/// must provide a get_secondary() member function and that member function
-/// must return a pair-wise iterable container, e.g. std::map, of types:
-///     - std::string
-///     - value_type
-///
-template <typename _Tp, typename _Value>
-template <typename _Vp>
-void
-base<_Tp, _Value>::append_impl(std::true_type, graph_iterator itr, const Type& rhs)
-{
-    static_assert(trait::secondary_data<_Tp>::value,
-                  "append_impl should not be compiled");
-    static_assert(std::is_same<_Vp, _Value>::value, "Type mismatch");
-
-    auto _storage          = storage_type::instance();
-    using string_t         = std::string;
-    using secondary_data_t = std::tuple<graph_iterator, const string_t&, _Vp>;
-    for(const auto& dat : rhs.get_secondary())
-        _storage->append(secondary_data_t{ itr, dat.first, dat.second });
-}
-
-//----------------------------------------------------------------------------------//
-//  type does not contain secondary data
-//
-template <typename _Tp, typename _Value>
-template <typename _Vp>
-void
-base<_Tp, _Value>::append_impl(std::false_type, graph_iterator, const Type&)
-{}
 
 }  // namespace component
 }  // namespace tim

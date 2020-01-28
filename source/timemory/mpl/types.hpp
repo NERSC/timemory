@@ -64,6 +64,11 @@ using true_type                      = std::true_type;
 using false_type                     = std::false_type;
 using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
 
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+struct generates_output;
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+struct implements_storage;
+
 //======================================================================================//
 // type-traits for customization
 //
@@ -242,6 +247,9 @@ template <typename _Tp>
 struct mark_end;
 
 template <typename _Tp>
+struct store;
+
+template <typename _Tp>
 struct audit;
 
 template <typename RetType, typename LhsType, typename RhsType>
@@ -276,6 +284,9 @@ struct print_statistics;
 
 template <typename _Tp>
 struct print_storage;
+
+template <typename _Tp>
+struct add_secondary;
 
 template <typename _Tp, typename _Archive>
 struct serialization;

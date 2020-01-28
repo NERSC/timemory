@@ -168,6 +168,12 @@ public:
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
     template <typename... _Args>
+    inline void store(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.store(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
     inline void audit(_Args&&... _args)
     {
         if(m_enabled)
