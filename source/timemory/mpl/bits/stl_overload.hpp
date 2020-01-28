@@ -43,38 +43,6 @@
 
 namespace std
 {
-template <size_t I, typename Lhs, typename Rhs,
-          typename std::enable_if<(I == 0), int>::type = 0>
-const Lhs
-get(const pair<Lhs, Rhs>& p)
-{
-    return p.first;
-}
-
-template <size_t I, typename Lhs, typename Rhs,
-          typename std::enable_if<(I == 0), int>::type = 0>
-Lhs&
-get(pair<Lhs, Rhs>& p)
-{
-    return p.first;
-}
-
-template <size_t I, typename Lhs, typename Rhs,
-          typename std::enable_if<(I == 1), int>::type = 0>
-const Rhs
-get(const pair<Lhs, Rhs>& p)
-{
-    return p.second;
-}
-
-template <size_t I, typename Lhs, typename Rhs,
-          typename std::enable_if<(I == 1), int>::type = 0>
-Rhs&
-get(pair<Lhs, Rhs>& p)
-{
-    return p.second;
-}
-
 template <typename _Lhs, typename _Rhs>
 const pair<_Lhs, _Rhs>
 operator-(pair<_Lhs, _Rhs>, const pair<_Lhs, _Rhs>&);
