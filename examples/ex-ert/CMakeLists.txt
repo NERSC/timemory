@@ -19,6 +19,7 @@ endif()
 project(timemory-ERT-Example LANGUAGES CXX)
 
 option(USE_CUDA "Enable CUDA" ${_USE_CUDA})
+option(USE_KOKKOS "Enable Kokkos" OFF)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
 set(COMPONENTS compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
@@ -50,7 +51,7 @@ if(USE_CUDA)
 endif()
 
 find_package(Kokkos QUIET)
-if(Kokkos_FOUND)
+if(Kokkos_FOUND AND USE_KOKKOS)
     add_executable(ex_ert_kokkos ex_ert_kokkos.cpp)
     target_link_libraries(ex_ert_kokkos timemory-ert-example Kokkos::kokkos)
     install(TARGETS ex_ert_kokkos DESTINATION bin)

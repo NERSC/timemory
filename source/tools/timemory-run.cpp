@@ -540,7 +540,7 @@ check_cost(BPatch_snippet snippet)
         printf("*Warning*: zero snippet cost\n");
     else if(cost > 0.01)
         printf("*Error*: snippet cost of %f, exceeds max expected of 0.1", cost);
-}  // check_cost()
+}
 
 int errorPrint = 0;  // external "dyninst" tracing
 
@@ -557,11 +557,11 @@ error_func_real(BPatchErrorLevel level, int num, const char* const* params)
             {
                 if(errorPrint > 1)
                     printf("%s\n", params[0]);
-            }  // if
+            }
             else
                 printf("%s", params[0]);
-        }  // if
-    }      // if
+        }
+    }
     else
     {
         // reporting of actual errors
@@ -574,9 +574,9 @@ error_func_real(BPatchErrorLevel level, int num, const char* const* params)
             // We consider some errors fatal.
             if(num == 101)
                 exit(-1);
-        }  // if
-    }      // else
-}  // error_func_real()
+        }
+    }
+}
 
 //======================================================================================//
 // We've a null error function when we don't want to display an error
@@ -585,7 +585,7 @@ error_func_fake(BPatchErrorLevel level, int num, const char* const* params)
 {
     tim::consume_parameters(level, num, params);
     // It does nothing.
-}  // error_func_fake()
+}
 
 //======================================================================================//
 // Constraints for instrumentation. Returns true for those modules that
