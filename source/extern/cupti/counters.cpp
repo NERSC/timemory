@@ -53,7 +53,7 @@ namespace component
 {
 //
 //
-template base<cupti_counters, cupti::profiler::results_t>;
+template struct base<cupti_counters, cupti::profiler::results_t>;
 //
 //
 }  // namespace component
