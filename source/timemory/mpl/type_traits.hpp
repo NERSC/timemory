@@ -873,6 +873,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_typ
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::current_peak_rss, false_type)
 
 #endif
 
