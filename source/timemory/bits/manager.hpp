@@ -116,7 +116,7 @@ inline manager::manager()
     {
         settings::parse();
         papi::init();
-        std::atexit(manager::exit_hook);
+        // std::atexit(manager::exit_hook);
     }
 
 #if !defined(TIMEMORY_DISABLE_BANNER)
@@ -139,6 +139,9 @@ inline manager::manager()
 inline manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
+
+    if(dmp::is_initialized())
+        m_rank = dmp::rank();
 
     bool _last = (get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
                   m_instance_count == 0);

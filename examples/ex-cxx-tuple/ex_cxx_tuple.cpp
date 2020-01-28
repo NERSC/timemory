@@ -88,12 +88,10 @@ print_mpi_storage();
 int
 main(int argc, char** argv)
 {
-    tim::settings::banner() = true;
-    tim::enable_signal_detection({ tim::sys_signal::SegFault, tim::sys_signal::Abort,
-                                   tim::sys_signal::User1, tim::sys_signal::User2 });
-    tim::dmp::initialize(argc, argv);
-    tim::timemory_init(argc, argv);
+    tim::settings::banner()      = true;
     tim::settings::json_output() = true;
+    tim::enable_signal_detection();
+    tim::dmp::initialize(argc, argv);
 
     tim::auto_tuple<papi_tuple_t>::component_type m("PAPI measurements");
     m.start();

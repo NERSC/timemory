@@ -175,13 +175,12 @@ tim::timemory_finalize()
         upc::finalize();
     }
 
-    if(settings::mpi_finalize())
-    {
-        if(settings::debug())
-            PRINT_HERE("%s", "finalizing mpi...");
-
-        mpi::finalize();
-    }
+    // if(settings::mpi_finalize())
+    // {
+    //    if(settings::debug())
+    //        PRINT_HERE("%s", "finalizing mpi...");
+    //    mpi::finalize();
+    // }
 
     if(settings::debug())
         PRINT_HERE("%s", "done...");

@@ -137,7 +137,10 @@ extern "C" int
 MPI_Init_thread(int* argc, char*** argv, int required, int* provided);
 
 #    if !defined(TIMEMORY_EXTERN_INIT)
-inline ::tim::manager*
+
+//--------------------------------------------------------------------------------------//
+
+static inline ::tim::manager*
 timemory_mpi_manager_master_instance()
 {
     using manager_t     = tim::manager;
@@ -145,8 +148,41 @@ timemory_mpi_manager_master_instance()
     return _pinst.first.get();
 }
 
+//--------------------------------------------------------------------------------------//
+
 extern "C"
 {
+    //----------------------------------------------------------------------------------//
+
+    int timemory_MPI_Finalize(int, int, void*, void*)
+    {
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
+        auto manager = timemory_manager_master_instance();
+        if(manager)
+            manager->finalize();
+        ::tim::dmp::is_finalized() = true;
+        return MPI_SUCCESS;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_MPI_Init(int* argc, char*** argv)
+    {
+        int comm_key = 0;
+        MPI_Comm_create_keyval(nullptr, &timemory_MPI_Finalize, &comm_key, nullptr);
+        MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, nullptr);
+
+        static auto _manager = timemory_manager_master_instance();
+        tim::consume_parameters(_manager);
+        ::tim::timemory_init(*argc, *argv);
+    }
+
+    //----------------------------------------------------------------------------------//
+
     int MPI_Init(int* argc, char*** argv)
     {
         if(tim::settings::debug())
@@ -157,12 +193,12 @@ extern "C"
 #        if defined(TIMEMORY_USE_TAU)
         Tau_init(*argc, *argv);
 #        endif
-        auto        ret      = PMPI_Init(argc, argv);
-        static auto _manager = timemory_mpi_manager_master_instance();
-        tim::consume_parameters(_manager);
-        ::tim::timemory_init(*argc, *argv);
+        auto ret = PMPI_Init(argc, argv);
+        timemory_MPI_Init(argc, argv);
         return ret;
     }
+
+    //----------------------------------------------------------------------------------//
 
     int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
     {
@@ -174,26 +210,12 @@ extern "C"
 #        if defined(TIMEMORY_USE_TAU)
         Tau_init(*argc, *argv);
 #        endif
-        auto        ret      = PMPI_Init_thread(argc, argv, req, prov);
-        static auto _manager = timemory_mpi_manager_master_instance();
-        tim::consume_parameters(_manager);
-        ::tim::timemory_init(*argc, *argv);
+        auto ret = PMPI_Init_thread(argc, argv, req, prov);
+        timemory_MPI_Init(argc, argv);
         return ret;
     }
 
-    int MPI_Finalize()
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-        auto manager = timemory_mpi_manager_master_instance();
-        if(manager)
-            manager->finalize();
-        ::tim::dmp::is_finalized() = true;
-        return PMPI_Finalize();
-    }
+    //----------------------------------------------------------------------------------//
 }  // extern "C"
 
 #    endif  // !defined(TIMEMORY_EXTERN_INIT)

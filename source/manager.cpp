@@ -54,7 +54,8 @@ timemory_manager_master_instance()
 
 extern "C"
 {
-    __library_ctor__ void timemory_library_constructor()
+    __library_ctor__
+    void timemory_library_constructor()
     {
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
         if(!library_ctor)
@@ -101,62 +102,6 @@ extern "C"
             _master->finalize();
     }
 }
-
-//======================================================================================//
-#    if defined(TIMEMORY_USE_MPI)
-
-extern "C"
-{
-    int MPI_Init(int* argc, char*** argv)
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
-                   __LINE__);
-        }
-#        if defined(TIMEMORY_USE_TAU)
-        Tau_init(*argc, *argv);
-#        endif
-        auto        ret      = PMPI_Init(argc, argv);
-        static auto _manager = timemory_manager_master_instance();
-        tim::consume_parameters(_manager);
-        ::tim::timemory_init(*argc, *argv);
-        return ret;
-    }
-
-    int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-#        if defined(TIMEMORY_USE_TAU)
-        Tau_init(*argc, *argv);
-#        endif
-        auto        ret      = PMPI_Init_thread(argc, argv, req, prov);
-        static auto _manager = timemory_manager_master_instance();
-        tim::consume_parameters(_manager);
-        ::tim::timemory_init(*argc, *argv);
-        return ret;
-    }
-
-    int MPI_Finalize()
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-        auto manager = timemory_manager_master_instance();
-        if(manager)
-            manager->finalize();
-        ::tim::dmp::is_finalized() = true;
-        return PMPI_Finalize();
-    }
-}
-
-#    endif
 
 //======================================================================================//
 

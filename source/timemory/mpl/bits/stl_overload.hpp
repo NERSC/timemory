@@ -37,6 +37,58 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/types.hpp"
 
+//======================================================================================//
+
+#if defined(_WINDOWS)
+
+namespace std
+{
+template <size_t I, typename Lhs, typename Rhs,
+          typename std::enable_if<(I == 0), int>::type = 0>
+const Lhs
+get(const pair<Lhs, Rhs>& p)
+{
+    return p.first;
+}
+
+template <size_t I, typename Lhs, typename Rhs,
+          typename std::enable_if<(I == 0), int>::type = 0>
+Lhs&
+get(pair<Lhs, Rhs>& p)
+{
+    return p.first;
+}
+
+template <size_t I, typename Lhs, typename Rhs,
+          typename std::enable_if<(I == 1), int>::type = 0>
+const Lhs
+get(const pair<Lhs, Rhs>& p)
+{
+    return p.second;
+}
+
+template <size_t I, typename Lhs, typename Rhs,
+          typename std::enable_if<(I == 1), int>::type = 0>
+Lhs&
+get(pair<Lhs, Rhs>& p)
+{
+    return p.second;
+}
+
+template <typename _Lhs, typename _Rhs>
+const pair<_Lhs, _Rhs>
+operator-(pair<_Lhs, _Rhs>, const pair<_Lhs, _Rhs>&);
+
+template <typename... _Types>
+const tuple<_Types...>
+operator-(tuple<_Types...>, const tuple<_Types...>&);
+
+}  // namespace std
+
+#endif
+
+//======================================================================================//
+
 namespace tim
 {
 /// \namespace tim::stl_overload

@@ -546,7 +546,7 @@ extern "C"
         auto _master = timemory_manager_master_instance();
         if(_master)
             _master->finalize();
-        // tim::settings::enabled() = false;
+        tim::settings::enabled() = false;
     }
 }
 
