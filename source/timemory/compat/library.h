@@ -74,6 +74,7 @@ extern "C"
 #endif  // if defined(__cplusplus)
 
     extern tim_api void        c_timemory_init(int argc, char** argv, timemory_settings);
+    extern tim_api void        c_timemory_finalize(void);
     extern tim_api int         c_timemory_enabled(void);
     extern tim_api void*       c_timemory_create_auto_timer(const char*);
     extern tim_api void        c_timemory_delete_auto_timer(void*);

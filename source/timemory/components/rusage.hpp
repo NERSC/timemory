@@ -932,8 +932,8 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
     void stop()
     {
-        auto tmp          = record();
-        auto diff         = tmp;
+        auto tmp  = record();
+        auto diff = tmp;
         diff[0] -= value[0];
         diff[1] -= value[1];
         diff[0] = std::abs(diff[0]);

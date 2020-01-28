@@ -75,6 +75,7 @@
 
 #    define TIMEMORY_C_SETTINGS_INIT { 1, -1, -1, -1, -1, -1, -1, -1, -1 };
 #    define TIMEMORY_C_INIT(argc, argv, settings) c_timemory_init(argc, argv, settings)
+#    define TIMEMORY_C_FINALIZE() c_timemory_finalize()
 
 //--------------------------------------------------------------------------------------//
 

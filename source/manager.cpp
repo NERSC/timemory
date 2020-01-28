@@ -92,6 +92,7 @@ extern "C"
 
     __library_dtor__ static void timemory_library_destructor()
     {
+        /*
         auto library_dtor = tim::get_env<bool>("TIMEMORY_LIBRARY_DTOR", true);
         if(!library_dtor)
             return;
@@ -99,6 +100,7 @@ extern "C"
         auto _master = timemory_manager_master_instance();
         if(_master)
             _master->finalize();
+        */
     }
 }
 
