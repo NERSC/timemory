@@ -158,6 +158,7 @@ main(int argc, char** argv)
                 for(auto nstream : gpu_num_streams)
                     for(auto block : gpu_block_sizes)
                     {
+                        if(!tim::get_env("ERT_GPU_FP16", false)) continue;
                         run_ert<fp16_t, device::gpu>(data, nthread, gpu_min_size,
                                                      gpu_max_data, nstream, block,
                                                      num_gpus);
@@ -168,6 +169,7 @@ main(int argc, char** argv)
                 for(auto nstream : gpu_num_streams)
                     for(auto block : gpu_block_sizes)
                     {
+                        if(!tim::get_env("ERT_GPU_FP32", true)) continue;
                         run_ert<float, device::gpu>(data, nthread, gpu_min_size,
                                                     gpu_max_data, nstream, block,
                                                     num_gpus);
@@ -178,6 +180,7 @@ main(int argc, char** argv)
                 for(auto nstream : gpu_num_streams)
                     for(auto block : gpu_block_sizes)
                     {
+                        if(!tim::get_env("ERT_GPU_FP64", true)) continue;
                         run_ert<double, device::gpu>(data, nthread, gpu_min_size,
                                                      gpu_max_data, nstream, block,
                                                      num_gpus);

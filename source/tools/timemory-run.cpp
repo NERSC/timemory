@@ -33,6 +33,7 @@
 #include "BPatch_snippet.h"
 #include "BPatch_statement.h"
 
+#include <regex>
 #include <string.h>
 #include <string>
 #include <unistd.h>
@@ -57,6 +58,8 @@ template class BPatch_Vector<BPatch_variableExpr*>;
 BPatch_function*               name_reg;
 BPatch_Vector<BPatch_snippet*> funcNames;
 BPatch*                        bpatch;
+std::vector<std::regex>        regex_include;
+std::vector<std::regex>        regex_exclude;
 
 void
 check_cost(BPatch_snippet snippet);
@@ -92,18 +95,24 @@ process_file_for_instrumentation(const string& file_name)
 bool
 instrument_entity(const string& function_name)
 {
-    std::set<std::string> exclude = {
-        "tim::",          "timemory",        "cereal::",
-        "rapidjson",      "label_array",     "display_unit_array",
-        "frame_dummy",    "basic_string",    "~array",
-        "~vector",        "~stack",          "~map",
-        "~unordered_map", "~deque",          "~pair",
-        "~tuple",         "~_Function_base", "_M_fill_insert",
-        "_M_erase",       "_M_create_nodes", "_M_initialize",
-        "_M_reallocate",  "_M_insert",       "_M_rehash",
-        "_M_realloc",     "_M_manager",      "std::_",
-        "atexit"
-    };
+    std::set<std::string> exclude = { "timemory",        "cereal::",
+                                      "unique_ptr",      "rapidjson",
+                                      "label_array",     "display_unit_array",
+                                      "frame_dummy",     "basic_string",
+                                      "~array",          "~vector",
+                                      "~stack",          "~map",
+                                      "~unordered_map",  "~deque",
+                                      "~pair",           "~tuple",
+                                      "~_Function_base", "_M_fill_insert",
+                                      "_M_erase",        "_M_create_nodes",
+                                      "_M_initialize",   "_M_reallocate",
+                                      "_M_insert",       "_M_rehash",
+                                      "_M_realloc",      "_M_manager",
+                                      "std::_",          "atexit",
+                                      "_M_default",      "tim::impl::",
+                                      "std::thread::",   "~set",
+                                      "tim::get_env",    "MPI_Init",
+                                      "MPI_Finalize" };
 
     // don't instrument the functions that are explicitly from timemory
     for(const auto& itr : exclude)
@@ -112,14 +121,45 @@ instrument_entity(const string& function_name)
             return false;
     }
 
+    if(function_name.find("std::") == 0)
+        return false;
+
+    if(function_name.find("((begin") == 0)
+        return false;
+
     // don't instrument functions with leading underscore
     if(function_name.length() > 0 && function_name[0] == '_')
         return false;
 
-    if(debugPrint)
-        PRINT_HERE("%s", function_name.c_str());
+    if(function_name.find("tim::") == 0)
+        return false;
 
-    return true;
+    auto is_include = [&]()
+    {
+        if(regex_include.empty())
+            return true;        
+        for(auto& itr : regex_include)
+        {
+            if(std::regex_search(function_name, itr))
+                return true;
+        }
+        return false;
+    };
+    
+    auto is_exclude = [&]()
+    {
+        for(auto& itr : regex_exclude)
+        {
+            if(std::regex_search(function_name, itr))
+                return true;
+        }
+        return false;
+    };
+
+    bool use = is_include() && !is_exclude();    
+    if(use && debugPrint)
+        PRINT_HERE("%s", function_name.c_str());
+    return use;
 }
 
 //======================================================================================//
@@ -1125,6 +1165,10 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
 int
 main(int argc, char** argv)
 {
+#if defined(DYNINST_API_RT)
+    tim::set_env("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
+#endif
+
     int  instrumented = 0;      // count of instrumented functions
     int  errflag      = 0;      // determine if error has occured.  default 0
     bool loadlib      = false;  // do we have a library loaded? default false
@@ -1144,6 +1188,8 @@ main(int argc, char** argv)
     char* tvalue = nullptr;
     char* fvalue = nullptr;
     char* ovalue = nullptr;
+    char* rvalue = nullptr;
+    char* evalue = nullptr;
     int   index;
     int   c;
 
@@ -1165,7 +1211,7 @@ main(int argc, char** argv)
     {
         opterr = 0;
 
-        while((c = getopt(argc, argv, "vT:X:o:f:d:")) != -1)
+        while((c = getopt(argc, argv, "vT:X:o:f:d:r:e:")) != -1)
             switch(c)
             {
                 case 'v':
@@ -1189,6 +1235,20 @@ main(int argc, char** argv)
                     ovalue        = optarg;
                     binaryRewrite = 1; /* binary rewrite is true */
                     strcpy(outfile, ovalue);
+                    break;
+                case 'r':
+                    rvalue = optarg;
+                    printf("regex include: %s\n", rvalue);
+                    regex_include.push_back(
+                        std::regex(rvalue, std::regex_constants::ECMAScript |
+                                               std::regex_constants::icase));
+                    break;
+                case 'e':
+                    evalue = optarg;
+                    printf("regex exclude: %s\n", evalue);
+                    regex_exclude.push_back(
+                        std::regex(evalue, std::regex_constants::ECMAScript |
+                                               std::regex_constants::icase));
                     break;
                 case '?':
                     if(optopt == 'X' || optopt == 'f' || optopt == 'o')

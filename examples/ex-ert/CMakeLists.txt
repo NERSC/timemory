@@ -22,7 +22,7 @@ option(USE_CUDA "Enable CUDA" ${_USE_CUDA})
 option(USE_KOKKOS "Enable Kokkos" OFF)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-ert-example)
-set(COMPONENTS compile-options vector analysis-tools OPTIONAL_COMPONENTS arch mpi)
+set(COMPONENTS headers compile-options vector analysis-tools OPTIONAL_COMPONENTS cxx arch mpi)
 
 if(USE_CUDA)
     check_language(CUDA)

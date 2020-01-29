@@ -37,7 +37,7 @@
 
 #if defined(TIMEMORY_USE_CUPTI)
 
-#include "timemory/components/cupti/counters.hpp"
+#    include "timemory/components/cupti/counters.hpp"
 
 //======================================================================================//
 

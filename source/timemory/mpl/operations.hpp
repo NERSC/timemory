@@ -1474,10 +1474,10 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::nvtx_marker, false)
 #    if defined(TIMEMORY_USE_CUPTI)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cupti_activity, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cupti_counters, true)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
+// TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
+// TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
+// TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
+// TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
 #    endif
 
 //======================================================================================//
