@@ -252,10 +252,10 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
             }
 
             // wait master thread notifies to proceed
+            // if(fbarrier)
+            //    fbarrier->notify_wait();
             if(fbarrier)
-                fbarrier->notify_wait();
-            // if(lbarrier)
-            //    lbarrier->spin_wait();
+                fbarrier->spin_wait();
 
             // get instance of object measuring something during the calculation
             _Counter ct = _counter.get_counter();
@@ -304,10 +304,10 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
             }
 
             // wait master thread notifies to proceed
+            // if(lbarrier)
+            //    lbarrier->notify_wait();
             if(lbarrier)
-                lbarrier->notify_wait();
-            // if(fbarrier)
-            //    fbarrier->spin_wait();
+                lbarrier->spin_wait();
 
             // stop the timer or anything else being recorded
             ct.stop();
@@ -351,6 +351,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
         for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
             threads.push_back(std::thread(_opfunc, i, &fbarrier, &lbarrier));
 
+        /*
         uint64_t n = _counter.params.working_set_min;
         while(n <= _counter.nsize)
         {
@@ -361,7 +362,7 @@ ops_main(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
             // barrier to finish
             lbarrier.notify_wait();
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
-        }
+        }*/
 
         // wait for threads to finish
         for(auto& itr : threads)
