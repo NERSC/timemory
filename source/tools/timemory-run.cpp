@@ -134,10 +134,9 @@ instrument_entity(const string& function_name)
     if(function_name.find("tim::") == 0)
         return false;
 
-    auto is_include = [&]()
-    {
+    auto is_include = [&]() {
         if(regex_include.empty())
-            return true;        
+            return true;
         for(auto& itr : regex_include)
         {
             if(std::regex_search(function_name, itr))
@@ -145,9 +144,8 @@ instrument_entity(const string& function_name)
         }
         return false;
     };
-    
-    auto is_exclude = [&]()
-    {
+
+    auto is_exclude = [&]() {
         for(auto& itr : regex_exclude)
         {
             if(std::regex_search(function_name, itr))
@@ -156,7 +154,7 @@ instrument_entity(const string& function_name)
         return false;
     };
 
-    bool use = is_include() && !is_exclude();    
+    bool use = is_include() && !is_exclude();
     if(use && debugPrint)
         PRINT_HERE("%s", function_name.c_str());
     return use;

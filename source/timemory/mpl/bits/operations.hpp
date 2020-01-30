@@ -599,17 +599,20 @@ struct print_header : public common_utils
         utility::write_header(_os, "% SELF", f_self, w_self, p_self);
 
         _os.insert_break();
-        for(size_t i = 0; i < _labels.size() - 1; ++i)
+        if(_labels.size() > 0)
         {
-            utility::write_header(_os, "METRIC");
-            utility::write_header(_os, "UNITS");
-            if(trait::report_sum<Type>::value)
-                utility::write_header(_os, "SUM", f_value, w_value, p_value);
-            if(trait::report_mean<Type>::value)
-                utility::write_header(_os, "MEAN", f_value, w_value, p_value);
-            print_statistics<_Tp>::get_header(_os, _stats);
-            utility::write_header(_os, "% SELF", f_self, w_self, p_self);
-            _os.insert_break();
+            for(size_t i = 0; i < _labels.size() - 1; ++i)
+            {
+                utility::write_header(_os, "METRIC");
+                utility::write_header(_os, "UNITS");
+                if(trait::report_sum<Type>::value)
+                    utility::write_header(_os, "SUM", f_value, w_value, p_value);
+                if(trait::report_mean<Type>::value)
+                    utility::write_header(_os, "MEAN", f_value, w_value, p_value);
+                print_statistics<_Tp>::get_header(_os, _stats);
+                utility::write_header(_os, "% SELF", f_self, w_self, p_self);
+                _os.insert_break();
+            }
         }
     }
 
