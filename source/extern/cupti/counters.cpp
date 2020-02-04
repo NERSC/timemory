@@ -27,6 +27,8 @@
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
+#include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -34,6 +36,14 @@
 #include "timemory/utility/utility.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
+
+#    include "timemory/components/cupti/counters.hpp"
+
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::cupti_counters, true)
+
+//======================================================================================//
 
 namespace tim
 {
@@ -43,7 +53,7 @@ namespace component
 {
 //
 //
-
+template struct base<cupti_counters, cupti::profiler::results_t>;
 //
 //
 }  // namespace component

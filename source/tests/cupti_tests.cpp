@@ -650,10 +650,8 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
-    tim::dmp::finalize();
+    tim::timemory_finalize();
     return ret;
-
-    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

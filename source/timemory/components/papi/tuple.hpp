@@ -27,9 +27,13 @@
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/data/storage.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/storage.hpp"
+
+//======================================================================================//
+
+TIMEMORY_VARIADIC_STATISTICS_TYPE(component::papi_tuple, std::vector<double>, int)
 
 //======================================================================================//
 
@@ -359,7 +363,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    static array_t<std::string> descript_array()
+    static array_t<std::string> description_array()
     {
         array_t<std::string> arr;
         for(size_type i = 0; i < num_events; ++i)

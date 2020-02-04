@@ -33,20 +33,62 @@
 #include "timemory/backends/rusage.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/data/storage.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/storage.hpp"
+
+//======================================================================================//
+
+// clang-format off
+namespace tim { namespace alias {
+using tuple_f8_f8_t = std::tuple<double, double>;
+using pair_f8_f8_t = std::pair<double, double>;
+template <size_t N>
+using farray_t = std::array<double, N>;
+} }
+// clang-format on
+
+TIMEMORY_STATISTICS_TYPE(component::peak_rss, double)
+TIMEMORY_STATISTICS_TYPE(component::page_rss, double)
+TIMEMORY_STATISTICS_TYPE(component::stack_rss, double)
+TIMEMORY_STATISTICS_TYPE(component::data_rss, double)
+TIMEMORY_STATISTICS_TYPE(component::num_swap, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::num_io_in, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::num_io_out, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::num_minor_page_faults, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::num_major_page_faults, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::num_msg_sent, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::num_msg_recv, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::num_signals, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::voluntary_context_switch, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::priority_context_switch, int64_t)
+TIMEMORY_STATISTICS_TYPE(component::read_bytes, tim::alias::tuple_f8_f8_t)
+TIMEMORY_STATISTICS_TYPE(component::written_bytes, tim::alias::farray_t<2>)
+TIMEMORY_STATISTICS_TYPE(component::virtual_memory, double)
+TIMEMORY_STATISTICS_TYPE(component::user_mode_time, double)
+TIMEMORY_STATISTICS_TYPE(component::kernel_mode_time, double)
+TIMEMORY_STATISTICS_TYPE(component::current_peak_rss, tim::alias::pair_f8_f8_t)
 
 //======================================================================================//
 
 namespace tim
 {
+namespace trait
+{
+template <>
+struct echo_enabled<component::written_bytes> : std::false_type
+{};
+template <>
+struct echo_enabled<component::read_bytes> : std::false_type
+{};
+}  // namespace trait
 namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
 extern template struct base<peak_rss>;
+extern template struct base<current_peak_rss, std::pair<int64_t, int64_t>>;
 extern template struct base<page_rss>;
 extern template struct base<stack_rss>;
 extern template struct base<data_rss>;
@@ -63,6 +105,9 @@ extern template struct base<priority_context_switch>;
 extern template struct base<read_bytes, std::tuple<int64_t, int64_t>>;
 extern template struct base<written_bytes, std::tuple<int64_t, int64_t>>;
 extern template struct base<virtual_memory>;
+extern template struct base<user_mode_time>;
+extern template struct base<kernel_mode_time>;
+extern template struct base<current_peak_rss, std::pair<int64_t, int64_t>>;
 
 #endif
 
@@ -80,18 +125,15 @@ extern template struct base<virtual_memory>;
 //
 struct peak_rss : public base<peak_rss>
 {
-    using value_type = int64_t;
-    using base_type  = base<peak_rss, value_type>;
-
     static std::string label() { return "peak_rss"; }
     static std::string description() { return "max resident set size"; }
     static value_type  record() { return get_peak_rss(); }
-    double             get_display() const
+    double             get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    double get() const { return get_display(); }
+    double get_display() const { return get(); }
     void   start()
     {
         set_started();
@@ -114,20 +156,22 @@ struct peak_rss : public base<peak_rss>
 /// memory. Unlike the peak_rss, this value will fluctuate as memory gets freed and
 /// allocated
 //
-struct page_rss : public base<page_rss>
+struct page_rss : public base<page_rss, int64_t>
 {
-    using value_type = int64_t;
-    using base_type  = base<page_rss, value_type>;
+    using value_type  = int64_t;
+    using result_type = double;
+    using this_type   = page_rss;
+    using base_type   = base<this_type, value_type>;
 
     static std::string label() { return "page_rss"; }
     static std::string description() { return "resident set size of memory pages"; }
     static value_type  record() { return get_page_rss(); }
-    double             get_display() const
+    double             get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    double get() const { return get_display(); }
+    double get_display() const { return get(); }
     void   start()
     {
         set_started();
@@ -143,15 +187,15 @@ struct page_rss : public base<page_rss>
     }
 };
 
-using current_rss = page_rss;
+// using current_peak_rss = page_rss;
 
 //--------------------------------------------------------------------------------------//
 /// \class stack_rss
 /// \brief
-/// an integral value indicating the amount of memory used by the text segment that was
-/// also shared among other processes.
 /// an integral value of the amount of unshared memory residing in the stack segment
 /// of a process
+/// Unmaintained by Unix kernel. Globally disabled
+/// unless TIMEMORY_USE_UNMAINTAINED_RUSAGE is defined
 //
 struct stack_rss : public base<stack_rss>
 {
@@ -162,12 +206,12 @@ struct stack_rss : public base<stack_rss>
     static std::string label() { return "stack_rss"; }
     static std::string description() { return "integral unshared stack size"; }
     static value_type  record() { return get_stack_rss(); }
-    double             get_display() const
+    double             get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    double get() const { return get_display(); }
+    double get_display() const { return get(); }
     void   start()
     {
         set_started();
@@ -188,6 +232,8 @@ struct stack_rss : public base<stack_rss>
 /// \brief
 /// an integral value of the amount of unshared memory residing in the data segment of
 /// a process
+/// Unmaintained by Unix kernel. Globally disabled
+/// unless TIMEMORY_USE_UNMAINTAINED_RUSAGE is defined
 //
 struct data_rss : public base<data_rss>
 {
@@ -198,12 +244,12 @@ struct data_rss : public base<data_rss>
     static std::string label() { return "data_rss"; }
     static std::string description() { return "integral unshared data size"; }
     static value_type  record() { return get_data_rss(); }
-    double             get_display() const
+    double             get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    double get() const { return get_display(); }
+    double get_display() const { return get(); }
     void   start()
     {
         set_started();
@@ -223,6 +269,8 @@ struct data_rss : public base<data_rss>
 /// \class num_swap
 /// \brief
 /// the number of times a process was swapped out of main memory.
+/// Unmaintained by Unix kernel. Globally disabled
+/// unless TIMEMORY_USE_UNMAINTAINED_RUSAGE is defined
 //
 struct num_swap : public base<num_swap>
 {
@@ -236,13 +284,13 @@ struct num_swap : public base<num_swap>
     static std::string label() { return "num_swap"; }
     static std::string description() { return "swaps out of main memory"; }
     static value_type  record() { return get_num_swap(); }
-    value_type         get_display() const
+    value_type         get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get_display() const { return get(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -273,13 +321,13 @@ struct num_io_in : public base<num_io_in>
     static std::string label() { return "io_in"; }
     static std::string description() { return "block input operations"; }
     static value_type  record() { return get_num_io_in(); }
-    value_type         get_display() const
+    value_type         get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get_display() const { return get(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -310,13 +358,13 @@ struct num_io_out : public base<num_io_out>
     static std::string label() { return "io_out"; }
     static std::string description() { return "block output operations"; }
     static value_type  record() { return get_num_io_out(); }
-    value_type         get_display() const
+    value_type         get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get_display() const { return get(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -348,13 +396,13 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     static std::string label() { return "minor_page_flts"; }
     static std::string description() { return "page reclaims"; }
     static value_type  record() { return get_num_minor_page_faults(); }
-    value_type         get_display() const
+    value_type         get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get_display() const { return get(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -385,13 +433,13 @@ struct num_major_page_faults : public base<num_major_page_faults>
     static std::string label() { return "major_page_flts"; }
     static std::string description() { return "page faults"; }
     static value_type  record() { return get_num_major_page_faults(); }
-    value_type         get_display() const
+    value_type         get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get_display() const { return get(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -409,6 +457,8 @@ struct num_major_page_faults : public base<num_major_page_faults>
 /// \class num_msg_sent
 /// \brief
 /// the number of IPC messages sent.
+/// Unmaintained by Unix kernel. Globally disabled
+/// unless TIMEMORY_USE_UNMAINTAINED_RUSAGE is defined
 //
 struct num_msg_sent : public base<num_msg_sent>
 {
@@ -422,13 +472,13 @@ struct num_msg_sent : public base<num_msg_sent>
     static std::string label() { return "num_msg_sent"; }
     static std::string description() { return "messages sent"; }
     static value_type  record() { return get_num_messages_sent(); }
-    value_type         get_display() const
+    value_type         get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get_display() const { return get(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -446,6 +496,8 @@ struct num_msg_sent : public base<num_msg_sent>
 /// \class num_msg_recv
 /// \brief
 /// the number of IPC messages received.
+/// Unmaintained by Unix kernel. Globally disabled
+/// unless TIMEMORY_USE_UNMAINTAINED_RUSAGE is defined
 //
 struct num_msg_recv : public base<num_msg_recv>
 {
@@ -459,13 +511,13 @@ struct num_msg_recv : public base<num_msg_recv>
     static std::string label() { return "num_msg_recv"; }
     static std::string description() { return "messages received"; }
     static value_type  record() { return get_num_messages_received(); }
-    value_type         get_display() const
+    value_type         get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get_display() const { return get(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -481,8 +533,9 @@ struct num_msg_recv : public base<num_msg_recv>
 
 //--------------------------------------------------------------------------------------//
 /// \class num_signals
-/// \brief
-/// the number of signals delivered
+/// \brief the number of signals delivered.
+/// Unmaintained by Unix kernel. Globally disabled
+/// unless TIMEMORY_USE_UNMAINTAINED_RUSAGE is defined
 //
 struct num_signals : public base<num_signals>
 {
@@ -498,11 +551,11 @@ struct num_signals : public base<num_signals>
     static value_type  record() { return get_num_signals(); }
     value_type         get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get() const { return get_display(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -537,11 +590,11 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
     static value_type  record() { return get_num_voluntary_context_switch(); }
     value_type         get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get() const { return get_display(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -578,11 +631,11 @@ struct priority_context_switch : public base<priority_context_switch>
     static value_type  record() { return get_num_priority_context_switch(); }
     value_type         get_display() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    double get() const { return get_display(); }
-    void   start()
+    value_type get() const { return get_display(); }
+    void       start()
     {
         set_started();
         value = record();
@@ -606,14 +659,44 @@ using prio_cxt_switch = priority_context_switch;
 //
 struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 {
+    using this_type   = read_bytes;
     using value_type  = std::tuple<int64_t, int64_t>;
-    using base_type   = base<read_bytes, value_type>;
+    using base_type   = base<this_type, value_type>;
     using timer_type  = wall_clock;
-    using result_type = std::tuple<int64_t, double>;
+    using result_type = std::tuple<double, double>;
 
-    static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "read_bytes"; }
     static std::string description() { return "physical I/O reads"; }
+
+    static std::tuple<double, double> unit()
+    {
+        return std::tuple<double, double>{
+            units::kilobyte, static_cast<double>(units::kilobyte) / units::sec
+        };
+    }
+
+    static std::vector<std::string> display_unit_array()
+    {
+        return std::vector<std::string>{ std::get<0>(get_display_unit()),
+                                         std::get<1>(get_display_unit()) };
+    }
+
+    static std::vector<std::string> label_array()
+    {
+        return std::vector<std::string>{ label(), "read_rate" };
+    }
+
+    static display_unit_type display_unit()
+    {
+        return display_unit_type{ "KB", "KB/sec" };
+    }
+
+    static std::tuple<double, double> unit_array() { return unit(); }
+
+    static std::vector<std::string> description_array()
+    {
+        return std::vector<std::string>{ "Number of bytes read", "Rate of bytes read" };
+    }
 
     static value_type record()
     {
@@ -626,19 +709,19 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         auto              _prec  = base_type::get_precision();
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
-        auto              _disp  = base_type::get_display_unit();
+        auto              _disp  = get_display_unit();
 
         auto _val = get();
 
         ssv.setf(_flags);
         ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
-        if(!_disp.empty())
-            ssv << " " << _disp;
+        if(!std::get<0>(_disp).empty())
+            ssv << " " << std::get<0>(_disp);
 
         ssr.setf(_flags);
         ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
-        if(!_disp.empty())
-            ssr << " " << _disp << "/" << timer_type::get_display_unit();
+        if(!std::get<1>(_disp).empty())
+            ssr << " " << std::get<1>(_disp);
 
         ss << ssv.str() << ", " << ssr.str();
         ss << " read";
@@ -647,15 +730,30 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 
     result_type get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
 
-        auto data  = std::get<0>(val) / base_type::get_unit();
-        auto delta = static_cast<double>(std::get<1>(val) /
-                                         static_cast<double>(timer_type::ratio_t::den) *
-                                         timer_type::get_unit());
-        auto rate  = data / delta;
+        double data  = std::get<0>(val);
+        double delta = std::get<1>(val);
+
+        if(!is_transient)
+            delta = timer_type::record() - delta;
+
+        delta /= static_cast<double>(timer_type::ratio_t::den);
+        delta *= timer_type::get_unit();
+
+        double rate = 0.0;
+        if(delta != 0.0)
+            rate = data / delta;
+
+        if(laps > 0)
+            rate *= laps;
+
+        data /= std::get<0>(get_unit());
+        rate /= std::get<0>(get_unit());
+
         if(!std::isfinite(rate))
             rate = 0.0;
+
         return result_type(data, rate);
     }
 
@@ -667,11 +765,63 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
+        auto tmp          = record();
+        auto diff         = tmp - value;
+        std::get<0>(diff) = std::abs(std::get<0>(diff));
+        accum += diff;
         value = std::move(tmp);
         set_stopped();
     }
+
+    static unit_type get_unit()
+    {
+        static auto  _instance = this_type::unit();
+        static auto& _mem      = std::get<0>(_instance);
+        static auto& _rate     = std::get<1>(_instance);
+
+        if(settings::memory_units().length() > 0)
+            _mem = std::get<1>(units::get_memory_unit(settings::memory_units()));
+
+        if(settings::timing_units().length() > 0)
+        {
+            auto _timing_val =
+                std::get<1>(units::get_timing_unit(settings::timing_units()));
+            _rate = _mem / (_timing_val);
+        }
+
+        static const auto factor = static_cast<double>(timer_type::ratio_t::den);
+        unit_type         _tmp   = _instance;
+        std::get<1>(_tmp) *= factor;
+
+        return _tmp;
+    }
+
+    static display_unit_type get_display_unit()
+    {
+        static display_unit_type _instance = this_type::display_unit();
+        static auto&             _mem      = std::get<0>(_instance);
+        static auto&             _rate     = std::get<1>(_instance);
+
+        if(settings::memory_units().length() > 0)
+            _mem = std::get<0>(units::get_memory_unit(settings::memory_units()));
+
+        if(settings::timing_units().length() > 0)
+        {
+            auto _tval = std::get<0>(units::get_timing_unit(settings::timing_units()));
+            _rate      = apply<std::string>::join("/", _mem, _tval);
+        }
+        else if(settings::memory_units().length() > 0)
+        {
+            _rate = apply<std::string>::join("/", _mem, "sec");
+        }
+
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // record a measurment (for file sampling)
+    //
+    void measure() { std::get<0>(value) = get_bytes_read(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -679,20 +829,50 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 /// \brief I/O counter: Attempt to count the number of bytes which this process caused to
 /// be sent to the storage layer. This is done at page-dirtying time.
 //
-struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
+struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 {
-    using value_type  = std::tuple<int64_t, int64_t>;
-    using base_type   = base<written_bytes, value_type>;
+    using this_type   = written_bytes;
+    using value_type  = std::array<int64_t, 2>;
+    using base_type   = base<this_type, value_type>;
     using timer_type  = wall_clock;
-    using result_type = std::tuple<int64_t, double>;
+    using result_type = std::array<double, 2>;
 
-    static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "written_bytes"; }
     static std::string description() { return "physical I/O writes"; }
 
+    static result_type unit()
+    {
+        return result_type{ { units::kilobyte,
+                              static_cast<double>(units::kilobyte) / units::sec } };
+    }
+
+    static std::vector<std::string> display_unit_array()
+    {
+        return std::vector<std::string>{ std::get<0>(get_display_unit()),
+                                         std::get<1>(get_display_unit()) };
+    }
+
+    static std::vector<std::string> label_array()
+    {
+        return std::vector<std::string>{ label(), "written_rate" };
+    }
+
+    static display_unit_type display_unit()
+    {
+        return display_unit_type{ { "KB", "KB/sec" } };
+    }
+
+    static std::array<double, 2> unit_array() { return unit(); }
+
+    static std::vector<std::string> description_array()
+    {
+        return std::vector<std::string>{ "Number of bytes written",
+                                         "Rate of bytes written" };
+    }
+
     static value_type record()
     {
-        return value_type(get_bytes_written(), timer_type::record());
+        return value_type{ { get_bytes_written(), timer_type::record() } };
     }
 
     std::string get_display() const
@@ -701,19 +881,19 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         auto              _prec  = base_type::get_precision();
         auto              _width = base_type::get_width();
         auto              _flags = base_type::get_format_flags();
-        auto              _disp  = base_type::get_display_unit();
+        auto              _disp  = get_display_unit();
 
         auto _val = get();
 
         ssv.setf(_flags);
         ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
-        if(!_disp.empty())
-            ssv << " " << _disp;
+        if(!std::get<0>(_disp).empty())
+            ssv << " " << std::get<0>(_disp);
 
         ssr.setf(_flags);
         ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
-        if(!_disp.empty())
-            ssr << " " << _disp << "/" << timer_type::get_display_unit();
+        if(!std::get<1>(_disp).empty())
+            ssr << " " << std::get<1>(_disp);
 
         ss << ssv.str() << ", " << ssr.str();
         ss << " written";
@@ -722,16 +902,31 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 
     result_type get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
 
-        auto data  = std::get<0>(val) / base_type::get_unit();
-        auto delta = static_cast<double>(std::get<1>(val) /
-                                         static_cast<double>(timer_type::ratio_t::den) *
-                                         timer_type::get_unit());
-        auto rate  = data / delta;
+        double data  = std::get<0>(val);
+        double delta = std::get<1>(val);
+
+        if(!is_transient)
+            delta = timer_type::record() - delta;
+
+        delta /= static_cast<double>(timer_type::ratio_t::den);
+        delta *= timer_type::get_unit();
+
+        double rate = 0.0;
+        if(delta != 0.0)
+            rate = data / delta;
+
+        if(laps > 0)
+            rate *= laps;
+
+        data /= std::get<0>(get_unit());
+        rate /= std::get<0>(get_unit());
+
         if(!std::isfinite(rate))
             rate = 0.0;
-        return result_type(data, rate);
+
+        return result_type{ { data, rate } };
     }
 
     void start()
@@ -742,11 +937,66 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        auto tmp  = record();
+        auto diff = tmp;
+        diff[0] -= value[0];
+        diff[1] -= value[1];
+        diff[0] = std::abs(diff[0]);
+        accum[0] += diff[0];
+        accum[1] += diff[1];
+        value = tmp;
         set_stopped();
     }
+
+    static unit_type get_unit()
+    {
+        static auto  _instance = this_type::unit();
+        static auto& _mem      = std::get<0>(_instance);
+        static auto& _rate     = std::get<1>(_instance);
+
+        if(settings::memory_units().length() > 0)
+            _mem = std::get<1>(units::get_memory_unit(settings::memory_units()));
+
+        if(settings::timing_units().length() > 0)
+        {
+            auto _timing_val =
+                std::get<1>(units::get_timing_unit(settings::timing_units()));
+            _rate = _mem / (_timing_val);
+        }
+
+        static const auto factor = static_cast<double>(timer_type::ratio_t::den);
+        unit_type         _tmp   = _instance;
+        std::get<1>(_tmp) *= factor;
+
+        return _tmp;
+    }
+
+    static display_unit_type get_display_unit()
+    {
+        static display_unit_type _instance = this_type::display_unit();
+        static auto&             _mem      = std::get<0>(_instance);
+        static auto&             _rate     = std::get<1>(_instance);
+
+        if(settings::memory_units().length() > 0)
+            _mem = std::get<0>(units::get_memory_unit(settings::memory_units()));
+
+        if(settings::timing_units().length() > 0)
+        {
+            auto _tval = std::get<0>(units::get_timing_unit(settings::timing_units()));
+            _rate      = apply<std::string>::join("/", _mem, _tval);
+        }
+        else if(settings::memory_units().length() > 0)
+        {
+            _rate = apply<std::string>::join("/", _mem, "sec");
+        }
+
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // record a measurment (for file sampling)
+    //
+    void measure() { std::get<0>(value) = get_bytes_written(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -762,12 +1012,12 @@ struct virtual_memory : public base<virtual_memory>
     static std::string label() { return "virtual_memory"; }
     static std::string description() { return "virtual memory usage"; }
     static value_type  record() { return get_virt_mem(); }
-    double             get_display() const
+    double             get() const
     {
-        auto val = (is_transient) ? static_cast<value_type>(accum) : value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    double get() const { return get_display(); }
+    double get_display() const { return get(); }
     void   start()
     {
         set_started();
@@ -782,6 +1032,205 @@ struct virtual_memory : public base<virtual_memory>
         set_stopped();
     }
 };
+
 //--------------------------------------------------------------------------------------//
+/// \class user_mode_time
+/// \brief This is the total amount of time spent executing in user mode
+//
+struct user_mode_time : public base<user_mode_time, int64_t>
+{
+    using ratio_t    = std::micro;
+    using value_type = int64_t;
+    using this_type  = user_mode_time;
+    using base_type  = base<this_type, value_type>;
+
+    static std::string label() { return "user_mode"; }
+    static std::string description() { return "Time spent executing in user mode"; }
+    static value_type  record() { return get_user_mode_time(); }
+
+    double get_display() const { return get(); }
+    double get() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return static_cast<double>(val) / ratio_t::den * get_unit();
+    }
+
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+
+    void stop()
+    {
+        auto tmp = record();
+        if(tmp > value)
+        {
+            accum += (tmp - value);
+            value = std::move(tmp);
+        }
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// \class kernel_mode_time
+/// \brief This is the total amount of time spent executing in kernel mode
+//
+struct kernel_mode_time : public base<kernel_mode_time, int64_t>
+{
+    using ratio_t    = std::micro;
+    using value_type = int64_t;
+    using this_type  = kernel_mode_time;
+    using base_type  = base<this_type, value_type>;
+
+    static std::string label() { return "kernel_mode"; }
+    static std::string description() { return "Time spent executing in kernel mode"; }
+    static value_type  record() { return get_kernel_mode_time(); }
+
+    double get_display() const { return get(); }
+    double get() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return static_cast<double>(val) / ratio_t::den * get_unit();
+    }
+
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+
+    void stop()
+    {
+        auto tmp = record();
+        if(tmp > value)
+        {
+            accum += (tmp - value);
+            value = std::move(tmp);
+        }
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// \class current_peak_rss
+/// \brief
+/// this struct extracts the high-water mark of the resident set size (RSS) at start
+/// and stop. RSS is current amount of memory in RAM.
+//
+struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64_t>>
+{
+    using unit_type         = std::pair<int64_t, int64_t>;
+    using display_unit_type = std::pair<std::string, std::string>;
+    using result_type       = std::pair<double, double>;
+    using this_type         = current_peak_rss;
+
+    static std::string label() { return "current_peak_rss"; }
+    static std::string description() { return "current resident set size"; }
+    static value_type  record() { return value_type{ get_peak_rss(), 0 }; }
+
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+
+    void stop()
+    {
+        value = value_type{ value.first, record().first };
+        accum = std::max(accum, value);
+        set_stopped();
+    }
+
+    std::string get_display() const
+    {
+        std::stringstream ss, ssv, ssr;
+        auto              _prec  = base_type::get_precision();
+        auto              _width = base_type::get_width();
+        auto              _flags = base_type::get_format_flags();
+        auto              _disp  = get_display_unit();
+
+        auto _val = get();
+
+        ssv.setf(_flags);
+        ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
+        if(!std::get<0>(_disp).empty())
+            ssv << " " << std::get<0>(_disp);
+
+        ssr.setf(_flags);
+        ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
+        if(!std::get<1>(_disp).empty())
+            ssr << " " << std::get<1>(_disp);
+
+        ss << ssv.str() << ", " << ssr.str();
+        return ss.str();
+    }
+
+    result_type get() const
+    {
+        result_type data = (is_transient) ? accum : value;
+        data.first /= get_unit().first;
+        data.second /= get_unit().second;
+        return data;
+    }
+
+    static std::pair<double, double> unit()
+    {
+        return std::pair<double, double>{ units::megabyte, units::megabyte };
+    }
+
+    static std::vector<std::string> display_unit_array()
+    {
+        return std::vector<std::string>{ get_display_unit().first,
+                                         get_display_unit().second };
+    }
+
+    static std::vector<std::string> label_array()
+    {
+        return std::vector<std::string>{ "start peak rss", " stop peak rss" };
+    }
+
+    static display_unit_type display_unit() { return display_unit_type{ "MB", "MB" }; }
+
+    static std::pair<double, double> unit_array() { return unit(); }
+
+    static std::vector<std::string> description_array()
+    {
+        return std::vector<std::string>{ "Resident set size at start",
+                                         "Resident set size at stop" };
+    }
+
+    static unit_type get_unit()
+    {
+        static auto  _instance = this_type::unit();
+        static auto& _mem      = _instance;
+
+        if(settings::memory_units().length() > 0)
+        {
+            _mem.first  = std::get<1>(units::get_memory_unit(settings::memory_units()));
+            _mem.second = std::get<1>(units::get_memory_unit(settings::memory_units()));
+        }
+
+        return _mem;
+    }
+
+    static display_unit_type get_display_unit()
+    {
+        static display_unit_type _instance = this_type::display_unit();
+        static auto&             _mem      = _instance;
+
+        if(settings::memory_units().length() > 0)
+        {
+            _mem.first  = std::get<0>(units::get_memory_unit(settings::memory_units()));
+            _mem.second = std::get<0>(units::get_memory_unit(settings::memory_units()));
+        }
+
+        return _mem;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace component
 }  // namespace tim

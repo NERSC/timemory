@@ -24,7 +24,7 @@
 //
 
 /** \file base_storage.hpp
- * \headerfile base_storage.hpp "timemory/utility/base_storage.hpp"
+ * \headerfile base_storage.hpp "timemory/data/base_storage.hpp"
  * Storage of the call-graph for each component. Each component has a thread-local
  * singleton that holds the call-graph. When a worker thread is deleted, it merges
  * itself back into the master thread storage. When the master thread is deleted,
@@ -139,6 +139,7 @@ public:
     virtual void print()       = 0;
     virtual void cleanup()     = 0;
     virtual void stack_clear() = 0;
+    virtual void disable()     = 0;
     virtual void initialize()  = 0;
     virtual void finalize()    = 0;
 

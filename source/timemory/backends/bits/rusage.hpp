@@ -378,6 +378,13 @@ tim::get_bytes_read()
     if(proc_pid_rusage(get_rusage_pid(), RUSAGE_INFO_CURRENT, (void**) &rusage) == 0)
         return rusage.ri_diskio_bytesread;
 #elif defined(_LINUX)
+
+#    if defined(TIMEM_DEBUG)
+    if(get_env("TIMEM_DEBUG", false))
+        printf("[%s@%s:%i]> using pid %li\n", __func__, __FILE__, __LINE__,
+               (long int) get_rusage_pid());
+#    endif
+
     std::stringstream fio;
     fio << "/proc/" << get_rusage_pid() << "/io";
     std::string   label = "";
@@ -385,14 +392,18 @@ tim::get_bytes_read()
     std::ifstream ifs(fio.str().c_str());
     if(ifs)
     {
-        static constexpr int max_lines = 7;
+        static constexpr int max_lines = 1;
         for(int i = 0; i < max_lines && !ifs.eof(); ++i)
         {
             ifs >> label;
             ifs >> value;
-            if(label.find("read_bytes") != std::string::npos)
-                return value;
+            // if(label.find("read_bytes") != std::string::npos)
+            //    return value;
+            // if(label.find("rchar") != std::string::npos)
+            //    return value;
         }
+        if(!ifs.eof())
+            return value;
     }
 #endif
     return 0;
@@ -408,6 +419,13 @@ tim::get_bytes_written()
     if(proc_pid_rusage(get_rusage_pid(), RUSAGE_INFO_CURRENT, (void**) &rusage) == 0)
         return rusage.ri_diskio_byteswritten;
 #elif defined(_LINUX)
+
+#    if defined(TIMEM_DEBUG)
+    if(get_env("TIMEM_DEBUG", false))
+        printf("[%s@%s:%i]> using pid %li\n", __func__, __FILE__, __LINE__,
+               (long int) get_rusage_pid());
+#    endif
+
     std::stringstream fio;
     fio << "/proc/" << get_rusage_pid() << "/io";
     std::string   label = "";
@@ -415,14 +433,18 @@ tim::get_bytes_written()
     std::ifstream ifs(fio.str().c_str());
     if(ifs)
     {
-        static constexpr int max_lines = 7;
+        static constexpr int max_lines = 2;
         for(int i = 0; i < max_lines && !ifs.eof(); ++i)
         {
             ifs >> label;
             ifs >> value;
-            if(label.find("write_bytes") != std::string::npos)
-                return value;
+            // if(label.find("write_bytes") != std::string::npos)
+            //     return value;
+            // if(label.find("wchar") != std::string::npos)
+            //    return value;
         }
+        if(!ifs.eof())
+            return value;
     }
 #endif
     return 0;
@@ -454,6 +476,12 @@ tim::get_virt_mem()
 
 #    else  // Linux
 
+#        if defined(TIMEM_DEBUG)
+    if(get_env("TIMEM_DEBUG", false))
+        printf("[%s@%s:%i]> using pid %li\n", __func__, __FILE__, __LINE__,
+               (long int) get_rusage_pid());
+#        endif
+
     static auto get_statm_file = [&]() {
         std::stringstream fio;
         fio << "/proc/" << get_rusage_pid() << "/statm";
@@ -472,6 +500,38 @@ tim::get_virt_mem()
 #    endif
 #elif defined(_WINDOWS)
     return static_cast<int64_t>(0);
+#else
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_user_mode_time()
+{
+#if defined(_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+
+    constexpr int64_t MSEC = 1000000;
+    return static_cast<int64_t>(_usage.ru_utime.tv_sec * MSEC + _usage.ru_utime.tv_usec);
+#else
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_kernel_mode_time()
+{
+#if defined(_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+
+    constexpr int64_t MSEC = 1000000;
+    return static_cast<int64_t>(_usage.ru_stime.tv_sec * MSEC + _usage.ru_stime.tv_usec);
 #else
     return static_cast<int64_t>(0);
 #endif

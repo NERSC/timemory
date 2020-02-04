@@ -65,6 +65,9 @@ inline void
 tim::timemory_init(int argc, char** argv, const std::string& _prefix,
                    const std::string& _suffix)
 {
+    if(settings::debug() || settings::verbose() > 3)
+        PRINT_HERE("%s", "");
+
     std::string exe_name = argv[0];
 
     while(exe_name.find("\\") != std::string::npos)
@@ -149,10 +152,13 @@ tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
 inline void
 tim::timemory_finalize()
 {
-    if(settings::enable_signal_handler() && settings::debug())
-        PRINT_HERE("%s", "disabling signal detection...");
+    if(settings::debug() || settings::verbose() > 3)
+        PRINT_HERE("%s", "");
 
-    disable_signal_detection();
+    // if(settings::enable_signal_handler() && settings::debug())
+    //    PRINT_HERE("%s", "disabling signal detection...");
+
+    // disable_signal_detection();
 
     if(settings::debug())
         PRINT_HERE("%s", "finalizing manager...");
@@ -169,13 +175,12 @@ tim::timemory_finalize()
         upc::finalize();
     }
 
-    if(settings::mpi_finalize())
-    {
-        if(settings::debug())
-            PRINT_HERE("%s", "finalizing mpi...");
-
-        mpi::finalize();
-    }
+    // if(settings::mpi_finalize())
+    // {
+    //    if(settings::debug())
+    //        PRINT_HERE("%s", "finalizing mpi...");
+    //    mpi::finalize();
+    // }
 
     if(settings::debug())
         PRINT_HERE("%s", "done...");

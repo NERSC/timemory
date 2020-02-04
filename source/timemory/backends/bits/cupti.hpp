@@ -158,8 +158,10 @@ namespace cupti
 
 using string_t = std::string;
 template <typename _Key, typename _Mapped>
-using map_t    = std::map<_Key, _Mapped>;
-using strvec_t = std::vector<string_t>;
+using map_t            = std::map<_Key, _Mapped>;
+using strvec_t         = std::vector<string_t>;
+using boolvec_t        = std::vector<bool>;
+using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -168,6 +170,9 @@ using metric_value_t  = CUpti_MetricValue;
 using activity_kind_t = CUpti_ActivityKind;
 using context_t       = CUcontext;
 using device_t        = CUdevice;
+
+inline hwcounter_info_t available_events_info(device_t);
+inline hwcounter_info_t available_metrics_info(device_t);
 #else
 typedef enum
 {
@@ -199,8 +204,10 @@ using context_t       = _CUcontext;
 using device_t        = _CUdevice;
 using activity_kind_t = _tim_activity_kind_t;
 
-inline strvec_t available_metrics(device_t) { return strvec_t{}; }
-inline strvec_t available_events(device_t) { return strvec_t{}; }
+inline strvec_t         available_metrics(device_t) { return strvec_t{}; }
+inline strvec_t         available_events(device_t) { return strvec_t{}; }
+inline hwcounter_info_t available_events_info(device_t) { return hwcounter_info_t{}; }
+inline hwcounter_info_t available_metrics_info(device_t) { return hwcounter_info_t{}; }
 
 #endif
 

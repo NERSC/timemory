@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/utility/impl/storage_true.hpp
- * \headerfile utility/impl/storage_true.hpp "timemory/utility/impl/storage_true.hpp"
+/** \file timemory/data/storage_true.hpp
+ * \headerfile data/storage_true.hpp "timemory/data/storage_true.hpp"
  * Defines storage implementation when the data type is not void
  *
  */
@@ -33,17 +33,18 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/data/base_storage.hpp"
+#include "timemory/data/graph.hpp"
+#include "timemory/data/graph_data.hpp"
 #include "timemory/mpl/bits/operations.hpp"
-#include "timemory/mpl/impl/math.hpp"
 #include "timemory/mpl/math.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
-#include "timemory/utility/base_storage.hpp"
-#include "timemory/utility/graph.hpp"
-#include "timemory/utility/graph_data.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
+#include "timemory/utility/stream.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -61,6 +62,30 @@
 
 namespace tim
 {
+//======================================================================================//
+//      plotting declaration
+//
+namespace plotting
+{
+//--------------------------------------------------------------------------------------//
+//
+template <typename... _Types, typename... _Args,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+void
+plot(_Args&&...);
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... _Types, typename... _Args,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+void
+plot(_Args&&...);
+
+}  // namespace plotting
+
+//======================================================================================//
+//      implementation
+//
 namespace impl
 {
 template <typename StorageType, typename Type,
@@ -89,9 +114,28 @@ public:
     friend struct result_node;
     friend struct graph_node;
 
+    using strvector_t  = std::vector<string_t>;
+    using uintvector_t = std::vector<uint64_t>;
+    using EmptyT       = std::tuple<>;
+
 protected:
     template <typename _Tp>
     struct write_serialization;
+
+    struct storage_data
+    {
+        using type         = typename trait::statistics<Type>::type;
+        using stats_policy = policy::record_statistics<Type, type>;
+        using stats_type   = typename stats_policy::statistics_type;
+        using node_type    = std::tuple<uint64_t, Type, int64_t, stats_type>;
+        using result_type  = std::tuple<uint64_t, Type, string_t, int64_t, uint64_t,
+                                       uintvector_t, stats_type>;
+    };
+
+    using storage_stats_t        = typename storage_data::stats_type;
+    using storage_stats_policy_t = typename storage_data::stats_policy;
+    using storage_node_t         = typename storage_data::node_type;
+    using storage_result_t       = typename storage_data::result_type;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -103,15 +147,18 @@ public:
     using singleton_t    = singleton<this_type, smart_pointer>;
     using pointer        = typename singleton_t::pointer;
     using auto_lock_t    = typename singleton_t::auto_lock_t;
-    using node_tuple_t   = std::tuple<uint64_t, Type, int64_t>;
+    using node_type      = storage_node_t;
+    using stats_type     = storage_stats_t;
+    using result_type    = storage_result_t;
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
-    using strvector_t    = std::vector<string_t>;
-    using result_tuple_t =
-        std::tuple<uint64_t, Type, string_t, int64_t, uint64_t, strvector_t>;
 
     friend struct impl::storage_deleter<this_type>;
     friend struct write_serialization<this_type>;
+    friend struct operation::finalize::storage::get<Type, true>;
+    friend struct operation::finalize::storage::mpi_get<Type, true>;
+    friend struct operation::finalize::storage::upc_get<Type, true>;
+    friend struct operation::finalize::storage::dmp_get<Type, true>;
     friend class tim::manager;
 
 public:
@@ -167,13 +214,13 @@ public:
     //      Result returned from get()
     //
     //----------------------------------------------------------------------------------//
-    struct result_node : public result_tuple_t
+    struct result_node : public result_type
     {
-        using base_type = result_tuple_t;
+        using base_type = result_type;
 
         result_node() = default;
         result_node(base_type&& _base)
-        : result_tuple_t(std::forward<base_type>(_base))
+        : base_type(std::forward<base_type>(_base))
         {}
         ~result_node()                  = default;
         result_node(const result_node&) = default;
@@ -181,19 +228,33 @@ public:
         result_node& operator=(const result_node&) = default;
         result_node& operator=(result_node&&) = default;
 
-        uint64_t&    hash() { return std::get<0>(*this); }
-        Type&        data() { return std::get<1>(*this); }
-        string_t&    prefix() { return std::get<2>(*this); }
-        int64_t&     depth() { return std::get<3>(*this); }
-        uint64_t&    rolling_hash() { return std::get<4>(*this); }
-        strvector_t& hierarchy() { return std::get<5>(*this); }
+        result_node(uint64_t _hash, const Type& _data, const string_t& _prefix,
+                    int64_t _depth, uint64_t _rolling, const uintvector_t& _hierarchy,
+                    const stats_type& _stats)
+        : base_type(_hash, _data, _prefix, _depth, _rolling, _hierarchy, _stats)
+        {}
 
-        const uint64_t&    hash() const { return std::get<0>(*this); }
-        const Type&        data() const { return std::get<1>(*this); }
-        const string_t&    prefix() const { return std::get<2>(*this); }
-        const int64_t&     depth() const { return std::get<3>(*this); }
-        const uint64_t&    rolling_hash() const { return std::get<4>(*this); }
-        const strvector_t& hierarchy() const { return std::get<5>(*this); }
+        uint64_t&     hash() { return std::get<0>(*this); }
+        Type&         data() { return std::get<1>(*this); }
+        string_t&     prefix() { return std::get<2>(*this); }
+        int64_t&      depth() { return std::get<3>(*this); }
+        uint64_t&     rolling_hash() { return std::get<4>(*this); }
+        uintvector_t& hierarchy() { return std::get<5>(*this); }
+        stats_type&   stats() { return std::get<6>(*this); }
+
+        const uint64_t&     hash() const { return std::get<0>(*this); }
+        const Type&         data() const { return std::get<1>(*this); }
+        const string_t&     prefix() const { return std::get<2>(*this); }
+        const int64_t&      depth() const { return std::get<3>(*this); }
+        const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
+        const uintvector_t& hierarchy() const { return std::get<5>(*this); }
+        const stats_type&   stats() const { return std::get<6>(*this); }
+
+        // this is for compatibility with a graph_node
+        uint64_t&       id() { return std::get<0>(*this); }
+        Type&           obj() { return std::get<1>(*this); }
+        const uint64_t& id() const { return std::get<0>(*this); }
+        const Type&     obj() const { return std::get<1>(*this); }
     };
 
     //----------------------------------------------------------------------------------//
@@ -201,26 +262,28 @@ public:
     //      Storage type in graph
     //
     //----------------------------------------------------------------------------------//
-    struct graph_node : public node_tuple_t
+    struct graph_node : public node_type
     {
         using this_type       = graph_node;
-        using base_type       = node_tuple_t;
+        using base_type       = node_type;
         using data_value_type = typename Type::value_type;
         using data_base_type  = typename Type::base_type;
         using string_t        = std::string;
 
-        uint64_t& id() { return std::get<0>(*this); }
-        Type&     obj() { return std::get<1>(*this); }
-        int64_t&  depth() { return std::get<2>(*this); }
+        uint64_t&   id() { return std::get<0>(*this); }
+        Type&       obj() { return std::get<1>(*this); }
+        int64_t&    depth() { return std::get<2>(*this); }
+        stats_type& stats() { return std::get<3>(*this); }
 
-        const uint64_t& id() const { return std::get<0>(*this); }
-        const Type&     obj() const { return std::get<1>(*this); }
-        const int64_t&  depth() const { return std::get<2>(*this); }
+        const uint64_t&   id() const { return std::get<0>(*this); }
+        const Type&       obj() const { return std::get<1>(*this); }
+        const int64_t&    depth() const { return std::get<2>(*this); }
+        const stats_type& stats() const { return std::get<3>(*this); }
 
         string_t get_prefix() const { return master_instance()->get_prefix(*this); }
 
         graph_node()
-        : base_type(0, Type(), 0)
+        : base_type(0, Type(), 0, stats_type{})
         {}
 
         explicit graph_node(base_type&& _base)
@@ -228,7 +291,7 @@ public:
         {}
 
         graph_node(const uint64_t& _id, const Type& _obj, int64_t _depth)
-        : base_type(_id, _obj, _depth)
+        : base_type(_id, _obj, _depth, stats_type{})
         {}
 
         ~graph_node() {}
@@ -240,28 +303,10 @@ public:
 
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
 
-        graph_node& operator+=(const graph_node& rhs)
+        static Type get_dummy()
         {
-            auto&       _obj = obj();
-            const auto& _rhs = rhs.obj();
-            _obj += _rhs;
-            _obj.plus(_rhs);
-            return *this;
-        }
-
-        size_t data_size() const { return sizeof(Type) + 2 * sizeof(int64_t); }
-
-        friend std::ostream& operator<<(std::ostream& os, const graph_node& obj)
-        {
-            std::stringstream ss;
-            auto              _prefix = obj.get_prefix();
-            static auto       _w      = _prefix.length();
-            _w                        = std::max(_w, _prefix.length());
-            ss << "id = " << std::setw(24) << obj.id() << ", depth = " << std::setw(4)
-               << obj.depth() << ", label = " << std::setw(_w) << std::left
-               << obj.get_prefix();
-            os << ss.str();
-            return os;
+            using object_base_t = typename Type::base_type;
+            return object_base_t::dummy();
         }
     };
 
@@ -281,7 +326,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     storage()
-    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::label())
+    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
     {
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -345,6 +390,8 @@ public:
 
     void get_shared_manager();
 
+    virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
+
     virtual void initialize()
     {
         if(m_initialized)
@@ -354,7 +401,7 @@ public:
         m_initialized = true;
     }
 
-    virtual void finalize()
+    virtual void finalize() final
     {
         if(m_finalized)
             return;
@@ -380,13 +427,14 @@ public:
             PRINT_HERE("[%s]> finalizing...", m_label.c_str());
     }
 
-    void stack_clear()
+    virtual void stack_clear() final
     {
+        using Base                       = typename Type::base_type;
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            itr->stop();
-            itr->pop_node();
+            static_cast<Base*>(itr)->stop();
+            static_cast<Base*>(itr)->pop_node();
         }
         m_stack.clear();
     }
@@ -396,7 +444,7 @@ public:
     virtual bool global_init() final
     {
         static auto _lambda = [&]() {
-            if(!m_is_master)
+            if(!m_is_master && master_instance())
                 master_instance()->global_init();
             if(m_is_master)
                 Type::global_init(this);
@@ -413,7 +461,7 @@ public:
     virtual bool thread_init() final
     {
         static auto _lambda = [&]() {
-            if(!m_is_master)
+            if(!m_is_master && master_instance())
                 master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
@@ -431,7 +479,7 @@ public:
     virtual bool data_init() final
     {
         static auto _lambda = [&]() {
-            if(!m_is_master)
+            if(!m_is_master && master_instance())
                 master_instance()->data_init();
             bool _global_init = global_init();
             bool _thread_init = thread_init();
@@ -447,40 +495,93 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    const graph_data_t& data() const { return _data(); }
-    const graph_t&      graph() const { return _data().graph(); }
-    int64_t             depth() const { return (is_finalizing()) ? 0 : _data().depth(); }
+    const graph_data_t& data() const
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+            consume_parameters(_init);
+        }
+        return _data();
+    }
+
+    const graph_t& graph() const
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+            consume_parameters(_init);
+        }
+        return _data().graph();
+    }
+
+    int64_t depth() const
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+            consume_parameters(_init);
+        }
+        return (is_finalizing()) ? 0 : _data().depth();
+    }
 
     //----------------------------------------------------------------------------------//
     //
-    graph_data_t& data() { return _data(); }
-    iterator&     current() { return _data().current(); }
-    graph_t&      graph() { return _data().graph(); }
+    graph_data_t& data()
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = data_init();
+            consume_parameters(_init);
+        }
+        return _data();
+    }
+
+    graph_t& graph()
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = data_init();
+            consume_parameters(_init);
+        }
+        return _data().graph();
+    }
+
+    iterator& current()
+    {
+        if(!is_finalizing())
+        {
+            static thread_local auto _init = data_init();
+            consume_parameters(_init);
+        }
+        return _data().current();
+    }
 
     //----------------------------------------------------------------------------------//
     //
     inline bool     empty() const { return (_data().graph().size() <= 1); }
     inline size_t   size() const { return _data().graph().size() - 1; }
-    inline iterator pop() { return _data().pop_graph(); }
+    inline iterator pop()
+    {
+        auto itr = _data().pop_graph();
+        // if data has popped all the way up to the zeroth (relative) depth
+        // then worker threads should insert a new dummy at the current
+        // master thread id and depth. Be aware, this changes 'm_current' inside
+        // the data graph
+        //
+        if(_data().at_sea_level())
+            _data().add_dummy();
+        return itr;
+    }
 
     result_array_t get();
     dmp_result_t   mpi_get();
     dmp_result_t   upc_get();
     dmp_result_t   dmp_get()
     {
-        auto fallback_get = [&]() { return dmp_result_t(1, get()); };
-
-#if defined(TIMEMORY_USE_UPCXX) && defined(TIMEMORY_USE_MPI)
-        return (mpi::is_initialized())
-                   ? mpi_get()
-                   : ((upc::is_initialized()) ? upc_get() : fallback_get());
-#elif defined(TIMEMORY_USE_UPCXX)
-        return (upc::is_initialized()) ? upc_get() : fallback_get();
-#elif defined(TIMEMORY_USE_MPI)
-        return (mpi::is_initialized()) ? mpi_get() : fallback_get();
-#else
-        return fallback_get();
-#endif
+        dmp_result_t _ret;
+        operation::finalize::storage::dmp_get<Type, true>(*this, _ret);
+        return _ret;
     }
 
     const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
@@ -508,10 +609,8 @@ private:
 public:
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope  = scope::process,
-              enable_if_t<(std::is_same<_Scope, scope::process>::value ||
-                           std::is_same<_Scope, scope::thread>::value),
-                          int> = 0>
+    template <typename _Scope                                              = scope::tree,
+              enable_if_t<(std::is_same<_Scope, scope::tree>::value), int> = 0>
     iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
     {
         // check this now to ensure everything is initialized
@@ -526,7 +625,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope = scope::process,
+    template <typename _Scope                                              = scope::tree,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
     {
@@ -563,15 +662,13 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope  = scope::process,
-              enable_if_t<(std::is_same<_Scope, scope::process>::value ||
-                           std::is_same<_Scope, scope::thread>::value),
-                          int> = 0>
+    template <typename _Scope                                              = scope::tree,
+              enable_if_t<(std::is_same<_Scope, scope::tree>::value), int> = 0>
     iterator insert(const Type& obj, uint64_t hash_id)
     {
-        static bool _global_init = global_init();
-        static bool _thread_init = thread_init();
-        static bool _data_init   = data_init();
+        static bool              _global_init = global_init();
+        static thread_local bool _thread_init = thread_init();
+        static bool              _data_init   = data_init();
         consume_parameters(_global_init, _thread_init, _data_init);
 
         auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
@@ -582,7 +679,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope = scope::process,
+    template <typename _Scope                                              = scope::tree,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     iterator insert(const Type& obj, uint64_t hash_id)
     {
@@ -603,6 +700,8 @@ public:
     template <typename _Vp>
     void append(const secondary_data_t<_Vp>& _secondary)
     {
+        using stats_policy_type = policy::record_statistics<Type>;
+
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
         static bool _data_init   = data_init();
@@ -630,6 +729,11 @@ public:
             // if so, then update
             _nitr->second->obj() += std::get<2>(_secondary);
             _nitr->second->obj().laps += 1;
+            auto& _stats = _nitr->second->stats();
+            IF_CONSTEXPR(trait::record_statistics<Type>::value)
+            {
+                stats_policy_type::apply(_stats, _nitr->second->obj());
+            }
         }
         else
         {
@@ -638,6 +742,12 @@ public:
             _tmp += std::get<2>(_secondary);
             _tmp.laps = 1;
             graph_node_t _node(_hash, _tmp, _depth);
+            _node.stats() += _tmp.get();
+            auto& _stats = _node.stats();
+            IF_CONSTEXPR(trait::record_statistics<Type>::value)
+            {
+                stats_policy_type::apply(_stats, _tmp);
+            }
             m_node_ids[_depth][_hash] = _data().emplace_child(_itr, _node);
         }
     }
@@ -647,6 +757,7 @@ protected:
     void     merge(this_type* itr);
     string_t get_prefix(const graph_node&);
     string_t get_prefix(iterator _node) { return get_prefix(*_node); }
+    string_t get_prefix(const uint64_t& _id);
 
 protected:
     //----------------------------------------------------------------------------------//
@@ -761,6 +872,28 @@ storage<Type, true>::get_prefix(const graph_node& node)
     return _ret;
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename Type>
+std::string
+storage<Type, true>::get_prefix(const uint64_t& id)
+{
+    auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, id);
+    if(_ret.find("unknown-hash=") == 0)
+    {
+        if(!m_is_master)
+        {
+            auto _master = singleton_t::master_instance();
+            return _master->get_prefix(id);
+        }
+        else
+        {
+            return get_hash_identifier(id);
+        }
+    }
+    return _ret;
+}
+
 //======================================================================================//
 
 template <typename Type>
@@ -769,29 +902,53 @@ storage<Type, true>::_data()
 {
     using object_base_t = typename Type::base_type;
 
-    if(m_graph_data_instance == nullptr && !m_is_master)
-    {
-        static bool _data_init = master_instance()->data_init();
-        consume_parameters(_data_init);
-
-        auto         m = *master_instance()->current();
-        graph_node_t node(m.id(), object_base_t::dummy(), m.depth());
-        m_graph_data_instance          = new graph_data_t(node);
-        m_graph_data_instance->depth() = m.depth();
-        if(m_node_ids.size() == 0)
-            m_node_ids[0][0] = m_graph_data_instance->current();
-    }
-    else if(m_graph_data_instance == nullptr)
+    if(m_graph_data_instance == nullptr)
     {
         auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
-        if(!lk.owns_lock())
-            lk.lock();
 
-        std::string _prefix = "> [tot] total";
-        add_hash_id(_prefix);
-        graph_node_t node(0, object_base_t::dummy(), 0);
-        m_graph_data_instance          = new graph_data_t(node);
-        m_graph_data_instance->depth() = 0;
+        if(!m_is_master && master_instance())
+        {
+            static bool _data_init = master_instance()->data_init();
+            auto&       m          = master_instance()->data();
+            consume_parameters(_data_init);
+
+            if(!lk.owns_lock())
+                lk.lock();
+
+            if(m.current())
+            {
+                auto         _current = m.current();
+                auto         _id      = _current->id();
+                auto         _depth   = _current->depth();
+                graph_node_t node(_id, object_base_t::dummy(), _depth);
+                if(!m_graph_data_instance)
+                    m_graph_data_instance = new graph_data_t(node, _depth, &m);
+                m_graph_data_instance->depth()     = _depth;
+                m_graph_data_instance->sea_level() = _depth;
+            }
+            else
+            {
+                graph_node_t node(0, object_base_t::dummy(), 0);
+                if(!m_graph_data_instance)
+                    m_graph_data_instance = new graph_data_t(node, 0, nullptr);
+                m_graph_data_instance->depth()     = 0;
+                m_graph_data_instance->sea_level() = 0;
+            }
+        }
+        else
+        {
+            if(!lk.owns_lock())
+                lk.lock();
+
+            std::string _prefix = "> [tot] total";
+            add_hash_id(_prefix);
+            graph_node_t node(0, object_base_t::dummy(), 0);
+            if(!m_graph_data_instance)
+                m_graph_data_instance = new graph_data_t(node, 0, nullptr);
+            m_graph_data_instance->depth()     = 0;
+            m_graph_data_instance->sea_level() = 0;
+        }
+
         if(m_node_ids.size() == 0)
             m_node_ids[0][0] = m_graph_data_instance->current();
     }
@@ -816,10 +973,8 @@ storage<Type, true>::merge()
     for(auto& itr : m_children)
         merge(itr);
 
-    // create lock but don't immediately lock
+    // create lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-    // lock if not already owned
     if(!l.owns_lock())
         l.lock();
 
@@ -849,11 +1004,8 @@ storage<Type, true>::merge(this_type* itr)
 
     itr->stack_clear();
 
-    // create lock but don't immediately lock
-    // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
+    // create lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-    // lock if not already owned
     if(!l.owns_lock())
         l.lock();
 
@@ -870,7 +1022,7 @@ storage<Type, true>::merge(this_type* itr)
     if(itr && itr->is_initialized() && !this->is_initialized())
     {
         PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
-                   Type::label().c_str());
+                   Type::get_label().c_str());
         graph().insert_subgraph_after(_data().head(), itr->data().head());
         m_initialized = itr->m_initialized;
         m_finalized   = itr->m_finalized;
@@ -885,19 +1037,105 @@ storage<Type, true>::merge(this_type* itr)
     if(itr->size() == 0 || !itr->data().has_head())
         return;
 
-    bool _merged = false;
-    for(auto _titr = graph().begin(); _titr != graph().end(); ++_titr)
+    int64_t num_merged     = 0;
+    auto    inverse_insert = itr->data().get_inverse_insert();
+
+    for(auto entry : inverse_insert)
     {
-        if(_titr && itr->data().has_head() && *_titr == *itr->data().head())
+        auto master_entry = data().find(entry.second);
+        if(master_entry != data().end())
         {
-            typename graph_t::pre_order_iterator _nitr(itr->data().head());
+            pre_order_iterator pitr(entry.second);
+
+            if(itr->graph().is_valid(pitr) && pitr)
+            {
+                if(settings::debug() || settings::verbose() > 2)
+                    PRINT_HERE("[%s]> worker is merging %i records into %i records",
+                               Type::get_label().c_str(), (int) itr->size(),
+                               (int) this->size());
+
+                pre_order_iterator pos = master_entry;
+
+                if(*pos == *pitr)
+                {
+                    // auto prefix = get_prefix(pitr->id());
+                    // PRINT_HERE("%s %s", "Merging!", prefix.c_str());
+
+                    ++num_merged;
+                    sibling_iterator other = pitr;
+                    for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
+                    {
+                        pre_order_iterator pchild = sitr;
+                        if(pchild->obj().nlaps() == 0)
+                            continue;
+                        // auto prefix = get_prefix(pchild->id());
+                        // PRINT_HERE("%s %s", "Appending child!", prefix.c_str());
+                        // graph().prepend_child(pos, pchild);
+                        graph().append_child(pos, pchild);
+                    }
+                }
+                else
+                {
+                    // auto prefix = get_prefix(pitr->id());
+                    // PRINT_HERE("%s %s", "Continuing past dummy!", prefix.c_str());
+                }
+
+                if(settings::debug() || settings::verbose() > 2)
+                    PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
+                               (int) this->size());
+
+                itr->graph().erase_children(entry.second);
+                itr->graph().erase(entry.second);
+            }
+            else
+            {
+                // std::stringstream ss;
+                // ss << std::boolalpha << "valid: " << (itr->graph().is_valid(pitr))
+                //    << ", begin: " << (static_cast<bool>(pitr.begin()));
+                // PRINT_HERE("Bookmark invalid: %s", ss.str().c_str());
+            }
+        }
+        else
+        {
+            // PRINT_HERE("Missing bookmark on master: '%s' @ %lu",
+            //            get_prefix(entry.second->id()).c_str(), entry.second->depth());
+        }
+    }
+
+    int64_t merge_size = static_cast<int64_t>(inverse_insert.size());
+    if(num_merged != merge_size)
+    {
+        int64_t           diff = merge_size - num_merged;
+        std::stringstream ss;
+        ss << "Testing error! Missing " << diff << " merge points. The worker thread "
+           << "contained " << merge_size << " bookmarks but only merged " << num_merged
+           << " nodes!";
+
+        PRINT_HERE("%s", ss.str().c_str());
+
+#if defined(TIMEMORY_TESTING)
+        throw std::runtime_error(ss.str());
+#endif
+    }
+
+    /*
+    for(auto mitr = graph().begin(); mitr != graph().end(); ++mitr)
+    {
+        if(!itr->data().has_head())
+            break;
+
+        if(mitr && *mitr == *itr->data().head())
+        {
+            pre_order_iterator _nitr(itr->data().head());
+
             if(graph().is_valid(_nitr.begin()) && _nitr.begin())
             {
                 if(settings::debug() || settings::verbose() > 2)
                     PRINT_HERE("[%s]> worker is merging %i records into %i records",
-                               Type::label().c_str(), (int) itr->size(),
+                               Type::get_label().c_str(), (int) itr->size(),
                                (int) this->size());
-                pre_order_iterator _pos   = _titr;
+
+                pre_order_iterator _pos   = mitr;
                 sibling_iterator   _other = _nitr;
                 for(auto sitr = _other.begin(); sitr != _other.end(); ++sitr)
                 {
@@ -905,31 +1143,20 @@ storage<Type, true>::merge(this_type* itr)
                     graph().append_child(_pos, pitr);
                 }
                 _merged = true;
+
                 if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> master has %i records", Type::label().c_str(),
+                    PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
                                (int) this->size());
                 break;
             }
 
-            if(!_merged)
-            {
-                if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> worker is not merged!", Type::label().c_str());
-                ++_nitr;
-                if(graph().is_valid(_nitr) && _nitr)
-                {
-                    graph().append_child(_titr, _nitr);
-                    _merged = true;
-                    break;
-                }
-            }
         }
-    }
+    }*/
 
-    if(!_merged)
+    if(num_merged == 0)
     {
         if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("[%s]> worker is not merged!", Type::label().c_str());
+            PRINT_HERE("[%s]> worker is not merged!", Type::get_label().c_str());
         pre_order_iterator _nitr(itr->data().head());
         ++_nitr;
         if(!graph().is_valid(_nitr))
@@ -946,132 +1173,9 @@ template <typename Type>
 typename storage<Type, true>::result_array_t
 storage<Type, true>::get()
 {
-    //------------------------------------------------------------------------------//
-    //
-    //  Compute the node prefix
-    //
-    //------------------------------------------------------------------------------//
-    auto _get_node_prefix = [&]() {
-        if(!m_node_init)
-            return std::string(">>> ");
-
-        // prefix spacing
-        static uint16_t width = 1;
-        if(m_node_size > 9)
-            width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
-        std::stringstream ss;
-        ss.fill('0');
-        ss << "|" << std::setw(width) << m_node_rank << ">>> ";
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //
-    //  Compute the indentation
-    //
-    //------------------------------------------------------------------------------//
-    // fix up the prefix based on the actual depth
-    auto _compute_modified_prefix = [&](const graph_node& itr) {
-        std::string _prefix      = get_prefix(itr);
-        std::string _indent      = "";
-        std::string _node_prefix = _get_node_prefix();
-
-        int64_t _depth = itr.depth() - 1;
-        if(_depth > 0)
-        {
-            for(int64_t ii = 0; ii < _depth - 1; ++ii)
-                _indent += "  ";
-            _indent += "|_";
-        }
-
-        return _node_prefix + _indent + _prefix;
-    };
-
-    // convert graph to a vector
-    auto convert_graph = [&]() {
-        result_array_t _list;
-        {
-            // the head node should always be ignored
-            int64_t _min = std::numeric_limits<int64_t>::max();
-            for(const auto& itr : graph())
-                _min = std::min<int64_t>(_min, itr.depth());
-
-            for(auto itr = graph().begin(); itr != graph().end(); ++itr)
-            {
-                if(itr->depth() > _min)
-                {
-                    auto        _depth   = itr->depth() - (_min + 1);
-                    auto        _prefix  = _compute_modified_prefix(*itr);
-                    auto        _rolling = itr->id();
-                    auto        _parent  = graph_t::parent(itr);
-                    strvector_t _hierarchy;
-                    if(_parent && _parent->depth() > _min)
-                    {
-                        while(_parent)
-                        {
-                            _hierarchy.push_back(get_prefix(*_parent));
-                            _rolling += _parent->id();
-                            _parent = graph_t::parent(_parent);
-                            if(!_parent || !(_parent->depth() > _min))
-                                break;
-                        }
-                    }
-                    if(_hierarchy.size() > 1)
-                        std::reverse(_hierarchy.begin(), _hierarchy.end());
-                    _hierarchy.push_back(get_prefix(*itr));
-                    result_node _entry(result_tuple_t{ itr->id(), itr->obj(), _prefix,
-                                                       _depth, _rolling, _hierarchy });
-                    _list.push_back(_entry);
-                }
-            }
-        }
-
-        bool _thread_scope_only = trait::thread_scope_only<Type>::value;
-        if(!settings::collapse_threads() || _thread_scope_only)
-            return _list;
-
-        result_array_t _combined;
-
-        //--------------------------------------------------------------------------//
-        //
-        auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
-            return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
-                    std::get<2>(_lhs) == std::get<2>(_rhs) &&
-                    std::get<3>(_lhs) == std::get<3>(_rhs) &&
-                    std::get<4>(_lhs) == std::get<4>(_rhs));
-        };
-
-        //--------------------------------------------------------------------------//
-        //
-        auto _exists = [&](const result_node& _lhs) {
-            for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
-            {
-                if(_equiv(_lhs, *itr))
-                    return itr;
-            }
-            return _combined.end();
-        };
-
-        //--------------------------------------------------------------------------//
-        //  collapse duplicates
-        //
-        for(const auto& itr : _list)
-        {
-            auto citr = _exists(itr);
-            if(citr == _combined.end())
-            {
-                _combined.push_back(itr);
-            }
-            else
-            {
-                std::get<1>(*citr) += std::get<1>(itr);
-                std::get<1>(*citr).plus(std::get<1>(itr));
-            }
-        }
-        return _combined;
-    };
-
-    return convert_graph();
+    result_array_t _ret;
+    operation::finalize::storage::get<Type, true>(*this, _ret);
+    return _ret;
 }
 
 //======================================================================================//
@@ -1080,88 +1184,9 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
-#if !defined(TIMEMORY_USE_MPI)
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory not using MPI");
-
-    return dmp_result_t(1, get());
-#else
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory using MPI");
-
-    // not yet implemented
-    // auto comm =
-    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
-    auto comm = mpi::comm_world_v;
-    mpi::barrier(comm);
-
-    int mpi_rank = mpi::rank(comm);
-    int mpi_size = mpi::size(comm);
-    // int mpi_rank = m_node_rank;
-    // int mpi_size = m_node_size;
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert a result to a serialization
-    //
-    auto send_serialize = [&](const result_array_t& src) {
-        std::stringstream ss;
-        {
-            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
-            cereal::JSONOutputArchive::Options opt(16, space, 0);
-            cereal::JSONOutputArchive oa(ss);
-            oa(cereal::make_nvp("data", src));
-        }
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert the serialization to a result
-    //
-    auto recv_serialize = [&](const std::string& src) {
-        result_array_t ret;
-        std::stringstream ss;
-        ss << src;
-        {
-            cereal::JSONInputArchive ia(ss);
-            ia(cereal::make_nvp("data", ret));
-            if(settings::debug())
-                printf("[RECV: %i]> data size: %lli\n", mpi_rank,
-                       (long long int) ret.size());
-        }
-        return ret;
-    };
-
-    dmp_result_t results(mpi_size);
-
-    auto ret = get();
-    auto str_ret = send_serialize(ret);
-
-    if(mpi_rank == 0)
-    {
-        for(int i = 1; i < mpi_size; ++i)
-        {
-            std::string str;
-            if(settings::debug())
-                printf("[RECV: %i]> starting %i\n", mpi_rank, i);
-            mpi::recv(str, i, 0, comm);
-            if(settings::debug())
-                printf("[RECV: %i]> completed %i\n", mpi_rank, i);
-            results[i] = recv_serialize(str);
-        }
-        results[mpi_rank] = ret;
-    }
-    else
-    {
-        if(settings::debug())
-            printf("[SEND: %i]> starting\n", mpi_rank);
-        mpi::send(str_ret, 0, 0, comm);
-        if(settings::debug())
-            printf("[SEND: %i]> completed\n", mpi_rank);
-        return dmp_result_t(1, ret);
-    }
-
-    return results;
-#endif
+    dmp_result_t _ret;
+    operation::finalize::storage::mpi_get<Type, true>(*this, _ret);
+    return _ret;
 }
 
 //======================================================================================//
@@ -1170,80 +1195,9 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
-#if !defined(TIMEMORY_USE_UPCXX)
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory not using UPC++");
-
-    return dmp_result_t(1, get());
-#else
-    if(settings::debug())
-        PRINT_HERE("%s", "timemory using UPC++");
-
-    upc::barrier();
-
-    int upc_rank = upc::rank();
-    int upc_size = upc::size();
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert a result to a serialization
-    //
-    auto send_serialize = [=](const result_array_t& src) {
-        std::stringstream ss;
-        {
-            auto space = cereal::JSONOutputArchive::Options::IndentChar::space;
-            cereal::JSONOutputArchive::Options opt(16, space, 0);
-            cereal::JSONOutputArchive oa(ss);
-            oa(cereal::make_nvp("data", src));
-        }
-        return ss.str();
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Used to convert the serialization to a result
-    //
-    auto recv_serialize = [=](const std::string& src) {
-        result_array_t ret;
-        std::stringstream ss;
-        ss << src;
-        {
-            cereal::JSONInputArchive ia(ss);
-            ia(cereal::make_nvp("data", ret));
-        }
-        return ret;
-    };
-
-    //------------------------------------------------------------------------------//
-    //  Function executed on remote node
-    //
-    auto remote_serialize = [=]() {
-        return send_serialize(this_type::master_instance()->get());
-    };
-
-    dmp_result_t results(upc_size);
-
-    //------------------------------------------------------------------------------//
-    //  Combine on master rank
-    //
-    if(upc_rank == 0)
-    {
-        for(int i = 1; i < upc_size; ++i)
-        {
-            upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
-            while(!fut.ready())
-                upcxx::progress();
-            fut.wait();
-            results[i] = recv_serialize(fut.result());
-        }
-        results[upc_rank] = get();
-    }
-
-    upcxx::barrier(upcxx::world());
-
-    if(upc_rank != 0)
-        return dmp_result_t(1, get());
-    else
-        return results;
-#endif
+    dmp_result_t _ret;
+    operation::finalize::storage::upc_get<Type, true>(*this, _ret);
+    return _ret;
 }
 
 //======================================================================================//
@@ -1257,9 +1211,8 @@ storage<Type, true>::internal_print()
     if(!m_initialized && !m_finalized)
         return;
 
-    auto                  requires_json = trait::requires_json<Type>::value;
-    auto                  label         = Type::label();
-    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    auto requires_json = trait::requires_json<Type>::value;
+    auto label         = Type::get_label();
 
     if(!singleton_t::is_master(this))
     {
@@ -1271,11 +1224,15 @@ storage<Type, true>::internal_print()
         merge();
         finalize();
 
+        if(!trait::runtime_enabled<Type>::get())
+            return;
+
         bool _json_forced = requires_json;
         bool _file_output = settings::file_output();
         bool _cout_output = settings::cout_output();
-        bool _json_output = settings::json_output() || _json_forced;
-        bool _text_output = settings::text_output();
+        bool _json_output = (settings::json_output() || _json_forced) && _file_output;
+        bool _text_output = settings::text_output() && _file_output;
+        bool _plot_output = settings::plot_output() && _json_output;
 
         // if the graph wasn't ever initialized, exit
         if(!m_graph_data_instance)
@@ -1307,8 +1264,7 @@ storage<Type, true>::internal_print()
                    (int) _dmp_results.size());
 
         // bool return_nonzero_mpi = (dmp::using_mpi() && !settings::mpi_output_per_node()
-        // &&
-        //                           !settings::mpi_output_per_rank());
+        // && !settings::mpi_output_per_rank());
 
         if(_dmp_results.size() > 0)
         {
@@ -1341,7 +1297,7 @@ storage<Type, true>::internal_print()
                 {
                     if(i == 0)
                         std::cout << " :: ";
-                    std::cout << _hierarchy[i];
+                    std::cout << get_prefix(_hierarchy[i]);
                     if(i + 1 < _hierarchy.size())
                         std::cout << "/";
                 }
@@ -1351,9 +1307,11 @@ storage<Type, true>::internal_print()
         }
 #endif
 
-        int64_t _width     = Type::get_width();
+        settings::indent_width<Type, 0>(Type::get_width());
+        settings::indent_width<Type, 1>(4);
+        settings::indent_width<Type, 2>(4);
+
         int64_t _max_depth = 0;
-        int64_t _max_laps  = 0;
         // find the max width
         for(const auto mitr : _dmp_results)
         {
@@ -1364,26 +1322,19 @@ storage<Type, true>::internal_print()
                 const auto& itr_depth  = itr.depth();
                 if(itr_depth < 0 || itr_depth > settings::max_depth())
                     continue;
-                int64_t _len = itr_prefix.length();
-                _width       = std::max(_len, _width);
-                _max_depth   = std::max<int64_t>(_max_depth, itr_depth);
-                _max_laps    = std::max<int64_t>(_max_laps, itr_obj.nlaps());
+                _max_depth = std::max<int64_t>(_max_depth, itr_depth);
+                // find global max
+                settings::indent_width<Type, 0>(itr_prefix.length());
+                settings::indent_width<Type, 1>(std::log10(itr_obj.nlaps()) + 1);
+                settings::indent_width<Type, 2>(std::log10(itr_depth) + 1);
             }
         }
 
-        int64_t              _width_laps  = std::log10(_max_laps) + 1;
-        int64_t              _width_depth = std::log10(_max_depth) + 1;
-        std::vector<int64_t> _widths      = { _width, _width_laps, _width_depth };
-
         // return type of get() function
         using get_return_type = decltype(std::declval<const Type>().get());
+        using compute_type    = math::compute<get_return_type>;
 
-        auto_lock_t flk(type_mutex<std::ofstream>(), std::defer_lock);
         auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
-
-        if(!flk.owns_lock())
-            flk.lock();
-
         if(!slk.owns_lock())
             slk.lock();
 
@@ -1393,7 +1344,7 @@ storage<Type, true>::internal_print()
         //--------------------------------------------------------------------------//
         // output to json file
         //
-        if((_file_output && _json_output) || _json_forced)
+        if(_json_output)
         {
             printf("\n");
             auto jname = settings::compose_output_filename(label, ".json");
@@ -1408,31 +1359,35 @@ storage<Type, true>::internal_print()
                     std::ofstream ofs(jname.c_str());
                     if(ofs)
                     {
-                        // ensure json write final block during destruction
+                        // ensure write final block during destruction
                         // before the file is closed
-                        //  Option args: precision, spacing, indent size
-                        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
-                        cereal::JSONOutputArchive          oa(ofs, opts);
-                        oa.setNextName("timemory");
-                        oa.startNode();
-                        oa.setNextName("ranks");
-                        oa.startNode();
-                        oa.makeArray();
+                        auto oa = trait::output_archive<Type>::get(ofs);
+                        oa->setNextName("timemory");
+                        oa->startNode();
+                        oa->setNextName("ranks");
+                        oa->startNode();
+                        oa->makeArray();
                         for(uint64_t i = 0; i < _dmp_results.size(); ++i)
                         {
-                            oa.startNode();
-                            oa(cereal::make_nvp("rank", i));
-                            oa(cereal::make_nvp("concurrency", num_instances));
-                            serial_write_t::serialize(*this, oa, 1, _dmp_results.at(i));
-                            oa.finishNode();
+                            oa->startNode();
+                            (*oa)(cereal::make_nvp("rank", i));
+                            (*oa)(cereal::make_nvp("concurrency", num_instances));
+                            serial_write_t::serialize(*this, *oa, 1, _dmp_results.at(i));
+                            oa->finishNode();
                         }
-                        oa.finishNode();
-                        oa.finishNode();
+                        oa->finishNode();
+                        oa->finishNode();
                     }
                     if(ofs)
                         ofs << std::endl;
                     ofs.close();
                 }
+            }
+
+            if(_plot_output)
+            {
+                plotting::plot<Type>(Type::get_label(), settings::output_path(),
+                                     settings::dart_output(), jname);
             }
         }
         else if(_file_output && _text_output)
@@ -1475,15 +1430,26 @@ storage<Type, true>::internal_print()
             printf("\n");
         }
 
+        auto stream_fmt   = Type::get_format_flags();
+        auto stream_width = Type::get_width();
+        auto stream_prec  = Type::get_precision();
+
+        utility::stream _stream('|', '-', stream_fmt, stream_width, stream_prec);
         for(auto itr = _results.begin(); itr != _results.end(); ++itr)
         {
-            auto& itr_obj    = std::get<1>(*itr);
-            auto& itr_prefix = std::get<2>(*itr);
-            auto& itr_depth  = std::get<3>(*itr);
+            auto& itr_obj    = itr->data();
+            auto& itr_prefix = itr->prefix();
+            auto& itr_depth  = itr->depth();
+            auto  itr_laps   = itr_obj.nlaps();
 
             if(itr_depth < 0 || itr_depth > settings::max_depth())
                 continue;
-            std::stringstream _pss;
+
+            // counts the number of non-exclusive values
+            int64_t nexclusive = 0;
+            // the sum of the exclusive values
+            get_return_type exclusive_values{};
+
             // if we are not at the bottom of the call stack (i.e. completely
             // inclusive)
             if(itr_depth < _max_depth)
@@ -1492,17 +1458,17 @@ storage<Type, true>::internal_print()
                 auto eitr = itr;
                 std::advance(eitr, 1);
                 // counts the number of non-exclusive values
-                int64_t nexclusive = 0;
+                nexclusive = 0;
                 // the sum of the exclusive values
-                get_return_type exclusive_values;
+                exclusive_values = get_return_type{};
                 // continue while not at end of graph until first sibling is
                 // encountered
                 if(eitr != _results.end())
                 {
-                    auto eitr_depth = std::get<3>(*eitr);
+                    auto eitr_depth = eitr->depth();
                     while(eitr_depth != itr_depth)
                     {
-                        auto& eitr_obj = std::get<1>(*eitr);
+                        auto& eitr_obj = eitr->data();
 
                         // if one level down, this is an exclusive value
                         if(eitr_depth == itr_depth + 1)
@@ -1512,7 +1478,7 @@ storage<Type, true>::internal_print()
                             if(nexclusive == 0)
                                 exclusive_values = eitr_obj.get();
                             else
-                                math::combine(exclusive_values, eitr_obj.get());
+                                compute_type::plus(exclusive_values, eitr_obj.get());
                             // increment. beyond 0 vs. 1, this value plays no role
                             ++nexclusive;
                         }
@@ -1520,32 +1486,28 @@ storage<Type, true>::internal_print()
                         ++eitr;
                         if(eitr == _results.end())
                             break;
-                        eitr_depth = std::get<3>(*eitr);
-                    }
-                    // if there were exclusive values encountered
-                    if(nexclusive > 0 && trait::is_available<Type>::value)
-                    {
-                        math::print_percentage(
-                            _pss,
-                            math::compute_percentage(exclusive_values, itr_obj.get()));
+                        eitr_depth = eitr->depth();
                     }
                 }
             }
 
-            auto _laps = itr_obj.nlaps();
+            auto itr_self  = compute_type::percent_diff(exclusive_values, itr_obj.get());
+            auto itr_stats = itr->stats();
 
-            std::stringstream _oss;
-            operation::print<Type>(itr_obj, _oss, itr_prefix, _laps, itr_depth, _widths,
-                                   true, _pss.str());
-            // for(const auto& itr : itr->hierarchy())
-            //    _oss << itr << "//";
-            // _oss << "\n";
+            bool _first = std::distance(_results.begin(), itr) == 0;
+            if(_first)
+                operation::print_header<Type>(itr_obj, _stream, itr_stats);
 
-            if(cout != nullptr)
-                *cout << _oss.str() << std::flush;
-            if(fout != nullptr)
-                *fout << _oss.str() << std::flush;
+            operation::print<Type>(itr_obj, _stream, itr_prefix, itr_laps, itr_depth,
+                                   itr_self, itr_stats);
+
+            _stream.add_row();
         }
+
+        if(cout != nullptr)
+            *cout << _stream << std::flush;
+        if(fout != nullptr)
+            *fout << _stream << std::flush;
 
         if(fout)
         {
@@ -1580,9 +1542,12 @@ storage<Type, true>::internal_print()
                 if(settings::dart_count() > 0 && _nitr >= settings::dart_count())
                     continue;
 
-                auto& itr_obj       = itr.data();
-                auto& itr_hierarchy = itr.hierarchy();
-                operation::echo_measurement<Type>(itr_obj, itr_hierarchy);
+                auto&       itr_obj       = itr.data();
+                auto&       itr_hierarchy = itr.hierarchy();
+                strvector_t str_hierarchy{};
+                for(const auto& hitr : itr_hierarchy)
+                    str_hierarchy.push_back(get_prefix(hitr));
+                operation::echo_measurement<Type>(itr_obj, str_hierarchy);
                 ++_nitr;
             }
         }
@@ -1609,10 +1574,10 @@ storage<Type, true>::serialize_me(std::false_type, Archive& ar,
     if(graph_list.size() == 0)
         return;
 
-    ar(cereal::make_nvp("type", Type::label()),
-       cereal::make_nvp("description", Type::description()),
-       cereal::make_nvp("unit_value", Type::unit()),
-       cereal::make_nvp("unit_repr", Type::display_unit()));
+    ar(cereal::make_nvp("type", Type::get_label()),
+       cereal::make_nvp("description", Type::get_description()),
+       cereal::make_nvp("unit_value", Type::get_unit()),
+       cereal::make_nvp("unit_repr", Type::get_display_unit()));
     Type::extra_serialization(ar, version);
     ar.setNextName("graph");
     ar.startNode();
@@ -1621,7 +1586,10 @@ storage<Type, true>::serialize_me(std::false_type, Archive& ar,
     {
         ar.startNode();
         ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
-           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()));
+           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
+           cereal::make_nvp("rolling_hash", itr.rolling_hash()),
+           cereal::make_nvp("heirarchy", itr.hierarchy()),
+           cereal::make_nvp("stats", itr.stats()));
         ar.finishNode();
     }
     ar.finishNode();
@@ -1643,7 +1611,7 @@ storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned in
 
     Type& obj           = _graph_list.front().data();
     auto  labels        = obj.label_array();
-    auto  descripts     = obj.descript_array();
+    auto  descripts     = obj.description_array();
     auto  units         = obj.unit_array();
     auto  display_units = obj.display_unit_array();
     ar(cereal::make_nvp("type", labels), cereal::make_nvp("description", descripts),
@@ -1657,7 +1625,10 @@ storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned in
     {
         ar.startNode();
         ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
-           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()));
+           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
+           cereal::make_nvp("rolling_hash", itr.rolling_hash()),
+           cereal::make_nvp("heirarchy", itr.hierarchy()),
+           cereal::make_nvp("stats", itr.stats()));
         ar.finishNode();
     }
     ar.finishNode();
@@ -1711,33 +1682,33 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
     if(!m_data->graph().is_valid(current))
         _insert_child();
 
-    if((hash_id) == current->id())
+    // check children first because in general, child match is ideal
+    auto fchild = graph_t::child(current, 0);
+    if(m_data->graph().is_valid(fchild))
     {
-        return current;
-    }
-    else if(m_data->graph().is_valid(current))
-    {
-        // check siblings
-        for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
         {
-            // skip if current
-            if(itr == current)
-                continue;
-            // check hash id's
             if((hash_id) == itr->id())
                 return _update(itr);
         }
+    }
 
-        // check child
-        auto fchild = graph_t::child(current, 0);
-        if(m_data->graph().is_valid(fchild))
-        {
-            for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-            {
-                if((hash_id) == itr->id())
-                    return _update(itr);
-            }
-        }
+    // occasionally, we end up here because of some of the threading stuff that
+    // has to do with the head node. Protected against mis-matches in hierarchy
+    // because the actual hash includes the depth so "example" at depth 2
+    // has a different hash than "example" at depth 3.
+    if((hash_id) == current->id())
+        return current;
+
+    // check siblings
+    for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+    {
+        // skip if current
+        if(itr == current)
+            continue;
+        // check hash id's
+        if((hash_id) == itr->id())
+            return _update(itr);
     }
 
     return _insert_child();

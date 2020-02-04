@@ -32,9 +32,11 @@
 
 #include "timemory/components.hpp"
 #include "timemory/settings.hpp"
+#include "timemory/types.hpp"
 #include "timemory/variadic/macros.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <tuple>
 #include <type_traits>
@@ -63,9 +65,13 @@ _plot(_Args&&...)
 template <typename _Tp, typename... _Tail,
           typename std::enable_if<(sizeof...(_Tail) == 0), int>::type = 0>
 void
-_plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
+_plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
+      bool echo_dart = settings::dart_output(), string_t _json_file = "")
 {
     using storage_type = typename _Tp::storage_type;
+
+    if(settings::debug() || settings::verbose() > 2)
+        PRINT_HERE("%s", "");
 
     if(std::is_same<typename _Tp::value_type, void>::value)
         return;
@@ -73,41 +79,63 @@ _plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
     if(!settings::json_output() && !trait::requires_json<_Tp>::value)
         return;
 
+    if(settings::python_exe().empty())
+    {
+        fprintf(stderr, "[%s]> Empty '%s' (env: '%s'). Plot generation is disabled...",
+                demangle<_Tp>().c_str(), "tim::settings::python_exe()",
+                "TIMEMORY_PYTHON_EXE");
+        return;
+    }
+
     auto ret = storage_type::noninit_instance();
     if(!ret)
         return;
+
     if(ret->empty())
         return;
 
-    // if(!component::state<_Tp>::has_storage())
-    //     return;
+    if(_prefix.empty())
+        _prefix = _Tp::get_description();
+
+    auto libctor = get_env<std::string>("TIMEMORY_LIBRARY_CTOR", "1");
+    auto libdtor = get_env<std::string>("TIMEMORY_LIBRARY_DTOR", "1");
+
+    set_env("TIMEMORY_BANNER", "OFF");
+    set_env("TIMEMORY_LIBRARY_CTOR", "0", 1);
+    set_env("TIMEMORY_LIBRARY_DTOR", "0", 1);
 
     if(std::system(nullptr))
     {
-        auto label    = _Tp::label();
-        auto descript = _Tp::description();
-        auto jname    = settings::compose_output_filename(label, ".json");
+        auto _file = _json_file;
+        if(_file.empty())
+            _file = settings::compose_output_filename(_Tp::get_label(), ".json");
         {
-            std::ifstream ifs(jname.c_str());
+            std::ifstream ifs(_file.c_str());
             bool          exists = ifs.good();
             ifs.close();
             if(!exists)
                 return;
         }
-        auto odir = (_dir == "") ? settings::output_path() : _dir;
-        auto cmd =
-            TIMEMORY_JOIN(" ", settings::python_exe(), "-m", "timemory.plotting", "-f",
-                          jname, "-t", "\"" + _prefix, descript + "\"", "-o", odir);
+
+        auto cmd = TIMEMORY_JOIN(" ", settings::python_exe(), "-m", "timemory.plotting",
+                                 "-f", _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
         if(echo_dart)
             cmd += " -e";
+
+        if(settings::verbose() > 2 || settings::debug())
+            PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
+
         int sysret = std::system(cmd.c_str());
         if(sysret != 0)
         {
             auto msg =
                 TIMEMORY_JOIN("", "Error generating plots with command: '", cmd, "'");
-            fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL(""), msg.c_str());
+            fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL("").c_str(), msg.c_str());
         }
     }
+
+    set_env("TIMEMORY_LIBRARY_CTOR", libctor, 1);
+    set_env("TIMEMORY_LIBRARY_DTOR", libdtor, 1);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -152,7 +180,7 @@ struct plot<std::tuple<_Types...>>
 //======================================================================================//
 
 template <typename... _Types, typename... _Args,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type>
 inline void
 plot(_Args&&... _args)
 {
@@ -162,17 +190,18 @@ plot(_Args&&... _args)
 //======================================================================================//
 
 template <typename... _Types, typename... _Args,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type>
 inline void
 plot(_Args&&... _args)
 {
-    impl::plot<complete_tuple_t>::generate(std::forward<_Args>(_args)...);
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    impl::plot<tuple_type>::generate(std::forward<_Args>(_args)...);
 }
 
 //======================================================================================//
 
 inline void
-echo_dart(const string_t& filepath, attributes_t attributes)
+echo_dart_file(const string_t& filepath, attributes_t attributes)
 {
     auto attribute_string = [](const string_t& key, const string_t& item) {
         return TIMEMORY_JOIN("", key, "=", "\"", item, "\"");

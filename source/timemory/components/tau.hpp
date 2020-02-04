@@ -32,9 +32,9 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/data/storage.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/storage.hpp"
 #include "timemory/variadic/types.hpp"
 
 #if defined(TIMEMORY_USE_TAU)

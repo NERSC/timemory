@@ -24,7 +24,7 @@
 
 /** \file timemory/ert/types.hpp
  * \headerfile timemory/ert/types.hpp "timemory/ert/types.hpp"
- * Provides pre-declaration of types for ERT
+ * Provides declaration of types for ERT
  *
  */
 

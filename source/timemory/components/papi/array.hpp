@@ -27,12 +27,16 @@
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/data/storage.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/storage.hpp"
 
 #include <iostream>
+
+//======================================================================================//
+
+TIMEMORY_TEMPLATE_STATISTICS_TYPE(component::papi_array, std::vector<double>, size_t)
 
 //======================================================================================//
 
@@ -58,7 +62,7 @@ template <size_t MaxNumEvents>
 struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>>
 {
-    using size_type         = std::size_t;
+    using size_type         = size_t;
     using event_list        = std::vector<int>;
     using value_type        = std::array<long long, MaxNumEvents>;
     using entry_type        = typename value_type::value_type;
@@ -217,7 +221,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    std::size_t size() { return events.size(); }
+    size_t size() { return events.size(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -346,9 +350,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    array_t<std::string> label_array() const
+    std::vector<std::string> label_array() const
     {
-        array_t<std::string> arr;
+        std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).short_descr;
         return arr;
@@ -357,9 +361,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    array_t<std::string> descript_array() const
+    std::vector<std::string> description_array() const
     {
-        array_t<std::string> arr;
+        std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).long_descr;
         return arr;
@@ -368,9 +372,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    array_t<std::string> display_unit_array() const
+    std::vector<std::string> display_unit_array() const
     {
-        array_t<std::string> arr;
+        std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).units;
         return arr;
@@ -379,9 +383,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    array_t<int64_t> unit_array() const
+    std::vector<int64_t> unit_array() const
     {
-        array_t<int64_t> arr;
+        std::vector<int64_t> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = 1;
         return arr;

@@ -51,6 +51,14 @@ using mpi_gotcha_t    = tim::component::gotcha<1, gotcha_hybrid_t>;
 using work_gotcha_t   = tim::component::gotcha<1, gotcha_hybrid_t, int>;
 using memfun_gotcha_t = tim::component::gotcha<5, gotcha_tuple_t>;
 
+using malloc_gotcha_t = malloc_gotcha::gotcha_type<gotcha_tuple_t>;
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, mpi_gotcha_t, priority_constant<256>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, malloc_gotcha_t, priority_constant<512>)
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, mpi_gotcha_t, priority_constant<-256>)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, malloc_gotcha_t, priority_constant<-512>)
+
 using comp_t  = component_tuple<real_clock, cpu_clock, peak_rss>;
 using tuple_t = component_tuple<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
 using list_t  = gotcha_list_t;
@@ -383,23 +391,9 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using malloc_gotcha_spec_t = malloc_gotcha::gotcha_spec<gotcha_tuple_t>;
-    using malloc_gotcha_t      = typename malloc_gotcha_spec_t::gotcha_type;
     using toolset_t = tim::auto_tuple<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
 
-    malloc_gotcha_t::get_initializer() = []() {
-#if defined(TIMEMORY_USE_CUDA)
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, cudaMalloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 3, free);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 4, cudaFree);
-#else
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, free);
-#endif
-    };
+    malloc_gotcha::configure<gotcha_tuple_t>();
 
     mpi_gotcha_t::get_initializer() = [=]() {
 #if defined(TIMEMORY_USE_MPI)
@@ -407,15 +401,17 @@ TEST_F(gotcha_tests, malloc_gotcha)
 #endif
     };
 
+    PRINT_HERE("%s", "starting");
     toolset_t tool(details::get_test_name());
 
     float  fsum = 0.0;
     double dsum = 0.0;
     {
-        std::vector<float>  fsendbuf, frecvbuf;
-        std::vector<double> dsendbuf, drecvbuf;
         for(int i = 0; i < nitr / 10; ++i)
         {
+            std::vector<float>  fsendbuf, frecvbuf;
+            std::vector<double> dsendbuf, drecvbuf;
+
             details::generate<float>(1000, fsendbuf);
             details::allreduce(fsendbuf, frecvbuf);
             fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
@@ -427,6 +423,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
     }
 
     tool.stop();
+    PRINT_HERE("%s", "stopped");
 
     malloc_gotcha_t& mc = tool.get<malloc_gotcha_t>();
     std::cout << mc << std::endl;
@@ -1015,7 +1012,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
-    tim::dmp::finalize();
+    tim::timemory_finalize();
     return ret;
 }
 

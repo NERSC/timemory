@@ -182,7 +182,8 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
 
     if(NOT TARGET google-test-debug-options)
         add_library(google-test-debug-options INTERFACE)
-        target_compile_definitions(google-test-debug-options INTERFACE $<$<CONFIG:Debug>:DEBUG>)
+        target_compile_definitions(google-test-debug-options INTERFACE
+            $<$<CONFIG:Debug>:DEBUG> TIMEMORY_TESTING)
     endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 

@@ -130,31 +130,47 @@ using string = tim::apply<std::string>;
 
 //======================================================================================//
 //
+//                      CONDITIONAL MARKER MACROS
+//
+//======================================================================================//
+
+#    define TIMEMORY_CONDITIONAL_BLANK_MARKER(cond, type, ...)                           \
+        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
+        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
+            ((cond)) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__)) : nullptr)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_CONDITIONAL_BASIC_MARKER(cond, type, ...)                           \
+        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
+        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
+            ((cond)) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__)) : nullptr)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_CONDITIONAL_MARKER(cond, type, ...)                                 \
+        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
+        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
+            ((cond)) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__)) : nullptr)
+
+//======================================================================================//
+//
 //                      POINTER MACROS
 //
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_POINTER(type, ...)                                            \
-        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
-        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
-            (::tim::settings::enabled()) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))  \
-                                         : nullptr)
+        TIMEMORY_CONDITIONAL_BLANK_MARKER(::tim::settings::enabled(), type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_POINTER(type, ...)                                            \
-        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
-        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
-            (::tim::settings::enabled()) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))  \
-                                         : nullptr)
+        TIMEMORY_CONDITIONAL_BASIC_MARKER(::tim::settings::enabled(), type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_POINTER(type, ...)                                                  \
-        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
-        std::unique_ptr<type> _TIM_VARIABLE(__LINE__) = std::unique_ptr<type>(           \
-            (::tim::settings::enabled()) ? new type(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))  \
-                                         : nullptr)
+        TIMEMORY_CONDITIONAL_MARKER(::tim::settings::enabled(), type, __VA_ARGS__)
 
 //======================================================================================//
 //

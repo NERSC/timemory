@@ -81,7 +81,7 @@ fi
 
 run-verbose apt-get install -y \
     libxerces-c-dev libexpat1-dev libhdf5-dev libhdf5-mpich-dev libmpich-dev mpich \
-    python python-dev ninja-build clang-tidy clang-format \
+    python python-dev ninja-build clang-tidy clang-format environment-modules tcl \
     manpages manpages-dev cppman manpages-posix manpages-posix-dev man-db \
     libgoogle-perftools-dev google-perftools libtbb-dev valgrind papi-tools libpapi-dev
 

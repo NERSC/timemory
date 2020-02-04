@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
 
 #include <cstdarg>
@@ -55,9 +56,12 @@ extern "C"
 }
 
 //======================================================================================//
-
+struct timemory_trace;
+using trace_bundle_t     = user_bundle<0, timemory_trace>;
+using traceset_t         = tim::component_tuple<trace_bundle_t>;
 using toolset_t          = TIMEMORY_LIBRARY_TYPE;
 using record_map_t       = std::unordered_map<uint64_t, toolset_t>;
+using trace_map_t        = std::unordered_map<size_t, std::vector<traceset_t*>>;
 using component_enum_t   = std::vector<TIMEMORY_COMPONENT>;
 using components_stack_t = std::deque<component_enum_t>;
 
@@ -70,6 +74,14 @@ static record_map_t&
 get_record_map()
 {
     static thread_local record_map_t _instance;
+    return _instance;
+}
+//--------------------------------------------------------------------------------------//
+
+static trace_map_t&
+get_trace_map()
+{
+    static thread_local trace_map_t _instance;
     return _instance;
 }
 
@@ -88,7 +100,7 @@ get_components_stack()
 inline std::string&
 get_default_components()
 {
-    static thread_local std::string _instance = "real_clock,cpu_clock,cpu_util,peak_rss";
+    static thread_local std::string _instance = "wall_clock";
     return _instance;
 }
 
@@ -214,6 +226,20 @@ extern "C"
         // clear the map
         _record_map.clear();
 
+        for(auto& itr : get_trace_map())
+        {
+            for(auto& eitr : itr.second)
+            {
+                eitr->stop();
+                delete eitr;
+            }
+            // delete all the records
+            itr.second.clear();
+        }
+
+        // delete all the records
+        get_trace_map().clear();
+
         // do the finalization
         tim::timemory_finalize();
 
@@ -222,6 +248,16 @@ extern "C"
         tim::settings::auto_output() = false;
 #endif
     }
+
+    //----------------------------------------------------------------------------------//
+    //  pause the collection
+    //
+    API void timemory_pause(void) { tim::settings::enabled() = false; }
+
+    //----------------------------------------------------------------------------------//
+    //  resume the collection
+    //
+    API void timemory_resume(void) { tim::settings::enabled() = true; }
 
     //----------------------------------------------------------------------------------//
 
@@ -428,59 +464,137 @@ extern "C"
 #endif
     }
 
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_init_trace(uint64_t id)
+    {
+        PRINT_HERE("[id = %llu]", (long long unsigned) id);
+        auto& comp = get_current_components();
+        tim::configure<trace_bundle_t>(comp);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    API int64_t timemory_register_trace(const char* name)
+    {
+        using hasher_t                       = std::hash<std::string>;
+        static thread_local auto& _trace_map = get_trace_map();
+        size_t                    id         = hasher_t()(std::string(name));
+        int64_t                   n          = _trace_map[id].size();
+
+#if defined(DEBUG)
+        if(tim::settings::verbose() > 2)
+            printf("beginning trace for '%s' (id = %llu, offset = %lli)...\n", name,
+                   (long long unsigned) id, (long long int) n);
+#endif
+
+        // _trace_map[id].push_back(
+        //    new toolset_t(name, true, tim::settings::flat_profile()));
+        // tim::initialize(*_trace_map[id].back(), get_current_components());
+        _trace_map[id].push_back(
+            new traceset_t(name, true, tim::settings::flat_profile()));
+        _trace_map[id].back()->start();
+
+        return n;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_deregister_trace(const char* name)
+    {
+        using hasher_t                       = std::hash<std::string>;
+        static thread_local auto& _trace_map = get_trace_map();
+        size_t                    id         = hasher_t()(std::string(name));
+        int64_t                   ntotal     = _trace_map[id].size();
+        int64_t                   offset     = ntotal - 1;
+
+#if defined(DEBUG)
+        if(tim::settings::verbose() > 2)
+            printf("ending trace for %llu [offset = %lli]...\n", (long long unsigned) id,
+                   (long long int) offset);
+#endif
+
+        if(offset >= 0 && ntotal > 0)
+        {
+            _trace_map[id].back()->stop();
+            delete _trace_map[id].back();
+            _trace_map[id].pop_back();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_dyninst_init(void)
+    {
+        PRINT_HERE("%s", "");
+        auto& comp = get_current_components();
+        tim::configure<trace_bundle_t>(comp);
+        tim::manager::use_exit_hook(false);
+        tim::settings::destructor_report() = false;
+        tim::set_env("TIMEMORY_DESTRUCTOR_REPORT", "OFF");
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_dyninst_finalize(void)
+    {
+        PRINT_HERE("%s", "");
+        timemory_finalize_library();
+    }
+
     //==================================================================================//
     //
     //      Symbols for Fortran
     //
     //==================================================================================//
 
-    void _timemory_create_record(const char* name, uint64_t* id, int n, int* ct)
+    void timemory_create_record_(const char* name, uint64_t* id, int n, int* ct)
     {
         timemory_create_record(name, id, n, ct);
     }
 
-    void _timemory_delete_record(uint64_t id) { timemory_delete_record(id); }
+    void timemory_delete_record_(uint64_t id) { timemory_delete_record(id); }
 
-    void _timemory_init_library(int argc, char** argv)
+    void timemory_init_library_(int argc, char** argv)
     {
         timemory_init_library(argc, argv);
     }
 
-    void _timemory_finalize_library(void) { timemory_finalize_library(); }
+    void timemory_finalize_library_(void) { timemory_finalize_library(); }
 
-    void _timemory_set_default(const char* components)
+    void timemory_set_default_(const char* components)
     {
         timemory_set_default(components);
     }
 
-    void _timemory_push_components(const char* components)
+    void timemory_push_components_(const char* components)
     {
         timemory_push_components(components);
     }
 
-    void _timemory_pop_components(void) { timemory_pop_components(); }
+    void timemory_pop_components_(void) { timemory_pop_components(); }
 
-    void _timemory_begin_record(const char* name, uint64_t* id)
+    void timemory_begin_record_(const char* name, uint64_t* id)
     {
         timemory_begin_record(name, id);
     }
 
-    void _timemory_begin_record_types(const char* name, uint64_t* id, const char* ctypes)
+    void timemory_begin_record_types_(const char* name, uint64_t* id, const char* ctypes)
     {
         timemory_begin_record_types(name, id, ctypes);
     }
 
-    uint64_t _timemory_get_begin_record(const char* name)
+    uint64_t timemory_get_begin_record_(const char* name)
     {
         return timemory_get_begin_record(name);
     }
 
-    uint64_t _timemory_get_begin_record_types(const char* name, const char* ctypes)
+    uint64_t timemory_get_begin_record_types_(const char* name, const char* ctypes)
     {
         return timemory_get_begin_record_types(name, ctypes);
     }
 
-    void _timemory_end_record(uint64_t id) { return timemory_end_record(id); }
+    void timemory_end_record_(uint64_t id) { return timemory_end_record(id); }
 
     //======================================================================================//
 

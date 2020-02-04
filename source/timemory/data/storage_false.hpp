@@ -22,8 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/utility/impl/storage_false.hpp
- * \headerfile utility/impl/storage_false.hpp "timemory/utility/impl/storage_false.hpp"
+/** \file timemory/data/storage_false.hpp
+ * \headerfile data/storage_false.hpp "timemory/data/storage_false.hpp"
  * Defines storage implementation when the data type is void
  *
  */
@@ -31,10 +31,10 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/data/base_storage.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
-#include "timemory/utility/base_storage.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -56,16 +56,24 @@ class storage<Type, false> : public base::storage
 public:
     //----------------------------------------------------------------------------------//
     //
-    using base_type     = base::storage;
-    using this_type     = storage<Type, false>;
-    using string_t      = std::string;
-    using smart_pointer = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
-    using singleton_t   = singleton<this_type, smart_pointer>;
-    using pointer       = typename singleton_t::pointer;
-    using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using base_type      = base::storage;
+    using component_type = Type;
+    using this_type      = storage<Type, false>;
+    using string_t       = std::string;
+    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
+    using singleton_t    = singleton<this_type, smart_pointer>;
+    using pointer        = typename singleton_t::pointer;
+    using auto_lock_t    = typename singleton_t::auto_lock_t;
 
     friend class tim::manager;
     friend struct impl::storage_deleter<this_type>;
+
+    using result_node    = std::tuple<>;
+    using graph_t        = std::tuple<>;
+    using graph_node     = std::tuple<>;
+    using dmp_result_t   = std::vector<std::tuple<>>;
+    using result_array_t = std::vector<std::tuple<>>;
+    using uintvector_t   = std::vector<uint64_t>;
 
 public:
     using iterator       = void*;
@@ -119,7 +127,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     storage()
-    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::label())
+    : base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
     {
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -154,14 +162,17 @@ public:
 
     virtual void stack_clear() final
     {
+        using Base                       = typename Type::base_type;
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            itr->stop();
-            itr->pop_node();
+            static_cast<Base*>(itr)->stop();
+            static_cast<Base*>(itr)->pop_node();
         }
         m_stack.clear();
     }
+
+    virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
 
     void initialize()
     {
@@ -251,11 +262,8 @@ protected:
     {
         itr->stack_clear();
 
-        // create lock but don't immediately lock
-        // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
+        // create lock
         auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-        // lock if not already owned
         if(!l.owns_lock())
             l.lock();
 

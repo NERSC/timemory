@@ -34,6 +34,10 @@
 #    define TIMEMORY_EXTERN_TEMPLATES
 #endif
 
+#if !defined(MAX_STR_LEN)
+#    define MAX_STR_LEN 512
+#endif
+
 #include "timemory/compat/library.h"
 #include "timemory/timemory.hpp"
 
@@ -179,34 +183,50 @@ extern "C"
         if(_mode == 0)
             return _extra;
 
-        if(_mode == 1 && strlen(_extra) == 0)
+        if(_mode == 1 && (!_extra || strlen(_extra) == 0))
             return _func;
 
         free_cstr() = true;
 
         std::stringstream ss;
+
+        auto to_string = [](const char* cstr) {
+            std::stringstream ss;
+            if(cstr)
+            {
+                for(int i = 0; i < MAX_STR_LEN; ++i)
+                {
+                    if(cstr[i] == '\0' || i + 1 == static_cast<int>(strlen(cstr)))
+                        break;
+                    ss << cstr[i];
+                }
+            }
+            return ss.str();
+        };
+
         if(_mode == 1)
         {
-            ss << _func << "/";
+            ss << to_string(_func) << "/";
         }
         else if(_mode == 2)
         {
-            ss << _func << "/"
-               << std::string(_file).substr(std::string(_file).find_last_of('/') + 1)
-               << ":" << _line;
+            auto _filestr = to_string(_file);
+            ss << to_string(_func) << "/"
+               << _filestr.substr(_filestr.find_last_of('/') + 1) << ":" << _line;
         }
 
-        auto  len  = ss.str().length() + strlen(_extra);
+        auto  len  = ss.str().length() + ((_extra) ? strlen(_extra) : 0);
         char* buff = (char*) malloc(len * sizeof(char));
         if(buff)
         {
-            if(strlen(_extra) == 0)
+            if(!_extra || strlen(_extra) == 0)
             {
                 sprintf(buff, "%s", ss.str().c_str());
             }
             else
             {
-                sprintf(buff, "%s/%s", ss.str().c_str(), _extra);
+                ss << "/" << to_string(_extra);
+                sprintf(buff, "%s", ss.str().c_str());
             }
         }
         return (const char*) buff;

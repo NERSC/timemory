@@ -77,8 +77,10 @@ namespace cupti
 
 using string_t = std::string;
 template <typename _Key, typename _Mapped>
-using map_t    = std::map<_Key, _Mapped>;
-using strvec_t = std::vector<string_t>;
+using map_t            = std::map<_Key, _Mapped>;
+using strvec_t         = std::vector<string_t>;
+using boolvec_t        = std::vector<bool>;
+using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -1611,6 +1613,7 @@ stop_trace(_Tp* obj)
 
 #if !defined(__CUPTI_PROFILER_NAME_SHORT)
 #    define __CUPTI_PROFILER_NAME_SHORT 128
+#    define __CUPTI_PROFILER_NAME_LONG 512
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -1718,7 +1721,184 @@ tim::cupti::available_events(CUdevice device)
     return event_names;
 }
 
+//--------------------------------------------------------------------------------------//
+
+inline tim::cupti::hwcounter_info_t
+tim::cupti::available_events_info(CUdevice device)
+{
+    hwcounter_info_t     event_info{};
+    uint32_t             numDomains  = 0;
+    uint32_t             num_events  = 0;
+    uint32_t             totalEvents = 0;
+    size_t               size;
+    CUpti_EventDomainID* domainIdArray;
+    CUpti_EventID*       eventIdArray;
+    size_t               eventIdArraySize;
+
+    CUPTI_CALL(cuptiDeviceGetNumEventDomains(device, &numDomains));
+    size          = sizeof(CUpti_EventDomainID) * numDomains;
+    domainIdArray = (CUpti_EventDomainID*) malloc(size);
+    if(domainIdArray == nullptr)
+    {
+        printf("Memory could not be allocated for domain array");
+        return event_info;
+    }
+    CUPTI_CALL(cuptiDeviceEnumEventDomains(device, &size, domainIdArray));
+
+    for(uint32_t i = 0; i < numDomains; i++)
+    {
+        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        totalEvents += num_events;
+    }
+
+    eventIdArraySize = sizeof(CUpti_EventID) * totalEvents;
+    eventIdArray     = (CUpti_EventID*) malloc(eventIdArraySize);
+
+    totalEvents = 0;
+    for(uint32_t i = 0; i < numDomains; i++)
+    {
+        // Query num of events available in the domain
+        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        size = num_events * sizeof(CUpti_EventID);
+        CUPTI_CALL(cuptiEventDomainEnumEvents(domainIdArray[i], &size,
+                                              eventIdArray + totalEvents));
+        totalEvents += num_events;
+    }
+
+    for(uint32_t i = 0; i < totalEvents; i++)
+    {
+        size_t ssize = __CUPTI_PROFILER_NAME_SHORT;
+        size_t lsize = __CUPTI_PROFILER_NAME_LONG;
+
+        char eventName[__CUPTI_PROFILER_NAME_SHORT];
+        char eventShortDesc[__CUPTI_PROFILER_NAME_LONG];
+        char eventLongDesc[__CUPTI_PROFILER_NAME_LONG];
+
+        CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME, &ssize,
+                                          eventName));
+
+        CUPTI_CALL(cuptiEventGetAttribute(
+            eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &lsize, eventShortDesc));
+
+        auto as_string = [](char* cstr, size_t len) {
+            std::stringstream ss;
+            for(size_t i = 0; i < len; ++i)
+            {
+                if(cstr[i] == '\0')
+                    ss << ' ';
+                else
+                    ss << cstr[i];
+            }
+            return ss.str();
+        };
+        std::string short_desc = as_string(eventShortDesc, lsize);
+        lsize                  = __CUPTI_PROFILER_NAME_LONG;
+
+        CUPTI_CALL(cuptiEventGetAttribute(
+            eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &lsize, eventLongDesc));
+
+        std::string long_desc = as_string(eventLongDesc, lsize);
+
+        std::get<0>(event_info).push_back(eventName);
+        std::get<1>(event_info).push_back(true);
+        std::get<2>(event_info).push_back(short_desc);
+        std::get<3>(event_info).push_back(long_desc);
+    }
+
+    free(domainIdArray);
+    free(eventIdArray);
+    return event_info;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline tim::cupti::hwcounter_info_t
+tim::cupti::available_metrics_info(CUdevice device)
+{
+    hwcounter_info_t      metric_info{};
+    uint32_t              numMetric;
+    size_t                size;
+    CUpti_MetricValueKind metricKind;
+    CUpti_MetricID*       metricIdArray;
+
+    CUPTI_CALL(cuptiDeviceGetNumMetrics(device, &numMetric));
+    size          = sizeof(CUpti_MetricID) * numMetric;
+    metricIdArray = (CUpti_MetricID*) malloc(size);
+    if(metricIdArray == nullptr)
+    {
+        printf("Memory could not be allocated for metric array");
+        return metric_info;
+    }
+
+    CUPTI_CALL(cuptiDeviceEnumMetrics(device, &size, metricIdArray));
+
+    for(uint32_t i = 0; i < numMetric; i++)
+    {
+        char metricName[__CUPTI_PROFILER_NAME_SHORT];
+        char metricShortDesc[__CUPTI_PROFILER_NAME_LONG];
+        char metricLongDesc[__CUPTI_PROFILER_NAME_LONG];
+
+        size_t ssize = __CUPTI_PROFILER_NAME_SHORT;
+        size_t lsize = __CUPTI_PROFILER_NAME_LONG;
+
+        auto as_string = [](char* cstr, size_t len) {
+            std::stringstream ss;
+            len = std::min<size_t>(len, strlen(cstr));
+            for(size_t i = 0; i < len; ++i)
+            {
+                if(cstr[i] == '\0')
+                    ss << ' ';
+                else
+                    ss << cstr[i];
+            }
+            return ss.str();
+        };
+
+        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_NAME,
+                                           &ssize, (void*) &metricName));
+
+        std::get<0>(metric_info).push_back(metricName);
+
+        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
+                                           CUPTI_METRIC_ATTR_SHORT_DESCRIPTION, &lsize,
+                                           (void*) &metricShortDesc));
+
+        auto short_desc = as_string(metricShortDesc, lsize);
+        std::get<2>(metric_info).push_back(short_desc);
+        lsize = __CUPTI_PROFILER_NAME_LONG;
+
+        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
+                                           CUPTI_METRIC_ATTR_LONG_DESCRIPTION, &lsize,
+                                           (void*) &metricLongDesc));
+
+        auto long_desc = as_string(metricLongDesc, lsize);
+        std::get<3>(metric_info).push_back(long_desc);
+
+        ssize = sizeof(CUpti_MetricValueKind);
+        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_VALUE_KIND,
+                                           &ssize, (void*) &metricKind));
+
+        if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
+           (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
+        {
+            std::get<1>(metric_info).push_back(false);
+
+            if(settings::verbose() > 0 || settings::debug())
+                printf("Metric %s cannot be profiled as metric requires GPU"
+                       "time duration for kernel run.\n",
+                       metricName);
+        }
+        else
+        {
+            std::get<1>(metric_info).push_back(true);
+        }
+    }
+    free(metricIdArray);
+    return metric_info;
+}
+
 #undef __CUPTI_PROFILER_NAME_SHORT
+#undef __CUPTI_PROFILER_NAME_LONG
 #undef CUPTI_BUFFER_SIZE
 #undef CUPTI_ALIGN_SIZE
 #undef CUPTI_ALIGN_BUFFER

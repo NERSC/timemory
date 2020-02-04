@@ -23,6 +23,12 @@
 // SOFTWARE.
 //
 
+#include <timemory/components/types.hpp>
+#include <timemory/mpl/types.hpp>
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_util, std::false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::false_type)
+
 #include <timemory/ert/configuration.hpp>
 #include <timemory/ert/data.hpp>
 #include <timemory/timemory.hpp>
@@ -94,7 +100,7 @@ main(int argc, char** argv)
     init_list_t cpu_num_threads;
 
     if(argc > 1) cpu_min_size = atol(argv[1]);
-    if(argc > 2) cpu_max_data = atol(argv[2]);
+    if(argc > 2) cpu_max_data = tim::from_string<long>(argv[2]);
 
     auto default_thread_init_list = init_list_t({ 1, 2 });
 
@@ -112,29 +118,10 @@ main(int argc, char** argv)
 
     TIMEMORY_BLANK_AUTO_TIMER("run_ert");
 
+    for(int i = 0; i < tim::get_env<int>("NUM_ITER", 1); ++i)
+    {
 #if !defined(USE_CUDA)
 
-    // execute the single-precision ERT calculations
-    for(auto nthread : cpu_num_threads)
-        run_ert<float, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
-
-    // execute the double-precision ERT calculations
-    for(auto nthread : cpu_num_threads)
-        run_ert<double, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
-
-#else
-
-    auto gpu_min_size = 1 * units::megabyte;
-    auto gpu_max_data = 500 * units::megabyte;
-
-    // determine how many GPUs to execute on (or on CPU if zero)
-    int num_gpus = cuda::device_count();
-    if(num_gpus > 0 && argc > 1) num_gpus = std::min<int>(num_gpus, atoi(argv[1]));
-    init_list_t gpu_num_streams = { 1 };
-    init_list_t gpu_block_sizes = { 32, 128, 256, 512, 1024 };
-
-    if(num_gpus < 1)
-    {
         // execute the single-precision ERT calculations
         for(auto nthread : cpu_num_threads)
             run_ert<float, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
@@ -142,45 +129,72 @@ main(int argc, char** argv)
         // execute the double-precision ERT calculations
         for(auto nthread : cpu_num_threads)
             run_ert<double, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
-    } else  // num_gpus >= 1
-    {
-#    if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
-        // execute the half-precision ERT calculations
-        for(auto nthread : cpu_num_threads)
-            for(auto nstream : gpu_num_streams)
-                for(auto block : gpu_block_sizes)
-                {
-                    run_ert<fp16_t, device::gpu>(data, nthread, gpu_min_size,
-                                                 gpu_max_data, nstream, block, num_gpus);
-                }
-#    endif
-        // execute the single-precision ERT calculations
-        for(auto nthread : cpu_num_threads)
-            for(auto nstream : gpu_num_streams)
-                for(auto block : gpu_block_sizes)
-                {
-                    run_ert<float, device::gpu>(data, nthread, gpu_min_size, gpu_max_data,
-                                                nstream, block, num_gpus);
-                }
 
-        // execute the double-precision ERT calculations
-        for(auto nthread : cpu_num_threads)
-            for(auto nstream : gpu_num_streams)
-                for(auto block : gpu_block_sizes)
-                {
-                    run_ert<double, device::gpu>(data, nthread, gpu_min_size,
-                                                 gpu_max_data, nstream, block, num_gpus);
-                }
-    }
+#else
+
+        auto gpu_min_size = 1 * units::megabyte;
+        auto gpu_max_data = 500 * units::megabyte;
+
+        // determine how many GPUs to execute on (or on CPU if zero)
+        int num_gpus = cuda::device_count();
+        if(num_gpus > 0 && argc > 1) num_gpus = std::min<int>(num_gpus, atoi(argv[1]));
+        init_list_t gpu_num_streams = { 1 };
+        init_list_t gpu_block_sizes = { 32, 128, 256, 512, 1024 };
+
+        if(num_gpus < 1)
+        {
+            // execute the single-precision ERT calculations
+            for(auto nthread : cpu_num_threads)
+                run_ert<float, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
+
+            // execute the double-precision ERT calculations
+            for(auto nthread : cpu_num_threads)
+                run_ert<double, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
+        } else  // num_gpus >= 1
+        {
+#    if !defined(TIMEMORY_DISABLE_CUDA_HALF)
+            // execute the half-precision ERT calculations
+            for(auto nthread : cpu_num_threads)
+                for(auto nstream : gpu_num_streams)
+                    for(auto block : gpu_block_sizes)
+                    {
+                        if(!tim::get_env("ERT_GPU_FP16", false)) continue;
+                        run_ert<fp16_t, device::gpu>(data, nthread, gpu_min_size,
+                                                     gpu_max_data, nstream, block,
+                                                     num_gpus);
+                    }
+#    endif
+            // execute the single-precision ERT calculations
+            for(auto nthread : cpu_num_threads)
+                for(auto nstream : gpu_num_streams)
+                    for(auto block : gpu_block_sizes)
+                    {
+                        if(!tim::get_env("ERT_GPU_FP32", true)) continue;
+                        run_ert<float, device::gpu>(data, nthread, gpu_min_size,
+                                                    gpu_max_data, nstream, block,
+                                                    num_gpus);
+                    }
+
+            // execute the double-precision ERT calculations
+            for(auto nthread : cpu_num_threads)
+                for(auto nstream : gpu_num_streams)
+                    for(auto block : gpu_block_sizes)
+                    {
+                        if(!tim::get_env("ERT_GPU_FP64", true)) continue;
+                        run_ert<double, device::gpu>(data, nthread, gpu_min_size,
+                                                     gpu_max_data, nstream, block,
+                                                     num_gpus);
+                    }
+        }
 #endif
+    }
 
     std::string fname = "ert_results";
-    if(argc > 1) fname = argv[1];
 
     printf("\n");
     ert::serialize(fname, *data);
 
-    dmp::finalize();
+    tim::timemory_finalize();
     return 0;
 }
 

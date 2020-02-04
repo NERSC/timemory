@@ -45,16 +45,11 @@ endif()
 # Check if CUDA can be enabled
 if(NOT DEFINED TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUDA)
     set(_USE_CUDA ON)
-    find_package(CUDA QUIET)
-    if(CUDA_FOUND)
-        check_language(CUDA)
-        if(CMAKE_CUDA_COMPILER)
-            enable_language(CUDA)
-        else()
-            message(STATUS "No CUDA support")
-            set(_USE_CUDA OFF)
-        endif()
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        enable_language(CUDA)
     else()
+        message(STATUS "No CUDA support")
         set(_USE_CUDA OFF)
     endif()
 else()
@@ -125,8 +120,16 @@ if(TIMEMORY_SKIP_BUILD)
     set(BUILD_STATIC_LIBS OFF)
     set(TIMEMORY_BUILD_C OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
-    set(TIMEMORY_BUILD_TOOLS OFF)
     set(TIMEMORY_USE_PYTHON OFF)
+    # set(TIMEMORY_BUILD_TOOLS OFF)
+    set(TIMEMORY_BUILD_MPIP OFF)
+endif()
+
+if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS AND NOT TIMEMORY_SKIP_BUILD)
+    message(STATUS "")
+    message(STATUS "Set TIMEMORY_SKIP_BUILD=ON instead of BUILD_SHARED_LIBS=OFF and BUILD_STATIC_LIBS=OFF")
+    message(STATUS "")
+    message(FATAL_ERROR "Confusing settings")
 endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
@@ -186,9 +189,15 @@ add_option(TIMEMORY_FORCE_GPERF_PYTHON
     "Enable gperftools + Python (may cause termination errors)" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
+add_option(TIMEMORY_REQUIRE_PACKAGES
+    "All find_package(...) use REQUIRED" OFF)
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
+endif()
+
+if(TIMEMORY_REQUIRE_PACKAGES)
+    set(TIMEMORY_FIND_REQUIREMENT REQUIRED)
 endif()
 
 # Features
@@ -199,8 +208,8 @@ if(${PROJECT_NAME}_MASTER_PROJECT)
 endif()
 
 # timemory options
-add_option(TIMEMORY_USE_EXTERN_INIT
-    "Do initialization in library instead of headers" OFF)
+add_option(TIMEMORY_USE_STATISTICS
+    "Enable statistics by default" ON ${_FEATURE})
 add_option(TIMEMORY_USE_MPI
     "Enable MPI usage" ON)
 add_option(TIMEMORY_USE_UPCXX
@@ -217,6 +226,8 @@ add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE} ${_FEATURE})
 add_option(TIMEMORY_USE_GPERF
     "Enable gperftools" ON)
+add_option(TIMEMORY_USE_GPERF_STATIC
+    "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_VTUNE
@@ -231,17 +242,19 @@ add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_BUILD_CALIPER})
 add_option(TIMEMORY_USE_PYTHON
     "Enable Python" ${TIMEMORY_BUILD_PYTHON})
+add_option(TIMEMORY_USE_COMPILE_TIMING
+    "Enable -ftime-report for compilation times" OFF ${_FEATURE})
+add_option(TIMEMORY_USE_DYNINST
+    "Enable dynamic instrumentation extensions" ON ${_FEATURE})
+add_option(TIMEMORY_USE_KOKKOS
+    "Enable ERT via Kokkos" ON ${_FEATURE})
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_USE_LIKWID
         "Enable LIKWID marker forwarding" ON)
     add_option(TIMEMORY_USE_GOTCHA
         "Enable GOTCHA" ON)
 endif()
-add_option(TIMEMORY_USE_COMPILE_TIMING
-    "Enable -ftime-report for compilation times" OFF ${_FEATURE})
 
-add_option(TIMEMORY_GPERF_STATIC
-    "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -254,7 +267,7 @@ if(${PROJECT_NAME}_MASTER_PROJECT)
 endif()
 
 if(TIMEMORY_USE_CUDA)
-    add_option(TIMEMORY_DISABLE_CUDA_HALF2 "Disable half2 if CUDA_ARCH < 60" OFF)
+    add_option(TIMEMORY_DISABLE_CUDA_HALF "Disable half/half2 if CUDA_ARCH < 60" OFF)
 endif()
 
 # cereal options

@@ -32,7 +32,7 @@
 #pragma once
 
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/types.hpp"
 
 // C library
 #include <cctype>
@@ -93,13 +93,6 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-// use this function to get rid of "unused parameter" warnings
-template <typename... _Args>
-void
-consume_parameters(_Args&&...)
-{}
-
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
@@ -179,6 +172,32 @@ inline std::string
 demangle()
 {
     return demangle(typeid(_Tp).name());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+inline T
+from_string(const std::string& str)
+{
+    std::stringstream ss;
+    ss << str;
+    T val{};
+    ss >> val;
+    return val;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+inline T
+from_string(const char* cstr)
+{
+    std::stringstream ss;
+    ss << cstr;
+    T val{};
+    ss >> val;
+    return val;
 }
 
 //--------------------------------------------------------------------------------------//

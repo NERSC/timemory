@@ -33,9 +33,14 @@ void* timers[MAX_TIMERS];
 
 uint64_t idx = 0;
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+long
+fib(long n)
+{
+    return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
 
-void create_record(const char* name, uint64_t* id, int n, int* comps)
+void
+create_record(const char* name, uint64_t* id, int n, int* comps)
 {
     *id         = idx++;
     timers[*id] = TIMEMORY_BLANK_MARKER(name, WALL_CLOCK);
@@ -43,13 +48,15 @@ void create_record(const char* name, uint64_t* id, int n, int* comps)
     (void) comps;
 }
 
-void delete_record(uint64_t nid)
+void
+delete_record(uint64_t nid)
 {
     FREE_TIMEMORY_MARKER(timers[nid]);
     timers[nid] = NULL;
 }
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 

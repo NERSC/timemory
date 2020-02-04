@@ -87,6 +87,8 @@ get_parse_callbacks()
 
 }  // namespace tim
 
+//--------------------------------------------------------------------------------------//
+
 #if defined(__GNUC__) && (__GNUC__ > 7)
 #    pragma GCC diagnostic pop
 #endif

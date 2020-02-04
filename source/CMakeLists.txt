@@ -95,8 +95,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
 #
+set(_PRIVATE_INTERFACES )
 set(_EXTERN_INIT TIMEMORY_EXTERN_INIT)
 set(_EXTERN_TEMP TIMEMORY_EXTERN_TEMPLATES)
+
 if(WIN32)
     set(_EXTERN_INIT )
     set(_EXTERN_TEMP )
@@ -332,7 +334,9 @@ add_library(timemory-mpip-library INTERFACE)
 if(TARGET timemory-mpip)
     target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPI_P)
     target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip)
+    list(APPEND TIMEMORY_COMPILED_LIBRARIES timemory-mpip)
 endif()
+
 
 #----------------------------------------------------------------------------------------#
 # Python bindings
@@ -374,3 +378,12 @@ include(PackageConfigure)
 #----------------------------------------------------------------------------------------#
 
 add_subdirectory(tests)
+
+set(TIMEMORY_MAKEFILE_COMPILED_LIBRARIES
+    ${TIMEMORY_COMPILED_LIBRARIES}
+    PARENT_SCOPE)
+
+set(TIMEMORY_MAKEFILE_INTERFACE_LIBRARIES
+    ${TIMEMORY_INTERFACE_LIBRARIES}
+    ${${PROJECT_NAME_UC}_INTERFACE_LIBRARIES}
+    PARENT_SCOPE)

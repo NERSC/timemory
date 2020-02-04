@@ -239,39 +239,38 @@ class timemory_data():
     """
     # ------------------------------------------------------------------------ #
 
-    def __init__(self, func, obj):
+    def __init__(self, func, obj, stats):
         """
         initialize data from JSON object
         """
         self.func = func
         self.is_transient = obj['is_transient']
         self.laps = obj['laps']
-        if isinstance(obj['repr_data'], dict):
-            self.data = []
-            for key, item in obj['repr_data'].items():
-                self.data.append(item)
-        elif isinstance(obj['repr_data'], list):
-            self.data = obj['repr_data']
-        else:
-            self.data = obj['repr_data']
 
-        if isinstance(obj['value'], dict):
-            self.value = []
-            for key, item in obj['value'].items():
-                self.value.append(item)
-        elif isinstance(obj['value'], list):
-            self.data = obj['value']
-        else:
-            self.value = obj['value']
+        def process(inp, key):
+            inst = None
+            if inp is None:
+                return inst
+            if not key in inp:
+                return inst
 
-        if isinstance(obj['accum'], dict):
-            self.accum = []
-            for key, item in obj['accum'].items():
-                self.accum.append(item)
-        elif isinstance(obj['accum'], list):
-            self.data = obj['accum']
-        else:
-            self.accum = obj['accum']
+            if isinstance(inp[key], dict):
+                inst = []
+                for key, item in inp[key].items():
+                    inst.append(item)
+            elif isinstance(inp[key], list):
+                inst = inp[key]
+            else:
+                inst = inp[key]
+            return inst
+
+        self.data = process(obj, 'repr_data')
+        self.value = process(obj, 'value')
+        self.accum = process(obj, 'accum')
+        self.sum = process(stats, 'sum')
+        self.sqr = process(stats, 'sqr')
+        self.min = process(stats, 'min')
+        self.max = process(stats, 'max')
 
     # ------------------------------------------------------------------------ #
     def plottable(self, params):
@@ -410,8 +409,8 @@ class plot_data():
                 tag = "_".join(self.ctype[n].lower().split())
                 self.filename.append("_".join([filename, tag]))
                 self.output_name.append("_".join([outname, tag]))
-            print("plot filenames: {}".format(self.filename))
-            print("plot output name: {}".format(self.output_name))
+            # print("plot filenames: {}".format(self.filename))
+            # print("plot output name: {}".format(self.output_name))
 
     # ------------------------------------------------------------------------ #
     def update_parameters(self, params=None):
@@ -492,7 +491,7 @@ def read(json_obj, plot_params=plot_parameters()):
     concurrency_sum = 0
     timemory_functions = nested_dict()
 
-    print('num ranks = {}'.format(nranks))
+    # print('num ranks = {}'.format(nranks))
 
     # rank = data['rank']
     nthrd = data['concurrency']    # concurrency
@@ -503,8 +502,8 @@ def read(json_obj, plot_params=plot_parameters()):
     ngraph = len(gdata)             # number of graph entries
     roofl = data['roofline'] if 'roofline' in data else None
 
-    if roofl is not None:
-        print(roofl)
+    # if roofl is not None:
+    #    print(roofl)
 
     concurrency_sum += nthrd
 
@@ -523,11 +522,11 @@ def read(json_obj, plot_params=plot_parameters()):
                     break
             return _tag
 
-        tfunc = timemory_data(tag, _data['entry'])
+        _stats = _data['stats'] if 'stats' in _data else None
+        tfunc = timemory_data(tag, _data['entry'], _stats)
+
         if tfunc.laps == 0:
             continue
-        # if '_inst' in tfunc.func:
-        #    continue
 
         if not tag in timemory_functions:
             # create timemory_data object if doesn't exist yet
@@ -587,7 +586,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     if len(types) == 0 or (len(types) == 1 and len(types[0]) == 0):
         return False
 
-    print("Plot types: {}".format(types))
+    # print("Plot types: {}".format(types))
 
     if ntics == 0:
         print('{} had no data less than the minimum time ({} {})'.format(
@@ -682,8 +681,6 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
         _desc = get_obj_idx(_plot_data.description, idx)
         _plot_min = (params.max_value * (0.01 * params.min_percent))
 
-        print("Filename: {}".format(_fname))
-
         _do_plot = plot_generic(_plot_data, _plot_min, _units, idx)
 
         if not _do_plot:
@@ -699,6 +696,7 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
                 'size': 22, }
 
         plt.xlabel(_xlabel, **font)
+        title = title.replace(' "', '"').strip()
         plt.title('"{}" Report for {}'.format(_desc.title(), title), **font)
         if disp:
             print('Displaying plot...')
@@ -717,9 +715,10 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
                 output_dir, imgfname), echo_dart)
 
             imgfname = os.path.join(output_dir, imgfname)
-            print('Saving plot: "{}"...'.format(imgfname))
+            print("Opening '{}' for output...".format(imgfname))
             plt.savefig(imgfname, dpi=params.img_dpi)
             plt.close()
+            print("Closed '{}'...".format(imgfname))
 
 
 #==============================================================================#
@@ -768,7 +767,7 @@ def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
         _combined.timemory_functions[_obj_name] = _obj
 
     try:
-        print('Plotting {}...'.format(_combined.filename))
+        # print('Plotting {}...'.format(_combined.filename))
         plot_all(_combined, display, output_dir, echo_dart)
 
     except Exception as e:
@@ -808,7 +807,7 @@ def plot(data=[], files=[], plot_params=plot_parameters(),
 
     if len(files) > 0:
         for filename in files:
-            print('Reading {}...'.format(filename))
+            # print('Reading {}...'.format(filename))
             f = open(filename, "r")
             _data = read(json.load(f))
             f.close()
@@ -828,7 +827,7 @@ def plot(data=[], files=[], plot_params=plot_parameters(),
 
     for _data in data:
         try:
-            print('Plotting {}...'.format(_data.filename))
+            # print('Plotting {}...'.format(_data.filename))
             plot_all(_data, display, output_dir, echo_dart)
 
         except Exception as e:
@@ -837,3 +836,4 @@ def plot(data=[], files=[], plot_params=plot_parameters(),
                 exc_type, exc_value, exc_traceback, limit=5)
             print('Exception - {}'.format(e))
             print('Error! Unable to plot "{}"...'.format(_data.filename))
+    print('Done')

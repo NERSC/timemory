@@ -79,14 +79,14 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
     auto op_func             = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
     auto store_func          = [](_Tp& a, const _Tp& b) { a = b; };
     auto bytes_per_elem      = sizeof(_Tp);
-    auto vec_size            = (TIMEMORY_VEC / 512.0) * (TIMEMORY_VEC / 8.0);
-    auto cpubit_factor       = std::max<int64_t>(1, sizeof(_Tp) / 8);
+    auto lst_per_vec         = (TIMEMORY_VEC / sizeof(_Tp));
+    auto cpubit_factor       = 8 / sizeof(_Tp);
     auto mem_access_per_elem = 2;
 
     int64_t nops         = _Unroll;
     int64_t working_size = nsize * ntrials;
     int64_t total_bytes  = working_size * bytes_per_elem * mem_access_per_elem;
-    int64_t total_lst    = total_bytes * cpubit_factor / vec_size;
+    int64_t total_lst    = total_bytes / lst_per_vec * cpubit_factor;
     int64_t total_ops    = working_size * nops;
     int64_t kB           = tim::units::kilobyte;
 

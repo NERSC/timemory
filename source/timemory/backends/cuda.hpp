@@ -32,11 +32,13 @@
 #pragma once
 
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstring>  // memcpy
 #include <limits>
 
 #if defined(TIMEMORY_USE_CUDA)
@@ -52,7 +54,7 @@
 
 #if defined(TIMEMORY_USE_CUDA) && (defined(__NVCC__) || defined(__CUDACC__)) &&          \
     (__CUDA_ARCH__ >= 530 || !defined(__CUDA_ARCH__))
-#    if !defined(TIMEMORY_CUDA_FP16) && !defined(TIMEMORY_DISABLE_CUDA_HALF2)
+#    if !defined(TIMEMORY_CUDA_FP16) && !defined(TIMEMORY_DISABLE_CUDA_HALF)
 #        define TIMEMORY_CUDA_FP16
 #    endif
 #endif

@@ -45,22 +45,22 @@ namespace tim
 
 template <typename _Bundle, typename _EnumT = int>
 inline void
-configure(std::initializer_list<_EnumT> components)
+configure(std::initializer_list<_EnumT> components, bool flat = false)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
-    configure<_Bundle>(std::vector<_EnumT>(components));
+    configure<_Bundle>(std::vector<_EnumT>(components), flat);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Bundle>
 inline void
-configure(const std::initializer_list<std::string>& components)
+configure(const std::initializer_list<std::string>& components, bool flat = false)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
-    configure<_Bundle>(enumerate_components(components));
+    configure<_Bundle>(enumerate_components(components), flat);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -70,11 +70,11 @@ configure(const std::initializer_list<std::string>& components)
 template <typename _Bundle, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
 inline void
-configure(const _Container<std::string, _ExtraArgs...>& components)
+configure(const _Container<std::string, _ExtraArgs...>& components, bool flat = false)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
-    configure<_Bundle>(enumerate_components(components));
+    configure<_Bundle>(enumerate_components(components), flat);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -83,98 +83,108 @@ configure(const _Container<std::string, _ExtraArgs...>& components)
 //
 template <typename _Bundle>
 inline void
-configure(const std::string& components)
+configure(const std::string& components, bool flat = false)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
-    configure<_Bundle>(enumerate_components(tim::delimit(components)));
+    configure<_Bundle>(enumerate_components(tim::delimit(components)), flat);
 }
 
 //======================================================================================//
 
 template <typename _Bundle>
 inline void
-configure(const TIMEMORY_COMPONENT& comp)
+configure(const TIMEMORY_COMPONENT& comp, bool flat = false)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
     using namespace component;
     switch(comp)
     {
-        case CALIPER: _Bundle::template configure<caliper>(); break;
-        case CPU_CLOCK: _Bundle::template configure<cpu_clock>(); break;
+        case CALIPER: _Bundle::template configure<caliper>(flat); break;
+        case CPU_CLOCK: _Bundle::template configure<cpu_clock>(flat); break;
         case CPU_ROOFLINE_DP_FLOPS:
-            _Bundle::template configure<cpu_roofline_dp_flops>();
+            _Bundle::template configure<cpu_roofline_dp_flops>(flat);
             break;
-        case CPU_ROOFLINE_FLOPS: _Bundle::template configure<cpu_roofline_flops>(); break;
+        case CPU_ROOFLINE_FLOPS:
+            _Bundle::template configure<cpu_roofline_flops>(flat);
+            break;
         case CPU_ROOFLINE_SP_FLOPS:
-            _Bundle::template configure<cpu_roofline_sp_flops>();
+            _Bundle::template configure<cpu_roofline_sp_flops>(flat);
             break;
-        case CPU_UTIL: _Bundle::template configure<cpu_util>(); break;
-        case CUDA_EVENT: _Bundle::template configure<cuda_event>(); break;
-        case CUDA_PROFILER: _Bundle::template configure<cuda_profiler>(); break;
-        case CUPTI_ACTIVITY: _Bundle::template configure<cupti_activity>(); break;
-        case CUPTI_COUNTERS: _Bundle::template configure<cupti_counters>(); break;
-        case DATA_RSS: _Bundle::template configure<data_rss>(); break;
-        case GPERF_CPU_PROFILER: _Bundle::template configure<gperf_cpu_profiler>(); break;
+        case CPU_UTIL: _Bundle::template configure<cpu_util>(flat); break;
+        case CUDA_EVENT: _Bundle::template configure<cuda_event>(flat); break;
+        case CUDA_PROFILER: _Bundle::template configure<cuda_profiler>(flat); break;
+        case CUPTI_ACTIVITY: _Bundle::template configure<cupti_activity>(flat); break;
+        case CUPTI_COUNTERS: _Bundle::template configure<cupti_counters>(flat); break;
+        case DATA_RSS: _Bundle::template configure<data_rss>(flat); break;
+        case GPERF_CPU_PROFILER:
+            _Bundle::template configure<gperf_cpu_profiler>(flat);
+            break;
         case GPERF_HEAP_PROFILER:
-            _Bundle::template configure<gperf_heap_profiler>();
+            _Bundle::template configure<gperf_heap_profiler>(flat);
             break;
         case GPU_ROOFLINE_DP_FLOPS:
-            _Bundle::template configure<gpu_roofline_dp_flops>();
+            _Bundle::template configure<gpu_roofline_dp_flops>(flat);
             break;
-        case GPU_ROOFLINE_FLOPS: _Bundle::template configure<gpu_roofline_flops>(); break;
+        case GPU_ROOFLINE_FLOPS:
+            _Bundle::template configure<gpu_roofline_flops>(flat);
+            break;
         case GPU_ROOFLINE_HP_FLOPS:
-            _Bundle::template configure<gpu_roofline_hp_flops>();
+            _Bundle::template configure<gpu_roofline_hp_flops>(flat);
             break;
         case GPU_ROOFLINE_SP_FLOPS:
-            _Bundle::template configure<gpu_roofline_sp_flops>();
+            _Bundle::template configure<gpu_roofline_sp_flops>(flat);
             break;
-        case LIKWID_NVMON: _Bundle::template configure<likwid_nvmon>(); break;
-        case LIKWID_PERFMON: _Bundle::template configure<likwid_perfmon>(); break;
-        case MONOTONIC_CLOCK: _Bundle::template configure<monotonic_clock>(); break;
+        case LIKWID_NVMON: _Bundle::template configure<likwid_nvmon>(flat); break;
+        case LIKWID_PERFMON: _Bundle::template configure<likwid_perfmon>(flat); break;
+        case MONOTONIC_CLOCK: _Bundle::template configure<monotonic_clock>(flat); break;
         case MONOTONIC_RAW_CLOCK:
-            _Bundle::template configure<monotonic_raw_clock>();
+            _Bundle::template configure<monotonic_raw_clock>(flat);
             break;
-        case NUM_IO_IN: _Bundle::template configure<num_io_in>(); break;
-        case NUM_IO_OUT: _Bundle::template configure<num_io_out>(); break;
+        case NUM_IO_IN: _Bundle::template configure<num_io_in>(flat); break;
+        case NUM_IO_OUT: _Bundle::template configure<num_io_out>(flat); break;
         case NUM_MAJOR_PAGE_FAULTS:
-            _Bundle::template configure<num_major_page_faults>();
+            _Bundle::template configure<num_major_page_faults>(flat);
             break;
         case NUM_MINOR_PAGE_FAULTS:
-            _Bundle::template configure<num_minor_page_faults>();
+            _Bundle::template configure<num_minor_page_faults>(flat);
             break;
-        case NUM_MSG_RECV: _Bundle::template configure<num_msg_recv>(); break;
-        case NUM_MSG_SENT: _Bundle::template configure<num_msg_sent>(); break;
-        case NUM_SIGNALS: _Bundle::template configure<num_signals>(); break;
-        case NUM_SWAP: _Bundle::template configure<num_swap>(); break;
-        case NVTX_MARKER: _Bundle::template configure<nvtx_marker>(); break;
-        case PAGE_RSS: _Bundle::template configure<page_rss>(); break;
-        case PAPI_ARRAY: _Bundle::template configure<papi_array_t>(); break;
-        case PEAK_RSS: _Bundle::template configure<peak_rss>(); break;
+        case NUM_MSG_RECV: _Bundle::template configure<num_msg_recv>(flat); break;
+        case NUM_MSG_SENT: _Bundle::template configure<num_msg_sent>(flat); break;
+        case NUM_SIGNALS: _Bundle::template configure<num_signals>(flat); break;
+        case NUM_SWAP: _Bundle::template configure<num_swap>(flat); break;
+        case NVTX_MARKER: _Bundle::template configure<nvtx_marker>(flat); break;
+        case PAGE_RSS: _Bundle::template configure<page_rss>(flat); break;
+        case PAPI_ARRAY: _Bundle::template configure<papi_array_t>(flat); break;
+        case PEAK_RSS: _Bundle::template configure<peak_rss>(flat); break;
         case PRIORITY_CONTEXT_SWITCH:
-            _Bundle::template configure<priority_context_switch>();
+            _Bundle::template configure<priority_context_switch>(flat);
             break;
-        case PROCESS_CPU_CLOCK: _Bundle::template configure<process_cpu_clock>(); break;
-        case PROCESS_CPU_UTIL: _Bundle::template configure<process_cpu_util>(); break;
-        case READ_BYTES: _Bundle::template configure<read_bytes>(); break;
-        case STACK_RSS: _Bundle::template configure<stack_rss>(); break;
-        case SYS_CLOCK: _Bundle::template configure<system_clock>(); break;
-        case TAU_MARKER: _Bundle::template configure<tau_marker>(); break;
-        case THREAD_CPU_CLOCK: _Bundle::template configure<thread_cpu_clock>(); break;
-        case THREAD_CPU_UTIL: _Bundle::template configure<thread_cpu_util>(); break;
-        case TRIP_COUNT: _Bundle::template configure<trip_count>(); break;
-        case USER_CLOCK: _Bundle::template configure<user_clock>(); break;
-        case USER_LIST_BUNDLE: _Bundle::template configure<user_list_bundle>(); break;
-        case USER_TUPLE_BUNDLE: _Bundle::template configure<user_tuple_bundle>(); break;
-        case VIRTUAL_MEMORY: _Bundle::template configure<virtual_memory>(); break;
+        case PROCESS_CPU_CLOCK:
+            _Bundle::template configure<process_cpu_clock>(flat);
+            break;
+        case PROCESS_CPU_UTIL: _Bundle::template configure<process_cpu_util>(flat); break;
+        case READ_BYTES: _Bundle::template configure<read_bytes>(flat); break;
+        case STACK_RSS: _Bundle::template configure<stack_rss>(flat); break;
+        case SYS_CLOCK: _Bundle::template configure<system_clock>(flat); break;
+        case TAU_MARKER: _Bundle::template configure<tau_marker>(flat); break;
+        case THREAD_CPU_CLOCK: _Bundle::template configure<thread_cpu_clock>(flat); break;
+        case THREAD_CPU_UTIL: _Bundle::template configure<thread_cpu_util>(flat); break;
+        case TRIP_COUNT: _Bundle::template configure<trip_count>(flat); break;
+        case USER_CLOCK: _Bundle::template configure<user_clock>(flat); break;
+        case USER_LIST_BUNDLE: _Bundle::template configure<user_list_bundle>(flat); break;
+        case USER_TUPLE_BUNDLE:
+            _Bundle::template configure<user_tuple_bundle>(flat);
+            break;
+        case VIRTUAL_MEMORY: _Bundle::template configure<virtual_memory>(flat); break;
         case VOLUNTARY_CONTEXT_SWITCH:
-            _Bundle::template configure<voluntary_context_switch>();
+            _Bundle::template configure<voluntary_context_switch>(flat);
             break;
-        case VTUNE_EVENT: _Bundle::template configure<vtune_event>(); break;
-        case VTUNE_FRAME: _Bundle::template configure<vtune_frame>(); break;
-        case WALL_CLOCK: _Bundle::template configure<wall_clock>(); break;
-        case WRITTEN_BYTES: _Bundle::template configure<written_bytes>(); break;
+        case VTUNE_EVENT: _Bundle::template configure<vtune_event>(flat); break;
+        case VTUNE_FRAME: _Bundle::template configure<vtune_frame>(flat); break;
+        case WALL_CLOCK: _Bundle::template configure<wall_clock>(flat); break;
+        case WRITTEN_BYTES: _Bundle::template configure<written_bytes>(flat); break;
         case TIMEMORY_COMPONENTS_END:
         default: break;
     }
@@ -188,13 +198,13 @@ template <typename _Bundle, template <typename, typename...> class _Container,
                                    std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
                                   int>::type>
 void
-configure(const _Container<_Intp, _ExtraArgs...>& components)
+configure(const _Container<_Intp, _ExtraArgs...>& components, bool flat)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
 
     for(auto itr : components)
-        configure<_Bundle>(static_cast<TIMEMORY_COMPONENT>(itr));
+        configure<_Bundle>(static_cast<TIMEMORY_COMPONENT>(itr), flat);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -202,14 +212,14 @@ configure(const _Container<_Intp, _ExtraArgs...>& components)
 template <typename _Bundle, template <typename, typename...> class _Container,
           typename... _ExtraArgs>
 void
-configure(const _Container<const char*, _ExtraArgs...>& components)
+configure(const _Container<const char*, _ExtraArgs...>& components, bool flat = false)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
     std::vector<std::string> _components;
     _components.reserve(components.size());
     for(auto itr : components)
-        _components.emplace_back(std::string(itr));
+        _components.emplace_back(std::string(itr), flat);
     configure<_Bundle>(_components);
 }
 
@@ -217,12 +227,12 @@ configure(const _Container<const char*, _ExtraArgs...>& components)
 
 template <typename _Bundle>
 void
-configure(const int ncomponents, const int* components)
+configure(const int ncomponents, const int* components, bool flat = false)
 {
     if(settings::debug())
         PRINT_HERE("%s", demangle<_Bundle>().c_str());
     for(int i = 0; i < ncomponents; ++i)
-        configure<_Bundle>(static_cast<TIMEMORY_COMPONENT>(components[i]));
+        configure<_Bundle>(static_cast<TIMEMORY_COMPONENT>(components[i]), flat);
 }
 
 //======================================================================================//

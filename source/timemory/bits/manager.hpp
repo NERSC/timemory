@@ -39,6 +39,7 @@
 #include "timemory/utility/utility.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <fstream>
 #include <functional>
@@ -97,9 +98,10 @@ manager::master_instance()
 
 inline manager::manager()
 : m_is_finalizing(false)
+, m_write_metadata(0)
 , m_instance_count(f_manager_instance_count()++)
 , m_rank(dmp::rank())
-, m_metadata_fname(settings::compose_output_filename("metadata", "json"))
+, m_metadata_prefix("")
 , m_thread_id(std::this_thread::get_id())
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
@@ -114,14 +116,19 @@ inline manager::manager()
     {
         settings::parse();
         papi::init();
-        std::atexit(manager::exit_hook);
+        // std::atexit(manager::exit_hook);
     }
 
-    // if(settings::banner())
+#if !defined(TIMEMORY_DISABLE_BANNER)
     if(_first && settings::banner())
         printf("#--------------------- tim::manager initialized [%i][%i] "
                "---------------------#\n\n",
                m_rank, m_instance_count);
+#endif
+
+    auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
+                                                   m_metadata_prefix);
+    consume_parameters(fname);
 
     if(settings::cpu_affinity())
         threading::affinity::set();
@@ -132,6 +139,9 @@ inline manager::manager()
 inline manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
+
+    if(dmp::is_initialized())
+        m_rank = dmp::rank();
 
     bool _last = (get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
                   m_instance_count == 0);
@@ -146,11 +156,12 @@ inline manager::~manager()
         f_thread_counter().store(0, std::memory_order_relaxed);
     }
 
-    // if(settings::banner())
+#if !defined(TIMEMORY_DISABLE_BANNER)
     if(_last && settings::banner())
         printf("\n\n#---------------------- tim::manager destroyed [%i][%i] "
                "----------------------#\n",
                m_rank, m_instance_count);
+#endif
 
     delete m_lock;
 }
@@ -164,10 +175,15 @@ manager::add_finalizer(const std::string& _key, _Func&& _func, bool _is_master)
     // ensure there are no duplicates
     remove_finalizer(_key);
 
-    if(m_lock && !m_lock->owns_lock())
-        m_lock->lock();
+    // if(m_lock && !m_lock->owns_lock())
+    //    m_lock->lock();
 
-    m_metadata_fname = settings::compose_output_filename("metadata", "json");
+    m_metadata_prefix = settings::get_output_prefix(true);
+    if(settings::debug())
+        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+
+    if(m_write_metadata == 0)
+        m_write_metadata = 1;
 
     auto _entry = finalizer_pair_t{ _key, std::forward<_Func>(_func) };
 
@@ -185,8 +201,8 @@ manager::remove_finalizer(const std::string& _key)
     // if(m_is_finalizing)
     //    return;
 
-    if(m_lock && !m_lock->owns_lock())
-        m_lock->lock();
+    // if(m_lock && !m_lock->owns_lock())
+    //    m_lock->lock();
 
     auto _remove_finalizer = [&](finalizer_list_t& _finalizers) {
         for(auto itr = _finalizers.begin(); itr != _finalizers.end(); ++itr)
@@ -208,8 +224,8 @@ manager::remove_finalizer(const std::string& _key)
 inline void
 manager::finalize()
 {
-    if(m_lock && !m_lock->owns_lock())
-        m_lock->lock();
+    // if(m_lock && !m_lock->owns_lock())
+    //    m_lock->lock();
 
     m_is_finalizing = true;
     if(settings::debug())
@@ -252,14 +268,20 @@ manager::exit_hook()
     if(settings::debug())
         PRINT_HERE("%s", "finalizing...");
 
+    if(!manager::f_use_exit_hook())
+        return;
+
     try
     {
         auto master_count = f_manager_instance_count().load();
         if(master_count > 0)
         {
             auto master_manager = get_shared_ptr_pair_master_instance<manager>();
-            master_manager->write_metadata("manager::exit_hook");
-            master_manager.reset();
+            if(master_manager)
+            {
+                master_manager->write_metadata("manager::exit_hook");
+                master_manager.reset();
+            }
         }
         else
         {
@@ -284,47 +306,83 @@ manager::write_metadata(const char* context)
         return;
 
     static bool written = false;
-    if(written)
+    if(written || m_write_metadata < 1)
+        return;
+
+    if(!settings::auto_output() || !settings::file_output())
         return;
 
     written          = true;
-    m_metadata_fname = settings::compose_output_filename("metadata", "json");
-    auto fname       = m_metadata_fname;
+    m_write_metadata = -1;
+
+    if(settings::debug())
+        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+
+    // get the output prefix if not already set
+    if(m_metadata_prefix.empty())
+        m_metadata_prefix = settings::get_output_prefix();
+
+    if(settings::debug())
+        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+
+    // remove any non-ascii characters
+    auto only_ascii = [](char c) { return !isascii(c); };
+    m_metadata_prefix.erase(
+        std::remove_if(m_metadata_prefix.begin(), m_metadata_prefix.end(), only_ascii),
+        m_metadata_prefix.end());
+
+    if(settings::debug())
+        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+
+    // if empty, set to default
+    if(m_metadata_prefix.empty())
+        m_metadata_prefix = "timemory-output/";
+
+    if(settings::debug())
+        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+
+    // if first char is a control character, the statics probably got deleted
+    if(iscntrl(m_metadata_prefix[0]))
+        m_metadata_prefix = "timemory-output/";
+
+    if(settings::debug())
+        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+
+    auto fname = settings::compose_output_filename("metadata", "json", false, -1, false,
+                                                   m_metadata_prefix);
+    consume_parameters(fname);
 
     if(settings::verbose() > 0 || settings::banner() || settings::debug())
         printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
 
-    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-    std::ofstream         ofs(fname.c_str());
+    std::ofstream ofs(fname.c_str());
     if(ofs)
     {
         // ensure json write final block during destruction before the file is closed
-        //                                  args: precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
-        cereal::JSONOutputArchive          oa(ofs, opts);
-        oa.setNextName("timemory");
-        oa.startNode();
+        auto oa = trait::output_archive<manager>::get(ofs);
+        oa->setNextName("timemory");
+        oa->startNode();
         {
-            oa.setNextName("metadata");
-            oa.startNode();
+            oa->setNextName("metadata");
+            oa->startNode();
             {
-                oa.setNextName("settings");
-                oa.startNode();
-                settings::serialize_settings(oa);
-                oa.finishNode();
+                oa->setNextName("settings");
+                oa->startNode();
+                settings::serialize_settings(*oa);
+                oa->finishNode();
             }
             {
-                oa.setNextName("output");
-                oa.startNode();
-                oa(cereal::make_nvp("text", m_text_files),
-                   cereal::make_nvp("json", m_json_files));
-                oa.finishNode();
+                oa->setNextName("output");
+                oa->startNode();
+                (*oa)(cereal::make_nvp("text", m_text_files),
+                      cereal::make_nvp("json", m_json_files));
+                oa->finishNode();
             }
             auto _env = env_settings::instance()->get();
-            oa(cereal::make_nvp("environment", _env));
-            oa.finishNode();
+            (*oa)(cereal::make_nvp("environment", _env));
+            oa->finishNode();
         }
-        oa.finishNode();
+        oa->finishNode();
     }
     if(ofs)
         ofs << std::endl;
@@ -387,13 +445,14 @@ manager::get_communicator_group()
 //======================================================================================//
 
 #include "timemory/config.hpp"
+#include "timemory/data/storage.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/types.hpp"
-#include "timemory/utility/storage.hpp"
 
 //======================================================================================//
 //  non-template version
 //
+#if defined(_WINDOWS)
 inline void
 tim::settings::initialize_storage()
 {
@@ -401,22 +460,32 @@ tim::settings::initialize_storage()
     // THIS CAUSES SUPER-LONG COMPILE TIMES BECAUSE IT ALWAYS GETS INSTANTIATED
     //
 
-    // using _Tuple = available_tuple<tim::complete_tuple_t>;
-    // manager::get_storage<_Tuple>::initialize();
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    manager::get_storage<tuple_type>::initialize();
 
-    throw std::runtime_error(
-        "tim::settings::initialize_storage() without tuple of types has been disabled "
-        "because it causes extremely long compile times!");
+    // throw std::runtime_error(
+    //    "tim::settings::initialize_storage() without tuple of types has been disabled "
+    //    "because it causes extremely long compile times!");
 }
+#else
+template <typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) == 0), char>::type>
+void
+tim::settings::initialize_storage()
+{
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    manager::get_storage<tuple_type>::initialize();
+}
+#endif
 
 //--------------------------------------------------------------------------------------//
 //  template version
 //
-template <typename _Tuple>
+template <typename... _Types, typename std::enable_if<(sizeof...(_Types) > 0), int>::type>
 void
 tim::settings::initialize_storage()
 {
-    manager::get_storage<_Tuple>::initialize();
+    manager::get_storage<_Types...>::initialize();
 }
 
 //--------------------------------------------------------------------------------------//

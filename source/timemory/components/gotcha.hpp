@@ -1239,8 +1239,8 @@ private:
 /// attempt to generate a GOTCHA wrapper for a C function (unmangled)
 ///
 #define TIMEMORY_C_GOTCHA(type, idx, func)                                               \
-    type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::call_type>::                \
+    type::instrument<idx, typename ::tim::function_traits<decltype(func)>::result_type,  \
+                     typename ::tim::function_traits<decltype(func)>::call_type>::       \
         generate(TIMEMORY_STRINGIZE(func))
 
 ///
@@ -1249,17 +1249,17 @@ private:
 ///    via `nm --dynamic <EXE>`
 ///
 #define TIMEMORY_DERIVED_GOTCHA(type, idx, func, deriv_name)                             \
-    type::instrument<                                                                    \
-        idx, ::tim::function_traits<decltype(func)>::result_type,                        \
-        ::tim::function_traits<decltype(func)>::call_type>::generate(deriv_name)
+    type::instrument<idx, typename ::tim::function_traits<decltype(func)>::result_type,  \
+                     typename ::tim::function_traits<decltype(func)>::call_type>::       \
+        generate(deriv_name)
 
 ///
 /// attempt to generate a GOTCHA wrapper for a C++ function by mangling the function name
 /// in general, mangling template function is not supported
 ///
 #define TIMEMORY_CXX_GOTCHA(type, idx, func)                                             \
-    type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::call_type>::                \
+    type::instrument<idx, typename ::tim::function_traits<decltype(func)>::result_type,  \
+                     typename ::tim::function_traits<decltype(func)>::call_type>::       \
         generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)))
 
 ///
@@ -1267,22 +1267,22 @@ private:
 /// in general, mangling template function is not supported
 ///
 #define TIMEMORY_CXX_MEMFUN_GOTCHA(type, idx, func)                                      \
-    type::instrument<idx, ::tim::function_traits<decltype(&func)>::result_type,          \
-                     ::tim::function_traits<decltype(&func)>::call_type>::               \
+    type::instrument<idx, typename ::tim::function_traits<decltype(&func)>::result_type, \
+                     typename ::tim::function_traits<decltype(&func)>::call_type>::      \
         generate(::tim::mangle<decltype(&func)>(TIMEMORY_STRINGIZE(func)))
 
 ///
 /// TIMEMORY_C_GOTCHA + ability to pass priority and tool name
 ///
 #define TIMEMORY_C_GOTCHA_TOOL(type, idx, func, ...)                                     \
-    type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::call_type>::                \
+    type::instrument<idx, typename ::tim::function_traits<decltype(func)>::result_type,  \
+                     typename ::tim::function_traits<decltype(func)>::call_type>::       \
         generate(TIMEMORY_STRINGIZE(func), __VA_ARGS__)
 
 ///
 /// TIMEMORY_CXX_GOTCHA + ability to pass priority and tool name
 ///
 #define TIMEMORY_CXX_GOTCHA_TOOL(type, idx, func, ...)                                   \
-    type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::call_type>::                \
+    type::instrument<idx, typename ::tim::function_traits<decltype(func)>::result_type,  \
+                     typename ::tim::function_traits<decltype(func)>::call_type>::       \
         generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)), __VA_ARGS__)

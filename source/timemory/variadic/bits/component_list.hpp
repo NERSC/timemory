@@ -51,6 +51,8 @@ component_list<Types...>::component_list()
 , m_laps(0)
 , m_hash(0)
 {
+    if(settings::enabled())
+        init_storage();
     apply_v::set_value(m_data, nullptr);
 }
 
@@ -69,8 +71,11 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
+        init_storage();
         _func(*this);
         set_object_prefix(key);
+        using set_flat_profile_t = operation_t<operation::set_flat_profile>;
+        apply_v::access<set_flat_profile_t>(m_data, flat);
     }
 }
 
@@ -90,8 +95,11 @@ component_list<Types...>::component_list(const captured_location_t& loc,
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
+        init_storage();
         _func(*this);
         set_object_prefix(loc.get_id());
+        using set_flat_profile_t = operation_t<operation::set_flat_profile>;
+        apply_v::access<set_flat_profile_t>(m_data, flat);
     }
 }
 
@@ -165,10 +173,7 @@ component_list<Types...>::push()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
-        if(m_flat)
-            apply_v::access<insert_node_t<scope::flat>>(m_data, m_hash);
-        else
-            apply_v::access<insert_node_t<scope::process>>(m_data, m_hash);
+        apply_v::access<insert_node_t>(m_data, m_hash, m_flat);
     }
 }
 
@@ -200,21 +205,46 @@ component_list<Types...>::measure()
 }
 
 //--------------------------------------------------------------------------------------//
+// sample functions
+//
+template <typename... Types>
+void
+component_list<Types...>::sample()
+{
+    using sample_t = operation_t<operation::sample>;
+    sample_type _samples{};
+    apply_v::access2<sample_t>(m_data, _samples);
+}
+
+//--------------------------------------------------------------------------------------//
 // start/stop functions
 //
 template <typename... Types>
 void
 component_list<Types...>::start()
 {
-    using priority_start_t = operation_t<operation::priority_start>;
     using standard_start_t = operation_t<operation::standard_start>;
-    using delayed_start_t  = operation_t<operation::delayed_start>;
+
+    using priority_types_t =
+        impl::filter_false<negative_start_priority, impl_unique_concat_type>;
+    using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
+    using priority_start_t = operation_t<operation::priority_start, priority_tuple_t>;
+
+    using delayed_types_t =
+        impl::filter_false<positive_start_priority, impl_unique_concat_type>;
+    using delayed_tuple_t = mpl::sort<trait::start_priority, delayed_types_t>;
+    using delayed_start_t = operation_t<operation::delayed_start, delayed_tuple_t>;
+
+    // push components into the call-stack
     push();
+
+    // increment laps
     ++m_laps;
+
     // start components
-    apply_v::access<priority_start_t>(m_data);
+    apply_v::out_of_order<priority_start_t>(m_data);
     apply_v::access<standard_start_t>(m_data);
-    apply_v::access<delayed_start_t>(m_data);
+    apply_v::out_of_order<delayed_start_t>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -223,14 +253,24 @@ template <typename... Types>
 void
 component_list<Types...>::stop()
 {
-    using priority_stop_t = operation_t<operation::priority_stop>;
     using standard_stop_t = operation_t<operation::standard_stop>;
-    using delayed_stop_t  = operation_t<operation::delayed_stop>;
+
+    using priority_types_t =
+        impl::filter_false<negative_stop_priority, impl_unique_concat_type>;
+    using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
+    using priority_stop_t  = operation_t<operation::priority_stop, priority_tuple_t>;
+
+    using delayed_types_t =
+        impl::filter_false<positive_stop_priority, impl_unique_concat_type>;
+    using delayed_tuple_t = mpl::sort<trait::stop_priority, delayed_types_t>;
+    using delayed_stop_t  = operation_t<operation::delayed_stop, delayed_tuple_t>;
+
     // stop components
-    apply_v::access<priority_stop_t>(m_data);
+    apply_v::out_of_order<priority_stop_t>(m_data);
     apply_v::access<standard_stop_t>(m_data);
-    apply_v::access<delayed_stop_t>(m_data);
-    // pop them off the running stack
+    apply_v::out_of_order<delayed_stop_t>(m_data);
+
+    // pop components off of the call-stack stack
     pop();
 }
 
@@ -266,7 +306,6 @@ typename component_list<Types...>::data_value_type
 component_list<Types...>::get() const
 {
     using get_data_t = operation_t<operation::get_data>;
-    const_cast<this_type&>(*this).stop();
     data_value_type _ret_data;
     apply_v::access2<get_data_t>(m_data, _ret_data);
     return _ret_data;
@@ -280,7 +319,6 @@ typename component_list<Types...>::data_label_type
 component_list<Types...>::get_labeled() const
 {
     using get_data_t = operation_t<operation::get_data>;
-    const_cast<this_type&>(*this).stop();
     data_label_type _ret_data;
     apply_v::access2<get_data_t>(m_data, _ret_data);
     return _ret_data;
@@ -503,7 +541,12 @@ template <typename... Types>
 inline void
 component_list<Types...>::init_storage()
 {
-    apply_v::type_access<operation::init_storage, reference_type>();
+    static auto _execute = []() {
+        apply_v::type_access<operation::init_storage, reference_type>();
+        return true;
+    };
+    static thread_local bool _once = _execute();
+    consume_parameters(_once);
 }
 
 //--------------------------------------------------------------------------------------//

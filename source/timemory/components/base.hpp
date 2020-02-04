@@ -32,11 +32,13 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/data/statistics.hpp"
+#include "timemory/data/storage.hpp"
+#include "timemory/mpl/math.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/utility/storage.hpp"
 
 //======================================================================================//
 
@@ -53,23 +55,32 @@ namespace component
 template <typename _Tp, typename _Value>
 struct base
 {
+    using EmptyT = std::tuple<>;
+    template <typename U>
+    using vector_t = std::vector<U>;
+
 public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
     static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
-    static constexpr bool record_statistics_v  = trait::record_statistics<_Tp>::value;
+    static constexpr bool is_sampler_v         = trait::sampler<_Tp>::value;
     static constexpr bool is_component_type    = false;
     static constexpr bool is_auto_type         = false;
     static constexpr bool is_component         = true;
 
-    using Type       = _Tp;
-    using value_type = _Value;
-    using accum_type =
-        typename std::conditional<record_statistics_v, statistics<_Value>, _Value>::type;
-    using this_type      = base<_Tp, _Value>;
-    using base_type      = this_type;
-    using storage_type   = impl::storage<_Tp, implements_storage_v>;
-    using graph_iterator = typename storage_type::iterator;
-    using state_t        = state<this_type>;
+    using Type             = _Tp;
+    using value_type       = _Value;
+    using accum_type       = _Value;
+    using sample_type      = conditional_t<is_sampler_v, operation::sample<_Tp>, EmptyT>;
+    using sample_list_type = conditional_t<is_sampler_v, vector_t<sample_type>, EmptyT>;
+
+    using this_type         = _Tp;
+    using base_type         = base<_Tp, _Value>;
+    using unit_type         = typename trait::units<_Tp>::type;
+    using display_unit_type = typename trait::units<_Tp>::display_type;
+    using storage_type      = impl::storage<_Tp, implements_storage_v>;
+    using graph_iterator    = typename storage_type::iterator;
+    using state_t           = state<this_type>;
+    using statistics_policy = policy::record_statistics<_Tp, _Value>;
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
@@ -92,8 +103,13 @@ private:
     friend struct operation::print<_Tp>;
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
+    friend struct operation::sample<_Tp>;
+    friend struct operation::finalize::storage::get<_Tp, implements_storage_v>;
+    // friend struct operation::finalize::storage::mpi_get<_Tp>;
+    // friend struct operation::finalize::storage::upc_get<_Tp>;
+    // friend struct operation::finalize::storage::dmp_get<_Tp>;
 
-    template <typename _Up, typename _Scope>
+    template <typename _Up>
     friend struct operation::insert_node;
 
     template <typename _Up, typename Archive>
@@ -111,9 +127,9 @@ public:
     , is_transient(false)
     , is_flat(false)
     , depth_change(false)
+    , laps(0)
     , value(value_type())
     , accum(value_type())
-    , laps(0)
     , graph_itr(graph_iterator{ nullptr })
     {
         if(!storage_type::is_finalizing())
@@ -125,11 +141,11 @@ public:
 
     ~base() = default;
 
-    explicit base(const this_type&) = default;
-    explicit base(this_type&&)      = default;
+    explicit base(const base_type&) = default;
+    explicit base(base_type&&)      = default;
 
-    base& operator=(const this_type&) = default;
-    base& operator=(this_type&&) = default;
+    base& operator=(const base_type&) = default;
+    base& operator=(base_type&&) = default;
 
 public:
     static void global_init(storage_type*) {}
@@ -165,8 +181,9 @@ public:
     ///
     static void append(graph_iterator itr, const Type& rhs)
     {
-        using has_secondary_type = typename trait::secondary_data<_Tp>::type;
-        this_type::append_impl<value_type>(has_secondary_type{}, itr, rhs);
+        auto _storage = storage_type::instance();
+        if(_storage)
+            operation::add_secondary<Type>(_storage, itr, rhs);
     }
 
 public:
@@ -179,9 +196,11 @@ public:
         is_on_stack  = false;
         is_transient = false;
         is_flat      = false;
+        depth_change = false;
         laps         = 0;
-        value        = value_type();
-        accum        = value_type();
+        value        = value_type{};
+        accum        = value_type{};
+        samples      = sample_type{};
     }
 
     //----------------------------------------------------------------------------------//
@@ -189,38 +208,39 @@ public:
     //
     void measure()
     {
-        is_running   = false;
+        // is_running   = false;
         is_transient = false;
         value        = Type::record();
     }
 
     //----------------------------------------------------------------------------------//
+    // sample statistics
+    //
+    void sample() {}
+
+    //----------------------------------------------------------------------------------//
     // start
     //
-    bool start()
+    void start()
     {
         if(!is_running)
         {
-            ++laps;
-            static_cast<Type&>(*this).start();
             set_started();
-            return true;
+            static_cast<Type&>(*this).start();
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    bool stop()
+    void stop()
     {
         if(is_running)
         {
-            static_cast<Type&>(*this).stop();
             set_stopped();
-            return true;
+            ++laps;
+            static_cast<Type&>(*this).stop();
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -234,13 +254,14 @@ public:
     void mark_end() {}
 
     //----------------------------------------------------------------------------------//
+    // store a value, by default, this does nothing
+    //
+    void store() {}
+
+    //----------------------------------------------------------------------------------//
     // set the firsts notify that start has been called
     //
-    void set_started()
-    {
-        is_running   = true;
-        is_transient = true;
-    }
+    void set_started() { is_running = true; }
 
     //----------------------------------------------------------------------------------//
     // set the firsts notify that stop has been called
@@ -257,33 +278,72 @@ public:
     value_type get() const { return (is_transient) ? value : accum; }
 
     //----------------------------------------------------------------------------------//
+    // default get_display if not defined by type
+    //
+    value_type get_display() const { return (is_transient) ? value : accum; }
+
+    //----------------------------------------------------------------------------------//
+    // add a sample
+    //
+    template <typename _Up = _Tp, enable_if_t<(_Up::is_sampler_v), int> = 0>
+    void add_sample(sample_type&& _sample)
+    {
+        samples.emplace_back(std::forward<sample_type>(_sample));
+    }
+
+    //----------------------------------------------------------------------------------//
     // comparison operators
     //
-    bool operator==(const this_type& rhs) const { return (load() == rhs.load()); }
-    bool operator<(const this_type& rhs) const { return (load() < rhs.load()); }
-    bool operator>(const this_type& rhs) const { return (load() > rhs.load()); }
-    bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
-    bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
-    bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator==(const this_type& rhs) const
+    {
+        return (load() == rhs.load());
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator<(const this_type& rhs) const
+    {
+        return (load() < rhs.load());
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator>(const this_type& rhs) const
+    {
+        return (load() > rhs.load());
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator!=(const this_type& rhs) const
+    {
+        return !(*this == rhs);
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator<=(const this_type& rhs) const
+    {
+        return !(*this > rhs);
+    }
+    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
+    bool operator>=(const this_type& rhs) const
+    {
+        return !(*this < rhs);
+    }
 
-    // this_type operators
+    //----------------------------------------------------------------------------------//
+    // base_type operators
     //
-    Type& operator+=(const this_type& rhs)
+    Type& operator+=(const base_type& rhs)
     {
         return operator+=(static_cast<const Type&>(rhs));
     }
 
-    Type& operator-=(const this_type& rhs)
+    Type& operator-=(const base_type& rhs)
     {
         return operator-=(static_cast<const Type&>(rhs));
     }
 
-    Type& operator*=(const this_type& rhs)
+    Type& operator*=(const base_type& rhs)
     {
         return operator*=(static_cast<const Type&>(rhs));
     }
 
-    Type& operator/=(const this_type& rhs)
+    Type& operator/=(const base_type& rhs)
     {
         return operator/=(static_cast<const Type&>(rhs));
     }
@@ -293,120 +353,89 @@ public:
     //
     Type& operator+=(const Type& rhs)
     {
-        value += rhs.value;
-        accum += rhs.accum;
+        math::plus(value, rhs.value);
+        math::plus(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     Type& operator-=(const Type& rhs)
     {
-        value -= rhs.value;
-        accum -= rhs.accum;
+        math::minus(value, rhs.value);
+        math::minus(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     Type& operator*=(const Type& rhs)
     {
-        value *= rhs.value;
-        accum *= rhs.accum;
+        math::multiply(value, rhs.value);
+        math::multiply(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     Type& operator/=(const Type& rhs)
     {
-        value /= rhs.value;
-        accum /= rhs.accum;
+        math::divide(value, rhs.value);
+        math::divide(accum, rhs.accum);
         return static_cast<Type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
     // value type operators
     //
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
     Type& operator+=(const value_type& rhs)
     {
-        value += rhs;
-        accum += rhs;
+        math::plus(value, rhs);
+        math::plus(accum, rhs);
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
     Type& operator-=(const value_type& rhs)
     {
-        value -= rhs;
-        accum -= rhs;
+        math::minus(value, rhs);
+        math::minus(accum, rhs);
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
     Type& operator*=(const value_type& rhs)
     {
-        value *= rhs;
-        accum *= rhs;
+        math::multiply(value, rhs);
+        math::multiply(accum, rhs);
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value), int> = 0>
     Type& operator/=(const value_type& rhs)
     {
-        value /= rhs;
-        accum /= rhs;
+        math::divide(value, rhs);
+        math::divide(accum, rhs);
         return static_cast<Type&>(*this);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // value type operators
-    //
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
-    Type& operator+=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator+=(rhs);
-    }
-
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
-    Type& operator-=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator-=(rhs);
-    }
-
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
-    Type& operator*=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator*=(rhs);
-    }
-
-    template <typename U = value_type, enable_if_t<!(std::is_pod<U>::value), int> = 0>
-    Type& operator/=(const value_type& rhs)
-    {
-        return static_cast<Type&>(*this).operator/=(rhs);
     }
 
     //----------------------------------------------------------------------------------//
     // friend operators
     //
-    friend Type operator+(const this_type& lhs, const this_type& rhs)
+    friend Type operator+(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) += rhs;
+        return this_type(static_cast<const Type&>(lhs)) += static_cast<const Type&>(rhs);
     }
 
-    friend Type operator-(const this_type& lhs, const this_type& rhs)
+    friend Type operator-(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) -= rhs;
+        return this_type(static_cast<const Type&>(lhs)) -= static_cast<const Type&>(rhs);
     }
 
-    friend Type operator*(const this_type& lhs, const this_type& rhs)
+    friend Type operator*(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) *= rhs;
+        return this_type(static_cast<const Type&>(lhs)) *= static_cast<const Type&>(rhs);
     }
 
-    friend Type operator/(const this_type& lhs, const this_type& rhs)
+    friend Type operator/(const base_type& lhs, const base_type& rhs)
     {
-        return this_type(lhs) /= rhs;
+        return this_type(static_cast<const Type&>(lhs)) /= static_cast<const Type&>(rhs);
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    friend std::ostream& operator<<(std::ostream& os, const base_type& obj)
     {
-        operation::base_printer<Type>(os, obj);
+        operation::base_printer<Type>(os, static_cast<const Type&>(obj));
         return os;
     }
 
@@ -421,14 +450,16 @@ public:
         auto _data = static_cast<const Type&>(*this).get();
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
            cereal::make_nvp("repr_data", _data), cereal::make_nvp("value", value),
-           cereal::make_nvp("accum", accum), cereal::make_nvp("units", get_unit()),
-           cereal::make_nvp("display_units", get_display_unit()));
+           cereal::make_nvp("accum", accum), cereal::make_nvp("units", Type::get_unit()),
+           cereal::make_nvp("display_units", Type::get_display_unit()));
     }
 
     const int64_t&    nlaps() const { return laps; }
+    const int64_t&    get_laps() const { return laps; }
     const value_type& get_value() const { return value; }
-    const value_type& get_accum() const { return accum; }
+    const accum_type& get_accum() const { return accum; }
     const bool&       get_is_transient() const { return is_transient; }
+    sample_list_type  get_samples() const { return samples; }
 
 protected:
     const value_type& load() const { return (is_transient) ? accum : value; }
@@ -437,7 +468,7 @@ protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope, typename _Up = this_type,
+    template <typename _Scope, typename _Up = base_type,
               enable_if_t<(_Up::implements_storage_v), int>                 = 0,
               enable_if_t<!(std::is_same<_Scope, scope::flat>::value), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
@@ -456,7 +487,7 @@ protected:
         }
     }
 
-    template <typename _Scope, typename _Up = this_type,
+    template <typename _Scope, typename _Up = base_type,
               enable_if_t<(_Up::implements_storage_v), int>                = 0,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     void insert_node(const _Scope&, const int64_t& _hash)
@@ -473,7 +504,7 @@ protected:
         }
     }
 
-    template <typename _Scope, typename _Up = this_type,
+    template <typename _Scope, typename _Up = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void insert_node(const _Scope&, const int64_t&)
     {
@@ -490,12 +521,15 @@ protected:
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
-    template <typename _Up = this_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     void pop_node()
     {
+        using stats_policy_type = policy::record_statistics<Type>;
+
         if(is_on_stack)
         {
             Type& obj    = graph_itr->obj();
+            auto& stats  = graph_itr->stats();
             Type& rhs    = static_cast<Type&>(*this);
             depth_change = false;
 
@@ -504,6 +538,10 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
+                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
+                {
+                    stats_policy_type::apply(stats, rhs);
+                }
             }
             else if(is_flat)
             {
@@ -512,6 +550,11 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
+                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
+                {
+                    stats_policy_type::apply(stats, rhs);
+                }
+
                 _storage->stack_pop(&rhs);
             }
             else
@@ -522,6 +565,11 @@ protected:
                 obj += rhs;
                 obj.plus(rhs);
                 Type::append(graph_itr, rhs);
+                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
+                {
+                    stats_policy_type::apply(stats, rhs);
+                }
+
                 if(_storage)
                 {
                     _storage->pop();
@@ -536,7 +584,7 @@ protected:
         }
     }
 
-    template <typename _Up                                   = this_type,
+    template <typename _Up                                   = base_type,
               enable_if_t<!(_Up::implements_storage_v), int> = 0>
     void pop_node()
     {
@@ -587,14 +635,14 @@ protected:
     }
 
 protected:
-    void plus(const this_type& rhs)
+    void plus(const base_type& rhs)
     {
         laps += rhs.laps;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
 
-    void minus(const this_type& rhs)
+    void minus(const base_type& rhs)
     {
         laps -= rhs.laps;
         if(rhs.is_transient)
@@ -604,15 +652,16 @@ protected:
     static void cleanup() {}
 
 protected:
-    bool           is_running   = false;
-    bool           is_on_stack  = false;
-    bool           is_transient = false;
-    bool           is_flat      = false;
-    bool           depth_change = false;
-    value_type     value        = value_type();
-    accum_type     accum        = accum_type();
-    int64_t        laps         = 0;
-    graph_iterator graph_itr    = graph_iterator{ nullptr };
+    bool             is_running   = false;
+    bool             is_on_stack  = false;
+    bool             is_transient = false;
+    bool             is_flat      = false;
+    bool             depth_change = false;
+    int64_t          laps         = 0;
+    value_type       value        = value_type{};
+    accum_type       accum        = accum_type{};
+    sample_list_type samples      = sample_type{};
+    graph_iterator   graph_itr    = graph_iterator{ nullptr };
 
     static storage_type*& get_storage()
     {
@@ -622,24 +671,23 @@ protected:
         return _instance;
     }
 
-private:
-    template <typename _Vp>
-    static void append_impl(std::true_type, graph_iterator, const Type&);
-    template <typename _Vp>
-    static void append_impl(std::false_type, graph_iterator, const Type&);
-
 public:
+    using fmtflags = std::ios_base::fmtflags;
+
     static constexpr bool timing_category_v = trait::is_timing_category<Type>::value;
     static constexpr bool memory_category_v = trait::is_memory_category<Type>::value;
     static constexpr bool timing_units_v    = trait::uses_timing_units<Type>::value;
     static constexpr bool memory_units_v    = trait::uses_memory_units<Type>::value;
     static constexpr bool percent_units_v   = trait::uses_percent_units<Type>::value;
+    static constexpr auto ios_fixed         = std::ios_base::fixed;
+    static constexpr auto ios_decimal       = std::ios_base::dec;
+    static constexpr auto ios_showpoint     = std::ios_base::showpoint;
+    static const short    precision         = (percent_units_v) ? 1 : 3;
+    static const short    width             = (percent_units_v) ? 6 : 8;
+    static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
 
-    static const short precision = (memory_units_v || percent_units_v) ? 1 : 3;
-    static const short width     = (memory_units_v || percent_units_v) ? 6 : 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
+    template <typename _Up = Type, typename _Unit = typename trait::units<_Up>::type,
+              enable_if_t<(std::is_same<_Unit, int64_t>::value), int> = 0>
     static int64_t unit()
     {
         if(timing_units_v)
@@ -652,6 +700,8 @@ public:
         return 1;
     }
 
+    template <typename _Up = Type, typename _Unit = typename _Up::display_unit_type,
+              enable_if_t<(std::is_same<_Unit, std::string>::value), int> = 0>
     static std::string display_unit()
     {
         if(timing_units_v)
@@ -662,6 +712,34 @@ public:
             return "%";
 
         return "";
+    }
+
+    template <typename _Up = Type, typename _Unit = typename trait::units<_Up>::type,
+              enable_if_t<(std::is_same<_Unit, int64_t>::value), int> = 0>
+    static int64_t get_unit()
+    {
+        static int64_t _instance = Type::unit();
+
+        if(timing_units_v && settings::timing_units().length() > 0)
+            _instance = std::get<1>(units::get_timing_unit(settings::timing_units()));
+        else if(memory_units_v && settings::memory_units().length() > 0)
+            _instance = std::get<1>(units::get_memory_unit(settings::memory_units()));
+
+        return _instance;
+    }
+
+    template <typename _Up = Type, typename _Unit = typename _Up::display_unit_type,
+              enable_if_t<(std::is_same<_Unit, std::string>::value), int> = 0>
+    static std::string get_display_unit()
+    {
+        static std::string _instance = Type::display_unit();
+
+        if(timing_units_v && settings::timing_units().length() > 0)
+            _instance = std::get<0>(units::get_timing_unit(settings::timing_units()));
+        else if(memory_units_v && settings::memory_units().length() > 0)
+            _instance = std::get<0>(units::get_memory_unit(settings::memory_units()));
+
+        return _instance;
     }
 
     static short get_width()
@@ -701,34 +779,10 @@ public:
             _instance |= (std::ios_base::scientific);
         };
 
-        if(settings::scientific() ||
-           (timing_category_v && settings::timing_scientific()) ||
-           (memory_category_v && settings::memory_scientific()))
+        if(!percent_units_v && (settings::scientific() ||
+                                (timing_category_v && settings::timing_scientific()) ||
+                                (memory_category_v && settings::memory_scientific())))
             _set_scientific();
-
-        return _instance;
-    }
-
-    static int64_t get_unit()
-    {
-        static int64_t _instance = Type::unit();
-
-        if(timing_units_v && settings::timing_units().length() > 0)
-            _instance = std::get<1>(units::get_timing_unit(settings::timing_units()));
-        else if(memory_units_v && settings::memory_units().length() > 0)
-            _instance = std::get<1>(units::get_memory_unit(settings::memory_units()));
-
-        return _instance;
-    }
-
-    static std::string get_display_unit()
-    {
-        static std::string _instance = Type::display_unit();
-
-        if(timing_units_v && settings::timing_units().length() > 0)
-            _instance = std::get<0>(units::get_timing_unit(settings::timing_units()));
-        else if(memory_units_v && settings::memory_units().length() > 0)
-            _instance = std::get<0>(units::get_memory_unit(settings::memory_units()));
 
         return _instance;
     }
@@ -747,22 +801,32 @@ public:
 };
 
 //--------------------------------------------------------------------------------------//
+//
+//              void overload of base
+//
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 struct base<_Tp, void>
 {
+    using EmptyT = std::tuple<>;
+
 public:
     static constexpr bool implements_storage_v = false;
     static constexpr bool has_secondary_data   = false;
-    static constexpr bool record_statistics_v  = false;
+    static constexpr bool is_sampler_v         = trait::sampler<_Tp>::value;
     static constexpr bool is_component_type    = false;
     static constexpr bool is_auto_type         = false;
     static constexpr bool is_component         = true;
 
-    using Type         = _Tp;
-    using value_type   = void;
-    using this_type    = base<_Tp, value_type>;
-    using base_type    = this_type;
+    using Type             = _Tp;
+    using value_type       = void;
+    using accum_type       = void;
+    using sample_type      = EmptyT;
+    using sample_list_type = EmptyT;
+
+    using this_type    = _Tp;
+    using base_type    = base<_Tp, value_type>;
     using storage_type = impl::storage<_Tp, implements_storage_v>;
 
 private:
@@ -785,7 +849,7 @@ private:
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
 
-    template <typename _Up, typename _Scope>
+    template <typename _Up>
     friend struct operation::insert_node;
 
     template <typename _Up, typename Archive>
@@ -802,10 +866,10 @@ public:
     {}
 
     ~base()                         = default;
-    explicit base(const this_type&) = default;
-    explicit base(this_type&&)      = default;
-    base& operator=(const this_type&) = default;
-    base& operator=(this_type&&) = default;
+    explicit base(const base_type&) = default;
+    explicit base(base_type&&)      = default;
+    base& operator=(const base_type&) = default;
+    base& operator=(base_type&&) = default;
 
 public:
     static void global_init(storage_type*) {}
@@ -851,36 +915,37 @@ public:
     //
     void measure()
     {
-        is_running   = false;
+        // is_running   = false;
         is_transient = false;
     }
 
     //----------------------------------------------------------------------------------//
+    // perform a sample
+    //
+    void sample() {}
+
+    //----------------------------------------------------------------------------------//
     // start
     //
-    bool start()
+    void start()
     {
         if(!is_running)
         {
             set_started();
             static_cast<Type&>(*this).start();
-            return true;
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    bool stop()
+    void stop()
     {
         if(is_running)
         {
-            static_cast<Type&>(*this).stop();
             set_stopped();
-            return true;
+            static_cast<Type&>(*this).stop();
         }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -911,9 +976,10 @@ public:
         is_transient = true;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
+    friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
     int64_t nlaps() const { return 0; }
+    int64_t get_laps() const { return 0; }
 
     void* get() { return nullptr; }
 
@@ -921,7 +987,7 @@ private:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope = scope::process, typename... _Args>
+    template <typename _Scope = scope::tree, typename... _Args>
     void insert_node(const _Scope&, _Args&&...)
     {
         if(!is_on_stack)
@@ -948,13 +1014,13 @@ private:
     }
 
 protected:
-    void plus(const this_type& rhs)
+    void plus(const base_type& rhs)
     {
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
 
-    void minus(const this_type& rhs)
+    void minus(const base_type& rhs)
     {
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
@@ -968,6 +1034,27 @@ protected:
     bool is_transient = false;
 
 public:
+    //
+    // components with void data types do not use label()/get_label()
+    // to generate an output filename so provide a default one from
+    // (potentially demangled) typeid(Type).name() and strip out
+    // namespace and any template parameters + replace any spaces
+    // with underscores
+    //
+    static std::string label()
+    {
+        std::string _label = demangle<Type>();
+        if(_label.find(':') != std::string::npos)
+            _label = _label.substr(_label.find_last_of(':'));
+        if(_label.find('<') != std::string::npos)
+            _label = _label.substr(0, _label.find_first_of('<'));
+        while(_label.find(' ') != std::string::npos)
+            _label = _label.replace(_label.find(' '), 1, "_");
+        while(_label.find("__") != std::string::npos)
+            _label = _label.replace(_label.find("__"), 2, "_");
+        return _label;
+    }
+
     static std::string get_label()
     {
         static std::string _instance = Type::label();
@@ -982,37 +1069,6 @@ public:
 };
 
 //----------------------------------------------------------------------------------//
-/// type contains secondary data resembling the original data
-/// but should be another node entry in the graph. These types
-/// must provide a get_secondary() member function and that member function
-/// must return a pair-wise iterable container, e.g. std::map, of types:
-///     - std::string
-///     - value_type
-///
-template <typename _Tp, typename _Value>
-template <typename _Vp>
-void
-base<_Tp, _Value>::append_impl(std::true_type, graph_iterator itr, const Type& rhs)
-{
-    static_assert(trait::secondary_data<_Tp>::value,
-                  "append_impl should not be compiled");
-    static_assert(std::is_same<_Vp, _Value>::value, "Type mismatch");
-
-    auto _storage          = storage_type::instance();
-    using string_t         = std::string;
-    using secondary_data_t = std::tuple<graph_iterator, const string_t&, _Vp>;
-    for(const auto& dat : rhs.get_secondary())
-        _storage->append(secondary_data_t{ itr, dat.first, dat.second });
-}
-
-//----------------------------------------------------------------------------------//
-//  type does not contain secondary data
-//
-template <typename _Tp, typename _Value>
-template <typename _Vp>
-void
-base<_Tp, _Value>::append_impl(std::false_type, graph_iterator, const Type&)
-{}
 
 }  // namespace component
 }  // namespace tim

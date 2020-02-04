@@ -253,3 +253,5 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     print_features()
 endif()
+
+include(GenerateMakefile)

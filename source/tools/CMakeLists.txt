@@ -64,16 +64,16 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
 endif()
 
 #----------------------------------------------------------------------------------------#
-# Build, link, and install exe
+# Build, link, and install timem
 #
-add_executable(timem timem.cpp)
+add_executable(timem timem.cpp timem.hpp)
 
 target_link_libraries(timem PRIVATE
     timemory-compile-options
     timemory-arch
     timemory-vector
     timemory-headers
-    timemory-papi
+    # timemory-papi
     timem-libexplain)
 
 set_target_properties(timem PROPERTIES
@@ -81,3 +81,35 @@ set_target_properties(timem PROPERTIES
 
 # timem installation
 install(TARGETS timem DESTINATION bin)
+
+#----------------------------------------------------------------------------------------#
+# Build, link, and install timemory-run
+#
+if(TIMEMORY_USE_DYNINST)
+    find_library(DYNINST_API_RT dyninstAPI_RT
+        HINTS ${Dyninst_DIR}
+        PATHS ${Dyninst_DIR}
+        PATH_SUFFIXES lib)
+    
+    add_executable(timemory-run timemory-run.cpp)
+
+    if(DYNINST_API_RT)
+        target_compile_definitions(timemory-run PRIVATE
+            DYNINST_API_RT="${DYNINST_API_RT}")
+    endif()
+    
+    target_link_libraries(timemory-run PRIVATE
+        timemory-compile-options
+        timemory-arch
+        timemory-vector
+        timemory-headers
+        timemory-dyninst
+        timemory-cxx-shared)
+
+    set_target_properties(timemory-run PROPERTIES
+        INSTALL_RPATH_USE_LINK_PATH ON
+        # EXCLUDE_FROM_ALL ON
+    )
+
+    install(TARGETS timemory-run DESTINATION bin)
+endif()

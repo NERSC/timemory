@@ -51,8 +51,8 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<user_bundle<10101, native_tag>, void>;
-extern template struct base<user_bundle<11011, native_tag>, void>;
+extern template struct base<user_bundle<10101, api::native_tag>, void>;
+extern template struct base<user_bundle<11011, api::native_tag>, void>;
 
 #endif
 
@@ -66,7 +66,7 @@ struct user_bundle : public base<user_bundle<_Idx, _Tag>, void>
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
-    using start_func_t = std::function<void*(const std::string&)>;
+    using start_func_t = std::function<void*(const std::string&, bool)>;
     using stop_func_t  = std::function<void(void*)>;
 
     using start_func_vec_t = std::vector<start_func_t>;
@@ -87,7 +87,8 @@ public:
     //  affecting this instance
     //
     user_bundle(const std::string& _prefix = "")
-    : m_prefix(_prefix)
+    : m_flat(false)
+    , m_prefix(_prefix)
     , m_bundle(void_vec_t{})
     , m_start(get_start())
     , m_stop(get_stop())
@@ -99,7 +100,8 @@ public:
     //  Pass in the start and stop functions
     //
     user_bundle(const start_func_vec_t& _start, const stop_func_vec_t& _stop)
-    : m_prefix("")
+    : m_flat(false)
+    , m_prefix("")
     , m_bundle(std::max(_start.size(), _stop.size()), nullptr)
     , m_start(_start)
     , m_stop(_stop)
@@ -112,7 +114,8 @@ public:
     //
     user_bundle(const std::string& _prefix, const start_func_vec_t& _start,
                 const stop_func_vec_t& _stop)
-    : m_prefix(_prefix)
+    : m_flat(false)
+    , m_prefix(_prefix)
     , m_bundle(std::max(_start.size(), _stop.size()), nullptr)
     , m_start(_start)
     , m_stop(_stop)
@@ -152,9 +155,9 @@ public:
 
         internal_init<_Toolset>();
 
-        using _Toolset_t = auto_tuple<_Toolset>;
-        auto _start      = [=](const std::string& _prefix) {
-            _Toolset_t* _result = new _Toolset_t(_prefix, _flat);
+        using _Toolset_t = component_tuple<_Toolset>;
+        auto _start      = [=](const std::string& _prefix, bool _argflat) {
+            _Toolset_t* _result = new _Toolset_t(_prefix, true, _flat || _argflat);
             _result->start();
             return (void*) _result;
         };
@@ -191,10 +194,11 @@ public:
 
         internal_init();
 
-        auto _start = [=](const std::string& _prefix) {
+        auto _start = [=](const std::string& _prefix, bool _argflat) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
-                                                    : new _Toolset(_prefix, _flat);
+            _Toolset*      _result           = (is_component_type)
+                                    ? new _Toolset(_prefix, true, _flat || _argflat)
+                                    : new _Toolset(_prefix, _flat || _argflat);
             _result->start();
             return (void*) _result;
         };
@@ -230,10 +234,11 @@ public:
 
         internal_init();
 
-        auto _start = [=](const std::string& _prefix) {
+        auto _start = [=](const std::string& _prefix, bool _argflat) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
-                                                    : new _Toolset(_prefix, _flat);
+            _Toolset*      _result           = (is_component_type)
+                                    ? new _Toolset(_prefix, true, _flat || _argflat)
+                                    : new _Toolset(_prefix, _flat || _argflat);
             _init(*_result);
             _result->start();
             return (void*) _result;
@@ -331,7 +336,7 @@ public:
         base_type::set_started();
         m_bundle.resize(m_start.size(), nullptr);
         for(int64_t i = 0; i < (int64_t) m_start.size(); ++i)
-            m_bundle[i] = m_start[i](m_prefix);
+            m_bundle[i] = m_start[i](m_prefix, m_flat);
     }
 
     void stop()
@@ -377,9 +382,9 @@ public:
 
         internal_init<_Toolset>();
 
-        using _Toolset_t = auto_tuple<_Toolset>;
-        auto _start      = [=](const std::string& _prefix) {
-            _Toolset_t* _result = new _Toolset_t(_prefix, _flat);
+        using _Toolset_t = component_tuple<_Toolset>;
+        auto _start      = [=](const std::string& _prefix, bool _argflat) {
+            _Toolset_t* _result = new _Toolset_t(_prefix, true, _flat || _argflat);
             _result->start();
             return (void*) _result;
         };
@@ -407,10 +412,11 @@ public:
 
         internal_init();
 
-        auto _start = [=](const std::string& _prefix) {
+        auto _start = [=](const std::string& _prefix, bool _argflat) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
-                                                    : new _Toolset(_prefix, _flat);
+            _Toolset*      _result           = (is_component_type)
+                                    ? new _Toolset(_prefix, true, _flat || _argflat)
+                                    : new _Toolset(_prefix, _flat || _argflat);
             _result->start();
             return (void*) _result;
         };
@@ -437,10 +443,11 @@ public:
 
         internal_init();
 
-        auto _start = [=](const std::string& _prefix) {
+        auto _start = [=](const std::string& _prefix, bool _argflat) {
             constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset* _result = (is_component_type) ? new _Toolset(_prefix, true, _flat)
-                                                    : new _Toolset(_prefix, _flat);
+            _Toolset*      _result           = (is_component_type)
+                                    ? new _Toolset(_prefix, true, _flat || _argflat)
+                                    : new _Toolset(_prefix, _flat || _argflat);
             _init(*_result);
             _result->start();
             return (void*) _result;
@@ -489,7 +496,10 @@ public:
         insert<_Tail...>(std::forward<_Args>(_args)...);
     }
 
+    void set_flat_profile(bool val) { m_flat = val; }
+
 protected:
+    bool             m_flat;
     std::string      m_prefix;
     void_vec_t       m_bundle;
     start_func_vec_t m_start;

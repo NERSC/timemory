@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "timemory/enum.h"
+#include "timemory/library.h"
 #include "timemory/timemory.h"
 
 #if !defined(TIMEMORY_EXTERN_C)
@@ -64,6 +65,10 @@ extern "C"
     {
         cxx_timemory_init(argc, argv, _settings);
     }
+
+    //==================================================================================//
+
+    tim_api void c_timemory_finalize(void) { timemory_finalize_library(); }
 
     //==================================================================================//
 

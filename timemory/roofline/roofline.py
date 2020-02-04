@@ -283,10 +283,13 @@ def get_peak_ops(roof_data, flop_info=None):
 
     info = "GFLOPs/sec"
     if flop_info is not None:
-        info_list = re.sub(r'[^\w]', ' ', flop_info).split()
-        if len(info_list) > 0:
-            info = info_list[0] + " GFLOPs/sec"
-
+        try:
+            info_list = re.sub(r'[^\w]', ' ', flop_info).split()
+            if len(info_list) > 0:
+                info = info_list[0] + " GFLOPs/sec"
+        except:
+            pass
+        
     print("PEAK: {}".format(peak))
 
     peak_ops = [peak, info]

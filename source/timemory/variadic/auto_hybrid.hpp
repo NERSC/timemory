@@ -129,10 +129,15 @@ public:
     inline operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_hybrid
-    inline void record()
+    inline void measure()
     {
         if(m_enabled)
-            m_temporary_object.record();
+            m_temporary_object.measure();
+    }
+    inline void sample()
+    {
+        if(m_enabled)
+            m_temporary_object.sample();
     }
     inline void start()
     {
@@ -165,6 +170,12 @@ public:
     {
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
+    inline void store(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.store(std::forward<_Args>(_args)...);
     }
     template <typename... _Args>
     inline void audit(_Args&&... _args)

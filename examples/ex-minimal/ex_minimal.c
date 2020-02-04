@@ -26,9 +26,14 @@
 #include <stdlib.h>
 #include <timemory/timemory.h>
 
-long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+long
+fib(long n)
+{
+    return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 

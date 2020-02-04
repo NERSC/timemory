@@ -19,6 +19,7 @@ add_subdirectory(ex-optional)
 add_subdirectory(ex-cxx-basic)
 add_subdirectory(ex-cxx-tuple)
 add_subdirectory(ex-cxx-overhead)
+add_subdirectory(ex-statistics)
 
 # external package related
 add_subdirectory(ex-caliper)
@@ -32,5 +33,8 @@ add_subdirectory(ex-cuda-event)
 add_subdirectory(ex-ert)
 add_subdirectory(ex-cpu-roofline)
 add_subdirectory(ex-gpu-roofline)
+
+# Python related
+add_subdirectory(ex-python)
 
 cmake_policy(POP)

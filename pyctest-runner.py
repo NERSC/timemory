@@ -115,6 +115,7 @@ def configure():
         args.papi = False
 
     os.environ["PYCTEST_TESTING"] = "ON"
+    os.environ["TIMEMORY_PLOT_OUTPUT"] = "ON"
 
     return args
 
@@ -476,6 +477,13 @@ def run_pyctest():
 
     pyct.test(construct_name("ex-cxx-basic"),
               construct_command(["./ex_cxx_basic"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
+
+    pyct.test(construct_name("ex-statistics"),
+              construct_command(["./ex_cxx_statistics"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",

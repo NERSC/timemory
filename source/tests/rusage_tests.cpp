@@ -45,10 +45,11 @@ static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
 static peak_rss      peak;
 static page_rss      curr;
-static read_bytes    rb;
-static written_bytes wb;
-static auto          tot_size = nelements * sizeof(int64_t) / memory_unit.first;
-static auto          tot_rw   = nelements * sizeof(floating_t) / memory_unit.first;
+static current_peak_rss current_peak;
+static read_bytes       rb;
+static written_bytes    wb;
+static auto             tot_size = nelements * sizeof(int64_t) / memory_unit.first;
+static auto             tot_rw   = nelements * sizeof(floating_t) / memory_unit.first;
 
 static const double peak_tolerance = 5 * tim::units::MiB;
 static const double curr_tolerance = 5 * tim::units::MiB;
@@ -84,9 +85,11 @@ allocate()
 {
     peak.reset();
     curr.reset();
+    current_peak.reset();
 
     curr.start();
     peak.start();
+    current_peak.start();
 
     std::vector<int64_t> v(nelements, 15);
     auto                 ret  = fibonacci(0);
@@ -100,6 +103,7 @@ allocate()
     if(ret < 0)
         printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 
+    current_peak.stop();
     curr.stop();
     peak.stop();
 }
@@ -155,11 +159,11 @@ string_t
 get_info(const read_bytes& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(read_bytes::get_unit());
+    auto           _unit = std::get<0>(read_bytes::get_unit());
     ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
-       << read_bytes::get_display_unit()
+       << std::get<0>(read_bytes::get_display_unit())
        << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
-       << read_bytes::get_display_unit() << std::endl;
+       << std::get<0>(read_bytes::get_display_unit()) << std::endl;
     return ss.str();
 }
 
@@ -167,11 +171,23 @@ string_t
 get_info(const written_bytes& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(written_bytes::get_unit());
+    auto           _unit = std::get<0>(written_bytes::get_unit());
     ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
-       << written_bytes::get_display_unit()
+       << std::get<0>(written_bytes::get_display_unit())
        << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
-       << written_bytes::get_display_unit() << std::endl;
+       << std::get<0>(written_bytes::get_display_unit()) << std::endl;
+    return ss.str();
+}
+
+string_t
+get_info(const current_peak_rss& obj)
+{
+    stringstream_t ss;
+    auto           _unit = std::get<0>(written_bytes::get_unit());
+    ss << "value = " << std::get<0>(obj.get_value()) / _unit << " "
+       << std::get<0>(written_bytes::get_display_unit())
+       << ", accum = " << std::get<0>(obj.get_accum()) / _unit << " "
+       << std::get<0>(written_bytes::get_display_unit()) << std::endl;
     return ss.str();
 }
 
@@ -236,6 +252,16 @@ TEST_F(rusage_tests, written_bytes)
     CHECK_AVAILABLE(written_bytes);
     details::print_info(wb, tot_rw);
     ASSERT_NEAR(tot_rw, std::get<0>(wb.get()), byte_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(rusage_tests, current_peak_rss)
+{
+    CHECK_AVAILABLE(current_peak_rss);
+    details::print_info(current_peak, tot_size);
+    ASSERT_NEAR(tot_size, current_peak.get().second - current_peak.get().first,
+                peak_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//

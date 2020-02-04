@@ -33,6 +33,7 @@
 #include "timemory/ert/data.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/plotting.hpp"
 
 namespace tim
 {

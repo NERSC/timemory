@@ -22,16 +22,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_BUILD_EXTERN_INIT
-#define TIMEMORY_BUILD_EXTERN_TEMPLATE
+// #define TIMEMORY_BUILD_EXTERN_INIT
+// #define TIMEMORY_BUILD_EXTERN_TEMPLATE
 
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/mpl/operations.hpp"
+#include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
+
+//======================================================================================//
+
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::wall_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::system_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::user_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::cpu_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::monotonic_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::monotonic_raw_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::thread_cpu_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::process_cpu_clock, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::cpu_util, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::process_cpu_util, true)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::thread_cpu_util, true)
+
+//======================================================================================//
 
 namespace tim
 {

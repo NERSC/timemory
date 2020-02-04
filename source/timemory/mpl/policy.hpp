@@ -32,6 +32,7 @@
 
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
 namespace tim
@@ -40,11 +41,57 @@ namespace policy
 {
 //======================================================================================//
 
-template <typename _Tp>
-struct instance_tracker
+template <typename _Comp, typename _Tp>
+struct record_statistics
 {
-    using type     = _Tp;
-    using int_type = int64_t;
+    using type            = _Tp;
+    using this_type       = record_statistics<_Comp, type>;
+    using policy_type     = this_type;
+    using statistics_type = statistics<type>;
+
+    static void apply(statistics<type>&, const _Comp&);
+    static void apply(type&, const _Comp&) {}
+};
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename _Comp>
+struct record_statistics<_Comp, void>
+{
+    using type            = void;
+    using this_type       = record_statistics<_Comp, type>;
+    using policy_type     = this_type;
+    using statistics_type = statistics<type>;
+
+    template <typename... _Args>
+    static void apply(_Args&&...)
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename _Comp>
+struct record_statistics<_Comp, std::tuple<>>
+{
+    using type            = std::tuple<>;
+    using this_type       = record_statistics<_Comp, type>;
+    using policy_type     = this_type;
+    using statistics_type = statistics<type>;
+
+    template <typename... _Args>
+    static void apply(_Args&&...)
+    {}
+};
+
+//======================================================================================//
+
+template <typename _Tp>
+struct instance_tracker<_Tp, true>
+{
+public:
+    using type                           = _Tp;
+    using int_type                       = int64_t;
+    static constexpr bool thread_support = true;
 
     instance_tracker()                        = default;
     ~instance_tracker()                       = default;
@@ -98,6 +145,49 @@ protected:
 protected:
     int_type m_tot = 0;
     int_type m_thr = 0;
+};
+
+//======================================================================================//
+
+template <typename _Tp>
+struct instance_tracker<_Tp, false>
+{
+public:
+    using type                           = _Tp;
+    using int_type                       = int64_t;
+    static constexpr bool thread_support = false;
+
+    instance_tracker()                        = default;
+    ~instance_tracker()                       = default;
+    instance_tracker(const instance_tracker&) = default;
+    instance_tracker(instance_tracker&&)      = default;
+    instance_tracker& operator=(const instance_tracker&) = default;
+    instance_tracker& operator=(instance_tracker&&) = default;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    static int_type get_started_count() { return get_started().load(); }
+
+protected:
+    //----------------------------------------------------------------------------------//
+    //
+    static std::atomic<int_type>& get_started()
+    {
+        static std::atomic<int_type> _instance(0);
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void start() { m_tot = get_started()++; }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void stop() { m_tot = --get_started(); }
+
+protected:
+    int_type m_tot = 0;
 };
 
 }  // namespace policy

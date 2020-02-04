@@ -283,7 +283,6 @@ main(int argc, char** argv)
 
     tim::dmp::finalize();
     return ret;
-    return RUN_ALL_TESTS();
 }
 
 //--------------------------------------------------------------------------------------//

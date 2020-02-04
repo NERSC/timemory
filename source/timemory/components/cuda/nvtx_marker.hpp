@@ -34,15 +34,10 @@
 
 namespace tim
 {
-template <typename... _Types>
-class component_list;
-template <typename... _Types>
-class component_tuple;
-
 namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
-
+extern template struct base<nvtx_marker, void>;
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -156,19 +151,6 @@ private:
 //--------------------------------------------------------------------------------------//
 
 }  // namespace component
-
-//--------------------------------------------------------------------------------------//
-
-namespace trait
-{
-template <>
-struct supports_args<component::nvtx_marker, std::tuple<>> : std::true_type
-{};
-
-template <>
-struct supports_args<component::nvtx_marker, std::tuple<cuda::stream_t>> : std::true_type
-{};
-}  // namespace trait
 
 //--------------------------------------------------------------------------------------//
 }  // namespace tim

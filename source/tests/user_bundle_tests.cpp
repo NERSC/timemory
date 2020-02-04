@@ -115,7 +115,15 @@ protected:
         cu_size_orig = tim::storage<cpu_util>::instance()->size();
         cc_size_orig = tim::storage<cpu_clock>::instance()->size();
         pr_size_orig = tim::storage<peak_rss>::instance()->size();
-        ret          = 0;
+
+        printf("\n");
+        printf("wc_size_orig = %lu\n", (long unsigned) wc_size_orig);
+        printf("cu_size_orig = %lu\n", (long unsigned) cu_size_orig);
+        printf("cc_size_orig = %lu\n", (long unsigned) cc_size_orig);
+        printf("pr_size_orig = %lu\n", (long unsigned) pr_size_orig);
+        printf("\n");
+
+        ret = 0;
 
         custom_bundle_t::reset();
         user_list_bundle::reset();

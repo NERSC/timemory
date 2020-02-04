@@ -256,6 +256,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::class_<component_list_t>         comp_list(tim, "component_tuple");
     py::class_<auto_timer_decorator>     timer_decorator(tim, "timer_decorator");
     py::class_<component_list_decorator> comp_decorator(tim, "component_decorator");
+    py::class_<pycomponent_bundle>       comp_bundle(tim, "component_bundle");
     py::class_<rss_usage_t>              rss_usage(tim, "rss_usage");
     py::class_<pytim::settings>          settings(tim, "settings");
 
@@ -410,14 +411,22 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, suppress_parsing);
     SETTING_PROPERTY(bool, enabled);
     SETTING_PROPERTY(bool, auto_output);
+    SETTING_PROPERTY(bool, cout_output);
     SETTING_PROPERTY(bool, file_output);
     SETTING_PROPERTY(bool, text_output);
     SETTING_PROPERTY(bool, json_output);
-    SETTING_PROPERTY(bool, cout_output);
+    SETTING_PROPERTY(bool, dart_output);
+    SETTING_PROPERTY(bool, time_output);
+    SETTING_PROPERTY(bool, plot_output);
     SETTING_PROPERTY(int, verbose);
     SETTING_PROPERTY(bool, debug);
     SETTING_PROPERTY(bool, banner);
+    SETTING_PROPERTY(bool, flat_profile);
+    SETTING_PROPERTY(bool, collapse_threads);
+    SETTING_PROPERTY(bool, destructor_report);
     SETTING_PROPERTY(uint16_t, max_depth);
+    SETTING_PROPERTY(string_t, time_format);
+    // width/precision
     SETTING_PROPERTY(int16_t, precision);
     SETTING_PROPERTY(int16_t, width);
     SETTING_PROPERTY(bool, scientific);
@@ -429,11 +438,30 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(int16_t, memory_width);
     SETTING_PROPERTY(string_t, memory_units);
     SETTING_PROPERTY(bool, memory_scientific);
+    // output
     SETTING_PROPERTY(string_t, output_path);
     SETTING_PROPERTY(string_t, output_prefix);
+    // dart
+    SETTING_PROPERTY(string_t, dart_type);
+    SETTING_PROPERTY(uint64_t, dart_count);
+    SETTING_PROPERTY(bool, dart_label);
+    // parallelism
+    SETTING_PROPERTY(bool, cpu_affinity);
+    SETTING_PROPERTY(bool, mpi_init);
+    SETTING_PROPERTY(bool, mpi_finalize);
+    SETTING_PROPERTY(bool, mpi_thread);
+    SETTING_PROPERTY(string_t, mpi_thread_type);
+    SETTING_PROPERTY(bool, mpi_output_per_rank);
+    SETTING_PROPERTY(bool, mpi_output_per_node);
+    SETTING_PROPERTY(bool, upcxx_init);
+    SETTING_PROPERTY(bool, upcxx_finalize);
+    SETTING_PROPERTY(int32_t, node_count);
+    // papi
     SETTING_PROPERTY(bool, papi_multiplexing);
     SETTING_PROPERTY(bool, papi_fail_on_error);
+    SETTING_PROPERTY(bool, papi_quiet);
     SETTING_PROPERTY(string_t, papi_events);
+    // cuda/nvtx/cupti
     SETTING_PROPERTY(uint64_t, cuda_event_batch_size);
     SETTING_PROPERTY(bool, nvtx_marker_device_sync);
     SETTING_PROPERTY(int32_t, cupti_activity_level);
@@ -441,6 +469,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(string_t, cupti_events);
     SETTING_PROPERTY(string_t, cupti_metrics);
     SETTING_PROPERTY(int, cupti_device);
+    // roofline
     SETTING_PROPERTY(string_t, roofline_mode);
     SETTING_PROPERTY(string_t, cpu_roofline_mode);
     SETTING_PROPERTY(string_t, gpu_roofline_mode);
@@ -449,6 +478,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, roofline_type_labels);
     SETTING_PROPERTY(bool, roofline_type_labels_cpu);
     SETTING_PROPERTY(bool, roofline_type_labels_gpu);
+    SETTING_PROPERTY(bool, instruction_roofline);
+    // ert
     SETTING_PROPERTY(uint64_t, ert_num_threads);
     SETTING_PROPERTY(uint64_t, ert_num_threads_cpu);
     SETTING_PROPERTY(uint64_t, ert_num_threads_gpu);
@@ -462,12 +493,12 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(uint64_t, ert_max_data_size);
     SETTING_PROPERTY(uint64_t, ert_max_data_size_cpu);
     SETTING_PROPERTY(uint64_t, ert_max_data_size_gpu);
+    SETTING_PROPERTY(string_t, ert_skip_ops);
+    // signals
     SETTING_PROPERTY(bool, allow_signal_handler);
     SETTING_PROPERTY(bool, enable_signal_handler);
     SETTING_PROPERTY(bool, enable_all_signals);
     SETTING_PROPERTY(bool, disable_all_signals);
-    SETTING_PROPERTY(int32_t, node_count);
-    SETTING_PROPERTY(bool, destructor_report);
 
     //==================================================================================//
     //
@@ -594,6 +625,68 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
                         py::return_value_policy::automatic);
     //----------------------------------------------------------------------------------//
+
+    auto configure_pybundle = [](py::list _args, bool flat_profile) {
+        std::set<TIMEMORY_COMPONENT> components;
+        if(_args.empty())
+            components.insert(WALL_CLOCK);
+
+        for(auto itr : _args)
+        {
+            std::string        _sitr = "";
+            TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
+
+            try
+            {
+                _sitr = itr.cast<std::string>();
+                if(_sitr.length() > 0)
+                    _citr = tim::enumerate_component(_sitr);
+                else
+                    continue;
+            } catch(...)
+            {}
+
+            if(_citr == TIMEMORY_COMPONENTS_END)
+            {
+                try
+                {
+                    _citr = itr.cast<TIMEMORY_COMPONENT>();
+                } catch(...)
+                {}
+            }
+
+            if(_citr != TIMEMORY_COMPONENTS_END)
+                components.insert(_citr);
+            else
+            {
+                PRINT_HERE("%s", "ignoring argument that failed casting to either "
+                                 "'timemory.component' and string");
+            }
+        }
+        pycomponent_bundle::configure(components, flat_profile);
+    };
+
+    //==================================================================================//
+    //
+    //                      Component bundle
+    //
+    //==================================================================================//
+    comp_bundle.def(py::init(&pytim::init::component_bundle), "Initialization",
+                    py::arg("func"), py::arg("file"), py::arg("line"),
+                    py::arg("extra") = py::list(),
+                    py::return_value_policy::take_ownership);
+    //----------------------------------------------------------------------------------//
+    comp_bundle.def("start", &pycomponent_bundle::start, "Start the bundle");
+    //----------------------------------------------------------------------------------//
+    comp_bundle.def("stop", &pycomponent_bundle::stop, "Stop the bundle");
+    //----------------------------------------------------------------------------------//
+    comp_bundle.def_static("configure", configure_pybundle,
+                           py::arg("components")   = py::list(),
+                           py::arg("flat_profile") = false,
+                           "Configure the profiler types (default: 'wall_clock')");
+    //----------------------------------------------------------------------------------//
+    comp_bundle.def_static("reset", &pybundle_t::reset,
+                           "Reset the components in the bundle");
 
     //==================================================================================//
     //

@@ -33,55 +33,26 @@
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
 
-namespace tim
-{
-namespace trait
-{
 //--------------------------------------------------------------------------------------//
 //
 //                              IS TIMING CATEGORY
 //
 //--------------------------------------------------------------------------------------//
 
-template <>
-struct is_timing_category<component::wall_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::system_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::user_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::cpu_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::monotonic_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::monotonic_raw_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::thread_cpu_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::process_cpu_clock> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::cuda_event> : std::true_type
-{};
-
-template <>
-struct is_timing_category<component::cupti_activity> : std::true_type
-{};
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::system_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::user_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::monotonic_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::monotonic_raw_clock,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::thread_cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::process_cpu_clock,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::user_mode_time, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::kernel_mode_time, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::cuda_event, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::cupti_activity, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -89,73 +60,28 @@ struct is_timing_category<component::cupti_activity> : std::true_type
 //
 //--------------------------------------------------------------------------------------//
 
-template <>
-struct is_memory_category<component::peak_rss> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::page_rss> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::stack_rss> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::data_rss> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_swap> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_io_in> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_io_out> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_minor_page_faults> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_major_page_faults> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_msg_sent> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_msg_recv> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::num_signals> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::voluntary_context_switch> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::priority_context_switch> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::read_bytes> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::written_bytes> : std::true_type
-{};
-
-template <>
-struct is_memory_category<component::virtual_memory> : std::true_type
-{};
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::peak_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::page_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::stack_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::data_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_swap, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_io_in, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_io_out, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_minor_page_faults,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_major_page_faults,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_msg_sent, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_msg_recv, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_signals, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::voluntary_context_switch,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::priority_context_switch,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::read_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::written_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::virtual_memory, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::malloc_gotcha, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -163,45 +89,19 @@ struct is_memory_category<component::virtual_memory> : std::true_type
 //
 //--------------------------------------------------------------------------------------//
 
-template <>
-struct uses_timing_units<component::wall_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::system_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::user_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::cpu_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::monotonic_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::monotonic_raw_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::thread_cpu_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::process_cpu_clock> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::cuda_event> : std::true_type
-{};
-
-template <>
-struct uses_timing_units<component::cupti_activity> : std::true_type
-{};
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::system_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::user_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::monotonic_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::monotonic_raw_clock,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::thread_cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::process_cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::user_mode_time, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::kernel_mode_time, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::cuda_event, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::cupti_activity, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -209,33 +109,14 @@ struct uses_timing_units<component::cupti_activity> : std::true_type
 //
 //--------------------------------------------------------------------------------------//
 
-template <>
-struct uses_memory_units<component::peak_rss> : std::true_type
-{};
-
-template <>
-struct uses_memory_units<component::page_rss> : std::true_type
-{};
-
-template <>
-struct uses_memory_units<component::stack_rss> : std::true_type
-{};
-
-template <>
-struct uses_memory_units<component::data_rss> : std::true_type
-{};
-
-template <>
-struct uses_memory_units<component::read_bytes> : std::true_type
-{};
-
-template <>
-struct uses_memory_units<component::written_bytes> : std::true_type
-{};
-
-template <>
-struct uses_memory_units<component::virtual_memory> : std::true_type
-{};
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::peak_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::page_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::stack_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::data_rss, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::read_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::written_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::virtual_memory, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::malloc_gotcha, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -243,17 +124,64 @@ struct uses_memory_units<component::virtual_memory> : std::true_type
 //
 //--------------------------------------------------------------------------------------//
 
-template <>
-struct uses_percent_units<component::cpu_util> : std::true_type
-{};
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::cpu_util, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::process_cpu_util, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::thread_cpu_util, true_type)
+
+namespace tim
+{
+namespace trait
+{
+//--------------------------------------------------------------------------------------//
+//
+//                              UNITS SPECIALIZATIONS
+//
+//--------------------------------------------------------------------------------------//
 
 template <>
-struct uses_percent_units<component::process_cpu_util> : std::true_type
-{};
+struct units<component::current_peak_rss>
+{
+    using type         = std::pair<double, double>;
+    using display_type = std::pair<std::string, std::string>;
+};
+
+//--------------------------------------------------------------------------------------//
 
 template <>
-struct uses_percent_units<component::thread_cpu_util> : std::true_type
-{};
+struct units<component::read_bytes>
+{
+    using type         = std::tuple<double, double>;
+    using display_type = std::tuple<std::string, std::string>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct units<component::written_bytes>
+{
+    using type         = std::array<double, 2>;
+    using display_type = std::array<std::string, 2>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct units<component::cpu_roofline<_Types...>>
+{
+    using type         = double;
+    using display_type = std::vector<std::string>;
+};
+
+//--------------------------------------------------------------------------------------//
+/*
+template <>
+struct units<component::cupti_counters>
+{
+    using type         = std::vector<double>;
+    using display_type = std::string;
+};
+*/
+//--------------------------------------------------------------------------------------//
 
 }  // namespace trait
 }  // namespace tim

@@ -136,7 +136,7 @@ public:
     {}
 
     template <typename _Func = init_func_t>
-    explicit component_hybrid(const string_t& key, const bool& store = false,
+    explicit component_hybrid(const string_t& key, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
     : m_tuple(key, store, flat)
@@ -146,7 +146,7 @@ public:
     }
 
     template <typename _Func = init_func_t>
-    explicit component_hybrid(const captured_location_t& loc, const bool& store = false,
+    explicit component_hybrid(const captured_location_t& loc, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
     : m_tuple(loc, store, flat)
@@ -234,6 +234,14 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // sample functions
+    void sample()
+    {
+        m_tuple.sample();
+        m_list.sample();
+    }
+
+    //----------------------------------------------------------------------------------//
     // start/stop functions
     void start()
     {
@@ -277,6 +285,16 @@ public:
     {
         m_tuple.mark_end(std::forward<_Args>(_args)...);
         m_list.mark_end(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // store a value
+    //
+    template <typename... _Args>
+    void store(_Args&&... _args)
+    {
+        m_tuple.store(std::forward<_Args>(_args)...);
+        m_list.store(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

@@ -30,6 +30,7 @@
 #include "timemory/components.hpp"
 #include "timemory/general/hash.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/plotting.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -39,6 +40,83 @@
 using namespace tim::component;
 
 #if defined(TIMEMORY_EXTERN_INIT)
+
+extern ::tim::manager*
+timemory_manager_master_instance();
+
+//======================================================================================//
+
+#    if defined(TIMEMORY_USE_MPI)
+
+extern "C"
+{
+    //----------------------------------------------------------------------------------//
+
+    int timemory_MPI_Finalize(int, int, void*, void*)
+    {
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
+        auto manager = timemory_manager_master_instance();
+        if(manager)
+            manager->finalize();
+        ::tim::dmp::is_finalized() = true;
+        return MPI_SUCCESS;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_MPI_Init(int* argc, char*** argv)
+    {
+        int comm_key = 0;
+        MPI_Comm_create_keyval(nullptr, &timemory_MPI_Finalize, &comm_key, nullptr);
+        MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, nullptr);
+
+        static auto _manager = timemory_manager_master_instance();
+        tim::consume_parameters(_manager);
+        ::tim::timemory_init(*argc, *argv);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    int MPI_Init(int* argc, char*** argv)
+    {
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
+                   __LINE__);
+        }
+#        if defined(TIMEMORY_USE_TAU)
+        Tau_init(*argc, *argv);
+#        endif
+        auto ret = PMPI_Init(argc, argv);
+        timemory_MPI_Init(argc, argv);
+        return ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
+    {
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
+#        if defined(TIMEMORY_USE_TAU)
+        Tau_init(*argc, *argv);
+#        endif
+        auto ret = PMPI_Init_thread(argc, argv, req, prov);
+        timemory_MPI_Init(argc, argv);
+        return ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+}
+
+#    endif
 
 //======================================================================================//
 
@@ -50,8 +128,12 @@ namespace tim
 env_settings*
 env_settings::instance()
 {
-    static env_settings* _instance = new env_settings();
-    return _instance;
+    static std::atomic<int>           _count;
+    static env_settings*              _instance = new env_settings();
+    static thread_local int           _id       = _count++;
+    static thread_local env_settings* _local =
+        (_id == 0) ? _instance : new env_settings(_instance, _id);
+    return _local;
 }
 
 //--------------------------------------------------------------------------------------//

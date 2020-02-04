@@ -44,10 +44,22 @@ static manager_pointer_t timemory_master_manager_instance =
 #    endif
 //======================================================================================//
 
+::tim::manager*
+timemory_manager_master_instance()
+{
+    using manager_t     = tim::manager;
+    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+    return _pinst.first.get();
+}
+
 extern "C"
 {
     __library_ctor__ void timemory_library_constructor()
     {
+        auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
+        if(!library_ctor)
+            return;
+
 #    if defined(DEBUG)
         auto _debug   = tim::settings::debug();
         auto _verbose = tim::settings::verbose();
@@ -71,75 +83,26 @@ extern "C"
             printf("[%s]> initializing storage...\n", __FUNCTION__);
 #    endif
 
+        std::atexit(tim::timemory_finalize);
         // initialize storage
-        using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-        tim::manager::get_storage<tuple_type>::initialize(_master);
+        tim::settings::initialize_storage();
+        // using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+        // tim::manager::get_storage<tuple_type>::initialize(_master);
+    }
+
+    __library_dtor__ static void timemory_library_destructor()
+    {
+        /*
+        auto library_dtor = tim::get_env<bool>("TIMEMORY_LIBRARY_DTOR", true);
+        if(!library_dtor)
+            return;
+
+        auto _master = timemory_manager_master_instance();
+        if(_master)
+            _master->finalize();
+        */
     }
 }
-
-//======================================================================================//
-#    if defined(TIMEMORY_USE_MPI)
-
-::tim::manager*
-timemory_mpi_manager_master_instance()
-{
-    using manager_t     = tim::manager;
-    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
-    return _pinst.first.get();
-}
-
-extern "C"
-{
-    int MPI_Init(int* argc, char*** argv)
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
-                   __LINE__);
-        }
-#        if defined(TIMEMORY_USE_TAU)
-        Tau_init(*argc, *argv);
-#        endif
-        auto        ret      = PMPI_Init(argc, argv);
-        static auto _manager = timemory_mpi_manager_master_instance();
-        tim::consume_parameters(_manager);
-        ::tim::timemory_init(*argc, *argv);
-        return ret;
-    }
-
-    int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-#        if defined(TIMEMORY_USE_TAU)
-        Tau_init(*argc, *argv);
-#        endif
-        auto        ret      = PMPI_Init_thread(argc, argv, req, prov);
-        static auto _manager = timemory_mpi_manager_master_instance();
-        tim::consume_parameters(_manager);
-        ::tim::timemory_init(*argc, *argv);
-        return ret;
-    }
-
-    int MPI_Finalize()
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-        auto manager = timemory_mpi_manager_master_instance();
-        if(manager)
-            manager->finalize();
-        ::tim::dmp::is_finalized() = true;
-        return PMPI_Finalize();
-    }
-}
-
-#    endif
 
 //======================================================================================//
 

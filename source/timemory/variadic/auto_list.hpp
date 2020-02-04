@@ -100,14 +100,16 @@ public:
 public:
     template <typename _Func = init_func_t>
     explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
-                       bool report_at_exit = false, const _Func& = get_initializer());
+                       bool report_at_exit = settings::destructor_report(),
+                       const _Func&        = get_initializer());
 
     template <typename _Func = init_func_t>
     explicit auto_list(const captured_location_t&, bool flat = settings::flat_profile(),
-                       bool report_at_exit = false, const _Func& = get_initializer());
+                       bool report_at_exit = settings::destructor_report(),
+                       const _Func&        = get_initializer());
 
     explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
-                       bool report_at_exit = false);
+                       bool report_at_exit = settings::destructor_report());
     ~auto_list();
 
     // copy and move
@@ -127,10 +129,15 @@ public:
     inline operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
-    inline void record()
+    inline void measure()
     {
         if(m_enabled)
-            m_temporary_object.record();
+            m_temporary_object.measure();
+    }
+    inline void sample()
+    {
+        if(m_enabled)
+            m_temporary_object.sample();
     }
     inline void start()
     {
@@ -163,6 +170,12 @@ public:
     {
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
+    inline void store(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.store(std::forward<_Args>(_args)...);
     }
     template <typename... _Args>
     inline void audit(_Args&&... _args)

@@ -169,9 +169,7 @@ private:
 template <typename T>
 inline void
 CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
-{
-    // ar.startNode();
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 //! Epilogue for NVPs for settings archive
@@ -179,9 +177,7 @@ CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
 template <typename T>
 inline void
 CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const NameValuePair<T>&)
-{
-    // ar.finishNode();
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 //! Prologue for deferred data for settings archive
@@ -242,17 +238,13 @@ CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const T&)
 //! Prologue for arithmetic types for settings archive
 inline void
 CEREAL_PROLOGUE_FUNCTION_NAME(SettingsTextArchive& ar, const std::nullptr_t&)
-{
-    PRINT_HERE("%s", "");
-}
+{}
 
 //--------------------------------------------------------------------------------------//
 //! Epilogue for arithmetic types for settings archive
 inline void
 CEREAL_EPILOGUE_FUNCTION_NAME(SettingsTextArchive&, const std::nullptr_t&)
-{
-    PRINT_HERE("%s", "");
-}
+{}
 
 //======================================================================================//
 //

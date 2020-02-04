@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <timemory/library.h>
 #include <timemory/timemory.h>
 
 static long nlaps = 0;
@@ -99,7 +100,7 @@ main(int argc, char** argv)
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
-    printf("... \"%s\" : %s @ %i. Running fibonacci(%i, %i)...\n", __FILE__, __FUNCTION__,
+    printf("'%s' : %s @ %i. Running fibonacci(%i, %i)...\n", __FILE__, __FUNCTION__,
            __LINE__, nfib, cutoff);
 
     // not sure why this fails on Windows
@@ -128,9 +129,10 @@ main(int argc, char** argv)
     printf("main (timed): fibonacci(%i, %i) = %lli\n", nfib, cutoff, (long long) n1);
     printf("# laps = %li\n", nlaps);
 
-    printf("\n... \"%s\" : %s @ %i --> n = %lli, %lli, %lli\n", __FILE__, __FUNCTION__,
+    printf("\n'%s' : %s @ %i --> n = %lli, %lli, %lli\n", __FILE__, __FUNCTION__,
            __LINE__, (long long int) n0, (long long int) n1, (long long int) n2);
 
+    TIMEMORY_FINALIZE();
     return 0;
 }
 
