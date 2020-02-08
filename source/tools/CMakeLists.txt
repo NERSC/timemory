@@ -86,6 +86,7 @@ install(TARGETS timem DESTINATION bin)
 # Build, link, and install timemory-run
 #
 if(TIMEMORY_USE_DYNINST)
+
     find_library(DYNINST_API_RT dyninstAPI_RT
         HINTS ${Dyninst_DIR}
         PATHS ${Dyninst_DIR}
@@ -97,7 +98,7 @@ if(TIMEMORY_USE_DYNINST)
         target_compile_definitions(timemory-run PRIVATE
             DYNINST_API_RT="${DYNINST_API_RT}")
     endif()
-    
+
     target_link_libraries(timemory-run PRIVATE
         timemory-compile-options
         timemory-arch

@@ -1124,7 +1124,7 @@ if(Dyninst_FOUND AND Boost_FOUND)
     target_link_libraries(timemory-dyninst INTERFACE
         ${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
     target_include_directories(timemory-dyninst SYSTEM INTERFACE
-        ${DYNINST_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+        ${DYNINST_INCLUDE_DIRS} ${DYNINST_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
     target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
