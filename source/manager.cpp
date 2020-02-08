@@ -44,64 +44,69 @@ static manager_pointer_t timemory_master_manager_instance =
 #    endif
 //======================================================================================//
 
-::tim::manager*
-timemory_manager_master_instance()
-{
-    using manager_t     = tim::manager;
-    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
-    return _pinst.first.get();
-}
-
 extern "C"
 {
+    ::tim::manager* timemory_manager_master_instance()
+    {
+        using manager_t     = tim::manager;
+        static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+        tim::manager::set_persistent_master(_pinst.first);
+        return _pinst.first.get();
+    }
+
     __library_ctor__ void timemory_library_constructor()
     {
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
+        auto storage_ctor = tim::get_env<bool>("TIMEMORY_STORAGE_CTOR", true);
+
         if(!library_ctor)
             return;
 
-#    if defined(DEBUG)
         auto _debug   = tim::settings::debug();
         auto _verbose = tim::settings::verbose();
 
         if(_debug || _verbose > 3)
             printf("[%s]> initializing manager...\n", __FUNCTION__);
-#    endif
 
+        /*
         static auto              _master = tim::manager::master_instance();
         static thread_local auto _worker = tim::manager::instance();
 
         if(!_master)
+            _master = tim::manager::master_instance();
+        */
+
+        auto        _inst        = timemory_manager_master_instance();
+        static auto _dir         = tim::settings::output_path();
+        static auto _prefix      = tim::settings::output_prefix();
+        static auto _time_output = tim::settings::time_output();
+        static auto _time_format = tim::settings::time_format();
+        tim::consume_parameters(_dir, _prefix, _time_output, _time_format);
+
+        static auto              _master = tim::manager::master_instance();
+        static thread_local auto _worker = tim::manager::instance();
+
+        if(!_master && _inst)
+            _master.reset(_inst);
+        else if(!_master)
             _master = tim::manager::master_instance();
 
         if(_worker != _master)
             printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
                    (void*) _master.get(), (void*) _worker.get());
 
-#    if defined(DEBUG)
-        if(_debug || _verbose > 3)
-            printf("[%s]> initializing storage...\n", __FUNCTION__);
-#    endif
-
         std::atexit(tim::timemory_finalize);
+
         // initialize storage
-        tim::settings::initialize_storage();
-        // using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-        // tim::manager::get_storage<tuple_type>::initialize(_master);
+        if(storage_ctor)
+        {
+            if(_debug || _verbose > 3)
+                printf("[%s]> initializing storage...\n", __FUNCTION__);
+            tim::settings::initialize_storage();
+        }
     }
 
-    __library_dtor__ static void timemory_library_destructor()
-    {
-        /*
-        auto library_dtor = tim::get_env<bool>("TIMEMORY_LIBRARY_DTOR", true);
-        if(!library_dtor)
-            return;
-
-        auto _master = timemory_manager_master_instance();
-        if(_master)
-            _master->finalize();
-        */
-    }
+    __library_dtor__ void timemory_library_destructor() {}
 }
 
 //======================================================================================//
@@ -109,21 +114,12 @@ extern "C"
 namespace tim
 {
 //======================================================================================//
-
-std::atomic<int32_t>&
-manager::f_manager_instance_count()
-{
-    static std::atomic<int32_t> _instance(0);
-    return _instance;
-}
-
-//======================================================================================//
-// number of threads counter
+// persistent data for instance counting, threading counting, and exit-hook control
 //
-std::atomic<int32_t>&
-manager::f_thread_counter()
+manager::persistent_data&
+manager::f_manager_persistent_data()
 {
-    static std::atomic<int32_t> _instance(0);
+    static persistent_data _instance;
     return _instance;
 }
 
@@ -144,7 +140,9 @@ manager::pointer_t
 manager::master_instance()
 {
     static auto _pinst = get_shared_ptr_pair_master_instance<manager>();
+    manager::f_manager_persistent_data().master_instance = _pinst;
     return _pinst;
+    // return f_manager_persistent_data().master_instance;
 }
 
 }  // namespace tim

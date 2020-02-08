@@ -140,16 +140,6 @@ MPI_Init_thread(int* argc, char*** argv, int required, int* provided);
 
 //--------------------------------------------------------------------------------------//
 
-static inline ::tim::manager*
-timemory_mpi_manager_master_instance()
-{
-    using manager_t     = tim::manager;
-    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
-    return _pinst.first.get();
-}
-
-//--------------------------------------------------------------------------------------//
-
 extern "C"
 {
     //----------------------------------------------------------------------------------//

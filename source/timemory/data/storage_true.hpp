@@ -431,11 +431,12 @@ public:
     {
         using Base                       = typename Type::base_type;
         std::unordered_set<Type*> _stack = m_stack;
-        for(auto& itr : _stack)
-        {
-            static_cast<Base*>(itr)->stop();
-            static_cast<Base*>(itr)->pop_node();
-        }
+        if(settings::stack_clearing())
+            for(auto& itr : _stack)
+            {
+                static_cast<Base*>(itr)->stop();
+                static_cast<Base*>(itr)->pop_node();
+            }
         m_stack.clear();
     }
 
@@ -1588,7 +1589,7 @@ storage<Type, true>::serialize_me(std::false_type, Archive& ar,
         ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
            cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
            cereal::make_nvp("rolling_hash", itr.rolling_hash()),
-           cereal::make_nvp("heirarchy", itr.hierarchy()),
+           // cereal::make_nvp("heirarchy", itr.hierarchy()),
            cereal::make_nvp("stats", itr.stats()));
         ar.finishNode();
     }
@@ -1627,7 +1628,7 @@ storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned in
         ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
            cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
            cereal::make_nvp("rolling_hash", itr.rolling_hash()),
-           cereal::make_nvp("heirarchy", itr.hierarchy()),
+           // cereal::make_nvp("heirarchy", itr.hierarchy()),
            cereal::make_nvp("stats", itr.stats()));
         ar.finishNode();
     }

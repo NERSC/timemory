@@ -69,17 +69,21 @@ def _profiler_function(frame, event, arg):
         _func = "{}".format(frame.f_code.co_name)
         _file = "" if not _include_filepath else "{}".format(
             frame.f_code.co_filename)
+
         if not _full_filepath and len(_file) > 0:
             _file = os.path.basename(_file)
         _line = int(frame.f_lineno) if _include_line else -1
-        if True or "__init__.py" not in _file:
+
+        if "__init__.py" not in _file:
             entry = component_bundle(_func, _file, _line)
             entry.start()
             _records.append(entry)
         else:
             _skip_counts.append(_count)
         _counter += 1
+
     elif event in _stop_events:
+
         if _count in _skip_counts:
             _skip_counts.remove(_count)
         elif len(_records) > 0:

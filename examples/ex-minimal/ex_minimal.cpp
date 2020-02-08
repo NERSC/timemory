@@ -22,9 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/timemory.hpp"
 #include <cstdio>
 #include <cstdlib>
-#include <timemory/timemory.hpp>
 
 //
 // shorthand

@@ -164,11 +164,11 @@ add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
 # Build settings
 add_option(TIMEMORY_BUILD_DOCS
-    "Make a `doc` make target"  OFF ${_FEATURE})
+    "Make a `doc` make target"  OFF)
 add_option(TIMEMORY_BUILD_TESTING
     "Enable testing" OFF)
-add_option(TIMEMORY_BUILD_GTEST
-    "Enable GoogleTest" ${TIMEMORY_BUILD_TESTING} ${_FEATURE})
+add_option(TIMEMORY_BUILD_GOOGLE_TEST
+    "Enable GoogleTest" ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_EXAMPLES
     "Build the examples"  ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_C
@@ -184,9 +184,9 @@ add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_DEVELOPER
-    "Enable building with developer flags" OFF ${_FEATURE})
+    "Enable building with developer flags" OFF)
 add_option(TIMEMORY_FORCE_GPERF_PYTHON
-    "Enable gperftools + Python (may cause termination errors)" OFF ${_FEATURE})
+    "Enable gperftools + Python (may cause termination errors)" OFF)
 add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
 add_option(TIMEMORY_REQUIRE_PACKAGES
@@ -209,27 +209,27 @@ endif()
 
 # timemory options
 add_option(TIMEMORY_USE_STATISTICS
-    "Enable statistics by default" ON ${_FEATURE})
+    "Enable statistics by default" ON)
 add_option(TIMEMORY_USE_MPI
     "Enable MPI usage" ON)
 add_option(TIMEMORY_USE_UPCXX
     "Enable UPCXX usage (MPI support takes precedence)" ON)
 add_option(TIMEMORY_USE_SANITIZER
-    "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF ${_FEATURE})
+    "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
 add_option(TIMEMORY_USE_TAU
     "Enable TAU marking API" ON)
 add_option(TIMEMORY_USE_PAPI
     "Enable PAPI" ${_USE_PAPI})
 add_option(TIMEMORY_USE_CLANG_TIDY
-    "Enable running clang-tidy" OFF ${_FEATURE})
+    "Enable running clang-tidy" OFF)
 add_option(TIMEMORY_USE_COVERAGE
-    "Enable code-coverage" ${_USE_COVERAGE} ${_FEATURE})
+    "Enable code-coverage" ${_USE_COVERAGE})
 add_option(TIMEMORY_USE_GPERF
     "Enable gperftools" ON)
 add_option(TIMEMORY_USE_GPERF_STATIC
     "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 add_option(TIMEMORY_USE_ARCH
-    "Enable architecture flags" OFF ${_FEATURE})
+    "Enable architecture flags" OFF)
 add_option(TIMEMORY_USE_VTUNE
     "Enable VTune marking API" ON)
 add_option(TIMEMORY_USE_CUDA
@@ -243,11 +243,9 @@ add_option(TIMEMORY_USE_CALIPER
 add_option(TIMEMORY_USE_PYTHON
     "Enable Python" ${TIMEMORY_BUILD_PYTHON})
 add_option(TIMEMORY_USE_COMPILE_TIMING
-    "Enable -ftime-report for compilation times" OFF ${_FEATURE})
+    "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
-    "Enable dynamic instrumentation extensions" ON ${_FEATURE})
-add_option(TIMEMORY_USE_KOKKOS
-    "Enable ERT via Kokkos" ON ${_FEATURE})
+    "Enable dynamic instrumentation extensions" ON)
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_USE_LIKWID
         "Enable LIKWID marker forwarding" ON)

@@ -35,7 +35,8 @@
 #if defined(TIMEMORY_USE_MPI_P)
 extern "C"
 {
-    extern void init_timemory_mpip_tools();
+    extern uint64_t init_timemory_mpip_tools();
+    extern void stop_timemory_mpip_tools(uint64_t);
 }
 #endif
 
@@ -300,8 +301,68 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     auto _init_mpip = [&]() {
 #if defined(TIMEMORY_USE_MPI_P)
-        init_timemory_mpip_tools();
+        return init_timemory_mpip_tools();
+#else
+        return std::numeric_limits<uint64_t>::max();
 #endif
+    };
+    //----------------------------------------------------------------------------------//
+    auto _stop_mpip = [&](uint64_t id) {
+#if defined(TIMEMORY_USE_MPI_P)
+        stop_timemory_mpip_tools(id);
+#else
+        tim::consume_parameters(id);
+#endif
+    };
+    //----------------------------------------------------------------------------------//
+    auto _init = [&](py::list argv, std::string _prefix, std::string _suffix) {
+        if(argv.size() < 1)
+            return;
+        int    _argc = argv.size();
+        char** _argv = new char*[argv.size()];
+        for(int i = 0; i < _argc; ++i)
+        {
+            auto  _str    = argv[i].cast<std::string>();
+            char* _argv_i = new char[_str.size()];
+            std::strcpy(_argv_i, _str.c_str());
+            _argv[i] = _argv_i;
+        }
+        tim::timemory_init(_argc, _argv, _prefix, _suffix);
+        for(int i = 0; i < _argc; ++i)
+            delete[] _argv[i];
+        delete[] _argv;
+    };
+    //----------------------------------------------------------------------------------//
+    auto _finalize = [&]() {
+        try
+        {
+            // python GC seems to cause occasional problems
+            tim::settings::stack_clearing() = false;
+            tim::timemory_finalize();
+        } catch(std::exception& e)
+        {
+            PRINT_HERE("ERROR: %s", e.what());
+        }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _init_mpi = [&]() {
+        try
+        {
+            // tim::mpi::init();
+        } catch(std::exception& e)
+        {
+            PRINT_HERE("ERROR: %s", e.what());
+        }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _finalize_mpi = [&]() {
+        try
+        {
+            tim::mpi::finalize();
+        } catch(std::exception& e)
+        {
+            PRINT_HERE("ERROR: %s", e.what());
+        }
     };
     //----------------------------------------------------------------------------------//
 
@@ -312,24 +373,18 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def("set_max_depth", [&](int32_t ndepth) { manager_t::max_depth(ndepth); },
-            "Max depth of auto-timers");
+    tim.def("toggle", [&](bool on) { tim::settings::enabled() = on; },
+            "Enable/disable timemory", py::arg("on") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("get_max_depth", [&]() { return manager_t::max_depth(); },
-            "Max depth of auto-timers");
+    tim.def("enable", [&]() { tim::settings::enabled() = true; }, "Enable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("toggle", [&](bool timers_on) { manager_t::enable(timers_on); },
-            "Enable/disable auto-timers", py::arg("timers_on") = true);
+    tim.def("disable", [&]() { tim::settings::enabled() = false; }, "Disable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("enable", [&]() { manager_t::enable(true); }, "Enable auto-timers");
+    tim.def("is_enabled", [&]() { return tim::settings::enabled(); },
+            "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("disable", [&]() { manager_t::enable(false); }, "Disable auto-timers");
-    //----------------------------------------------------------------------------------//
-    tim.def("is_enabled", [&]() { return manager_t::is_enabled(); },
-            "Return if the auto-timers are enabled or disabled");
-    //----------------------------------------------------------------------------------//
-    tim.def("enabled", [&]() { return manager_t::is_enabled(); },
-            "Return if the auto-timers are enabled or disabled");
+    tim.def("enabled", [&]() { return tim::settings::enabled(); },
+            "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
     tim.def("enable_signal_detection", &pytim::enable_signal_detection,
             "Enable signal detection", py::arg("signal_list") = py::list());
@@ -357,43 +412,27 @@ PYBIND11_MODULE(libpytimemory, tim)
             "Set the exit action when a signal is raised -- function must accept "
             "integer");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_init",
-            [&](py::list argv, std::string _prefix, std::string _suffix) {
-                if(argv.size() < 1)
-                    return;
-                int    _argc = argv.size();
-                char** _argv = new char*[argv.size()];
-                for(int i = 0; i < _argc; ++i)
-                {
-                    auto  _str    = argv[i].cast<std::string>();
-                    char* _argv_i = new char[_str.size()];
-                    std::strcpy(_argv_i, _str.c_str());
-                    _argv[i] = _argv_i;
-                }
-                tim::timemory_init(_argc, _argv, _prefix, _suffix);
-                for(int i = 0; i < _argc; ++i)
-                    delete[] _argv[i];
-                delete[] _argv;
-            },
-            "Parse the environment and use argv to set output path",
-            py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
-            py::arg("suffix") = "-output");
+    tim.def("timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list(),
+            py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_finalize",
-            []() {
-                try
-                {
-                    tim::timemory_finalize();
-                } catch(std::exception& e)
-                {
-                    PRINT_HERE("ERROR: %s", e.what());
-                }
-            },
+    tim.def("timemory_finalize", _finalize,
+            "Finalize timemory (generate output) -- important to call if using MPI");
+    //----------------------------------------------------------------------------------//
+    tim.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list(),
+            py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
+    //----------------------------------------------------------------------------------//
+    tim.def("finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
     //----------------------------------------------------------------------------------//
-    tim.def("init_mpip", _init_mpip, "Enable MPIP profiling");
+    tim.def("init_mpip", _init_mpip, "Activate MPIP profiling");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_mpip", _stop_mpip, "Deactivate MPIP profiling", py::arg("id"));
+    //----------------------------------------------------------------------------------//
+    tim.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
+    //----------------------------------------------------------------------------------//
+    tim.def("mpi_init", _init_mpi, "Initialize MPI");
 
     //==================================================================================//
     //

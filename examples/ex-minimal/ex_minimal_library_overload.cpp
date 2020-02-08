@@ -30,11 +30,11 @@
 #    undef TIMEMORY_USE_NVTX
 #endif
 
+#include "timemory/library.h"
+#include "timemory/variadic/auto_tuple.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <timemory/library.h>
-#include <timemory/variadic/auto_tuple.hpp>
 
 #define LABEL(...) TIMEMORY_LABEL(__VA_ARGS__)
 

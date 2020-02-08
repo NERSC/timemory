@@ -96,7 +96,7 @@ struct cupti_activity : public base<cupti_activity, uint64_t>
             std::vector<cupti::activity_kind_t> _kinds;
             auto                                lvl = settings::cupti_activity_level();
 
-            /// look up integer codes in <timemory/details/cupti.hpp>
+            /// look up integer codes in <timemory/backends/bits/cupti.hpp>
             auto vec = delimit(settings::cupti_activity_kinds());
             for(const auto& itr : vec)
             {

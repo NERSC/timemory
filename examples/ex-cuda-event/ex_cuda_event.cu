@@ -35,10 +35,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/ert/kernels.hpp>
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
-#include <timemory/utility/testing.hpp>
+#include "timemory/ert/kernels.hpp"
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/testing.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/components/cupti/counters.hpp"

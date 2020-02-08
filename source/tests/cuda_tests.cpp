@@ -24,8 +24,8 @@
 
 #include "gtest/gtest.h"
 
-#include <timemory/backends/device.hpp>
-#include <timemory/timemory.hpp>
+#include "timemory/backends/device.hpp"
+#include "timemory/timemory.hpp"
 
 #include <chrono>
 #include <iostream>

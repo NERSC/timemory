@@ -64,9 +64,10 @@ using true_type                      = std::true_type;
 using false_type                     = std::false_type;
 using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
 
-template <typename _Tp, typename _Vp = typename _Tp::value_type>
+template <typename T, typename V = typename T::value_type>
 struct generates_output;
-template <typename _Tp, typename _Vp = typename _Tp::value_type>
+
+template <typename T, typename V = typename T::value_type>
 struct implements_storage;
 
 //======================================================================================//
@@ -74,107 +75,138 @@ struct implements_storage;
 //
 namespace trait
 {
-template <typename _Tp>
+template <typename T>
 struct is_available;
 
-template <typename _Tp>
+template <typename T>
 struct runtime_enabled;
 
-template <typename _Tp>
+template <typename T>
 struct record_max;
 
-template <typename _Tp>
+template <typename T>
 struct array_serialization;
 
-template <typename _Tp>
+template <typename T>
 struct requires_prefix;
 
-template <typename _Tp>
+template <typename T>
 struct custom_label_printing;
 
-template <typename _Tp>
+template <typename T>
 struct custom_unit_printing;
 
-template <typename _Tp>
+template <typename T>
 struct custom_laps_printing;
 
-template <typename _Tp>
+template <typename T>
 struct start_priority;
 
-template <typename _Tp>
+template <typename T>
 struct stop_priority;
 
-template <typename _Tp>
+template <typename T>
 struct is_timing_category;
 
-template <typename _Tp>
+template <typename T>
 struct is_memory_category;
 
-template <typename _Tp>
+template <typename T>
 struct uses_timing_units;
 
-template <typename _Tp>
+template <typename T>
 struct uses_memory_units;
 
-template <typename _Tp>
+template <typename T>
 struct requires_json;
 
-template <typename _Tp>
+template <typename T>
 struct is_gotcha;
 
-template <typename _Tp, typename _Tuple>
+template <typename T, typename Tuple>
 struct supports_args;
 
-template <typename _Tp>
+template <typename T>
 struct supports_custom_record;
 
-template <typename _Tp>
+template <typename T>
 struct iterable_measurement;
 
-template <typename _Tp>
+template <typename T>
 struct secondary_data;
 
-template <typename _Tp>
+template <typename T>
 struct thread_scope_only;
 
-template <typename _Tp>
+template <typename T>
 struct split_serialization;
 
-template <typename _Tp>
+template <typename T>
 struct record_statistics;
 
-template <typename _Tp>
+template <typename T>
 struct statistics;
 
-template <typename _Tp>
+template <typename T>
+struct permissive_statistics;
+
+template <typename T>
 struct sampler;
 
-template <typename _Tp>
+template <typename T>
 struct file_sampler;
 
-template <typename _Tp>
+template <typename T>
 struct units;
 
-template <typename _Tp>
+template <typename T>
 struct echo_enabled;
 
-template <typename _Tp>
+template <typename T>
 struct input_archive;
 
-template <typename _Tp>
+template <typename T>
 struct output_archive;
 
-template <typename _Tp>
+template <typename T>
 struct pretty_json;
 
-template <typename _Tp>
+template <typename T>
 struct flat_storage;
 
-template <typename _Tp>
+template <typename T>
 struct report_sum;
 
-template <typename _Tp>
+template <typename T>
 struct report_mean;
+
+template <typename T>
+struct is_empty;
+
+template <typename T>
+struct is_variadic;
+
+template <typename T>
+struct is_wrapper;
+
+template <typename T>
+struct is_stack_wrapper;
+
+template <typename T>
+struct is_heap_wrapper;
+
+template <typename T>
+struct is_hybrid_wrapper;
+
+template <bool B, typename T = int>
+struct bool_int;
+
+template <bool... B>
+struct sum_bool_int;
+
+template <typename Lhs, typename Rhs>
+struct compatible_wrappers;
+
 }  // namespace trait
 
 //======================================================================================//
@@ -183,128 +215,140 @@ struct report_mean;
 namespace operation
 {
 // operators
-template <typename _Tp>
+template <typename T>
 struct init_storage;
 
-template <typename _Tp>
+template <typename T>
 struct construct;
 
-template <typename _Tp>
+template <typename T>
 struct set_prefix;
 
-template <typename _Tp>
+template <typename T>
 struct set_flat_profile;
 
-template <typename _Tp>
+template <typename T>
 struct insert_node;
 
-template <typename _Tp>
+template <typename T>
 struct pop_node;
 
-template <typename _Tp>
+template <typename T>
 struct record;
 
-template <typename _Tp>
+template <typename T>
 struct reset;
 
-template <typename _Tp>
+template <typename T>
 struct measure;
 
-template <typename _Tp>
+template <typename T>
 struct sample;
 
-template <typename _Ret, typename _Lhs, typename _Rhs>
+template <typename Ret, typename Lhs, typename Rhs>
 struct compose;
 
-template <typename _Tp>
+template <typename T>
 struct start;
 
-template <typename _Tp>
+template <typename T>
 struct priority_start;
 
-template <typename _Tp>
+template <typename T>
 struct standard_start;
 
-template <typename _Tp>
+template <typename T>
 struct delayed_start;
 
-template <typename _Tp>
+template <typename T>
 struct stop;
 
-template <typename _Tp>
+template <typename T>
 struct priority_stop;
 
-template <typename _Tp>
+template <typename T>
 struct standard_stop;
 
-template <typename _Tp>
+template <typename T>
 struct delayed_stop;
 
-template <typename _Tp>
+template <typename T>
 struct mark_begin;
 
-template <typename _Tp>
+template <typename T>
 struct mark_end;
 
-template <typename _Tp>
+template <typename T>
 struct store;
 
-template <typename _Tp>
+template <typename T>
 struct audit;
 
 template <typename RetType, typename LhsType, typename RhsType>
 struct compose;
 
-template <typename _Tp>
+template <typename T>
 struct plus;
 
-template <typename _Tp>
+template <typename T>
 struct minus;
 
-template <typename _Tp>
+template <typename T>
 struct multiply;
 
-template <typename _Tp>
+template <typename T>
 struct divide;
 
-template <typename _Tp>
+template <typename T>
 struct get_data;
 
-template <typename _Tp>
+template <typename T>
 struct base_printer;
 
-template <typename _Tp>
+template <typename T>
 struct print;
 
-template <typename _Tp>
+template <typename T>
 struct print_header;
 
-template <typename _Tp>
+template <typename T>
 struct print_statistics;
 
-template <typename _Tp>
+template <typename T>
 struct print_storage;
 
-template <typename _Tp>
+template <typename T>
 struct add_secondary;
 
-template <typename _Tp, typename _Archive>
+template <typename T>
+struct add_statistics;
+
+template <typename T, typename _Archive>
 struct serialization;
 
-template <typename _Tp, bool _Enabled = trait::echo_enabled<_Tp>::value>
+template <typename T, bool Enabled = trait::echo_enabled<T>::value>
 struct echo_measurement;
 
-template <typename _Tp>
+template <typename T>
 struct copy;
 
-template <typename _Tp, typename _Op>
+template <typename T, typename _Op>
 struct pointer_operator;
 
-template <typename _Tp>
+template <typename T>
 struct pointer_deleter;
 
-template <typename _Tp>
+template <typename T>
 struct pointer_counter;
+
+template <typename T, typename _Op>
+struct generic_operator;
+
+template <typename T>
+struct generic_deleter;
+
+template <typename T>
+struct generic_counter;
 
 namespace finalize
 {
@@ -441,10 +485,10 @@ struct dmp_get<Type, false>
 //
 namespace policy
 {
-template <typename _Tp, bool _WithThreads = true>
+template <typename T, bool WithThreads = true>
 struct instance_tracker;
 
-template <typename _Comp, typename _Tp = typename trait::statistics<_Comp>::type>
+template <typename _Comp, typename T = typename trait::statistics<_Comp>::type>
 struct record_statistics;
 
 }  // namespace policy
@@ -631,6 +675,12 @@ using conditional_t = typename std::conditional<_Val, _Lhs, _Rhs>::type;
 template <typename... Ts>
 using tuple_concat_t = typename impl::tuple_concat<Ts...>::type;
 
+template <typename U>
+using remove_pointer_t = typename std::remove_pointer<U>::type;
+
+template <typename U>
+using add_pointer_t = conditional_t<(std::is_pointer<U>::value), U, U*>;
+
 //======================================================================================//
 
 ///
@@ -656,6 +706,34 @@ struct index_of<_Tp, _Tuple<Head, Tail...>>
 
 namespace impl
 {
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+struct unwrapper
+{
+    using type = T;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename...> class Tuple, typename... T>
+struct unwrapper<Tuple<T...>>
+{
+    using type = Tuple<T...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename...> class Tuple, typename... T>
+struct unwrapper<Tuple<Tuple<T...>>>
+{
+    using type = conditional_t<(std::is_same<Tuple<>, std::tuple<>>::value ||
+                                std::is_same<Tuple<>, type_list<>>::value),
+                               typename unwrapper<Tuple<T...>>::type, Tuple<Tuple<T...>>>;
+};
+
+//--------------------------------------------------------------------------------------//
+
 template <typename In, typename Out>
 struct convert
 {
@@ -698,6 +776,30 @@ struct convert<InTuple<In...>, OutTuple<Out...>>
 
 //======================================================================================//
 
+namespace impl
+{
+template <typename T>
+struct wrapper_index_sequence;
+template <typename T>
+struct nonwrapper_index_sequence;
+
+template <template <typename...> class Tuple, typename... _Types>
+struct wrapper_index_sequence<Tuple<_Types...>>
+{
+    static constexpr auto size  = sizeof...(_Types);
+    static constexpr auto value = make_index_sequence<size>{};
+    using type                  = decltype(make_index_sequence<size>{});
+};
+
+template <template <typename...> class Tuple, typename... _Types>
+struct nonwrapper_index_sequence<Tuple<_Types...>>
+{
+    static constexpr auto size  = sizeof...(_Types);
+    static constexpr auto value = std::tuple<>{};
+    using type                  = std::tuple<>;
+};
+}  // namespace impl
+
 template <typename _Tp>
 struct get_index_sequence
 {
@@ -722,6 +824,17 @@ struct get_index_sequence<std::tuple<_Types...>>
     using type                  = decltype(make_index_sequence<size>{});
 };
 
+template <template <typename...> class Tuple, typename... _Types>
+struct get_index_sequence<Tuple<_Types...>>
+{
+    using base_type = conditional_t<(trait::is_variadic<Tuple<_Types...>>::value),
+                                    impl::wrapper_index_sequence<Tuple<_Types...>>,
+                                    impl::nonwrapper_index_sequence<Tuple<_Types...>>>;
+    static constexpr auto size  = base_type::size;
+    static constexpr auto value = base_type::value;
+    using type                  = typename base_type::type;
+};
+
 template <typename _Tp>
 using get_index_sequence_t = typename get_index_sequence<decay_t<_Tp>>::type;
 
@@ -729,6 +842,9 @@ using get_index_sequence_t = typename get_index_sequence<decay_t<_Tp>>::type;
 
 template <typename T, typename U>
 using convert_t = typename impl::convert<T, U>::type;
+
+template <typename T>
+using unwrap_t = typename impl::unwrapper<T>::type;
 
 //======================================================================================//
 
@@ -940,6 +1056,12 @@ get_size(const _Tp& _val)
     return get_size(_val, get_index_sequence<decay_t<_Tp>>::value);
 }
 
+template <typename _Tp>
+struct get_tuple_size
+{
+    static constexpr size_t value = get_index_sequence<decay_t<_Tp>>::size;
+};
+
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
@@ -1022,6 +1144,145 @@ assign(_Tp& _targ, const _Vp& _val)
 }  // namespace mpl
 
 //======================================================================================//
+
+namespace trait
+{
+//--------------------------------------------------------------------------------------//
+/// trait the specifies that a variadic type is empty
+///
+template <typename T>
+struct is_empty : false_type
+{};
+
+template <template <typename...> class Tuple>
+struct is_empty<Tuple<>> : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait the specifies that a type is a generic variadic wrapper
+///
+template <typename T>
+struct is_variadic : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait the specifies that a type is a timemory variadic wrapper
+///
+template <typename T>
+struct is_wrapper : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait the specifies that a type is a timemory variadic wrapper
+/// and components are stack-allocated
+///
+template <typename T>
+struct is_stack_wrapper : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait the specifies that a type is a timemory variadic wrapper
+/// and components are heap-allocated
+///
+template <typename T>
+struct is_heap_wrapper : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait the specifies that a type is a timemory variadic wrapper
+/// and components are stack- and heap- allocated
+///
+template <typename T>
+struct is_hybrid_wrapper : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// converts a boolean to an integer
+///
+template <bool B, typename T>
+struct bool_int
+{
+    static constexpr T value = (B) ? 1 : 0;
+};
+
+//--------------------------------------------------------------------------------------//
+/// counts a series of booleans
+///
+template <bool... B>
+struct sum_bool_int;
+
+template <bool B, bool... BoolTail>
+struct sum_bool_int<B, BoolTail...>
+{
+    static constexpr int value = bool_int<B>::value + sum_bool_int<BoolTail...>::value;
+};
+
+template <bool B>
+struct sum_bool_int<B>
+{
+    static constexpr int value = bool_int<B>::value;
+};
+
+template <>
+struct sum_bool_int<>
+{
+    static constexpr int value = 0;
+};
+
+//--------------------------------------------------------------------------------------//
+/// determines whether variadic structures are compatible
+///
+template <typename Lhs, typename Rhs>
+struct compatible_wrappers
+{
+    static constexpr int variadic_count = (bool_int<is_variadic<Lhs>::value>::value +
+                                           bool_int<is_variadic<Rhs>::value>::value);
+    static constexpr int wrapper_count  = (bool_int<is_wrapper<Lhs>::value>::value +
+                                          bool_int<is_wrapper<Rhs>::value>::value);
+    static constexpr int heap_count     = (bool_int<is_heap_wrapper<Lhs>::value>::value +
+                                       bool_int<is_heap_wrapper<Rhs>::value>::value);
+    static constexpr int stack_count    = (bool_int<is_stack_wrapper<Lhs>::value>::value +
+                                        bool_int<is_stack_wrapper<Rhs>::value>::value);
+    static constexpr int hybrid_count = (bool_int<is_hybrid_wrapper<Lhs>::value>::value +
+                                         bool_int<is_hybrid_wrapper<Rhs>::value>::value);
+
+    //  valid configs:
+    //
+    //      1. both heap/stack/hybrid
+    //      2. hybrid + stack or heap wrapper
+    //      3. wrapper + variadic
+    //
+    //  invalid configs:
+    //
+    //      1. hybrid + non-wrapper variadic
+    //      2. one stack + one heap
+    //      3. zero variadic
+    //      4. variadic and zero wrappers
+    //
+
+    static constexpr bool valid_1 =
+        (hybrid_count == 2 || stack_count == 2 || heap_count == 2);
+    static constexpr bool valid_2 =
+        (hybrid_count == 1 && (stack_count + heap_count) == 1);
+    static constexpr bool valid_3 = (wrapper_count == 1 && variadic_count == 2);
+
+    static constexpr bool invalid_1 = (hybrid_count == 1 && wrapper_count == 1);
+    static constexpr bool invalid_2 =
+        (hybrid_count == 1 && (stack_count + heap_count) == 1);
+    static constexpr bool invalid_3 = (variadic_count == 0);
+    static constexpr bool invalid_4 = (variadic_count == 2 && wrapper_count == 0);
+
+    using value_type = bool;
+
+    static constexpr bool value = (!invalid_1 && !invalid_2 && !invalid_3 && !invalid_4 &&
+                                   (valid_1 || valid_2 || valid_3))
+                                      ? true
+                                      : false;
+
+    using type = typename std::conditional<(value), true_type, false_type>::type;
+};
+
+}  // namespace trait
 
 }  // namespace tim
 

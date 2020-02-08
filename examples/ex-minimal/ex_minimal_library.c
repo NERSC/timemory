@@ -22,10 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/library.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <timemory/library.h>
 
 long
 fib(long n)

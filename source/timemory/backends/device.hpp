@@ -51,8 +51,9 @@
 #endif
 
 #include <cstdint>
-#include <timemory/backends/cuda.hpp>
 #include <type_traits>
+
+#include "timemory/backends/cuda.hpp"
 
 namespace tim
 {

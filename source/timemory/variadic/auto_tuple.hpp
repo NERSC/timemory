@@ -64,6 +64,7 @@ public:
     using data_value_type     = typename component_type::data_value_type;
     using data_label_type     = typename component_type::data_label_type;
     using data_type           = typename component_type::data_type;
+    using sample_type         = typename component_type::sample_type;
     using string_t            = std::string;
     using init_func_t         = std::function<void(this_type&)>;
     using captured_location_t = typename component_type::captured_location_t;

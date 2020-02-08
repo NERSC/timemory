@@ -24,8 +24,8 @@
 
 #include "gtest/gtest.h"
 
-#include <timemory/mpl/apply.hpp>
-#include <timemory/timemory.hpp>
+#include "timemory/mpl/apply.hpp"
+#include "timemory/timemory.hpp"
 
 #include <array>
 #include <chrono>

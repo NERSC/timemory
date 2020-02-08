@@ -32,7 +32,7 @@
 // #    define DEBUG
 // #endif
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 #include <chrono>
 #include <iostream>

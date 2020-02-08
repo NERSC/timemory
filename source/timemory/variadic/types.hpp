@@ -38,6 +38,8 @@
 #include <string>
 #include <type_traits>
 
+#include "timemory/mpl/types.hpp"
+
 //======================================================================================//
 //
 namespace tim
@@ -66,8 +68,48 @@ class auto_list;
 template <typename _Tuple, typename _List>
 class auto_hybrid;
 
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+//
+//                                  IS VARIADIC / IS WRAPPER
+//
 //--------------------------------------------------------------------------------------//
 
+// these are variadic types used to bundle components together
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, auto_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, auto_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, component_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, component_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, component_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, std::tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_variadic, type_list, true_type, typename)
+
+// there are timemory-specific variadic wrappers
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_wrapper, auto_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_wrapper, auto_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_wrapper, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_wrapper, component_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_wrapper, component_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_wrapper, component_hybrid, true_type, typename)
+
+// tuple wrappers (stack-allocated components)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_stack_wrapper, auto_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_stack_wrapper, component_tuple, true_type, typename)
+
+// list wrappers (heap-allocated components)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_heap_wrapper, auto_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_heap_wrapper, component_list, true_type, typename)
+
+// hybrid wrappers (stack- and heap- allocated components)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_hybrid_wrapper, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_hybrid_wrapper, component_hybrid, true_type, typename)
+
+//======================================================================================//
+
+namespace tim
+{
 namespace impl
 {
 template <typename... _Types>

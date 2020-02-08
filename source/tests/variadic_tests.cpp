@@ -38,8 +38,8 @@
 
 #define TIMEMORY_STRICT_VARIADIC_CONCAT
 
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
 using namespace tim::component;
 
@@ -180,12 +180,15 @@ TEST_F(variadic_tests, concat)
     using lhs_t = tim::component_tuple<real_clock, system_clock>;
     using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
 
-    using comp_t0 = tim::remove_duplicates<
-        typename tim::component_tuple<lhs_t, rhs_t>::component_type>;
-    using comp_t1 = tim::remove_duplicates<
-        typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type>;
-    using comp_t2 = tim::remove_duplicates<typename tim::auto_tuple<
-        lhs_t, tim::component_list<rhs_t, user_clock>>::component_type>;
+    using join_t0 = typename tim::component_tuple<lhs_t, rhs_t>::component_type;
+    using join_t1 = typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::component_type;
+    using join_t2 =
+        typename tim::auto_tuple<lhs_t,
+                                 tim::component_list<rhs_t, user_clock>>::component_type;
+
+    using comp_t0 = tim::remove_duplicates<join_t0>;
+    using comp_t1 = tim::remove_duplicates<join_t1>;
+    using comp_t2 = tim::remove_duplicates<join_t2>;
 
     using data_t0 =
         tim::remove_duplicates<typename tim::component_list<lhs_t, rhs_t>::data_type>;
@@ -193,6 +196,11 @@ TEST_F(variadic_tests, concat)
         typename tim::auto_list<lhs_t, rhs_t, user_clock>::data_type>;
     using data_t2 = tim::remove_duplicates<
         typename tim::auto_list<lhs_t, tim::auto_tuple<rhs_t, user_clock>>::data_type>;
+
+    std::cout << "\n" << std::flush;
+    std::cout << "join_t0 = " << tim::demangle<join_t0>() << "\n";
+    std::cout << "join_t1 = " << tim::demangle<join_t1>() << "\n";
+    std::cout << "join_t2 = " << tim::demangle<join_t2>() << "\n";
 
     std::cout << "\n" << std::flush;
     std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";

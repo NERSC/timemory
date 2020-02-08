@@ -109,6 +109,16 @@ struct filter_if_false<Predicate, std::tuple<Ts...>>
 };
 
 //--------------------------------------------------------------------------------------//
+/*
+template <template <typename> class Predicate, template <typename...> class Tuple,
+          typename... Ts>
+struct filter_if_false<Predicate, Tuple<Ts...>>
+{
+    using type = tuple_concat_t<
+        typename filter_if_false_result<Predicate<Ts>::value>::template type<Ts>...>;
+};
+*/
+//--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, typename Sequence>
 using filter_false = typename filter_if_false<Predicate, Sequence>::type;
@@ -133,6 +143,16 @@ struct operation_filter_if_false<Predicate, Operator, std::tuple<Ts...>>
         Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
 };
 
+//--------------------------------------------------------------------------------------//
+/*
+template <template <typename> class Predicate, template <typename...> class Operator,
+          template <typename...> class Tuple, typename... Ts>
+struct operation_filter_if_false<Predicate, Operator, Tuple<Ts...>>
+{
+    using type = tuple_concat_t<typename filter_if_false_result<
+        Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
+};
+*/
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, template <typename...> class Operator,
@@ -221,7 +241,21 @@ struct get_data_tuple_type
     using type = conditional_t<(std::is_fundamental<_Tp>::value), _Tp,
                                decltype(std::declval<_Tp>().get())>;
 };
+/*
+template <typename _Tp>
+struct get_data_tuple_type<std::tuple<_Tp>>
+{
+    using type = conditional_t<(std::is_fundamental<_Tp>::value), _Tp,
+                               decltype(std::declval<_Tp>().get())>;
+};
 
+template <typename _Tp>
+struct get_data_tuple_type<type_list<_Tp>>
+{
+    using type = conditional_t<(std::is_fundamental<_Tp>::value), _Tp,
+                               decltype(std::declval<_Tp>().get())>;
+};
+*/
 template <typename... _ImplTypes>
 struct get_data_tuple
 {
@@ -229,12 +263,20 @@ struct get_data_tuple
     using label_type = std::tuple<std::tuple<std::string, _ImplTypes>...>;
 };
 
-template <typename... _ImplTypes, template <typename...> class _Tuple>
-struct get_data_tuple<_Tuple<_ImplTypes...>>
+template <typename... _ImplTypes>
+struct get_data_tuple<std::tuple<_ImplTypes...>>
 {
-    using value_type = _Tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
+    using value_type = std::tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
     using label_type =
-        _Tuple<_Tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
+        std::tuple<std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
+};
+
+template <typename... _ImplTypes>
+struct get_data_tuple<type_list<_ImplTypes...>>
+{
+    using value_type = std::tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
+    using label_type =
+        std::tuple<std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
 };
 
 //======================================================================================//
@@ -421,6 +463,40 @@ struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>,
 //======================================================================================//
 
 ///
+///  generic alias for extracting all types with a specified trait enabled
+///
+template <template <typename> class Predicate, typename... Sequence>
+struct get_true_types
+{
+    using type = impl::filter_false<Predicate, std::tuple<Sequence...>>;
+};
+
+template <template <typename> class Predicate, template <typename...> class Tuple,
+          typename... Sequence>
+struct get_true_types<Predicate, Tuple<Sequence...>>
+{
+    using type = impl::filter_false<Predicate, Tuple<Sequence...>>;
+};
+
+///
+///  generic alias for extracting all types with a specified trait disabled
+///
+template <template <typename> class Predicate, typename... Sequence>
+struct get_false_types
+{
+    using type = impl::filter_true<Predicate, std::tuple<Sequence...>>;
+};
+
+template <template <typename> class Predicate, template <typename...> class Tuple,
+          typename... Sequence>
+struct get_false_types<Predicate, Tuple<Sequence...>>
+{
+    using type = impl::filter_true<Predicate, Tuple<Sequence...>>;
+};
+
+//======================================================================================//
+
+///
 /// check if type is in expansion
 ///
 template <typename _Tp, typename _Types>
@@ -469,6 +545,12 @@ using modifiers =
 /// filter out any types that are not available
 template <typename... Types>
 using filter_gotchas = impl::filter_false<trait::is_gotcha, std::tuple<Types...>>;
+
+template <typename T>
+using filter_gotchas_t = impl::filter_false<trait::is_gotcha, T>;
+
+template <typename T>
+using filter_empty_t = impl::filter_true<trait::is_empty, T>;
 
 //======================================================================================//
 //

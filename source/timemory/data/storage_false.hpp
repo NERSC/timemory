@@ -252,8 +252,9 @@ protected:
         if(m_children.size() == 0)
             return;
 
-        for(auto& itr : m_children)
-            merge(itr);
+        if(settings::stack_clearing())
+            for(auto& itr : m_children)
+                merge(itr);
 
         stack_clear();
     }

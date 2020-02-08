@@ -31,7 +31,7 @@
 #include <thread>
 #include <vector>
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;

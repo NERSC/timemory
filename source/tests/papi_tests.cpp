@@ -24,6 +24,7 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/timemory.hpp"
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -31,7 +32,6 @@
 #include <iostream>
 #include <random>
 #include <thread>
-#include <timemory/timemory.hpp>
 #include <vector>
 #include <x86intrin.h>
 

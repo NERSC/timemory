@@ -72,3 +72,4 @@ if __name__ == "__main__":
     # print the dictionary
     print("TIMEMORY_DATA:\n{}".format(
         json.dumps(data, indent=4, sort_keys=True)))
+    timemory.finalize()

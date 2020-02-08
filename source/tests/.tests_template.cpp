@@ -30,7 +30,7 @@
 #include <thread>
 #include <vector>
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 //--------------------------------------------------------------------------------------//
 

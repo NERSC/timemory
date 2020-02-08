@@ -123,11 +123,6 @@ public:
     // Public static functions
     static pointer_t instance();
     static pointer_t master_instance();
-    static void      enable(bool val = true) { settings::enabled() = val; }
-    static void      disable(bool val = true) { settings::enabled() = !val; }
-    static bool      is_enabled() { return settings::enabled(); }
-    static void      max_depth(const int32_t& val) { settings::max_depth() = val; }
-    static int32_t   max_depth() { return settings::max_depth(); }
     static int32_t   total_instance_count() { return f_manager_instance_count().load(); }
     static void      use_exit_hook(bool val) { f_use_exit_hook() = val; }
     static void      exit_hook();
@@ -170,18 +165,16 @@ private:
     void _print_storage()
     {
         using storage_type = typename _Tp::storage_type;
-        // if(component::state<_Tp>::has_storage())
-        {
-            auto ret = storage_type::noninit_instance();
-            if(ret && !ret->empty())
-                ret->print();
 
-            if(settings::debug())
-                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                       demangle<_Tp>().c_str(), (void*) ret,
-                       (component::state<_Tp>::has_storage()) ? "true" : "false",
-                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
-        }
+        auto ret = storage_type::noninit_instance();
+        if(ret && !ret->empty())
+            ret->print();
+
+        if(settings::debug())
+            printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                   demangle<_Tp>().c_str(), (void*) ret,
+                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
     template <typename _Tp, typename... _Tail,
@@ -199,18 +192,16 @@ private:
     void _clear()
     {
         using storage_type = typename _Tp::storage_type;
-        // if(component::state<_Tp>::has_storage())
-        {
-            auto ret = storage_type::noninit_instance();
-            if(ret)
-                ret->data().reset();
 
-            if(settings::debug())
-                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                       demangle<_Tp>().c_str(), (void*) ret,
-                       (component::state<_Tp>::has_storage()) ? "true" : "false",
-                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
-        }
+        auto ret = storage_type::noninit_instance();
+        if(ret)
+            ret->data().reset();
+
+        if(settings::debug())
+            printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                   demangle<_Tp>().c_str(), (void*) ret,
+                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
     template <typename _Tp, typename... _Tail,
@@ -228,18 +219,16 @@ private:
     void _serialize(_Archive& ar)
     {
         using storage_type = typename _Tp::storage_type;
-        // if(component::state<_Tp>::has_storage())
-        {
-            auto ret = storage_type::noninit_instance();
-            if(ret && !ret->empty())
-                ret->_serialize(ar);
 
-            if(settings::debug())
-                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                       demangle<_Tp>().c_str(), (void*) ret,
-                       (component::state<_Tp>::has_storage()) ? "true" : "false",
-                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
-        }
+        auto ret = storage_type::noninit_instance();
+        if(ret && !ret->empty())
+            ret->_serialize(ar);
+
+        if(settings::debug())
+            printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                   demangle<_Tp>().c_str(), (void*) ret,
+                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
     template <typename _Archive, typename _Tp, typename... _Tail,
@@ -259,18 +248,16 @@ private:
         auto label         = tim::demangle<_Tp>();
         using storage_type = typename _Tp::storage_type;
         label += std::string(" (") + tim::demangle<storage_type>() + ")";
-        // if(component::state<_Tp>::has_storage())
-        {
-            auto ret = storage_type::noninit_instance();
-            if(ret && !ret->empty())
-                _sz += ret->size();
 
-            if(settings::debug())
-                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                       demangle<_Tp>().c_str(), (void*) ret,
-                       (component::state<_Tp>::has_storage()) ? "true" : "false",
-                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
-        }
+        auto ret = storage_type::noninit_instance();
+        if(ret && !ret->empty())
+            _sz += ret->size();
+
+        if(settings::debug())
+            printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                   demangle<_Tp>().c_str(), (void*) ret,
+                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
     template <typename _Tp, typename... _Tail,
@@ -421,8 +408,6 @@ protected:
     string_t get_prefix() const;
 
 private:
-    /// number of timing manager instances
-    static std::atomic<int32_t>& f_manager_instance_count();
     /// notifies that it is finalizing
     bool  m_is_finalizing  = false;
     short m_write_metadata = 0;
@@ -443,12 +428,43 @@ private:
     strmap_t               m_json_files;
 
 private:
-    /// num-threads based on number of managers created
-    static std::atomic<int32_t>& f_thread_counter();
-    static bool&                 f_use_exit_hook()
+    struct persistent_data
     {
-        static bool _instance = true;
-        return _instance;
+        persistent_data()  = default;
+        ~persistent_data() = default;
+
+        persistent_data(const persistent_data&) = delete;
+        persistent_data(persistent_data&&)      = delete;
+        persistent_data& operator=(const persistent_data&) = delete;
+        persistent_data& operator=(persistent_data&&) = delete;
+
+        std::atomic<int32_t> instance_count{ 0 };
+        std::atomic<int32_t> thread_count{ 0 };
+        bool                 use_exit_hook = true;
+        pointer_t            master_instance;
+    };
+
+    static persistent_data& f_manager_persistent_data();
+
+    /// number of timing manager instances
+    static std::atomic<int32_t>& f_manager_instance_count()
+    {
+        return f_manager_persistent_data().instance_count;
+    }
+
+    /// num-threads based on number of managers created
+    static std::atomic<int32_t>& f_thread_counter()
+    {
+        return f_manager_persistent_data().thread_count;
+    }
+
+    /// suppresses the exit hook during termination
+    static bool& f_use_exit_hook() { return f_manager_persistent_data().use_exit_hook; }
+
+public:
+    static void set_persistent_master(pointer_t _pinst)
+    {
+        tim::manager::f_manager_persistent_data().master_instance = _pinst;
     }
 };
 
@@ -482,19 +498,25 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(TIMEMORY_EXTERN_INIT)
-
-static ::tim::manager*
-timemory_manager_master_instance()
-{
-    using manager_t     = tim::manager;
-    static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
-    return _pinst.first.get();
-}
-
 extern "C"
 {
-    __library_ctor__ static void timemory_library_constructor()
+#if defined(TIMEMORY_EXTERN_INIT)
+
+    extern ::tim::manager*       timemory_manager_master_instance();
+    __library_ctor__ extern void timemory_library_constructor();
+    __library_dtor__ extern void timemory_library_destructor();
+
+#else
+
+    ::tim::manager* timemory_manager_master_instance()
+    {
+        using manager_t     = tim::manager;
+        static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+        tim::manager::set_persistent_master(_pinst.first);
+        return _pinst.first.get();
+    }
+
+    __library_ctor__ void timemory_library_constructor()
     {
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
         if(!library_ctor)
@@ -511,47 +533,26 @@ extern "C"
         static auto _prefix      = tim::settings::output_prefix();
         static auto _time_output = tim::settings::time_output();
         static auto _time_format = tim::settings::time_format();
-        tim::consume_parameters(_inst, _dir, _prefix, _time_output, _time_format);
+        tim::consume_parameters(_dir, _prefix, _time_output, _time_format);
 
         static auto              _master = tim::manager::master_instance();
         static thread_local auto _worker = tim::manager::instance();
 
-        if(!_master)
+        if(!_master && _inst)
+            _master.reset(_inst);
+        else if(!_master)
             _master = tim::manager::master_instance();
 
         if(_worker != _master)
             printf("[%s]> tim::manager :: master != worker : %p vs. %p\n", __FUNCTION__,
                    (void*) _master.get(), (void*) _worker.get());
 
-#    if defined(DEBUG)
-        if(_debug || _verbose > 3)
-            printf("[%s]> initializing storage...\n", __FUNCTION__);
-#    endif
-
         std::atexit(tim::timemory_finalize);
     }
 
-    __library_dtor__ static void timemory_library_destructor()
-    {
-        /*
-        auto library_dtor = tim::get_env<bool>("TIMEMORY_LIBRARY_DTOR", true);
-        if(!library_dtor)
-            return;
-
-        auto _debug   = tim::settings::debug();
-        auto _verbose = tim::settings::verbose();
-
-        if(_debug || _verbose > 3)
-            printf("[%s]> finalizing...\n", __FUNCTION__);
-
-        auto _master = timemory_manager_master_instance();
-        if(_master)
-            _master->finalize();
-        tim::settings::enabled() = false;
-        */
-    }
-}
+    __library_dtor__ void timemory_library_destructor() {}
 
 #endif
+}
 
 //--------------------------------------------------------------------------------------//

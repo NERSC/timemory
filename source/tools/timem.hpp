@@ -189,8 +189,8 @@ public:
     using base_type::reset;
     using base_type::start;
     using base_type::stop;
-    using apply_v                 = typename base_type::apply_v;
-    using impl_unique_concat_type = typename base_type::impl_unique_concat_type;
+    using apply_v   = typename base_type::apply_v;
+    using impl_type = typename base_type::impl_type;
 
     template <typename... _Types>
     struct opsample;
@@ -203,7 +203,7 @@ public:
 
     void sample()
     {
-        using apply_sample_t = typename opsample<impl_unique_concat_type>::type;
+        using apply_sample_t = typename opsample<impl_type>::type;
         apply<void>::access<apply_sample_t>(this->m_data);
     }
 

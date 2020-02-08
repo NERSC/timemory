@@ -386,7 +386,7 @@ component_list_decorator*
 component_decorator(py::list components, const std::string& key)
 {
     component_list_decorator* _ptr = new component_list_decorator();
-    if(!manager_t::is_enabled())
+    if(!tim::settings::enabled())
         return _ptr;
 
     return &(*_ptr = create_component_list(key, components_enum_to_vec(components)));

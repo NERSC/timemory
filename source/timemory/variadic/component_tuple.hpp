@@ -52,6 +52,7 @@
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
+#include "timemory/variadic/generic_bundle.hpp"
 #include "timemory/variadic/types.hpp"
 
 //======================================================================================//
@@ -62,7 +63,7 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class component_tuple
+class component_tuple : public generic_bundle<Types...>
 {
     // manager is friend so can use above
     friend class manager;
@@ -74,73 +75,32 @@ class component_tuple
     friend class auto_tuple;
 
 public:
-    // clang-format off
-    template <typename... _Types>                                   struct filtered;
-    template <template <typename...> class _Op, typename... _Types> struct opfiltered;
-    // clang-format on
-
-    template <template <typename...> class _TypeL, typename... _Types>
-    struct filtered<_TypeL<_Types...>>
-    {
-        template <typename T>
-        using sample_type_t = typename T::sample_type;
-
-        using this_type   = component_tuple<_Types...>;
-        using data_type   = std::tuple<_Types...>;
-        using type_tuple  = std::tuple<_Types...>;
-        using sample_type = std::tuple<sample_type_t<_Types>...>;
-
-        template <typename _Archive>
-        using serialize_t   = _TypeL<operation::serialization<Types, _Archive>...>;
-        using insert_node_t = _TypeL<operation::insert_node<_Types>...>;
-        using pop_node_t    = _TypeL<operation::pop_node<_Types>...>;
-        using measure_t     = _TypeL<operation::measure<_Types>...>;
-        using record_t      = _TypeL<operation::record<_Types>...>;
-        using reset_t       = _TypeL<operation::reset<_Types>...>;
-        using plus_t        = _TypeL<operation::plus<_Types>...>;
-        using minus_t       = _TypeL<operation::minus<_Types>...>;
-        using multiply_t    = _TypeL<operation::multiply<_Types>...>;
-        using divide_t      = _TypeL<operation::divide<_Types>...>;
-        using print_t       = _TypeL<operation::print<_Types>...>;
-        using mark_begin_t  = _TypeL<operation::mark_begin<_Types>...>;
-        using mark_end_t    = _TypeL<operation::mark_end<_Types>...>;
-        using construct_t   = _TypeL<operation::construct<_Types>...>;
-        using audit_t       = _TypeL<operation::audit<_Types>...>;
-        using set_prefix_t  = _TypeL<operation::set_prefix<_Types>...>;
-        using get_data_t    = _TypeL<operation::get_data<_Types>...>;
-        using auto_type     = auto_tuple<_Types...>;
-    };
-
-    template <template <typename...> class _OpType, template <typename...> class _TypeL,
-              typename... _Types>
-    struct opfiltered<_OpType, _TypeL<_Types...>>
-    {
-        using type = _TypeL<_OpType<_Types>...>;
-    };
-
-    using impl_unique_concat_type = available_tuple<concat<Types...>>;
-
-    template <template <typename...> class _OpType,
-              typename _Tuple = impl_unique_concat_type>
-    using operation_t = typename opfiltered<_OpType, _Tuple>::type;
-
-public:
-    using string_t            = std::string;
-    using size_type           = int64_t;
+    using bundle_type         = generic_bundle<Types...>;
     using this_type           = component_tuple<Types...>;
-    using data_type           = typename filtered<impl_unique_concat_type>::data_type;
-    using type_tuple          = typename filtered<impl_unique_concat_type>::type_tuple;
-    using sample_type         = typename filtered<impl_unique_concat_type>::sample_type;
-    using string_hash         = std::hash<string_t>;
     using init_func_t         = std::function<void(this_type&)>;
-    using data_value_type     = get_data_value_t<data_type>;
-    using data_label_type     = get_data_label_t<data_type>;
     using captured_location_t = source_location::captured;
-    using apply_v             = apply<void>;
+
+    using data_type       = typename bundle_type::data_type;
+    using impl_type       = typename bundle_type::impl_type;
+    using type_tuple      = typename bundle_type::type_tuple;
+    using sample_type     = typename bundle_type::sample_type;
+    using pointer_type    = typename bundle_type::pointer_type;
+    using reference_type  = typename bundle_type::reference_type;
+    using data_value_type = typename bundle_type::data_value_type;
+    using data_label_type = typename bundle_type::data_label_type;
+
+    using apply_v     = apply<void>;
+    using size_type   = typename bundle_type::size_type;
+    using string_t    = typename bundle_type::string_t;
+    using string_hash = typename bundle_type::string_hash;
+
+    template <template <typename> class Op, typename _Tuple = impl_type>
+    using operation_t =
+        typename bundle_type::template generic_operation<Op, _Tuple>::type;
 
     // used by gotcha
-    using component_type = typename filtered<impl_unique_concat_type>::this_type;
-    using auto_type      = auto_tuple<Types...>;
+    using component_type = convert_t<data_type, component_tuple<>>;
+    using auto_type      = convert_t<data_type, auto_tuple<>>;
 
     // used by component hybrid
     static constexpr bool is_component_list   = false;
@@ -153,10 +113,6 @@ public:
     static constexpr bool is_auto_type        = false;
     static constexpr bool is_component        = false;
 
-    // used by gotcha component to prevent recursion
-    static constexpr bool contains_gotcha =
-        (std::tuple_size<filter_gotchas<Types...>>::value != 0);
-
     //----------------------------------------------------------------------------------//
     //
     static init_func_t& get_initializer()
@@ -164,29 +120,6 @@ public:
         static init_func_t _instance = [](this_type&) {};
         return _instance;
     }
-
-public:
-    // modifier types
-    template <typename _Archive>
-    using serialize_t =
-        typename filtered<impl_unique_concat_type>::template serialize_t<_Archive>;
-    template <typename _Scope>
-    using insert_node_t = typename filtered<impl_unique_concat_type>::insert_node_t;
-    using pop_node_t    = typename filtered<impl_unique_concat_type>::pop_node_t;
-    using measure_t     = typename filtered<impl_unique_concat_type>::measure_t;
-    using record_t      = typename filtered<impl_unique_concat_type>::record_t;
-    using reset_t       = typename filtered<impl_unique_concat_type>::reset_t;
-    using plus_t        = typename filtered<impl_unique_concat_type>::plus_t;
-    using minus_t       = typename filtered<impl_unique_concat_type>::minus_t;
-    using multiply_t    = typename filtered<impl_unique_concat_type>::multiply_t;
-    using divide_t      = typename filtered<impl_unique_concat_type>::divide_t;
-    using print_t       = typename filtered<impl_unique_concat_type>::print_t;
-    using mark_begin_t  = typename filtered<impl_unique_concat_type>::mark_begin_t;
-    using mark_end_t    = typename filtered<impl_unique_concat_type>::mark_end_t;
-    using construct_t   = typename filtered<impl_unique_concat_type>::construct_t;
-    using audit_t       = typename filtered<impl_unique_concat_type>::audit_t;
-    using set_prefix_t  = typename filtered<impl_unique_concat_type>::set_prefix_t;
-    using get_data_t    = typename filtered<impl_unique_concat_type>::get_data_t;
 
 public:
     component_tuple();
@@ -237,12 +170,12 @@ public:
     data_label_type         get_labeled() const;
     inline data_type&       data();
     inline const data_type& data() const;
-    inline int64_t          laps() const;
-    inline string_t         key() const;
-    inline uint64_t         hash() const;
-    inline void             rekey(const string_t& _key);
-    inline bool&            store();
-    inline const bool&      store() const;
+
+    using bundle_type::hash;
+    using bundle_type::key;
+    using bundle_type::laps;
+    using bundle_type::rekey;
+    using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
     // construct the objects that have constructors with matching arguments
@@ -250,6 +183,7 @@ public:
     template <typename... _Args>
     void construct(_Args&&... _args)
     {
+        using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<_Args>(_args)...);
     }
 
@@ -260,6 +194,7 @@ public:
     template <typename... _Args>
     void mark_begin(_Args&&... _args)
     {
+        using mark_begin_t = operation_t<operation::mark_begin>;
         apply_v::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...);
     }
 
@@ -270,6 +205,7 @@ public:
     template <typename... _Args>
     void mark_end(_Args&&... _args)
     {
+        using mark_end_t = operation_t<operation::mark_end>;
         apply_v::access<mark_end_t>(m_data, std::forward<_Args>(_args)...);
     }
 
@@ -289,6 +225,7 @@ public:
     template <typename... _Args>
     void audit(_Args&&... _args)
     {
+        using audit_t = operation_t<operation::audit>;
         apply_v::access<audit_t>(m_data, std::forward<_Args>(_args)...);
     }
 
@@ -333,6 +270,7 @@ public:
     template <typename _Op>
     this_type& operator-=(_Op&& rhs)
     {
+        using minus_t = operation_t<operation::minus>;
         apply_v::access<minus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -340,6 +278,7 @@ public:
     template <typename _Op>
     this_type& operator+=(_Op&& rhs)
     {
+        using plus_t = operation_t<operation::plus>;
         apply_v::access<plus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -347,6 +286,7 @@ public:
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
+        using multiply_t = operation_t<operation::multiply>;
         apply_v::access<multiply_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -354,6 +294,7 @@ public:
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
+        using divide_t = operation_t<operation::divide>;
         apply_v::access<divide_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -392,6 +333,7 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
+        using print_t = typename bundle_type::print_t;
         if(size() == 0)
             return;
         std::stringstream ss_prefix;
@@ -443,28 +385,35 @@ public:
         ar(cereal::make_nvp("data", m_data));
     }
 
-protected:
-    // protected static functions
-    static int64_t output_width(int64_t = 0);
+public:
+    int64_t         laps() const { return bundle_type::laps(); }
+    std::string     key() const { return bundle_type::key(); }
+    uint64_t        hash() const { return bundle_type::hash(); }
+    void            rekey(const string_t& _key) { bundle_type::rekey(_key); }
+    bool&           store() { return bundle_type::store(); }
+    const bool&     store() const { return bundle_type::store(); }
+    const string_t& prefix() const { return bundle_type::prefix(); }
+    const string_t& get_prefix() const { return bundle_type::get_prefix(); }
 
+protected:
+    static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
+    void           update_width() const { bundle_type::update_width(); }
+    void compute_width(const string_t& _key) const { bundle_type::compute_width(_key); }
+
+protected:
     // protected member functions
     inline data_type&       get_data();
     inline const data_type& get_data() const;
-    inline const string_t&  get_prefix() const;
-    inline void             compute_width(const string_t&) const;
-    inline void             update_width() const;
     inline void             set_object_prefix(const string_t&) const;
 
 protected:
     // objects
-    bool              m_store     = false;
-    bool              m_flat      = false;
-    bool              m_is_pushed = false;
-    int64_t           m_laps      = 0;
-    uint64_t          m_hash      = 0;
-    mutable data_type m_data      = data_type();
-
-public:
+    using bundle_type::m_flat;
+    using bundle_type::m_hash;
+    using bundle_type::m_is_pushed;
+    using bundle_type::m_laps;
+    using bundle_type::m_store;
+    mutable data_type m_data = data_type{};
 };
 
 //======================================================================================//

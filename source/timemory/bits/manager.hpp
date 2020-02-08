@@ -55,20 +55,13 @@ namespace tim
 //
 #if !defined(TIMEMORY_EXTERN_INIT)
 
-inline std::atomic<int32_t>&
-manager::f_manager_instance_count()
-{
-    static std::atomic<int32_t> instance(0);
-    return instance;
-}
-
 //======================================================================================//
-// number of threads counter
+// persistent data for instance counting, threading counting, and exit-hook control
 //
-inline std::atomic<int32_t>&
-manager::f_thread_counter()
+manager::persistent_data&
+manager::f_manager_persistent_data()
 {
-    static std::atomic<int32_t> _instance(0);
+    static persistent_data _instance{};
     return _instance;
 }
 
@@ -89,7 +82,9 @@ inline manager::pointer_t
 manager::master_instance()
 {
     static auto _pinst = get_shared_ptr_pair_master_instance<manager>();
+    manager::f_manager_persistent_data().master_instance = _pinst;
     return _pinst;
+    // return f_manager_persistent_data().master_instance;
 }
 
 #endif

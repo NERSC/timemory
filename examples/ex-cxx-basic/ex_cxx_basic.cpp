@@ -23,9 +23,9 @@
 // SOFTWARE.
 //
 
+#include "timemory/timemory.hpp"
 #include <chrono>
 #include <thread>
-#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 

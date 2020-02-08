@@ -73,8 +73,8 @@ struct init_storage
         _instance->initialize();
     }
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                          = _Tp,
+              enable_if_t<!(trait::is_available<_Up>::value), char> = 0>
     init_storage()
     {}
 
@@ -205,8 +205,8 @@ struct set_prefix
         obj.set_prefix(_prefix);
     }
 
-    template <typename _Up                                                    = _Tp,
-              enable_if_t<(trait::requires_prefix<_Up>::value == false), int> = 0>
+    template <typename _Up                                            = _Tp,
+              enable_if_t<!(trait::requires_prefix<_Up>::value), int> = 0>
     set_prefix(Type& obj, const string_t& _prefix)
     {
         set_prefix_sfinae(obj, 0, _prefix);
@@ -380,9 +380,8 @@ struct record
         obj = std::max(obj, rhs);
     }
 
-    template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::record_max<_Up>::value == false), int> = 0,
-              enable_if_t<(is_enabled<_Up>::value), char>                = 0>
+    template <typename _Up = _Tp, enable_if_t<!(trait::record_max<_Up>::value), int> = 0,
+              enable_if_t<(is_enabled<_Up>::value), char> = 0>
     record(base_type& obj, const base_type& rhs)
     {
         if(!trait::runtime_enabled<_Tp>::get())
@@ -929,9 +928,8 @@ struct plus
         obj = std::max(obj, rhs);
     }
 
-    template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::record_max<_Up>::value == false), int> = 0,
-              enable_if_t<(has_data<_Up>::value), char>                  = 0>
+    template <typename _Up = _Tp, enable_if_t<!(trait::record_max<_Up>::value), int> = 0,
+              enable_if_t<(has_data<_Up>::value), char> = 0>
     plus(Type& obj, const Type& rhs)
     {
         if(!trait::runtime_enabled<_Tp>::get())
@@ -1079,8 +1077,7 @@ struct get_data
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
     get_data(const Type&, DataType&)
     {}
 
@@ -1096,8 +1093,7 @@ struct get_data
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
     get_data(const Type&, LabeledDataType&)
     {}
 };
@@ -1157,13 +1153,13 @@ struct copy
         }
     }
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                          = _Tp,
+              enable_if_t<!(trait::is_available<_Up>::value), char> = 0>
     copy(_Up&, const _Up&)
     {}
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                          = _Tp,
+              enable_if_t<!(trait::is_available<_Up>::value), char> = 0>
     copy(_Up*&, const _Up*)
     {}
 };
@@ -1191,7 +1187,7 @@ struct pointer_operator
     pointer_operator& operator=(pointer_operator&&) = delete;
 
     template <typename _Up = _Tp, typename... _Args,
-              tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, _Args&&... _args)
     {
         if(!trait::runtime_enabled<_Tp>::get())
@@ -1202,7 +1198,7 @@ struct pointer_operator
     }
 
     template <typename _Up = _Tp, typename... _Args,
-              tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, _Args&&... _args)
     {
         if(!trait::runtime_enabled<_Tp>::get())
@@ -1213,7 +1209,7 @@ struct pointer_operator
     }
 
     template <typename _Up = _Tp, typename... _Args,
-              tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, base_type* rhs, _Args&&... _args)
     {
         if(!trait::runtime_enabled<_Tp>::get())
@@ -1224,7 +1220,7 @@ struct pointer_operator
     }
 
     template <typename _Up = _Tp, typename... _Args,
-              tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, Type* rhs, _Args&&... _args)
     {
         if(!trait::runtime_enabled<_Tp>::get())
@@ -1236,7 +1232,7 @@ struct pointer_operator
 
     // if the type is not available, never do anything
     template <typename _Up = _Tp, typename... _Args,
-              tim::enable_if_t<(trait::is_available<_Up>::value == false), int> = 0>
+              enable_if_t<!(trait::is_available<_Up>::value), int> = 0>
     pointer_operator(_Args&&...)
     {}
 };
@@ -1270,6 +1266,154 @@ struct pointer_counter
 
         if(obj)
             ++count;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+///
+/// \class operation::generic_operator
+///
+/// \brief This operation class is similar to pointer_operator but can handle non-pointer
+/// types
+///
+template <typename _Tp, typename _Op>
+struct generic_operator
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    generic_operator()                        = delete;
+    generic_operator(const generic_operator&) = delete;
+    generic_operator(generic_operator&&)      = delete;
+
+    generic_operator& operator=(const generic_operator&) = delete;
+    generic_operator& operator=(generic_operator&&) = delete;
+
+    //----------------------------------------------------------------------------------//
+    //
+    //      Pointers
+    //
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(base_type* obj, _Args&&... _args)
+    {
+        if(obj)
+            _Op(*obj, std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(Type* obj, _Args&&... _args)
+    {
+        if(obj)
+            _Op(*obj, std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(base_type* obj, base_type* rhs, _Args&&... _args)
+    {
+        if(obj && rhs)
+            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(Type* obj, Type* rhs, _Args&&... _args)
+    {
+        if(obj && rhs)
+            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    //      References
+    //
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(base_type& obj, _Args&&... _args)
+    {
+        _Op(obj, std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(Type& obj, _Args&&... _args)
+    {
+        _Op(obj, std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(base_type& obj, base_type& rhs, _Args&&... _args)
+    {
+        _Op(obj, rhs, std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
+    explicit generic_operator(Type& obj, Type& rhs, _Args&&... _args)
+    {
+        _Op(obj, rhs, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    //      Not available
+    //
+    //----------------------------------------------------------------------------------//
+
+    // if the type is not available, never do anything
+    template <typename _Up = _Tp, typename... _Args,
+              enable_if_t<!(trait::is_available<_Up>::value), int> = 0>
+    generic_operator(_Args&&...)
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct generic_deleter
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up = _Tp, enable_if_t<(std::is_pointer<_Up>::value), int> = 0>
+    explicit generic_deleter(_Up& obj)
+    {
+        delete static_cast<Type*&>(obj);
+    }
+
+    template <typename _Up = _Tp, enable_if_t<!(std::is_pointer<_Up>::value), int> = 0>
+    explicit generic_deleter(_Up&)
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct generic_counter
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up = _Tp, enable_if_t<(std::is_pointer<_Up>::value), int> = 0>
+    explicit generic_counter(const _Up& obj, uint64_t& count)
+    {
+        count += (trait::runtime_enabled<_Tp>::get() && obj) ? 1 : 0;
+    }
+
+    template <typename _Up = _Tp, enable_if_t<!(std::is_pointer<_Up>::value), int> = 0>
+    explicit generic_counter(const _Up&, uint64_t& count)
+    {
+        count += (trait::runtime_enabled<_Tp>::get()) ? 1 : 0;
     }
 };
 

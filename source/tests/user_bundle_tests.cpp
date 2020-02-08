@@ -24,9 +24,9 @@
 
 #include "gtest/gtest.h"
 
-#include <timemory/runtime/configure.hpp>
-#include <timemory/runtime/insert.hpp>
-#include <timemory/timemory.hpp>
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/insert.hpp"
+#include "timemory/timemory.hpp"
 
 #include <chrono>
 #include <condition_variable>

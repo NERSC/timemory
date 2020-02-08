@@ -338,7 +338,7 @@ target_link_libraries(timemory-headers INTERFACE timemory-cereal)
 #
 #----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_BUILD_GTEST)
+if(TIMEMORY_BUILD_GOOGLE_TEST)
     checkout_git_submodule(RECURSIVE
         RELATIVE_PATH external/google-test
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -1114,10 +1114,12 @@ generate_composite_interface(timemory-roofline
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_DYNINST)
-    find_package(Dyninst ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(Dyninst QUIET ${TIMEMORY_FIND_REQUIREMENT})
     set(_BOOST_COMPONENTS atomic system thread date_time)
     set(TIMEMORY_BOOST_COMPONENTS "${_BOOST_COMPONENTS}" CACHE STRING "Boost components used by Dyninst in timemory")
-    find_package(Boost ${TIMEMORY_FIND_REQUIREMENT} COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
+    if(Dyninst_FOUND)
+        find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT} COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
+    endif()
 endif()
 
 if(Dyninst_FOUND AND Boost_FOUND)
@@ -1129,25 +1131,6 @@ if(Dyninst_FOUND AND Boost_FOUND)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
-endif()
-
-
-#----------------------------------------------------------------------------------------#
-#
-#                               Kokkos
-#
-#----------------------------------------------------------------------------------------#
-
-if(TIMEMORY_USE_KOKKOS)
-    find_package(Kokkos ${TIMEMORY_FIND_REQUIREMENT})
-endif()
-
-if(Kokkos_FOUND)
-    target_link_libraries(timemory-kokkos INTERFACE Kokkos::kokkos)
-    target_compile_definitions(timemory-kokkos INTERFACE TIMEMORY_USE_KOKKOS)
-else()
-    set(TIMEMORY_USE_KOKKOS OFF)
-    inform_empty_interface(timemory-kokkos "Kokkos")
 endif()
 
 

@@ -23,14 +23,15 @@ tolower()
 get_mpi_functions()
 {
     local N=0
-    local funcs=$(grep -E 'int[ \t].*MPI_' ${MPI_HEADER} \
+    local funcs=$(grep -E 'int[ \t].*PMPI_' ${MPI_HEADER} \
         | grep '(' \
         | sed 's/OMPI_DECLSPEC//g' \
         | ${SED} 's/[(].*//g' \
         | awk '{print $2}' \
-        | grep -E -v 'PMPI_|typedef|OMPI_|MPI_T_|MPI_Pcontrol|MPI_Test|MPI_Type|MPI_Init|MPI_Finalize|MPI_Abort|MPI_DUP|MPI_Address|MPI_Attr|MPI_Errhandler|MPI_Keyval' | sort -u)
+        | grep -E -v 'typedef|OMPI_|MPI_T_|MPI_Pcontrol|MPI_Test|MPI_Type|MPI_Init|MPI_Finalize|MPI_Abort|MPI_DUP|MPI_Address|MPI_Attr|MPI_Errhandler|MPI_Keyval' | sort -u)
     for i in ${funcs}
     do
+        i=$(echo $i | sed 's/^PMPI_/MPI_/g')
         if [ -z "$(echo $i | grep MPI_)" ]; then continue; fi
         if [ -n "$(echo $i | grep -E '_c2f|MPI_Fint')" ]; then continue; fi
     	echo "        TIMEMORY_C_GOTCHA(mpip_gotcha_t, ${N}, $i);"

@@ -253,16 +253,7 @@ timemory_stack_backtrace(std::ostream& os)
 
     // lambda for demangling a string when delimiting
     auto _transform = [](std::string s) {
-        int    status        = 0;
-        char*  output_buffer = nullptr;
-        size_t length        = s.length();
-        char*  d = abi::__cxa_demangle(s.c_str(), output_buffer, &length, &status);
-        if(status == 0 && d != nullptr)
-        {
-            s = d;
-            free(d);
-        }
-        return s;
+        return tim::demangle(s);
     };
 
     dmang_buf.resize(nptrs, std::vector<std::string>(0, ""));
@@ -271,7 +262,7 @@ timemory_stack_backtrace(std::ostream& os)
     {
         std::string _str = const_cast<const char*>(strings[j]);
 
-        auto _delim = tim::delimit(_str, " ;\t\n\r()[]");
+        auto _delim = tim::delimit(_str, " +;\t\n\r()[]");
 
         if(_delim.size() > 0)
             _delim[0] = _transform(_delim[0]);

@@ -24,7 +24,7 @@
 
 #include "ex_gotcha_lib.hpp"
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 #include <chrono>
 #include <cmath>

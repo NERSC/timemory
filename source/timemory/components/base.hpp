@@ -52,6 +52,8 @@ namespace tim
 
 namespace component
 {
+//--------------------------------------------------------------------------------------//
+//
 template <typename _Tp, typename _Value>
 struct base
 {
@@ -157,19 +159,15 @@ public:
     {}
 
 public:
-    static void initialize_storage()
+    /*static void initialize_storage()
     {
         static thread_local auto _instance = storage_type::instance();
         consume_parameters(_instance);
-    }
+    }*/
 
     template <typename... _Args>
     static void configure(_Args&&...)
-    {
-        // this is generically allowable
-        static_assert(sizeof...(_Args) == 0,
-                      "Error! component::<Type>::configure not handled!");
-    }
+    {}
 
     //----------------------------------------------------------------------------------//
     /// type contains secondary data resembling the original data
@@ -294,36 +292,10 @@ public:
     //----------------------------------------------------------------------------------//
     // comparison operators
     //
-    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
-    bool operator==(const this_type& rhs) const
-    {
-        return (load() == rhs.load());
-    }
-    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
-    bool operator<(const this_type& rhs) const
-    {
-        return (load() < rhs.load());
-    }
-    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
-    bool operator>(const this_type& rhs) const
-    {
-        return (load() > rhs.load());
-    }
-    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
-    bool operator!=(const this_type& rhs) const
-    {
-        return !(*this == rhs);
-    }
-    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
-    bool operator<=(const this_type& rhs) const
-    {
-        return !(*this > rhs);
-    }
-    template <typename V = _Value, enable_if_t<(std::is_arithmetic<V>::value), int> = 0>
-    bool operator>=(const this_type& rhs) const
-    {
-        return !(*this < rhs);
-    }
+    bool operator<(const base_type& rhs) const { return (load() < rhs.load()); }
+    bool operator>(const base_type& rhs) const { return (load() > rhs.load()); }
+    bool operator<=(const base_type& rhs) const { return !(*this > rhs); }
+    bool operator>=(const base_type& rhs) const { return !(*this < rhs); }
 
     //----------------------------------------------------------------------------------//
     // base_type operators
@@ -454,8 +426,8 @@ public:
            cereal::make_nvp("display_units", Type::get_display_unit()));
     }
 
-    const int64_t&    nlaps() const { return laps; }
-    const int64_t&    get_laps() const { return laps; }
+    int64_t           nlaps() const { return laps; }
+    int64_t           get_laps() const { return laps; }
     const value_type& get_value() const { return value; }
     const accum_type& get_accum() const { return accum; }
     const bool&       get_is_transient() const { return is_transient; }
@@ -524,57 +496,40 @@ protected:
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     void pop_node()
     {
-        using stats_policy_type = policy::record_statistics<Type>;
-
         if(is_on_stack)
         {
-            Type& obj    = graph_itr->obj();
-            auto& stats  = graph_itr->stats();
-            Type& rhs    = static_cast<Type&>(*this);
-            depth_change = false;
+            Type& obj     = graph_itr->obj();
+            auto& stats   = graph_itr->stats();
+            Type& rhs     = static_cast<Type&>(*this);
+            depth_change  = false;
+            auto _storage = get_storage();
 
             if(storage_type::is_finalizing())
             {
                 obj += rhs;
                 obj.plus(rhs);
-                Type::append(graph_itr, rhs);
-                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
-                {
-                    stats_policy_type::apply(stats, rhs);
-                }
+                operation::add_secondary<Type>(_storage, graph_itr, rhs);
+                operation::add_statistics<Type>(rhs, stats);
             }
             else if(is_flat)
             {
-                auto _storage = get_storage();
-
                 obj += rhs;
                 obj.plus(rhs);
-                Type::append(graph_itr, rhs);
-                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
-                {
-                    stats_policy_type::apply(stats, rhs);
-                }
-
+                operation::add_secondary<Type>(_storage, graph_itr, rhs);
+                operation::add_statistics<Type>(rhs, stats);
                 _storage->stack_pop(&rhs);
             }
             else
             {
-                auto _storage   = get_storage();
                 auto _beg_depth = _storage->depth();
-
                 obj += rhs;
                 obj.plus(rhs);
-                Type::append(graph_itr, rhs);
-                IF_CONSTEXPR(trait::record_statistics<_Tp>::value)
-                {
-                    stats_policy_type::apply(stats, rhs);
-                }
-
+                operation::add_secondary<Type>(_storage, graph_itr, rhs);
+                operation::add_statistics<Type>(rhs, stats);
                 if(_storage)
                 {
                     _storage->pop();
                     _storage->stack_pop(&rhs);
-
                     auto _end_depth = _storage->depth();
                     depth_change    = (_beg_depth > _end_depth);
                 }
@@ -881,19 +836,15 @@ public:
     {}
 
 public:
-    static void initialize_storage()
+    /*static void initialize_storage()
     {
         static thread_local auto _instance = storage_type::instance();
         consume_parameters(_instance);
-    }
+    }*/
 
     template <typename... _Args>
     static void configure(_Args&&...)
-    {
-        // this is generically allowable
-        static_assert(sizeof...(_Args) == 0,
-                      "Error! component::<Type>::configure not handled!");
-    }
+    {}
 
     template <typename _GraphItr>
     static void append(_GraphItr, const Type&)
@@ -988,7 +939,7 @@ private:
     // insert the node into the graph
     //
     template <typename _Scope = scope::tree, typename... _Args>
-    void insert_node(const _Scope&, _Args&&...)
+    void insert_node(_Scope, _Args&&...)
     {
         if(!is_on_stack)
         {

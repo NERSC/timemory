@@ -34,7 +34,7 @@
 #include <utility>
 #include <vector>
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 using namespace tim;
 using namespace tim::stl_overload;

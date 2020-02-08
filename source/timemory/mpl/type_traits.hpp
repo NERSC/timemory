@@ -265,6 +265,14 @@ struct statistics
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that will suppress compilation error in operation::add_statistics<Component>
+/// if the data type passed does not match statistics<Component>::type
+///
+template <typename _Tp>
+struct permissive_statistics : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// trait that signifies the component support sampling
 ///
 template <typename _Tp>

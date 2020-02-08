@@ -22,11 +22,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/library.h"
+#include "timemory/variadic/macros.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <timemory/library.h>
-#include <timemory/variadic/macros.hpp>
 
 #define LABEL(...) TIMEMORY_LABEL(__VA_ARGS__)
 

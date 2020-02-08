@@ -225,6 +225,8 @@ struct settings
 
     /// enable thread affinity
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY", false)
+    /// configure component storage stack clearing
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, stack_clearing, "TIMEMORY_STACK_CLEARING", true)
 
     //==================================================================================//
     //

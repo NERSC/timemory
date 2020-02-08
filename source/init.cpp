@@ -41,8 +41,10 @@ using namespace tim::component;
 
 #if defined(TIMEMORY_EXTERN_INIT)
 
-extern ::tim::manager*
-timemory_manager_master_instance();
+extern "C"
+{
+    extern ::tim::manager* timemory_manager_master_instance();
+}
 
 //======================================================================================//
 

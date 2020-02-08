@@ -24,11 +24,11 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/timemory.hpp"
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <thread>
-#include <timemory/timemory.hpp>
 #include <vector>
 
 //--------------------------------------------------------------------------------------//

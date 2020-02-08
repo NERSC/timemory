@@ -39,7 +39,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_json, void, std::false_type)
 //--------------------------------------------------------------------------------------//
 // include rest of headers
 //
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 //
 // configure these two types to always record statistics

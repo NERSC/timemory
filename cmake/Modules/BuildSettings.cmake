@@ -27,21 +27,21 @@ endif()
 # set the compiler flags
 add_flag_if_avail(
     "-W" "${OS_FLAG}" "-Wno-unknown-pragmas" "-Wno-ignored-attributes"
-    "-Wno-attributes" "-Wno-cast-function-type"
-    "-Wno-unused-command-line-argument")
+    "-Wno-attributes" "-Wno-unused-command-line-argument")
 
-add_cxx_flag_if_avail("-Wno-class-memaccess")
+if(CMAKE_CXX_COMPILER_IS_GNU)
+    add_cxx_flag_if_avail("-Wno-class-memaccess")
+    add_cxx_flag_if_avail("-Wno-cast-function-type")
+endif()
 
 if(TIMEMORY_BUILD_QUIET)
     add_flag_if_avail("-Wno-unused-value" "-Wno-unused-function"
-        "-Wno-unknown-pragmas" "-Wno-reserved-id-macro" "-Wno-deprecated-declarations"
-        "-Wno-implicit-fallthrough" "-Wno-deprecated-declarations")
+        "-Wno-unknown-pragmas" "-Wno-deprecated-declarations" "-Wno-implicit-fallthrough")
 endif()
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)
     # add_cxx_flag_if_avail("-Wno-exceptions")
-    # add_cxx_flag_if_avail("-Wno-reserved-id-macro")
     # add_cxx_flag_if_avail("-Wno-unused-private-field")
 else()
     # add_cxx_flag_if_avail("-Wno-class-memaccess")

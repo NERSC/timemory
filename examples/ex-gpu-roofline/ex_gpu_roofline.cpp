@@ -27,13 +27,13 @@
 #    define TIMEMORY_CUDA_FP16
 #endif
 
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/testing.hpp"
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <thread>
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
-#include <timemory/utility/testing.hpp>
 
 using namespace tim::component;
 

@@ -27,7 +27,7 @@
 
 #if defined(USE_TIMEMORY)
 
-#    include <timemory/timemory.hpp>
+#    include "timemory/timemory.hpp"
 
 using tim::component::cpu_clock;
 using tim::component::cpu_util;

@@ -34,9 +34,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/timemory.hpp>
-#include <timemory/utility/signals.hpp>
-#include <timemory/utility/testing.hpp>
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/testing.hpp"
 
 using namespace tim::stl_overload;
 using namespace tim::component;

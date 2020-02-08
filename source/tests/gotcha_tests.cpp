@@ -28,7 +28,7 @@
 
 #include "gtest/gtest.h"
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 #include <chrono>
 #include <condition_variable>
