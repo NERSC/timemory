@@ -37,7 +37,7 @@ if(WIN32)
     set(_BUILD_CALIPER OFF)
 endif()
 
-set(_BUILD_OMPT ON)
+set(_BUILD_OMPT OFF)
 if(WIN32 OR APPLE)
     set(_BUILD_OMPT OFF)
 endif()
@@ -252,7 +252,7 @@ add_option(TIMEMORY_USE_PYTHON
 add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
-    "Enable dynamic instrumentation extensions" ON)
+    "Enable dynamic instrumentation" OFF)
 add_option(TIMEMORY_USE_OPENMP
     "Enable OpenMP tooling" ${_BUILD_OMPT})
 if(_NON_APPLE_UNIX)
