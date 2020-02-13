@@ -22,7 +22,7 @@ endif()
 
 add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${TIMEMORY_BUILD_TOOLS})
-add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" ${TIMEMORY_BUILD_TOOLS})
+add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF) # still dev
 add_option(TIMEMORY_BUILD_DYNINST_TOOLS "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
 
 if(TIMEMORY_USE_MPI)
@@ -91,6 +91,22 @@ if(TIMEMORY_BUILD_TIMEM)
     # timem installation
     install(TARGETS timem DESTINATION bin)
 
+    # add_executable(timem-sampler timem-sampler.cpp timem.hpp)
+    #
+    # target_link_libraries(timem-sampler PRIVATE
+    #    timemory-compile-options
+    #    timemory-arch
+    #    timemory-vector
+    #    timemory-headers
+    #    # timemory-papi
+    #    timem-libexplain)
+    #
+    # set_target_properties(timem-sampler PROPERTIES
+    #    INSTALL_RPATH_USE_LINK_PATH ON)
+    #
+    # timem-sampler installation
+    # install(TARGETS timem-sampler DESTINATION bin)
+
 endif()
 
 
@@ -103,7 +119,7 @@ if(TIMEMORY_USE_DYNINST)
         HINTS ${Dyninst_DIR}
         PATHS ${Dyninst_DIR}
         PATH_SUFFIXES lib)
-    
+
     add_executable(timemory-run timemory-run.cpp)
 
     if(DYNINST_API_RT)
