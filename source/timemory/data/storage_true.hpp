@@ -155,10 +155,10 @@ public:
 
     friend struct impl::storage_deleter<this_type>;
     friend struct write_serialization<this_type>;
-    friend struct operation::finalize::storage::get<Type, true>;
-    friend struct operation::finalize::storage::mpi_get<Type, true>;
-    friend struct operation::finalize::storage::upc_get<Type, true>;
-    friend struct operation::finalize::storage::dmp_get<Type, true>;
+    friend struct operation::finalize::get<Type, true>;
+    friend struct operation::finalize::mpi_get<Type, true>;
+    friend struct operation::finalize::upc_get<Type, true>;
+    friend struct operation::finalize::dmp_get<Type, true>;
     friend class tim::manager;
 
 public:
@@ -581,7 +581,7 @@ public:
     dmp_result_t   dmp_get()
     {
         dmp_result_t _ret;
-        operation::finalize::storage::dmp_get<Type, true>(*this, _ret);
+        operation::finalize::dmp_get<Type, true>(*this, _ret);
         return _ret;
     }
 
@@ -1175,7 +1175,7 @@ typename storage<Type, true>::result_array_t
 storage<Type, true>::get()
 {
     result_array_t _ret;
-    operation::finalize::storage::get<Type, true>(*this, _ret);
+    operation::finalize::get<Type, true>(*this, _ret);
     return _ret;
 }
 
@@ -1186,7 +1186,7 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
     dmp_result_t _ret;
-    operation::finalize::storage::mpi_get<Type, true>(*this, _ret);
+    operation::finalize::mpi_get<Type, true>(*this, _ret);
     return _ret;
 }
 
@@ -1197,7 +1197,7 @@ typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
     dmp_result_t _ret;
-    operation::finalize::storage::upc_get<Type, true>(*this, _ret);
+    operation::finalize::upc_get<Type, true>(*this, _ret);
     return _ret;
 }
 

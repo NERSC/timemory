@@ -85,8 +85,7 @@ struct cupti_activity
 
     static get_initializer_t& get_initializer()
     {
-        static auto              _lambda   = []() { return kind_vector_type{}; };
-        static get_initializer_t _instance = _lambda;
+        static get_initializer_t _instance = []() { return kind_vector_type{}; };
         return _instance;
     }
 };
@@ -106,8 +105,7 @@ struct cupti_counters
 
     static get_initializer_t& get_initializer()
     {
-        static auto              _lambda   = []() -> tuple_type { return tuple_type{}; };
-        static get_initializer_t _instance = _lambda;
+        static get_initializer_t _instance = []() -> tuple_type { return tuple_type{}; };
         return _instance;
     }
 };

@@ -204,11 +204,24 @@ if(TIMEMORY_BUILD_CALIPER)
     set(_CALIPER_TARGETS)
     foreach(CALIPER_TARGET caliper caliper-serial caliper-tools-util caliper-mpi)
         if(TARGET ${CALIPER_TARGET})
-            list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${CALIPER_TARGET})
+            list(APPEND _CALIPER_TARGETS ${CALIPER_TARGET})
         endif()
     endforeach()
     list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_CALIPER_TARGETS})
     install(TARGETS ${_CALIPER_TARGETS}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        EXPORT ${PROJECT_NAME}-library-depends)
+endif()
+
+if(TIMEMORY_BUILD_OPENMP)
+    set(_OMPT_TARGETS)
+    foreach(OMPT_TARGET omp ompimp omptarget.rtl.cuda omptarget)
+        if(TARGET ${OMPT_TARGET})
+            list(APPEND _OMPT_TARGETS ${OMPT_TARGET})
+        endif()
+    endforeach()
+    list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_OMPT_TARGETS})
+    install(TARGETS ${_OMPT_TARGETS}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         EXPORT ${PROJECT_NAME}-library-depends)
 endif()

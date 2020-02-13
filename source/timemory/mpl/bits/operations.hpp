@@ -678,8 +678,8 @@ struct print
         utility::write_entry(_os, "LABEL", _prefix);
         utility::write_entry(_os, "COUNT", _laps);
         utility::write_entry(_os, "DEPTH", _depth);
-        utility::write_entry(_os, "METRIC", _labels);
-        utility::write_entry(_os, "UNITS", _units);
+        utility::write_entry(_os, "METRIC", _labels, true);
+        utility::write_entry(_os, "UNITS", _units, true);
         if(trait::report_sum<Type>::value)
             utility::write_entry(_os, "SUM", _obj.get());
         if(trait::report_mean<Type>::value)
@@ -1194,8 +1194,6 @@ struct echo_measurement<_Tp, true> : public common_utils
 
 namespace finalize
 {
-namespace storage
-{
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
@@ -1510,8 +1508,6 @@ dmp_get<Type, true>::dmp_get(storage_type& data, distrib_type& results)
     results = fallback_get();
 #endif
 }
-
-}  // namespace storage
 
 }  // namespace finalize
 

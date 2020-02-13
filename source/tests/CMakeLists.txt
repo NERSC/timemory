@@ -38,15 +38,6 @@ set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
 
-add_library(timemory-openmp INTERFACE)
-if(NOT APPLE AND NOT "${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang*")
-    find_package(OpenMP)
-    if(OpenMP_FOUND)
-        target_link_libraries(timemory-openmp INTERFACE OpenMP::OpenMP_CXX)
-        target_compile_definitions(timemory-openmp INTERFACE TIMEMORY_USE_OPENMP)
-    endif()
-endif()
-
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp

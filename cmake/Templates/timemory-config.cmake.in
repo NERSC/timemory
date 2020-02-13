@@ -110,7 +110,7 @@ if(NOT WIN32)
     set(CMAKE_THREAD_PREFER_PTHREAD @CMAKE_THREAD_PREFER_PTHREAD@)
     set(THREADS_PREFER_PTHREAD_FLAG @THREADS_PREFER_PTHREAD_FLAG@)
 endif()
-find_package(Threads QUIET)
+find_package(Threads QUIET @TIMEMORY_FIND_REQUIREMENT@)
 
 #----------------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -129,7 +129,7 @@ if(TIMEMORY_INSTALL_TREE)
     if(@TIMEMORY_BUILD_PYTHON@)
         set(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
         if(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
-            find_package(PythonInterp QUIET)
+            find_package(PythonInterp QUIET @TIMEMORY_FIND_REQUIREMENT@)
             if(PYTHONINTERP_FOUND)
                 execute_process(COMMAND
                     ${PYTHON_EXECUTABLE} -c "import site; print(site.getsitepackages()[0])"
@@ -146,27 +146,33 @@ if(TIMEMORY_INSTALL_TREE)
 
     set(caliper_DIR "@caliper_DIR@")
     if(NOT "${caliper_DIR}" STREQUAL "")
-        find_package(caliper QUIET)
+        find_package(caliper QUIET @TIMEMORY_FIND_REQUIREMENT@)
     endif()
 
     set(gotcha_DIR "@gotcha_DIR@")
     if(NOT "${gotcha_DIR}" STREQUAL "")
-        find_package(gotcha QUIET)
+        find_package(gotcha QUIET @TIMEMORY_FIND_REQUIREMENT@)
     endif()
 
     set(Kokkos_DIR "@Kokkos_DIR@")
     if(NOT "${Kokkos_DIR}" STREQUAL "")
-        find_package(Kokkos QUIET)
+        find_package(Kokkos QUIET @TIMEMORY_FIND_REQUIREMENT@)
     endif()
 
     set(Dyninst_DIR "@Dyninst_DIR@")
     if(NOT "${Dyninst_DIR}" STREQUAL "")
-        find_package(Dyninst QUIET)
+        find_package(Dyninst QUIET @TIMEMORY_FIND_REQUIREMENT@)
+    endif()
+
+    set(OpenMP_DIR "@OpenMP_DIR@")
+    if(NOT "${OpenMP_DIR}" STREQUAL "" OR @TIMEMORY_USE_OPENMP@)
+        find_package(OpenMP QUIET @TIMEMORY_FIND_REQUIREMENT@)
     endif()
 
     set(Boost_DIR "@Boost_DIR@")
     if(NOT "${Boost_DIR}" STREQUAL "")
-        find_package(Boost QUIET COMPONENTS @TIMEMORY_BOOST_COMPONENTS@)
+        find_package(Boost QUIET @TIMEMORY_FIND_REQUIREMENT@ COMPONENTS
+            @TIMEMORY_BOOST_COMPONENTS@)
     endif()
 
     include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-library-depends.cmake)

@@ -33,6 +33,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
@@ -86,7 +87,7 @@ struct init_storage
     template <typename U = base_type, enable_if_t<(U::implements_storage_v), int> = 0>
     static get_type get()
     {
-        static auto _lambda = []() {
+        static thread_local auto _instance = []() {
             static thread_local auto _main_inst = storage_type::master_instance();
             static thread_local auto _this_inst = storage_type::instance();
             if(_main_inst != _this_inst)
@@ -108,26 +109,24 @@ struct init_storage
                 return get_type{ _main_inst, _this_inst, (_this_glob), (_this_work),
                                  (_this_data) };
             }
-        };
-        static thread_local auto _instance = _lambda();
+        }();
         return _instance;
     }
 
     template <typename U = base_type, enable_if_t<!(U::implements_storage_v), int> = 0>
     static get_type get()
     {
-        static auto _lambda = []() {
+        static thread_local auto _instance = []() {
             static thread_local auto _main_inst = storage_type::master_instance();
             static thread_local auto _this_inst = storage_type::instance();
             return get_type{ _main_inst, _this_inst, false, false, false };
-        };
-        static thread_local auto _instance = _lambda();
+        }();
         return _instance;
     }
 
     static void init()
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         static thread_local auto _init = this_type::get();
@@ -148,11 +147,15 @@ struct construct
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename... _Args>
+    template <typename... _Args, enable_if_t<(sizeof...(_Args) > 0), int> = 0>
     construct(Type& obj, _Args&&... _args)
     {
         construct_sfinae(obj, std::forward<_Args>(_args)...);
     }
+
+    template <typename... _Args, enable_if_t<(sizeof...(_Args) == 0), int> = 0>
+    construct(Type&, _Args&&...)
+    {}
 
 private:
     //----------------------------------------------------------------------------------//
@@ -199,7 +202,7 @@ struct set_prefix
               enable_if_t<(trait::requires_prefix<_Up>::value), int> = 0>
     set_prefix(Type& obj, const string_t& _prefix)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj.set_prefix(_prefix);
@@ -288,7 +291,7 @@ struct insert_node
               enable_if_t<(_Up::implements_storage_v), int>       = 0>
     explicit insert_node(base_type& obj, const uint64_t& _hash, bool flat)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -306,7 +309,7 @@ struct insert_node
               enable_if_t<(_Up::implements_storage_v), int>      = 0>
     explicit insert_node(base_type& obj, const uint64_t& _hash, bool)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -337,7 +340,7 @@ struct pop_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit pop_node(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj.pop_node();
@@ -361,38 +364,47 @@ struct record
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
+    template <typename T = Type, typename V = value_type,
+              typename R = typename function_traits<decltype(&T::record)>::result_type,
+              enable_if_t<(std::is_same<V, R>::value && !std::is_same<V, void>::value),
+                          int> = 0>
     explicit record(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
-
         obj.value = Type::record();
     }
 
-    template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0,
-              enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    record(base_type& obj, const base_type& rhs)
+    template <typename T = Type, typename V = value_type,
+              typename R = typename function_traits<decltype(&T::record)>::result_type,
+              enable_if_t<!(std::is_same<V, R>::value) || std::is_same<V, void>::value,
+                          int> = 0>
+    explicit record(base_type&)
+    {}
+
+    template <typename T = Type, enable_if_t<(trait::record_max<T>::value), int> = 0,
+              enable_if_t<(is_enabled<T>::value), char> = 0>
+    record(T& obj, const T& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj = std::max(obj, rhs);
     }
 
-    template <typename _Up = _Tp, enable_if_t<!(trait::record_max<_Up>::value), int> = 0,
-              enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    record(base_type& obj, const base_type& rhs)
+    template <typename T = Type, enable_if_t<!(trait::record_max<T>::value), int> = 0,
+              enable_if_t<(is_enabled<T>::value), char> = 0>
+    record(T& obj, const T& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj += rhs;
     }
 
-    template <typename... _Args, typename _Up = _Tp,
-              enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    record(_Args&&...)
+    template <typename... Args, typename T = Type,
+              enable_if_t<!(is_enabled<T>::value), char> = 0>
+    record(Args&&...)
     {}
 };
 
@@ -419,7 +431,7 @@ struct measure
 
     explicit measure(Type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -450,7 +462,7 @@ struct sample
     template <typename _Up, enable_if_t<(std::is_same<_Up, this_type>::value), int> = 0>
     explicit sample(Type& obj, _Up data)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -477,7 +489,7 @@ struct start
 
     explicit start(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -503,7 +515,7 @@ struct priority_start
               enable_if_t<(trait::start_priority<_Up>::value < 0), int> = 0>
     explicit priority_start(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -529,7 +541,7 @@ struct standard_start
               enable_if_t<(trait::start_priority<_Up>::value == 0), int> = 0>
     explicit standard_start(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -555,7 +567,7 @@ struct delayed_start
               enable_if_t<(trait::start_priority<_Up>::value > 0), int> = 0>
     explicit delayed_start(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         init_storage<_Tp>::init();
@@ -574,7 +586,7 @@ struct stop
 
     explicit stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj.stop();
@@ -599,7 +611,7 @@ struct priority_stop
               enable_if_t<(trait::stop_priority<_Up>::value < 0), int> = 0>
     explicit priority_stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj.stop();
@@ -624,7 +636,7 @@ struct standard_stop
               enable_if_t<(trait::stop_priority<_Up>::value == 0), int> = 0>
     explicit standard_stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj.stop();
@@ -649,7 +661,7 @@ struct delayed_stop
               enable_if_t<(trait::stop_priority<_Up>::value > 0), int> = 0>
     explicit delayed_stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         obj.stop();
@@ -668,7 +680,7 @@ struct mark_begin
     template <typename... _Args>
     explicit mark_begin(Type& obj, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         mark_begin_sfinae(obj, std::forward<_Args>(_args)...);
@@ -717,7 +729,7 @@ struct mark_end
     template <typename... _Args>
     explicit mark_end(Type& obj, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         mark_end_sfinae(obj, std::forward<_Args>(_args)...);
@@ -766,7 +778,7 @@ struct store
     template <typename... _Args>
     explicit store(Type& obj, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         store_sfinae(obj, 0, std::forward<_Args>(_args)...);
@@ -815,7 +827,7 @@ struct audit
     template <typename... _Args>
     audit(Type& obj, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         audit_sfinae(obj, std::forward<_Args>(_args)...);
@@ -920,7 +932,7 @@ struct plus
               enable_if_t<(has_data<_Up>::value), char> = 0>
     plus(Type& obj, const Type& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -932,7 +944,7 @@ struct plus
               enable_if_t<(has_data<_Up>::value), char> = 0>
     plus(Type& obj, const Type& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -962,7 +974,7 @@ struct minus
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     minus(Type& obj, const Type& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -989,7 +1001,7 @@ struct multiply
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     multiply(Type& obj, const int64_t& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -999,7 +1011,7 @@ struct multiply
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     multiply(Type& obj, const Type& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -1024,7 +1036,7 @@ struct divide
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     divide(Type& obj, const int64_t& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -1034,7 +1046,7 @@ struct divide
     template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
     divide(Type& obj, const Type& rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -1110,7 +1122,7 @@ struct serialization
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     serialization(const base_type& obj, _Archive& ar, const unsigned int)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         auto _data = static_cast<const Type&>(obj).get();
@@ -1190,7 +1202,7 @@ struct pointer_operator
               enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         if(obj)
@@ -1201,7 +1213,7 @@ struct pointer_operator
               enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         if(obj)
@@ -1212,7 +1224,7 @@ struct pointer_operator
               enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, base_type* rhs, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         if(obj && rhs)
@@ -1223,7 +1235,7 @@ struct pointer_operator
               enable_if_t<(trait::is_available<_Up>::value), int> = 0>
     explicit pointer_operator(Type* obj, Type* rhs, _Args&&... _args)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         if(obj && rhs)
@@ -1261,7 +1273,7 @@ struct pointer_counter
 
     explicit pointer_counter(Type* obj, uint64_t& count)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Type>::get())
             return;
 
         if(obj)
@@ -1407,13 +1419,13 @@ struct generic_counter
     template <typename _Up = _Tp, enable_if_t<(std::is_pointer<_Up>::value), int> = 0>
     explicit generic_counter(const _Up& obj, uint64_t& count)
     {
-        count += (trait::runtime_enabled<_Tp>::get() && obj) ? 1 : 0;
+        count += (trait::runtime_enabled<Type>::get() && obj) ? 1 : 0;
     }
 
     template <typename _Up = _Tp, enable_if_t<!(std::is_pointer<_Up>::value), int> = 0>
     explicit generic_counter(const _Up&, uint64_t& count)
     {
-        count += (trait::runtime_enabled<_Tp>::get()) ? 1 : 0;
+        count += (trait::runtime_enabled<Type>::get()) ? 1 : 0;
     }
 };
 
@@ -1479,10 +1491,10 @@ operator+(const tim::component::user_clock&   _user,
     extern template struct copy<COMPONENT_NAME>;                                         \
     extern template struct echo_measurement<COMPONENT_NAME,                              \
                                             trait::echo_enabled<COMPONENT_NAME>::value>; \
-    extern template struct finalize::storage::get<COMPONENT_NAME, HAS_DATA>;             \
-    extern template struct finalize::storage::mpi_get<COMPONENT_NAME, HAS_DATA>;         \
-    extern template struct finalize::storage::upc_get<COMPONENT_NAME, HAS_DATA>;         \
-    extern template struct finalize::storage::dmp_get<COMPONENT_NAME, HAS_DATA>;         \
+    extern template struct finalize::get<COMPONENT_NAME, HAS_DATA>;                      \
+    extern template struct finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;                  \
+    extern template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                  \
+    extern template struct finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;                  \
     }                                                                                    \
     }
 
@@ -1521,10 +1533,10 @@ operator+(const tim::component::user_clock&   _user,
     template struct copy<COMPONENT_NAME>;                                                \
     template struct echo_measurement<COMPONENT_NAME,                                     \
                                      trait::echo_enabled<COMPONENT_NAME>::value>;        \
-    template struct finalize::storage::get<COMPONENT_NAME, HAS_DATA>;                    \
-    template struct finalize::storage::mpi_get<COMPONENT_NAME, HAS_DATA>;                \
-    template struct finalize::storage::upc_get<COMPONENT_NAME, HAS_DATA>;                \
-    template struct finalize::storage::dmp_get<COMPONENT_NAME, HAS_DATA>;                \
+    template struct finalize::get<COMPONENT_NAME, HAS_DATA>;                             \
+    template struct finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;                         \
+    template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                         \
+    template struct finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;                         \
     }                                                                                    \
     }
 

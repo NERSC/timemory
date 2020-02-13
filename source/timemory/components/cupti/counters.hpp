@@ -156,11 +156,10 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 
     static get_initializer_t& get_initializer()
     {
-        static auto _lambda_instance = []() -> tuple_type {
+        static get_initializer_t _instance = []() -> tuple_type {
             return tuple_type(get_device_initializer()(), get_event_initializer()(),
                               get_metric_initializer()());
         };
-        static get_initializer_t _instance = _lambda_instance;
         return _instance;
     }
 

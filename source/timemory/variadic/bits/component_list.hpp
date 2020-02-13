@@ -541,11 +541,10 @@ template <typename... Types>
 inline void
 component_list<Types...>::init_storage()
 {
-    static auto _execute = []() {
+    static thread_local bool _once = []() {
         apply_v::type_access<operation::init_storage, reference_type>();
         return true;
-    };
-    static thread_local bool _once = _execute();
+    }();
     consume_parameters(_once);
 }
 

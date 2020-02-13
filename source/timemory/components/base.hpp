@@ -106,10 +106,7 @@ private:
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
     friend struct operation::sample<_Tp>;
-    friend struct operation::finalize::storage::get<_Tp, implements_storage_v>;
-    // friend struct operation::finalize::storage::mpi_get<_Tp>;
-    // friend struct operation::finalize::storage::upc_get<_Tp>;
-    // friend struct operation::finalize::storage::dmp_get<_Tp>;
+    friend struct operation::finalize::get<_Tp, implements_storage_v>;
 
     template <typename _Up>
     friend struct operation::insert_node;
@@ -159,12 +156,6 @@ public:
     {}
 
 public:
-    /*static void initialize_storage()
-    {
-        static thread_local auto _instance = storage_type::instance();
-        consume_parameters(_instance);
-    }*/
-
     template <typename... _Args>
     static void configure(_Args&&...)
     {}
@@ -206,9 +197,9 @@ public:
     //
     void measure()
     {
-        // is_running   = false;
-        is_transient = false;
-        value        = Type::record();
+        is_transient                = false;
+        Type&                   obj = static_cast<Type&>(*this);
+        operation::record<Type> m(obj);
     }
 
     //----------------------------------------------------------------------------------//
@@ -836,12 +827,6 @@ public:
     {}
 
 public:
-    /*static void initialize_storage()
-    {
-        static thread_local auto _instance = storage_type::instance();
-        consume_parameters(_instance);
-    }*/
-
     template <typename... _Args>
     static void configure(_Args&&...)
     {}

@@ -39,16 +39,18 @@ __all__ = ["profile"]
 _records = deque()
 _counter = 0
 _skip_counts = []
-_start_events = ["call"]  # + ["c_call"]
-_stop_events = ["return"]  # + ["c_return"]
+_start_events = ["call"] # + ["c_call"]
+_stop_events = ["return"] # + ["c_return"]
 _is_running = False
 _components = os.environ.get("TIMEMORY_PROFILER_COMPONENTS", "")
+_always_skipped_functions = ["__exit__"]
+_always_skipped_files = ["__init__.py"]
 
 #
 #   Profiler settings
 #
-_include_line = False
-_include_filepath = False
+_include_line = True
+_include_filepath = True
 _full_filepath = False
 
 
@@ -62,17 +64,33 @@ def _profiler_function(frame, event, arg):
     global _skip_counts
     global _start_events
     global _stop_events
+    global _always_skipped_functions
 
     _count = copy.copy(_counter)
 
     if event in _start_events:
-        _func = "{}".format(frame.f_code.co_name)
+        _func = "{}".format(frame.f_code.co_name)        
+        _line = int(frame.f_lineno) if _include_line else -1
         _file = "" if not _include_filepath else "{}".format(
             frame.f_code.co_filename)
 
+        # skip anything from this file
+        if _file == __file__:
+            _skip_counts.append(_count)
+            return
+
+        # check if skipped function
+        if _func in _always_skipped_functions:
+            _skip_counts.append(_count)
+            return
+
+        # check if skipped file
+        if os.path.basename(_file) in _always_skipped_files:
+            _skip_counts.append(_count)
+            return
+
         if not _full_filepath and len(_file) > 0:
             _file = os.path.basename(_file)
-        _line = int(frame.f_lineno) if _include_line else -1
 
         if "__init__.py" not in _file:
             entry = component_bundle(_func, _file, _line)
@@ -136,6 +154,8 @@ class profile():
         self._use = not _is_running
         self._flat_profile = settings.flat_profile
         self.components = components + _components.split(",")
+        if len(self.components) == 0:
+            self.components += ["wall_clock"]
 
     #------------------------------------------------------------------------------------#
     #
@@ -208,3 +228,33 @@ class profile():
         import traceback
         if exec_type is not None and exec_value is not None and exec_tb is not None:
             traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
+
+    #------------------------------------------------------------------------------------#
+    #
+    def run(self, cmd):
+        import __main__
+        dict = __main__.__dict__
+        if isinstance(cmd, str):
+            return self.runctx(cmd, dict, dict)
+        else:
+            return self.runctx(" ".join(cmd), dict, dict)
+
+    #------------------------------------------------------------------------------------#
+    #
+    def runctx(self, cmd, globals, locals):
+        global _is_running
+
+        if self._use:
+            self._original_profiler_function = sys.getprofile()
+            _is_running = True
+            self.start()
+            component_bundle.reset()
+            component_bundle.configure(self.components)
+
+        try:
+            exec(cmd, globals, locals)
+        finally:
+            if self._use:
+                self.stop()
+                _is_running = False
+        return self

@@ -37,6 +37,11 @@ if(WIN32)
     set(_BUILD_CALIPER OFF)
 endif()
 
+set(_BUILD_OMPT ON)
+if(WIN32 OR APPLE)
+    set(_BUILD_OMPT OFF)
+endif()
+
 set(_NON_APPLE_UNIX OFF)
 if(UNIX AND NOT APPLE)
     set(_NON_APPLE_UNIX ON)
@@ -183,6 +188,8 @@ add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
+add_option(TIMEMORY_BUILD_OPENMP
+    "Enable building OpenMP-Tools" ${_BUILD_OMPT})
 add_option(TIMEMORY_BUILD_DEVELOPER
     "Enable building with developer flags" OFF)
 add_option(TIMEMORY_FORCE_GPERF_PYTHON
@@ -246,6 +253,8 @@ add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
     "Enable dynamic instrumentation extensions" ON)
+add_option(TIMEMORY_USE_OPENMP
+    "Enable OpenMP tooling" ${_BUILD_OMPT})
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_USE_LIKWID
         "Enable LIKWID marker forwarding" ON)

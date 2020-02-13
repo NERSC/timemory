@@ -171,6 +171,7 @@ struct user_bundle;
 // reserved
 using user_tuple_bundle = user_bundle<10101, api::native_tag>;
 using user_list_bundle  = user_bundle<11011, api::native_tag>;
+using user_ompt_bundle  = user_bundle<10001, api::native_tag>;
 
 // requires gotcha
 struct malloc_gotcha;

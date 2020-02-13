@@ -100,7 +100,11 @@ tim::impl::storage<Type, true>::get_shared_manager()
             {
                 this->stack_clear();
                 _instance->reset(this);
+                _instance->smart_instance().reset();
+                if(_is_master)
+                    _instance->smart_master_instance().reset();
             }
+            trait::runtime_enabled<Type>::set(false);
         };
         m_manager->add_finalizer(Type::get_label(), std::move(_finalize), _is_master);
     }
@@ -127,6 +131,7 @@ tim::impl::storage<Type, false>::get_shared_manager()
                 this->stack_clear();
                 _instance->reset(this);
             }
+            trait::runtime_enabled<Type>::set(false);
         };
         m_manager->add_finalizer(Type::get_label(), std::move(_finalize), _is_master);
     }
@@ -139,7 +144,9 @@ tim::impl::storage_singleton_t<_Tp>*
 tim::get_storage_singleton()
 {
     using singleton_type  = ::tim::impl::storage_singleton_t<_Tp>;
-    static auto _instance = std::unique_ptr<singleton_type>(new singleton_type());
+    using component_type  = typename _Tp::component_type;
+    static auto _instance = std::unique_ptr<singleton_type>(
+        (trait::runtime_enabled<component_type>::get()) ? new singleton_type() : nullptr);
     return _instance.get();
 }
 

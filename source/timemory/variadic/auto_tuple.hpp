@@ -95,18 +95,26 @@ public:
     }
 
 public:
-    template <typename _Func = init_func_t>
+    template <typename Func = init_func_t>
     explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
-                        const _Func&        = this_type::get_initializer());
+                        const Func&        = this_type::get_initializer());
 
-    template <typename _Func = init_func_t>
+    template <typename Func = init_func_t>
     explicit auto_tuple(const captured_location_t&, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
-                        const _Func&        = this_type::get_initializer());
+                        const Func&        = this_type::get_initializer());
 
     explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report());
+
+    template <typename Func, typename Arg, typename... Args>
+    auto_tuple(const string_t&, bool store, bool flat, const Func&, Arg&&, Args&&...);
+
+    template <typename Func, typename Arg, typename... Args>
+    auto_tuple(const captured_location_t&, bool store, bool flat, const Func&, Arg&&,
+               Args&&...);
+
     inline ~auto_tuple();
 
     // copy and move
@@ -213,6 +221,30 @@ public:
         return m_temporary_object.template get<_Tp>();
     }
 
+protected:
+    template <typename Func, typename... Args,
+              enable_if_t<(sizeof...(Args) == 0), int> = 0>
+    void init(Func&& _func, Args&&...)
+    {
+        if(m_enabled)
+        {
+            _func(*this);
+            m_temporary_object.start();
+        }
+    }
+
+    template <typename Func, typename... Args,
+              enable_if_t<(sizeof...(Args) > 0), int> = 0>
+    void init(Func&& _func, Args&&... args)
+    {
+        if(m_enabled)
+        {
+            _func(*this);
+            m_temporary_object.construct(std::forward<Args>(args)...);
+            m_temporary_object.start();
+        }
+    }
+
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
@@ -230,9 +262,9 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename _Func>
+template <typename Func>
 auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_exit,
-                                 const _Func& _func)
+                                 const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
@@ -240,7 +272,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_
 {
     if(m_enabled)
     {
-        _func(*this);
+        init(_func);
         m_temporary_object.start();
     }
 }
@@ -248,9 +280,9 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename _Func>
+template <typename Func>
 auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
-                                 bool report_at_exit, const _Func& _func)
+                                 bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
@@ -258,7 +290,7 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
 {
     if(m_enabled)
     {
-        _func(*this);
+        init(_func);
         m_temporary_object.start();
     }
 }
@@ -274,6 +306,44 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_
 {
     if(m_enabled)
     {
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+template <typename Func, typename Arg, typename... Args>
+auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, bool flat,
+                                 const Func& func, Arg&& arg, Args&&... args)
+: m_enabled(store && settings::enabled())
+, m_report_at_exit(settings::destructor_report())
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        init(func);
+        m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+template <typename Func, typename Arg, typename... Args>
+auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store, bool flat,
+                                 const Func& func, Arg&& arg, Args&&... args)
+: m_enabled(store && settings::enabled())
+, m_report_at_exit(settings::destructor_report())
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        init(func);
+        m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
         m_temporary_object.start();
     }
 }

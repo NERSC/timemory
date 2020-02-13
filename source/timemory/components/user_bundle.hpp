@@ -520,12 +520,11 @@ private:
     //
     static void internal_init()
     {
-        static auto _instance = []() {
+        static bool _inited = []() {
             auto ret = storage_type::instance();
             ret->initialize();
             return true;
-        };
-        static bool _inited = _instance();
+        }();
         consume_parameters(_inited);
     }
 
@@ -534,13 +533,12 @@ private:
     static void internal_init()
     {
         internal_init();
-        static auto _instance = []() {
+        static bool _inited = []() {
             using tool_storage_type = typename _Tool::storage_type;
             auto ret                = tool_storage_type::instance();
             ret->initialize();
             return true;
-        };
-        static bool _inited = _instance();
+        }();
         consume_parameters(_inited);
     }
 };

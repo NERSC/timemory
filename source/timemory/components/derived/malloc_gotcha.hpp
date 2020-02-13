@@ -410,7 +410,7 @@ private:
 
     static hash_array_t& get_hash_array()
     {
-        static auto _get = []() {
+        static hash_array_t _instance = []() {
 #if defined(TIMEMORY_USE_CUDA)
             hash_array_t _instance = {
                 { string_hash()("malloc"),
@@ -425,9 +425,7 @@ private:
 #endif
 
             return _instance;
-        };
-
-        static hash_array_t _instance = _get();
+        }();
         return _instance;
     }
 

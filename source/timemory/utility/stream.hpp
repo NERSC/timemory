@@ -103,10 +103,6 @@ struct stream_entry
         m_value = ss.str();
         if(settings::max_width() > 0 && m_value.length() > (size_t) settings::max_width())
         {
-            // while(m_value.find(' ') != std::string::npos)
-            //    m_value = m_value.replace(m_value.find(' '), 1, "");
-            // if(m_value.length() > (size_t) settings::max_width())
-
             //
             //  don't truncate and add ellipsis if max width is really small
             //
@@ -159,6 +155,9 @@ write_entry(_Stream& ss, const _Tp& obj)
         _wrem      = std::max<int>(_wrem, 0);
         if(_i + _wrem > _w - 3)
             _wrem = _w - 3 - _i;
+        // e.g. 4 leading spaces, 2 spaces at end
+        if(((_wrem - itr.length()) - (_w - 2)) > 1)
+            _wrem -= 1;
         stringstream_t ssbeg;
         ssbeg << std::setw(_wrem) << "" << itr;
         ss << std::left << std::setw(_w - 2) << ssbeg.str();
@@ -480,12 +479,6 @@ public:
 
         offset.clear();
 
-        // printf("num rows: %i\n", (int) obj.m_rows);
-        // std::cout << "num breaks: ";
-        // for(const auto& itr : obj.m_break)
-        //    std::cout << itr << " ";
-        // std::cout << "\n";
-
         for(int i = 0; i < obj.m_rows; ++i)
         {
             bool just_broke = false;
@@ -720,28 +713,31 @@ write_header(stream& _os, const std::string& _label, std::ios_base::fmtflags _fm
 
 template <typename _Tp>
 void
-write_entry(stream& _os, const std::string& _label, const _Tp& _value)
+write_entry(stream& _os, const std::string& _label, const _Tp& _value, bool c = false,
+            bool l = false)
 {
     _os.set_name(_label);
-    _os(entry(_value, _os.get_header(_label, 0)));
+    _os(entry(_value, _os.get_header(_label, 0), c, l));
 }
 
 //--------------------------------------------------------------------------------------//
 
 inline void
-write_entry(stream& _os, const std::string& _label, const std::string& _value)
+write_entry(stream& _os, const std::string& _label, const std::string& _value,
+            bool c = false, bool = false)
 {
     _os.set_name(_label);
-    _os(entry(_value, _os.get_header(_label, 0), false, true));
+    _os(entry(_value, _os.get_header(_label, 0), c, true));
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 void
-write_entry(stream& _os, const std::vector<std::string>& _label, const _Tp& _value)
+write_entry(stream& _os, const std::vector<std::string>& _label, const _Tp& _value,
+            bool c = false, bool l = false)
 {
-    write_entry(_os, _label.front(), _value);
+    write_entry(_os, _label.front(), _value, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -749,20 +745,21 @@ write_entry(stream& _os, const std::vector<std::string>& _label, const _Tp& _val
 template <typename _Tp>
 void
 write_entry(stream& _os, const std::string& _label,
-            const std::vector<std::string>& _value)
+            const std::vector<std::string>& _value, bool c = false, bool l = false)
 {
     for(const auto& itr : _value)
-        write_entry(_os, _label, itr);
+        write_entry(_os, _label, itr, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename _Up>
 void
-write_entry(stream& _os, const std::string& _label, const std::pair<_Tp, _Up>& _value)
+write_entry(stream& _os, const std::string& _label, const std::pair<_Tp, _Up>& _value,
+            bool c = false, bool l = false)
 {
-    write_entry(_os, _label, _value.first);
-    write_entry(_os, _label, _value.second);
+    write_entry(_os, _label, _value.first, c, l);
+    write_entry(_os, _label, _value.second, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -770,11 +767,11 @@ write_entry(stream& _os, const std::string& _label, const std::pair<_Tp, _Up>& _
 template <typename _Tp, typename _Up>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::pair<_Tp, _Up>& _value)
+            const std::pair<_Tp, _Up>& _value, bool c = false, bool l = false)
 {
     size_t _L = _labels.size();
-    write_entry(_os, _labels.at(0), _value.first);
-    write_entry(_os, _labels.at(1 % _L), _value.second);
+    write_entry(_os, _labels.at(0), _value.first, c, l);
+    write_entry(_os, _labels.at(1 % _L), _value.second, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -782,10 +779,10 @@ write_entry(stream& _os, const std::vector<std::string>& _labels,
 template <typename _Tp, typename... _Alloc>
 void
 write_entry(stream& _os, const std::string& _label,
-            const std::vector<_Tp, _Alloc...>& _values)
+            const std::vector<_Tp, _Alloc...>& _values, bool c = false, bool l = false)
 {
     for(const auto& itr : _values)
-        write_entry(_os, _label, itr);
+        write_entry(_os, _label, itr, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -793,22 +790,23 @@ write_entry(stream& _os, const std::string& _label,
 template <typename _Tp, typename... _Alloc>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::vector<_Tp, _Alloc...>& _values)
+            const std::vector<_Tp, _Alloc...>& _values, bool c = false, bool l = false)
 {
     size_t _L = _labels.size();
     size_t _N = _values.size();
     for(size_t i = 0; i < _N; ++i)
-        write_entry(_os, _labels.at(i % _L), _values.at(i));
+        write_entry(_os, _labels.at(i % _L), _values.at(i), c, l);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, size_t _N>
 void
-write_entry(stream& _os, const std::string& _label, const std::array<_Tp, _N>& _values)
+write_entry(stream& _os, const std::string& _label, const std::array<_Tp, _N>& _values,
+            bool c = false, bool l = false)
 {
     for(const auto& itr : _values)
-        write_entry(_os, _label, itr);
+        write_entry(_os, _label, itr, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -816,11 +814,11 @@ write_entry(stream& _os, const std::string& _label, const std::array<_Tp, _N>& _
 template <typename _Tp, size_t _N>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::array<_Tp, _N>& _values)
+            const std::array<_Tp, _N>& _values, bool c = false, bool l = false)
 {
     size_t _L = _labels.size();
     for(size_t i = 0; i < _N; ++i)
-        write_entry(_os, _labels.at(i % _L), _values.at(i));
+        write_entry(_os, _labels.at(i % _L), _values.at(i), c, l);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -828,11 +826,11 @@ write_entry(stream& _os, const std::vector<std::string>& _labels,
 template <typename... _Types, size_t... _Idx>
 void
 write_entry(stream& _os, const std::string& _label, const std::tuple<_Types...>& _values,
-            index_sequence<_Idx...>)
+            index_sequence<_Idx...>, bool c = false, bool l = false)
 {
     using init_list_type = std::initializer_list<int>;
     auto&& ret =
-        init_list_type{ (write_entry(_os, _label, std::get<_Idx>(_values)), 0)... };
+        init_list_type{ (write_entry(_os, _label, std::get<_Idx>(_values), c, l), 0)... };
     consume_parameters(ret);
 }
 
@@ -841,12 +839,13 @@ write_entry(stream& _os, const std::string& _label, const std::tuple<_Types...>&
 template <typename... _Types, size_t... _Idx>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::tuple<_Types...>& _values, index_sequence<_Idx...>)
+            const std::tuple<_Types...>& _values, index_sequence<_Idx...>, bool c = false,
+            bool l = false)
 {
     using init_list_type = std::initializer_list<int>;
     size_t _L            = _labels.size();
     auto&& ret           = init_list_type{ (
-        write_entry(_os, _labels.at(_Idx % _L), std::get<_Idx>(_values)), 0)... };
+        write_entry(_os, _labels.at(_Idx % _L), std::get<_Idx>(_values), c, l), 0)... };
     consume_parameters(ret);
 }
 
@@ -854,10 +853,11 @@ write_entry(stream& _os, const std::vector<std::string>& _labels,
 
 template <typename... _Types>
 void
-write_entry(stream& _os, const std::string& _labels, const std::tuple<_Types...>& _values)
+write_entry(stream& _os, const std::string& _labels, const std::tuple<_Types...>& _values,
+            bool c = false, bool l = false)
 {
     constexpr size_t _N = sizeof...(_Types);
-    write_entry(_os, _labels, _values, make_index_sequence<_N>{});
+    write_entry(_os, _labels, _values, make_index_sequence<_N>{}, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -865,10 +865,10 @@ write_entry(stream& _os, const std::string& _labels, const std::tuple<_Types...>
 template <typename... _Types>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::tuple<_Types...>& _values)
+            const std::tuple<_Types...>& _values, bool c = false, bool l = false)
 {
     constexpr size_t _N = sizeof...(_Types);
-    write_entry(_os, _labels, _values, make_index_sequence<_N>{});
+    write_entry(_os, _labels, _values, make_index_sequence<_N>{}, c, l);
 }
 
 //--------------------------------------------------------------------------------------//

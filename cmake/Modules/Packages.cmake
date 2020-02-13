@@ -39,6 +39,7 @@ add_interface_library(timemory-gotcha)
 add_interface_library(timemory-likwid)
 add_interface_library(timemory-vtune)
 add_interface_library(timemory-tau)
+add_interface_library(timemory-openmp)
 add_interface_library(timemory-python)
 add_interface_library(timemory-plotting)
 
@@ -1038,6 +1039,52 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
+#                               OpenMP
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_OPENMP AND CMAKE_CXX_COMPILER_IS_CLANG)
+    if(TIMEMORY_BUILD_OPENMP)
+        set(OPENMP_STANDALONE_BUILD ON CACHE BOOL "Needed by ompt")
+        add_subdirectory(external/llvm-ompt)
+    else()
+        find_package(OpenMP ${TIMEMORY_FIND_REQUIREMENT})
+        find_library(OMPT_LIBRARY
+            NAME ompt ompprof
+            PATH_SUFFIXES lib lib64)
+    endif()
+else()
+    set(TIMEMORY_BUILD_OPENMP OFF)
+endif()
+
+if(TIMEMORY_USE_OPENMP AND TIMEMORY_BUILD_OPENMP)
+    set(OMPT_EXPORT_TARGETS)
+    foreach(_TARG omp ompimp omptarget.rtl.cuda omptarget)
+        if(TARGET ${_TARG})
+            target_link_libraries(timemory-openmp INTERFACE ${_TARG})
+            list(APPEND OMPT_EXPORT_TARGETS ${_TARG})
+        endif()
+    endforeach()
+    if(NOT "${OMPT_EXPORT_TARGETS}" STREQUAL "")
+        target_compile_definitions(timemory-openmp INTERFACE TIMEMORY_USE_OPENMP)
+    else()
+        set(TIMEMORY_BUILD_OPENMP OFF)
+        set(TIMEMORY_USE_OPENMP OFF)
+        inform_empty_interface(timemory-openmp "OpenMP")
+    endif()
+elseif(TIMEMORY_USE_OPENMP AND OpenMP_FOUND AND OMPT_LIBRARY)
+    target_link_libraries(timemory-openmp INTERFACE ${OMPT_LIBRARY})
+    target_link_libraries(timemory-openmp INTERFACE OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
+    target_compile_definitions(timemory-openmp INTERFACE TIMEMORY_USE_OPENMP)
+else()
+    set(TIMEMORY_BUILD_OPENMP OFF)
+    set(TIMEMORY_USE_OPENMP OFF)
+    inform_empty_interface(timemory-openmp "OpenMP")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
 #                               VTune
 #
 #----------------------------------------------------------------------------------------#
@@ -1125,8 +1172,14 @@ endif()
 if(Dyninst_FOUND AND Boost_FOUND)
     target_link_libraries(timemory-dyninst INTERFACE
         ${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
+    foreach(_TARG Dyninst::dyninst Boost::headers Boost::atomic Boost::system Boost::thread Boost::date_time)
+        if(TARGET ${_TARG})
+            target_link_libraries(timemory-dyninst INTERFACE ${_TARG})
+        endif()
+    endforeach()
     target_include_directories(timemory-dyninst SYSTEM INTERFACE
-        ${DYNINST_INCLUDE_DIRS} ${DYNINST_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+        ${DYNINST_INCLUDE_DIRS} ${DYNINST_INCLUDE_DIR}
+        ${Dyninst_INCLUDE_DIRS} ${Dyninst_INCLUDE_DIR})
     target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 else()
     set(TIMEMORY_USE_DYNINST OFF)

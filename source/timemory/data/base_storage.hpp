@@ -103,8 +103,13 @@ public:
         {
             int _id = m_instance_id;
             PRINT_HERE("%s: %i (%s)",
-                       "Warning! base::storage is master but is not zero instance", _id,
+                       "Error! base::storage is master but is not zero instance", _id,
                        m_label.c_str());
+            if(m_instance_id > 10)
+            {
+                // at this point we have a recursive loop
+                throw std::runtime_error("duplication!");
+            }
         }
 
         if(!m_is_master && m_instance_id == 0)

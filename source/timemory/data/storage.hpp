@@ -120,7 +120,7 @@ struct tim::impl::storage_deleter : public std::default_delete<StorageType>
         std::thread::id master_tid = singleton_t::master_thread_id();
         std::thread::id this_tid   = std::this_thread::get_id();
 
-        tim::dmp::barrier();
+        // tim::dmp::barrier();
 
         if(ptr && master && ptr != master)
         {
@@ -129,6 +129,16 @@ struct tim::impl::storage_deleter : public std::default_delete<StorageType>
         }
         else
         {
+            // sometimes the worker threads get deleted after the master thread
+            // but the singleton class will ensure it is merged so we are
+            // safe to leak here
+            if(ptr && !master && this_tid != master_tid)
+            {
+                ptr->StorageType::free_shared_manager();
+                ptr = nullptr;
+                return;
+            }
+
             if(ptr)
             {
                 ptr->StorageType::print();

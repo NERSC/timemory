@@ -96,6 +96,11 @@
 #    include "timemory/components/vtune/profiler.hpp"
 #endif
 
+// OpenMP components
+#if defined(TIMEMORY_USE_OPENMP)
+#    include "timemory/components/openmp.hpp"
+#endif
+
 #include "timemory/backends/cuda.hpp"
 
 // device backend

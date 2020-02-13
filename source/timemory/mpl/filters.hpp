@@ -267,16 +267,16 @@ template <typename... _ImplTypes>
 struct get_data_tuple<std::tuple<_ImplTypes...>>
 {
     using value_type = std::tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
-    using label_type =
-        std::tuple<std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
+    using label_type = std::tuple<
+        std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
 };
 
 template <typename... _ImplTypes>
 struct get_data_tuple<type_list<_ImplTypes...>>
 {
     using value_type = std::tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
-    using label_type =
-        std::tuple<std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
+    using label_type = std::tuple<
+        std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
 };
 
 //======================================================================================//

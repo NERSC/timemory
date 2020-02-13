@@ -36,7 +36,7 @@
 extern "C"
 {
     extern uint64_t init_timemory_mpip_tools();
-    extern void stop_timemory_mpip_tools(uint64_t);
+    extern uint64_t stop_timemory_mpip_tools(uint64_t);
 }
 #endif
 
@@ -303,15 +303,16 @@ PYBIND11_MODULE(libpytimemory, tim)
 #if defined(TIMEMORY_USE_MPI_P)
         return init_timemory_mpip_tools();
 #else
-        return std::numeric_limits<uint64_t>::max();
+        return 0;
 #endif
     };
     //----------------------------------------------------------------------------------//
     auto _stop_mpip = [&](uint64_t id) {
 #if defined(TIMEMORY_USE_MPI_P)
-        stop_timemory_mpip_tools(id);
+        return stop_timemory_mpip_tools(id);
 #else
         tim::consume_parameters(id);
+        return 0;
 #endif
     };
     //----------------------------------------------------------------------------------//
@@ -358,7 +359,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto _finalize_mpi = [&]() {
         try
         {
-            tim::mpi::finalize();
+            // tim::mpi::finalize();
         } catch(std::exception& e)
         {
             PRINT_HERE("ERROR: %s", e.what());
@@ -447,6 +448,8 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     settings.def(py::init<>(), "Dummy");
 
+    using strvector_t = std::vector<std::string>;
+
     SETTING_PROPERTY(bool, suppress_parsing);
     SETTING_PROPERTY(bool, enabled);
     SETTING_PROPERTY(bool, auto_output);
@@ -465,6 +468,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, destructor_report);
     SETTING_PROPERTY(uint16_t, max_depth);
     SETTING_PROPERTY(string_t, time_format);
+    SETTING_PROPERTY(string_t, python_exe);
+    SETTING_PROPERTY(strvector_t, command_line);
     // width/precision
     SETTING_PROPERTY(int16_t, precision);
     SETTING_PROPERTY(int16_t, width);
@@ -495,6 +500,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, upcxx_init);
     SETTING_PROPERTY(bool, upcxx_finalize);
     SETTING_PROPERTY(int32_t, node_count);
+    // misc
+    SETTING_PROPERTY(bool, stack_clearing);
     // papi
     SETTING_PROPERTY(bool, papi_multiplexing);
     SETTING_PROPERTY(bool, papi_fail_on_error);

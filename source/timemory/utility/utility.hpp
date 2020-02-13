@@ -144,7 +144,7 @@ type_mutex(const uint64_t& _n = 0)
 inline std::string
 demangle(const char* _cstr)
 {
-#if defined(_TIMEMORY_ENABLE_DEMANGLE)
+#if defined(TIMEMORY_ENABLE_DEMANGLE)
     // demangling a string when delimiting
     int   _ret    = 0;
     char* _demang = abi::__cxa_demangle(_cstr, 0, 0, &_ret);

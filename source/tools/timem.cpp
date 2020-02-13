@@ -26,6 +26,48 @@
 
 //--------------------------------------------------------------------------------------//
 
+inline void
+sampler(int signum)
+{
+    if(signum == TIMEM_SIGNAL)
+    {
+        get_measure()->sample();
+        if((debug() && verbose() > 1) || (verbose() > 2))
+            std::cerr << "[SAMPLE][" << getpid() << "]> " << *get_measure() << std::endl;
+        else if(debug())
+            fprintf(stderr, "[%i]> sampling...\n", getpid());
+    }
+    else
+    {
+        perror("timem sampler caught signal that was not TIMEM_SIGNAL...");
+        signal(signum, SIG_DFL);
+        raise(signum);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+sampler(int signum, siginfo_t*, void*)
+{
+    if(signum == TIMEM_SIGNAL)
+    {
+        get_measure()->sample();
+        if((debug() && verbose() > 1) || (verbose() > 2))
+            std::cerr << "[SAMPLE][" << getpid() << "]> " << *get_measure() << std::endl;
+        else if(debug())
+            fprintf(stderr, "[%i]> sampling...\n", getpid());
+    }
+    else
+    {
+        perror("timem sampler caught signal that was not TIMEM_SIGNAL...");
+        signal(signum, SIG_DFL);
+        raise(signum);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
 void
 parent_process(pid_t pid, int status)
 {
@@ -348,6 +390,7 @@ main(int argc, char** argv)
             std::cerr << "[BEFORE STOP][" << pid << "]> " << *get_measure() << std::endl;
 
         get_measure()->stop();
+        signal(TIMEM_SIGNAL, SIG_IGN);
 
         parent_process(pid, status);
     }

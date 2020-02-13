@@ -92,7 +92,7 @@ struct cupti_activity : public base<cupti_activity, uint64_t>
 
     static get_initializer_t& get_initializer()
     {
-        static auto _lambda_instance = []() -> kind_vector_type {
+        static get_initializer_t _instance = []() -> kind_vector_type {
             std::vector<cupti::activity_kind_t> _kinds;
             auto                                lvl = settings::cupti_activity_level();
 
@@ -149,7 +149,6 @@ struct cupti_activity : public base<cupti_activity, uint64_t>
             }
             return _kinds;
         };
-        static get_initializer_t _instance = _lambda_instance;
         return _instance;
     }
 

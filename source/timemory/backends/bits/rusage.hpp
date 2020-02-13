@@ -195,13 +195,11 @@ tim::get_data_rss()
 
 #    else  // Linux
 
-    static auto get_statm_file = [&]() {
+    std::string fstatm = [&]() {
         std::stringstream fio;
         fio << "/proc/" << get_rusage_pid() << "/statm";
         return fio.str();
-    };
-
-    std::string   fstatm    = get_statm_file();
+    }();
     int64_t       drss_size = 0;
     std::ifstream ifs;
     ifs.open(fstatm.c_str());
@@ -482,13 +480,11 @@ tim::get_virt_mem()
                (long int) get_rusage_pid());
 #        endif
 
-    static auto get_statm_file = [&]() {
+    std::string fstatm = [&]() {
         std::stringstream fio;
         fio << "/proc/" << get_rusage_pid() << "/statm";
         return fio.str();
-    };
-
-    std::string   fstatm  = get_statm_file();
+    }();
     int64_t       vm_size = 0;
     std::ifstream ifs;
     ifs.open(fstatm.c_str());

@@ -141,11 +141,8 @@ public:
         using print_t        = TypeL<operation::print<T>...>;
         template <typename _Archive>
         using serialize_t = TypeL<
-                            operation::generic_operator<T,
-                                                        operation::serialization<T,
-                                                                 _Archive>>...>;
+            operation::generic_operator<T, operation::serialization<T, _Archive>>...>;
     };
-
 
     template <template <typename...> class CompL, template <typename...> class AutoL,
               template <typename...> class DataL, typename... L, typename... T>

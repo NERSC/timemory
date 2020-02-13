@@ -22,7 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "pybind11/pybind11.h"
 #include "pybind11/cast.h"
 #include "pybind11/chrono.h"
 #include "pybind11/embed.h"
@@ -34,12 +33,12 @@
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
 
-#include <vector>
 #include <random>
 #include <type_traits>
+#include <vector>
 
 #if defined(USE_MPI) || defined(TIMEMORY_USE_MPI)
-#include <mpi.h>
+#    include <mpi.h>
 #endif
 
 namespace py = pybind11;
@@ -82,12 +81,13 @@ allreduce(const vector_t<_Tp>& sendbuf)
 
 //--------------------------------------------------------------------------------------//
 
-double run(int nitr, int nsize)
+double
+run(int nitr, int nsize)
 {
     rng.seed(54561434UL);
 
-    printf("[%s] Running MPI algorithm with %i iterations and %i entries...\n",
-           __func__, nitr, nsize);
+    printf("[%s] Running MPI algorithm with %i iterations and %i entries...\n", __func__,
+           nitr, nsize);
 
     double dsum = 0.0;
     for(int i = 0; i < nitr; ++i)
@@ -103,8 +103,7 @@ double run(int nitr, int nsize)
 
 PYBIND11_MODULE(libex_python_bindings, ex)
 {
-    ex.def("run", &run, "Run a calculation",
-           py::arg("nitr") = 10,
+    ex.def("run", &run, "Run a calculation", py::arg("nitr") = 10,
            py::arg("nsize") = 5000);
 }
 

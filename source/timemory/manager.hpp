@@ -99,8 +99,12 @@ public:
 
     // storage-types add functors to destroy the instances
     template <typename _Func>
+    void add_cleanup(const std::string&, _Func&&);
+    template <typename _Func>
     void add_finalizer(const std::string&, _Func&&, bool);
+    void remove_cleanup(const std::string&);
     void remove_finalizer(const std::string&);
+    void cleanup();
     void finalize();
 
     void add_text_output(const string_t& _label, const string_t& _file)
@@ -135,19 +139,23 @@ private:
     void _init_storage()
     {
         using storage_type = typename _Tp::storage_type;
-        static thread_local std::atomic<int> _once(0);
-        if(_once++ == 0 && !component::state<_Tp>::has_storage())
-        {
-            auto ret = storage_type::instance();
-            if(ret)
-                ret->initialize();
 
-            if(settings::debug())
-                printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                       demangle<_Tp>().c_str(), (void*) ret,
-                       (component::state<_Tp>::has_storage()) ? "true" : "false",
-                       (ret) ? ((ret->empty()) ? "true" : "false") : "false");
-        }
+        static thread_local auto tmp = []() {
+            if(!component::state<_Tp>::has_storage())
+            {
+                auto ret = storage_type::instance();
+                if(ret)
+                    ret->initialize();
+
+                if(settings::debug())
+                    printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
+                           demangle<_Tp>().c_str(), (void*) ret,
+                           (component::state<_Tp>::has_storage()) ? "true" : "false",
+                           (ret) ? ((ret->empty()) ? "true" : "false") : "false");
+            }
+            return true;
+        }();
+        tim::consume_parameters(tmp);
     }
 
     template <typename _Tp, typename... _Tail,
@@ -420,6 +428,7 @@ private:
     /// for the entire lifetime of the manager instance
     graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
     graph_hash_alias_ptr_t m_hash_aliases = get_hash_aliases();
+    finalizer_list_t       m_finalizer_cleanups;
     finalizer_list_t       m_master_finalizers;
     finalizer_list_t       m_worker_finalizers;
     mutex_t                m_mutex;

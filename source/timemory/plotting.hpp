@@ -128,8 +128,8 @@ _plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
         int sysret = std::system(cmd.c_str());
         if(sysret != 0)
         {
-            auto msg =
-                TIMEMORY_JOIN("", "Error generating plots with command: '", cmd, "'");
+            auto msg = TIMEMORY_JOIN("", "Error generating plots with command: '", cmd,
+                                     "'", " Exit code: ", sysret);
             fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL("").c_str(), msg.c_str());
         }
     }

@@ -836,4 +836,4 @@ def plot(data=[], files=[], plot_params=plot_parameters(),
                 exc_type, exc_value, exc_traceback, limit=5)
             print('Exception - {}'.format(e))
             print('Error! Unable to plot "{}"...'.format(_data.filename))
-    print('Done')
+    # print('Done')

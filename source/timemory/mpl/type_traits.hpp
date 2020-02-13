@@ -46,7 +46,10 @@
 
 namespace tim
 {
-template <typename _Tp>
+template <typename...>
+class component_tuple;
+
+template <typename T>
 struct statistics;
 
 class manager;
@@ -63,14 +66,14 @@ struct sfinae_true : true_type
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation (e.g. PAPI) is available
 ///
-template <typename _Tp>
+template <typename T>
 struct is_available : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation (e.g. PAPI) is available
 ///
-template <typename _Tp>
+template <typename T>
 struct runtime_enabled
 {
     static bool get() { return get_runtime_value(); }
@@ -79,7 +82,7 @@ struct runtime_enabled
 private:
     static bool& get_runtime_value()
     {
-        static bool _instance = is_available<_Tp>::value;
+        static bool _instance = is_available<T>::value;
         return _instance;
     }
 };
@@ -88,14 +91,14 @@ private:
 /// trait that signifies that updating w.r.t. another instance should
 /// be a max of the two instances
 //
-template <typename _Tp>
+template <typename T>
 struct record_max : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that data is an array type
 ///
-template <typename _Tp>
+template <typename T>
 struct array_serialization : false_type
 {};
 
@@ -104,28 +107,28 @@ struct array_serialization : false_type
 /// construction. Types with this trait must contain a member string variable named
 /// prefix
 ///
-template <typename _Tp>
+template <typename T>
 struct requires_prefix : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component handles it's label when printing
 ///
-template <typename _Tp>
+template <typename T>
 struct custom_label_printing : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component includes it's units when printing
 ///
-template <typename _Tp>
+template <typename T>
 struct custom_unit_printing : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that a component includes it's laps when printing
 ///
-template <typename _Tp>
+template <typename T>
 struct custom_laps_printing : false_type
 {};
 
@@ -133,7 +136,7 @@ struct custom_laps_printing : false_type
 /// trait that designates whether there is a priority when starting the type w.r.t.
 /// other types.
 ///
-template <typename _Tp>
+template <typename T>
 struct start_priority : std::integral_constant<int, 0>
 {};
 
@@ -141,7 +144,7 @@ struct start_priority : std::integral_constant<int, 0>
 /// trait that designates whether there is a priority when stopping the type w.r.t.
 /// other types.
 ///
-template <typename _Tp>
+template <typename T>
 struct stop_priority : std::integral_constant<int, 0>
 {};
 
@@ -149,7 +152,7 @@ struct stop_priority : std::integral_constant<int, 0>
 /// trait that designates the width and precision should follow env specified
 /// timing settings
 ///
-template <typename _Tp>
+template <typename T>
 struct is_timing_category : false_type
 {};
 
@@ -157,42 +160,42 @@ struct is_timing_category : false_type
 /// trait that designates the width and precision should follow env specified
 /// memory settings
 ///
-template <typename _Tp>
+template <typename T>
 struct is_memory_category : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the units should follow env specified timing settings
 ///
-template <typename _Tp>
+template <typename T>
 struct uses_timing_units : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the units should follow env specified memory settings
 ///
-template <typename _Tp>
+template <typename T>
 struct uses_memory_units : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the units are a percentage
 ///
-template <typename _Tp>
+template <typename T>
 struct uses_percent_units : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates a type should always print a JSON output
 ///
-template <typename _Tp>
+template <typename T>
 struct requires_json : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the type is a gotcha... ONLY gotcha should set to TRUE!
 ///
-template <typename _Tp>
+template <typename T>
 struct is_gotcha : false_type
 {};
 
@@ -200,7 +203,7 @@ struct is_gotcha : false_type
 /// trait that designates the type supports calling a function with a certain
 /// set of argument types (passed via a tuple)
 ///
-template <typename _Tp, typename _Tuple>
+template <typename T, typename Tuple>
 struct supports_args : false_type
 {};
 
@@ -208,14 +211,14 @@ struct supports_args : false_type
 /// trait that designates the type supports changing the record() static function
 /// per-instance
 ///
-template <typename _Tp>
+template <typename T>
 struct supports_custom_record : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that get() returns an iterable type
 ///
-template <typename _Tp>
+template <typename T>
 struct iterable_measurement : false_type
 {};
 
@@ -227,7 +230,7 @@ struct iterable_measurement : false_type
 ///     - std::string
 ///     - value_type
 ///
-template <typename _Tp>
+template <typename T>
 struct secondary_data : false_type
 {};
 
@@ -235,7 +238,7 @@ struct secondary_data : false_type
 /// trait that signifies the component only has relevant values if it is not collapsed
 /// into the master thread
 ///
-template <typename _Tp>
+template <typename T>
 struct thread_scope_only : false_type
 {};
 
@@ -244,21 +247,21 @@ struct thread_scope_only : false_type
 /// store(...) for serialization so the base class should not provide a generic
 /// serialize(...) function
 ///
-template <typename _Tp>
+template <typename T>
 struct split_serialization : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies the component will accumulate a min/max
 ///
-template <typename _Tp>
+template <typename T>
 struct record_statistics : default_record_statistics_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that specifies the data type of the statistics
 ///
-template <typename _Tp>
+template <typename T>
 struct statistics
 {
     using type = std::tuple<>;
@@ -268,28 +271,28 @@ struct statistics
 /// trait that will suppress compilation error in operation::add_statistics<Component>
 /// if the data type passed does not match statistics<Component>::type
 ///
-template <typename _Tp>
+template <typename T>
 struct permissive_statistics : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies the component support sampling
 ///
-template <typename _Tp>
+template <typename T>
 struct sampler : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies the component samples a measurement from a file
 ///
-template <typename _Tp>
+template <typename T>
 struct file_sampler : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait the designates the units
 ///
-template <typename _Tp>
+template <typename T>
 struct units
 {
     using type         = int64_t;
@@ -299,7 +302,7 @@ struct units
 //--------------------------------------------------------------------------------------//
 /// trait the configures echo_measurement usage
 ///
-template <typename _Tp>
+template <typename T>
 struct echo_enabled : true_type
 {};
 
@@ -314,7 +317,7 @@ struct pretty_json : std::true_type
 //--------------------------------------------------------------------------------------//
 /// trait the configures output archive type
 ///
-template <typename _Tp>
+template <typename T>
 struct input_archive
 {
     using type    = cereal::JSONInputArchive;
@@ -326,15 +329,14 @@ struct input_archive
 //--------------------------------------------------------------------------------------//
 /// trait the configures output archive type
 ///
-template <typename _Tp>
+template <typename T>
 struct output_archive
 {
-    using subtype =
-        conditional_t<(!pretty_json<_Tp>::value || !pretty_json<void>::value) &&
-                          !std::is_same<_Tp, manager>::value,
-                      cereal::MinimalJsonWriter, cereal::PrettyJsonWriter>;
-    using type        = cereal::BaseJSONOutputArchive<subtype>;
-    using pointer     = std::shared_ptr<type>;
+    using subtype = conditional_t<(!pretty_json<T>::value || !pretty_json<void>::value) &&
+                                      !std::is_same<T, manager>::value,
+                                  cereal::MinimalJsonWriter, cereal::PrettyJsonWriter>;
+    using type    = cereal::BaseJSONOutputArchive<subtype>;
+    using pointer = std::shared_ptr<type>;
     using option_type = typename type::Options;
     using indent_type = typename option_type::IndentChar;
 
@@ -439,23 +441,32 @@ struct output_archive<cereal::MinimalJSONOutputArchive>
 //--------------------------------------------------------------------------------------//
 /// trait the configures type to always flat_storage the call-tree
 ///
-template <typename _Tp>
+template <typename T>
 struct flat_storage : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait the configures type to not report the accumulated value (useful if meaningless)
 ///
-template <typename _Tp>
+template <typename T>
 struct report_sum : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait the configures type to not report the mean value (useful if meaningless)
 ///
-template <typename _Tp>
+template <typename T>
 struct report_mean : true_type
 {};
+
+//--------------------------------------------------------------------------------------//
+/// trait for configuring OMPT components
+///
+template <typename T>
+struct omp_tools
+{
+    using type = ::tim::component_tuple<::tim::component::user_ompt_bundle>;
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -485,10 +496,10 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Vp>
+template <typename T, typename V>
 struct generates_output
 {
-    static constexpr bool value = (!(std::is_same<_Vp, void>::value));
+    static constexpr bool value = (!(std::is_same<V, void>::value));
 };
 
 //--------------------------------------------------------------------------------------//
@@ -497,11 +508,11 @@ struct generates_output
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Vp>
+template <typename T, typename V>
 struct implements_storage
 {
     static constexpr bool value =
-        (trait::is_available<_Tp>::value && !(std::is_same<_Vp, void>::value));
+        (trait::is_available<T>::value && !(std::is_same<V, void>::value));
 };
 
 }  // namespace tim

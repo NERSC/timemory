@@ -109,6 +109,30 @@ struct tree
 
 }  // namespace scope
 
+//--------------------------------------------------------------------------------------//
+
+namespace lifetime
+{
+/// \class lifetime::scoped
+/// \brief Dummy struct for meta-programming to designate that a component activates
+/// it's features at the first start() invocation and deactivates it's features when
+/// all instances that called start() have called stop(). Thus, the component's
+/// features are dependent on at least one component instance existing in memory
+/// (excluding the instances in the call-graph, which never call start/stop)
+///
+struct scoped
+{};
+
+/// \class lifetime::persistent
+/// \brief Dummy struct for meta-programming to designate that a component activates its
+/// features in {global,thread}_init and deactivates it's features in
+/// {global,thead}_finalize
+///
+struct persistent
+{};
+
+}  // namespace lifetime
+
 namespace audit
 {
 /// \class incoming

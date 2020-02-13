@@ -720,25 +720,30 @@ private:
     };
 
     //----------------------------------------------------------------------------------//
-
-    static array_t<gotcha_data>& get_data()
+    //
+    struct persistent_data
     {
-        static auto _get = []() {
-            array_t<gotcha_data> _arr;
-            return _arr;
-        };
-        static array_t<gotcha_data> _instance = _get();
+        array_t<gotcha_data> m_data;
+        std::atomic<int64_t> m_started{ 0 };
+    };
+
+    //----------------------------------------------------------------------------------//
+    //
+    static persistent_data& get_persistent_data()
+    {
+        static persistent_data _instance;
         return _instance;
     }
 
     //----------------------------------------------------------------------------------//
-    /// \brief get_started()
-    /// Global counter of active gotchas started
-    static std::atomic<int64_t>& get_started()
-    {
-        static std::atomic<int64_t> _instance(0);
-        return _instance;
-    }
+    /// \fn get_data()
+    /// \brief Gotcha wrapper data
+    static array_t<gotcha_data>& get_data() { return get_persistent_data().m_data; }
+
+    //----------------------------------------------------------------------------------//
+    /// \fn get_started()
+    /// \brief Global counter of active gotchas started
+    static std::atomic<int64_t>& get_started() { return get_persistent_data().m_started; }
 
     //----------------------------------------------------------------------------------//
     /// \brief get_thread_started()
@@ -1089,6 +1094,7 @@ private:
         {
             // component_type is always: component_{tuple,list,hybrid}
             component_type _obj(_data.tool_id, true, settings::flat_profile());
+            _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
             _Ret _ret = invoke<component_type>(_obj, _data.ready, _orig,
@@ -1150,6 +1156,7 @@ private:
         if(_orig)
         {
             component_type _obj(_data.tool_id, true, settings::flat_profile());
+            _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
             invoke<component_type>(_obj, _data.ready, _orig,

@@ -165,12 +165,11 @@ private:
 
     static value_type& get_read_values()
     {
-        static auto _get_read_values = []() {
+        static thread_local value_type _instance = []() {
             value_type values;
             apply<void>::set_value(values, 0);
             return values;
-        };
-        static thread_local value_type _instance = _get_read_values();
+        }();
         return _instance;
     }
 

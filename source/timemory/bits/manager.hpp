@@ -134,20 +134,11 @@ inline manager::manager()
 inline manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
-
-    if(dmp::is_initialized())
-        m_rank = dmp::rank();
-
-    bool _last = (get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
+    bool _last   = (get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
                   m_instance_count == 0);
-
-    if(m_rank == 0 && _remain == 0)
-        write_metadata("manager::~manager");
 
     if(_last)
     {
-        // papi::shutdown();
-        // dmp::finalize();
         f_thread_counter().store(0, std::memory_order_relaxed);
     }
 
@@ -165,13 +156,42 @@ inline manager::~manager()
 
 template <typename _Func>
 inline void
+manager::add_cleanup(const std::string& _key, _Func&& _func)
+{
+    // ensure there are no duplicates
+    remove_cleanup(_key);
+    // insert into map
+    auto _entry = finalizer_pair_t{ _key, std::forward<_Func>(_func) };
+    m_finalizer_cleanups.push_back(_entry);
+}
+
+//======================================================================================//
+
+inline void
+manager::remove_cleanup(const std::string& _key)
+{
+    auto _remove_functor = [&](finalizer_list_t& _functors) {
+        for(auto itr = _functors.begin(); itr != _functors.end(); ++itr)
+        {
+            if(itr->first == _key)
+            {
+                _functors.erase(itr);
+                return;
+            }
+        }
+    };
+
+    _remove_functor(m_finalizer_cleanups);
+}
+
+//======================================================================================//
+
+template <typename _Func>
+inline void
 manager::add_finalizer(const std::string& _key, _Func&& _func, bool _is_master)
 {
     // ensure there are no duplicates
     remove_finalizer(_key);
-
-    // if(m_lock && !m_lock->owns_lock())
-    //    m_lock->lock();
 
     m_metadata_prefix = settings::get_output_prefix(true);
     if(settings::debug())
@@ -193,18 +213,12 @@ manager::add_finalizer(const std::string& _key, _Func&& _func, bool _is_master)
 inline void
 manager::remove_finalizer(const std::string& _key)
 {
-    // if(m_is_finalizing)
-    //    return;
-
-    // if(m_lock && !m_lock->owns_lock())
-    //    m_lock->lock();
-
-    auto _remove_finalizer = [&](finalizer_list_t& _finalizers) {
-        for(auto itr = _finalizers.begin(); itr != _finalizers.end(); ++itr)
+    auto _remove_finalizer = [&](finalizer_list_t& _functors) {
+        for(auto itr = _functors.begin(); itr != _functors.end(); ++itr)
         {
             if(itr->first == _key)
             {
-                _finalizers.erase(itr);
+                _functors.erase(itr);
                 return;
             }
         }
@@ -217,24 +231,48 @@ manager::remove_finalizer(const std::string& _key)
 //======================================================================================//
 
 inline void
+manager::cleanup()
+{
+    m_is_finalizing = true;
+    if(settings::debug())
+        PRINT_HERE("%s [size: %i]", "cleaning", (int) m_finalizer_cleanups.size());
+
+    auto _cleanup = [](finalizer_list_t& _functors) {
+        // reverse to delete the most recent additions first
+        std::reverse(_functors.begin(), _functors.end());
+        // invoke all the functions
+        for(auto& itr : _functors)
+            itr.second();
+        // remove all these functors
+        _functors.clear();
+    };
+
+    _cleanup(m_finalizer_cleanups);
+
+    if(settings::debug())
+        PRINT_HERE("%s [size: %i]", "cleaned", (int) m_finalizer_cleanups.size());
+}
+
+//======================================================================================//
+
+inline void
 manager::finalize()
 {
-    // if(m_lock && !m_lock->owns_lock())
-    //    m_lock->lock();
-
     m_is_finalizing = true;
     if(settings::debug())
         PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
                    (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
 
-    auto _finalize = [](finalizer_list_t& _finalizers) {
+    cleanup();
+
+    auto _finalize = [](finalizer_list_t& _functors) {
         // reverse to delete the most recent additions first
-        std::reverse(_finalizers.begin(), _finalizers.end());
+        std::reverse(_functors.begin(), _functors.end());
         // invoke all the functions
-        for(auto& itr : _finalizers)
+        for(auto& itr : _functors)
             itr.second();
         // remove all these finalizers
-        _finalizers.clear();
+        _functors.clear();
     };
 
     //
@@ -278,12 +316,6 @@ manager::exit_hook()
                 master_manager.reset();
             }
         }
-        else
-        {
-            // papi::shutdown();
-            // dmp::finalize();
-        }
-        // papi::shutdown();
     } catch(...)
     {}
 

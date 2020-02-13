@@ -207,6 +207,9 @@ struct sum_bool_int;
 template <typename Lhs, typename Rhs>
 struct compatible_wrappers;
 
+template <typename T>
+struct omp_tools;
+
 }  // namespace trait
 
 //======================================================================================//
@@ -352,8 +355,6 @@ struct generic_counter;
 
 namespace finalize
 {
-namespace storage
-{
 template <typename Type, bool has_data>
 struct get;
 
@@ -476,7 +477,6 @@ struct dmp_get<Type, false>
 
 //======================================================================================//
 
-}  // namespace storage
 }  // namespace finalize
 }  // namespace operation
 

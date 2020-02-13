@@ -252,9 +252,7 @@ timemory_stack_backtrace(std::ostream& os)
     std::vector<size_type>                dmang_len;
 
     // lambda for demangling a string when delimiting
-    auto _transform = [](std::string s) {
-        return tim::demangle(s);
-    };
+    auto _transform = [](std::string s) { return tim::demangle(s); };
 
     dmang_buf.resize(nptrs, std::vector<std::string>(0, ""));
 

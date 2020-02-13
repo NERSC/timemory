@@ -179,8 +179,8 @@
 #if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL) ||    \
     defined(_TIMEMORY_NVCC)) &&                                                          \
     defined(_UNIX)
-#    if !defined(_TIMEMORY_ENABLE_DEMANGLE)
-#        define _TIMEMORY_ENABLE_DEMANGLE 1
+#    if !defined(TIMEMORY_ENABLE_DEMANGLE)
+#        define TIMEMORY_ENABLE_DEMANGLE 1
 #    endif
 #endif
 

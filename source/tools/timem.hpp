@@ -154,6 +154,7 @@ struct file_sample<_Tp, false>
 {
     explicit file_sample(_Tp&) {}
 };
+
 }  // namespace operation
 
 //--------------------------------------------------------------------------------------//
@@ -164,8 +165,6 @@ class custom_component_tuple : public component_tuple<Types...>
 public:
     using apply_print_t = modifiers<custom_print, Types...>;
     using base_type     = component_tuple<Types...>;
-
-    static std::string label();
 
 public:
     explicit custom_component_tuple(const string_t& key)
@@ -234,10 +233,16 @@ public:
 //--------------------------------------------------------------------------------------//
 //
 //
-using comp_tuple_t = tim::custom_component_tuple<
-    real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss, page_rss,
-    virtual_memory, num_minor_page_faults, num_major_page_faults, num_signals,
-    voluntary_context_switch, priority_context_switch, read_bytes, written_bytes>;
+#if !defined(TIMEM_BUNDLER)
+#    define TIMEM_BUNDLER                                                                \
+        tim::custom_component_tuple<real_clock, user_clock, system_clock, cpu_clock,     \
+                                    cpu_util, peak_rss, page_rss, virtual_memory,        \
+                                    num_minor_page_faults, num_major_page_faults,        \
+                                    num_signals, voluntary_context_switch,               \
+                                    priority_context_switch, read_bytes, written_bytes>
+#endif
+
+using comp_tuple_t = TIMEM_BUNDLER;
 
 //--------------------------------------------------------------------------------------//
 
@@ -286,15 +291,6 @@ command()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
-std::string
-tim::custom_component_tuple<Types...>::label()
-{
-    return command();
-}
-
-//--------------------------------------------------------------------------------------//
-
 inline pid_t&
 master_pid()
 {
@@ -327,48 +323,6 @@ timem_itimer()
 {
     static struct itimerval _instance;
     return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-sampler(int signum)
-{
-    if(signum == TIMEM_SIGNAL)
-    {
-        get_measure()->sample();
-        if((debug() && verbose() > 1) || (verbose() > 2))
-            std::cerr << "[SAMPLE][" << getpid() << "]> " << *get_measure() << std::endl;
-        else if(debug())
-            fprintf(stderr, "[%i]> sampling...\n", getpid());
-    }
-    else
-    {
-        perror("timem sampler caught signal that was not TIMEM_SIGNAL...");
-        signal(signum, SIG_DFL);
-        raise(signum);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-sampler(int signum, siginfo_t*, void*)
-{
-    if(signum == TIMEM_SIGNAL)
-    {
-        get_measure()->sample();
-        if((debug() && verbose() > 1) || (verbose() > 2))
-            std::cerr << "[SAMPLE][" << getpid() << "]> " << *get_measure() << std::endl;
-        else if(debug())
-            fprintf(stderr, "[%i]> sampling...\n", getpid());
-    }
-    else
-    {
-        perror("timem sampler caught signal that was not TIMEM_SIGNAL...");
-        signal(signum, SIG_DFL);
-        raise(signum);
-    }
 }
 
 //--------------------------------------------------------------------------------------//
