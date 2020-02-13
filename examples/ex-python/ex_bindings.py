@@ -73,7 +73,8 @@ if __name__ == "__main__":
     timemory.settings.width = 12
     timemory.settings.precision = 6
 
-    with profile(["wall_clock", "user_clock", "system_clock", "cpu_util", "peak_rss"]):
+    with profile(["wall_clock", "user_clock", "system_clock", "cpu_util",
+                  "peak_rss", "thread_cpu_clock", "thread_cpu_util"]):
         ans = main(args)
         print("Answer = {}".format(ans))
 

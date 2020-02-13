@@ -48,13 +48,19 @@ if(TIMEMORY_USE_CUDA)
 endif()
 
 set_target_properties(libpytimemory PROPERTIES
-    PREFIX ""
-    SUFFIX "${PYTHON_MODULE_EXTENSION}"
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
-    PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
+    PREFIX                      ""
+    SUFFIX                      "${PYTHON_MODULE_EXTENSION}"
+    LIBRARY_OUTPUT_DIRECTORY    ${CMAKE_BINARY_DIR}/timemory
+    ARCHIVE_OUTPUT_DIRECTORY    ${CMAKE_BINARY_DIR}/timemory
+    RUNTIME_OUTPUT_DIRECTORY    ${CMAKE_BINARY_DIR}/timemory
+    PDB_OUTPUT_DIRECTORY        ${CMAKE_BINARY_DIR}/timemory
+    INSTALL_RPATH_USE_LINK_PATH ON
     ${EXTRA_PROPERTIES})
+
+if(UNIX AND NOT APPLE)
+    set_target_properties(libpytimemory PROPERTIES
+        INSTALL_RPATH "\$ORIGIN/../../..")
+endif()
 
 set(PYTHON_SUBMODULE_FOLDERS
     ert gperftools mpi_support plotting profiler roofline util)

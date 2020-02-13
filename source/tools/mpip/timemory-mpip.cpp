@@ -8,13 +8,12 @@
 #include <unordered_map>
 
 using namespace tim::component;
+using string_t      = std::string;
 using stringset_t   = std::set<std::string>;
-using mpi_toolset_t = tim::auto_timer;
+using mpi_toolset_t = tim::complete_list_t;
 using mpip_gotcha_t = tim::component::gotcha<246, mpi_toolset_t>;
-using mpip_tuple_t  = tim::component_tuple<tim::auto_timer_tuple_t, mpip_gotcha_t>;
-using mpip_list_t   = tim::auto_timer_list_t;
-using mpip_hybrid_t = tim::component_hybrid<mpip_tuple_t, mpip_list_t>;
-using toolset_ptr_t = std::shared_ptr<mpip_hybrid_t>;
+using mpip_tuple_t  = tim::component_tuple<mpip_gotcha_t>;
+using toolset_ptr_t = std::shared_ptr<mpip_tuple_t>;
 using record_map_t  = std::unordered_map<uint64_t, toolset_ptr_t>;
 
 static toolset_ptr_t    _tool_instance;
@@ -25,7 +24,7 @@ extern "C"
     void create_record(const char* name, uint64_t* id, int, int*)
     {
         *id                                     = timemory_get_unique_id();
-        auto obj                                = toolset_ptr_t(new mpip_hybrid_t(name));
+        auto obj                                = toolset_ptr_t(new mpip_tuple_t(name));
         timemory_tl_static<record_map_t>()[*id] = std::move(obj);
     }
 
@@ -340,8 +339,17 @@ extern "C"
         // provide environment variable for enabling/disabling
         if(tim::get_env<bool>("ENABLE_TIMEMORY_MPIP", true))
         {
+            auto env_ret = tim::get_env<string_t>("TIMEMORY_PROFILER_COMPONENTS", "");
+            if(env_ret.empty())
+                env_ret = tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "");
+            auto env_enum = tim::enumerate_components(tim::delimit(env_ret));
+
+            mpi_toolset_t::get_initializer() = [env_enum](mpi_toolset_t& cl) {
+                ::tim::initialize(cl, env_enum);
+            };
+
             if(!_tool_instance)
-                _tool_instance = std::make_shared<mpip_hybrid_t>("timemory_mpip");
+                _tool_instance = std::make_shared<mpip_tuple_t>("timemory_mpip");
 
             auto cleanup_functor = [=]() {
                 if(_tool_instance)
