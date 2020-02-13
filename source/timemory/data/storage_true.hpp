@@ -1256,6 +1256,9 @@ storage<Type, true>::internal_print()
         }
 
         dmp::barrier();
+        m_node_init       = dmp::is_initialized();
+        m_node_rank       = dmp::rank();
+        m_node_size       = dmp::size();
         auto _results     = this->get();
         auto _dmp_results = this->dmp_get();
         dmp::barrier();
@@ -1280,6 +1283,10 @@ storage<Type, true>::internal_print()
                         _results.push_back(ritr);
                 }
             }
+        }
+        else if(m_node_init && m_node_rank > 0)
+        {
+            return;
         }
 
 #if defined(DEBUG)

@@ -98,12 +98,12 @@ public:
     template <typename Func = init_func_t>
     explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
-                        const Func&        = this_type::get_initializer());
+                        const Func&         = this_type::get_initializer());
 
     template <typename Func = init_func_t>
     explicit auto_tuple(const captured_location_t&, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
-                        const Func&        = this_type::get_initializer());
+                        const Func&         = this_type::get_initializer());
 
     explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report());
