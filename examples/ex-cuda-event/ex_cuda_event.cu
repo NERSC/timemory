@@ -1110,7 +1110,7 @@ test_7_cupti_available()
 
     auto reduce_size = [](std::vector<std::string>& arr) {
         std::sort(arr.begin(), arr.end());
-        if(arr.size() > max_size)
+        if(arr.size() > (size_t) max_size)
             arr.resize(max_size);
     };
 
