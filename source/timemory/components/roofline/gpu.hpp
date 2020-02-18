@@ -229,9 +229,7 @@ public:
                                  "l2_read_transactions",
                                  "l2_write_transactions",
                                  "dram_read_transactions",
-                                 "dram_write_transactions",
-                                 "system_read_transactions",
-                                 "system_write_transactions" };
+                                 "dram_write_transactions" };
 
 #if defined(TIMEMORY_CUDA_FP16)
             if(is_one_of<cuda::fp16_t, types_tuple>::value)
