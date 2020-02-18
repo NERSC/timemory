@@ -1058,6 +1058,11 @@ if(TIMEMORY_USE_OMPT)
         else()
             set(OPENMP_ENABLE_LIBOMPTARGET OFF CACHE BOOL "OpenMP target tooling")
         endif()
+        checkout_git_submodule(RECURSIVE
+            RELATIVE_PATH external/llvm-ompt
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            REPO_URL https://github.com/NERSC/LLVM-openmp.git
+            REPO_BRANCH timemory)
         add_subdirectory(external/llvm-ompt)
     elseif(OpenMP_FOUND)
         find_library(OMPT_LIBRARY
