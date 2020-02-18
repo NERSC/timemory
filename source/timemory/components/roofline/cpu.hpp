@@ -254,10 +254,6 @@ struct cpu_roofline
         if(!initialize_papi())
             return;
 
-        static thread_local bool _first = true;
-        if(!_first)
-            return;
-
         // create the hardware counter events to accumulate
         event_type _events;
         if(event_mode() == MODE::OP)
@@ -330,8 +326,6 @@ struct cpu_roofline
             if(_events_ptr()->size() > 0)
                 papi::start(event_set());
         }
-
-        _first = false;
     }
 
     //----------------------------------------------------------------------------------//
