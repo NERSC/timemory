@@ -338,8 +338,6 @@ struct cpu_roofline
 
         if(event_set() != PAPI_NULL && events().size() > 0)
         {
-            // store these for later
-            _label_array() = label_array();
             // stop PAPI counters
             array_type event_values(events().size(), 0);
             papi::stop(event_set(), event_values.data());
@@ -412,7 +410,7 @@ struct cpu_roofline
     static display_unit_type display_unit()
     {
         display_unit_type _units{};
-        auto              labels = label_array();
+        auto              labels = events_label_array();
         for(size_type i = 0; i < labels.size(); ++i)
         {
             std::stringstream ss;
@@ -764,6 +762,8 @@ public:
         for(const auto& itr : m_events)
             arr.push_back(papi::get_event_info(itr).short_descr);
         arr.push_back("TOTAL");
+        if(events_label_array().size() < arr.size())
+            events_label_array() = arr;
         return arr;
     }
 
@@ -809,7 +809,7 @@ private:
     //
     size_type   m_event_size  = events().size();
     event_type  m_events      = events();
-    strvec_t    m_label_array = label_array();
+    strvec_t    m_label_array = events_label_array();
     record_type m_record      = []() { return this_type::record(); };
 
     //----------------------------------------------------------------------------------//
@@ -825,9 +825,15 @@ private:
 private:
     //----------------------------------------------------------------------------------//
 
-    static strvec_t& _label_array()
+    static strvec_t& events_label_array()
     {
-        static thread_local strvec_t _instance;
+        static thread_local strvec_t _instance = []() {
+            strvec_t arr;
+            for(const auto& itr : events())
+                arr.push_back(papi::get_event_info(itr).short_descr);
+            arr.push_back("TOTAL");
+            return arr;
+        }();
         return _instance;
     }
 
