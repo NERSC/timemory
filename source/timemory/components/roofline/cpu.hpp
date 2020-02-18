@@ -172,7 +172,8 @@ struct cpu_roofline
 
     static event_type events()
     {
-        return (_events_ptr()) ? (*_events_ptr()) : event_type{};
+        static thread_local event_type*& _instance = _events_ptr();
+        return (_instance) ? (*_instance) : event_type{};
     }
 
     //----------------------------------------------------------------------------------//
@@ -767,7 +768,7 @@ public:
     {
         strvec_t arr;
         for(const auto& itr : events())
-            arr.push_back(papi::get_event_info(itr).symbol);
+            arr.push_back(papi::get_event_info(itr).short_descr);
         arr.push_back("TOTAL");
         // arr.push_back(papi::get_event_info(itr).short_descr);
         return arr;
@@ -808,7 +809,7 @@ private:
 
     static event_type*& _events_ptr()
     {
-        static thread_local event_type* _instance = new event_type;
+        static thread_local event_type* _instance = new event_type{};
         return _instance;
     }
 
