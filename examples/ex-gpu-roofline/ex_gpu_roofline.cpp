@@ -46,7 +46,7 @@ using default_device = device_t;
 using fp16_t = tim::cuda::fp16_t;
 #endif
 
-using simple_timer_t = tim::auto_tuple<wall_clock>;
+using simple_timer_t = tim::auto_tuple_t<wall_clock>;
 
 //--------------------------------------------------------------------------------------//
 

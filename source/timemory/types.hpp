@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <tuple>
@@ -69,7 +70,16 @@ using complete_component_tuple_t = convert_t<complete_types_t, component_tuple<>
 using complete_auto_list_t       = convert_t<complete_types_t, auto_list<>>;
 using complete_auto_tuple_t      = convert_t<complete_types_t, auto_tuple<>>;
 
+using available_types_t = convert_t<available_tuple<complete_types_t>, type_list<>>;
+
+using available_tuple_t           = convert_t<available_types_t, std::tuple<>>;
+using available_component_list_t  = convert_t<available_types_t, component_list<>>;
+using available_component_tuple_t = convert_t<available_types_t, component_tuple<>>;
+using available_auto_list_t       = convert_t<available_types_t, auto_list<>>;
+using available_auto_tuple_t      = convert_t<available_types_t, auto_tuple<>>;
+
 // backwards-compatibility
-using complete_list_t = complete_component_list_t;
+using complete_list_t  = complete_component_list_t;
+using available_list_t = available_component_list_t;
 
 }  // namespace tim

@@ -24,6 +24,11 @@
 
 #pragma once
 
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
+
 #include "timemory/components/base.hpp"
 #include "timemory/components/gotcha.hpp"
 #include "timemory/components/types.hpp"
@@ -513,3 +518,7 @@ malloc_gotcha::configure()
 }  // namespace component
 
 }  // namespace tim
+
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+#    pragma GCC diagnostic pop
+#endif

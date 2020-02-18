@@ -33,7 +33,7 @@
 using namespace tim::component;
 
 #if !defined(TIMEMORY_LIBRARY_TYPE)
-#    define TIMEMORY_LIBRARY_TYPE typename tim::complete_list_t::type
+#    define TIMEMORY_LIBRARY_TYPE tim::available_component_list_t
 #endif
 
 using string_t      = std::string;

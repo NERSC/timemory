@@ -711,35 +711,42 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     std::set<std::string> _discarded_events{};
     std::set<std::string> _discarded_metrics{};
 
+    bool _discard = true;
+
     // handle events
-    auto _find_event = [&_avail_events, &_discarded_events](const string_t& evt) {
+    auto _not_event = [&_avail_events, &_discarded_events,
+                       &_discard](const string_t& evt) {
         bool nf = (std::find(std::begin(_avail_events), std::end(_avail_events), evt) ==
                    std::end(_avail_events));
-        if(nf)
+        if(nf && _discard)
             _discarded_events.insert(evt);
         return nf;
     };
 
     // handle metrics
-    auto _find_metric = [&_avail_metric, &_discarded_metrics](const string_t& met) {
+    auto _not_metric = [&_avail_metric, &_discarded_metrics,
+                        &_discard](const string_t& met) {
         bool nf = (std::find(std::begin(_avail_metric), std::end(_avail_metric), met) ==
                    std::end(_avail_metric));
-        if(nf)
+        if(nf && _discard)
             _discarded_metrics.insert(met);
         return nf;
     };
 
     // do the removals
-    _events.erase(std::remove_if(std::begin(_events), std::end(_events), _find_event),
+    _events.erase(std::remove_if(std::begin(_events), std::end(_events), _not_event),
                   std::end(_events));
 
-    _metrics.erase(std::remove_if(std::begin(_metrics), std::end(_metrics), _find_metric),
+    _metrics.erase(std::remove_if(std::begin(_metrics), std::end(_metrics), _not_metric),
                    std::end(_metrics));
+
+    // turn off discarding
+    _discard = false;
 
     // check to see if any requested events are actually metrics
     for(const auto& itr : _discarded_events)
     {
-        bool is_metric = _find_metric(itr);
+        bool is_metric = !(_not_metric(itr));
         if(is_metric)
             _metrics.push_back(itr);
         else
@@ -753,7 +760,7 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     // check to see if any requested metrics are actually events
     for(const auto& itr : _discarded_metrics)
     {
-        bool is_event = _find_event(itr);
+        bool is_event = !(_not_event(itr));
         if(is_event)
             _events.push_back(itr);
         else

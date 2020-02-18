@@ -445,11 +445,6 @@ get_labeled(const auto_tuple<_Types...>& _obj)
     return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
 
-//--------------------------------------------------------------------------------------//
-
-template <typename... T>
-using auto_tuple_t = typename auto_tuple<T...>::type;
-
 //======================================================================================//
 
 }  // namespace tim
@@ -509,7 +504,7 @@ get(tim::auto_tuple<Types...>&& obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-class tuple_size<::tim::auto_tuple<Types...>>
+struct tuple_size<::tim::auto_tuple<Types...>>
 {
 public:
     using value_type                  = size_t;

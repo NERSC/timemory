@@ -38,13 +38,13 @@
 #include <vector>
 
 using namespace tim::component;
-using tim::component_tuple;
+using tim::component_tuple_t;
 
 // create a hybrid for inside the gotcha
-using gotcha_tuple_t = component_tuple<real_clock, cpu_clock, peak_rss>;
+using gotcha_tuple_t = component_tuple_t<real_clock, cpu_clock, peak_rss>;
 using gotcha_list_t =
-    tim::component_list<papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops>;
-using gotcha_hybrid_t = tim::auto_hybrid<gotcha_tuple_t, gotcha_list_t>;
+    tim::component_list_t<papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops>;
+using gotcha_hybrid_t = tim::auto_hybrid_t<gotcha_tuple_t, gotcha_list_t>;
 
 // create gotcha types for various bundles of functions
 using mpi_gotcha_t    = tim::component::gotcha<1, gotcha_hybrid_t>;
@@ -59,10 +59,10 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, malloc_gotcha_t, priority_constan
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, mpi_gotcha_t, priority_constant<-256>)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, malloc_gotcha_t, priority_constant<-512>)
 
-using comp_t  = component_tuple<real_clock, cpu_clock, peak_rss>;
-using tuple_t = component_tuple<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
+using comp_t  = component_tuple_t<real_clock, cpu_clock, peak_rss>;
+using tuple_t = component_tuple_t<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
 using list_t  = gotcha_list_t;
-using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
+using auto_hybrid_t = tim::auto_hybrid_t<tuple_t, list_t>;
 
 template <typename _Tp>
 using vector_t = std::vector<_Tp>;
@@ -391,7 +391,7 @@ print_func_info(const std::string& fname)
 
 TEST_F(gotcha_tests, malloc_gotcha)
 {
-    using toolset_t = tim::auto_tuple<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
+    using toolset_t = tim::auto_tuple_t<gotcha_tuple_t, malloc_gotcha_t, mpi_gotcha_t>;
 
     malloc_gotcha::configure<gotcha_tuple_t>();
 
@@ -602,9 +602,9 @@ TEST_F(gotcha_tests, member_functions)
 TEST_F(gotcha_tests, mpip)
 {
     using namespace tim::component;
-    using mpi_toolset_t = tim::auto_tuple<real_clock, cpu_clock>;
+    using mpi_toolset_t = tim::auto_tuple_t<real_clock, cpu_clock>;
     using mpip_gotcha_t = tim::component::gotcha<337, mpi_toolset_t>;
-    using mpip_tuple_t  = tim::auto_tuple<real_clock, mpip_gotcha_t>;
+    using mpip_tuple_t  = tim::auto_tuple_t<real_clock, mpip_gotcha_t>;
 
     auto init_mpip_tools = []() {
         mpip_gotcha_t::get_initializer() = []() {

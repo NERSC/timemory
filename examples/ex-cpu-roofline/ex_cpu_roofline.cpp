@@ -48,8 +48,8 @@ using float_type = float;
 
 using roofline_t   = cpu_roofline<float_type>;
 using fib_list_t   = std::vector<int64_t>;
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
-using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_tuple_t = tim::auto_tuple_t<real_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_list_t  = tim::auto_list_t<real_clock, cpu_clock, cpu_util, roofline_t>;
 using device_t     = tim::device::cpu;
 using roofline_ert_config_t = typename roofline_t::ert_config_type<float_type>;
 

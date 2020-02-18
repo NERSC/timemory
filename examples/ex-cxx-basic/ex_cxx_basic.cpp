@@ -29,12 +29,12 @@
 
 using namespace tim::component;
 
-using real_tuple_t = tim::auto_tuple<real_clock, papi_array_t, caliper, tau_marker>;
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss,
-                                     papi_array_t, caliper, tau_marker>;
+using real_tuple_t = tim::auto_tuple_t<real_clock, papi_array_t, caliper, tau_marker>;
+using auto_tuple_t = tim::auto_tuple_t<real_clock, cpu_clock, cpu_util, peak_rss,
+                                       papi_array_t, caliper, tau_marker>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using auto_list_t =
-    tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss, caliper, tau_marker>;
+    tim::auto_list_t<real_clock, cpu_clock, cpu_util, peak_rss, caliper, tau_marker>;
 using auto_timer_t = tim::auto_timer;
 
 void

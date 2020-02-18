@@ -487,8 +487,7 @@ tim::settings::initialize_storage()
     // THIS CAUSES SUPER-LONG COMPILE TIMES BECAUSE IT ALWAYS GETS INSTANTIATED
     //
 
-    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    manager::get_storage<tuple_type>::initialize();
+    manager::get_storage<tim::available_tuple_t>::initialize();
 
     // throw std::runtime_error(
     //    "tim::settings::initialize_storage() without tuple of types has been disabled "
@@ -500,8 +499,7 @@ template <typename... _Types,
 void
 tim::settings::initialize_storage()
 {
-    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    manager::get_storage<tuple_type>::initialize();
+    manager::get_storage<tim::available_tuple_t>::initialize();
 }
 #endif
 

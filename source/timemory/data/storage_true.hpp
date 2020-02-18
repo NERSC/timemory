@@ -1394,8 +1394,9 @@ storage<Type, true>::internal_print()
 
             if(_plot_output)
             {
-                plotting::plot<Type>(Type::get_label(), settings::output_path(),
-                                     settings::dart_output(), jname);
+                if(m_node_rank == 0)
+                    plotting::plot<Type>(Type::get_label(), settings::output_path(),
+                                         settings::dart_output(), jname);
             }
         }
         else if(_file_output && _text_output)

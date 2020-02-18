@@ -33,6 +33,10 @@
 #if defined(__GNUC__) && (__GNUC__ >= 7) && (__cplusplus < 201703L)
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wnoexcept-type"
+#    pragma GCC diagnostic ignored "-Wignored-attributes"
+#elif defined(__GNUC__) && (__GNUC__ >= 6)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
 
 #include <functional>
@@ -190,5 +194,7 @@ struct function_traits<R (C::*)(Args...) const noexcept>
 }  // namespace tim
 
 #if defined(__GNUC__) && (__GNUC__ >= 7) && (__cplusplus < 201703L)
+#    pragma GCC diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ >= 6)
 #    pragma GCC diagnostic pop
 #endif

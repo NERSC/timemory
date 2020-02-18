@@ -36,6 +36,7 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -47,23 +48,23 @@ namespace auto_timer_types
 using namespace component;
 
 using minimal_tuple_t =
-    component_tuple<wall_clock, cpu_clock, cpu_util, peak_rss, user_tuple_bundle>;
+    component_tuple_t<wall_clock, cpu_clock, cpu_util, peak_rss, user_tuple_bundle>;
 
-using full_tuple_t = component_tuple<wall_clock, system_clock, user_clock, cpu_util,
-                                     peak_rss, user_tuple_bundle>;
+using full_tuple_t = component_tuple_t<wall_clock, system_clock, user_clock, cpu_util,
+                                       peak_rss, user_tuple_bundle>;
 
 //--------------------------------------------------------------------------------------//
 
 using minimal_list_t =
-    component_list<user_list_bundle, caliper, tau_marker, papi_array_t, cuda_event,
-                   nvtx_marker, cupti_activity, cupti_counters>;
+    component_list_t<user_list_bundle, caliper, tau_marker, papi_array_t, cuda_event,
+                     nvtx_marker, cupti_activity, cupti_counters>;
 
 using full_list_t =
-    component_list<user_list_bundle, gperf_cpu_profiler, gperf_heap_profiler, caliper,
-                   tau_marker, papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops,
-                   cuda_event, nvtx_marker, cupti_activity, cupti_counters,
-                   gpu_roofline_flops, gpu_roofline_hp_flops, gpu_roofline_sp_flops,
-                   gpu_roofline_dp_flops>;
+    component_list_t<user_list_bundle, gperf_cpu_profiler, gperf_heap_profiler, caliper,
+                     tau_marker, papi_array_t, cpu_roofline_sp_flops,
+                     cpu_roofline_dp_flops, cuda_event, nvtx_marker, cupti_activity,
+                     cupti_counters, gpu_roofline_flops, gpu_roofline_hp_flops,
+                     gpu_roofline_sp_flops, gpu_roofline_dp_flops>;
 
 }  // namespace auto_timer_types
 

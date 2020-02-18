@@ -194,8 +194,7 @@ template <typename... _Types, typename... _Args,
 inline void
 plot(_Args&&... _args)
 {
-    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    impl::plot<tuple_type>::generate(std::forward<_Args>(_args)...);
+    impl::plot<tim::available_tuple_t>::generate(std::forward<_Args>(_args)...);
 }
 
 //======================================================================================//

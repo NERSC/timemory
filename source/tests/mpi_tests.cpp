@@ -45,8 +45,8 @@ using namespace tim::component;
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                    process_cpu_util, peak_rss, page_rss>;
+    tim::auto_tuple_t<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                      process_cpu_util, peak_rss, page_rss>;
 
 static int    _argc = 0;
 static char** _argv = nullptr;

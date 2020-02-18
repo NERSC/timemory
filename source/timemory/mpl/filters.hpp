@@ -27,6 +27,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/variadic/types.hpp"
 
 #include <tuple>
 
@@ -547,7 +548,7 @@ template <typename T>
 using filter_gotchas_t = impl::filter_false<trait::is_gotcha, T>;
 
 template <typename T>
-using filter_empty_t = impl::filter_true<trait::is_empty, T>;
+using filter_empty_t = impl::filter_true<concept ::is_empty, T>;
 
 //======================================================================================//
 //
@@ -613,5 +614,21 @@ struct negative_stop_priority : negative_priority<_Tp, trait::stop_priority<_Tp>
 template <typename _Tp>
 struct positive_stop_priority : positive_priority<_Tp, trait::stop_priority<_Tp>>
 {};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... T>
+using component_tuple_t = convert_t<available_tuple<concat<T...>>, component_tuple<>>;
+
+template <typename... T>
+using component_list_t = convert_t<available_tuple<concat<T...>>, component_list<>>;
+
+template <typename... T>
+using auto_tuple_t = convert_t<available_tuple<concat<T...>>, auto_tuple<>>;
+
+template <typename... T>
+using auto_list_t = convert_t<available_tuple<concat<T...>>, auto_list<>>;
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim

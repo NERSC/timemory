@@ -382,7 +382,7 @@ using auto_hybrid_t = typename auto_hybrid<T...>::type;
 namespace std
 {
 template <typename _Tuple, typename _List>
-class tuple_size<::tim::auto_hybrid<_Tuple, _List>>
+struct tuple_size<::tim::auto_hybrid<_Tuple, _List>>
 {
 public:
     using value_type                  = size_t;

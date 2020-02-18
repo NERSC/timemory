@@ -34,7 +34,7 @@ using namespace tim::component;
 //
 // bundle of tools
 //
-using tuple_t = tim::auto_tuple<wall_clock, cpu_clock>;
+using tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock>;
 
 //--------------------------------------------------------------------------------------//
 

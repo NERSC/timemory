@@ -595,11 +595,6 @@ get_labeled(const component_list<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... T>
-using component_list_t = typename component_list<T...>::type;
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
@@ -644,7 +639,7 @@ get(tim::component_list<Types...>&& obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-class tuple_size<::tim::component_list<Types...>>
+struct tuple_size<::tim::component_list<Types...>>
 {
 public:
     using value_type = size_t;

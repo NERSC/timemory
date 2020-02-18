@@ -44,13 +44,13 @@ using namespace tim::component;
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t =
-    tim::auto_tuple<wall_clock, system_clock, thread_cpu_clock, thread_cpu_util,
-                    process_cpu_clock, process_cpu_util, papi_tuple_t, tau_marker>;
+    tim::auto_tuple_t<wall_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                      process_cpu_clock, process_cpu_util, papi_tuple_t, tau_marker>;
 
 using measurement_t =
-    tim::component_tuple<peak_rss, page_rss, virtual_memory, num_major_page_faults,
-                         num_minor_page_faults, priority_context_switch,
-                         voluntary_context_switch, tau_marker>;
+    tim::component_tuple_t<peak_rss, page_rss, virtual_memory, num_major_page_faults,
+                           num_minor_page_faults, priority_context_switch,
+                           voluntary_context_switch, tau_marker>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation

@@ -83,12 +83,12 @@ using namespace tim::component;
 struct pytim_project;
 using pybundle_t = tim::component::user_bundle<0, pytim_project>;
 
-using auto_timer_t = tim::auto_timer;
+using auto_timer_t = typename tim::auto_timer::type;
 
 using auto_usage_t =
-    tim::auto_tuple<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
-                    voluntary_context_switch, priority_context_switch>;
-using auto_list_t        = tim::complete_auto_list_t;
+    tim::auto_tuple_t<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
+                      voluntary_context_switch, priority_context_switch>;
+using auto_list_t        = tim::available_auto_list_t;
 using component_bundle_t = tim::component_tuple<pybundle_t>;
 
 using tim_timer_t       = typename auto_timer_t::component_type;

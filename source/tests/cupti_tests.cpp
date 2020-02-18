@@ -181,7 +181,7 @@ class cupti_tests : public ::testing::Test
 
 TEST_F(cupti_tests, activity)
 {
-    using tuple_t = tim::auto_tuple<real_clock, cupti_activity>::component_type;
+    using tuple_t            = tim::component_tuple_t<real_clock, cupti_activity>;
     tim::settings::verbose() = 4;
     tim::settings::debug()   = true;
 
@@ -338,7 +338,7 @@ TEST_F(cupti_tests, kernels)
     float*             data = tim::device::gpu::alloc<float>(num_data);
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
-    using tuple_t = tim::auto_tuple<real_clock, cupti_counters>::component_type;
+    using tuple_t = tim::component_tuple_t<real_clock, cupti_counters>;
     tuple_t timer(details::get_test_name(), true);
 
     timer.start();
@@ -436,7 +436,7 @@ TEST_F(cupti_tests, streams)
           "ldst_executed", "ldst_issued" });
 
     // must initialize storage before creating the stream
-    using tuple_t = tim::auto_tuple<real_clock, cupti_event>::component_type;
+    using tuple_t = tim::component_tuple_t<real_clock, cupti_event>;
 
     tim::cuda::stream_t stream;
     tim::cuda::stream_create(stream);
@@ -524,7 +524,7 @@ TEST_F(cupti_tests, streams)
 TEST_F(cupti_tests, roofline_activity)
 {
     using roofline_t = gpu_roofline<float>;
-    using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
+    using tuple_t    = tim::component_tuple_t<real_clock, roofline_t>;
 
     num_iter *= 2;
     uint64_t                         nstream = 1;
@@ -589,7 +589,7 @@ TEST_F(cupti_tests, roofline_activity)
 TEST_F(cupti_tests, roofline_counters)
 {
     using roofline_t = gpu_roofline<float>;
-    using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
+    using tuple_t    = tim::component_tuple_t<real_clock, roofline_t>;
 
     roofline_t::configure(roofline_t::MODE::COUNTERS);
     num_iter *= 2;

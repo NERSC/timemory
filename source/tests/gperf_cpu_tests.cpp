@@ -40,11 +40,12 @@ using lock_t  = std::unique_lock<mutex_t>;
 static const int64_t niter     = 10;
 static const int64_t page_size = tim::units::get_page_size();
 
-using tuple_t = tim::component_tuple<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
-using list_t  = tim::component_list<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
+using tuple_t =
+    tim::component_tuple_t<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
+using list_t = tim::component_list_t<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
 using auto_tuple_t  = typename tuple_t::auto_type;
 using auto_list_t   = typename list_t::auto_type;
-using mem_list_t    = tim::component_list<cpu_clock, cpu_util, peak_rss, page_rss>;
+using mem_list_t    = tim::component_list_t<cpu_clock, cpu_util, peak_rss, page_rss>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, mem_list_t>;
 
 //--------------------------------------------------------------------------------------//

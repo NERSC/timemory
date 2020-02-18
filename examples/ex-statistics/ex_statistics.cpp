@@ -60,8 +60,8 @@ using namespace tim;
 //
 // bundle of tools
 //
-using tuple_t = auto_tuple<wall_clock, monotonic_clock, cpu_clock, read_bytes,
-                           written_bytes, peak_rss, current_peak_rss>;
+using tuple_t = auto_tuple_t<wall_clock, monotonic_clock, cpu_clock, read_bytes,
+                             written_bytes, peak_rss, current_peak_rss>;
 
 //--------------------------------------------------------------------------------------//
 

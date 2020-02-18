@@ -74,7 +74,7 @@ using put_gotcha_t     = tim::component::gotcha<_N, tool_tuple_t, char>;
 using mpi_gotcha_t     = tim::component::gotcha<_N, tool_tuple_t, double>;
 using exp_gotcha_t     = tim::component::gotcha<_N, exp_timer_t, exp_intercept>;
 using fake_gotcha_t    = tim::component::gotcha<_N, tim::component_tuple<>, float>;
-using gotcha_tuple_t   = tim::auto_tuple<tool_tuple_t, user_tuple_bundle>;
+using gotcha_tuple_t   = tim::auto_tuple_t<tool_tuple_t, user_tuple_bundle>;
 
 #if !defined(TIMEMORY_USE_MPI)
 namespace tim

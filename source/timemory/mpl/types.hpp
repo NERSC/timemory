@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "timemory/api.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/utility/types.hpp"
 
 //======================================================================================//
@@ -185,33 +186,6 @@ struct report_sum;
 
 template <typename T>
 struct report_mean;
-
-template <typename T>
-struct is_empty;
-
-template <typename T>
-struct is_variadic;
-
-template <typename T>
-struct is_wrapper;
-
-template <typename T>
-struct is_stack_wrapper;
-
-template <typename T>
-struct is_heap_wrapper;
-
-template <typename T>
-struct is_hybrid_wrapper;
-
-template <bool B, typename T = int>
-struct bool_int;
-
-template <bool... B>
-struct sum_bool_int;
-
-template <typename Lhs, typename Rhs>
-struct compatible_wrappers;
 
 template <typename T>
 struct omp_tools;
@@ -845,7 +819,7 @@ struct get_index_sequence<std::tuple<_Types...>>
 template <template <typename...> class Tuple, typename... _Types>
 struct get_index_sequence<Tuple<_Types...>>
 {
-    using base_type = conditional_t<(trait::is_variadic<Tuple<_Types...>>::value),
+    using base_type = conditional_t<(concept ::is_variadic<Tuple<_Types...>>::value),
                                     impl::wrapper_index_sequence<Tuple<_Types...>>,
                                     impl::nonwrapper_index_sequence<Tuple<_Types...>>>;
     static constexpr auto size  = base_type::size;
@@ -898,147 +872,6 @@ iterate(_Tp& _val, _Func&& _func, _End&& _end = []() {})
     _func(_val);
     _end();
     return std::vector<_Tp>({ _val });
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Func>
-auto
-transform(_Tp& _val, _Func&& _func, std::tuple<>) -> decltype(_func(_val), void())
-{
-    _func(_val);
-}
-
-template <typename _Tp, typename _Func>
-auto
-transform(_Tp& _val, _Func&& _func, std::tuple<>) -> decltype(std::begin(_val), void())
-{
-    for(auto& itr : _val)
-        transform(itr, std::forward<_Func>(_func),
-                  get_index_sequence<decay_t<decltype(itr)>>::value);
-}
-
-template <typename _Tp, typename _Func>
-_Tp
-transform(_Tp _val, _Func&& _func)
-{
-    auto index = get_index_sequence<decay_t<_Tp>>::value;
-    transform(_val, std::forward<_Func>(_func), index);
-    return _val;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Func>
-auto
-unary_op(const _Tp& _lhs, _Func&& _func, std::tuple<>) -> decltype(_func(_lhs), _Tp())
-{
-    return _func(_lhs);
-}
-
-template <typename _Tp, typename _Func>
-auto
-unary_op(const _Tp& _lhs, _Func&& _func, std::tuple<>)
-    -> decltype(std::begin(_lhs), _Tp())
-{
-    auto _n = get_size(_lhs);
-    _Tp  _ret{};
-    resize(_ret, _n);
-
-    for(decltype(_n) i = 0; i < _n; ++i)
-    {
-        auto litr = std::begin(_lhs) + i;
-        auto itr  = std::begin(_ret) + i;
-        *itr      = unary_op(*litr, std::forward<_Func>(_func),
-                        get_index_sequence<decay_t<decltype(*itr)>>::value);
-    }
-    return _ret;
-}
-
-template <typename _Tp, typename _Func>
-_Tp
-unary_op(const _Tp& _lhs, _Func&& _func)
-{
-    auto index = get_index_sequence<decay_t<_Tp>>::value;
-    return unary_op(_lhs, std::forward<_Func>(_func), index);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Func>
-auto
-binary_op(const _Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
-    -> decltype(_func(_lhs, _rhs), _Tp())
-{
-    return _func(_lhs, _rhs);
-}
-
-template <typename _Tp, typename _Func>
-auto
-binary_op(const _Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
-    -> decltype(std::begin(_lhs), _Tp())
-{
-    auto _nl    = get_size(_lhs);
-    auto _nr    = get_size(_rhs);
-    using Int_t = decltype(_nl);
-    assert(_nl == _nr);
-
-    auto _n = std::min<Int_t>(_nl, _nr);
-    _Tp  _ret{};
-    resize(_ret, _n);
-
-    for(Int_t i = 0; i < _n; ++i)
-    {
-        auto litr = std::begin(_lhs) + i;
-        auto ritr = std::begin(_rhs) + i;
-        auto itr  = std::begin(_ret) + i;
-        *itr      = binary_op(*litr, *ritr, std::forward<_Func>(_func),
-                         get_index_sequence<decay_t<decltype(*itr)>>::value);
-    }
-    return _ret;
-}
-
-template <typename _Tp, typename _Func>
-_Tp
-binary_op(const _Tp& _lhs, const _Tp& _rhs, _Func&& _func)
-{
-    auto index = get_index_sequence<decay_t<_Tp>>::value;
-    return binary_op(_lhs, _rhs, std::forward<_Func>(_func), index);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Func>
-auto
-binary_set(_Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
-    -> decltype(_func(_lhs, _rhs), void())
-{
-    _func(_lhs, _rhs);
-}
-
-template <typename _Tp, typename _Func>
-auto
-binary_set(_Tp& _lhs, const _Tp& _rhs, _Func&& _func, std::tuple<>)
-    -> decltype(std::begin(_lhs), void())
-{
-    auto _n = get_size(_rhs);
-    resize(_lhs, _n);
-
-    for(decltype(_n) i = 0; i < _n; ++i)
-    {
-        auto litr = std::begin(_lhs) + i;
-        auto ritr = std::begin(_rhs) + i;
-        binary_set(*litr, *ritr, std::forward<_Func>(_func),
-                   get_index_sequence<decay_t<decltype(*litr)>>::value);
-    }
-}
-
-template <typename _Tp, typename _Func>
-void
-binary_set(_Tp& _lhs, const _Tp& _rhs, _Func&& _func)
-{
-    auto index = get_index_sequence<decay_t<_Tp>>::value;
-    binary_set(_lhs, _rhs, std::forward<_Func>(_func), index);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1162,145 +995,6 @@ assign(_Tp& _targ, const _Vp& _val)
 }  // namespace mpl
 
 //======================================================================================//
-
-namespace trait
-{
-//--------------------------------------------------------------------------------------//
-/// trait the specifies that a variadic type is empty
-///
-template <typename T>
-struct is_empty : false_type
-{};
-
-template <template <typename...> class Tuple>
-struct is_empty<Tuple<>> : true_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// trait the specifies that a type is a generic variadic wrapper
-///
-template <typename T>
-struct is_variadic : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// trait the specifies that a type is a timemory variadic wrapper
-///
-template <typename T>
-struct is_wrapper : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// trait the specifies that a type is a timemory variadic wrapper
-/// and components are stack-allocated
-///
-template <typename T>
-struct is_stack_wrapper : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// trait the specifies that a type is a timemory variadic wrapper
-/// and components are heap-allocated
-///
-template <typename T>
-struct is_heap_wrapper : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// trait the specifies that a type is a timemory variadic wrapper
-/// and components are stack- and heap- allocated
-///
-template <typename T>
-struct is_hybrid_wrapper : false_type
-{};
-
-//--------------------------------------------------------------------------------------//
-/// converts a boolean to an integer
-///
-template <bool B, typename T>
-struct bool_int
-{
-    static constexpr T value = (B) ? 1 : 0;
-};
-
-//--------------------------------------------------------------------------------------//
-/// counts a series of booleans
-///
-template <bool... B>
-struct sum_bool_int;
-
-template <bool B, bool... BoolTail>
-struct sum_bool_int<B, BoolTail...>
-{
-    static constexpr int value = bool_int<B>::value + sum_bool_int<BoolTail...>::value;
-};
-
-template <bool B>
-struct sum_bool_int<B>
-{
-    static constexpr int value = bool_int<B>::value;
-};
-
-template <>
-struct sum_bool_int<>
-{
-    static constexpr int value = 0;
-};
-
-//--------------------------------------------------------------------------------------//
-/// determines whether variadic structures are compatible
-///
-template <typename Lhs, typename Rhs>
-struct compatible_wrappers
-{
-    static constexpr int variadic_count = (bool_int<is_variadic<Lhs>::value>::value +
-                                           bool_int<is_variadic<Rhs>::value>::value);
-    static constexpr int wrapper_count  = (bool_int<is_wrapper<Lhs>::value>::value +
-                                          bool_int<is_wrapper<Rhs>::value>::value);
-    static constexpr int heap_count     = (bool_int<is_heap_wrapper<Lhs>::value>::value +
-                                       bool_int<is_heap_wrapper<Rhs>::value>::value);
-    static constexpr int stack_count    = (bool_int<is_stack_wrapper<Lhs>::value>::value +
-                                        bool_int<is_stack_wrapper<Rhs>::value>::value);
-    static constexpr int hybrid_count = (bool_int<is_hybrid_wrapper<Lhs>::value>::value +
-                                         bool_int<is_hybrid_wrapper<Rhs>::value>::value);
-
-    //  valid configs:
-    //
-    //      1. both heap/stack/hybrid
-    //      2. hybrid + stack or heap wrapper
-    //      3. wrapper + variadic
-    //
-    //  invalid configs:
-    //
-    //      1. hybrid + non-wrapper variadic
-    //      2. one stack + one heap
-    //      3. zero variadic
-    //      4. variadic and zero wrappers
-    //
-
-    static constexpr bool valid_1 =
-        (hybrid_count == 2 || stack_count == 2 || heap_count == 2);
-    static constexpr bool valid_2 =
-        (hybrid_count == 1 && (stack_count + heap_count) == 1);
-    static constexpr bool valid_3 = (wrapper_count == 1 && variadic_count == 2);
-
-    static constexpr bool invalid_1 = (hybrid_count == 1 && wrapper_count == 1);
-    static constexpr bool invalid_2 =
-        (hybrid_count == 1 && (stack_count + heap_count) == 1);
-    static constexpr bool invalid_3 = (variadic_count == 0);
-    static constexpr bool invalid_4 = (variadic_count == 2 && wrapper_count == 0);
-
-    using value_type = bool;
-
-    static constexpr bool value = (!invalid_1 && !invalid_2 && !invalid_3 && !invalid_4 &&
-                                   (valid_1 || valid_2 || valid_3))
-                                      ? true
-                                      : false;
-
-    using type = typename std::conditional<(value), true_type, false_type>::type;
-};
-
-}  // namespace trait
 
 }  // namespace tim
 

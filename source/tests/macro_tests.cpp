@@ -37,7 +37,7 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
-using auto_tuple_t      = tim::auto_tuple<real_clock, cpu_clock, cpu_util>;
+using auto_tuple_t      = tim::auto_tuple_t<real_clock, cpu_clock, cpu_util>;
 using component_tuple_t = typename auto_tuple_t::component_type;
 
 //--------------------------------------------------------------------------------------//

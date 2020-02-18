@@ -30,7 +30,7 @@
 using namespace tim::component;
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, caliper, user_clock, system_clock, cpu_util>;
+    tim::auto_tuple_t<real_clock, caliper, user_clock, system_clock, cpu_util>;
 
 intmax_t time_fibonacci(intmax_t);
 intmax_t

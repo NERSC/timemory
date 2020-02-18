@@ -35,7 +35,7 @@
 using namespace tim::component;
 
 #if !defined(TIMEMORY_LIBRARY_TYPE)
-#    define TIMEMORY_LIBRARY_TYPE typename tim::complete_list_t::type
+#    define TIMEMORY_LIBRARY_TYPE tim::available_component_list_t
 #endif
 
 #if defined(__GNUC__)
@@ -76,6 +76,7 @@ get_record_map()
     static thread_local record_map_t _instance;
     return _instance;
 }
+
 //--------------------------------------------------------------------------------------//
 
 static trace_map_t&
