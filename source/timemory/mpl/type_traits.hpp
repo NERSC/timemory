@@ -644,6 +644,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::written_bytes, t
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::current_peak_rss,
                                true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::cupti_counters, true_type)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::cpu_roofline, true_type,
+                               typename)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::gpu_roofline, true_type,
                                typename)
 
@@ -657,6 +659,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::read_bytes, tru
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::cupti_counters,
                                true_type)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_label_printing, component::cpu_roofline, true_type,
+                               typename)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_label_printing, component::gpu_roofline, true_type,
                                typename)
 
@@ -733,6 +737,15 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::gpu_roofline_d
 //                              ITERABLE MEASUREMENT
 //
 //--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(iterable_measurement, component::cpu_roofline, true_type,
+                               typename)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::cpu_roofline_flops,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::cpu_roofline_sp_flops,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::cpu_roofline_dp_flops,
+                               true_type)
 
 TIMEMORY_DEFINE_VARIADIC_TRAIT(iterable_measurement, component::gpu_roofline, true_type,
                                typename)
