@@ -26,6 +26,7 @@
 
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/components/papi/array.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/configuration.hpp"
@@ -166,22 +167,20 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static int event_set() { return _event_set(); }
+    static int event_set() { return private_event_set(); }
 
     //----------------------------------------------------------------------------------//
 
     static event_type events()
     {
-        static thread_local event_type*& _instance = _events_ptr();
-        return (_instance) ? (*_instance) : event_type{};
+        return (private_events()) ? (*private_events()) : event_type{};
     }
 
     //----------------------------------------------------------------------------------//
 
     static size_type size()
     {
-        static thread_local event_type*& _instance = _events_ptr();
-        return (_instance) ? _instance->size() : 0;
+        return (private_events()) ? (private_events()->size()) : 0;
     }
 
     //----------------------------------------------------------------------------------//
@@ -220,7 +219,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static ert_data_ptr_t& get_ert_data()
+    static ert_data_ptr_t get_ert_data()
     {
         static ert_data_ptr_t _instance = std::make_shared<ert_data_t>();
         return _instance;
@@ -249,56 +248,88 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
+    static event_type get_events()
+    {
+        static auto _instance = []() {
+            event_type _events;
+            if(event_mode() == MODE::OP)
+            {
+                //
+                // add in user callback events BEFORE presets based on type so that
+                // the user can override the counters being used
+                //
+                auto _extra_events = get_events_callback()(event_mode());
+                for(const auto& itr : _extra_events)
+                    _events.push_back(itr);
+
+                //
+                //  add some presets based on data types
+                //
+                if(use_predefined_enums())
+                {
+                    if(is_one_of<float, types_tuple>::value)
+                        _events.push_back(PAPI_SP_OPS);
+                    if(is_one_of<double, types_tuple>::value)
+                        _events.push_back(PAPI_DP_OPS);
+                }
+            }
+            else if(event_mode() == MODE::AI)
+            {
+                //
+                //  add the load/store hardware counter
+                //
+                if(use_predefined_enums())
+                {
+                    _events.push_back(PAPI_LD_INS);
+                    _events.push_back(PAPI_SR_INS);
+                    _events.push_back(PAPI_LST_INS);
+                    _events.push_back(PAPI_TOT_INS);
+                }
+                //
+                // add in user callback events AFTER load/store so that load/store
+                // instructions are always counted
+                //
+                auto _extra_events = get_events_callback()(event_mode());
+                for(const auto& itr : _extra_events)
+                    _events.push_back(itr);
+            }
+
+            auto array_events = papi_array_t::get_initializer()();
+            for(auto& itr : array_events)
+            {
+                if(std::find(_events.begin(), _events.end(), itr) == _events.end())
+                    _events.push_back(itr);
+            }
+
+            return _events;
+        }();
+
+        if(private_events()->empty())
+            *private_events() = _instance;
+
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     static void thread_init(storage_type*)
     {
         if(!initialize_papi())
             return;
 
+        static thread_local bool _first = true;
+        if(!_first)
+            return;
+        _first = true;
+
         // create the hardware counter events to accumulate
-        event_type _events;
-        if(event_mode() == MODE::OP)
-        {
-            //
-            // add in user callback events BEFORE presets based on type so that
-            // the user can override the counters being used
-            //
-            auto _extra_events = get_events_callback()(event_mode());
-            for(const auto& itr : _extra_events)
-                _events.push_back(itr);
-
-            //
-            //  add some presets based on data types
-            //
-            if(use_predefined_enums())
-            {
-                if(is_one_of<float, types_tuple>::value)
-                    _events.push_back(PAPI_SP_OPS);
-                if(is_one_of<double, types_tuple>::value)
-                    _events.push_back(PAPI_DP_OPS);
-            }
-        }
-        else if(event_mode() == MODE::AI)
-        {
-            //
-            //  add the load/store hardware counter
-            //
-            if(use_predefined_enums())
-                _events.push_back(PAPI_LST_INS);
-
-            //
-            // add in user callback events AFTER load/store so that load/store
-            // instructions are always counted
-            //
-            auto _extra_events = get_events_callback()(event_mode());
-            for(const auto& itr : _extra_events)
-                _events.push_back(itr);
-        }
+        event_type _events = get_events();
 
         // found that PAPI occassionally seg-faults during add_event...
         static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);
 
-        papi::create_event_set(&_event_set(), settings::papi_multiplexing());
+        papi::create_event_set(&private_event_set(), settings::papi_multiplexing());
         if(event_set() == PAPI_NULL)
         {
             fprintf(stderr, "[cpu_roofline]> event_set is PAPI_NULL!\n");
@@ -309,13 +340,17 @@ struct cpu_roofline
             {
                 if(papi::add_event(event_set(), itr))
                 {
-                    _events_ptr()->push_back(itr);
                     if(settings::verbose() > 1 || settings::debug())
                         printf("[cpu_roofline]> Added event %s to event set %i\n",
                                papi::get_event_code_name(itr).c_str(), event_set());
                 }
                 else
                 {
+                    auto pitr = std::find(private_events()->begin(),
+                                          private_events()->end(), itr);
+                    if(pitr != private_events()->end())
+                        private_events()->erase(pitr);
+
                     if(!settings::papi_quiet())
                         fprintf(stderr,
                                 "[cpu_roofline]> Failed to add event %s to event "
@@ -323,9 +358,15 @@ struct cpu_roofline
                                 papi::get_event_code_name(itr).c_str(), event_set());
                 }
             }
-            if(_events_ptr()->size() > 0)
-                papi::start(event_set());
         }
+
+        if(private_events()->size() == 0)
+            throw std::runtime_error("No events for the roofline!");
+        if(private_events()->size() != events().size())
+            throw std::runtime_error("Mismatched!");
+
+        if(private_events()->size() > 0)
+            papi::start(event_set());
     }
 
     //----------------------------------------------------------------------------------//
@@ -341,12 +382,10 @@ struct cpu_roofline
             // stop PAPI counters
             array_type event_values(events().size(), 0);
             papi::stop(event_set(), event_values.data());
-            papi::remove_events(event_set(), _events_ptr()->data(), events().size());
+            papi::remove_events(event_set(), private_events()->data(), events().size());
             papi::destroy_event_set(event_set());
         }
-        delete _events_ptr();
-        _event_set()  = PAPI_NULL;
-        _events_ptr() = nullptr;
+        private_event_set() = PAPI_NULL;
         papi::unregister_thread();
     }
 
@@ -378,7 +417,7 @@ struct cpu_roofline
     template <typename _Archive>
     static void extra_serialization(_Archive& ar, const unsigned int /*version*/)
     {
-        auto& _ert_data = get_ert_data();
+        auto _ert_data = get_ert_data();
         if(!_ert_data.get())  // for input
             _ert_data.reset(new ert_data_t());
         ar(cereal::make_nvp("roofline", *_ert_data.get()));
@@ -422,7 +461,7 @@ struct cpu_roofline
             else
             {
                 if(event_mode() == MODE::OP)
-                    ss << "/" << count_type::display_unit();
+                    ss << " / " << count_type::display_unit();
                 _units.push_back(ss.str());
             }
         }
@@ -473,15 +512,16 @@ public:
     //----------------------------------------------------------------------------------//
 
     cpu_roofline()
+    : m_events(get_events())
+    , m_record([]() { return this_type::record(); })
     {
-        value.first.resize(size(), 0);
-        accum.first.resize(size(), 0);
+        resize(m_events.size());
         std::tie(value.second, accum.second) = std::make_pair(0, 0);
     }
 
     //----------------------------------------------------------------------------------//
 
-    ~cpu_roofline() {}
+    ~cpu_roofline()                       = default;
     cpu_roofline(const cpu_roofline& rhs) = default;
     cpu_roofline(cpu_roofline&& rhs)      = default;
     this_type& operator=(const this_type&) = default;
@@ -495,23 +535,10 @@ public:
         std::vector<double> _data(_n, 0.0);
         const auto&         obj = (is_transient) ? accum : value;
 
-        if(event_mode() == MODE::OP)
-        {
-            if(!(obj.second > 0.0))
-                return _data;
-        }
-
         for(size_t i = 0; i < obj.first.size(); ++i)
-        {
             _data[i] += static_cast<double>(obj.first[i]);
-            _data.back() += static_cast<double>(obj.first[i]);
-        }
 
-        if(event_mode() == MODE::OP)
-        {
-            for(auto& itr : _data)
-                itr /= obj.second;
-        }
+        _data.back() += obj.second;
 
         return _data;
     }
@@ -558,7 +585,7 @@ public:
 
     this_type& operator+=(const this_type& rhs)
     {
-        resize(std::max<size_type>(rhs.value.first.size(), rhs.accum.first.size()));
+        resize(std::max<size_type>(m_events.size(), events().size()));
         for(size_type i = 0; i < accum.first.size(); ++i)
             accum.first[i] += rhs.accum.first[i];
         for(size_type i = 0; i < value.first.size(); ++i)
@@ -574,7 +601,7 @@ public:
 
     this_type& operator-=(const this_type& rhs)
     {
-        resize(std::max<size_type>(rhs.value.first.size(), rhs.accum.first.size()));
+        resize(std::max<size_type>(m_events.size(), events().size()));
         for(size_type i = 0; i < accum.first.size(); ++i)
             accum.first[i] -= rhs.accum.first[i];
         for(size_type i = 0; i < value.first.size(); ++i)
@@ -734,23 +761,19 @@ public:
            cereal::make_nvp("mode", get_mode_string()),
            cereal::make_nvp("type", get_type_string()));
 
-        const auto& labels  = get_labels();
-        auto        data    = (is_transient) ? accum.first : value.first;
-        auto        runtime = (is_transient) ? accum.second : value.second;
+        const auto& labels = events_label_array();
+        auto        data   = get();
         ar.setNextName("repr_data");
         ar.startNode();
         auto litr = labels.begin();
         auto ditr = data.begin();
-        ar(cereal::make_nvp("runtime", runtime));
         for(; litr != labels.end() && ditr != data.end(); ++litr, ++ditr)
             ar(cereal::make_nvp(*litr, double(*ditr)));
-        ar(cereal::make_nvp("counted", get_counted()),
-           cereal::make_nvp("elapsed", get_elapsed()), cereal::make_nvp("fom", get()));
         ar.finishNode();
 
         ar(cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
-           cereal::make_nvp("units", count_type::get_unit()),
-           cereal::make_nvp("display_units", count_type::get_display_unit()));
+           cereal::make_nvp("units", unit_array()),
+           cereal::make_nvp("display_units", display_unit_array()));
     }
 
     //----------------------------------------------------------------------------------//
@@ -761,7 +784,32 @@ public:
         strvec_t arr;
         for(const auto& itr : m_events)
             arr.push_back(papi::get_event_info(itr).short_descr);
-        arr.push_back("TOTAL");
+        arr.push_back("Runtime");
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find("L/S")) != std::string::npos)
+                itr.replace(n, 3, "Loads_Stores");
+        }
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find("/")) != std::string::npos)
+                itr.replace(n, 1, "_per_");
+        }
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find(" ")) != std::string::npos)
+                itr.replace(n, 1, "_");
+
+            while((n = itr.find("__")) != std::string::npos)
+                itr.replace(n, 2, "_");
+        }
+
         if(events_label_array().size() < arr.size())
             events_label_array() = arr;
         return arr;
@@ -775,18 +823,18 @@ public:
         std::vector<std::string> arr(m_events.size());
         for(size_type i = 0; i < m_events.size(); ++i)
             arr[i] = papi::get_event_info(m_events[i]).long_descr;
-        arr.push_back("TOTAL");
+        arr.push_back("Runtime");
         return arr;
     }
 
     //----------------------------------------------------------------------------------//
     //
-    static strvec_t display_unit_array()
+    strvec_t display_unit_array() const
     {
         strvec_t arr;
-        for(const auto& itr : events())
+        for(const auto& itr : m_events)
             arr.push_back(papi::get_event_info(itr).units);
-        arr.push_back("TOTAL");
+        arr.push_back(count_type::get_display_unit());
         return arr;
     }
 
@@ -796,28 +844,22 @@ public:
     std::vector<int64_t> unit_array() const
     {
         std::vector<int64_t> arr(m_events.size() + 1, 1);
+        arr.back() = count_type::get_unit();
         return arr;
     }
-
-    //----------------------------------------------------------------------------------//
-
-    const strvec_t& get_labels() const { return m_label_array; }
 
 private:
     //----------------------------------------------------------------------------------//
     // these are needed after the global label array is destroyed
     //
-    size_type   m_event_size  = events().size();
-    event_type  m_events      = events();
-    strvec_t    m_label_array = events_label_array();
-    record_type m_record      = []() { return this_type::record(); };
+    event_type  m_events = get_events();
+    record_type m_record = []() { return this_type::record(); };
 
     //----------------------------------------------------------------------------------//
 
     void resize(size_type sz)
     {
-        sz           = std::max<size_type>(size(), sz);
-        m_event_size = std::max<size_type>(m_event_size, sz);
+        sz = std::max<size_type>(size(), sz);
         value.first.resize(std::max<size_type>(sz, value.first.size()), 0);
         accum.first.resize(std::max<size_type>(sz, accum.first.size()), 0);
     }
@@ -827,27 +869,22 @@ private:
 
     static strvec_t& events_label_array()
     {
-        static thread_local strvec_t _instance = []() {
-            strvec_t arr;
-            for(const auto& itr : events())
-                arr.push_back(papi::get_event_info(itr).short_descr);
-            arr.push_back("TOTAL");
-            return arr;
-        }();
+        static thread_local strvec_t _instance{};
         return _instance;
     }
 
     //----------------------------------------------------------------------------------//
 
-    static event_type*& _events_ptr()
+    static event_type* private_events()
     {
-        static thread_local event_type* _instance = new event_type{};
-        return _instance;
+        using pointer_t                    = std::unique_ptr<event_type>;
+        static thread_local auto _instance = pointer_t(new event_type{});
+        return _instance.get();
     }
 
     //----------------------------------------------------------------------------------//
 
-    static int& _event_set()
+    static int& private_event_set()
     {
         static thread_local int _instance = PAPI_NULL;
         return _instance;
@@ -856,12 +893,7 @@ private:
 public:
     //----------------------------------------------------------------------------------//
 
-    static void cleanup()
-    {
-        delete _events_ptr();
-        _events_ptr() = nullptr;
-        _event_set()  = PAPI_NULL;
-    }
+    static void cleanup() {}
 };
 
 //--------------------------------------------------------------------------------------//

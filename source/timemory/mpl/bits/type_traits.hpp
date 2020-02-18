@@ -164,14 +164,14 @@ struct units<component::written_bytes>
 };
 
 //--------------------------------------------------------------------------------------//
-
+/*
 template <typename... _Types>
 struct units<component::cpu_roofline<_Types...>>
 {
     using type         = double;
     using display_type = std::vector<std::string>;
 };
-
+*/
 //--------------------------------------------------------------------------------------//
 /*
 template <>

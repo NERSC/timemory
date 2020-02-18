@@ -75,7 +75,7 @@ struct is_available<T*> : is_available<std::remove_pointer_t<T>>
 {};
 
 //--------------------------------------------------------------------------------------//
-/// trait that signifies that an implementation (e.g. PAPI) is available
+/// trait that signifies that an implementation is enabled at runtime
 ///
 template <typename T>
 struct runtime_enabled
@@ -504,6 +504,28 @@ struct report_mean : true_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait that allows runtime configuration of reporting certain types of values
+/// (used in roofline)
+///
+template <typename T>
+struct report_values
+{
+    using value_type = std::tuple<bool, bool>;
+
+    static bool sum() { return std::get<0>(get_runtime_value()); }
+    static void sum(bool val) { std::get<0>(get_runtime_value()) = val; }
+    static bool mean() { return std::get<1>(get_runtime_value()); }
+    static void mean(bool val) { std::get<1>(get_runtime_value()) = val; }
+
+private:
+    static value_type& get_runtime_value()
+    {
+        static value_type _instance{ report_sum<T>::value, report_mean<T>::value };
+        return _instance;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 /// trait for configuring OMPT components
 ///
 template <typename T>
@@ -681,6 +703,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_laps_printing, component::trip_count, true
 TIMEMORY_DEFINE_TEMPLATE_TRAIT(array_serialization, component::papi_array, true_type,
                                size_t)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::papi_tuple, true_type, int)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::cpu_roofline, true_type,
+                               typename)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::cupti_counters, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::written_bytes, true_type)

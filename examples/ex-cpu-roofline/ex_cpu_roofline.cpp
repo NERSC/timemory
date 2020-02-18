@@ -183,6 +183,7 @@ main(int argc, char** argv)
 
     tim::timemory_finalize();
 
+    std::cout << std::flush;
     return 0;
 }
 

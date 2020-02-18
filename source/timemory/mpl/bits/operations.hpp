@@ -591,9 +591,9 @@ struct print_header : public common_utils
 
         utility::write_header(_os, "METRIC");
         utility::write_header(_os, "UNITS");
-        if(trait::report_sum<type>::value)
+        if(trait::report_sum<type>::value && trait::report_values<type>::sum())
             utility::write_header(_os, "SUM", f_value, w_value, p_value);
-        if(trait::report_mean<type>::value)
+        if(trait::report_mean<type>::value && trait::report_values<type>::mean())
             utility::write_header(_os, "MEAN", f_value, w_value, p_value);
         print_statistics<Tp>::get_header(_os, _stats);
         utility::write_header(_os, "% SELF", f_self, w_self, p_self);
@@ -605,9 +605,9 @@ struct print_header : public common_utils
             {
                 utility::write_header(_os, "METRIC");
                 utility::write_header(_os, "UNITS");
-                if(trait::report_sum<type>::value)
+                if(trait::report_sum<type>::value && trait::report_values<type>::sum())
                     utility::write_header(_os, "SUM", f_value, w_value, p_value);
-                if(trait::report_mean<type>::value)
+                if(trait::report_mean<type>::value && trait::report_values<type>::mean())
                     utility::write_header(_os, "MEAN", f_value, w_value, p_value);
                 print_statistics<Tp>::get_header(_os, _stats);
                 utility::write_header(_os, "% SELF", f_self, w_self, p_self);
@@ -680,9 +680,9 @@ struct print
         utility::write_entry(_os, "DEPTH", _depth);
         utility::write_entry(_os, "METRIC", _labels, true);
         utility::write_entry(_os, "UNITS", _units, true);
-        if(trait::report_sum<type>::value)
+        if(trait::report_sum<type>::value && trait::report_values<type>::sum())
             utility::write_entry(_os, "SUM", _obj.get());
-        if(trait::report_mean<type>::value)
+        if(trait::report_mean<type>::value && trait::report_values<type>::mean())
             utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
         print_statistics<Tp>(_obj, _os, _self, _stats, _laps);
         utility::write_entry(_os, "% SELF", _self);

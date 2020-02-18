@@ -188,6 +188,9 @@ template <typename T>
 struct report_mean;
 
 template <typename T>
+struct report_values;
+
+template <typename T>
 struct omp_tools;
 
 }  // namespace trait

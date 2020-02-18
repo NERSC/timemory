@@ -638,7 +638,7 @@ private:
 
         if(_used_devs.size() > 0)
         {
-            if(settings::verbose() > 0 || settings::debug())
+            // if(settings::verbose() > 0 || settings::debug())
             {
                 std::cout << "Devices : " << writer<intset_t>(_used_devs) << std::endl;
                 std::cout << "Event   : " << writer<strset_t>(_used_evts) << std::endl;
@@ -692,17 +692,25 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     strvec_t _events  = std::get<1>(_init);
     strvec_t _metrics = std::get<2>(_init);
 
+    auto _tmp_init = get_initializer()();
+
+    if(_events.empty())
+        _events = std::get<1>(_tmp_init);
+
     // provide defaults events
     if(_events.empty())
     {
-        _events = { "active_warps", "active_cycles", "global_load", "global_store" };
+        // _events = { "active_warps", "active_cycles", "global_load", "global_store" };
     }
+
+    if(_metrics.empty())
+        _metrics = std::get<2>(_tmp_init);
 
     // provide default metrics
     if(_metrics.empty())
     {
-        _metrics = { "inst_per_warp", "branch_efficiency", "gld_efficiency",
-                     "gst_efficiency", "warp_execution_efficiency" };
+        //_metrics = { "inst_per_warp", "branch_efficiency", "gld_efficiency",
+        //             "gst_efficiency", "warp_execution_efficiency" };
     }
 
     const auto& _avail_events = get_available_events(devid);
