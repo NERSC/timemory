@@ -95,27 +95,13 @@ struct init_storage
     static get_type get()
     {
         static thread_local auto _instance = []() {
-            static thread_local auto _main_inst = storage_type::master_instance();
-            static thread_local auto _this_inst = storage_type::instance();
-            if(_main_inst != _this_inst)
-            {
-                static bool              _main_glob = _main_inst->global_init();
-                static bool              _this_glob = _this_inst->global_init();
-                static thread_local bool _main_work = _main_inst->thread_init();
-                static thread_local bool _this_work = _this_inst->thread_init();
-                static thread_local bool _main_data = _main_inst->data_init();
-                static thread_local bool _this_data = _this_inst->data_init();
-                return get_type{ _main_inst, _this_inst, (_main_glob && _this_glob),
-                                 (_main_work && _this_work), (_main_data && _this_data) };
-            }
-            else
-            {
-                static bool              _this_glob = _this_inst->global_init();
-                static thread_local bool _this_work = _this_inst->thread_init();
-                static thread_local bool _this_data = _this_inst->data_init();
-                return get_type{ _main_inst, _this_inst, (_this_glob), (_this_work),
-                                 (_this_data) };
-            }
+            auto _main_inst = storage_type::master_instance();
+            auto _this_inst = storage_type::instance();
+            bool _this_glob = true;
+            bool _this_work = true;
+            bool _this_data = _this_inst->data_init();
+            return get_type{ _main_inst, _this_inst, (_this_glob), (_this_work),
+                             (_this_data) };
         }();
         return _instance;
     }
