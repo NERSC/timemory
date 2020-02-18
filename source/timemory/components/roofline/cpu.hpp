@@ -691,8 +691,8 @@ public:
 
         // output the roofline metric
         auto _value = obj.get();
-        auto _label = this_type::label_array();
-        auto _disp  = this_type::display_unit();
+        auto _label = obj.label_array();
+        auto _disp  = obj.display_unit_array();
 
 #if defined(DEBUG)
         if(settings::debug())
