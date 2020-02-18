@@ -758,13 +758,24 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    static strvec_t label_array()
+    strvec_t label_array() const
     {
         strvec_t arr;
-        for(const auto& itr : events())
+        for(const auto& itr : m_events)
             arr.push_back(papi::get_event_info(itr).short_descr);
         arr.push_back("TOTAL");
-        // arr.push_back(papi::get_event_info(itr).short_descr);
+        return arr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // array of labels
+    //
+    strvec_t description_array() const
+    {
+        std::vector<std::string> arr(m_events.size());
+        for(size_type i = 0; i < m_events.size(); ++i)
+            arr[i] = papi::get_event_info(m_events[i]).long_descr;
+        arr.push_back("TOTAL");
         return arr;
     }
 
@@ -780,6 +791,15 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // array of unit values
+    //
+    std::vector<int64_t> unit_array() const
+    {
+        std::vector<int64_t> arr(m_events.size() + 1, 1);
+        return arr;
+    }
+
+    //----------------------------------------------------------------------------------//
 
     const strvec_t& get_labels() const { return m_label_array; }
 
@@ -788,6 +808,7 @@ private:
     // these are needed after the global label array is destroyed
     //
     size_type   m_event_size  = events().size();
+    event_type  m_events      = events();
     strvec_t    m_label_array = label_array();
     record_type m_record      = []() { return this_type::record(); };
 
