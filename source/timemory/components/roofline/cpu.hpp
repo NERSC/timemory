@@ -227,10 +227,31 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
+    static bool initialize_papi()
+    {
+        static thread_local bool _initalized = false;
+        static thread_local bool _working    = false;
+        if(!_initalized)
+        {
+            papi::init();
+            papi::register_thread();
+            _initalized = true;
+            _working    = papi::working();
+            if(!_working)
+            {
+                std::cerr << "Warning! PAPI failed to initialized!\n";
+                std::cerr << std::flush;
+            }
+        }
+        return _working;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     static void thread_init(storage_type*)
     {
-        papi::init();
-        papi::register_thread();
+        if(!initialize_papi())
+            return;
 
         // create the hardware counter events to accumulate
         event_type _events;
