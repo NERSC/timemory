@@ -769,6 +769,17 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    //
+    static strvec_t display_unit_array()
+    {
+        strvec_t arr;
+        for(const auto& itr : events())
+            arr.push_back(papi::get_event_info(itr).units);
+        arr.push_back("TOTAL");
+        return arr;
+    }
+
+    //----------------------------------------------------------------------------------//
 
     const strvec_t& get_labels() const { return m_label_array; }
 
