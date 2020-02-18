@@ -137,6 +137,10 @@ struct concat<component_list<_Types...>>
 };
 
 template <typename... _Types>
+struct concat<component_list<_Types*...>> : concat<component_list<_Types...>>
+{};
+
+template <typename... _Types>
 struct concat<auto_tuple<_Types...>>
 {
     using type = typename concat<_Types...>::type;
@@ -147,6 +151,10 @@ struct concat<auto_list<_Types...>>
 {
     using type = typename concat<_Types...>::type;
 };
+
+template <typename... _Types>
+struct concat<auto_list<_Types*...>> : concat<auto_list<_Types...>>
+{};
 
 template <typename... _Lhs, typename... _Rhs>
 struct concat<std::tuple<_Lhs...>, std::tuple<_Rhs...>>
@@ -245,6 +253,16 @@ struct concat<component_list<_Lhs...>, _Rhs...>
                                  typename concat<_Rhs...>::type>::type;
 };
 
+template <typename... _Lhs, typename... _Rhs>
+struct concat<component_list<_Lhs...>*, _Rhs*...>
+: public concat<component_list<_Lhs...>, _Rhs...>
+{};
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<component_list<_Lhs...>*, _Rhs...>
+: public concat<component_list<_Lhs...>, _Rhs...>
+{};
+
 //--------------------------------------------------------------------------------------//
 //      auto_tuple
 //--------------------------------------------------------------------------------------//
@@ -266,6 +284,14 @@ struct concat<auto_list<_Lhs...>, _Rhs...>
     using type = typename concat<typename concat<_Lhs...>::type,
                                  typename concat<_Rhs...>::type>::type;
 };
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<auto_list<_Lhs...>*, _Rhs*...> : public concat<auto_list<_Lhs...>, _Rhs...>
+{};
+
+template <typename... _Lhs, typename... _Rhs>
+struct concat<auto_list<_Lhs...>*, _Rhs...> : public concat<auto_list<_Lhs...>, _Rhs...>
+{};
 
 //--------------------------------------------------------------------------------------//
 //      component_hybrid

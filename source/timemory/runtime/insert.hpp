@@ -102,6 +102,7 @@ insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
         case CUDA_PROFILER: obj.template insert<cuda_profiler>(); break;
         case CUPTI_ACTIVITY: obj.template insert<cupti_activity>(); break;
         case CUPTI_COUNTERS: obj.template insert<cupti_counters>(); break;
+        case CURRENT_PEAK_RSS: obj.template insert<current_peak_rss>(); break;
         case DATA_RSS: obj.template insert<data_rss>(); break;
         case GPERF_CPU_PROFILER: obj.template insert<gperf_cpu_profiler>(); break;
         case GPERF_HEAP_PROFILER: obj.template insert<gperf_heap_profiler>(); break;
@@ -109,8 +110,10 @@ insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
         case GPU_ROOFLINE_FLOPS: obj.template insert<gpu_roofline_flops>(); break;
         case GPU_ROOFLINE_HP_FLOPS: obj.template insert<gpu_roofline_hp_flops>(); break;
         case GPU_ROOFLINE_SP_FLOPS: obj.template insert<gpu_roofline_sp_flops>(); break;
-        case LIKWID_NVMON: obj.template insert<likwid_nvmon>(); break;
-        case LIKWID_PERFMON: obj.template insert<likwid_perfmon>(); break;
+        case KERNEL_MODE_TIME: obj.template insert<kernel_mode_time>(); break;
+        case LIKWID_MARKER: obj.template insert<likwid_marker>(); break;
+        case LIKWID_NVMARKER: obj.template insert<likwid_nvmarker>(); break;
+        case MALLOC_GOTCHA: obj.template insert<malloc_gotcha>(); break;
         case MONOTONIC_CLOCK: obj.template insert<monotonic_clock>(); break;
         case MONOTONIC_RAW_CLOCK: obj.template insert<monotonic_raw_clock>(); break;
         case NUM_IO_IN: obj.template insert<num_io_in>(); break;
@@ -139,6 +142,7 @@ insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
         case TRIP_COUNT: obj.template insert<trip_count>(); break;
         case USER_CLOCK: obj.template insert<user_clock>(); break;
         case USER_LIST_BUNDLE: obj.template insert<user_list_bundle>(); break;
+        case USER_MODE_TIME: obj.template insert<user_mode_time>(); break;
         case USER_TUPLE_BUNDLE: obj.template insert<user_tuple_bundle>(); break;
         case VIRTUAL_MEMORY: obj.template insert<virtual_memory>(); break;
         case VOLUNTARY_CONTEXT_SWITCH:
@@ -146,6 +150,7 @@ insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
             break;
         case VTUNE_EVENT: obj.template insert<vtune_event>(); break;
         case VTUNE_FRAME: obj.template insert<vtune_frame>(); break;
+        case VTUNE_PROFILER: obj.template insert<vtune_profiler>(); break;
         case WALL_CLOCK: obj.template insert<wall_clock>(); break;
         case WRITTEN_BYTES: obj.template insert<written_bytes>(); break;
         case TIMEMORY_COMPONENTS_END:

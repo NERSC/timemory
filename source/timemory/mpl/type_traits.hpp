@@ -70,6 +70,10 @@ template <typename T>
 struct is_available : true_type
 {};
 
+template <typename T>
+struct is_available<T*> : is_available<std::remove_pointer_t<T>>
+{};
+
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation (e.g. PAPI) is available
 ///
@@ -197,6 +201,46 @@ struct requires_json : false_type
 ///
 template <typename T>
 struct is_gotcha : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates the type is a user-bundle... ONLY user-bundles should be TRUE!
+///
+template <typename T>
+struct is_user_bundle : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates the type supports calling a function with a certain
+/// set of argument types (passed via a tuple)
+///
+template <typename T, bool>
+struct component_value_type;
+
+template <typename T>
+struct component_value_type<T, true>
+{
+    using type       = T;
+    using value_type = typename T::value_type;
+};
+
+template <typename T>
+struct component_value_type<T, false>
+{
+    using type       = T;
+    using value_type = void;
+};
+
+template <typename T>
+struct collects_data
+{
+    using type       = T;
+    using value_type = typename component_value_type<T, is_available<T>::value>::type;
+    static constexpr bool value = !(std::is_same<type, void>::value);
+};
+
+template <typename T>
+struct collects_data<T*> : public collects_data<T>
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -745,8 +789,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::gpu_roofline_dp_flops,
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::caliper, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::nvtx_marker, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::gperf_heap_profiler, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_perfmon, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_nvmon, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_marker, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_nvmarker, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_event, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_frame, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::tau_marker, true_type)
@@ -824,11 +868,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_cpu_profiler, fals
 //      LIKWID
 //
 #if !defined(TIMEMORY_USE_LIKWID)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_perfmon, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmon, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_marker, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
 #else
 #    if !defined(TIMEMORY_USE_CUDA)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmon, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
 #    endif
 #endif
 
@@ -846,6 +890,13 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_profiler, false_ty
 //
 #if !defined(TIMEMORY_USE_TAU)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tau_marker, false_type)
+#endif
+
+//
+//      GOTCHA
+//
+#if !defined(TIMEMORY_USE_GOTCHA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::malloc_gotcha, false_type)
 #endif
 
 //
@@ -943,6 +994,10 @@ struct stop_priority<component::gotcha<_N, _Comp, _Diff>> : priority_constant<-2
 //                              User-bundle
 //
 //--------------------------------------------------------------------------------------//
+
+template <size_t _Idx, typename _Type>
+struct is_user_bundle<component::user_bundle<_Idx, _Type>> : true_type
+{};
 
 template <size_t _Idx, typename _Type>
 struct requires_prefix<component::user_bundle<_Idx, _Type>> : true_type

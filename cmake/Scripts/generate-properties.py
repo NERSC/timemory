@@ -12,10 +12,14 @@ def generate_get_enum(component):
     """
     enumeration = mangled_enums.get(component, component).upper()
     strings = ["{}".format(component)] + mangled_strings.get(component, [])
+    if len(strings) == 1:
+        strings += ['']
 
     quoted = ('"{}"'.format(x) for x in strings)
+
     return "TIMEMORY_PROPERTY_SPECIALIZATION({}, {}, {})".format(
            component, enumeration, ", ".join(quoted))
+
 
 if __name__ == "__main__":
 

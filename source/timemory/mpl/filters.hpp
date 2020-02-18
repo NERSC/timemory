@@ -109,15 +109,16 @@ struct filter_if_false<Predicate, std::tuple<Ts...>>
 };
 
 //--------------------------------------------------------------------------------------//
-/*
+
 template <template <typename> class Predicate, template <typename...> class Tuple,
           typename... Ts>
 struct filter_if_false<Predicate, Tuple<Ts...>>
 {
-    using type = tuple_concat_t<
-        typename filter_if_false_result<Predicate<Ts>::value>::template type<Ts>...>;
+    using type = convert_t<tuple_concat_t<typename filter_if_false_result<
+                               Predicate<Ts>::value>::template type<Ts>...>,
+                           Tuple<>>;
 };
-*/
+
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, typename Sequence>
@@ -144,7 +145,7 @@ struct operation_filter_if_false<Predicate, Operator, std::tuple<Ts...>>
 };
 
 //--------------------------------------------------------------------------------------//
-/*
+
 template <template <typename> class Predicate, template <typename...> class Operator,
           template <typename...> class Tuple, typename... Ts>
 struct operation_filter_if_false<Predicate, Operator, Tuple<Ts...>>
@@ -152,7 +153,7 @@ struct operation_filter_if_false<Predicate, Operator, Tuple<Ts...>>
     using type = tuple_concat_t<typename filter_if_false_result<
         Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
 };
-*/
+
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, template <typename...> class Operator,
@@ -235,49 +236,42 @@ using operation_filter_true =
 //
 //======================================================================================//
 
-template <typename _Tp>
+template <typename T>
 struct get_data_tuple_type
 {
-    using type = conditional_t<(std::is_fundamental<_Tp>::value), _Tp,
-                               decltype(std::declval<_Tp>().get())>;
-};
-/*
-template <typename _Tp>
-struct get_data_tuple_type<std::tuple<_Tp>>
-{
-    using type = conditional_t<(std::is_fundamental<_Tp>::value), _Tp,
-                               decltype(std::declval<_Tp>().get())>;
+    using type = conditional_t<(std::is_fundamental<T>::value), T,
+                               decltype(std::declval<T>().get())>;
 };
 
-template <typename _Tp>
-struct get_data_tuple_type<type_list<_Tp>>
-{
-    using type = conditional_t<(std::is_fundamental<_Tp>::value), _Tp,
-                               decltype(std::declval<_Tp>().get())>;
-};
-*/
-template <typename... _ImplTypes>
+template <typename T>
+struct get_data_tuple_type<T*> : public get_data_tuple_type<std::remove_pointer_t<T>>
+{};
+
+template <typename T>
+struct get_data_tuple_type<std::tuple<T>> : public get_data_tuple_type<T>
+{};
+
+template <typename T>
+struct get_data_tuple_type<type_list<T>> : public get_data_tuple_type<T>
+{};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
 struct get_data_tuple
 {
-    using value_type = std::tuple<_ImplTypes...>;
-    using label_type = std::tuple<std::tuple<std::string, _ImplTypes>...>;
+    using value_type = std::tuple<typename get_data_tuple_type<Types>::type...>;
+    using label_type =
+        std::tuple<std::tuple<std::string, typename get_data_tuple_type<Types>::type>...>;
 };
 
-template <typename... _ImplTypes>
-struct get_data_tuple<std::tuple<_ImplTypes...>>
-{
-    using value_type = std::tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
-    using label_type = std::tuple<
-        std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
-};
+template <typename... Types>
+struct get_data_tuple<std::tuple<Types...>> : public get_data_tuple<Types...>
+{};
 
-template <typename... _ImplTypes>
-struct get_data_tuple<type_list<_ImplTypes...>>
-{
-    using value_type = std::tuple<typename get_data_tuple_type<_ImplTypes>::type...>;
-    using label_type = std::tuple<
-        std::tuple<std::string, typename get_data_tuple_type<_ImplTypes>::type>...>;
-};
+template <typename... Types>
+struct get_data_tuple<type_list<Types...>> : public get_data_tuple<Types...>
+{};
 
 //======================================================================================//
 // check if type is in expansion
@@ -530,6 +524,9 @@ using implemented = impl::filter_false<trait::is_available, std::tuple<Types...>
 
 template <typename _Tuple>
 using available_tuple = impl::filter_false<trait::is_available, _Tuple>;
+
+template <typename T>
+using available_t = impl::filter_false<trait::is_available, T>;
 
 /// filter out any operations on types that are not available
 template <template <typename...> class Operator, typename... Types>

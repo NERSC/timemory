@@ -82,6 +82,14 @@ void
 initialize(_CompList<_CompTypes...>&               obj,
            const _Container<_Intp, _ExtraArgs...>& components);
 
+template <typename T, typename... Args>
+void
+initialize(T* obj, Args&&... args)
+{
+    if(obj)
+        initialize(*obj, std::forward<Args>(args)...);
+}
+
 //--------------------------------------------------------------------------------------//
 //
 ///  description:
@@ -105,6 +113,14 @@ template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle
                                   int>::type = 0>
 void
 insert(_Bundle<_Idx, _Type>& obj, const _Container<_Intp, _ExtraArgs...>& components);
+
+template <typename T, typename... Args>
+void
+insert(T* obj, Args&&... args)
+{
+    if(obj)
+        insert(*obj, std::forward<Args>(args)...);
+}
 
 //--------------------------------------------------------------------------------------//
 //
@@ -156,6 +172,16 @@ initialize(_CompList<_CompTypes...>&, const std::string&, const std::string&)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename T, typename... Args>
+void
+initialize(T* obj, Args&&... args)
+{
+    if(obj)
+        initialize(*obj, std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
 inline void
 insert(_Bundle<_Idx, _Type>& obj, const std::string& env_var,
@@ -163,6 +189,16 @@ insert(_Bundle<_Idx, _Type>& obj, const std::string& env_var,
 {
     auto env_result = tim::get_env(env_var, default_env);
     ::tim::insert(obj, enumerate_components(tim::delimit(env_result)));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename... Args>
+void
+insert(T* obj, Args&&... args)
+{
+    if(obj)
+        insert(*obj, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//

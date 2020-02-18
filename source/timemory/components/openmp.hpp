@@ -28,13 +28,13 @@
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/function_traits.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include "timemory/runtime/configure.hpp"
 
-#include <omp-tools.h>
 #include <omp.h>
 #include <ompt.h>
 
@@ -43,8 +43,8 @@
 #endif
 
 // for callback declarations
-#if !defined(cbdecl)
-#    define cbdecl(name) (ompt_callback_t) & name
+#if !defined(CBDECL)
+#    define CBDECL(NAME) (ompt_callback_t) & NAME
 #endif
 
 static ompt_set_callback_t             ompt_set_callback;
@@ -64,6 +64,14 @@ namespace tim
 {
 namespace component
 {
+//--------------------------------------------------------------------------------------//
+
+template <typename Api = api::native_tag>
+struct omp_tools
+{};
+
+//--------------------------------------------------------------------------------------//
+
 namespace openmp
 {
 //--------------------------------------------------------------------------------------//
@@ -408,6 +416,9 @@ struct callback_connector
               enable_if_t<(std::is_same<T, mode::begin_callback>::value), int> = 0>
     callback_connector(T, Args... args)
     {
+        if(!trait::runtime_enabled<omp_tools<api_type>>::get())
+            return;
+
         context_handler<api_type> ctx(args...);
 
         // don't provide empty entries
@@ -428,6 +439,9 @@ struct callback_connector
               enable_if_t<(std::is_same<T, mode::end_callback>::value), int> = 0>
     callback_connector(T, Args... args)
     {
+        if(!trait::runtime_enabled<omp_tools<api_type>>::get())
+            return;
+
         context_handler<api_type> ctx(args...);
 
         // don't provide empty entries
@@ -451,6 +465,9 @@ struct callback_connector
               enable_if_t<(std::is_same<T, mode::measure_callback>::value), int> = 0>
     callback_connector(T, Args... args)
     {
+        if(!trait::runtime_enabled<omp_tools<api_type>>::get())
+            return;
+
         context_handler<api_type> ctx(args...);
 
         // don't provide empty entries
@@ -473,29 +490,6 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-//  call this function if KokkosUserBundle is listed as one of the tools
-//  (long compile times)
-//
-template <typename Api, typename _Tuple,
-          enable_if_t<(tim::is_one_of<user_ompt_bundle, _Tuple>::value), int> = 0>
-static void
-configure(const std::vector<TIMEMORY_COMPONENT>&)
-{
-    user_ompt_bundle::configure<wall_clock>();
-    // tim::configure<user_ompt_bundle>(components);
-}
-
-//--------------------------------------------------------------------------------------//
-//  call this function if KokkosUserBundle is NOT listed as one of the tools
-//  (drastically reduces compile times)
-//
-template <typename Api, typename _Tuple,
-          enable_if_t<!(tim::is_one_of<user_ompt_bundle, _Tuple>::value), int> = 0>
-static void
-configure(const std::vector<TIMEMORY_COMPONENT>&)
-{}
-
-//--------------------------------------------------------------------------------------//
 
 }  // namespace openmp
 }  // namespace component
@@ -507,6 +501,15 @@ extern "C" int
 ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
                 ompt_data_t* tool_data)
 {
+    using namespace tim::component;
+    using api_type       = TIMEMORY_OMPT_API_TAG;
+    using component_type = typename tim::trait::omp_tools<api_type>::type;
+    using policy_type    = tim::policy::omp_tools<api_type, component_type>;
+    using connector_type = openmp::callback_connector<component_type, api_type>;
+
+    if(!tim::trait::is_available<omp_tools<api_type>>::value)
+        return 1;
+
     tim::consume_parameters(initial_device_num, tool_data);
 
     auto register_callback = [](ompt_callbacks_t name, ompt_callback_t cb) {
@@ -550,9 +553,9 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
 
     ompt_set_callback      = (ompt_set_callback_t) lookup("ompt_set_callback");
     ompt_get_task_info     = (ompt_get_task_info_t) lookup("ompt_get_task_info");
+    ompt_get_unique_id     = (ompt_get_unique_id_t) lookup("ompt_get_unique_id");
     ompt_get_thread_data   = (ompt_get_thread_data_t) lookup("ompt_get_thread_data");
     ompt_get_parallel_info = (ompt_get_parallel_info_t) lookup("ompt_get_parallel_info");
-    ompt_get_unique_id     = (ompt_get_unique_id_t) lookup("ompt_get_unique_id");
 
     ompt_get_num_places = (ompt_get_num_places_t) lookup("ompt_get_num_places");
     ompt_get_place_proc_ids =
@@ -565,17 +568,7 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
     ompt_enumerate_mutex_impls =
         (ompt_enumerate_mutex_impls_t) lookup("ompt_enumerate_mutex_impls");
 
-    using namespace tim::component;
-    using api_type       = TIMEMORY_OMPT_API_TAG;
-    using component_type = typename tim::trait::omp_tools<api_type>::type;
-    using connector_type = openmp::callback_connector<component_type, api_type>;
-
-    std::string components = "wall_clock";
-    auto        env_var    = tim::get_env("TIMEMORY_OMPT_COMPONENTS", components);
-    std::transform(env_var.begin(), env_var.end(), env_var.begin(),
-                   [](unsigned char c) -> unsigned char { return std::tolower(c); });
-    openmp::configure<api_type, component_type>(
-        tim::enumerate_components(tim::delimit(env_var)));
+    policy_type::configure();
 
     using parallel_begin_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::begin_callback,
@@ -649,35 +642,35 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
                              ompt_id_t, ompt_id_t, unsigned int>;
 
     timemory_ompt_register_callback(ompt_callback_parallel_begin,
-                                    cbdecl(parallel_begin_cb_t::callback));
+                                    CBDECL(parallel_begin_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_parallel_end,
-                                    cbdecl(parallel_end_cb_t::callback));
+                                    CBDECL(parallel_end_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_task_create,
-                                    cbdecl(task_create_cb_t::callback));
+                                    CBDECL(task_create_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_task_schedule,
-                                    cbdecl(task_schedule_cb_t::callback));
+                                    CBDECL(task_schedule_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_implicit_task,
-                                    cbdecl(implicit_task_cb_t::callback));
+                                    CBDECL(implicit_task_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_thread_begin,
-                                    cbdecl(thread_begin_cb_t::callback));
+                                    CBDECL(thread_begin_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_thread_end,
-                                    cbdecl(thread_end_cb_t::callback));
-    timemory_ompt_register_callback(ompt_callback_target, cbdecl(target_cb_t::callback));
+                                    CBDECL(thread_end_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_target, CBDECL(target_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_target_data_op,
-                                    cbdecl(target_data_op_cb_t::callback));
+                                    CBDECL(target_data_op_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_target_submit,
-                                    cbdecl(target_submit_cb_t::callback));
+                                    CBDECL(target_submit_cb_t::callback));
 
-    timemory_ompt_register_callback(ompt_callback_master, cbdecl(master_cb_t::callback));
-    timemory_ompt_register_callback(ompt_callback_work, cbdecl(work_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_master, CBDECL(master_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_work, CBDECL(work_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_sync_region,
-                                    cbdecl(sync_region_cb_t::callback));
+                                    CBDECL(sync_region_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_mutex_acquire,
-                                    cbdecl(mutex_acquire_cb_t::callback));
+                                    CBDECL(mutex_acquire_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_mutex_acquired,
-                                    cbdecl(mutex_acquired_cb_t::callback));
+                                    CBDECL(mutex_acquired_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_mutex_released,
-                                    cbdecl(mutex_released_cb_t::callback));
+                                    CBDECL(mutex_released_cb_t::callback));
 
     if(tim::settings::verbose() > 0 || tim::settings::debug())
         printf("\n");

@@ -35,7 +35,7 @@
 using namespace tim::component;
 
 #if !defined(TIMEMORY_LIBRARY_TYPE)
-#    define TIMEMORY_LIBRARY_TYPE tim::complete_list_t;
+#    define TIMEMORY_LIBRARY_TYPE typename tim::complete_list_t::type
 #endif
 
 #if defined(__GNUC__)

@@ -76,6 +76,22 @@ add_target_flag_if_avail(timemory-compile-timing "-ftime-report")
 if(TIMEMORY_USE_COMPILE_TIMING)
     target_link_libraries(timemory-compile-options INTERFACE timemory-compile-timing)
 endif()
+if(NOT cxx_timemory_compile_timing_ftime_report)
+    add_disabled_interface(timemory-compile-timing)
+endif()
+
+#----------------------------------------------------------------------------------------#
+# use xray instrumentation
+#
+add_interface_library(timemory-xray)
+if(CMAKE_CXX_COMPILER_IS_CLANG)
+    add_target_flag_if_avail(timemory-xray "-fxray-instrument" "-fxray-instruction-threshold=1")
+    if(NOT cxx_timemory_xray_fxray_instrument)
+        add_disabled_interface(timemory-xray)
+    endif()
+else()
+    add_disabled_interface(timemory-xray)
+endif()
 
 #----------------------------------------------------------------------------------------#
 # developer build flags

@@ -28,32 +28,30 @@
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/plotting.hpp"
 #include "timemory/utility/bits/storage.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
 
-#if defined(TIMEMORY_USE_LIKWID)
+#if defined(TIMEMORY_USE_GOTCHA)
 
 //======================================================================================//
 
-TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::likwid_marker, false)
-TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::likwid_nvmarker, false)
+TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::malloc_gotcha, true)
 
 //======================================================================================//
 
 namespace tim
 {
-TIMEMORY_INSTANTIATE_EXTERN_INIT(likwid_marker)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(likwid_nvmarker)
+TIMEMORY_INSTANTIATE_EXTERN_INIT(malloc_gotcha)
 
 namespace component
 {
 //
 //
-template struct base<likwid_marker, void>;
-template struct base<likwid_nvmarker, void>;
+template struct base<malloc_gotcha, double>;
 //
 //
 }  // namespace component

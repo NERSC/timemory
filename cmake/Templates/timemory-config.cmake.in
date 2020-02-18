@@ -165,7 +165,7 @@ if(TIMEMORY_INSTALL_TREE)
     endif()
 
     set(OpenMP_DIR "@OpenMP_DIR@")
-    if(NOT "${OpenMP_DIR}" STREQUAL "" OR @TIMEMORY_USE_OPENMP@)
+    if(NOT "${OpenMP_DIR}" STREQUAL "" OR @TIMEMORY_USE_OMPT@)
         find_package(OpenMP QUIET @TIMEMORY_FIND_REQUIREMENT@)
     endif()
 

@@ -54,7 +54,7 @@ namespace component
 {
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp, typename _Value>
+template <typename Tp, typename Value>
 struct base
 {
     using EmptyT = std::tuple<>;
@@ -62,62 +62,62 @@ struct base
     using vector_t = std::vector<U>;
 
 public:
-    static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
-    static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
-    static constexpr bool is_sampler_v         = trait::sampler<_Tp>::value;
+    static constexpr bool implements_storage_v = implements_storage<Tp, Value>::value;
+    static constexpr bool has_secondary_data   = trait::secondary_data<Tp>::value;
+    static constexpr bool is_sampler_v         = trait::sampler<Tp>::value;
     static constexpr bool is_component_type    = false;
     static constexpr bool is_auto_type         = false;
     static constexpr bool is_component         = true;
 
-    using Type             = _Tp;
-    using value_type       = _Value;
-    using accum_type       = _Value;
-    using sample_type      = conditional_t<is_sampler_v, operation::sample<_Tp>, EmptyT>;
+    using Type             = Tp;
+    using value_type       = Value;
+    using accum_type       = Value;
+    using sample_type      = conditional_t<is_sampler_v, operation::sample<Tp>, EmptyT>;
     using sample_list_type = conditional_t<is_sampler_v, vector_t<sample_type>, EmptyT>;
 
-    using this_type         = _Tp;
-    using base_type         = base<_Tp, _Value>;
-    using unit_type         = typename trait::units<_Tp>::type;
-    using display_unit_type = typename trait::units<_Tp>::display_type;
-    using storage_type      = impl::storage<_Tp, implements_storage_v>;
+    using this_type         = Tp;
+    using base_type         = base<Tp, Value>;
+    using unit_type         = typename trait::units<Tp>::type;
+    using display_unit_type = typename trait::units<Tp>::display_type;
+    using storage_type      = impl::storage<Tp, implements_storage_v>;
     using graph_iterator    = typename storage_type::iterator;
     using state_t           = state<this_type>;
-    using statistics_policy = policy::record_statistics<_Tp, _Value>;
+    using statistics_policy = policy::record_statistics<Tp, Value>;
 
 private:
-    friend class impl::storage<_Tp, implements_storage_v>;
-    friend class storage<_Tp>;
+    friend class impl::storage<Tp, implements_storage_v>;
+    friend class storage<Tp>;
 
-    friend struct operation::init_storage<_Tp>;
-    friend struct operation::construct<_Tp>;
-    friend struct operation::set_prefix<_Tp>;
-    friend struct operation::pop_node<_Tp>;
-    friend struct operation::record<_Tp>;
-    friend struct operation::reset<_Tp>;
-    friend struct operation::measure<_Tp>;
-    friend struct operation::start<_Tp>;
-    friend struct operation::stop<_Tp>;
-    friend struct operation::minus<_Tp>;
-    friend struct operation::plus<_Tp>;
-    friend struct operation::multiply<_Tp>;
-    friend struct operation::divide<_Tp>;
-    friend struct operation::base_printer<_Tp>;
-    friend struct operation::print<_Tp>;
-    friend struct operation::print_storage<_Tp>;
-    friend struct operation::copy<_Tp>;
-    friend struct operation::sample<_Tp>;
-    friend struct operation::finalize::get<_Tp, implements_storage_v>;
+    friend struct operation::init_storage<Tp>;
+    friend struct operation::construct<Tp>;
+    friend struct operation::set_prefix<Tp>;
+    friend struct operation::pop_node<Tp>;
+    friend struct operation::record<Tp>;
+    friend struct operation::reset<Tp>;
+    friend struct operation::measure<Tp>;
+    friend struct operation::start<Tp>;
+    friend struct operation::stop<Tp>;
+    friend struct operation::minus<Tp>;
+    friend struct operation::plus<Tp>;
+    friend struct operation::multiply<Tp>;
+    friend struct operation::divide<Tp>;
+    friend struct operation::base_printer<Tp>;
+    friend struct operation::print<Tp>;
+    friend struct operation::print_storage<Tp>;
+    friend struct operation::copy<Tp>;
+    friend struct operation::sample<Tp>;
+    friend struct operation::finalize::get<Tp, implements_storage_v>;
 
-    template <typename _Up>
+    template <typename Up>
     friend struct operation::insert_node;
 
-    template <typename _Up, typename Archive>
+    template <typename Up, typename Archive>
     friend struct operation::serialization;
 
     template <typename _Ret, typename _Lhs, typename _Rhs>
     friend struct operation::compose;
 
-    static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
+    static_assert(std::is_pointer<Tp>::value == false, "Error pointer base type");
 
 public:
     base()
@@ -262,6 +262,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // assign the type to a pointer
+    //
+    void get(void*& ptr, size_t typeid_hash) const
+    {
+        static size_t this_typeid_hash = std::hash<std::string>()(demangle<Type>());
+        if(!ptr && typeid_hash == this_typeid_hash)
+            ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
+    }
+
+    //----------------------------------------------------------------------------------//
     // default get
     //
     value_type get() const { return (is_transient) ? value : accum; }
@@ -274,7 +284,7 @@ public:
     //----------------------------------------------------------------------------------//
     // add a sample
     //
-    template <typename _Up = _Tp, enable_if_t<(_Up::is_sampler_v), int> = 0>
+    template <typename Up = Tp, enable_if_t<(Up::is_sampler_v), int> = 0>
     void add_sample(sample_type&& _sample)
     {
         samples.emplace_back(std::forward<sample_type>(_sample));
@@ -405,8 +415,8 @@ public:
     //----------------------------------------------------------------------------------//
     // serialization
     //
-    template <typename Archive, typename _Up = Type,
-              enable_if_t<!(trait::split_serialization<_Up>::value), int> = 0>
+    template <typename Archive, typename Up = Type,
+              enable_if_t<!(trait::split_serialization<Up>::value), int> = 0>
     void serialize(Archive& ar, const unsigned int)
     {
         // operation::serialization<Type, Archive>(*this, ar, version);
@@ -431,10 +441,10 @@ protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope, typename _Up = base_type,
-              enable_if_t<(_Up::implements_storage_v), int>                 = 0,
-              enable_if_t<!(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    void insert_node(const _Scope&, const int64_t& _hash)
+    template <typename Scope, typename Up = base_type,
+              enable_if_t<(Up::implements_storage_v), int>                 = 0,
+              enable_if_t<!(std::is_same<Scope, scope::flat>::value), int> = 0>
+    void insert_node(Scope&&, const int64_t& _hash)
     {
         if(!is_on_stack)
         {
@@ -442,7 +452,7 @@ protected:
             auto  _storage   = get_storage();
             auto  _beg_depth = _storage->depth();
             Type& obj        = static_cast<Type&>(*this);
-            graph_itr        = _storage->template insert<_Scope>(obj, _hash);
+            graph_itr        = _storage->template insert<Scope>(obj, _hash);
             is_on_stack      = true;
             auto _end_depth  = _storage->depth();
             depth_change     = (_beg_depth < _end_depth);
@@ -450,26 +460,26 @@ protected:
         }
     }
 
-    template <typename _Scope, typename _Up = base_type,
-              enable_if_t<(_Up::implements_storage_v), int>                = 0,
-              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    void insert_node(const _Scope&, const int64_t& _hash)
+    template <typename Scope, typename Up = base_type,
+              enable_if_t<(Up::implements_storage_v), int>                = 0,
+              enable_if_t<(std::is_same<Scope, scope::flat>::value), int> = 0>
+    void insert_node(Scope&&, const int64_t& _hash)
     {
         if(!is_on_stack)
         {
             is_flat        = true;
             auto  _storage = get_storage();
             Type& obj      = static_cast<Type&>(*this);
-            graph_itr      = _storage->template insert<_Scope>(obj, _hash);
+            graph_itr      = _storage->template insert<Scope>(obj, _hash);
             is_on_stack    = true;
             depth_change   = false;
             _storage->stack_push(&obj);
         }
     }
 
-    template <typename _Scope, typename _Up = base_type,
-              enable_if_t<!(_Up::implements_storage_v), int> = 0>
-    void insert_node(const _Scope&, const int64_t&)
+    template <typename Scope, typename Up = base_type,
+              enable_if_t<!(Up::implements_storage_v), int> = 0>
+    void insert_node(Scope&&, const int64_t&)
     {
         if(!is_on_stack)
         {
@@ -484,7 +494,7 @@ protected:
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
-    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
+    template <typename Up = base_type, enable_if_t<(Up::implements_storage_v), int> = 0>
     void pop_node()
     {
         if(is_on_stack)
@@ -530,8 +540,7 @@ protected:
         }
     }
 
-    template <typename _Up                                   = base_type,
-              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    template <typename Up = base_type, enable_if_t<!(Up::implements_storage_v), int> = 0>
     void pop_node()
     {
         if(is_on_stack)
@@ -547,8 +556,8 @@ protected:
     //----------------------------------------------------------------------------------//
     // initialize the storage
     //
-    template <typename _Up = _Tp, typename _Vp = _Value,
-              enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
+    template <typename Up = Tp, typename Vp = Value,
+              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
     static bool init_storage(storage_type*& _instance)
     {
         if(!_instance)
@@ -563,8 +572,8 @@ protected:
         return state_t::has_storage();
     }
 
-    template <typename _Up = _Tp, typename _Vp = _Value,
-              enable_if_t<!(implements_storage<_Up, _Vp>::value), int> = 0>
+    template <typename Up = Tp, typename Vp = Value,
+              enable_if_t<!(implements_storage<Up, Vp>::value), int> = 0>
     static bool init_storage(storage_type*&)
     {
         return true;
@@ -632,21 +641,19 @@ public:
     static const short    width             = (percent_units_v) ? 6 : 8;
     static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
 
-    template <typename _Up = Type, typename _Unit = typename trait::units<_Up>::type,
+    template <typename Up = Type, typename _Unit = typename trait::units<Up>::type,
               enable_if_t<(std::is_same<_Unit, int64_t>::value), int> = 0>
     static int64_t unit()
     {
-        if(timing_units_v)
-            return units::sec;
-        else if(memory_units_v)
-            return units::megabyte;
-        else if(percent_units_v)
-            return 1;
+        IF_CONSTEXPR(timing_units_v)
+        return units::sec;
+        else IF_CONSTEXPR(memory_units_v) return units::megabyte;
+        else IF_CONSTEXPR(percent_units_v) return 1;
 
         return 1;
     }
 
-    template <typename _Up = Type, typename _Unit = typename _Up::display_unit_type,
+    template <typename Up = Type, typename _Unit = typename Up::display_unit_type,
               enable_if_t<(std::is_same<_Unit, std::string>::value), int> = 0>
     static std::string display_unit()
     {
@@ -660,21 +667,22 @@ public:
         return "";
     }
 
-    template <typename _Up = Type, typename _Unit = typename trait::units<_Up>::type,
+    template <typename Up = Type, typename _Unit = typename trait::units<Up>::type,
               enable_if_t<(std::is_same<_Unit, int64_t>::value), int> = 0>
     static int64_t get_unit()
     {
-        static int64_t _instance = Type::unit();
-
-        if(timing_units_v && settings::timing_units().length() > 0)
-            _instance = std::get<1>(units::get_timing_unit(settings::timing_units()));
-        else if(memory_units_v && settings::memory_units().length() > 0)
-            _instance = std::get<1>(units::get_memory_unit(settings::memory_units()));
-
+        static int64_t _instance = []() {
+            auto _value = Type::unit();
+            if(timing_units_v && settings::timing_units().length() > 0)
+                _value = std::get<1>(units::get_timing_unit(settings::timing_units()));
+            else if(memory_units_v && settings::memory_units().length() > 0)
+                _value = std::get<1>(units::get_memory_unit(settings::memory_units()));
+            return _value;
+        }();
         return _instance;
     }
 
-    template <typename _Up = Type, typename _Unit = typename _Up::display_unit_type,
+    template <typename Up = Type, typename _Unit = typename Up::display_unit_type,
               enable_if_t<(std::is_same<_Unit, std::string>::value), int> = 0>
     static std::string get_display_unit()
     {
@@ -752,53 +760,53 @@ public:
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct base<_Tp, void>
+template <typename Tp>
+struct base<Tp, void>
 {
     using EmptyT = std::tuple<>;
 
 public:
     static constexpr bool implements_storage_v = false;
     static constexpr bool has_secondary_data   = false;
-    static constexpr bool is_sampler_v         = trait::sampler<_Tp>::value;
+    static constexpr bool is_sampler_v         = trait::sampler<Tp>::value;
     static constexpr bool is_component_type    = false;
     static constexpr bool is_auto_type         = false;
     static constexpr bool is_component         = true;
 
-    using Type             = _Tp;
+    using Type             = Tp;
     using value_type       = void;
     using accum_type       = void;
     using sample_type      = EmptyT;
     using sample_list_type = EmptyT;
 
-    using this_type    = _Tp;
-    using base_type    = base<_Tp, value_type>;
-    using storage_type = impl::storage<_Tp, implements_storage_v>;
+    using this_type    = Tp;
+    using base_type    = base<Tp, value_type>;
+    using storage_type = impl::storage<Tp, implements_storage_v>;
 
 private:
-    friend class impl::storage<_Tp, implements_storage_v>;
+    friend class impl::storage<Tp, implements_storage_v>;
 
-    friend struct operation::init_storage<_Tp>;
-    friend struct operation::construct<_Tp>;
-    friend struct operation::set_prefix<_Tp>;
-    friend struct operation::pop_node<_Tp>;
-    friend struct operation::record<_Tp>;
-    friend struct operation::reset<_Tp>;
-    friend struct operation::measure<_Tp>;
-    friend struct operation::start<_Tp>;
-    friend struct operation::stop<_Tp>;
-    friend struct operation::minus<_Tp>;
-    friend struct operation::plus<_Tp>;
-    friend struct operation::multiply<_Tp>;
-    friend struct operation::divide<_Tp>;
-    friend struct operation::print<_Tp>;
-    friend struct operation::print_storage<_Tp>;
-    friend struct operation::copy<_Tp>;
+    friend struct operation::init_storage<Tp>;
+    friend struct operation::construct<Tp>;
+    friend struct operation::set_prefix<Tp>;
+    friend struct operation::pop_node<Tp>;
+    friend struct operation::record<Tp>;
+    friend struct operation::reset<Tp>;
+    friend struct operation::measure<Tp>;
+    friend struct operation::start<Tp>;
+    friend struct operation::stop<Tp>;
+    friend struct operation::minus<Tp>;
+    friend struct operation::plus<Tp>;
+    friend struct operation::multiply<Tp>;
+    friend struct operation::divide<Tp>;
+    friend struct operation::print<Tp>;
+    friend struct operation::print_storage<Tp>;
+    friend struct operation::copy<Tp>;
 
-    template <typename _Up>
+    template <typename Up>
     friend struct operation::insert_node;
 
-    template <typename _Up, typename Archive>
+    template <typename Up, typename Archive>
     friend struct operation::serialization;
 
     template <typename _Ret, typename _Lhs, typename _Rhs>
@@ -919,12 +927,22 @@ public:
 
     void* get() { return nullptr; }
 
+    //----------------------------------------------------------------------------------//
+    // assign the type to a pointer
+    //
+    void get(void*& ptr, size_t typeid_hash) const
+    {
+        static size_t this_typeid_hash = std::hash<std::string>()(demangle<Type>());
+        if(!ptr && typeid_hash == this_typeid_hash)
+            ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
+    }
+
 private:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope = scope::tree, typename... _Args>
-    void insert_node(_Scope, _Args&&...)
+    template <typename Scope = scope::tree, typename... _Args>
+    void insert_node(Scope&&, _Args&&...)
     {
         if(!is_on_stack)
         {

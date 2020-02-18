@@ -50,13 +50,18 @@ components = [
     "gperf_cpu_profiler",
     "gperf_heap_profiler",
     "virtual_memory",
-    "likwid_perfmon",
-    "likwid_nvmon",
+    "likwid_marker",
+    "likwid_nvmarker",
     "vtune_frame",
     "vtune_event",
+    "vtune_profiler",
     "user_tuple_bundle",
     "user_list_bundle",
-    "tau_marker"
+    "tau_marker",
+    "user_mode_time",
+    "kernel_mode_time",
+    "current_peak_rss",
+    "malloc_gotcha",
 ]
 
 #
@@ -88,8 +93,6 @@ mangled_strings = {
     "caliper": ["cali"],
     "written_bytes": ["write_bytes"],
     "nvtx_marker": ["nvtx"],
-    "likwid_perfmon": ["likwid_cpu"],
-    "likwid_nvmon": ["likwid_gpu"],
     "tau_marker": ["tau"],
     "gperf_cpu_profiler": ["gperf_cpu", "gperftools-cpu"],
     "gperf_heap_profiler": ["gperf_heap", "gperftools-heap"],

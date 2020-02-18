@@ -58,21 +58,19 @@ extern template struct base<user_bundle<11011, api::native_tag>, void>;
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx, typename _Tag>
-struct user_bundle : public base<user_bundle<_Idx, _Tag>, void>
+template <size_t Idx, typename Tag>
+struct user_bundle : public base<user_bundle<Idx, Tag>, void>
 {
+public:
     using value_type   = void;
-    using this_type    = user_bundle<_Idx, _Tag>;
+    using this_type    = user_bundle<Idx, Tag>;
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
-    using start_func_t = std::function<void*(const std::string&, bool)>;
-    using stop_func_t  = std::function<void(void*)>;
-
-    using start_func_vec_t = std::vector<start_func_t>;
-    using stop_func_vec_t  = std::vector<stop_func_t>;
-    using void_vec_t       = std::vector<void*>;
-    using typeid_set_t     = std::unordered_set<size_t>;
+    using start_func_t  = std::function<void*(const std::string&, bool)>;
+    using stop_func_t   = std::function<void(void*)>;
+    using get_func_t    = std::function<void(void*, void*&, size_t)>;
+    using delete_func_t = std::function<void(void*&)>;
 
     using mutex_t = std::mutex;
     using lock_t  = std::unique_lock<mutex_t>;
@@ -81,239 +79,302 @@ struct user_bundle : public base<user_bundle<_Idx, _Tag>, void>
     static std::string description() { return "user-defined bundle of tools"; }
     static value_type  record() {}
 
+    static void global_init(storage_type*);
+
+    struct bundle_data
+    {
+        template <typename StartF, typename StopF, typename GetF, typename DelF>
+        bundle_data(size_t _typeid, StartF&& _start, StopF&& _stop, GetF&& _get,
+                    DelF&& _del)
+        : m_typeid(_typeid)
+        , m_start(std::move(_start))
+        , m_stop(std::move(_stop))
+        , m_get(std::move(_get))
+        , m_del(std::move(_del))
+        , m_data(nullptr)
+        {}
+
+        ~bundle_data()
+        {
+            if(m_data)
+            {
+                m_stop(m_data);
+                m_del(m_data);
+            }
+        }
+
+        void start(const std::string& _prefix, bool _flat)
+        {
+            if(m_data)
+            {
+                stop();
+                cleanup();
+            }
+            m_data = m_start(_prefix, _flat);
+        }
+
+        void stop()
+        {
+            if(m_data)
+                m_stop(m_data);
+        }
+
+        void cleanup()
+        {
+            if(m_data)
+                m_del(m_data);
+            m_data = nullptr;
+        }
+
+        void get(void*& ptr, size_t _hash) const
+        {
+            if(m_data)
+                m_get(m_data, ptr, _hash);
+        }
+
+        size_t        m_typeid = 0;
+        start_func_t  m_start  = [](const std::string&, bool) { return nullptr; };
+        stop_func_t   m_stop   = [](void*) {};
+        get_func_t    m_get    = [](void*, void*&, size_t) {};
+        delete_func_t m_del    = [](void*&) {};
+        void*         m_data   = nullptr;
+    };
+
+    using bundle_data_vec_t = std::vector<bundle_data>;
+    using typeid_set_t      = std::set<size_t>;
+
+    static inline size_t get_hash(std::string&& key)
+    {
+        return std::hash<std::string>()(std::forward<std::string>(key));
+    }
+
+    static size_t bundle_size() { return get_bundle_data().size(); }
+
+protected:
+    template <typename T>
+    struct variadic_toolset;
+
+    template <typename T>
+    friend struct variadic_toolset;
+
+    template <template <typename...> class Tuple, typename... T>
+    struct variadic_toolset<Tuple<T...>>
+    {
+        template <typename U, typename... Tail,
+                  enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+        static void add_typeids(typeid_set_t& _typeids)
+        {
+            _typeids.insert(get_hash(demangle<U>()));
+        }
+
+        template <typename U, typename... Tail,
+                  enable_if_t<(sizeof...(Tail) > 0), int> = 0>
+        static void add_typeids(typeid_set_t& _typeids)
+        {
+            add_typeids<U>(_typeids);
+            add_typeids<Tail...>(_typeids);
+        }
+
+        static void add_typeids(typeid_set_t& _typeids) { add_typeids<T...>(_typeids); }
+
+        template <typename... Args>
+        static void configure(Args&&... args)
+        {
+            add_typeids<T...>(get_typeids());
+            this_type::configure<T...>(std::forward<Args>(args)...);
+        }
+
+        template <typename... Args>
+        static void insert(this_type& obj, Args&&... args)
+        {
+            add_typeids<T...>(obj.m_typeids);
+            obj.template insert<T...>(std::forward<Args>(args)...);
+        }
+    };
+
+    template <template <typename...> class Tuple>
+    struct variadic_toolset<Tuple<>>
+    {
+        static void add_typeids(typeid_set_t&) {}
+        template <typename... Args>
+        static void configure(Args&&...)
+        {}
+    };
+
 public:
     //----------------------------------------------------------------------------------//
-    //  Capture the statically-defined start/stop so these can be changed without
+    //  Captures the statically-defined data so these can be changed without
     //  affecting this instance
     //
-    user_bundle(const std::string& _prefix = "")
-    : m_flat(false)
-    , m_prefix(_prefix)
-    , m_bundle(void_vec_t{})
-    , m_start(get_start())
-    , m_stop(get_stop())
-    {
-        assert(m_start.size() == m_stop.size());
-    }
+    user_bundle() = default;
 
-    //----------------------------------------------------------------------------------//
-    //  Pass in the start and stop functions
-    //
-    user_bundle(const start_func_vec_t& _start, const stop_func_vec_t& _stop)
-    : m_flat(false)
-    , m_prefix("")
-    , m_bundle(std::max(_start.size(), _stop.size()), nullptr)
-    , m_start(_start)
-    , m_stop(_stop)
-    {
-        assert(m_start.size() == m_stop.size());
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Pass in the prefix, start, and stop functions
-    //
-    user_bundle(const std::string& _prefix, const start_func_vec_t& _start,
-                const stop_func_vec_t& _stop)
-    : m_flat(false)
+    user_bundle(const std::string& _prefix, bool _flat = false)
+    : m_flat(_flat)
     , m_prefix(_prefix)
-    , m_bundle(std::max(_start.size(), _stop.size()), nullptr)
-    , m_start(_start)
-    , m_stop(_stop)
+    {}
+
+    user_bundle(const std::string& _prefix, const bundle_data_vec_t& _bundle_vec,
+                bool _flat = false)
+    : m_flat(_flat)
+    , m_prefix(_prefix)
+    , m_bundle(_bundle_vec)
+    {}
+
+    ~user_bundle()
     {
-        assert(m_start.size() == m_stop.size());
+        for(auto& itr : m_bundle)
+            itr.cleanup();
     }
 
 public:
     //----------------------------------------------------------------------------------//
-    //  Configure the tool with a specific start and stop
+    //  Configure the tool for a specific set of tools
     //
-    static void configure(start_func_t&& _start, stop_func_t&& _stop)
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) == 0), int>                = 0,
+              enable_if_t<(trait::is_available<Toolset>::value), int> = 0,
+              enable_if_t<(Toolset::is_component), char>              = 0>
+    static void configure(bool _flat, Args&&... args)
     {
-        internal_init();
+        DEBUG_PRINT_HERE("%s", demangle<Toolset>().c_str());
+
+        if(!trait::is_available<Toolset>::value)
+            return;
+
+        auto _typeid_hash = get_hash(demangle<Toolset>());
+        if(get_typeids().count(_typeid_hash) > 0)
+            return;
+
+        internal_init<Toolset>();
+
+        using Toolset_t = component_tuple<Toolset>;
+        auto _start     = [=, &args...](const std::string& _prefix, bool _argflat) {
+            Toolset_t* _result = new Toolset_t(_prefix, true, _flat || _argflat,
+                                               std::forward<Args>(args)...);
+            _result->start();
+            return (void*) _result;
+        };
+
+        auto _stop = [=](void* v_result) {
+            Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+            _result->stop();
+        };
+
+        auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
+            if(_hash == _typeid_hash && v_result && !ptr)
+            {
+                Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+                ptr                = static_cast<void*>(_result->template get<Toolset>());
+            }
+        };
+
+        auto _del = [=](void*& v_result) {
+            if(v_result)
+            {
+                Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+                delete _result;
+                _result = nullptr;
+            }
+        };
+
         lock_t lk(get_lock());
-        get_start().emplace_back(std::forward<start_func_t>(_start));
-        get_stop().emplace_back(std::forward<stop_func_t>(_stop));
+        get_typeids().insert(_typeid_hash);
+        get_bundle_data().push_back({ _typeid_hash, std::move(_start), std::move(_stop),
+                                      std::move(_get), std::move(_del) });
     }
 
     //----------------------------------------------------------------------------------//
     //  Configure the tool for a specific set of tools
     //
-    template <typename _Toolset, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int>                = 0,
-              enable_if_t<(trait::is_available<_Toolset>::value), int> = 0,
-              enable_if_t<(_Toolset::is_component), char>              = 0>
-    static void configure(bool _flat = settings::flat_profile())
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) == 0), int>    = 0,
+              enable_if_t<!(Toolset::is_component), char> = 0>
+    static void configure(bool _flat, Args&&... args)
     {
-        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+        DEBUG_PRINT_HERE("%s", demangle<Toolset>().c_str());
 
-        if(!trait::is_available<_Toolset>::value)
+        if(Toolset::size() == 0)
             return;
 
-        auto _typeid_hash = std::hash<std::string>()(demangle<_Toolset>());
-        if(get_typeids().count(_typeid_hash) > 0)
-            return;
-
-        internal_init<_Toolset>();
-
-        using _Toolset_t = component_tuple<_Toolset>;
-        auto _start      = [=](const std::string& _prefix, bool _argflat) {
-            _Toolset_t* _result = new _Toolset_t(_prefix, true, _flat || _argflat);
-            _result->start();
-            return (void*) _result;
-        };
-
-        auto _stop = [=](void* v_result) {
-            _Toolset_t* _result = static_cast<_Toolset_t*>(v_result);
-            _result->stop();
-            delete _result;
-        };
-
-        lock_t lk(get_lock());
-        get_typeids().insert(_typeid_hash);
-        get_start().emplace_back(_start);
-        get_stop().emplace_back(_stop);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Configure the tool for a specific set of tools
-    //
-    template <typename _Toolset, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int>                = 0,
-              enable_if_t<(trait::is_available<_Toolset>::value), int> = 0,
-              enable_if_t<!(_Toolset::is_component), char>             = 0>
-    static void configure(bool _flat = settings::flat_profile())
-    {
-        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
-
-        if(_Toolset::size() == 0)
-            return;
-
-        auto _typeid_hash = std::hash<std::string>()(demangle<_Toolset>());
+        auto _typeid_hash = get_hash(demangle<Toolset>());
         if(get_typeids().count(_typeid_hash) > 0)
             return;
 
         internal_init();
 
-        auto _start = [=](const std::string& _prefix, bool _argflat) {
-            constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset*      _result           = (is_component_type)
-                                    ? new _Toolset(_prefix, true, _flat || _argflat)
-                                    : new _Toolset(_prefix, _flat || _argflat);
-            _result->start();
+        auto _start = [=, &args...](const std::string& _prefix, bool _argflat) {
+            constexpr bool is_component_type = Toolset::is_component_type;
+            Toolset*       _result           = (is_component_type)
+                                   ? new Toolset(_prefix, true, _flat || _argflat,
+                                                 std::forward<Args>(args)...)
+                                   : new Toolset(_prefix, _flat || _argflat,
+                                                 settings::destructor_report(),
+                                                 std::forward<Args>(args)...);
             return (void*) _result;
         };
 
         auto _stop = [=](void* v_result) {
-            _Toolset* _result = static_cast<_Toolset*>(v_result);
+            Toolset* _result = static_cast<Toolset*>(v_result);
             _result->stop();
-            delete _result;
+        };
+
+        auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
+            if(v_result && !ptr)
+            {
+                Toolset* _result = static_cast<Toolset*>(v_result);
+                _result->get(ptr, _hash);
+            }
+        };
+
+        auto _del = [=](void*& v_result) {
+            if(v_result)
+            {
+                Toolset* _result = static_cast<Toolset*>(v_result);
+                delete _result;
+                _result = nullptr;
+            }
         };
 
         lock_t lk(get_lock());
-        get_typeids().insert(_typeid_hash);
-        get_start().emplace_back(_start);
-        get_stop().emplace_back(_stop);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Configure the tool for a specific set of tools with an initializer
-    //
-    template <typename _Toolset, typename _InitFunc,
-              enable_if_t<(trait::is_available<_Toolset>::value), int> = 0,
-              enable_if_t<!(_Toolset::is_component), char>             = 0>
-    static void configure(_InitFunc&& _init, bool _flat = settings::flat_profile())
-    {
-        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
-
-        if(_Toolset::size() == 0)
-            return;
-
-        auto _typeid_hash = std::hash<std::string>()(demangle<_Toolset>());
-        if(get_typeids().count(_typeid_hash) > 0)
-            return;
-
-        internal_init();
-
-        auto _start = [=](const std::string& _prefix, bool _argflat) {
-            constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset*      _result           = (is_component_type)
-                                    ? new _Toolset(_prefix, true, _flat || _argflat)
-                                    : new _Toolset(_prefix, _flat || _argflat);
-            _init(*_result);
-            _result->start();
-            return (void*) _result;
-        };
-
-        auto _stop = [=](void* v_result) {
-            _Toolset* _result = static_cast<_Toolset*>(v_result);
-            _result->stop();
-            delete _result;
-        };
-
-        lock_t lk(get_lock());
-        get_typeids().insert(_typeid_hash);
-        get_start().emplace_back(_start);
-        get_stop().emplace_back(_stop);
+        variadic_toolset<Toolset>::add_typeids(get_typeids());
+        get_bundle_data().push_back({ _typeid_hash, std::move(_start), std::move(_stop),
+                                      std::move(_get), std::move(_del) });
     }
 
     //----------------------------------------------------------------------------------//
     //  Configure the tool for a variadic list of tools
     //
-    template <typename _Head, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    static void configure(bool _flat = settings::flat_profile())
+    template <typename Head, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) > 0), int> = 0>
+    static void configure(bool flat, Args&&... args)
     {
-        DEBUG_PRINT_HERE("%s", demangle<_Head>().c_str());
+        DEBUG_PRINT_HERE("%s", demangle<Head>().c_str());
 
-        configure<_Head>(_flat);
-        configure<_Tail...>(_flat);
+        configure<Head>(flat, std::forward<Args>(args)...);
+        configure<Tail...>(flat, std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  If a tool is not avail
     //
-    template <typename _Toolset, typename... _Tail, typename... _Args,
-              enable_if_t<(sizeof...(_Tail) == 0), int>                 = 0,
-              enable_if_t<!(trait::is_available<_Toolset>::value), int> = 0>
-    static void configure(_Args&&...)
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) == 0), int>                 = 0,
+              enable_if_t<!(trait::is_available<Toolset>::value), int> = 0>
+    static void configure(bool, Args&&...)
     {}
 
-    //----------------------------------------------------------------------------------//
-    //  If a tool is not avail
-    //
-    template <typename _Toolset, typename... _Tail, typename... _Args,
-              enable_if_t<(sizeof...(_Tail) > 0), int>                  = 0,
-              enable_if_t<!(trait::is_available<_Toolset>::value), int> = 0>
-    static void configure(_Args&&... _args)
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) > 0), int>                  = 0,
+              enable_if_t<!(trait::is_available<Toolset>::value), int> = 0>
+    static void configure(bool flat, Args&&... _args)
     {
-        configure<_Tail...>(std::forward<_Args>(_args)...);
+        configure<Tail...>(flat, std::forward<Args>(_args)...);
     }
 
-    //----------------------------------------------------------------------------------//
-    //  Explicitly configure the start functions
-    //
-    static start_func_vec_t& get_start()
+    template <typename Toolset, typename... Tail>
+    static void configure()
     {
-        static start_func_vec_t _instance{};
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Explicitly configure the stop functions
-    //
-    static stop_func_vec_t& get_stop()
-    {
-        static stop_func_vec_t _instance{};
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  The configuration strings
-    //
-    static typeid_set_t& get_typeids()
-    {
-        static typeid_set_t _instance{};
-        return _instance;
+        configure<Toolset, Tail...>(settings::flat_profile());
     }
 
     //----------------------------------------------------------------------------------//
@@ -322,8 +383,7 @@ public:
     static void reset()
     {
         lock_t lk(get_lock());
-        get_start().clear();
-        get_stop().clear();
+        get_bundle_data().clear();
         get_typeids().clear();
     }
 
@@ -334,16 +394,14 @@ public:
     void start()
     {
         base_type::set_started();
-        m_bundle.resize(m_start.size(), nullptr);
-        for(int64_t i = 0; i < (int64_t) m_start.size(); ++i)
-            m_bundle[i] = m_start[i](m_prefix, m_flat);
+        for(auto& itr : m_bundle)
+            itr.start(m_prefix, m_flat);
     }
 
     void stop()
     {
-        assert(m_stop.size() == m_bundle.size());
-        for(int64_t i = 0; i < (int64_t) m_stop.size(); ++i)
-            m_stop[i](m_bundle[i]);
+        for(auto& itr : m_bundle)
+            itr.stop();
         base_type::set_stopped();
     }
 
@@ -351,169 +409,229 @@ public:
     {
         if(base_type::is_running)
             stop();
-        m_start.clear();
-        m_stop.clear();
+        m_typeids.clear();
         m_bundle.clear();
     }
 
+    template <typename T>
+    T* get()
+    {
+        auto  _typeid_hash = get_hash(demangle<T>());
+        void* void_ptr     = nullptr;
+        for(auto& itr : m_bundle)
+        {
+            itr.get(void_ptr, _typeid_hash);
+            if(void_ptr)
+                return void_ptr;
+        }
+        return static_cast<T*>(void_ptr);
+    }
+
+    void get(void*& ptr, size_t _hash) const
+    {
+        for(const auto& itr : m_bundle)
+        {
+            itr.get(ptr, _hash);
+            if(ptr)
+                break;
+        }
+    }
+
+    void* get() { return nullptr; }
+
     void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
+
+    size_t size() const { return m_bundle.size(); }
 
 public:
     //----------------------------------------------------------------------------------//
-    //  Configure the tool with a specific start and stop
+    //  Configure the tool for a specific set of tools
     //
-    void insert(start_func_t&& _start, stop_func_t&& _stop)
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) == 0), int>                = 0,
+              enable_if_t<(trait::is_available<Toolset>::value), int> = 0,
+              enable_if_t<(Toolset::is_component), char>              = 0>
+    void insert(bool _flat, Args&&... args)
     {
-        internal_init();
-        m_start.emplace_back(std::forward<start_func_t>(_start));
-        m_stop.emplace_back(std::forward<stop_func_t>(_stop));
+        DEBUG_PRINT_HERE("%s", demangle<Toolset>().c_str());
+
+        auto _typeid_hash = get_hash(demangle<Toolset>());
+        if(m_typeids.count(_typeid_hash) > 0)
+            return;
+
+        internal_init<Toolset>();
+
+        using Toolset_t = component_tuple<Toolset>;
+        auto _start     = [=, &args...](const std::string& _prefix, bool _argflat) {
+            Toolset_t* _result = new Toolset_t(_prefix, true, _flat || _argflat,
+                                               std::forward<Args>(args)...);
+            _result->start();
+            return (void*) _result;
+        };
+
+        auto _stop = [=](void* v_result) {
+            Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+            _result->stop();
+        };
+
+        auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
+            if(_hash == _typeid_hash && v_result && !ptr)
+            {
+                Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+                ptr                = static_cast<void*>(_result->template get<Toolset>());
+            }
+        };
+
+        auto _del = [=](void*& v_result) {
+            if(v_result)
+            {
+                Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+                delete _result;
+                _result = nullptr;
+            }
+        };
+
+        m_bundle.emplace_back(bundle_data{ _typeid_hash, std::move(_start),
+                                           std::move(_stop), std::move(_get),
+                                           std::move(_del) });
     }
 
     //----------------------------------------------------------------------------------//
     //  Configure the tool for a specific set of tools
     //
-    template <typename _Toolset, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int>                = 0,
-              enable_if_t<(trait::is_available<_Toolset>::value), int> = 0,
-              enable_if_t<(_Toolset::is_component), char>              = 0>
-    void insert(bool _flat = settings::flat_profile())
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) == 0), int>    = 0,
+              enable_if_t<!(Toolset::is_component), char> = 0>
+    void insert(bool _flat, Args&&... args)
     {
-        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+        DEBUG_PRINT_HERE("%s", demangle<Toolset>().c_str());
 
-        internal_init<_Toolset>();
+        if(Toolset::size() == 0)
+            return;
 
-        using _Toolset_t = component_tuple<_Toolset>;
-        auto _start      = [=](const std::string& _prefix, bool _argflat) {
-            _Toolset_t* _result = new _Toolset_t(_prefix, true, _flat || _argflat);
-            _result->start();
-            return (void*) _result;
-        };
-
-        auto _stop = [=](void* v_result) {
-            _Toolset_t* _result = static_cast<_Toolset_t*>(v_result);
-            _result->stop();
-            delete _result;
-        };
-
-        m_start.emplace_back(_start);
-        m_stop.emplace_back(_stop);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Configure the tool for a specific set of tools
-    //
-    template <typename _Toolset, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int>                = 0,
-              enable_if_t<(trait::is_available<_Toolset>::value), int> = 0,
-              enable_if_t<!(_Toolset::is_component), char>             = 0>
-    void insert(bool _flat = settings::flat_profile())
-    {
-        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
+        auto _typeid_hash = get_hash(demangle<Toolset>());
+        if(m_typeids.count(_typeid_hash) > 0)
+            return;
 
         internal_init();
 
-        auto _start = [=](const std::string& _prefix, bool _argflat) {
-            constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset*      _result           = (is_component_type)
-                                    ? new _Toolset(_prefix, true, _flat || _argflat)
-                                    : new _Toolset(_prefix, _flat || _argflat);
-            _result->start();
+        auto _start = [=, &args...](const std::string& _prefix, bool _argflat) {
+            constexpr bool is_component_type = Toolset::is_component_type;
+            Toolset*       _result           = (is_component_type)
+                                   ? new Toolset(_prefix, true, _flat || _argflat,
+                                                 std::forward<Args>(args)...)
+                                   : new Toolset(_prefix, _flat || _argflat,
+                                                 settings::destructor_report(),
+                                                 std::forward<Args>(args)...);
             return (void*) _result;
         };
 
         auto _stop = [=](void* v_result) {
-            _Toolset* _result = static_cast<_Toolset*>(v_result);
+            Toolset* _result = static_cast<Toolset*>(v_result);
             _result->stop();
-            delete _result;
         };
 
-        m_start.emplace_back(_start);
-        m_stop.emplace_back(_stop);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  Configure the tool for a specific set of tools with an initializer
-    //
-    template <typename _Toolset, typename _InitFunc,
-              enable_if_t<(trait::is_available<_Toolset>::value), int> = 0,
-              enable_if_t<!(_Toolset::is_component), char>             = 0>
-    void insert(_InitFunc&& _init, bool _flat = settings::flat_profile())
-    {
-        DEBUG_PRINT_HERE("%s", demangle<_Toolset>().c_str());
-
-        internal_init();
-
-        auto _start = [=](const std::string& _prefix, bool _argflat) {
-            constexpr bool is_component_type = _Toolset::is_component_type;
-            _Toolset*      _result           = (is_component_type)
-                                    ? new _Toolset(_prefix, true, _flat || _argflat)
-                                    : new _Toolset(_prefix, _flat || _argflat);
-            _init(*_result);
-            _result->start();
-            return (void*) _result;
+        auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
+            if(v_result && !ptr)
+            {
+                Toolset* _result = static_cast<Toolset*>(v_result);
+                _result->get(ptr, _hash);
+            }
         };
 
-        auto _stop = [=](void* v_result) {
-            _Toolset* _result = static_cast<_Toolset*>(v_result);
-            _result->stop();
-            delete _result;
+        auto _del = [=](void*& v_result) {
+            if(v_result)
+            {
+                Toolset* _result = static_cast<Toolset*>(v_result);
+                delete _result;
+                _result = nullptr;
+            }
         };
 
-        m_start.emplace_back(_start);
-        m_stop.emplace_back(_stop);
+        lock_t lk(get_lock());
+        variadic_toolset<Toolset>::add_typeids(m_typeids);
+        m_bundle.push_back({ _typeid_hash, std::move(_start), std::move(_stop),
+                             std::move(_get), std::move(_del) });
     }
 
     //----------------------------------------------------------------------------------//
     //  Configure the tool for a variadic list of tools
     //
-    template <typename _Head, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    void insert(bool _flat = settings::flat_profile())
+    template <typename Head, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) > 0), int> = 0>
+    void insert(bool flat, Args&&... args)
     {
-        DEBUG_PRINT_HERE("%s", demangle<_Head>().c_str());
+        DEBUG_PRINT_HERE("%s", demangle<Head>().c_str());
 
-        configure<_Head>(_flat);
-        configure<_Tail...>(_flat);
+        configure<Head>(flat, std::forward<Args>(args)...);
+        configure<Tail...>(flat, std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  If a tool is not avail
     //
-    template <typename _Toolset, typename... _Tail, typename... _Args,
-              enable_if_t<(sizeof...(_Tail) == 0), int>                 = 0,
-              enable_if_t<!(trait::is_available<_Toolset>::value), int> = 0>
-    void insert(_Args&&...)
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) == 0), int>                 = 0,
+              enable_if_t<!(trait::is_available<Toolset>::value), int> = 0>
+    void insert(bool, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
     //  If a tool is not avail
     //
-    template <typename _Toolset, typename... _Tail, typename... _Args,
-              enable_if_t<(sizeof...(_Tail) > 0), int>                  = 0,
-              enable_if_t<!(trait::is_available<_Toolset>::value), int> = 0>
-    void insert(_Args&&... _args)
+    template <typename Toolset, typename... Tail, typename... Args,
+              enable_if_t<(sizeof...(Tail) > 0), int>                  = 0,
+              enable_if_t<!(trait::is_available<Toolset>::value), int> = 0>
+    void insert(bool flat, Args&&... _args)
     {
-        insert<_Tail...>(std::forward<_Args>(_args)...);
+        insert<Tail...>(flat, std::forward<Args>(_args)...);
+    }
+
+    template <typename Toolset, typename... Tail>
+    void insert()
+    {
+        insert<Toolset, Tail...>(settings::flat_profile());
     }
 
     void set_flat_profile(bool val) { m_flat = val; }
 
 protected:
-    bool             m_flat;
-    std::string      m_prefix;
-    void_vec_t       m_bundle;
-    start_func_vec_t m_start;
-    stop_func_vec_t  m_stop;
+    bool              m_flat    = false;
+    std::string       m_prefix  = "";
+    typeid_set_t      m_typeids = get_typeids();
+    bundle_data_vec_t m_bundle  = get_bundle_data();
 
 private:
+    struct persistent_data
+    {
+        mutex_t           lock;
+        bundle_data_vec_t data    = {};
+        typeid_set_t      typeids = {};
+    };
+
+    //----------------------------------------------------------------------------------//
+    //  Persistent data
+    //
+    static persistent_data& get_persistent_data()
+    {
+        static persistent_data _instance{};
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Bundle data
+    //
+    static bundle_data_vec_t& get_bundle_data() { return get_persistent_data().data; }
+
+    //----------------------------------------------------------------------------------//
+    //  The configuration strings
+    //
+    static typeid_set_t& get_typeids() { return get_persistent_data().typeids; }
+
     //----------------------------------------------------------------------------------//
     //  Get lock
     //
-    static mutex_t& get_lock()
-    {
-        static mutex_t _instance;
-        return _instance;
-    }
+    static mutex_t& get_lock() { return get_persistent_data().lock; }
 
     //----------------------------------------------------------------------------------//
     //  Initialize the storage
@@ -529,12 +647,12 @@ private:
     }
 
     //
-    template <typename _Tool, enable_if_t<(_Tool::is_component), char> = 0>
+    template <typename Tool, enable_if_t<(Tool::is_component), char> = 0>
     static void internal_init()
     {
         internal_init();
         static bool _inited = []() {
-            using tool_storage_type = typename _Tool::storage_type;
+            using tool_storage_type = typename Tool::storage_type;
             auto ret                = tool_storage_type::instance();
             ret->initialize();
             return true;
@@ -542,6 +660,32 @@ private:
         consume_parameters(_inited);
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+// generic user_bundle
+template <size_t Idx, typename Tag>
+inline void
+user_bundle<Idx, Tag>::global_init(storage_type*)
+{}
+
+// user_tuple_bundle
+template <>
+inline void
+user_bundle<10101, api::native_tag>::global_init(storage_type*)
+{}
+
+// user_list_bundle
+template <>
+inline void
+user_bundle<11011, api::native_tag>::global_init(storage_type*)
+{}
+
+// user_ompt_bundle
+template <>
+inline void
+user_bundle<10001, api::native_tag>::global_init(storage_type*)
+{}
 
 //--------------------------------------------------------------------------------------//
 

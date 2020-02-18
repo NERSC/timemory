@@ -130,12 +130,13 @@ class gperf_cpu_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-        list_t::get_initializer() = [](list_t& obj) {
-            obj.initialize<real_clock, gperf_cpu_profiler, gperf_heap_profiler>();
+        list_t::get_initializer() = [](auto& obj) {
+            obj.template initialize<real_clock, gperf_cpu_profiler,
+                                    gperf_heap_profiler>();
         };
 
-        mem_list_t::get_initializer() = [](mem_list_t& obj) {
-            obj.initialize<cpu_clock, cpu_util, peak_rss, page_rss>();
+        mem_list_t::get_initializer() = [](auto& obj) {
+            obj.template initialize<cpu_clock, cpu_util, peak_rss, page_rss>();
         };
     }
 };

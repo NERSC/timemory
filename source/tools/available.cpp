@@ -50,6 +50,7 @@
 #include "timemory/components/user_bundle.hpp"
 #include "timemory/components/vtune/event.hpp"
 #include "timemory/components/vtune/frame.hpp"
+#include "timemory/components/vtune/profiler.hpp"
 
 #include <array>
 #include <iomanip>
@@ -697,5 +698,4 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, _N>& options,
         os << banner(_widths, _wusing, '-');
 
     os << "\n" << std::flush;
-    // os << banner(total_width, '-') << std::flush;
 }

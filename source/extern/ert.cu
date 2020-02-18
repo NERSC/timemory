@@ -25,38 +25,40 @@
 #define TIMEMORY_BUILD_EXTERN_INIT
 #define TIMEMORY_BUILD_EXTERN_TEMPLATE
 
-#include "timemory/components.hpp"
+#include "timemory/backends/cuda.hpp"
+#include "timemory/backends/device.hpp"
+#include "timemory/components/timing.hpp"
+#include "timemory/ert/configuration.hpp"
+#include "timemory/ert/counter.hpp"
+#include "timemory/ert/data.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpl/operations.hpp"
-#include "timemory/utility/bits/storage.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/singleton.hpp"
-#include "timemory/utility/utility.hpp"
-
-#if defined(TIMEMORY_USE_LIKWID)
-
-//======================================================================================//
-
-TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::likwid_marker, false)
-TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::likwid_nvmarker, false)
-
-//======================================================================================//
+#include "timemory/plotting.hpp"
 
 namespace tim
 {
-TIMEMORY_INSTANTIATE_EXTERN_INIT(likwid_marker)
-TIMEMORY_INSTANTIATE_EXTERN_INIT(likwid_nvmarker)
-
-namespace component
+namespace ert
 {
 //
 //
-template struct base<likwid_marker, void>;
-template struct base<likwid_nvmarker, void>;
+// template struct exec_data<component::wall_clock>;
 //
+// template struct counter<device::cpu, float, component::wall_clock>;
+// template struct counter<device::cpu, double, component::wall_clock>;
+// template struct configuration<device::cpu, float, component::wall_clock>;
+// template struct configuration<device::cpu, double, component::wall_clock>;
 //
-}  // namespace component
-}  // namespace tim
-
+#if defined(TIMEMORY_USE_CUDA)
+//
+// template struct counter<device::gpu, float, component::wall_clock>;
+// template struct counter<device::gpu, double, component::wall_clock>;
+// template struct counter<device::gpu, cuda::fp16_t, component::wall_clock>;
+template struct configuration<device::gpu, float, component::wall_clock>;
+template struct configuration<device::gpu, double, component::wall_clock>;
+template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
+//
 #endif
+//
+//
+}  // namespace ert
+}  // namespace tim

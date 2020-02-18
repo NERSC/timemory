@@ -59,6 +59,7 @@ fibonacci(int32_t n)
 {
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
+
 //--------------------------------------------------------------------------------------//
 // time fibonacci with return type and arguments
 // e.g. std::function < int32_t ( int32_t ) >
@@ -68,6 +69,7 @@ time_fibonacci(int32_t n)
     TIMEMORY_MARKER(auto_tuple_t, "");
     return fibonacci(n);
 }
+
 //--------------------------------------------------------------------------------------//
 
 void

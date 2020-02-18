@@ -425,7 +425,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
     tool.stop();
     PRINT_HERE("%s", "stopped");
 
-    malloc_gotcha_t& mc = tool.get<malloc_gotcha_t>();
+    malloc_gotcha_t& mc = *tool.get<malloc_gotcha_t>();
     std::cout << mc << std::endl;
 
     auto rank = tim::mpi::rank();

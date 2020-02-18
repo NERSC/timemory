@@ -46,9 +46,13 @@
 #include <unordered_map>
 #include <vector>
 
+#if !defined(TIMEMORY_LIBRARY_TYPE)
+#    define TIMEMORY_LIBRARY_TYPE typename tim::complete_list_t::type
+#endif
+
 using namespace tim::component;
 using auto_timer_t    = typename tim::auto_timer::component_type;
-using complete_list_t = tim::complete_list_t;
+using complete_list_t = TIMEMORY_LIBRARY_TYPE;
 
 //======================================================================================//
 //

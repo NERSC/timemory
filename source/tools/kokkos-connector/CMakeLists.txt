@@ -21,6 +21,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
     set(TIMEMORY_KOKKOS_TOOLS_OPTION "TIMEMORY_KOKKOS_")
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kokkos-tools)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kokkos-tools)
+    set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME kokkos)
 endif()
 
 include(CheckLanguage)
@@ -42,8 +43,8 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 endif()
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
-set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ language standard")
-set(CMAKE_CUDA_STANDARD 11 CACHE STRING "CUDA language standard")
+set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ language standard")
+set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
 set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "C++ language flags required")
 set(CMAKE_CUDA_STANDARD_REQUIRED ON CACHE BOOL "CUDA language flags required")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Use link path to set default rpath")
@@ -311,7 +312,7 @@ endif()
 
 if(USE_LIKWID)
     add_connector_config(likwid
-        COMPONENTS likwid_perfmon likwid_nvmon
+        COMPONENTS likwid_marker likwid_nvmarker
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-likwid)
 endif()
 

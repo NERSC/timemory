@@ -1,3 +1,26 @@
+// MIT License
+//
+// Copyright (c) 2020, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "timemory/components/gotcha.hpp"
 #include "timemory/library.h"
@@ -8,9 +31,14 @@
 #include <unordered_map>
 
 using namespace tim::component;
+
+#if !defined(TIMEMORY_LIBRARY_TYPE)
+#    define TIMEMORY_LIBRARY_TYPE typename tim::complete_list_t::type
+#endif
+
 using string_t      = std::string;
 using stringset_t   = std::set<std::string>;
-using mpi_toolset_t = tim::complete_list_t;
+using mpi_toolset_t = TIMEMORY_LIBRARY_TYPE;
 using mpip_gotcha_t = tim::component::gotcha<246, mpi_toolset_t>;
 using mpip_tuple_t  = tim::component_tuple<mpip_gotcha_t>;
 using toolset_ptr_t = std::shared_ptr<mpip_tuple_t>;
@@ -21,33 +49,11 @@ static std::atomic<int> _tool_count;
 
 extern "C"
 {
-    void create_record(const char* name, uint64_t* id, int, int*)
-    {
-        *id                                     = timemory_get_unique_id();
-        auto obj                                = toolset_ptr_t(new mpip_tuple_t(name));
-        timemory_tl_static<record_map_t>()[*id] = std::move(obj);
-    }
-
-    void delete_record(uint64_t nid)
-    {
-        auto& record_ids = timemory_tl_static<record_map_t>();
-        // erase key from map which stops recording when object is destroyed
-        record_ids.erase(nid);
-    }
-
     uint64_t init_timemory_mpip_tools()
     {
         static bool is_initialized = false;
         if(!is_initialized)
         {
-            // provide environment variable for enabling/disabling using custom record
-            // types
-            if(tim::get_env<bool>("ENABLE_TIMEMORY_MPIP_RECORD_TYPES", false))
-            {
-                timemory_create_function = (timemory_create_func_t) &create_record;
-                timemory_delete_function = (timemory_delete_func_t) &delete_record;
-            }
-
             // initialize manager
             auto manager = tim::manager::instance();
             tim::consume_parameters(manager);
@@ -339,12 +345,15 @@ extern "C"
         // provide environment variable for enabling/disabling
         if(tim::get_env<bool>("ENABLE_TIMEMORY_MPIP", true))
         {
-            auto env_ret = tim::get_env<string_t>("TIMEMORY_PROFILER_COMPONENTS", "");
-            if(env_ret.empty())
-                env_ret = tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "");
+            auto env_ret  = tim::get_env<string_t>("TIMEMORY_PROFILER_COMPONENTS", "");
             auto env_enum = tim::enumerate_components(tim::delimit(env_ret));
+            if(env_enum.empty())
+            {
+                env_ret  = tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "");
+                env_enum = tim::enumerate_components(tim::delimit(env_ret));
+            }
 
-            mpi_toolset_t::get_initializer() = [env_enum](mpi_toolset_t& cl) {
+            mpi_toolset_t::get_initializer() = [env_enum](auto& cl) {
                 ::tim::initialize(cl, env_enum);
             };
 

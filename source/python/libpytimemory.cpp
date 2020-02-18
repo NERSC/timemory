@@ -118,6 +118,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("cuda_profiler", CUDA_PROFILER)
         .value("cupti_activity", CUPTI_ACTIVITY)
         .value("cupti_counters", CUPTI_COUNTERS)
+        .value("current_peak_rss", CURRENT_PEAK_RSS)
         .value("data_rss", DATA_RSS)
         .value("gperf_cpu_profiler", GPERF_CPU_PROFILER)
         .value("gperf_heap_profiler", GPERF_HEAP_PROFILER)
@@ -125,8 +126,10 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("gpu_roofline_flops", GPU_ROOFLINE_FLOPS)
         .value("gpu_roofline_hp_flops", GPU_ROOFLINE_HP_FLOPS)
         .value("gpu_roofline_sp_flops", GPU_ROOFLINE_SP_FLOPS)
-        .value("likwid_nvmon", LIKWID_NVMON)
-        .value("likwid_perfmon", LIKWID_PERFMON)
+        .value("kernel_mode_time", KERNEL_MODE_TIME)
+        .value("likwid_marker", LIKWID_MARKER)
+        .value("likwid_nvmarker", LIKWID_NVMARKER)
+        .value("malloc_gotcha", MALLOC_GOTCHA)
         .value("monotonic_clock", MONOTONIC_CLOCK)
         .value("monotonic_raw_clock", MONOTONIC_RAW_CLOCK)
         .value("num_io_in", NUM_IO_IN)
@@ -151,13 +154,15 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("thread_cpu_clock", THREAD_CPU_CLOCK)
         .value("thread_cpu_util", THREAD_CPU_UTIL)
         .value("trip_count", TRIP_COUNT)
-        .value("user_tuple_bundle", USER_TUPLE_BUNDLE)
-        .value("user_list_bundle", USER_LIST_BUNDLE)
         .value("user_clock", USER_CLOCK)
+        .value("user_list_bundle", USER_LIST_BUNDLE)
+        .value("user_mode_time", USER_MODE_TIME)
+        .value("user_tuple_bundle", USER_TUPLE_BUNDLE)
         .value("virtual_memory", VIRTUAL_MEMORY)
         .value("voluntary_context_switch", VOLUNTARY_CONTEXT_SWITCH)
         .value("vtune_event", VTUNE_EVENT)
         .value("vtune_frame", VTUNE_FRAME)
+        .value("vtune_profiler", VTUNE_PROFILER)
         .value("wall_clock", WALL_CLOCK)
         .value("written_bytes", WRITTEN_BYTES);
 
@@ -557,7 +562,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("real_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = _timer.get<real_clock>();
+                  auto&        obj    = *(_timer.get<real_clock>());
                   return obj.get();
               },
               "Elapsed wall clock");
@@ -565,7 +570,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("sys_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = _timer.get<system_clock>();
+                  auto&        obj    = *(_timer.get<system_clock>());
                   return obj.get();
               },
               "Elapsed system clock");
@@ -573,7 +578,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("user_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = _timer.get<user_clock>();
+                  auto&        obj    = *(_timer.get<user_clock>());
                   return obj.get();
               },
               "Elapsed user time");

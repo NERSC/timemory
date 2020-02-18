@@ -97,7 +97,7 @@
 #endif
 
 // OpenMP components
-#if defined(TIMEMORY_USE_OPENMP)
+#if defined(TIMEMORY_USE_OMPT)
 #    include "timemory/components/openmp.hpp"
 #endif
 

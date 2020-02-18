@@ -45,11 +45,6 @@ namespace tim
 {
 template <typename... Types>
 component_list<Types...>::component_list()
-: m_store(false)
-, m_flat(false)
-, m_is_pushed(false)
-, m_laps(0)
-, m_hash(0)
 {
     if(settings::enabled())
         init_storage();
@@ -62,20 +57,16 @@ template <typename... Types>
 template <typename _Func>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
                                          const bool& flat, const _Func& _func)
-: m_store(store && settings::enabled())
-, m_flat(flat)
-, m_is_pushed(false)
-, m_laps(0)
-, m_hash((settings::enabled()) ? add_hash_id(key) : 0)
+: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, flat)
+, m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
         init_storage();
         _func(*this);
-        set_object_prefix(key);
-        using set_flat_profile_t = operation_t<operation::set_flat_profile>;
-        apply_v::access<set_flat_profile_t>(m_data, flat);
+        set_prefix(key);
+        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
     }
 }
 
@@ -86,20 +77,35 @@ template <typename _Func>
 component_list<Types...>::component_list(const captured_location_t& loc,
                                          const bool& store, const bool& flat,
                                          const _Func& _func)
-: m_store(store && settings::enabled())
-, m_flat(flat)
-, m_is_pushed(false)
-, m_laps(0)
-, m_hash(loc.get_hash())
+: bundle_type(loc.get_hash(), store, flat)
+, m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
         init_storage();
         _func(*this);
-        set_object_prefix(loc.get_id());
-        using set_flat_profile_t = operation_t<operation::set_flat_profile>;
-        apply_v::access<set_flat_profile_t>(m_data, flat);
+        set_prefix(loc.get_id());
+        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename _Func>
+component_list<Types...>::component_list(size_t _hash, const bool& store,
+                                         const bool& flat, const _Func& _func)
+: bundle_type(_hash, store, flat)
+, m_data(data_type{})
+{
+    apply_v::set_value(m_data, nullptr);
+    if(settings::enabled())
+    {
+        init_storage();
+        _func(*this);
+        set_prefix(_hash);
+        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
     }
 }
 
@@ -109,21 +115,17 @@ template <typename... Types>
 component_list<Types...>::~component_list()
 {
     pop();
-    apply_v::access<deleter_t>(m_data);
+    apply_v::access<operation_t<operation::generic_deleter>>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 component_list<Types...>::component_list(const this_type& rhs)
-: m_store(rhs.m_store)
-, m_flat(rhs.m_flat)
-, m_is_pushed(rhs.m_is_pushed)
-, m_laps(rhs.m_laps)
-, m_hash(rhs.m_hash)
+: bundle_type(rhs)
 {
     apply_v::set_value(m_data, nullptr);
-    apply_v::access2<copy_t>(m_data, rhs.m_data);
+    apply_v::access2<operation_t<operation::copy>>(m_data, rhs.m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -134,13 +136,9 @@ component_list<Types...>::operator=(const this_type& rhs)
 {
     if(this != &rhs)
     {
-        m_store     = rhs.m_store;
-        m_flat      = rhs.m_flat;
-        m_is_pushed = rhs.m_is_pushed;
-        m_laps      = rhs.m_laps;
-        m_hash      = rhs.m_hash;
-        apply_v::access<deleter_t>(m_data);
-        apply_v::access2<copy_t>(m_data, rhs.m_data);
+        bundle_type::operator=(rhs);
+        apply_v::access<operation_t<operation::generic_deleter>>(m_data);
+        apply_v::access2<operation_t<operation::copy>>(m_data, rhs.m_data);
     }
     return *this;
 }
@@ -165,15 +163,15 @@ inline void
 component_list<Types...>::push()
 {
     uint64_t count = 0;
-    apply_v::access<pointer_count_t>(m_data, std::ref(count));
+    apply_v::access<operation_t<operation::generic_counter>>(m_data, std::ref(count));
     if(m_store && !m_is_pushed && count > 0)
     {
         // reset data
-        apply_v::access<reset_t>(m_data);
+        apply_v::access<operation_t<operation::reset>>(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
-        apply_v::access<insert_node_t>(m_data, m_hash, m_flat);
+        apply_v::access<operation_t<operation::insert_node>>(m_data, m_hash, m_flat);
     }
 }
 
@@ -187,7 +185,7 @@ component_list<Types...>::pop()
     if(m_store && m_is_pushed)
     {
         // set the current node to the parent node
-        apply_v::access<pop_node_t>(m_data);
+        apply_v::access<operation_t<operation::pop_node>>(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = false;
     }
@@ -200,8 +198,7 @@ template <typename... Types>
 void
 component_list<Types...>::measure()
 {
-    using measure_t = operation_t<operation::measure>;
-    apply_v::access<measure_t>(m_data);
+    apply_v::access<operation_t<operation::measure>>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -211,9 +208,8 @@ template <typename... Types>
 void
 component_list<Types...>::sample()
 {
-    using sample_t = operation_t<operation::sample>;
     sample_type _samples{};
-    apply_v::access2<sample_t>(m_data, _samples);
+    apply_v::access2<operation_t<operation::sample>>(m_data, _samples);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -225,13 +221,11 @@ component_list<Types...>::start()
 {
     using standard_start_t = operation_t<operation::standard_start>;
 
-    using priority_types_t =
-        impl::filter_false<negative_start_priority, impl_unique_concat_type>;
+    using priority_types_t = impl::filter_false<negative_start_priority, impl_type>;
     using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
     using priority_start_t = operation_t<operation::priority_start, priority_tuple_t>;
 
-    using delayed_types_t =
-        impl::filter_false<positive_start_priority, impl_unique_concat_type>;
+    using delayed_types_t = impl::filter_false<positive_start_priority, impl_type>;
     using delayed_tuple_t = mpl::sort<trait::start_priority, delayed_types_t>;
     using delayed_start_t = operation_t<operation::delayed_start, delayed_tuple_t>;
 
@@ -242,9 +236,9 @@ component_list<Types...>::start()
     ++m_laps;
 
     // start components
-    apply_v::out_of_order<priority_start_t>(m_data);
+    apply_v::out_of_order<priority_start_t, 1>(m_data);
     apply_v::access<standard_start_t>(m_data);
-    apply_v::out_of_order<delayed_start_t>(m_data);
+    apply_v::out_of_order<delayed_start_t, 1>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -255,20 +249,18 @@ component_list<Types...>::stop()
 {
     using standard_stop_t = operation_t<operation::standard_stop>;
 
-    using priority_types_t =
-        impl::filter_false<negative_stop_priority, impl_unique_concat_type>;
+    using priority_types_t = impl::filter_false<negative_stop_priority, impl_type>;
     using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
     using priority_stop_t  = operation_t<operation::priority_stop, priority_tuple_t>;
 
-    using delayed_types_t =
-        impl::filter_false<positive_stop_priority, impl_unique_concat_type>;
+    using delayed_types_t = impl::filter_false<positive_stop_priority, impl_type>;
     using delayed_tuple_t = mpl::sort<trait::stop_priority, delayed_types_t>;
     using delayed_stop_t  = operation_t<operation::delayed_stop, delayed_tuple_t>;
 
     // stop components
-    apply_v::out_of_order<priority_stop_t>(m_data);
+    apply_v::out_of_order<priority_stop_t, 1>(m_data);
     apply_v::access<standard_stop_t>(m_data);
-    apply_v::out_of_order<delayed_stop_t>(m_data);
+    apply_v::out_of_order<delayed_stop_t, 1>(m_data);
 
     // pop components off of the call-stack stack
     pop();
@@ -281,9 +273,8 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::record()
 {
-    using record_t = operation_t<operation::record>;
     ++m_laps;
-    apply_v::access<record_t>(m_data);
+    apply_v::access<operation_t<operation::record>>(m_data);
     return *this;
 }
 
@@ -294,7 +285,7 @@ template <typename... Types>
 void
 component_list<Types...>::reset()
 {
-    apply_v::access<reset_t>(m_data);
+    apply_v::access<operation_t<operation::reset>>(m_data);
     m_laps = 0;
 }
 
@@ -305,9 +296,9 @@ template <typename... Types>
 typename component_list<Types...>::data_value_type
 component_list<Types...>::get() const
 {
-    using get_data_t = operation_t<operation::get_data>;
+    using get_data_t = operation_t<operation::get_data, data_collect_type>;
     data_value_type _ret_data;
-    apply_v::access2<get_data_t>(m_data, _ret_data);
+    apply_v::out_of_order<get_data_t, 2>(m_data, _ret_data);
     return _ret_data;
 }
 
@@ -318,9 +309,9 @@ template <typename... Types>
 typename component_list<Types...>::data_label_type
 component_list<Types...>::get_labeled() const
 {
-    using get_data_t = operation_t<operation::get_data>;
+    using get_data_t = operation_t<operation::get_data, data_collect_type>;
     data_label_type _ret_data;
-    apply_v::access2<get_data_t>(m_data, _ret_data);
+    apply_v::out_of_order<get_data_t, 2>(m_data, _ret_data);
     return _ret_data;
 }
 
@@ -331,8 +322,7 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator-=(const this_type& rhs)
 {
-    using minus_t = operation_t<operation::minus>;
-    apply_v::access2<minus_t>(m_data, rhs.m_data);
+    apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -343,8 +333,7 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator-=(this_type& rhs)
 {
-    using minus_t = operation_t<operation::minus>;
-    apply_v::access2<minus_t>(m_data, rhs.m_data);
+    apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
     return *this;
 }
@@ -355,8 +344,7 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator+=(const this_type& rhs)
 {
-    using plus_t = operation_t<operation::plus>;
-    apply_v::access2<plus_t>(m_data, rhs.m_data);
+    apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }
@@ -367,8 +355,7 @@ template <typename... Types>
 typename component_list<Types...>::this_type&
 component_list<Types...>::operator+=(this_type& rhs)
 {
-    using plus_t = operation_t<operation::plus>;
-    apply_v::access2<plus_t>(m_data, rhs.m_data);
+    apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
     return *this;
 }
@@ -403,136 +390,33 @@ component_list<Types...>::data() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline int64_t
-component_list<Types...>::laps() const
+inline void
+component_list<Types...>::set_prefix(const string_t& key) const
 {
-    return m_laps;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline std::string
-component_list<Types...>::key() const
-{
-    return get_hash_ids()->find(m_hash)->second;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline uint64_t
-component_list<Types...>::hash() const
-{
-    return m_hash;
+    apply_v::access<operation_t<operation::set_prefix>>(m_data, key);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 inline void
-component_list<Types...>::rekey(const string_t& _key)
+component_list<Types...>::set_prefix(size_t _hash) const
 {
-    m_hash = add_hash_id(_key);
-    compute_width(_key);
+    auto itr = get_hash_ids()->find(_hash);
+    if(itr != get_hash_ids()->end())
+        apply_v::access<operation_t<operation::set_prefix>>(m_data, itr->second);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline bool&
-component_list<Types...>::store()
-{
-    return m_store;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline const bool&
-component_list<Types...>::store() const
-{
-    return m_store;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline const std::string&
-component_list<Types...>::get_prefix() const
-{
-    auto _get_prefix = []() {
-        if(!dmp::is_initialized())
-            return string_t(">>> ");
-
-        // prefix spacing
-        static uint16_t width = 1;
-        if(dmp::size() > 9)
-            width = std::max(width, (uint16_t)(log10(dmp::size()) + 1));
-        std::stringstream ss;
-        ss.fill('0');
-        ss << "|" << std::setw(width) << dmp::rank() << ">>> ";
-        return ss.str();
-    };
-    static string_t _prefix = _get_prefix();
-    return _prefix;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
+template <typename T>
 inline void
-component_list<Types...>::compute_width(const string_t& _key) const
+component_list<Types...>::set_prefix(T* obj) const
 {
-    static const string_t& _prefix = get_prefix();
-    output_width(_key.length() + _prefix.length() + 1);
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline void
-component_list<Types...>::update_width() const
-{
-    compute_width(key());
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline int64_t
-component_list<Types...>::output_width(int64_t width)
-{
-    static std::atomic<int64_t> _instance(0);
-    if(width > 0)
-    {
-        auto current_width = _instance.load(std::memory_order_relaxed);
-        auto compute       = [&]() {
-            current_width = _instance.load(std::memory_order_relaxed);
-            return std::max(_instance.load(), width);
-        };
-        int64_t propose_width = compute();
-        do
-        {
-            if(propose_width > current_width)
-            {
-                auto ret = _instance.compare_exchange_strong(current_width, propose_width,
-                                                             std::memory_order_relaxed);
-                if(!ret)
-                    compute();
-            }
-        } while(propose_width > current_width);
-    }
-    return _instance.load();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline void
-component_list<Types...>::set_object_prefix(const string_t& key)
-{
-    apply_v::access<set_prefix_t>(m_data, key);
+    using _PrefixOp = operation::pointer_operator<T, operation::set_prefix<T>>;
+    auto _key       = get_hash_ids()->find(m_hash)->second;
+    _PrefixOp(obj, _key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -546,21 +430,6 @@ component_list<Types...>::init_storage()
         return true;
     }();
     consume_parameters(_once);
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-inline typename component_list<Types...>::init_func_t&
-component_list<Types...>::get_initializer()
-{
-    static init_func_t _instance = [](this_type& cl) {
-        static auto env_ret  = tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "");
-        static auto env_enum = enumerate_components(tim::delimit(env_ret));
-        ::tim::initialize(cl, env_enum);
-        // env::initialize(cl, "TIMEMORY_COMPONENT_LIST_INIT", "");
-    };
-    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//

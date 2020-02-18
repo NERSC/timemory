@@ -55,10 +55,13 @@ main(int argc, char** argv)
     };
 #endif
 
+    const std::string default_env = "real_clock,cpu_clock,cpu_util,caliper";
+    auto              env         = tim::get_env("TIMEMORY_COMPONENTS", default_env);
+    auto              env_enum    = tim::enumerate_components(tim::delimit(env));
+
     // runtime customization of auto_list_t initialization
-    auto_list_t::get_initializer() = [](auto_list_t& al) {
-        const std::string default_env = "real_clock,cpu_clock,cpu_util,caliper";
-        tim::env::initialize(al, "TIMEMORY_COMPONENTS", default_env);
+    auto_list_t::get_initializer() = [env_enum](auto& al) {
+        tim::initialize(al, env_enum);
         al.report_at_exit(true);
     };
 
@@ -100,6 +103,8 @@ main(int argc, char** argv)
 
     some_func();
     another_func();
+
+    tim::timemory_finalize();
 }
 
 //======================================================================================//
@@ -107,7 +112,7 @@ main(int argc, char** argv)
 intmax_t
 fibonacci(intmax_t n)
 {
-    TIMEMORY_BASIC_MARKER(real_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
 

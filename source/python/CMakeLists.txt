@@ -1,6 +1,5 @@
 
 ##########################################################################################
-
 #
 #        timemory (Python)
 #
@@ -11,6 +10,7 @@ if(NOT TIMEMORY_BUILD_PYTHON AND NOT TIMEMORY_USE_PYTHON)
 endif()
 
 unset(CMAKE_CXX_CLANG_TIDY)
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
 add_library(timemory-python-compile-options INTERFACE)
 add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-compile-options)

@@ -30,10 +30,13 @@
 
 #pragma once
 
+#include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/enumerate.hpp"
 
 namespace tim
 {
@@ -189,6 +192,53 @@ protected:
 protected:
     int_type m_tot = 0;
 };
+
+//======================================================================================//
+
+template <typename T, typename Toolset>
+struct omp_tools
+{
+    using type               = Toolset;
+    using api_type           = T;
+    using function_type      = std::function<void()>;
+    using user_ompt_bundle_t = component::user_ompt_bundle;
+
+    //----------------------------------------------------------------------------------//
+    //  the default initalizer for OpenMP tools when user_ompt_bundle is included
+    //
+    template <typename Bundle = user_ompt_bundle_t, typename Tuple = Toolset,
+              enable_if_t<(is_one_of<Bundle, Tuple>::value), int> = 0>
+    static function_type& get_initializer()
+    {
+        static function_type _instance = []() {
+            std::string components = "wall_clock";
+            auto        env_var    = tim::get_env("TIMEMORY_OMPT_COMPONENTS", components);
+            std::transform(
+                env_var.begin(), env_var.end(), env_var.begin(),
+                [](unsigned char c) -> unsigned char { return std::tolower(c); });
+            ::tim::configure<Bundle>(enumerate_components(delimit(env_var)));
+        };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  this functin calls the initializer for the
+    //
+    template <typename Bundle = user_ompt_bundle_t, typename Tuple = Toolset,
+              enable_if_t<!(is_one_of<Bundle, Tuple>::value), int> = 0>
+    static function_type& get_initializer()
+    {
+        static function_type _instance = []() {};
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  this functin calls the initializer for the
+    //
+    static void configure() { get_initializer()(); }
+};
+
+//======================================================================================//
 
 }  // namespace policy
 }  // namespace tim

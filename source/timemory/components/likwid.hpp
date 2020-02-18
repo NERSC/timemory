@@ -64,8 +64,8 @@ namespace component
 {
 #if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
 
-extern template struct base<likwid_perfmon, void>;
-extern template struct base<likwid_nvmon, void>;
+extern template struct base<likwid_marker, void>;
+extern template struct base<likwid_nvmarker, void>;
 
 #endif
 
@@ -75,23 +75,23 @@ extern template struct base<likwid_nvmon, void>;
 //
 //======================================================================================//
 
-struct likwid_perfmon : public base<likwid_perfmon, void>
+struct likwid_marker : public base<likwid_marker, void>
 {
     // timemory component api
     using value_type = void;
-    using this_type  = likwid_perfmon;
+    using this_type  = likwid_marker;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "likwid_perfmon"; }
+    static std::string label() { return "likwid_marker"; }
     static std::string description() { return "LIKWID perfmon (CPU) marker forwarding"; }
     static value_type  record() {}
 
     static void global_init(storage_type*) { LIKWID_MARKER_INIT; }
     static void thread_init(storage_type*) { LIKWID_MARKER_THREADINIT; }
 
-    likwid_perfmon() = default;
+    likwid_marker() = default;
 
-    likwid_perfmon(const std::string& _prefix)
+    likwid_marker(const std::string& _prefix)
     : prefix(_prefix)
     {
         register_marker();
@@ -146,23 +146,23 @@ private:
 //
 //======================================================================================//
 
-struct likwid_nvmon : public base<likwid_nvmon, void>
+struct likwid_nvmarker : public base<likwid_nvmarker, void>
 {
     // timemory component api
     using value_type = void;
-    using this_type  = likwid_nvmon;
+    using this_type  = likwid_nvmarker;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "likwid_nvmon"; }
+    static std::string label() { return "likwid_nvmarker"; }
     static std::string description() { return "LIKWID nvmon (GPU) marker forwarding"; }
     static value_type  record() {}
 
     static void global_init(storage_type*) { LIKWID_NVMARKER_INIT; }
     static void thread_init(storage_type*) { LIKWID_NVMARKER_THREADINIT; }
 
-    likwid_nvmon() = default;
+    likwid_nvmarker() = default;
 
-    likwid_nvmon(const std::string& _prefix)
+    likwid_nvmarker(const std::string& _prefix)
     : prefix(_prefix)
     {
         register_marker();

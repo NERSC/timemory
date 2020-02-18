@@ -142,11 +142,11 @@ TEST_F(cuda_tests, saxpy)
     tim::cuda::device_reset();
 
 #if defined(TIMEMORY_USE_CUDA)
-    auto ce = bw.get<cuda_event>();
+    auto ce = *bw.get<cuda_event>();
 #else
-    auto ce = bw.get<real_clock>();
+    auto ce = *bw.get<real_clock>();
 #endif
-    auto rc = bw.get<real_clock>();
+    auto rc = *bw.get<real_clock>();
 
     printf("Max error: %8.4e\n", maxError);
     printf("Sum error: %8.4e\n", sumError);
@@ -259,11 +259,11 @@ TEST_F(cuda_tests, saxpy_streams)
     tim::cuda::device_reset();
 
 #if defined(TIMEMORY_USE_CUDA)
-    auto ce = bw.get<cuda_event>();
+    auto ce = *bw.get<cuda_event>();
 #else
-    auto ce = bw.get<real_clock>();
+    auto ce = *bw.get<real_clock>();
 #endif
-    auto rc = bw.get<real_clock>();
+    auto rc = *bw.get<real_clock>();
 
     printf("Max error: %8.4e\n", maxError);
     printf("Sum error: %8.4e\n", sumError);

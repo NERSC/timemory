@@ -65,8 +65,9 @@ public:
     using data_label_type     = typename component_type::data_label_type;
     using data_type           = typename component_type::data_type;
     using sample_type         = typename component_type::sample_type;
+    using type                = convert_t<typename component_type::type, auto_tuple<>>;
     using string_t            = std::string;
-    using init_func_t         = std::function<void(this_type&)>;
+    using initializer_type    = std::function<void(this_type&)>;
     using captured_location_t = typename component_type::captured_location_t;
 
     // used by component hybrid and gotcha
@@ -79,7 +80,8 @@ public:
     static constexpr bool is_auto_hybrid      = false;
     static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
-    static constexpr bool contains_gotcha     = component_type::contains_gotcha;
+    static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -88,20 +90,25 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    static init_func_t& get_initializer()
+    static initializer_type& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static initializer_type _instance = [](this_type&) {};
         return _instance;
     }
 
 public:
-    template <typename Func = init_func_t>
+    template <typename Func = initializer_type>
     explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
                         const Func&         = this_type::get_initializer());
 
-    template <typename Func = init_func_t>
+    template <typename Func = initializer_type>
     explicit auto_tuple(const captured_location_t&, bool flat = settings::flat_profile(),
+                        bool report_at_exit = settings::destructor_report(),
+                        const Func&         = this_type::get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit auto_tuple(size_t, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
                         const Func&         = this_type::get_initializer());
 
@@ -114,6 +121,9 @@ public:
     template <typename Func, typename Arg, typename... Args>
     auto_tuple(const captured_location_t&, bool store, bool flat, const Func&, Arg&&,
                Args&&...);
+
+    template <typename Func, typename Arg, typename... Args>
+    auto_tuple(size_t, bool store, bool flat, const Func&, Arg&&, Args&&...);
 
     inline ~auto_tuple();
 
@@ -210,16 +220,18 @@ public:
 
 public:
     template <typename _Tp>
-    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
+    decltype(auto) get()
     {
         return m_temporary_object.template get<_Tp>();
     }
 
     template <typename _Tp>
-    auto get() const -> decltype(std::declval<const component_type>().template get<_Tp>())
+    decltype(auto) get() const
     {
         return m_temporary_object.template get<_Tp>();
     }
+
+    inline void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
 
 protected:
     template <typename Func, typename... Args,
@@ -298,6 +310,25 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
+template <typename Func>
+auto_tuple<Types...>::auto_tuple(size_t _hash, bool flat, bool report_at_exit,
+                                 const Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        init(_func);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
@@ -338,6 +369,26 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store, boo
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report())
 , m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        init(func);
+        m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+template <typename Func, typename Arg, typename... Args>
+auto_tuple<Types...>::auto_tuple(size_t _hash, bool store, bool flat, const Func& func,
+                                 Arg&& arg, Args&&... args)
+: m_enabled(store && settings::enabled())
+, m_report_at_exit(settings::destructor_report())
+, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
+                               : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -449,6 +500,16 @@ get(tim::auto_tuple<Types...>&& obj)
     using obj_type = tim::auto_tuple<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+struct tuple_size<::tim::auto_tuple<Types...>>
+{
+    using value_type                  = size_t;
+    using type                        = typename ::tim::auto_tuple<Types...>::type_tuple;
+    static constexpr value_type value = tuple_size<type>::value;
+};
 
 //======================================================================================//
 

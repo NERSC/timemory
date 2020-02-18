@@ -157,6 +157,7 @@ class profile():
         if len(self.components) == 0:
             self.components += ["wall_clock"]
         os.environ["TIMEMORY_PROFILER_COMPONENTS"] = ",".join(self.components)
+        # os.environ["TIMEMORY_COMPONENT_LIST_INIT"] = ",".join(self.components)
 
     #------------------------------------------------------------------------------------#
     #

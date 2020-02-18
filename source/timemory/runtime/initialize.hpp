@@ -104,6 +104,7 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case CUDA_PROFILER: obj.template init<cuda_profiler>(); break;
         case CUPTI_ACTIVITY: obj.template init<cupti_activity>(); break;
         case CUPTI_COUNTERS: obj.template init<cupti_counters>(); break;
+        case CURRENT_PEAK_RSS: obj.template init<current_peak_rss>(); break;
         case DATA_RSS: obj.template init<data_rss>(); break;
         case GPERF_CPU_PROFILER: obj.template init<gperf_cpu_profiler>(); break;
         case GPERF_HEAP_PROFILER: obj.template init<gperf_heap_profiler>(); break;
@@ -111,8 +112,10 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case GPU_ROOFLINE_FLOPS: obj.template init<gpu_roofline_flops>(); break;
         case GPU_ROOFLINE_HP_FLOPS: obj.template init<gpu_roofline_hp_flops>(); break;
         case GPU_ROOFLINE_SP_FLOPS: obj.template init<gpu_roofline_sp_flops>(); break;
-        case LIKWID_NVMON: obj.template init<likwid_nvmon>(); break;
-        case LIKWID_PERFMON: obj.template init<likwid_perfmon>(); break;
+        case KERNEL_MODE_TIME: obj.template init<kernel_mode_time>(); break;
+        case LIKWID_MARKER: obj.template init<likwid_marker>(); break;
+        case LIKWID_NVMARKER: obj.template init<likwid_nvmarker>(); break;
+        case MALLOC_GOTCHA: obj.template init<malloc_gotcha>(); break;
         case MONOTONIC_CLOCK: obj.template init<monotonic_clock>(); break;
         case MONOTONIC_RAW_CLOCK: obj.template init<monotonic_raw_clock>(); break;
         case NUM_IO_IN: obj.template init<num_io_in>(); break;
@@ -139,6 +142,7 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
         case TRIP_COUNT: obj.template init<trip_count>(); break;
         case USER_CLOCK: obj.template init<user_clock>(); break;
         case USER_LIST_BUNDLE: obj.template init<user_list_bundle>(); break;
+        case USER_MODE_TIME: obj.template init<user_mode_time>(); break;
         case USER_TUPLE_BUNDLE: obj.template init<user_tuple_bundle>(); break;
         case VIRTUAL_MEMORY: obj.template init<virtual_memory>(); break;
         case VOLUNTARY_CONTEXT_SWITCH:
@@ -146,6 +150,7 @@ initialize(const TIMEMORY_COMPONENT& comp, _CompList<_CompTypes...>& obj)
             break;
         case VTUNE_EVENT: obj.template init<vtune_event>(); break;
         case VTUNE_FRAME: obj.template init<vtune_frame>(); break;
+        case VTUNE_PROFILER: obj.template init<vtune_profiler>(); break;
         case WALL_CLOCK: obj.template init<wall_clock>(); break;
         case WRITTEN_BYTES: obj.template init<written_bytes>(); break;
         case TIMEMORY_COMPONENTS_END:

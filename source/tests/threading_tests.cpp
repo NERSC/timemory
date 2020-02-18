@@ -86,11 +86,11 @@ get_tid()
 
 TEST_F(threading_tests, openmp)
 {
+    tim::trait::runtime_enabled<omp_tools<tim::api::native_tag>>::set(false);
+
     TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());
 
     omp_set_num_threads(2);
-
-    auto run_fib = [&](uint64_t n) { return details::fibonacci(n); };
 
     std::atomic<uint64_t> sum(0);
     {
@@ -101,7 +101,7 @@ TEST_F(threading_tests, openmp)
         {
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/", region,
                                   "/", omp_get_thread_num());
-            sum += run_fib(40);
+            sum += details::fibonacci(40);
             details::do_sleep(500);
         }
     }
@@ -114,7 +114,7 @@ TEST_F(threading_tests, openmp)
         {
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/", region,
                                   "/", omp_get_thread_num());
-            sum += run_fib(45);
+            sum += details::fibonacci(45);
             details::do_sleep(500);
         }
     }

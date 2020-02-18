@@ -66,9 +66,11 @@ public:
     using list_type_list      = typename component_type::list_type_list;
     using data_value_type     = typename component_type::data_value_type;
     using data_label_type     = typename component_type::data_label_type;
-    using init_func_t         = std::function<void(this_type&)>;
     using string_t            = std::string;
     using captured_location_t = typename component_type::captured_location_t;
+    using type =
+        convert_t<typename component_type::type, auto_hybrid<type_list<>, type_list<>>>;
+    using initializer_type = std::function<void(this_type&)>;
 
     // used by gotcha
     static constexpr bool is_component_list   = false;
@@ -80,7 +82,8 @@ public:
     static constexpr bool is_auto_hybrid      = true;
     static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
-    static constexpr bool contains_gotcha     = component_type::contains_gotcha;
+    static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -89,21 +92,26 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    static init_func_t& get_initializer()
+    static initializer_type& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static initializer_type _instance = [](this_type&) {};
         return _instance;
     }
 
 public:
-    template <typename _Func = init_func_t>
+    template <typename _Func = initializer_type>
     inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
                                 bool report_at_exit = settings::destructor_report(),
                                 const _Func& _func  = this_type::get_initializer());
 
-    template <typename _Func = init_func_t>
+    template <typename _Func = initializer_type>
     inline explicit auto_hybrid(const captured_location_t&,
                                 bool flat           = settings::flat_profile(),
+                                bool report_at_exit = settings::destructor_report(),
+                                const _Func& _func  = this_type::get_initializer());
+
+    template <typename _Func = initializer_type>
+    inline explicit auto_hybrid(size_t, bool flat = settings::flat_profile(),
                                 bool report_at_exit = settings::destructor_report(),
                                 const _Func& _func  = this_type::get_initializer());
 
@@ -218,13 +226,13 @@ public:
     list_type&        get_rhs() { return m_temporary_object.get_list(); }
     const list_type&  get_rhs() const { return m_temporary_object.get_list(); }
 
-    template <typename _Tp, enable_if_t<(is_one_of<_Tp, tuple_type_list>::value ||
-                                         is_one_of<_Tp, list_type_list>::value),
-                                        int> = 0>
-    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
+    template <typename _Tp>
+    decltype(auto) get()
     {
         return m_temporary_object.template get<_Tp>();
     }
+
+    inline void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
@@ -269,6 +277,25 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& objec
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
+                               : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        _func(*this);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _CompTuple, typename _CompList>
+template <typename _Func>
+auto_hybrid<_CompTuple, _CompList>::auto_hybrid(size_t _hash, bool flat,
+                                                bool report_at_exit, const _Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
                                : component_type{})
 , m_reference_object(nullptr)
 {
@@ -344,3 +371,19 @@ get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
 //======================================================================================//
 
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+
+namespace std
+{
+template <typename _Tuple, typename _List>
+struct tuple_size<::tim::auto_hybrid<_Tuple, _List>>
+{
+    using value_type                  = size_t;
+    static constexpr value_type value = tuple_size<typename _Tuple::type_tuple>::value +
+                                        tuple_size<typename _List::type_tuple>::value;
+};
+
+}  // namespace std
+
+//--------------------------------------------------------------------------------------//

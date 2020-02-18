@@ -63,7 +63,7 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class component_tuple : public generic_bundle<Types...>
+class component_tuple : public stack_bundle<available_tuple<concat<Types...>>>
 {
     // manager is friend so can use above
     friend class manager;
@@ -75,19 +75,19 @@ class component_tuple : public generic_bundle<Types...>
     friend class auto_tuple;
 
 public:
-    using bundle_type         = generic_bundle<Types...>;
+    using bundle_type         = stack_bundle<available_tuple<concat<Types...>>>;
     using this_type           = component_tuple<Types...>;
-    using init_func_t         = std::function<void(this_type&)>;
     using captured_location_t = source_location::captured;
 
-    using data_type       = typename bundle_type::data_type;
-    using impl_type       = typename bundle_type::impl_type;
-    using type_tuple      = typename bundle_type::type_tuple;
-    using sample_type     = typename bundle_type::sample_type;
-    using pointer_type    = typename bundle_type::pointer_type;
-    using reference_type  = typename bundle_type::reference_type;
-    using data_value_type = typename bundle_type::data_value_type;
-    using data_label_type = typename bundle_type::data_label_type;
+    using data_type         = typename bundle_type::data_type;
+    using impl_type         = typename bundle_type::impl_type;
+    using type_tuple        = typename bundle_type::type_tuple;
+    using sample_type       = typename bundle_type::sample_type;
+    using reference_type    = typename bundle_type::reference_type;
+    using data_collect_type = typename bundle_type::data_collect_type;
+    using data_value_type   = typename bundle_type::data_value_type;
+    using data_label_type   = typename bundle_type::data_label_type;
+    using user_bundle_types = typename bundle_type::user_bundle_types;
 
     using apply_v     = apply<void>;
     using size_type   = typename bundle_type::size_type;
@@ -99,8 +99,10 @@ public:
         typename bundle_type::template generic_operation<Op, _Tuple>::type;
 
     // used by gotcha
-    using component_type = convert_t<data_type, component_tuple<>>;
-    using auto_type      = convert_t<data_type, auto_tuple<>>;
+    using component_type   = component_tuple<Types...>;
+    using auto_type        = auto_tuple<Types...>;
+    using type             = convert_t<type_tuple, component_tuple<>>;
+    using initializer_type = std::function<void(this_type&)>;
 
     // used by component hybrid
     static constexpr bool is_component_list   = false;
@@ -112,27 +114,34 @@ public:
     static constexpr bool is_auto_hybrid      = false;
     static constexpr bool is_auto_type        = false;
     static constexpr bool is_component        = false;
+    static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
 
     //----------------------------------------------------------------------------------//
     //
-    static init_func_t& get_initializer()
+    static initializer_type& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static initializer_type _instance = [](this_type&) {};
         return _instance;
     }
 
 public:
     component_tuple();
 
-    template <typename _Func = init_func_t>
+    template <typename Func = initializer_type>
     explicit component_tuple(const string_t& key, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const _Func&     = get_initializer());
+                             const Func&      = get_initializer());
 
-    template <typename _Func = init_func_t>
+    template <typename Func = initializer_type>
     explicit component_tuple(const captured_location_t& loc, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const _Func&     = get_initializer());
+                             const Func&      = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit component_tuple(size_t _hash, const bool& store = true,
+                             const bool& flat = settings::flat_profile(),
+                             const Func&      = get_initializer());
 
     ~component_tuple();
 
@@ -180,80 +189,137 @@ public:
     //----------------------------------------------------------------------------------//
     // construct the objects that have constructors with matching arguments
     //
-    template <typename... _Args>
-    void construct(_Args&&... _args)
+    template <typename... Args>
+    void construct(Args&&... _args)
     {
         using construct_t = operation_t<operation::construct>;
-        apply_v::access<construct_t>(m_data, std::forward<_Args>(_args)...);
+        apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    template <typename... _Args>
-    void mark_begin(_Args&&... _args)
+    template <typename... Args>
+    void mark_begin(Args&&... _args)
     {
         using mark_begin_t = operation_t<operation::mark_begin>;
-        apply_v::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...);
+        apply_v::access<mark_begin_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    template <typename... _Args>
-    void mark_end(_Args&&... _args)
+    template <typename... Args>
+    void mark_end(Args&&... _args)
     {
         using mark_end_t = operation_t<operation::mark_end>;
-        apply_v::access<mark_end_t>(m_data, std::forward<_Args>(_args)...);
+        apply_v::access<mark_end_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // store a value
     //
-    template <typename... _Args>
-    void store(_Args&&... _args)
+    template <typename... Args>
+    void store(Args&&... _args)
     {
         using store_t = operation_t<operation::store>;
-        apply_v::access<store_t>(m_data, std::forward<_Args>(_args)...);
+        apply_v::access<store_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // perform a auditd operation (typically for GOTCHA)
     //
-    template <typename... _Args>
-    void audit(_Args&&... _args)
+    template <typename... Args>
+    void audit(Args&&... _args)
     {
         using audit_t = operation_t<operation::audit>;
-        apply_v::access<audit_t>(m_data, std::forward<_Args>(_args)...);
-    }
-
-    // get member functions taking either a type
-    template <typename _Tp>
-    inline _Tp& get()
-    {
-        return std::get<index_of<_Tp, data_type>::value>(m_data);
-    }
-
-    template <typename _Tp>
-    inline const _Tp& get() const
-    {
-        return std::get<index_of<_Tp, data_type>::value>(m_data);
+        apply_v::access<audit_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
-    template <typename _Tp, typename _Func, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, data_type>::value == true), int> = 0>
-    inline void type_apply(_Func&& _func, _Args&&... _args)
+    // get member functions taking either a type
+    //
+    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    inline T* get()
     {
-        auto&& _obj = get<_Tp>();
-        ((_obj).*(_func))(std::forward<_Args>(_args)...);
+        return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename _Tp, typename _Func, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, data_type>::value == false), int> = 0>
-    inline void type_apply(_Func&&, _Args&&...)
+    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    inline const T* get() const
+    {
+        return &(std::get<index_of<T, data_type>::value>(m_data));
+    }
+
+    template <typename T, enable_if_t<!(is_one_of<T, data_type>::value), int> = 0>
+    inline T* get() const
+    {
+        void*       ptr   = nullptr;
+        static auto _hash = std::hash<std::string>()(demangle<T>());
+        get(ptr, _hash);
+        return static_cast<T*>(ptr);
+    }
+
+    inline void get(void*& ptr, size_t _hash) const
+    {
+        using get_t = operation_t<operation::get>;
+        apply_v::access<get_t>(m_data, ptr, _hash);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <
+        typename T, typename... Args,
+        enable_if_t<(is_one_of<T, reference_type>::value == false && has_user_bundle_v),
+                    int> = 0>
+    void init(Args&&...)
+    {
+        using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
+        this->init<bundle_t>();
+        this->get<bundle_t>()->template insert<T>(m_flat);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <
+        typename T, typename... Args,
+        enable_if_t<(is_one_of<T, reference_type>::value == false && !has_user_bundle_v),
+                    int> = 0>
+    void init(Args&&...)
+    {}
+
+    //----------------------------------------------------------------------------------//
+    //  variadic initialization
+    //
+    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+    void initialize()
+    {
+        this->init<T>();
+    }
+
+    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
+    void initialize()
+    {
+        this->init<T>();
+        this->initialize<Tail...>();
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// apply a member function to a type that is in variadic list AND is available
+    ///
+    template <typename T, typename Func, typename... Args,
+              enable_if_t<(is_one_of<T, data_type>::value == true), int> = 0>
+    inline void type_apply(Func&& _func, Args&&... _args)
+    {
+        auto&& _obj = get<T>();
+        ((_obj).*(_func))(std::forward<Args>(_args)...);
+    }
+
+    template <typename T, typename Func, typename... Args,
+              enable_if_t<(is_one_of<T, data_type>::value == false), int> = 0>
+    inline void type_apply(Func&&, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -267,35 +333,35 @@ public:
     //----------------------------------------------------------------------------------//
     // generic operators
     //
-    template <typename _Op>
-    this_type& operator-=(_Op&& rhs)
+    template <typename Op>
+    this_type& operator-=(Op&& rhs)
     {
         using minus_t = operation_t<operation::minus>;
-        apply_v::access<minus_t>(m_data, std::forward<_Op>(rhs));
+        apply_v::access<minus_t>(m_data, std::forward<Op>(rhs));
         return *this;
     }
 
-    template <typename _Op>
-    this_type& operator+=(_Op&& rhs)
+    template <typename Op>
+    this_type& operator+=(Op&& rhs)
     {
         using plus_t = operation_t<operation::plus>;
-        apply_v::access<plus_t>(m_data, std::forward<_Op>(rhs));
+        apply_v::access<plus_t>(m_data, std::forward<Op>(rhs));
         return *this;
     }
 
-    template <typename _Op>
-    this_type& operator*=(_Op&& rhs)
+    template <typename Op>
+    this_type& operator*=(Op&& rhs)
     {
         using multiply_t = operation_t<operation::multiply>;
-        apply_v::access<multiply_t>(m_data, std::forward<_Op>(rhs));
+        apply_v::access<multiply_t>(m_data, std::forward<Op>(rhs));
         return *this;
     }
 
-    template <typename _Op>
-    this_type& operator/=(_Op&& rhs)
+    template <typename Op>
+    this_type& operator/=(Op&& rhs)
     {
         using divide_t = operation_t<operation::divide>;
-        apply_v::access<divide_t>(m_data, std::forward<_Op>(rhs));
+        apply_v::access<divide_t>(m_data, std::forward<Op>(rhs));
         return *this;
     }
 
@@ -314,18 +380,18 @@ public:
         return tmp -= rhs;
     }
 
-    template <typename _Op>
-    friend this_type operator*(const this_type& lhs, _Op&& rhs)
+    template <typename Op>
+    friend this_type operator*(const this_type& lhs, Op&& rhs)
     {
         this_type tmp(lhs);
-        return tmp *= std::forward<_Op>(rhs);
+        return tmp *= std::forward<Op>(rhs);
     }
 
-    template <typename _Op>
-    friend this_type operator/(const this_type& lhs, _Op&& rhs)
+    template <typename Op>
+    friend this_type operator/(const this_type& lhs, Op&& rhs)
     {
         this_type tmp(lhs);
-        return tmp /= std::forward<_Op>(rhs);
+        return tmp /= std::forward<Op>(rhs);
     }
 
     //----------------------------------------------------------------------------------//
@@ -334,17 +400,16 @@ public:
     void print(std::ostream& os) const
     {
         using print_t = typename bundle_type::print_t;
-        if(size() == 0)
+        if(size() == 0 || m_hash == 0)
             return;
-        std::stringstream ss_prefix;
         std::stringstream ss_data;
         apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
         {
-            auto _key = get_hash_ids()->find(m_hash)->second;
             update_width();
+            std::stringstream ss_prefix;
             std::stringstream ss_id;
-            ss_id << get_prefix() << " " << std::left << _key;
+            ss_id << get_prefix() << " " << std::left << key();
             ss_prefix << std::setw(output_width()) << std::left << ss_id.str() << " : ";
             os << ss_prefix.str();
         }
@@ -404,7 +469,8 @@ protected:
     // protected member functions
     inline data_type&       get_data();
     inline const data_type& get_data() const;
-    inline void             set_object_prefix(const string_t&) const;
+    inline void             set_prefix(const string_t&) const;
+    inline void             set_prefix(size_t) const;
 
 protected:
     // objects
@@ -482,6 +548,16 @@ get(::tim::component_tuple<Types...>&& obj)
     using obj_type = ::tim::component_tuple<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+struct tuple_size<::tim::component_tuple<Types...>>
+{
+    using value_type = size_t;
+    using type       = typename ::tim::component_tuple<Types...>::type_tuple;
+    static constexpr value_type value = tuple_size<type>::value;
+};
 
 //======================================================================================//
 }  // namespace std

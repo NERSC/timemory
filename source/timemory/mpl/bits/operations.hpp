@@ -71,55 +71,55 @@ struct common_utils
     using strvec_t       = std::vector<string_t>;
 
 public:
-    template <typename _Tp>
-    static size_t get_distance(const _Tp& _data)
+    template <typename Tp>
+    static size_t get_distance(const Tp& _data)
     {
         return get_distance_sfinae(_data);
     }
 
-    template <typename _Tp>
-    static auto get_distance_sfinae(const _Tp& _data, int)
+    template <typename Tp>
+    static auto get_distance_sfinae(const Tp& _data, int)
         -> decltype(std::distance(_data.begin(), _data.end()), size_t())
     {
         return std::distance(_data.begin(), _data.end());
     }
 
-    template <typename _Tp>
-    static auto get_distance_sfinae(const _Tp&, long) -> size_t
+    template <typename Tp>
+    static auto get_distance_sfinae(const Tp&, long) -> size_t
     {
         return size_t(1);
     }
 
-    template <typename _Tp>
-    static auto get_distance_sfinae(const _Tp& _data)
+    template <typename Tp>
+    static auto get_distance_sfinae(const Tp& _data)
         -> decltype(get_distance_sfinae(_data, 0))
     {
         return get_distance_sfinae(_data, 0);
     }
 
 public:
-    template <typename _Tp, enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
-    static _Tp get_entry(const _Tp& _data, size_t)
+    template <typename Tp, enable_if_t<(std::is_arithmetic<Tp>::value), int> = 0>
+    static Tp get_entry(const Tp& _data, size_t)
     {
         return _data;
     }
 
-    template <typename _Tp, enable_if_t<!(std::is_arithmetic<_Tp>::value), int> = 0>
-    static auto get_entry(const _Tp& _data, size_t _idx)
+    template <typename Tp, enable_if_t<!(std::is_arithmetic<Tp>::value), int> = 0>
+    static auto get_entry(const Tp& _data, size_t _idx)
         -> decltype(get_entry_sfinae_(_data, _idx))
     {
-        return get_entry_sfinae_<_Tp>(_data, _idx);
+        return get_entry_sfinae_<Tp>(_data, _idx);
     }
 
-    template <typename _Tp, size_t _Idx>
-    static _Tp get_entry(const _Tp& _data, size_t)
+    template <typename Tp, size_t _Idx>
+    static Tp get_entry(const Tp& _data, size_t)
     {
         return _data;
     }
 
-    template <typename _Tp>
-    static auto get_entry_sfinae(const _Tp& _data, int, size_t _idx)
-        -> decltype(_data.begin(), typename _Tp::value_type())
+    template <typename Tp>
+    static auto get_entry_sfinae(const Tp& _data, int, size_t _idx)
+        -> decltype(_data.begin(), typename Tp::value_type())
     {
         auto sz  = std::distance(_data.begin(), _data.end());
         auto n   = _idx % sz;
@@ -128,30 +128,30 @@ public:
         return *itr;
     }
 
-    template <typename _Tp>
-    static _Tp get_entry_sfinae(const _Tp& _data, long, size_t)
+    template <typename Tp>
+    static Tp get_entry_sfinae(const Tp& _data, long, size_t)
     {
         return _data;
     }
 
-    template <typename _Tp>
-    static auto get_entry_sfinae_(const _Tp& _data, size_t _idx)
+    template <typename Tp>
+    static auto get_entry_sfinae_(const Tp& _data, size_t _idx)
         -> decltype(get_entry_sfinae(_data, 0, _idx))
     {
-        return get_entry_sfinae<_Tp>(_data, 0, _idx);
+        return get_entry_sfinae<Tp>(_data, 0, _idx);
     }
 
 public:
-    template <typename _Tp, typename _Wp, typename _Pp>
+    template <typename Tp, typename _Wp, typename _Pp>
     static void write(std::vector<std::stringstream*>& _os,
-                      std::ios_base::fmtflags _format, const _Tp& _data,
-                      const _Wp& _width, const _Pp& _prec)
+                      std::ios_base::fmtflags _format, const Tp& _data, const _Wp& _width,
+                      const _Pp& _prec)
     {
         size_t num_data = get_distance(_data);
 
         for(size_t i = 0; i < num_data; ++i)
         {
-            auto  _idata  = get_entry<_Tp>(_data, i);
+            auto  _idata  = get_entry<Tp>(_data, i);
             auto  _iwidth = get_entry<_Wp>(_width, i);
             auto  _iprec  = get_entry<_Pp>(_prec, i);
             auto* ss      = new std::stringstream;
@@ -161,9 +161,9 @@ public:
         }
     }
 
-    template <typename... _Tp, size_t... _Idx, typename _Wp, typename _Pp>
+    template <typename... Tp, size_t... _Idx, typename _Wp, typename _Pp>
     static void write(std::vector<std::stringstream*>& _os,
-                      std::ios_base::fmtflags _format, const std::tuple<_Tp...>& _data,
+                      std::ios_base::fmtflags _format, const std::tuple<Tp...>& _data,
                       const _Wp& _width, const _Pp& _prec, index_sequence<_Idx...>)
     {
         using init_list_type = std::initializer_list<int>;
@@ -172,38 +172,38 @@ public:
         consume_parameters(ret);
     }
 
-    template <typename... _Tp, typename _Wp, typename _Pp>
+    template <typename... Tp, typename _Wp, typename _Pp>
     static void write(std::vector<std::stringstream*>& _os,
-                      std::ios_base::fmtflags _format, const std::tuple<_Tp...>& _data,
+                      std::ios_base::fmtflags _format, const std::tuple<Tp...>& _data,
                       const _Wp& _width, const _Pp& _prec)
     {
-        constexpr size_t _N = sizeof...(_Tp);
-        write(_os, _format, _data, _width, _prec, make_index_sequence<_N>{});
+        constexpr size_t N = sizeof...(Tp);
+        write(_os, _format, _data, _width, _prec, make_index_sequence<N>{});
     }
 
 public:
-    template <typename _Tp>
-    static int64_t get_size(const _Tp& _data)
+    template <typename Tp>
+    static int64_t get_size(const Tp& _data)
     {
         return get_labels_sfinae(_data, 0);
     }
 
-    template <typename _Tp>
-    static auto get_size_sfinae(const _Tp& _data, int)
+    template <typename Tp>
+    static auto get_size_sfinae(const Tp& _data, int)
         -> decltype(_data.label_array(), int64_t())
     {
         return _data.label_array().size();
     }
 
-    template <typename _Tp>
-    static auto get_size_sfinae(const _Tp&, long) -> int64_t
+    template <typename Tp>
+    static auto get_size_sfinae(const Tp&, long) -> int64_t
     {
         return 1;
     }
 
 public:
-    template <typename _Tp>
-    static auto get_labels_sfinae(const _Tp& _data, int)
+    template <typename Tp>
+    static auto get_labels_sfinae(const Tp& _data, int)
         -> decltype(_data.label_array(), strvec_t())
     {
         strvec_t _ret;
@@ -212,14 +212,14 @@ public:
         return _ret;
     }
 
-    template <typename _Tp>
-    static auto get_labels_sfinae(const _Tp&, long) -> strvec_t
+    template <typename Tp>
+    static auto get_labels_sfinae(const Tp&, long) -> strvec_t
     {
-        return strvec_t{ _Tp::get_label() };
+        return strvec_t{ Tp::get_label() };
     }
 
-    template <typename _Tp>
-    static strvec_t get_labels(const _Tp& _data)
+    template <typename Tp>
+    static strvec_t get_labels(const Tp& _data)
     {
         return get_labels_sfinae(_data, 0);
     }
@@ -231,8 +231,8 @@ public:
         return strvec_t{ _data };
     }
 
-    template <typename _Tp>
-    static std::string as_string(const _Tp& _obj)
+    template <typename Tp>
+    static std::string as_string(const Tp& _obj)
     {
         std::stringstream ss;
         ss << _obj;
@@ -250,13 +250,13 @@ public:
     template <typename... T>
     static strvec_t as_string_vec(const std::tuple<T...>& _obj)
     {
-        constexpr size_t _N = sizeof...(T);
-        return as_string_vec(_obj, make_index_sequence<_N>{});
+        constexpr size_t N = sizeof...(T);
+        return as_string_vec(_obj, make_index_sequence<N>{});
     }
 
 public:
-    template <typename _Tp>
-    static auto get_display_units_sfinae(const _Tp& _data, int)
+    template <typename Tp>
+    static auto get_display_units_sfinae(const Tp& _data, int)
         -> decltype(_data.display_unit_array(), strvec_t())
     {
         strvec_t _ret;
@@ -265,14 +265,14 @@ public:
         return _ret;
     }
 
-    template <typename _Tp>
-    static auto get_display_units_sfinae(const _Tp&, long) -> strvec_t
+    template <typename Tp>
+    static auto get_display_units_sfinae(const Tp&, long) -> strvec_t
     {
-        return as_string_vec(_Tp::get_display_unit());
+        return as_string_vec(Tp::get_display_unit());
     }
 
-    template <typename _Tp>
-    static strvec_t get_display_units(const _Tp& _data)
+    template <typename Tp>
+    static strvec_t get_display_units(const Tp& _data)
     {
         return get_display_units_sfinae(_data, 0);
     }
@@ -280,23 +280,23 @@ public:
 public:
     using sizevector_t = std::vector<size_t>;
 
-    template <typename _Tp>
-    static sizevector_t get_widths(const _Tp& _data)
+    template <typename Tp>
+    static sizevector_t get_widths(const Tp& _data)
     {
         return get_widths_sfinae(_data, 0);
     }
 
-    template <typename _Tp>
-    static auto get_widths_sfinae(const _Tp& _data, int)
+    template <typename Tp>
+    static auto get_widths_sfinae(const Tp& _data, int)
         -> decltype(_data.width_array(), sizevector_t())
     {
         return _data.width_array();
     }
 
-    template <typename _Tp>
-    static auto get_widths_sfinae(const _Tp&, long) -> sizevector_t
+    template <typename Tp>
+    static auto get_widths_sfinae(const Tp&, long) -> sizevector_t
     {
-        return sizevector_t{ _Tp::get_width() };
+        return sizevector_t{ Tp::get_width() };
     }
 
     //----------------------------------------------------------------------------------//
@@ -356,10 +356,10 @@ public:
     //----------------------------------------------------------------------------------//
     /// shorthand for apply<string_t>::join(...)
     ///
-    template <typename... _Args>
-    static string_t join(const std::string& _delim, _Args&&... _args)
+    template <typename... Args>
+    static string_t join(const std::string& _delim, Args&&... _args)
     {
-        return apply<string_t>::join(_delim, std::forward<_Args>(_args)...);
+        return apply<string_t>::join(_delim, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -368,8 +368,8 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tp, typename... _Extra>
-    static bool is_empty(const std::vector<_Tp, _Extra...>& obj)
+    template <typename Tp, typename... _Extra>
+    static bool is_empty(const std::vector<Tp, _Extra...>& obj)
     {
         for(const auto& itr : obj)
             if(!itr.empty())
@@ -379,27 +379,27 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <template <typename...> class _Tuple, typename... _Tp>
-    static bool is_empty(const _Tuple<_Tp...>& obj)
+    template <template <typename...> class Tuple, typename... Tp>
+    static bool is_empty(const Tuple<Tp...>& obj)
     {
         using init_list_type = std::initializer_list<int>;
-        using input_type     = _Tuple<_Tp...>;
+        using input_type     = Tuple<Tp...>;
 
-        constexpr size_t _N = sizeof...(_Tp);
-        std::bitset<_N>  _bits;
+        constexpr size_t N = sizeof...(Tp);
+        std::bitset<N>   _bits;
 
-        auto&& ret = init_list_type{ (
-            _bits[index_of<_Tp, input_type>::value] =
-                (std::get<index_of<_Tp, input_type>::value>(obj).empty()),
-            0)... };
+        auto&& ret =
+            init_list_type{ (_bits[index_of<Tp, input_type>::value] =
+                                 (std::get<index_of<Tp, input_type>::value>(obj).empty()),
+                             0)... };
         consume_parameters(ret);
         return _bits.all();
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <bool _Enabled, typename _Arg, enable_if_t<(_Enabled == true), int> = 0>
-    static void print_tag(std::ostream& os, const _Arg& _arg)
+    template <bool _Enabled, typename Arg, enable_if_t<(_Enabled == true), int> = 0>
+    static void print_tag(std::ostream& os, const Arg& _arg)
     {
         if(!is_empty(_arg))
             os << " " << _arg;
@@ -407,8 +407,8 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <bool _Enabled, typename _Arg, enable_if_t<(_Enabled == false), int> = 0>
-    static void print_tag(std::ostream&, const _Arg&)
+    template <bool _Enabled, typename Arg, enable_if_t<(_Enabled == false), int> = 0>
+    static void print_tag(std::ostream&, const Arg&)
     {}
 };
 
@@ -416,22 +416,22 @@ public:
 /// \class base_printer
 /// \brief invoked from the base class to provide default printing behavior
 //
-template <typename _Tp>
+template <typename Tp>
 struct base_printer : public common_utils
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
     using widths_t   = std::vector<int64_t>;
 
-    explicit base_printer(std::ostream& _os, const Type& _obj)
+    explicit base_printer(std::ostream& _os, const type& _obj)
     {
-        auto _value = static_cast<const Type&>(_obj).get_display();
-        auto _disp  = Type::get_display_unit();
-        auto _label = Type::get_label();
-        auto _prec  = Type::get_precision();
-        auto _width = Type::get_width();
-        auto _flags = Type::get_format_flags();
+        auto _value = static_cast<const type&>(_obj).get_display();
+        auto _disp  = type::get_display_unit();
+        auto _label = type::get_label();
+        auto _prec  = type::get_precision();
+        auto _width = type::get_width();
+        auto _flags = type::get_format_flags();
 
         std::stringstream ss_value;
         std::stringstream ss_extra;
@@ -439,8 +439,8 @@ struct base_printer : public common_utils
         ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
 
         // check traits to see if we should print
-        constexpr bool units_print = !trait::custom_unit_printing<Type>::value;
-        constexpr bool label_print = !trait::custom_label_printing<Type>::value;
+        constexpr bool units_print = !trait::custom_unit_printing<type>::value;
+        constexpr bool label_print = !trait::custom_label_printing<type>::value;
 
         print_tag<units_print>(ss_extra, _disp);
         print_tag<label_print>(ss_extra, _label);
@@ -453,33 +453,33 @@ struct base_printer : public common_utils
 /// \class base_printer
 /// \brief invoked from the base class to provide default printing behavior
 //
-template <typename _Tp>
+template <typename Tp>
 struct print_statistics : public common_utils
 {
 public:
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
     using widths_t   = std::vector<int64_t>;
 
 public:
-    template <typename _Up, typename _Vp>
+    template <typename Up, typename Vp>
     struct stats_enabled
     {
         static constexpr bool value =
-            (trait::record_statistics<_Up>::value && !(std::is_same<_Vp, void>::value) &&
-             !(std::is_same<_Vp, std::tuple<>>::value) &&
-             !(std::is_same<_Vp, statistics<void>>::value) &&
-             !(std::is_same<_Vp, statistics<std::tuple<>>>::value));
+            (trait::record_statistics<Up>::value && !(std::is_same<Vp, void>::value) &&
+             !(std::is_same<Vp, std::tuple<>>::value) &&
+             !(std::is_same<Vp, statistics<void>>::value) &&
+             !(std::is_same<Vp, statistics<std::tuple<>>>::value));
     };
 
 public:
-    template <typename _Self, template <typename> class _Sp, typename _Vp,
-              typename _Up = _Tp, enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
-    print_statistics(const Type&, utility::stream& _os, const _Self&,
-                     const _Sp<_Vp>& _stats, uint64_t)
+    template <typename Self, template <typename> class Sp, typename Vp, typename Up = Tp,
+              enable_if_t<(stats_enabled<Up, Vp>::value), int> = 0>
+    print_statistics(const type&, utility::stream& _os, const Self&, const Sp<Vp>& _stats,
+                     uint64_t)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
@@ -497,22 +497,22 @@ public:
             utility::write_entry(_os, "STDDEV", _stats.get_stddev());
     }
 
-    template <typename _Self, typename _Vp, typename _Up = _Tp,
-              enable_if_t<!(stats_enabled<_Up, _Vp>::value), int> = 0>
-    print_statistics(const Type&, utility::stream&, const _Self&, const _Vp&, uint64_t)
+    template <typename Self, typename Vp, typename Up = Tp,
+              enable_if_t<!(stats_enabled<Up, Vp>::value), int> = 0>
+    print_statistics(const type&, utility::stream&, const Self&, const Vp&, uint64_t)
     {}
 
-    template <typename _Self>
-    print_statistics(const Type&, utility::stream&, const _Self&,
+    template <typename Self>
+    print_statistics(const type&, utility::stream&, const Self&,
                      const statistics<std::tuple<>>&, uint64_t)
     {}
 
 public:
-    template <template <typename> class _Sp, typename _Vp, typename _Up = _Tp,
-              enable_if_t<(stats_enabled<_Up, _Vp>::value), int> = 0>
-    static void get_header(utility::stream& _os, const _Sp<_Vp>&)
+    template <template <typename> class Sp, typename Vp, typename Up = Tp,
+              enable_if_t<(stats_enabled<Up, Vp>::value), int> = 0>
+    static void get_header(utility::stream& _os, const Sp<Vp>&)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
@@ -520,9 +520,9 @@ public:
         bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
         bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
 
-        auto _flags = _Tp::get_format_flags();
-        auto _width = _Tp::get_width();
-        auto _prec  = _Tp::get_precision();
+        auto _flags = Tp::get_format_flags();
+        auto _width = Tp::get_width();
+        auto _prec  = Tp::get_precision();
 
         if(use_min)
             utility::write_header(_os, "MIN", _flags, _width, _prec);
@@ -534,9 +534,9 @@ public:
             utility::write_header(_os, "STDDEV", _flags, _width, _prec);
     }
 
-    template <typename _Vp, typename _Up = _Tp,
-              enable_if_t<!(stats_enabled<_Up, _Vp>::value), int> = 0>
-    static void get_header(utility::stream&, _Vp&)
+    template <typename Vp, typename Up = Tp,
+              enable_if_t<!(stats_enabled<Up, Vp>::value), int> = 0>
+    static void get_header(utility::stream&, Vp&)
     {}
 
     static void get_header(utility::stream&, const statistics<std::tuple<>>&) {}
@@ -544,27 +544,27 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct print_header : public common_utils
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
     using widths_t   = std::vector<int64_t>;
 
     //----------------------------------------------------------------------------------//
     // only if components are available
     //
-    template <typename _Stats, typename _Up = _Tp,
-              enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print_header(const Type& _obj, utility::stream& _os, const _Stats& _stats)
+    template <typename Statp, typename Up = Tp,
+              enable_if_t<(is_enabled<Up>::value), char> = 0>
+    print_header(const type& _obj, utility::stream& _os, const Statp& _stats)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         auto _labels = get_labels(_obj);
         // auto _display = get_display_units(_obj);
-        // std::cout << "[" << demangle<_Tp>() << "]> labels: ";
+        // std::cout << "[" << demangle<Tp>() << "]> labels: ";
         // for(const auto& itr : _labels)
         //    std::cout << "'" << itr << "' ";
         // std::cout << "\n";
@@ -585,17 +585,17 @@ struct print_header : public common_utils
         auto f_self    = ios_fixed | ios_dec | ios_showp;
         int  w_self    = 8;
         int  p_self    = 1;
-        auto f_value   = _Tp::get_format_flags();
-        auto w_value   = _Tp::get_width();
-        auto p_value   = _Tp::get_precision();
+        auto f_value   = Tp::get_format_flags();
+        auto w_value   = Tp::get_width();
+        auto p_value   = Tp::get_precision();
 
         utility::write_header(_os, "METRIC");
         utility::write_header(_os, "UNITS");
-        if(trait::report_sum<Type>::value)
+        if(trait::report_sum<type>::value)
             utility::write_header(_os, "SUM", f_value, w_value, p_value);
-        if(trait::report_mean<Type>::value)
+        if(trait::report_mean<type>::value)
             utility::write_header(_os, "MEAN", f_value, w_value, p_value);
-        print_statistics<_Tp>::get_header(_os, _stats);
+        print_statistics<Tp>::get_header(_os, _stats);
         utility::write_header(_os, "% SELF", f_self, w_self, p_self);
 
         _os.insert_break();
@@ -605,40 +605,40 @@ struct print_header : public common_utils
             {
                 utility::write_header(_os, "METRIC");
                 utility::write_header(_os, "UNITS");
-                if(trait::report_sum<Type>::value)
+                if(trait::report_sum<type>::value)
                     utility::write_header(_os, "SUM", f_value, w_value, p_value);
-                if(trait::report_mean<Type>::value)
+                if(trait::report_mean<type>::value)
                     utility::write_header(_os, "MEAN", f_value, w_value, p_value);
-                print_statistics<_Tp>::get_header(_os, _stats);
+                print_statistics<Tp>::get_header(_os, _stats);
                 utility::write_header(_os, "% SELF", f_self, w_self, p_self);
                 _os.insert_break();
             }
         }
     }
 
-    template <typename... _Args, typename _Up = _Tp,
-              enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    print_header(const Type&, utility::stream&, _Args&&...)
+    template <typename... Args, typename Up = Tp,
+              enable_if_t<!(is_enabled<Up>::value), char> = 0>
+    print_header(const type&, utility::stream&, Args&&...)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct print
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
     using widths_t   = std::vector<int64_t>;
 
     //----------------------------------------------------------------------------------//
     // only if components are available
     //
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print(const Type& _obj, std::ostream& _os, bool _endline = false)
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    print(const type& _obj, std::ostream& _os, bool _endline = false)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         std::stringstream ss;
@@ -648,28 +648,28 @@ struct print
         _os << ss.str();
     }
 
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    print(std::size_t N, std::size_t Ntot, const type& _obj, std::ostream& _os,
           bool _endline)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         std::stringstream ss;
         ss << _obj;
-        if(_N + 1 < _Ntot)
+        if(N + 1 < Ntot)
             ss << ", ";
-        else if(_N + 1 == _Ntot && _endline)
+        else if(N + 1 == Ntot && _endline)
             ss << '\n';
         _os << ss.str();
     }
 
-    template <typename _Vp, typename _Stats, typename _Up = _Tp,
-              enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print(const Type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _depth, const _Vp& _self, const _Stats& _stats)
+    template <typename Vp, typename Statp, typename Up = Tp,
+              enable_if_t<(is_enabled<Up>::value), char> = 0>
+    print(const type& _obj, utility::stream& _os, const string_t& _prefix, int64_t _laps,
+          int64_t _depth, const Vp& _self, const Statp& _stats)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         auto _labels = common_utils::get_labels(_obj);
@@ -680,44 +680,44 @@ struct print
         utility::write_entry(_os, "DEPTH", _depth);
         utility::write_entry(_os, "METRIC", _labels, true);
         utility::write_entry(_os, "UNITS", _units, true);
-        if(trait::report_sum<Type>::value)
+        if(trait::report_sum<type>::value)
             utility::write_entry(_os, "SUM", _obj.get());
-        if(trait::report_mean<Type>::value)
+        if(trait::report_mean<type>::value)
             utility::write_entry(_os, "MEAN", _obj.get() / _obj.get_laps());
-        print_statistics<_Tp>(_obj, _os, _self, _stats, _laps);
+        print_statistics<Tp>(_obj, _os, _self, _stats, _laps);
         utility::write_entry(_os, "% SELF", _self);
     }
 
     //----------------------------------------------------------------------------------//
     // only if components are available -- pointers
     //
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print(const Type* _obj, std::ostream& _os, bool _endline = false)
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    print(const type* _obj, std::ostream& _os, bool _endline = false)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         if(_obj)
             print(*_obj, _os, _endline);
     }
 
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print(std::size_t _N, std::size_t _Ntot, const Type* _obj, std::ostream& _os,
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    print(std::size_t N, std::size_t Ntot, const type* _obj, std::ostream& _os,
           bool _endline)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         if(_obj)
-            print(_N, _Ntot, *_obj, _os, _endline);
+            print(N, Ntot, *_obj, _os, _endline);
     }
 
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    print(const Type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
+    print(const type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, const widths_t& _output_widths, bool _endline,
           const string_t& _suffix = "")
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         if(_obj)
@@ -727,61 +727,55 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(const Type&, std::ostream&, bool = false)
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    print(const type&, std::ostream&, bool = false)
     {}
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(std::size_t, std::size_t, const Type&, std::ostream&, bool)
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    print(std::size_t, std::size_t, const type&, std::ostream&, bool)
     {}
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    print(const type&, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
     {}
 
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available -- pointers
     //
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(const Type*, std::ostream&, bool = false)
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    print(const type*, std::ostream&, bool = false)
     {}
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(std::size_t, std::size_t, const Type*, std::ostream&, bool)
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    print(std::size_t, std::size_t, const type*, std::ostream&, bool)
     {}
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
+    print(const type*, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct print_storage
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
     //----------------------------------------------------------------------------------//
     // only if components are available
     //
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
     print_storage()
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
-        auto _storage = tim::storage<_Tp>::noninit_instance();
+        auto _storage = tim::storage<Tp>::noninit_instance();
         if(_storage)
         {
             _storage->stack_clear();
@@ -792,8 +786,7 @@ struct print_storage
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value == false), char> = 0>
     print_storage()
     {}
 };
@@ -808,22 +801,22 @@ struct print_storage
 ///     - std::string
 ///     - value_type
 ///
-template <typename _Tp>
+template <typename Tp>
 struct add_secondary
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
     using string_t   = std::string;
 
     //----------------------------------------------------------------------------------//
     // if secondary data explicitly specified
     //
-    template <typename Storage, typename Iterator, typename Up = Type,
+    template <typename Storage, typename Iterator, typename Up = type,
               enable_if_t<(trait::secondary_data<Up>::value), int> = 0>
     add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
     {
-        if(!trait::runtime_enabled<_Tp>::get() || _storage == nullptr)
+        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr)
             return;
 
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
@@ -834,7 +827,7 @@ struct add_secondary
     //----------------------------------------------------------------------------------//
     // check if secondary data implicitly specified
     //
-    template <typename Storage, typename Iterator, typename Up = Type,
+    template <typename Storage, typename Iterator, typename Up = type,
               enable_if_t<!(trait::secondary_data<Up>::value), int> = 0>
     add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
     {
@@ -845,11 +838,11 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component has a set_prefix(const string_t&) member function
     //
-    template <typename Storage, typename Iterator, typename Up = Type>
+    template <typename Storage, typename Iterator, typename Up = type>
     auto add_secondary_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int)
         -> decltype(_rhs.get_secondary(), void())
     {
-        if(!trait::runtime_enabled<_Tp>::get() || _storage == nullptr)
+        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr)
             return;
 
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
@@ -860,7 +853,7 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component does not have a set_prefix(const string_t&) member function
     //
-    template <typename Storage, typename Iterator, typename Up = Type>
+    template <typename Storage, typename Iterator, typename Up = type>
     auto add_secondary_sfinae(Storage*, Iterator, const Up&, long)
         -> decltype(void(), void())
     {}
@@ -878,7 +871,7 @@ private:
 template <typename T>
 struct add_statistics
 {
-    using Type   = T;
+    using type   = T;
     using EmptyT = std::tuple<>;
 
     //----------------------------------------------------------------------------------//
@@ -894,7 +887,7 @@ struct add_statistics
     //----------------------------------------------------------------------------------//
     // if statistics is enabled
     //
-    template <typename StatsT, typename U = Type,
+    template <typename StatsT, typename U = type,
               enable_if_t<(enabled_statistics<U, StatsT>::value), int> = 0>
     add_statistics(const U& rhs, StatsT& stats)
     {
@@ -929,37 +922,37 @@ struct add_statistics
 ///
 /// \brief This operation class echoes DartMeasurements for a CDash dashboard
 ///
-template <typename _Tp>
-struct echo_measurement<_Tp, false> : public common_utils
+template <typename Tp>
+struct echo_measurement<Tp, false> : public common_utils
 {
-    template <typename... _Args>
-    echo_measurement(_Args&&...)
+    template <typename... Args>
+    echo_measurement(Args&&...)
     {}
 };
 
-template <typename _Tp>
-struct echo_measurement<_Tp, true> : public common_utils
+template <typename Tp>
+struct echo_measurement<Tp, true> : public common_utils
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
     //----------------------------------------------------------------------------------//
     /// generate a name attribute
     ///
-    template <typename... _Args>
+    template <typename... Args>
     static string_t generate_name(const string_t& _prefix, string_t _unit,
-                                  _Args&&... _args)
+                                  Args&&... _args)
     {
         if(settings::dart_label())
         {
             return (_unit.length() > 0 && _unit != "%")
-                       ? join("//", Type::get_label(), _unit)
-                       : Type::get_label();
+                       ? join("//", type::get_label(), _unit)
+                       : type::get_label();
         }
 
-        auto _extra = join("/", std::forward<_Args>(_args)...);
-        auto _label = uppercase(Type::get_label());
+        auto _extra = join("/", std::forward<Args>(_args)...);
+        auto _label = uppercase(type::get_label());
         _unit       = replace(_unit, "", { " " });
         string_t _name =
             (_extra.length() > 0) ? join("//", _extra, _prefix) : join("//", _prefix);
@@ -979,73 +972,73 @@ struct echo_measurement<_Tp, true> : public common_utils
     //
     struct impl
     {
-        template <typename _Tuple, typename... _Args, size_t... _Nt,
+        template <typename Tuple, typename... Args, size_t... _Nt,
                   enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static std::string name_generator(const string_t&, _Tuple, _Args&&...,
+        static std::string name_generator(const string_t&, Tuple, Args&&...,
                                           index_sequence<_Nt...>)
         {
             return "";
         }
 
-        template <typename _Tuple, typename... _Args, size_t _Idx, size_t... _Nt,
+        template <typename Tuple, typename... Args, size_t _Idx, size_t... _Nt,
                   enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
-        static std::string name_generator(const string_t& _prefix, _Tuple _units,
-                                          _Args&&... _args, index_sequence<_Idx, _Nt...>)
+        static std::string name_generator(const string_t& _prefix, Tuple _units,
+                                          Args&&... _args, index_sequence<_Idx, _Nt...>)
         {
             return generate_name(_prefix, std::get<_Idx>(_units),
-                                 std::forward<_Args>(_args)...);
+                                 std::forward<Args>(_args)...);
         }
 
-        template <typename _Tuple, typename... _Args, size_t _Idx, size_t... _Nt,
+        template <typename Tuple, typename... Args, size_t _Idx, size_t... _Nt,
                   enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
-        static std::string name_generator(const string_t& _prefix, _Tuple _units,
-                                          _Args&&... _args, index_sequence<_Idx, _Nt...>)
+        static std::string name_generator(const string_t& _prefix, Tuple _units,
+                                          Args&&... _args, index_sequence<_Idx, _Nt...>)
         {
             return join(
                 ",",
-                name_generator<_Tuple>(_prefix, _units, std::forward<_Args>(_args)...,
-                                       index_sequence<_Idx>{}),
-                name_generator<_Tuple>(_prefix, _units, std::forward<_Args>(_args)...,
-                                       index_sequence<_Nt...>{}));
+                name_generator<Tuple>(_prefix, _units, std::forward<Args>(_args)...,
+                                      index_sequence<_Idx>{}),
+                name_generator<Tuple>(_prefix, _units, std::forward<Args>(_args)...,
+                                      index_sequence<_Nt...>{}));
         }
     };
 
     //----------------------------------------------------------------------------------//
     /// generate a name attribute
     ///
-    template <typename _Tuple, typename... _Args>
-    static string_t generate_name(const string_t& _prefix, _Tuple _unit, _Args&&... _args)
+    template <typename Tuple, typename... Args>
+    static string_t generate_name(const string_t& _prefix, Tuple _unit, Args&&... _args)
     {
-        constexpr size_t _N = std::tuple_size<_Tuple>::value;
-        return impl::template name_generator<_Tuple>(
-            _prefix, _unit, std::forward<_Args>(_args)..., make_index_sequence<_N>{});
+        constexpr size_t N = std::tuple_size<Tuple>::value;
+        return impl::template name_generator<Tuple>(
+            _prefix, _unit, std::forward<Args>(_args)..., make_index_sequence<N>{});
     }
 
     //----------------------------------------------------------------------------------//
     /// generate a name attribute
     ///
-    template <typename _Type, typename... _Alloc, typename... _Args>
-    static string_t generate_name(const string_t&               _prefix,
-                                  std::vector<_Type, _Alloc...> _unit, _Args&&... _args)
+    template <typename T, typename... Alloc, typename... Args>
+    static string_t generate_name(const string_t& _prefix, std::vector<T, Alloc...> _unit,
+                                  Args&&... _args)
     {
         string_t ret;
         for(auto& itr : _unit)
             return join(",", ret,
-                        generate_name(_prefix, itr, std::forward<_Args>(_args)...));
+                        generate_name(_prefix, itr, std::forward<Args>(_args)...));
         return ret;
     }
 
     //----------------------------------------------------------------------------------//
     /// generate a name attribute
     ///
-    template <typename _Type, size_t _N, typename... _Args>
-    static string_t generate_name(const string_t& _prefix, std::array<_Type, _N> _unit,
-                                  _Args&&... _args)
+    template <typename T, size_t N, typename... Args>
+    static string_t generate_name(const string_t& _prefix, std::array<T, N> _unit,
+                                  Args&&... _args)
     {
         string_t ret;
         for(auto& itr : _unit)
             return join(",", ret,
-                        generate_name(_prefix, itr, std::forward<_Args>(_args)...));
+                        generate_name(_prefix, itr, std::forward<Args>(_args)...));
         return ret;
     }
 
@@ -1060,7 +1053,7 @@ struct echo_measurement<_Tp, true> : public common_utils
         os << " " << attribute_string("type", "numeric/double");
         for(const auto& itr : attributes)
             os << " " << attribute_string(itr.first, itr.second);
-        os << ">" << std::setprecision(Type::get_precision()) << value
+        os << ">" << std::setprecision(type::get_precision()) << value
            << "</DartMeasurement>\n\n";
     }
 
@@ -1130,18 +1123,18 @@ struct echo_measurement<_Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// assumes type is not a iterable
     ///
-    template <typename _Up = _Tp, typename _Vt = value_type,
-              enable_if_t<(is_enabled<_Up>::value), char> = 0,
-              enable_if_t<!(trait::array_serialization<_Up>::value ||
-                            trait::iterable_measurement<_Up>::value),
-                          int>                            = 0>
-    echo_measurement(_Up& obj, const strvec_t& hierarchy)
+    template <typename Up = Tp, typename _Vt = value_type,
+              enable_if_t<(is_enabled<Up>::value), char> = 0,
+              enable_if_t<!(trait::array_serialization<Up>::value ||
+                            trait::iterable_measurement<Up>::value),
+                          int>                           = 0>
+    echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         auto prefix = generate_prefix(hierarchy);
-        auto _unit  = Type::get_display_unit();
+        auto _unit  = type::get_display_unit();
         auto name   = generate_name(prefix, _unit);
         auto _data  = obj.get();
 
@@ -1154,14 +1147,14 @@ struct echo_measurement<_Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// assumes type is iterable
     ///
-    template <typename _Up = _Tp, typename _Vt = value_type,
-              enable_if_t<(is_enabled<_Up>::value), char> = 0,
-              enable_if_t<(trait::array_serialization<_Up>::value ||
-                           trait::iterable_measurement<_Up>::value),
-                          int>                            = 0>
-    echo_measurement(_Up& obj, const strvec_t& hierarchy)
+    template <typename Up = Tp, typename _Vt = value_type,
+              enable_if_t<(is_enabled<Up>::value), char> = 0,
+              enable_if_t<(trait::array_serialization<Up>::value ||
+                           trait::iterable_measurement<Up>::value),
+                          int>                           = 0>
+    echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
-        if(!trait::runtime_enabled<_Tp>::get())
+        if(!trait::runtime_enabled<Tp>::get())
             return;
 
         auto prefix = generate_prefix(hierarchy);
@@ -1184,9 +1177,9 @@ struct echo_measurement<_Tp, true> : public common_utils
         std::cout << ss.str() << std::flush;
     }
 
-    template <typename... _Args, typename _Up = _Tp, typename _Vt = value_type,
-              enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    echo_measurement(_Up&, _Args&&...)
+    template <typename... Args, typename Up = Tp, typename _Vt = value_type,
+              enable_if_t<!(is_enabled<Up>::value), char> = 0>
+    echo_measurement(Up&, Args&&...)
     {}
 };
 

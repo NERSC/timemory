@@ -54,28 +54,35 @@ namespace tim
 {
 namespace operation
 {
+#if !defined(TIMEMORY_OPERATION_DEFAULT)
+#    define TIMEMORY_OPERATION_DEFAULT(NAME)                                             \
+        NAME()            = delete;                                                      \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct init_storage
 {
-    using Type         = _Tp;
-    using value_type   = typename Type::value_type;
-    using base_type    = typename Type::base_type;
+    using type         = Tp;
+    using value_type   = typename type::value_type;
+    using base_type    = typename type::base_type;
     using string_t     = std::string;
-    using storage_type = storage<Type>;
-    using this_type    = init_storage<_Tp>;
+    using storage_type = storage<type>;
+    using this_type    = init_storage<Tp>;
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
     init_storage()
     {
         static thread_local auto _instance = storage_type::instance();
         _instance->initialize();
     }
 
-    template <typename _Up                                          = _Tp,
-              enable_if_t<!(trait::is_available<_Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
     init_storage()
     {}
 
@@ -126,7 +133,7 @@ struct init_storage
 
     static void init()
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         static thread_local auto _init = this_type::get();
@@ -140,49 +147,51 @@ struct init_storage
 ///
 /// \brief The purpose of this operation class is construct an object with specific args
 ///
-template <typename _Tp>
+template <typename Tp>
 struct construct
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename... _Args, enable_if_t<(sizeof...(_Args) > 0), int> = 0>
-    construct(Type& obj, _Args&&... _args)
+    TIMEMORY_OPERATION_DEFAULT(construct)
+
+    template <typename... Args, enable_if_t<(sizeof...(Args) > 0), int> = 0>
+    construct(type& obj, Args&&... _args)
     {
-        construct_sfinae(obj, std::forward<_Args>(_args)...);
+        construct_sfinae(obj, std::forward<Args>(_args)...);
     }
 
-    template <typename... _Args, enable_if_t<(sizeof...(_Args) == 0), int> = 0>
-    construct(Type&, _Args&&...)
+    template <typename... Args, enable_if_t<(sizeof...(Args) == 0), int> = 0>
+    construct(type&, Args&&...)
     {}
 
 private:
     //----------------------------------------------------------------------------------//
     //  The equivalent of supports args and an implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto construct_sfinae_impl(_Up& obj, int, _Args&&... _args)
-        -> decltype(_Up(std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto construct_sfinae_impl(Up& obj, int, Args&&... _args)
+        -> decltype(Up(std::forward<Args>(_args)...), void())
     {
-        obj = _Up(std::forward<_Args>(_args)...);
+        obj = Up(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  The equivalent of !supports_args and no implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto construct_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
+    template <typename Up, typename... Args>
+    auto construct_sfinae_impl(Up&, long, Args&&...) -> decltype(void(), void())
     {}
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
-    template <typename _Up, typename... _Args>
-    auto construct_sfinae(_Up& obj, _Args&&... _args)
-        -> decltype(construct_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto construct_sfinae(Up& obj, Args&&... _args)
+        -> decltype(construct_sfinae_impl(obj, 0, std::forward<Args>(_args)...), void())
     {
-        construct_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+        construct_sfinae_impl(obj, 0, std::forward<Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -190,27 +199,28 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct set_prefix
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
     using string_t   = std::string;
 
-    template <typename _Up                                           = _Tp,
-              enable_if_t<(trait::requires_prefix<_Up>::value), int> = 0>
-    set_prefix(Type& obj, const string_t& _prefix)
+    TIMEMORY_OPERATION_DEFAULT(set_prefix)
+
+    template <typename Up = Tp, enable_if_t<(trait::requires_prefix<Up>::value), int> = 0>
+    set_prefix(type& obj, const string_t& _prefix)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj.set_prefix(_prefix);
     }
 
-    template <typename _Up                                            = _Tp,
-              enable_if_t<!(trait::requires_prefix<_Up>::value), int> = 0>
-    set_prefix(Type& obj, const string_t& _prefix)
+    template <typename Up                                            = Tp,
+              enable_if_t<!(trait::requires_prefix<Up>::value), int> = 0>
+    set_prefix(type& obj, const string_t& _prefix)
     {
         set_prefix_sfinae(obj, 0, _prefix);
     }
@@ -219,7 +229,7 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component has a set_prefix(const string_t&) member function
     //
-    template <typename U = Type>
+    template <typename U = type>
     auto set_prefix_sfinae(U& obj, int, const string_t& _prefix)
         -> decltype(obj.set_prefix(_prefix), void())
     {
@@ -232,24 +242,26 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component does not have a set_prefix(const string_t&) member function
     //
-    template <typename U = Type>
+    template <typename U = type>
     auto set_prefix_sfinae(U&, long, const string_t&) -> decltype(void(), void())
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct set_flat_profile
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
     using string_t   = std::string;
 
-    set_flat_profile(Type& obj, bool flat)
+    TIMEMORY_OPERATION_DEFAULT(set_flat_profile)
+
+    set_flat_profile(type& obj, bool flat)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         set_flat_profile_sfinae(obj, 0, flat);
@@ -259,7 +271,7 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component has a set_flat_profile(bool) member function
     //
-    template <typename T = Type>
+    template <typename T = type>
     auto set_flat_profile_sfinae(T& obj, int, bool flat)
         -> decltype(obj.set_flat_profile(flat), void())
     {
@@ -269,32 +281,34 @@ private:
     //----------------------------------------------------------------------------------//
     //  If the component does not have a set_flat_profile(bool) member function
     //
-    template <typename T = Type>
+    template <typename T = type>
     auto set_flat_profile_sfinae(T&, long, bool) -> decltype(void(), void())
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct insert_node
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    TIMEMORY_OPERATION_DEFAULT(insert_node)
 
     //----------------------------------------------------------------------------------//
     //  has run-time optional flat storage implementation
     //
-    template <typename _Up = base_type, typename T = Type,
+    template <typename Up = base_type, typename T = type,
               enable_if_t<!(trait::flat_storage<T>::value), char> = 0,
-              enable_if_t<(_Up::implements_storage_v), int>       = 0>
+              enable_if_t<(Up::implements_storage_v), int>        = 0>
     explicit insert_node(base_type& obj, const uint64_t& _hash, bool flat)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         if(flat)
             obj.insert_node(scope::flat{}, _hash);
         else
@@ -304,43 +318,44 @@ struct insert_node
     //----------------------------------------------------------------------------------//
     //  has compile-time fixed flat storage implementation
     //
-    template <typename _Up = base_type, typename T = Type,
+    template <typename Up = base_type, typename T = type,
               enable_if_t<(trait::flat_storage<T>::value), char> = 0,
-              enable_if_t<(_Up::implements_storage_v), int>      = 0>
+              enable_if_t<(Up::implements_storage_v), int>       = 0>
     explicit insert_node(base_type& obj, const uint64_t& _hash, bool)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         obj.insert_node(scope::flat{}, _hash);
     }
 
     //----------------------------------------------------------------------------------//
     //  no storage implementation
     //
-    template <typename _Up                                   = base_type,
-              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    template <typename Up = base_type, enable_if_t<!(Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type&, const uint64_t&, bool)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct pop_node
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    TIMEMORY_OPERATION_DEFAULT(pop_node)
 
     //----------------------------------------------------------------------------------//
     //  has storage implementation
     //
-    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
+    template <typename Up = base_type, enable_if_t<(Up::implements_storage_v), int> = 0>
     explicit pop_node(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj.pop_node();
@@ -349,60 +364,61 @@ struct pop_node
     //----------------------------------------------------------------------------------//
     //  no storage implementation
     //
-    template <typename _Up                                   = base_type,
-              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    template <typename Up = base_type, enable_if_t<!(Up::implements_storage_v), int> = 0>
     explicit pop_node(base_type&)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct record
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename T = Type, typename V = value_type,
+    TIMEMORY_OPERATION_DEFAULT(record)
+
+    template <typename T = type, typename V = value_type,
               typename R = typename function_traits<decltype(&T::record)>::result_type,
               enable_if_t<(std::is_same<V, R>::value && !std::is_same<V, void>::value),
                           int> = 0>
     explicit record(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
-        obj.value = Type::record();
+        obj.value = type::record();
     }
 
-    template <typename T = Type, typename V = value_type,
+    template <typename T = type, typename V = value_type,
               typename R = typename function_traits<decltype(&T::record)>::result_type,
               enable_if_t<!(std::is_same<V, R>::value) || std::is_same<V, void>::value,
                           int> = 0>
     explicit record(base_type&)
     {}
 
-    template <typename T = Type, enable_if_t<(trait::record_max<T>::value), int> = 0,
+    template <typename T = type, enable_if_t<(trait::record_max<T>::value), int> = 0,
               enable_if_t<(is_enabled<T>::value), char> = 0>
     record(T& obj, const T& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj = std::max(obj, rhs);
     }
 
-    template <typename T = Type, enable_if_t<!(trait::record_max<T>::value), int> = 0,
+    template <typename T = type, enable_if_t<!(trait::record_max<T>::value), int> = 0,
               enable_if_t<(is_enabled<T>::value), char> = 0>
     record(T& obj, const T& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj += rhs;
     }
 
-    template <typename... Args, typename T = Type,
+    template <typename... Args, typename T = type,
               enable_if_t<!(is_enabled<T>::value), char> = 0>
     record(Args&&...)
     {}
@@ -410,47 +426,51 @@ struct record
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct reset
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    TIMEMORY_OPERATION_DEFAULT(reset)
 
     explicit reset(base_type& obj) { obj.reset(); }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct measure
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    explicit measure(Type& obj)
+    TIMEMORY_OPERATION_DEFAULT(measure)
+
+    explicit measure(type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         obj.measure();
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct sample
 {
-    static constexpr bool enable = trait::sampler<_Tp>::value;
+    static constexpr bool enable = trait::sampler<Tp>::value;
     using EmptyT                 = std::tuple<>;
-    using Type                   = _Tp;
-    using value_type             = typename Type::value_type;
-    using base_type              = typename Type::base_type;
-    using this_type              = sample<_Tp>;
-    using data_type = conditional_t<enable, decltype(std::declval<_Tp>().get()), EmptyT>;
+    using type                   = Tp;
+    using value_type             = typename type::value_type;
+    using base_type              = typename type::base_type;
+    using this_type              = sample<Tp>;
+    using data_type = conditional_t<enable, decltype(std::declval<Tp>().get()), EmptyT>;
 
     sample()              = default;
     ~sample()             = default;
@@ -459,20 +479,20 @@ struct sample
     sample& operator=(const sample&) = default;
     sample& operator=(sample&&) = default;
 
-    template <typename _Up, enable_if_t<(std::is_same<_Up, this_type>::value), int> = 0>
-    explicit sample(Type& obj, _Up data)
+    template <typename Up, enable_if_t<(std::is_same<Up, this_type>::value), int> = 0>
+    explicit sample(type& obj, Up data)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         obj.sample();
         data.value = obj.get();
         obj.add_sample(std::move(data));
     }
 
-    template <typename _Up, enable_if_t<!(std::is_same<_Up, this_type>::value), int> = 0>
-    explicit sample(Type&, _Up)
+    template <typename Up, enable_if_t<!(std::is_same<Up, this_type>::value), int> = 0>
+    explicit sample(type&, Up)
     {}
 
     data_type value;
@@ -480,113 +500,123 @@ struct sample
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct start
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    TIMEMORY_OPERATION_DEFAULT(start)
 
     explicit start(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         obj.start();
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct priority_start
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value >= 0), int> = 0>
+    TIMEMORY_OPERATION_DEFAULT(priority_start)
+
+    template <typename Up                                               = Tp,
+              enable_if_t<(trait::start_priority<Up>::value >= 0), int> = 0>
     explicit priority_start(base_type&)
     {}
 
-    template <typename _Up                                              = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value < 0), int> = 0>
+    template <typename Up                                              = Tp,
+              enable_if_t<(trait::start_priority<Up>::value < 0), int> = 0>
     explicit priority_start(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         obj.start();
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct standard_start
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value != 0), int> = 0>
+    TIMEMORY_OPERATION_DEFAULT(standard_start)
+
+    template <typename Up                                               = Tp,
+              enable_if_t<(trait::start_priority<Up>::value != 0), int> = 0>
     explicit standard_start(base_type&)
     {}
 
-    template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value == 0), int> = 0>
+    template <typename Up                                               = Tp,
+              enable_if_t<(trait::start_priority<Up>::value == 0), int> = 0>
     explicit standard_start(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         obj.start();
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct delayed_start
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value <= 0), int> = 0>
+    TIMEMORY_OPERATION_DEFAULT(delayed_start)
+
+    template <typename Up                                               = Tp,
+              enable_if_t<(trait::start_priority<Up>::value <= 0), int> = 0>
     explicit delayed_start(base_type&)
     {}
 
-    template <typename _Up                                              = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value > 0), int> = 0>
+    template <typename Up                                              = Tp,
+              enable_if_t<(trait::start_priority<Up>::value > 0), int> = 0>
     explicit delayed_start(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        init_storage<_Tp>::init();
+        init_storage<Tp>::init();
         obj.start();
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct stop
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    TIMEMORY_OPERATION_DEFAULT(stop)
 
     explicit stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj.stop();
@@ -595,23 +625,25 @@ struct stop
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct priority_stop
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up                                              = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value >= 0), int> = 0>
+    TIMEMORY_OPERATION_DEFAULT(priority_stop)
+
+    template <typename Up                                              = Tp,
+              enable_if_t<(trait::stop_priority<Up>::value >= 0), int> = 0>
     explicit priority_stop(base_type&)
     {}
 
-    template <typename _Up                                             = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value < 0), int> = 0>
+    template <typename Up                                             = Tp,
+              enable_if_t<(trait::stop_priority<Up>::value < 0), int> = 0>
     explicit priority_stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj.stop();
@@ -620,23 +652,25 @@ struct priority_stop
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct standard_stop
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up                                              = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value != 0), int> = 0>
+    TIMEMORY_OPERATION_DEFAULT(standard_stop)
+
+    template <typename Up                                              = Tp,
+              enable_if_t<(trait::stop_priority<Up>::value != 0), int> = 0>
     explicit standard_stop(base_type&)
     {}
 
-    template <typename _Up                                              = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value == 0), int> = 0>
+    template <typename Up                                              = Tp,
+              enable_if_t<(trait::stop_priority<Up>::value == 0), int> = 0>
     explicit standard_stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj.stop();
@@ -645,23 +679,25 @@ struct standard_stop
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct delayed_stop
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up                                              = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value <= 0), int> = 0>
+    TIMEMORY_OPERATION_DEFAULT(delayed_stop)
+
+    template <typename Up                                              = Tp,
+              enable_if_t<(trait::stop_priority<Up>::value <= 0), int> = 0>
     explicit delayed_stop(base_type&)
     {}
 
-    template <typename _Up                                             = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value > 0), int> = 0>
+    template <typename Up                                             = Tp,
+              enable_if_t<(trait::stop_priority<Up>::value > 0), int> = 0>
     explicit delayed_stop(base_type& obj)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         obj.stop();
@@ -670,48 +706,50 @@ struct delayed_stop
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct mark_begin
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename... _Args>
-    explicit mark_begin(Type& obj, _Args&&... _args)
+    TIMEMORY_OPERATION_DEFAULT(mark_begin)
+
+    template <typename... Args>
+    explicit mark_begin(type& obj, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        mark_begin_sfinae(obj, std::forward<_Args>(_args)...);
+        mark_begin_sfinae(obj, std::forward<Args>(_args)...);
     }
 
 private:
     //----------------------------------------------------------------------------------//
     //  The equivalent of supports args and an implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto mark_begin_sfinae_impl(_Up& obj, int, _Args&&... _args)
-        -> decltype(obj.mark_begin(std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto mark_begin_sfinae_impl(Up& obj, int, Args&&... _args)
+        -> decltype(obj.mark_begin(std::forward<Args>(_args)...), void())
     {
-        obj.mark_begin(std::forward<_Args>(_args)...);
+        obj.mark_begin(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  The equivalent of !supports_args and no implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto mark_begin_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
+    template <typename Up, typename... Args>
+    auto mark_begin_sfinae_impl(Up&, long, Args&&...) -> decltype(void(), void())
     {}
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
-    template <typename _Up, typename... _Args>
-    auto mark_begin_sfinae(_Up& obj, _Args&&... _args)
-        -> decltype(mark_begin_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto mark_begin_sfinae(Up& obj, Args&&... _args)
+        -> decltype(mark_begin_sfinae_impl(obj, 0, std::forward<Args>(_args)...), void())
     {
-        mark_begin_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+        mark_begin_sfinae_impl(obj, 0, std::forward<Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -719,48 +757,50 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct mark_end
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename... _Args>
-    explicit mark_end(Type& obj, _Args&&... _args)
+    TIMEMORY_OPERATION_DEFAULT(mark_end)
+
+    template <typename... Args>
+    explicit mark_end(type& obj, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        mark_end_sfinae(obj, std::forward<_Args>(_args)...);
+        mark_end_sfinae(obj, std::forward<Args>(_args)...);
     }
 
 private:
     //----------------------------------------------------------------------------------//
     //  The equivalent of supports args and an implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto mark_end_sfinae_impl(_Up& obj, int, _Args&&... _args)
-        -> decltype(obj.mark_end(std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto mark_end_sfinae_impl(Up& obj, int, Args&&... _args)
+        -> decltype(obj.mark_end(std::forward<Args>(_args)...), void())
     {
-        obj.mark_end(std::forward<_Args>(_args)...);
+        obj.mark_end(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  The equivalent of !supports_args and no implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto mark_end_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
+    template <typename Up, typename... Args>
+    auto mark_end_sfinae_impl(Up&, long, Args&&...) -> decltype(void(), void())
     {}
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
-    template <typename _Up, typename... _Args>
-    auto mark_end_sfinae(_Up& obj, _Args&&... _args)
-        -> decltype(mark_end_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto mark_end_sfinae(Up& obj, Args&&... _args)
+        -> decltype(mark_end_sfinae_impl(obj, 0, std::forward<Args>(_args)...), void())
     {
-        mark_end_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+        mark_end_sfinae_impl(obj, 0, std::forward<Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -768,38 +808,40 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct store
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename... _Args>
-    explicit store(Type& obj, _Args&&... _args)
+    TIMEMORY_OPERATION_DEFAULT(store)
+
+    template <typename... Args>
+    explicit store(type& obj, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        store_sfinae(obj, 0, std::forward<_Args>(_args)...);
+        store_sfinae(obj, 0, std::forward<Args>(_args)...);
     }
 
 private:
     //----------------------------------------------------------------------------------//
     //  The equivalent of supports args and an implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto store_sfinae(_Up& obj, int, _Args&&... _args)
-        -> decltype(obj.store(std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto store_sfinae(Up& obj, int, Args&&... _args)
+        -> decltype(obj.store(std::forward<Args>(_args)...), void())
     {
-        obj.store(std::forward<_Args>(_args)...);
+        obj.store(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  The equivalent of !supports_args and no implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto store_sfinae(_Up&, long, _Args&&...) -> decltype(void(), void())
+    template <typename Up, typename... Args>
+    auto store_sfinae(Up&, long, Args&&...) -> decltype(void(), void())
     {}
 };
 
@@ -817,48 +859,50 @@ private:
 /// One such purpose may be to create a custom component that intercepts a malloc and
 /// uses the arguments to get the exact allocation size.
 ///
-template <typename _Tp>
+template <typename Tp>
 struct audit
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename... _Args>
-    audit(Type& obj, _Args&&... _args)
+    TIMEMORY_OPERATION_DEFAULT(audit)
+
+    template <typename... Args>
+    audit(type& obj, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        audit_sfinae(obj, std::forward<_Args>(_args)...);
+        audit_sfinae(obj, std::forward<Args>(_args)...);
     }
 
 private:
     //----------------------------------------------------------------------------------//
     //  The equivalent of supports args and an implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto audit_sfinae_impl(_Up& obj, int, _Args&&... _args)
-        -> decltype(obj.audit(std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto audit_sfinae_impl(Up& obj, int, Args&&... _args)
+        -> decltype(obj.audit(std::forward<Args>(_args)...), void())
     {
-        obj.audit(std::forward<_Args>(_args)...);
+        obj.audit(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     //  The equivalent of !supports_args and no implementation provided
     //
-    template <typename _Up, typename... _Args>
-    auto audit_sfinae_impl(_Up&, long, _Args&&...) -> decltype(void(), void())
+    template <typename Up, typename... Args>
+    auto audit_sfinae_impl(Up&, long, Args&&...) -> decltype(void(), void())
     {}
 
     //----------------------------------------------------------------------------------//
     //  Wrapper that calls one of two above
     //
-    template <typename _Up, typename... _Args>
-    auto audit_sfinae(_Up& obj, _Args&&... _args)
-        -> decltype(audit_sfinae_impl(obj, 0, std::forward<_Args>(_args)...), void())
+    template <typename Up, typename... Args>
+    auto audit_sfinae(Up& obj, Args&&... _args)
+        -> decltype(audit_sfinae_impl(obj, 0, std::forward<Args>(_args)...), void())
     {
-        audit_sfinae_impl(obj, 0, std::forward<_Args>(_args)...);
+        audit_sfinae_impl(obj, 0, std::forward<Args>(_args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -882,6 +926,8 @@ struct compose
     using lhs_base_type = typename LhsType::base_type;
     using rhs_base_type = typename RhsType::base_type;
 
+    TIMEMORY_OPERATION_DEFAULT(compose)
+
     static_assert(std::is_same<ret_value_type, lhs_value_type>::value,
                   "Value types of RetType and LhsType are different!");
 
@@ -900,11 +946,11 @@ struct compose
         return _ret;
     }
 
-    template <typename _Func, typename... _Args>
+    template <typename _Func, typename... Args>
     static RetType generate(const lhs_base_type& _lhs, const rhs_base_type& _rhs,
-                            const _Func& _func, _Args&&... _args)
+                            const _Func& _func, Args&&... _args)
     {
-        RetType _ret(std::forward<_Args>(_args)...);
+        RetType _ret(std::forward<Args>(_args)...);
         _ret.is_running   = false;
         _ret.is_on_stack  = false;
         _ret.is_transient = (_lhs.is_transient && _rhs.is_transient);
@@ -921,18 +967,20 @@ struct compose
 ///
 /// \brief Define addition operations
 ///
-template <typename _Tp>
+template <typename Tp>
 struct plus
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0,
-              enable_if_t<(has_data<_Up>::value), char> = 0>
-    plus(Type& obj, const Type& rhs)
+    TIMEMORY_OPERATION_DEFAULT(plus)
+
+    template <typename Up = Tp, enable_if_t<(trait::record_max<Up>::value), int> = 0,
+              enable_if_t<(has_data<Up>::value), char> = 0>
+    plus(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -940,11 +988,11 @@ struct plus
         obj = std::max(obj, rhs);
     }
 
-    template <typename _Up = _Tp, enable_if_t<!(trait::record_max<_Up>::value), int> = 0,
-              enable_if_t<(has_data<_Up>::value), char> = 0>
-    plus(Type& obj, const Type& rhs)
+    template <typename Up = Tp, enable_if_t<!(trait::record_max<Up>::value), int> = 0,
+              enable_if_t<(has_data<Up>::value), char> = 0>
+    plus(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -952,9 +1000,9 @@ struct plus
         obj += rhs;
     }
 
-    template <typename _Vt, typename _Up = _Tp,
-              enable_if_t<!(has_data<_Up>::value), char> = 0>
-    plus(Type&, const _Vt&)
+    template <typename _Vt, typename Up = Tp,
+              enable_if_t<!(has_data<Up>::value), char> = 0>
+    plus(type&, const _Vt&)
     {}
 };
 
@@ -964,17 +1012,19 @@ struct plus
 ///
 /// \brief Define subtraction operations
 ///
-template <typename _Tp>
+template <typename Tp>
 struct minus
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
-    minus(Type& obj, const Type& rhs)
+    TIMEMORY_OPERATION_DEFAULT(minus)
+
+    template <typename Up = Tp, enable_if_t<(has_data<Up>::value), char> = 0>
+    minus(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         using namespace tim::stl_overload;
@@ -983,80 +1033,121 @@ struct minus
         obj -= rhs;
     }
 
-    template <typename _Vt, typename _Up = _Tp,
-              enable_if_t<!(has_data<_Up>::value), char> = 0>
-    minus(Type&, const _Vt&)
+    template <typename _Vt, typename Up = Tp,
+              enable_if_t<!(has_data<Up>::value), char> = 0>
+    minus(type&, const _Vt&)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct multiply
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
-    multiply(Type& obj, const int64_t& rhs)
+    TIMEMORY_OPERATION_DEFAULT(multiply)
+
+    template <typename Up = Tp, enable_if_t<(has_data<Up>::value), char> = 0>
+    multiply(type& obj, const int64_t& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         using namespace tim::stl_overload;
         obj *= rhs;
     }
 
-    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
-    multiply(Type& obj, const Type& rhs)
+    template <typename Up = Tp, enable_if_t<(has_data<Up>::value), char> = 0>
+    multiply(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         using namespace tim::stl_overload;
         obj *= rhs;
     }
 
-    template <typename _Vt, typename _Up = _Tp,
-              enable_if_t<!(has_data<_Up>::value), char> = 0>
-    multiply(Type&, const _Vt&)
+    template <typename _Vt, typename Up = Tp,
+              enable_if_t<!(has_data<Up>::value), char> = 0>
+    multiply(type&, const _Vt&)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct divide
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
-    divide(Type& obj, const int64_t& rhs)
+    TIMEMORY_OPERATION_DEFAULT(divide)
+
+    template <typename Up = Tp, enable_if_t<(has_data<Up>::value), char> = 0>
+    divide(type& obj, const int64_t& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         using namespace tim::stl_overload;
         obj /= rhs;
     }
 
-    template <typename _Up = _Tp, enable_if_t<(has_data<_Up>::value), char> = 0>
-    divide(Type& obj, const Type& rhs)
+    template <typename Up = Tp, enable_if_t<(has_data<Up>::value), char> = 0>
+    divide(type& obj, const type& rhs)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         using namespace tim::stl_overload;
         obj /= rhs;
     }
 
-    template <typename _Vt, typename _Up = _Tp,
-              enable_if_t<!(has_data<_Up>::value), char> = 0>
-    divide(Type&, const _Vt&)
+    template <typename _Vt, typename Up = Tp,
+              enable_if_t<!(has_data<Up>::value), char> = 0>
+    divide(type&, const _Vt&)
     {}
+};
+
+//--------------------------------------------------------------------------------------//
+///
+/// \class operation::get
+///
+/// \brief The purpose of this operation class is to provide a non-template hook to get
+/// the object itself
+///
+template <typename Tp>
+struct get
+{
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    TIMEMORY_OPERATION_DEFAULT(get)
+
+    //----------------------------------------------------------------------------------//
+    //
+    get(const type& _obj, void*& _ptr, size_t _hash) { get_sfinae(_obj, 0, _ptr, _hash); }
+
+private:
+    template <typename U = type>
+    auto get_sfinae(const U& _obj, int, void*& _ptr, size_t _hash)
+        -> decltype(_obj.get(_ptr, _hash), void())
+    {
+        if(!_ptr)
+            _obj.get(_ptr, _hash);
+    }
+
+    template <typename U = type>
+    void get_sfinae(const U& _obj, long, void*& _ptr, size_t _hash)
+    {
+        if(!_ptr)
+            static_cast<const base_type&>(_obj).get(_ptr, _hash);
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1067,112 +1158,107 @@ struct divide
 /// "get()" member function for multiple components -- this is specifically used in the
 /// Python interface to provide direct access to the results
 ///
-template <typename _Tp>
+template <typename Tp>
 struct get_data
 {
-    using Type            = _Tp;
-    using DataType        = decltype(std::declval<Type>().get());
-    using LabeledDataType = std::tuple<std::string, decltype(std::declval<Type>().get())>;
+    using type            = Tp;
+    using DataType        = decltype(std::declval<type>().get());
+    using LabeledDataType = std::tuple<std::string, decltype(std::declval<type>().get())>;
 
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    TIMEMORY_OPERATION_DEFAULT(get_data)
 
     //----------------------------------------------------------------------------------//
     // only if components are available
     //
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    get_data(const Type& _obj, DataType& _dst)
+    template <typename Up = Tp, enable_if_t<(has_data<Up>::value), char> = 0>
+    get_data(const type& _obj, DataType& _dst)
     {
         _dst = _obj.get();
     }
 
     //----------------------------------------------------------------------------------//
-    // print nothing if component is not available
-    //
-    template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    get_data(const Type&, DataType&)
-    {}
-
-    //----------------------------------------------------------------------------------//
     // only if components are available
     //
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    get_data(const Type& _obj, LabeledDataType& _dst)
+    template <typename Up = Tp, enable_if_t<(has_data<Up>::value), char> = 0>
+    get_data(const type& _obj, LabeledDataType& _dst)
     {
-        _dst = LabeledDataType(Type::get_label(), _obj.get());
+        _dst = LabeledDataType(type::get_label(), _obj.get());
     }
 
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    get_data(const Type&, LabeledDataType&)
+    template <typename U = Tp, typename Dp, enable_if_t<!(has_data<U>::value), char> = 0>
+    get_data(U&, Dp&)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Archive>
+template <typename Tp, typename _Archive>
 struct serialization
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
+    TIMEMORY_OPERATION_DEFAULT(serialization)
+
+    template <typename Up = Tp, enable_if_t<(is_enabled<Up>::value), char> = 0>
     serialization(const base_type& obj, _Archive& ar, const unsigned int)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
-        auto _data = static_cast<const Type&>(obj).get();
+        auto _data = static_cast<const type&>(obj).get();
         ar(cereal::make_nvp("is_transient", obj.is_transient),
            cereal::make_nvp("laps", obj.laps), cereal::make_nvp("repr_data", _data),
            cereal::make_nvp("value", obj.value), cereal::make_nvp("accum", obj.accum));
     }
 
-    template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
+    template <typename Up = Tp, enable_if_t<!(is_enabled<Up>::value), char> = 0>
     serialization(const base_type&, _Archive&, const unsigned int)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct copy
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value), char> = 0>
-    copy(_Up& obj, const _Up& rhs)
+    TIMEMORY_OPERATION_DEFAULT(copy)
+
+    template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
+    copy(Up& obj, const Up& rhs)
     {
-        obj = _Up(rhs);
+        obj = Up(rhs);
     }
 
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value), char> = 0>
-    copy(_Up*& obj, const _Up* rhs)
+    template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
+    copy(Up*& obj, const Up* rhs)
     {
         if(rhs)
         {
             if(!obj)
-                obj = new Type(*rhs);
+                obj = new type(*rhs);
             else
-                *obj = Type(*rhs);
+                *obj = type(*rhs);
         }
     }
 
-    template <typename _Up                                          = _Tp,
-              enable_if_t<!(trait::is_available<_Up>::value), char> = 0>
-    copy(_Up&, const _Up&)
+    template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
+    copy(Up&, const Up&)
     {}
 
-    template <typename _Up                                          = _Tp,
-              enable_if_t<!(trait::is_available<_Up>::value), char> = 0>
-    copy(_Up*&, const _Up*)
+    template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
+    copy(Up*&, const Up*)
     {}
 };
 
@@ -1184,96 +1270,95 @@ struct copy
 /// on the heap (e.g. within a component_list) by ensuring other operation
 /// classes are not invoked on a null pointer
 ///
-template <typename _Tp, typename _Op>
+template <typename Tp, typename Op>
 struct pointer_operator
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    pointer_operator()                        = delete;
-    pointer_operator(const pointer_operator&) = delete;
-    pointer_operator(pointer_operator&&)      = delete;
+    TIMEMORY_OPERATION_DEFAULT(pointer_operator)
 
-    pointer_operator& operator=(const pointer_operator&) = delete;
-    pointer_operator& operator=(pointer_operator&&) = delete;
-
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit pointer_operator(base_type* obj, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit pointer_operator(base_type* obj, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         if(obj)
-            _Op(*obj, std::forward<_Args>(_args)...);
+            Op(*obj, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit pointer_operator(Type* obj, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit pointer_operator(type* obj, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         if(obj)
-            _Op(*obj, std::forward<_Args>(_args)...);
+            Op(*obj, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit pointer_operator(base_type* obj, base_type* rhs, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit pointer_operator(base_type* obj, base_type* rhs, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         if(obj && rhs)
-            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+            Op(*obj, *rhs, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit pointer_operator(Type* obj, Type* rhs, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit pointer_operator(type* obj, type* rhs, Args&&... _args)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         if(obj && rhs)
-            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+            Op(*obj, *rhs, std::forward<Args>(_args)...);
     }
 
     // if the type is not available, never do anything
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<!(trait::is_available<_Up>::value), int> = 0>
-    pointer_operator(_Args&&...)
+    template <typename Up                                         = Tp, typename... Args,
+              enable_if_t<!(trait::is_available<Up>::value), int> = 0>
+    pointer_operator(Args&&...)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct pointer_deleter
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    explicit pointer_deleter(Type*& obj) { delete obj; }
-    explicit pointer_deleter(base_type*& obj) { delete static_cast<Type*&>(obj); }
+    TIMEMORY_OPERATION_DEFAULT(pointer_deleter)
+
+    explicit pointer_deleter(type*& obj) { delete obj; }
+    explicit pointer_deleter(base_type*& obj) { delete static_cast<type*&>(obj); }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct pointer_counter
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    explicit pointer_counter(Type* obj, uint64_t& count)
+    TIMEMORY_OPERATION_DEFAULT(pointer_counter)
+
+    explicit pointer_counter(type* obj, uint64_t& count)
     {
-        if(!trait::runtime_enabled<Type>::get())
+        if(!trait::runtime_enabled<type>::get())
             return;
 
         if(obj)
@@ -1288,19 +1373,14 @@ struct pointer_counter
 /// \brief This operation class is similar to pointer_operator but can handle non-pointer
 /// types
 ///
-template <typename _Tp, typename _Op>
+template <typename Tp, typename Op>
 struct generic_operator
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    generic_operator()                        = delete;
-    generic_operator(const generic_operator&) = delete;
-    generic_operator(generic_operator&&)      = delete;
-
-    generic_operator& operator=(const generic_operator&) = delete;
-    generic_operator& operator=(generic_operator&&) = delete;
+    TIMEMORY_OPERATION_DEFAULT(generic_operator)
 
     //----------------------------------------------------------------------------------//
     //
@@ -1308,36 +1388,36 @@ struct generic_operator
     //
     //----------------------------------------------------------------------------------//
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(base_type* obj, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(base_type* obj, Args&&... _args)
     {
         if(obj)
-            _Op(*obj, std::forward<_Args>(_args)...);
+            Op(*obj, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(Type* obj, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(type* obj, Args&&... _args)
     {
         if(obj)
-            _Op(*obj, std::forward<_Args>(_args)...);
+            Op(*obj, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(base_type* obj, base_type* rhs, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(base_type* obj, base_type* rhs, Args&&... _args)
     {
         if(obj && rhs)
-            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+            Op(*obj, *rhs, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(Type* obj, Type* rhs, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(type* obj, type* rhs, Args&&... _args)
     {
         if(obj && rhs)
-            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+            Op(*obj, *rhs, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1346,32 +1426,32 @@ struct generic_operator
     //
     //----------------------------------------------------------------------------------//
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(base_type& obj, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(base_type& obj, Args&&... _args)
     {
-        _Op(obj, std::forward<_Args>(_args)...);
+        Op(obj, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(Type& obj, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(type& obj, Args&&... _args)
     {
-        _Op(obj, std::forward<_Args>(_args)...);
+        Op(obj, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(base_type& obj, base_type& rhs, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(base_type& obj, base_type& rhs, Args&&... _args)
     {
-        _Op(obj, rhs, std::forward<_Args>(_args)...);
+        Op(obj, rhs, std::forward<Args>(_args)...);
     }
 
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<(trait::is_available<_Up>::value), int> = 0>
-    explicit generic_operator(Type& obj, Type& rhs, _Args&&... _args)
+    template <typename Up                                        = Tp, typename... Args,
+              enable_if_t<(trait::is_available<Up>::value), int> = 0>
+    explicit generic_operator(type& obj, type& rhs, Args&&... _args)
     {
-        _Op(obj, rhs, std::forward<_Args>(_args)...);
+        Op(obj, rhs, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1381,51 +1461,55 @@ struct generic_operator
     //----------------------------------------------------------------------------------//
 
     // if the type is not available, never do anything
-    template <typename _Up = _Tp, typename... _Args,
-              enable_if_t<!(trait::is_available<_Up>::value), int> = 0>
-    generic_operator(_Args&&...)
+    template <typename Up                                         = Tp, typename... Args,
+              enable_if_t<!(trait::is_available<Up>::value), int> = 0>
+    generic_operator(Args&&...)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct generic_deleter
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(std::is_pointer<_Up>::value), int> = 0>
-    explicit generic_deleter(_Up& obj)
+    TIMEMORY_OPERATION_DEFAULT(generic_deleter)
+
+    template <typename Up = Tp, enable_if_t<(std::is_pointer<Up>::value), int> = 0>
+    explicit generic_deleter(Up& obj)
     {
-        delete static_cast<Type*&>(obj);
+        delete static_cast<type*&>(obj);
     }
 
-    template <typename _Up = _Tp, enable_if_t<!(std::is_pointer<_Up>::value), int> = 0>
-    explicit generic_deleter(_Up&)
+    template <typename Up = Tp, enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
+    explicit generic_deleter(Up&)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct generic_counter
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(std::is_pointer<_Up>::value), int> = 0>
-    explicit generic_counter(const _Up& obj, uint64_t& count)
+    TIMEMORY_OPERATION_DEFAULT(generic_counter)
+
+    template <typename Up = Tp, enable_if_t<(std::is_pointer<Up>::value), int> = 0>
+    explicit generic_counter(const Up& obj, uint64_t& count)
     {
-        count += (trait::runtime_enabled<Type>::get() && obj) ? 1 : 0;
+        count += (trait::runtime_enabled<type>::get() && obj) ? 1 : 0;
     }
 
-    template <typename _Up = _Tp, enable_if_t<!(std::is_pointer<_Up>::value), int> = 0>
-    explicit generic_counter(const _Up&, uint64_t& count)
+    template <typename Up = Tp, enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
+    explicit generic_counter(const Up&, uint64_t& count)
     {
-        count += (trait::runtime_enabled<Type>::get()) ? 1 : 0;
+        count += (trait::runtime_enabled<type>::get()) ? 1 : 0;
     }
 };
 
@@ -1487,6 +1571,7 @@ operator+(const tim::component::user_clock&   _user,
     extern template struct minus<COMPONENT_NAME>;                                        \
     extern template struct multiply<COMPONENT_NAME>;                                     \
     extern template struct divide<COMPONENT_NAME>;                                       \
+    extern template struct get<COMPONENT_NAME>;                                          \
     extern template struct get_data<COMPONENT_NAME>;                                     \
     extern template struct copy<COMPONENT_NAME>;                                         \
     extern template struct echo_measurement<COMPONENT_NAME,                              \
@@ -1529,6 +1614,7 @@ operator+(const tim::component::user_clock&   _user,
     template struct minus<COMPONENT_NAME>;                                               \
     template struct multiply<COMPONENT_NAME>;                                            \
     template struct divide<COMPONENT_NAME>;                                              \
+    template struct get<COMPONENT_NAME>;                                                 \
     template struct get_data<COMPONENT_NAME>;                                            \
     template struct copy<COMPONENT_NAME>;                                                \
     template struct echo_measurement<COMPONENT_NAME,                                     \
@@ -1571,6 +1657,9 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::priority_context_switch, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::read_bytes, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::written_bytes, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::virtual_memory, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::user_mode_time, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::kernel_mode_time, true)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::current_peak_rss, true)
 
 //======================================================================================//
 //  timing
@@ -1640,8 +1729,8 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cupti_counters, true)
 //  likwid
 //
 #    if defined(TIMEMORY_USE_LIKWID)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_perfmon, false)
-TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_nvmon, false)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_marker, false)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_nvmarker, false)
 #    endif
 
 //======================================================================================//
@@ -1658,6 +1747,13 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::tau_marker, false)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_profiler, false)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_event, false)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_frame, false)
+#    endif
+
+//======================================================================================//
+//  gotcha
+//
+#    if defined(TIMEMORY_USE_VTUNE)
+TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::malloc_gotcha, true)
 #    endif
 
 #endif

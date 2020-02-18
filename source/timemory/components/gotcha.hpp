@@ -345,7 +345,7 @@ struct gotcha_components_size<_Tuple<_Types...>>
 template <size_type _Nt, typename _Components, typename _Differentiator>
 struct gotcha : public base<gotcha<_Nt, _Components, _Differentiator>, void>
 {
-    static_assert(_Components::contains_gotcha == false,
+    static_assert(_Components::has_gotcha_v == false,
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
@@ -959,7 +959,7 @@ private:
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
-        _Type& _obj    = _comp.template get<_Type>();
+        _Type& _obj    = *_comp.template get<_Type>();
         return _Invoker::invoke(_obj, _ready, _func, std::forward<_Args>(_args)...);
     }
 
@@ -989,7 +989,7 @@ private:
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
-        _Type& _obj    = _comp.template get<_Type>();
+        _Type& _obj    = *_comp.template get<_Type>();
         _Invoker::invoke(_obj, _ready, _func, std::forward<_Args>(_args)...);
     }
 
@@ -1017,7 +1017,7 @@ private:
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
-        _Type& _obj    = _comp.template get<_Type>();
+        _Type& _obj    = *_comp.template get<_Type>();
         return _Invoker::invoke(_obj, _func, std::forward<_Args>(_args)...);
     }
 
@@ -1042,7 +1042,7 @@ private:
     {
         using _Type    = _Differentiator;
         using _Invoker = gotcha_invoker<_Type, _Ret>;
-        _Type& _obj    = _comp.template get<_Type>();
+        _Type& _obj    = *_comp.template get<_Type>();
         _Invoker::invoke(_obj, _func, std::forward<_Args>(_args)...);
     }
 

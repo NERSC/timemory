@@ -65,7 +65,8 @@ public:
     using data_value_type     = typename component_type::data_value_type;
     using data_label_type     = typename component_type::data_label_type;
     using sample_type         = typename component_type::sample_type;
-    using init_func_t         = std::function<void(this_type&)>;
+    using type                = convert_t<typename component_type::type, auto_list<>>;
+    using initializer_type    = std::function<void(this_type&)>;
     using string_t            = std::string;
     using captured_location_t = typename component_type::captured_location_t;
 
@@ -79,7 +80,8 @@ public:
     static constexpr bool is_auto_hybrid      = false;
     static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
-    static constexpr bool contains_gotcha     = component_type::contains_gotcha;
+    static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -88,24 +90,30 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    static init_func_t& get_initializer()
+    static auto& get_initializer()
     {
-        static init_func_t _instance = [](this_type& al) {
-            static auto env_ret  = tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "");
-            static auto env_enum = enumerate_components(tim::delimit(env_ret));
-            ::tim::initialize(al, env_enum);
+        static auto env_enum = enumerate_components(
+            tim::delimit(tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "")));
+
+        static initializer_type _instance = [=](this_type& cl) {
+            ::tim::initialize(cl, env_enum);
         };
         return _instance;
     }
 
 public:
-    template <typename _Func = init_func_t>
+    template <typename _Func = initializer_type>
     explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
                        bool report_at_exit = settings::destructor_report(),
                        const _Func&        = get_initializer());
 
-    template <typename _Func = init_func_t>
+    template <typename _Func = initializer_type>
     explicit auto_list(const captured_location_t&, bool flat = settings::flat_profile(),
+                       bool report_at_exit = settings::destructor_report(),
+                       const _Func&        = get_initializer());
+
+    template <typename _Func = initializer_type>
+    explicit auto_list(size_t, bool flat = settings::flat_profile(),
                        bool report_at_exit = settings::destructor_report(),
                        const _Func&        = get_initializer());
 
@@ -206,42 +214,29 @@ public:
 
 public:
     template <typename _Tp>
-    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
+    decltype(auto) get()
     {
         return m_temporary_object.template get<_Tp>();
     }
 
     template <typename _Tp>
-    auto get() const -> decltype(std::declval<const component_type>().template get<_Tp>())
+    decltype(auto) get() const
     {
         return m_temporary_object.template get<_Tp>();
     }
 
-    template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, type_tuple>::value == true), int> = 0>
+    inline void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
+
+    template <typename _Tp, typename... _Args>
     void init(_Args&&... _args)
     {
         m_temporary_object.template init<_Tp>(std::forward<_Args>(_args)...);
     }
 
-    template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, type_tuple>::value == false), int> = 0>
-    void init(_Args&&...)
-    {}
-
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    template <typename... T>
     void initialize()
     {
-        this->init<_Tp>();
-    }
-
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    void initialize()
-    {
-        this->init<_Tp>();
-        this->initialize<_Tail...>();
+        m_temporary_object.template initialize<T...>();
     }
 
 public:
@@ -285,6 +280,25 @@ auto_list<Types...>::auto_list(const captured_location_t& loc, bool flat,
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        _func(*this);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+template <typename _Func>
+auto_list<Types...>::auto_list(size_t _hash, bool flat, bool report_at_exit,
+                               const _Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
+                               : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -410,6 +424,16 @@ get(tim::auto_list<Types...>&& obj)
     using obj_type = tim::auto_list<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+struct tuple_size<::tim::auto_list<Types...>>
+{
+    using value_type                  = size_t;
+    using type                        = typename ::tim::auto_list<Types...>::type_tuple;
+    static constexpr value_type value = tuple_size<type>::value;
+};
 
 //======================================================================================//
 

@@ -206,9 +206,9 @@ TEST_F(priority_tests, simple_check)
     // details::consume(500);
     // t.stop();
 
-    auto& native_wc = t.get<wall_clock>();
-    auto& pstart_wc = t.get<priority_start_wc>();
-    auto& pstop_wc  = t.get<priority_stop_wc>();
+    auto& native_wc = *t.get<wall_clock>();
+    auto& pstart_wc = *t.get<priority_start_wc>();
+    auto& pstop_wc  = *t.get<priority_stop_wc>();
 
     printf("\n");
     std::cout << native_wc << std::endl;
@@ -242,9 +242,9 @@ TEST_F(priority_tests, start_stop)
 
     t.stop();
 
-    auto& native_wc = t.get<wall_clock>();
-    auto& pstart_wc = t.get<priority_start_wc>();
-    auto& pstop_wc  = t.get<priority_stop_wc>();
+    auto& native_wc = *t.get<wall_clock>();
+    auto& pstart_wc = *t.get<priority_start_wc>();
+    auto& pstop_wc  = *t.get<priority_stop_wc>();
 
     printf("\n");
     std::cout << native_wc << std::endl;

@@ -111,8 +111,8 @@ struct written_bytes;
 
 // marker-forwarding
 struct caliper;
-struct likwid_perfmon;
-struct likwid_nvmon;
+struct likwid_marker;
+struct likwid_nvmarker;
 struct tau_marker;
 
 // vtune
@@ -169,9 +169,13 @@ template <size_t _Idx, typename _Tag = api::native_tag>
 struct user_bundle;
 
 // reserved
-using user_tuple_bundle = user_bundle<10101, api::native_tag>;
-using user_list_bundle  = user_bundle<11011, api::native_tag>;
-using user_ompt_bundle  = user_bundle<10001, api::native_tag>;
+static constexpr size_t user_tuple_bundle_idx = 10101;
+static constexpr size_t user_list_bundle_idx  = 11011;
+static constexpr size_t user_ompt_bundle_idx  = 10001;
+
+using user_tuple_bundle = user_bundle<user_tuple_bundle_idx, api::native_tag>;
+using user_list_bundle  = user_bundle<user_list_bundle_idx, api::native_tag>;
+using user_ompt_bundle  = user_bundle<user_ompt_bundle_idx, api::native_tag>;
 
 // requires gotcha
 struct malloc_gotcha;
@@ -262,6 +266,11 @@ TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, CUPTI_COUNTERS, "cupti_counters
 
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_PROPERTY_SPECIALIZATION(current_peak_rss, CURRENT_PEAK_RSS, "current_peak_rss",
+                                 "")
+
+//--------------------------------------------------------------------------------------//
+
 TIMEMORY_PROPERTY_SPECIALIZATION(data_rss, DATA_RSS, "data_rss", "")
 
 //--------------------------------------------------------------------------------------//
@@ -299,12 +308,20 @@ TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_sp_flops, GPU_ROOFLINE_SP_FLOPS,
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmon, LIKWID_NVMON, "likwid_nvmon", "likwid_gpu")
+TIMEMORY_PROPERTY_SPECIALIZATION(kernel_mode_time, KERNEL_MODE_TIME, "kernel_mode_time",
+                                 "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_perfmon, LIKWID_PERFMON, "likwid_perfmon",
-                                 "likwid_cpu")
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, LIKWID_MARKER, "likwid_marker", "")
+
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, LIKWID_NVMARKER, "likwid_nvmarker", "")
+
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, MALLOC_GOTCHA, "malloc_gotcha", "")
 
 //--------------------------------------------------------------------------------------//
 
@@ -351,7 +368,7 @@ TIMEMORY_PROPERTY_SPECIALIZATION(num_swap, NUM_SWAP, "num_swap", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx")
 
 //--------------------------------------------------------------------------------------//
 
@@ -391,11 +408,11 @@ TIMEMORY_PROPERTY_SPECIALIZATION(stack_rss, STACK_RSS, "stack_rss", "")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock")
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TAU_MARKER, "tau_marker", "tau", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TAU_MARKER, "tau_marker", "tau")
 
 //--------------------------------------------------------------------------------------//
 
@@ -421,6 +438,10 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_
 
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_PROPERTY_SPECIALIZATION(user_mode_time, USER_MODE_TIME, "user_mode_time", "")
+
+//--------------------------------------------------------------------------------------//
+
 TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
                                  "user_tuple_bundle", "")
 
@@ -443,13 +464,17 @@ TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, VTUNE_FRAME, "vtune_frame", "")
 
 //--------------------------------------------------------------------------------------//
 
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_profiler, VTUNE_PROFILER, "vtune_profiler", "")
+
+//--------------------------------------------------------------------------------------//
+
 TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
-                                 "virtual_clock", "")
+                                 "virtual_clock")
 
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_PROPERTY_SPECIALIZATION(written_bytes, WRITTEN_BYTES, "written_bytes",
-                                 "write_bytes", "")
+                                 "write_bytes")
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component

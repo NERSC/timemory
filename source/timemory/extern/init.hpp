@@ -69,8 +69,8 @@ TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_dp_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_sp_flops)
 #    endif
 #    if defined(TIMEMORY_USE_LIKWID)
-TIMEMORY_DECLARE_EXTERN_INIT(likwid_perfmon)
-TIMEMORY_DECLARE_EXTERN_INIT(likwid_nvmon)
+TIMEMORY_DECLARE_EXTERN_INIT(likwid_marker)
+TIMEMORY_DECLARE_EXTERN_INIT(likwid_nvmarker)
 #    endif
 TIMEMORY_DECLARE_EXTERN_INIT(monotonic_clock)
 TIMEMORY_DECLARE_EXTERN_INIT(monotonic_raw_clock)
@@ -113,6 +113,12 @@ TIMEMORY_DECLARE_EXTERN_INIT(vtune_frame)
 #    endif
 TIMEMORY_DECLARE_EXTERN_INIT(voluntary_context_switch)
 TIMEMORY_DECLARE_EXTERN_INIT(written_bytes)
+TIMEMORY_DECLARE_EXTERN_INIT(user_mode_time)
+TIMEMORY_DECLARE_EXTERN_INIT(kernel_mode_time)
+TIMEMORY_DECLARE_EXTERN_INIT(current_peak_rss)
+#    if defined(TIMEMORY_USE_GOTCHA)
+TIMEMORY_DECLARE_EXTERN_INIT(malloc_gotcha)
+#    endif
 
 }  // namespace tim
 

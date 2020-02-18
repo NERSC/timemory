@@ -38,8 +38,8 @@ if(WIN32)
 endif()
 
 set(_BUILD_OMPT OFF)
-if(WIN32 OR APPLE)
-    set(_BUILD_OMPT OFF)
+if(DEFINED TIMEMORY_USE_OMPT)
+    set(_BUILD_OMPT ${TIMEMORY_USE_OMPT})
 endif()
 
 set(_NON_APPLE_UNIX OFF)
@@ -141,9 +141,19 @@ add_feature(BUILD_SHARED_LIBS "Build shared libraries")
 add_feature(BUILD_STATIC_LIBS "Build static libraries")
 
 if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
+    if("${CMAKE_CXX_STANDARD}" LESS 14)
+        unset(CMAKE_CXX_STANDARD CACHE)
+    endif()
+
+    if("${CMAKE_CUDA_STANDARD}" LESS 14)
+        unset(CMAKE_CUDA_STANDARD CACHE)
+    endif()
+endif()
+
+if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     # standard
     set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
-    set(CMAKE_CXX_STANDARD 11 CACHE STRING "CXX language standard")
+    set(CMAKE_CXX_STANDARD 14 CACHE STRING "CXX language standard")
     set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "CUDA language standard")
 
     # standard required
@@ -155,7 +165,6 @@ if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)" OFF)
     add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)" OFF)
     add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++11)" OFF)
-
 else()
     add_feature(CMAKE_C_STANDARD_REQUIRED "Require C language standard")
     add_feature(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard")
@@ -188,7 +197,7 @@ add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
-add_option(TIMEMORY_BUILD_OPENMP
+add_option(TIMEMORY_BUILD_OMPT
     "Enable building OpenMP-Tools" ${_BUILD_OMPT})
 add_option(TIMEMORY_BUILD_DEVELOPER
     "Enable building with developer flags" OFF)
@@ -253,8 +262,12 @@ add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
     "Enable dynamic instrumentation" OFF)
-add_option(TIMEMORY_USE_OPENMP
+add_option(TIMEMORY_USE_OMPT
     "Enable OpenMP tooling" ${_BUILD_OMPT})
+if(CMAKE_CXX_COMPILER_IS_CLANG)
+    add_option(TIMEMORY_USE_XRAY
+        "Enable XRay instrumentation" OFF)
+endif()
 if(_NON_APPLE_UNIX)
     add_option(TIMEMORY_USE_LIKWID
         "Enable LIKWID marker forwarding" ON)
@@ -262,6 +275,10 @@ if(_NON_APPLE_UNIX)
         "Enable GOTCHA" ON)
 endif()
 
+if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang*")
+    set(TIMEMORY_USE_OMPT OFF)
+    set(TIMEMORY_BUILD_OMPT OFF)
+endif()
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

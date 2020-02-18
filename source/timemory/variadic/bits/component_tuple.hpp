@@ -62,7 +62,7 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
     {
         init_storage();
         _func(*this);
-        set_object_prefix(key);
+        set_prefix(key);
         apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
     }
 }
@@ -81,9 +81,35 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
     {
         init_storage();
         _func(*this);
-        set_object_prefix(loc.get_id());
+        set_prefix(loc.get_id());
         apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
     }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename _Func>
+inline component_tuple<Types...>::component_tuple(size_t _hash, const bool& store,
+                                                  const bool& flat, const _Func& _func)
+: bundle_type(_hash, store, flat)
+, m_data(data_type{})
+{
+    if(settings::enabled())
+    {
+        init_storage();
+        _func(*this);
+        set_prefix(_hash);
+        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+component_tuple<Types...>::~component_tuple()
+{
+    pop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -96,14 +122,6 @@ component_tuple<Types...>::clone(bool store, bool flat)
     tmp.m_store = store;
     tmp.m_flat  = flat;
     return tmp;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-component_tuple<Types...>::~component_tuple()
-{
-    pop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -185,9 +203,9 @@ component_tuple<Types...>::start()
     ++m_laps;
 
     // start components
-    apply_v::out_of_order<priority_start_t>(m_data);
+    apply_v::out_of_order<priority_start_t, 1>(m_data);
     apply_v::access<standard_start_t>(m_data);
-    apply_v::out_of_order<delayed_start_t>(m_data);
+    apply_v::out_of_order<delayed_start_t, 1>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -207,9 +225,9 @@ component_tuple<Types...>::stop()
     using delayed_stop_t  = operation_t<operation::delayed_stop, delayed_tuple_t>;
 
     // stop components
-    apply_v::out_of_order<priority_stop_t>(m_data);
+    apply_v::out_of_order<priority_stop_t, 1>(m_data);
     apply_v::access<standard_stop_t>(m_data);
-    apply_v::out_of_order<delayed_stop_t>(m_data);
+    apply_v::out_of_order<delayed_stop_t, 1>(m_data);
 
     // pop components off of the call-stack stack
     pop();
@@ -245,8 +263,9 @@ template <typename... Types>
 inline typename component_tuple<Types...>::data_value_type
 component_tuple<Types...>::get() const
 {
+    using get_data_t = operation_t<operation::get_data, data_collect_type>;
     data_value_type _ret_data;
-    apply_v::access2<operation_t<operation::get_data>>(m_data, _ret_data);
+    apply_v::out_of_order<get_data_t, 2>(m_data, _ret_data);
     return _ret_data;
 }
 
@@ -257,8 +276,9 @@ template <typename... Types>
 inline typename component_tuple<Types...>::data_label_type
 component_tuple<Types...>::get_labeled() const
 {
+    using get_data_t = operation_t<operation::get_data, data_collect_type>;
     data_label_type _ret_data;
-    apply_v::access2<operation_t<operation::get_data>>(m_data, _ret_data);
+    apply_v::out_of_order<get_data_t, 2>(m_data, _ret_data);
     return _ret_data;
 }
 
@@ -338,9 +358,20 @@ component_tuple<Types...>::data() const
 //
 template <typename... Types>
 inline void
-component_tuple<Types...>::set_object_prefix(const string_t& _key) const
+component_tuple<Types...>::set_prefix(const string_t& _key) const
 {
     apply_v::access<operation_t<operation::set_prefix>>(m_data, _key);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+inline void
+component_tuple<Types...>::set_prefix(size_t _hash) const
+{
+    auto itr = get_hash_ids()->find(_hash);
+    if(itr != get_hash_ids()->end())
+        apply_v::access<operation_t<operation::set_prefix>>(m_data, itr->second);
 }
 
 //--------------------------------------------------------------------------------------//

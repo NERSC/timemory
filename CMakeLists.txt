@@ -12,6 +12,15 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(WARNING "In-source build")
 endif()
 
+option(TIMEMORY_CCACHE_BUILD "Enable ccache build" OFF)
+mark_as_advanced(TIMEMORY_CCACHE_BUILD)
+if(TIMEMORY_CCACHE_BUILD)
+    find_program(CCACHE_EXE ccache)
+    if(CCACHE_EXE)
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_EXE}")
+    endif()
+endif()
+
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
@@ -219,7 +228,7 @@ if(TIMEMORY_BUILD_CALIPER)
         EXPORT ${PROJECT_NAME}-library-depends)
 endif()
 
-if(TIMEMORY_BUILD_OPENMP)
+if(TIMEMORY_BUILD_OMPT)
     set(_OMPT_TARGETS)
     foreach(OMPT_TARGET omp ompimp omptarget.rtl.cuda omptarget)
         if(TARGET ${OMPT_TARGET})
@@ -252,7 +261,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory")
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 endif()
 

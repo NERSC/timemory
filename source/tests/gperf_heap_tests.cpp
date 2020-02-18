@@ -105,8 +105,9 @@ protected:
         setenv("MALLOCSTATS", "1", 1);
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "500", 1);
-        list_t::get_initializer() = [](list_t& obj) {
-            obj.initialize<real_clock, gperf_cpu_profiler, gperf_heap_profiler>();
+        list_t::get_initializer() = [](auto& obj) {
+            obj.template initialize<real_clock, gperf_cpu_profiler,
+                                    gperf_heap_profiler>();
         };
     }
 };

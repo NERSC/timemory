@@ -13,6 +13,8 @@ if(NOT MPI_FOUND)
     return()
 endif()
 
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME mpip)
+
 option(TIMEMORY_GENERATE_MPIP "Generate the mpip via parsing mpi.h for PMPI functions" OFF)
 mark_as_advanced(TIMEMORY_GENERATE_MPIP)
 

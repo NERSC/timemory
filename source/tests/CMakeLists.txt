@@ -42,7 +42,7 @@ add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-analysis-tools timemory-openmp)
+                    timemory-analysis-tools timemory-ompt)
 
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(timemory-CXX-Basic-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-cxx-basic-example)
-set(COMPONENTS cxx compile-options analysis-tools)
+set(COMPONENTS compile-options analysis-tools)
 
 option(USE_TAU "Enable TAU support" OFF)
 option(USE_PAPI "Enable PAPI support" OFF)

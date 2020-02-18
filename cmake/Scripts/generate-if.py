@@ -11,16 +11,16 @@ def generate_if_statement(component, idx, indent_tabs=2, spaces=4, var="_hashmap
     This function generates a case label for C++
     """
     enumeration = mangled_enums.get(component, component)
-    strcomponent = mangled_strings.get(component, [component])
-    if component not in strcomponent:
-        strcomponent += [component]
-    strcomponent.sort()
+    component_options = mangled_strings.get(component, [component])
+    if component not in component_options:
+        component_options += [component]
+    component_options.sort()
 
     tab = " " * spaces * indent_tabs
     statement = ""
-    for comp in strcomponent:
-        statement = '{}{}{}["{}"] = {};\n'.format(
-            statement, tab, var, comp, enumeration.upper())
+    for comp in component_options:
+        statement += '{}{}"{}", {}{},\n'.format(
+            tab, '{', comp, enumeration.upper(), '}')
     return statement
 
 
@@ -92,15 +92,17 @@ if __name__ == "__main__":
 
     tab = " " * args.spaces_per_tab * args.tabs_per_indent
     btab = " " * args.spaces_per_tab * (args.tabs_per_indent - 1)
-    outdata = "{}static auto _generate = []() {}\n{}component_hash_map_t _instance;\n".format(btab, '{', tab)
-
+    outdata = "{}static component_hash_map_t _hashmap = {}\n".format(
+        btab, '{')
     idx = 0
     for component in components:
         outdata += "{}".format(generate_if_statement(component, idx,
                                                      args.tabs_per_indent, args.spaces_per_tab,
                                                      args.var))
         idx += 1
-    outdata += "{}return _instance;\n{}{}\n".format(tab, btab, '};')
+    outdata = outdata.strip(",\n")
+    outdata += '\n{}{};\n'.format(btab, '}')
+    # outdata += "{}return _instance;\n{}{}\n".format(tab, btab, '};')
 
     message = '{}static auto errmsg = [](const std::string& {}) {} fprintf(stderr, "Unknown component label: %s{}", {}.c_str()); {};'.format(
         btab, args.iter_var, "{", ". Valid choices are: {}\\n".format(component_options), args.iter_var, "}")

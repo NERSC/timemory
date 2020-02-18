@@ -67,7 +67,7 @@ class component_hybrid
     // manager is friend so can use above
     friend class manager;
 
-    template <typename _TupleC, typename _ListC>
+    template <typename T, typename L>
     friend class auto_hybrid;
 
 public:
@@ -81,7 +81,7 @@ public:
     using type_tuple      = tim::impl::tuple_concat<typename tuple_type::type_tuple,
                                                typename list_type::type_tuple>;
 
-    using tuple_type_list = typename tuple_type::data_type;
+    using tuple_type_list = typename tuple_type::reference_type;
     using list_type_list  = typename list_type::reference_type;
     using data_value_type = decltype(std::tuple_cat(std::declval<tuple_type>().get(),
                                                     std::declval<list_type>().get()));
@@ -92,6 +92,7 @@ public:
     // used by gotcha
     using component_type = component_hybrid<tuple_type, list_type>;
     using auto_type      = auto_hybrid<tuple_type, list_type>;
+    using type = component_hybrid<typename tuple_type::type, typename list_type::type>;
 
     // used by component hybrid and gotcha
     static constexpr bool is_component_list   = false;
@@ -105,12 +106,15 @@ public:
     static constexpr bool is_component        = false;
 
     // used by gotcha component to prevent recursion
-    static constexpr bool contains_gotcha =
-        (tuple_type::contains_gotcha || list_type::contains_gotcha);
+    static constexpr bool has_gotcha_v =
+        (tuple_type::has_gotcha_v || list_type::has_gotcha_v);
+
+    static constexpr bool has_user_bundle_v =
+        (tuple_type::has_user_bundle_v || list_type::has_user_bundle_v);
 
     using size_type           = int64_t;
     using captured_location_t = source_location::captured;
-    using init_func_t         = std::function<void(this_type&)>;
+    using initializer_type    = std::function<void(this_type&)>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -123,9 +127,9 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    static init_func_t& get_initializer()
+    static initializer_type& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static initializer_type _instance = [](this_type&) {};
         return _instance;
     }
 
@@ -135,7 +139,7 @@ public:
     , m_list()
     {}
 
-    template <typename _Func = init_func_t>
+    template <typename _Func = initializer_type>
     explicit component_hybrid(const string_t& key, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
@@ -145,12 +149,22 @@ public:
         _func(*this);
     }
 
-    template <typename _Func = init_func_t>
+    template <typename _Func = initializer_type>
     explicit component_hybrid(const captured_location_t& loc, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
     : m_tuple(loc, store, flat)
     , m_list(loc, store, flat)
+    {
+        _func(*this);
+    }
+
+    template <typename _Func = initializer_type>
+    explicit component_hybrid(size_t _hash, const bool& store = true,
+                              const bool&  flat  = settings::flat_profile(),
+                              const _Func& _func = this_type::get_initializer())
+    : m_tuple(_hash, store, flat)
+    , m_list(_hash, store, flat)
     {
         _func(*this);
     }
@@ -448,6 +462,8 @@ public:
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        if((obj.m_tuple.hash() + obj.m_list.hash()) == 0)
+            return os;
         std::stringstream tss, lss;
 
         obj.m_tuple.template print<true, false>(tss);
@@ -505,6 +521,13 @@ public:
         return m_list.template get<_Tp>();
     }
 
+    inline void get(void*& ptr, size_t _hash)
+    {
+        m_tuple.get(ptr, _hash);
+        if(!ptr)
+            m_list.get(ptr, _hash);
+    }
+
 public:
     //----------------------------------------------------------------------------------//
     //  apply a member function to a type
@@ -537,9 +560,22 @@ protected:
     list_type  m_list  = list_type();
 };
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+
+namespace std
+{
+template <typename _Tuple, typename _List>
+struct tuple_size<::tim::component_hybrid<_Tuple, _List>>
+{
+    using value_type                  = size_t;
+    static constexpr value_type value = tuple_size<typename _Tuple::type_tuple>::value +
+                                        tuple_size<typename _List::type_tuple>::value;
+};
+}  // namespace std
 
 //--------------------------------------------------------------------------------------//
 

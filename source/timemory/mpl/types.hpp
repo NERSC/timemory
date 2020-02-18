@@ -123,6 +123,12 @@ struct requires_json;
 template <typename T>
 struct is_gotcha;
 
+template <typename T>
+struct is_user_bundle;
+
+template <typename T>
+struct collects_data;
+
 template <typename T, typename Tuple>
 struct supports_args;
 
@@ -301,6 +307,9 @@ struct multiply;
 
 template <typename T>
 struct divide;
+
+template <typename T>
+struct get;
 
 template <typename T>
 struct get_data;
@@ -491,14 +500,17 @@ struct instance_tracker;
 template <typename _Comp, typename T = typename trait::statistics<_Comp>::type>
 struct record_statistics;
 
+template <typename T, typename Toolset>
+struct omp_tools;
+
 }  // namespace policy
 
 //--------------------------------------------------------------------------------------//
 
 namespace operation
 {
-//----------------------------------------------------------------------------------//
-// shorthand for available, non-void, using internal output handling
+//--------------------------------------------------------------------------------------//
+// shorthand for available, non-void
 //
 template <typename _Up>
 struct is_enabled
@@ -508,8 +520,11 @@ struct is_enabled
         (trait::is_available<_Up>::value && !(std::is_same<_Vp, void>::value));
 };
 
-//----------------------------------------------------------------------------------//
-// shorthand for non-void, using internal output handling
+template <typename U>
+using is_enabled_t = typename is_enabled<U>::type;
+
+//--------------------------------------------------------------------------------------//
+// shorthand for non-void
 //
 template <typename _Up>
 struct has_data
@@ -517,6 +532,9 @@ struct has_data
     using _Vp                   = typename _Up::value_type;
     static constexpr bool value = (!(std::is_same<_Vp, void>::value));
 };
+
+template <typename U>
+using has_data_t = typename has_data<U>::type;
 
 }  // namespace operation
 
