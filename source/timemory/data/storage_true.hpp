@@ -445,11 +445,11 @@ public:
     virtual bool global_init() final
     {
         static auto _lambda = [&]() {
+            m_global_init = true;
             if(!m_is_master && master_instance())
                 master_instance()->global_init();
             if(m_is_master)
                 Type::global_init(this);
-            m_global_init = true;
             return m_global_init;
         };
         if(!m_global_init)
@@ -462,12 +462,12 @@ public:
     virtual bool thread_init() final
     {
         static auto _lambda = [&]() {
+            m_thread_init = true;
             if(!m_is_master && master_instance())
                 master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
             Type::thread_init(this);
-            m_thread_init = true;
             return m_thread_init;
         };
         if(!m_thread_init)
@@ -480,13 +480,13 @@ public:
     virtual bool data_init() final
     {
         static auto _lambda = [&]() {
+            m_data_init = true;
             if(!m_is_master && master_instance())
                 master_instance()->data_init();
             bool _global_init = global_init();
             bool _thread_init = thread_init();
             consume_parameters(_global_init, _thread_init);
             check_consistency();
-            m_data_init = true;
             return m_data_init;
         };
         if(!m_data_init)
