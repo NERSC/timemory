@@ -166,7 +166,7 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static int event_set() { return (_event_set_ptr()) ? (*_event_set_ptr()) : -1; }
+    static int event_set() { return _event_set(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -297,7 +297,7 @@ struct cpu_roofline
         static std::mutex            _mutex;
         std::unique_lock<std::mutex> _lock(_mutex);
 
-        papi::create_event_set(_event_set_ptr(), settings::papi_multiplexing());
+        papi::create_event_set(&_event_set(), settings::papi_multiplexing());
         if(event_set() == PAPI_NULL)
         {
             fprintf(stderr, "[cpu_roofline]> event_set is PAPI_NULL!\n");
@@ -310,14 +310,16 @@ struct cpu_roofline
                 {
                     _events_ptr()->push_back(itr);
                     if(settings::verbose() > 1 || settings::debug())
-                        printf("[cpu_roofline]> Added event %s\n",
-                               papi::get_event_code_name(itr).c_str());
+                        printf("[cpu_roofline]> Added event %s to event set %i\n",
+                               papi::get_event_code_name(itr).c_str(), event_set());
                 }
                 else
                 {
                     if(!settings::papi_quiet())
-                        fprintf(stderr, "[cpu_roofline]> Failed to add event %s\n",
-                                papi::get_event_code_name(itr).c_str());
+                        fprintf(stderr,
+                                "[cpu_roofline]> Failed to add event %s to event "
+                                "set %i\n",
+                                papi::get_event_code_name(itr).c_str(), event_set());
                 }
             }
             if(_events_ptr()->size() > 0)
@@ -344,9 +346,8 @@ struct cpu_roofline
             papi::destroy_event_set(event_set());
         }
         delete _events_ptr();
-        delete _event_set_ptr();
-        _events_ptr()    = nullptr;
-        _event_set_ptr() = nullptr;
+        _event_set()  = PAPI_NULL;
+        _events_ptr() = nullptr;
         papi::unregister_thread();
     }
 
@@ -807,9 +808,9 @@ private:
 
     //----------------------------------------------------------------------------------//
 
-    static int*& _event_set_ptr()
+    static int& _event_set()
     {
-        static thread_local int* _instance = new int(PAPI_NULL);
+        static thread_local int _instance = PAPI_NULL;
         return _instance;
     }
 
@@ -819,9 +820,8 @@ public:
     static void cleanup()
     {
         delete _events_ptr();
-        delete _event_set_ptr();
-        _events_ptr()    = nullptr;
-        _event_set_ptr() = nullptr;
+        _events_ptr() = nullptr;
+        _event_set()  = PAPI_NULL;
     }
 };
 
