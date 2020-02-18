@@ -1752,7 +1752,7 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_frame, false)
 //======================================================================================//
 //  gotcha
 //
-#    if defined(TIMEMORY_USE_VTUNE)
+#    if defined(TIMEMORY_USE_GOTCHA)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::malloc_gotcha, true)
 #    endif
 
