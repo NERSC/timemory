@@ -368,6 +368,11 @@ get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
     return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename... T>
+using auto_hybrid_t = typename auto_hybrid<T...>::type;
+
 //======================================================================================//
 
 }  // namespace tim
@@ -377,8 +382,9 @@ get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
 namespace std
 {
 template <typename _Tuple, typename _List>
-struct tuple_size<::tim::auto_hybrid<_Tuple, _List>>
+class tuple_size<::tim::auto_hybrid<_Tuple, _List>>
 {
+public:
     using value_type                  = size_t;
     static constexpr value_type value = tuple_size<typename _Tuple::type_tuple>::value +
                                         tuple_size<typename _List::type_tuple>::value;

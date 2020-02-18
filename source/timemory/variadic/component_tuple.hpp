@@ -504,6 +504,11 @@ get_labeled(const component_tuple<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename... T>
+using component_tuple_t = typename component_tuple<T...>::type;
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
@@ -552,8 +557,9 @@ get(::tim::component_tuple<Types...>&& obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-struct tuple_size<::tim::component_tuple<Types...>>
+class tuple_size<::tim::component_tuple<Types...>>
 {
+public:
     using value_type = size_t;
     using type       = typename ::tim::component_tuple<Types...>::type_tuple;
     static constexpr value_type value = tuple_size<type>::value;

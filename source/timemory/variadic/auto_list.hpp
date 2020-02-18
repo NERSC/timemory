@@ -368,6 +368,10 @@ get_labeled(const auto_list<_Types...>& _obj)
 {
     return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
+//--------------------------------------------------------------------------------------//
+
+template <typename... T>
+using auto_list_t = typename auto_list<T...>::type;
 
 //======================================================================================//
 
@@ -428,8 +432,9 @@ get(tim::auto_list<Types...>&& obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-struct tuple_size<::tim::auto_list<Types...>>
+class tuple_size<::tim::auto_list<Types...>>
 {
+public:
     using value_type                  = size_t;
     using type                        = typename ::tim::auto_list<Types...>::type_tuple;
     static constexpr value_type value = tuple_size<type>::value;

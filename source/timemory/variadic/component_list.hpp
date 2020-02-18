@@ -1,3 +1,4 @@
+
 // MIT License
 //
 // Copyright (c) 2020, The Regents of the University of California,
@@ -379,31 +380,43 @@ public:
 
 public:
     // get member functions taking a type
-    template <typename U, typename T = typename std::remove_pointer<U>::type,
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
     T* get()
     {
         return std::get<index_of<T*, data_type>::value>(m_data);
     }
 
-    template <typename U, typename T = typename std::remove_pointer<U>::type,
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
     const T* get() const
     {
         return std::get<index_of<T*, data_type>::value>(m_data);
     }
 
-    template <typename U, typename T = typename std::remove_pointer<U>::type,
-              enable_if_t<!(is_one_of<T, reference_type>::value), int> = 0>
-    T* get() const
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              enable_if_t<!(is_one_of<T*, data_type>::value), int> = 0>
+    T* get()
     {
-        void*       ptr   = nullptr;
-        static auto _hash = std::hash<std::string>()(demangle<T>());
-        get(ptr, _hash);
-        return static_cast<T*>(ptr);
+        // void*       ptr   = nullptr;
+        // static auto _hash = std::hash<std::string>()(demangle<T>());
+        // get(ptr, _hash);
+        // return static_cast<T*>(ptr);
+        return nullptr;
     }
 
-    inline void get(void*& ptr, size_t _hash) const
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              enable_if_t<!(is_one_of<T*, data_type>::value), int> = 0>
+    const T* get() const
+    {
+        // void*       ptr   = nullptr;
+        // static auto _hash = std::hash<std::string>()(demangle<T>());
+        // get(ptr, _hash);
+        // return static_cast<T*>(ptr);
+        return nullptr;
+    }
+
+    inline void get(void*& ptr, size_t _hash)
     {
         using get_t = operation_t<operation::get>;
         apply_v::access<get_t>(m_data, ptr, _hash);
@@ -412,10 +425,10 @@ public:
     //----------------------------------------------------------------------------------//
     ///  initialize a type that is in variadic list AND is available
     ///
-    template <typename U, typename T = typename std::remove_pointer<U>::type,
-              typename... Args,
-              enable_if_t<(is_one_of<T*, data_type>::value == true), int> = 0,
-              enable_if_t<(trait::is_available<T>::value == true), int>   = 0>
+    template <
+        typename U, typename T = std::remove_pointer_t<decay_t<U>>, typename... Args,
+        enable_if_t<(is_one_of<T*, data_type>::value && trait::is_available<T>::value),
+                    char> = 0>
     void init(Args&&... _args)
     {
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
@@ -444,28 +457,13 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    ///  "initialize" a type that is in variadic list BUT is NOT available
+    ///  "initialize" a type that is NOT in variadic list but IS available
     ///
-    template <typename T, typename... Args,
-              enable_if_t<(is_one_of<T, reference_type>::value == true), int> = 0,
-              enable_if_t<(trait::is_available<T>::value == false), int>      = 0>
-    void init(Args&&...)
-    {
-        static std::atomic<int> _count(0);
-        if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
-        {
-            std::string _id = demangle(typeid(T).name());
-            printf("[component_list::init]> skipping unavailable type '%s'...\n",
-                   _id.c_str());
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <
-        typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && has_user_bundle_v),
-                    int> = 0>
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args,
+              enable_if_t<(!is_one_of<T*, data_type>::value &&
+                           trait::is_available<T>::value && has_user_bundle_v),
+                          int> = 0>
     void init(Args&&...)
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
@@ -474,13 +472,25 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
-    template <
-        typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && !has_user_bundle_v),
-                    int> = 0>
+    ///  "initialize" a type that is in variadic list but is NOT available
+    ///
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args,
+              enable_if_t<(!trait::is_available<T>::value ||
+                           (!is_one_of<T*, data_type>::value && !has_user_bundle_v)),
+                          long> = 0>
     void init(Args&&...)
-    {}
+    {
+        /*
+        static std::atomic<int> _count(0);
+        if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
+        {
+            std::string _id = demangle<T>();
+            printf("[component_list::init]> skipping unavailable type '%s'...\n",
+                   _id.c_str());
+        }
+        */
+    }
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
@@ -585,6 +595,11 @@ get_labeled(const component_list<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename... T>
+using component_list_t = typename component_list<T...>::type;
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
@@ -629,8 +644,9 @@ get(tim::component_list<Types...>&& obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-struct tuple_size<::tim::component_list<Types...>>
+class tuple_size<::tim::component_list<Types...>>
 {
+public:
     using value_type = size_t;
     using type       = typename ::tim::component_list<Types...>::type_tuple;
     static constexpr value_type value = tuple_size<type>::value;

@@ -247,7 +247,7 @@ TEST_F(cupti_tests, activity)
         std::cout << itr << std::endl;
         // secondaries (individual kernels)
         std::cout << "Individual kernels:\n";
-        for(const auto& sitr : itr.get<cupti_activity>().get_secondary())
+        for(const auto& sitr : itr.get<cupti_activity>()->get_secondary())
         {
             std::cout << "    " << std::setw(kwidth) << sitr.first << " : "
                       << std::setw(12) << std::setprecision(8) << std::fixed
@@ -261,15 +261,15 @@ TEST_F(cupti_tests, activity)
 
     // secondaries (individual kernels)
     std::cout << "Individual kernels:\n";
-    for(const auto& itr : timer.get<cupti_activity>().get_secondary())
+    for(const auto& itr : timer.get<cupti_activity>()->get_secondary())
     {
         std::cout << "    " << std::setw(kwidth) << itr.first << " : " << std::setw(12)
                   << std::setprecision(8) << std::fixed << itr.second << "\n";
     }
     std::cout << "\n";
 
-    auto& rc = timer.get<real_clock>();
-    auto& ca = timer.get<cupti_activity>();
+    auto& rc = *timer.get<real_clock>();
+    auto& ca = *timer.get<cupti_activity>();
 
     double rc_msec = (rc.get() / cupti_activity::get_unit()) * tim::units::msec;
     double ca_msec = (ca.get() / cupti_activity::get_unit()) * tim::units::msec;
@@ -353,7 +353,7 @@ TEST_F(cupti_tests, kernels)
     int kwidth = 40;
     // secondaries (individual kernels)
     std::cout << "Individual kernels:\n";
-    for(const auto& itr : timer.get<cupti_counters>().get_secondary())
+    for(const auto& itr : timer.get<cupti_counters>()->get_secondary())
     {
         std::stringstream ss_beg, ss_data;
         ss_beg << "    " << std::setw(kwidth) << itr.first;
@@ -372,8 +372,8 @@ TEST_F(cupti_tests, kernels)
     tim::cuda::device_reset();
     printf("\n");
 
-    auto cupti_data   = timer.get<cupti_counters>().get();
-    auto cupti_labels = timer.get<cupti_counters>().label_array();
+    auto cupti_data   = timer.get<cupti_counters>()->get();
+    auto cupti_labels = timer.get<cupti_counters>()->label_array();
     std::cout << "CUPTI: data size = " << cupti_data.size()
               << ", label size = " << cupti_labels.size() << "\n"
               << std::endl;
@@ -470,8 +470,8 @@ TEST_F(cupti_tests, streams)
     std::cout << timer << std::endl;
     printf("\n");
 
-    auto cupti_data   = timer.get<cupti_event>().get();
-    auto cupti_labels = timer.get<cupti_event>().label_array();
+    auto cupti_data   = timer.get<cupti_event>()->get();
+    auto cupti_labels = timer.get<cupti_event>()->label_array();
     std::cout << "CUPTI: data size = " << cupti_data.size()
               << ", label size = " << cupti_labels.size() << "\n"
               << std::endl;

@@ -50,6 +50,16 @@
 //
 namespace tim
 {
+template <typename T>
+struct pointer
+{
+    using type = T*;
+};
+
+template <typename T>
+struct pointer<T*> : pointer<T>
+{};
+
 //======================================================================================//
 //
 template <typename... Types>
@@ -60,9 +70,9 @@ public:
     struct bundle;
     template <typename C, typename A, typename T>
     struct bundle_definitions;
-    template <typename T>
+    template <typename... T>
     struct generic_counter;
-    template <typename T>
+    template <typename... T>
     struct generic_deleter;
     template <template <typename> class Op, typename... T>
     struct generic_operation;
@@ -72,48 +82,30 @@ public:
     using sample_type_t =
         conditional_t<trait::sampler<U>::value, operation::sample<U>, EmptyT>;
 
-    template <template <typename...> class TypeL>
-    struct bundle<TypeL<>>
+    template <typename... T>
+    struct bundle
     {
-        using data_type      = TypeL<>;
-        using type_tuple     = TypeL<>;
-        using reference_type = TypeL<>;
-        using sample_type    = TypeL<>;
-        using print_t        = TypeL<>;
+        // static_assert(!std::is_pointer<T>::value, "Error! pointer pointer!");
+        using type_tuple     = std::tuple<T...>;
+        using reference_type = std::tuple<T...>;
+        using sample_type    = std::tuple<sample_type_t<T>...>;
+        using print_t        = std::tuple<operation::print<T>...>;
         template <typename _Archive>
-        using serialize_t = TypeL<>;
+        using serialize_t = std::tuple<
+            operation::generic_operator<T, operation::serialization<T, _Archive>>...>;
     };
 
-    template <template <typename...> class TypeL, typename T, typename... Tail>
-    struct bundle<TypeL<T, Tail...>>
+    template <template <typename...> class TypeL, typename... T>
+    struct bundle<TypeL<T...>> : bundle<T...>
     {
-        static_assert(!std::is_pointer<T>::value, "Error! pointer pointer!");
-        using data_type      = std::tuple<T, Tail...>;
-        using type_tuple     = std::tuple<T, Tail...>;
-        using reference_type = TypeL<T, Tail...>;
-        using sample_type    = TypeL<sample_type_t<T>, sample_type_t<Tail>...>;
-        using print_t        = TypeL<operation::print<T>, operation::print<Tail>...>;
+        // static_assert(!std::is_pointer<T>::value, "Error! pointer pointer!");
+        using type_tuple     = std::tuple<T...>;
+        using reference_type = TypeL<T...>;
+        using sample_type    = TypeL<sample_type_t<T>...>;
+        using print_t        = TypeL<operation::print<T>...>;
         template <typename _Archive>
-        using serialize_t =
-            TypeL<operation::generic_operator<T, operation::serialization<T, _Archive>>,
-                  operation::generic_operator<
-                      Tail, operation::serialization<Tail, _Archive>>...>;
-    };
-
-    template <template <typename...> class TypeL, typename T, typename... Tail>
-    struct bundle<TypeL<T*, Tail*...>>
-    {
-        static_assert(!std::is_pointer<T>::value, "Error! pointer pointer!");
-        using data_type      = std::tuple<T*, Tail*...>;
-        using type_tuple     = std::tuple<T, Tail...>;
-        using reference_type = TypeL<T, Tail...>;
-        using sample_type    = TypeL<sample_type_t<T>, sample_type_t<Tail>...>;
-        using print_t        = TypeL<operation::print<T>, operation::print<Tail>...>;
-        template <typename _Archive>
-        using serialize_t =
-            TypeL<operation::generic_operator<T*, operation::serialization<T, _Archive>>,
-                  operation::generic_operator<
-                      Tail*, operation::serialization<Tail, _Archive>>...>;
+        using serialize_t = TypeL<
+            operation::generic_operator<T, operation::serialization<T, _Archive>>...>;
     };
 
     template <template <typename...> class CompL, template <typename...> class AutoL,
@@ -131,42 +123,82 @@ public:
     template <typename C, typename A, typename T>
     using auto_type_definition_t = typename bundle_definitions<C, A, T>::auto_type;
 
-    template <template <typename> class Op, template <typename...> class TypeL>
-    struct generic_operation<Op, TypeL<>>
-    {
-        using type = TypeL<>;
-    };
-
-    template <template <typename> class Op, template <typename...> class TypeL,
-              typename... T>
-    struct generic_operation<Op, TypeL<T...>>
-    {
-        using type = TypeL<operation::generic_operator<T, Op<T>>...>;
-    };
-
-    template <template <typename> class Op, template <typename...> class TypeL,
-              typename... T>
-    struct generic_operation<Op, TypeL<T*...>>
-    {
-        using type = TypeL<operation::generic_operator<T, Op<T>>...>;
-    };
-
+    //----------------------------------------------------------------------------------//
+    //
     template <template <typename> class Op, typename... T>
     struct generic_operation
     {
         using type = std::tuple<operation::generic_operator<T, Op<T>>...>;
     };
 
-    template <template <typename...> class TypeL, typename... T>
-    struct generic_counter<TypeL<T...>>
+    template <template <typename> class Op, typename... T>
+    struct generic_operation<Op, std::tuple<T...>> : generic_operation<Op, T...>
+    {};
+
+    template <template <typename> class Op, typename... T>
+    struct generic_operation<Op, std::tuple<T*...>> : generic_operation<Op, T...>
+    {};
+
+    template <template <typename> class Op, typename... T>
+    struct generic_operation<Op, std::tuple<pointer<T>...>> : generic_operation<Op, T...>
+    {};
+
+    template <template <typename> class Op>
+    struct generic_operation<Op, std::tuple<>>
     {
-        using type = TypeL<operation::generic_counter<T>...>;
+        using type = std::tuple<>;
     };
 
-    template <template <typename...> class TypeL, typename... T>
-    struct generic_deleter<TypeL<T...>>
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename... T>
+    struct generic_counter
     {
-        using type = TypeL<operation::generic_deleter<T>...>;
+        using type = std::tuple<operation::generic_counter<T>...>;
+    };
+
+    template <typename... T>
+    struct generic_counter<std::tuple<T...>> : generic_counter<T...>
+    {};
+
+    template <typename... T>
+    struct generic_counter<std::tuple<T*...>> : generic_counter<T...>
+    {};
+
+    template <typename... T>
+    struct generic_counter<std::tuple<pointer<T>...>> : generic_counter<T...>
+    {};
+
+    template <template <typename...> class TypeL>
+    struct generic_counter<TypeL<>>
+    {
+        using type = std::tuple<>;
+    };
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename... T>
+    struct generic_deleter
+    {
+        using type = std::tuple<operation::generic_deleter<T>...>;
+    };
+
+    template <typename... T>
+    struct generic_deleter<std::tuple<T...>> : generic_deleter<T...>
+    {};
+
+    template <typename... T>
+    struct generic_deleter<std::tuple<T*...>> : generic_deleter<T...>
+    {};
+
+    template <typename... T>
+    struct generic_deleter<std::tuple<pointer<T>...>> : generic_deleter<T...>
+    {};
+
+    template <template <typename...> class TypeL>
+    struct generic_deleter<TypeL<>>
+    {
+        using type = std::tuple<>;
     };
 
 public:
@@ -174,9 +206,9 @@ public:
     using string_t    = std::string;
     using string_hash = std::hash<string_t>;
 
-    using impl_type      = std::tuple<Types...>;
-    using type_bundler   = bundle<impl_type>;
-    using data_type      = typename type_bundler::data_type;
+    using impl_type    = std::tuple<Types...>;
+    using type_bundler = bundle<impl_type>;
+    // using data_type      = typename type_bundler::data_type;
     using sample_type    = typename type_bundler::sample_type;
     using type_tuple     = typename type_bundler::type_tuple;
     using reference_type = typename type_bundler::reference_type;
@@ -186,22 +218,22 @@ public:
     using data_label_type = get_data_label_t<data_collect_type>;
 
     // used by gotcha component to prevent recursion
-    using gotcha_types = typename get_true_types<trait::is_gotcha, impl_type>::type;
+    using gotcha_types = typename get_true_types<trait::is_gotcha, type_tuple>::type;
     static constexpr bool has_gotcha_v = (mpl::get_tuple_size<gotcha_types>::value != 0);
 
     using user_bundle_types =
-        typename get_true_types<trait::is_user_bundle, impl_type>::type;
+        typename get_true_types<trait::is_user_bundle, type_tuple>::type;
     static constexpr bool has_user_bundle_v =
         (mpl::get_tuple_size<user_bundle_types>::value != 0);
 
 public:
-    template <template <typename> class Op, typename _Tuple = data_type>
+    template <template <typename> class Op, typename _Tuple = type_tuple>
     using operation_t = typename generic_operation<Op, _Tuple>::type;
 
-    template <typename _Tuple = impl_type>
+    template <typename _Tuple = type_tuple>
     using deleter_t = typename generic_deleter<_Tuple>::type;
 
-    template <typename _Tuple = impl_type>
+    template <typename _Tuple = type_tuple>
     using counter_t = typename generic_counter<_Tuple>::type;
 
 public:
@@ -331,6 +363,8 @@ protected:
 template <typename... Types>
 class generic_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types...>;
+
     template <typename... Args>
     generic_bundle(Args&&... args)
     : generic_bundle<Types...>(std::forward<Args>(args)...)
@@ -340,6 +374,8 @@ class generic_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
 template <typename... Types>
 class generic_bundle<type_list<Types...>> : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types...>;
+
     template <typename... Args>
     generic_bundle(Args&&... args)
     : generic_bundle<Types...>(std::forward<Args>(args)...)
@@ -351,6 +387,8 @@ class generic_bundle<type_list<Types...>> : public generic_bundle<Types...>
 template <typename... Types>
 struct stack_bundle : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types...>;
+
     template <typename... Args>
     stack_bundle(Args&&... args)
     : generic_bundle<Types...>(std::forward<Args>(args)...)
@@ -360,6 +398,8 @@ struct stack_bundle : public generic_bundle<Types...>
 template <typename... Types>
 struct stack_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types...>;
+
     template <typename... Args>
     stack_bundle(Args&&... args)
     : generic_bundle<Types...>(std::forward<Args>(args)...)
@@ -369,6 +409,8 @@ struct stack_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
 template <typename... Types>
 struct stack_bundle<type_list<Types...>> : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types...>;
+
     template <typename... Args>
     stack_bundle(Args&&... args)
     : generic_bundle<Types...>(std::forward<Args>(args)...)
@@ -378,29 +420,35 @@ struct stack_bundle<type_list<Types...>> : public generic_bundle<Types...>
 //======================================================================================//
 //
 template <typename... Types>
-struct heap_bundle : public generic_bundle<Types*...>
+struct heap_bundle : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types*...>;
+
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : generic_bundle<Types*...>(std::forward<Args>(args)...)
+    : generic_bundle<Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
-struct heap_bundle<std::tuple<Types...>> : public generic_bundle<Types*...>
+struct heap_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types*...>;
+
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : generic_bundle<Types*...>(std::forward<Args>(args)...)
+    : generic_bundle<Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
-struct heap_bundle<type_list<Types...>> : public generic_bundle<Types*...>
+struct heap_bundle<type_list<Types...>> : public generic_bundle<Types...>
 {
+    using data_type = std::tuple<Types*...>;
+
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : generic_bundle<Types*...>(std::forward<Args>(args)...)
+    : generic_bundle<Types...>(std::forward<Args>(args)...)
     {}
 };
 

@@ -560,6 +560,11 @@ protected:
     list_type  m_list  = list_type();
 };
 
+//--------------------------------------------------------------------------------------//
+
+template <typename... T>
+using component_hybrid_t = typename component_hybrid<T...>::type;
+
 //======================================================================================//
 
 }  // namespace tim
@@ -569,8 +574,9 @@ protected:
 namespace std
 {
 template <typename _Tuple, typename _List>
-struct tuple_size<::tim::component_hybrid<_Tuple, _List>>
+class tuple_size<::tim::component_hybrid<_Tuple, _List>>
 {
+public:
     using value_type                  = size_t;
     static constexpr value_type value = tuple_size<typename _Tuple::type_tuple>::value +
                                         tuple_size<typename _List::type_tuple>::value;
