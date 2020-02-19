@@ -574,7 +574,8 @@ using component_hybrid_t = typename component_hybrid<T...>::type;
 namespace std
 {
 template <typename _Tuple, typename _List>
-struct tuple_size<::tim::component_hybrid<_Tuple, _List>>
+TSTAG(struct)
+tuple_size<::tim::component_hybrid<_Tuple, _List>>
 {
 public:
     using value_type                  = size_t;

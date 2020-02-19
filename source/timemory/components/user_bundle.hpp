@@ -217,7 +217,8 @@ public:
     {}
 
     user_bundle(const user_bundle& rhs)
-    : m_flat(rhs.m_flat)
+    : base_type(rhs)
+    , m_flat(rhs.m_flat)
     , m_prefix(rhs.m_prefix)
     , m_typeids(rhs.m_typeids)
     , m_bundle(rhs.m_bundle)
@@ -244,10 +245,11 @@ public:
         if(this == &rhs)
             return *this;
 
-        m_flat    = rhs.m_flat;
-        m_prefix  = rhs.m_prefix;
-        m_typeids = rhs.m_typeids;
-        m_bundle  = rhs.m_bundle;
+        base_type::operator=(rhs);
+        m_flat             = rhs.m_flat;
+        m_prefix           = rhs.m_prefix;
+        m_typeids          = rhs.m_typeids;
+        m_bundle           = rhs.m_bundle;
         for(auto& itr : m_bundle)
             itr.set_copy(true);
     }

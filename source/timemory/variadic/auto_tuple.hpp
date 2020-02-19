@@ -504,7 +504,8 @@ get(tim::auto_tuple<Types...>&& obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-struct tuple_size<::tim::auto_tuple<Types...>>
+TSTAG(struct)
+tuple_size<::tim::auto_tuple<Types...>>
 {
 public:
     using value_type                  = size_t;

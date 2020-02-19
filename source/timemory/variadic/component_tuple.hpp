@@ -552,7 +552,8 @@ get(::tim::component_tuple<Types...>&& obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-struct tuple_size<::tim::component_tuple<Types...>>
+TSTAG(struct)
+tuple_size<::tim::component_tuple<Types...>>
 {
 public:
     using value_type = size_t;
