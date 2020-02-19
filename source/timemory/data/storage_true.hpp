@@ -673,8 +673,8 @@ public:
         consume_parameters(_global_init, _thread_init, _data_init);
 
         auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
-        auto itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
-        add_hash_id(hash_id, hash_id * hash_depth);
+        auto itr        = insert<_Scope>(hash_id ^ hash_depth, obj, hash_depth);
+        add_hash_id(hash_id, hash_id ^ hash_depth);
         return itr;
     }
 
@@ -691,8 +691,8 @@ public:
 
         // auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
         uint64_t hash_depth = 1;
-        auto     itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
-        add_hash_id(hash_id, hash_id * hash_depth);
+        auto     itr        = insert<_Scope>(hash_id ^ hash_depth, obj, hash_depth);
+        add_hash_id(hash_id, hash_id ^ hash_depth);
         return itr;
     }
 
@@ -717,7 +717,7 @@ public:
         auto _hash_id = add_hash_id(std::get<1>(_secondary));
         // compute hash w.r.t. parent iterator (so identical kernels from different
         // call-graph parents do not locate same iterator)
-        auto _hash = _hash_id + _itr->id();
+        auto _hash = _hash_id ^ _itr->id();
         // add the hash alias
         add_hash_id(_hash_id, _hash);
         // compute depth
@@ -1059,9 +1059,6 @@ storage<Type, true>::merge(this_type* itr)
 
                 if(*pos == *pitr)
                 {
-                    // auto prefix = get_prefix(pitr->id());
-                    // PRINT_HERE("%s %s", "Merging!", prefix.c_str());
-
                     ++num_merged;
                     sibling_iterator other = pitr;
                     for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
@@ -1069,37 +1066,18 @@ storage<Type, true>::merge(this_type* itr)
                         pre_order_iterator pchild = sitr;
                         if(pchild->obj().nlaps() == 0)
                             continue;
-                        // auto prefix = get_prefix(pchild->id());
-                        // PRINT_HERE("%s %s", "Appending child!", prefix.c_str());
-                        // graph().prepend_child(pos, pchild);
                         graph().append_child(pos, pchild);
                     }
-                }
-                else
-                {
-                    // auto prefix = get_prefix(pitr->id());
-                    // PRINT_HERE("%s %s", "Continuing past dummy!", prefix.c_str());
                 }
 
                 if(settings::debug() || settings::verbose() > 2)
                     PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
                                (int) this->size());
 
+                // remove the entry from this graph since it has been added
                 itr->graph().erase_children(entry.second);
                 itr->graph().erase(entry.second);
             }
-            else
-            {
-                // std::stringstream ss;
-                // ss << std::boolalpha << "valid: " << (itr->graph().is_valid(pitr))
-                //    << ", begin: " << (static_cast<bool>(pitr.begin()));
-                // PRINT_HERE("Bookmark invalid: %s", ss.str().c_str());
-            }
-        }
-        else
-        {
-            // PRINT_HERE("Missing bookmark on master: '%s' @ %lu",
-            //            get_prefix(entry.second->id()).c_str(), entry.second->depth());
         }
     }
 
@@ -1118,41 +1096,6 @@ storage<Type, true>::merge(this_type* itr)
         throw std::runtime_error(ss.str());
 #endif
     }
-
-    /*
-    for(auto mitr = graph().begin(); mitr != graph().end(); ++mitr)
-    {
-        if(!itr->data().has_head())
-            break;
-
-        if(mitr && *mitr == *itr->data().head())
-        {
-            pre_order_iterator _nitr(itr->data().head());
-
-            if(graph().is_valid(_nitr.begin()) && _nitr.begin())
-            {
-                if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> worker is merging %i records into %i records",
-                               Type::get_label().c_str(), (int) itr->size(),
-                               (int) this->size());
-
-                pre_order_iterator _pos   = mitr;
-                sibling_iterator   _other = _nitr;
-                for(auto sitr = _other.begin(); sitr != _other.end(); ++sitr)
-                {
-                    pre_order_iterator pitr = sitr;
-                    graph().append_child(_pos, pitr);
-                }
-                _merged = true;
-
-                if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
-                               (int) this->size());
-                break;
-            }
-
-        }
-    }*/
 
     if(num_merged == 0)
     {
@@ -1226,7 +1169,10 @@ storage<Type, true>::internal_print()
         finalize();
 
         if(!trait::runtime_enabled<Type>::get())
+        {
+            instance_count().store(0);
             return;
+        }
 
         bool _json_forced = requires_json;
         bool _file_output = settings::file_output();
@@ -1267,13 +1213,13 @@ storage<Type, true>::internal_print()
             printf("[%s]|%i> dmp results size: %i\n", label.c_str(), m_node_rank,
                    (int) _dmp_results.size());
 
-        // bool return_nonzero_mpi = (dmp::using_mpi() && !settings::mpi_output_per_node()
-        // && !settings::mpi_output_per_rank());
-
         if(_dmp_results.size() > 0)
         {
             if(m_node_rank != 0)
+            {
+                instance_count().store(0);
                 return;
+            }
             else
             {
                 _results.clear();
@@ -1286,6 +1232,7 @@ storage<Type, true>::internal_print()
         }
         else if(m_node_init && m_node_rank > 0)
         {
+            instance_count().store(0);
             return;
         }
 

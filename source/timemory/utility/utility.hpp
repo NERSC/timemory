@@ -39,6 +39,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 // I/O
 #include <iomanip>
 #include <iostream>
@@ -465,290 +466,232 @@ public:
     }
 };
 
-//======================================================================================//
-//
-//  Counting the number of objects of a given type
-//
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
-template <typename CountedType>
-class static_counted_object
+inline size_t
+unaligned_load(const char* p)
 {
-public:
-    typedef static_counted_object<CountedType> this_type;
+    size_t result;
+    std::memcpy(&result, p, sizeof(result));
+    return result;
+}
 
-public:
-    // return number of existing objects:
-    static int64_t live() { return count().load(); }
-    static bool    is_master() { return thread_number() == 0; }
+//--------------------------------------------------------------------------------------//
 
-protected:
-    // default constructor
-    static_counted_object()
-    : m_thread(thread_number())
-    , m_count(count()++)
-    {}
-    ~static_counted_object()
+#if __SIZEOF_SIZE_T__ == 8
+
+// Loads n bytes, where 1 <= n < 8.
+inline size_t
+load_bytes(const char* p, int n)
+{
+    size_t result = 0;
+    --n;
+    do
+        result = (result << 8) + static_cast<unsigned char>(p[n]);
+    while(--n >= 0);
+    return result;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline size_t
+shift_mix(size_t v)
+{
+    return v ^ (v >> 47);
+}
+
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if __SIZEOF_SIZE_T__ == 4
+
+//--------------------------------------------------------------------------------------//
+// Implementation of Murmur hash for 32-bit size_t.
+//
+inline size_t
+hash_bytes(const void* ptr, size_t len, size_t seed)
+{
+    const size_t m    = 0x5bd1e995;
+    size_t       hash = seed ^ len;
+    const char*  buf  = static_cast<const char*>(ptr);
+
+    // Mix 4 bytes at a time into the hash.
+    while(len >= 4)
     {
-        if(m_decrement)
-        {
-            --count();
-        }
+        size_t k = unaligned_load(buf);
+        k *= m;
+        k ^= k >> 24;
+        k *= m;
+        hash *= m;
+        hash ^= k;
+        buf += 4;
+        len -= 4;
     }
-    static_counted_object(const this_type& rhs)
-    : m_decrement(false)
-    , m_thread(rhs.m_thread)
-    , m_count(rhs.m_count)
-    {}
-    this_type& operator=(const this_type& rhs)
+
+    // Handle the last few bytes of the input array.
+    switch(len)
     {
-        if(this != &rhs)
-        {
-            m_decrement = false;
-            m_thread    = rhs.m_thread;
-            m_count     = rhs.m_count;
-        }
-        return *this;
+        case 3: hash ^= static_cast<unsigned char>(buf[2]) << 16; [[gnu::fallthrough]];
+        case 2: hash ^= static_cast<unsigned char>(buf[1]) << 8; [[gnu::fallthrough]];
+        case 1: hash ^= static_cast<unsigned char>(buf[0]); hash *= m;
+    };
+
+    // Do a few final mixes of the hash.
+    hash ^= hash >> 13;
+    hash *= m;
+    hash ^= hash >> 15;
+    return hash;
+}
+
+//--------------------------------------------------------------------------------------//
+// Implementation of FNV hash for 32-bit size_t.
+// N.B. This function should work on unsigned char, otherwise it does not
+// correctly implement the FNV-1a algorithm (see PR59406).
+// The existing behaviour is retained for backwards compatibility.
+//
+inline size_t
+fnv_hash_bytes(const void* ptr, size_t len, size_t hash)
+{
+    const char* cptr = static_cast<const char*>(ptr);
+    for(; len; --len)
+    {
+        hash ^= static_cast<size_t>(*cptr++);
+        hash *= static_cast<size_t>(16777619UL);
     }
-    static_counted_object(this_type&& rhs)
-    : m_decrement(false)
-    , m_thread(std::move(rhs.m_thread))
-    , m_count(std::move(rhs.m_count))
-    {}
+    return hash;
+}
 
-protected:
-    bool    m_decrement = true;
-    int64_t m_thread;
-    int64_t m_count;
+#elif __SIZEOF_SIZE_T__ == 8
 
-private:
-    // number of existing objects
-    static std::atomic<int64_t>& count();
-    static int64_t&              thread_number();
+//--------------------------------------------------------------------------------------//
+// Implementation of Murmur hash for 64-bit size_t.
+//
+inline size_t
+hash_bytes(const void* ptr, size_t len, size_t seed)
+{
+    static constexpr size_t mul =
+        (((size_t) 0xc6a4a793UL) << 32UL) + (size_t) 0x5bd1e995UL;
+    const char* const buf = static_cast<const char*>(ptr);
+
+    // Remove the bytes not divisible by the sizeof(size_t).  This
+    // allows the main loop to process the data as 64-bit integers.
+    const size_t len_aligned = len & ~(size_t) 0x7;
+    const char* const end = buf + len_aligned;
+    size_t hash = seed ^ (len * mul);
+    for(const char* p = buf; p != end; p += 8)
+    {
+        const size_t data = shift_mix(unaligned_load(p) * mul) * mul;
+        hash ^= data;
+        hash *= mul;
+    }
+    if((len & 0x7) != 0)
+    {
+        const size_t data = load_bytes(end, len & 0x7);
+        hash ^= data;
+        hash *= mul;
+    }
+    hash = shift_mix(hash) * mul;
+    hash = shift_mix(hash);
+    return hash;
+}
+
+//--------------------------------------------------------------------------------------//
+// Implementation of FNV hash for 64-bit size_t.
+// N.B. This function should work on unsigned char, otherwise it does not
+// correctly implement the FNV-1a algorithm (see PR59406).
+// The existing behaviour is retained for backwards compatibility.
+//
+inline size_t
+fnv_hash_bytes(const void* ptr, size_t len, size_t hash)
+{
+    const char* cptr = static_cast<const char*>(ptr);
+    for(; len; --len)
+    {
+        hash ^= static_cast<size_t>(*cptr++);
+        hash *= static_cast<size_t>(1099511628211ULL);
+    }
+    return hash;
+}
+
+#else
+
+//--------------------------------------------------------------------------------------//
+// Dummy hash implementation for unusual sizeof(size_t).
+//
+inline size_t
+hash_bytes(const void* ptr, size_t len, size_t seed)
+{
+    size_t      hash = seed;
+    const char* cptr = reinterpret_cast<const char*>(ptr);
+    for(; len; --len)
+        hash = (hash * 131) + *cptr++;
+    return hash;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+inline size_t
+fnv_hash_bytes(const void* ptr, size_t len, size_t seed)
+{
+    return hash_bytes(ptr, len, seed);
+}
+
+#endif /* __SIZEOF_SIZE_T__ */
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+inline size_t
+get_hash(T&& obj)
+{
+    return std::hash<T>()(std::forward<T>(obj));
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline size_t
+get_hash(const std::string& str)
+{
+    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    return hash_bytes(static_cast<const void*>(str.data()), str.length(), seed);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline size_t
+get_hash(std::string&& str)
+{
+    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    return hash_bytes(static_cast<const void*>(str.data()), str.length(), seed);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline size_t
+get_hash(const char* cstr)
+{
+    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    return hash_bytes(static_cast<const void*>(cstr), strlen(cstr), seed);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline size_t
+get_hash(char* cstr)
+{
+    static constexpr size_t seed = static_cast<size_t>(0xc70f6907UL);
+    return hash_bytes(static_cast<const void*>(cstr), strlen(cstr), seed);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+struct hasher
+{
+    inline size_t operator()(T&& val) { return get_hash(std::forward<T>(val)); }
+    inline size_t operator()(const T& val) { return get_hash(val); }
 };
-
-//--------------------------------------------------------------------------------------//
-
-template <typename CountedType>
-int64_t&
-static_counted_object<CountedType>::thread_number()
-{
-    static std::atomic<int64_t> _all_instance(0);
-    static thread_local int64_t _instance = _all_instance++;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename CountedType>
-std::atomic<int64_t>&
-static_counted_object<CountedType>::count()
-{
-    static thread_local std::atomic<int64_t> _instance;
-    return _instance;
-}
-
-//======================================================================================//
-//
-//  Counting the number of objects of a given type
-//
-//======================================================================================//
-
-template <typename CountedType>
-class counted_object
-{
-public:
-    using this_type = counted_object<CountedType>;
-    using void_type = counted_object<void>;
-
-public:
-    // return number of existing objects:
-    static int64_t           live() { return count().load(); }
-    static constexpr int64_t zero() { return static_cast<int64_t>(0); }
-    static int64_t           max_depth() { return fmax_depth; }
-
-    static void enable(const bool& val) { fenabled = val; }
-    static void set_max_depth(const int64_t& val) { fmax_depth = val; }
-    static bool is_enabled() { return fenabled; }
-    static bool is_master() { return thread_number() == 0; }
-
-    template <typename _Tp = CountedType,
-              typename std::enable_if<std::is_same<_Tp, void>::value>::type* = nullptr>
-    static bool enable()
-    {
-        return fenabled && fmax_depth > count().load();
-    }
-    // the void type is consider the global setting
-    template <typename _Tp = CountedType,
-              typename std::enable_if<!std::is_same<_Tp, void>::value>::type* = nullptr>
-    static bool enable()
-    {
-        return void_type::is_enabled() && void_type::max_depth() > count().load() &&
-               fenabled && fmax_depth > count().load();
-    }
-
-    void activate_noop()
-    {
-        count()--;
-        is_noop = true;
-    }
-
-protected:
-    // default constructor
-    counted_object()
-    : m_count(count()++)
-    {}
-    ~counted_object()
-    {
-        if(!is_noop)
-            --count();
-    }
-    explicit counted_object(const this_type&)
-    : m_count(count()++)
-    {}
-    explicit counted_object(this_type&&) = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&& rhs) = default;
-
-protected:
-    int64_t m_count;
-
-private:
-    bool is_noop = false;
-
-private:
-    // number of existing objects
-    static int64_t&              thread_number();
-    static std::atomic<int64_t>& master_count();
-    static std::atomic<int64_t>& count();
-    static int64_t               fmax_depth;
-    static bool                  fenabled;
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename CountedType>
-int64_t&
-counted_object<CountedType>::thread_number()
-{
-    static std::atomic<int64_t> _all_instance(0);
-    static thread_local int64_t _instance = _all_instance++;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename CountedType>
-std::atomic<int64_t>&
-counted_object<CountedType>::master_count()
-{
-    static std::atomic<int64_t> _instance(0);
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename CountedType>
-std::atomic<int64_t>&
-counted_object<CountedType>::count()
-{
-    if(thread_number() == 0)
-        return master_count();
-    static thread_local std::atomic<int64_t> _instance(master_count().load());
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename CountedType>
-int64_t counted_object<CountedType>::fmax_depth = std::numeric_limits<int64_t>::max();
-
-//--------------------------------------------------------------------------------------//
-
-template <typename CountedType>
-bool counted_object<CountedType>::fenabled = true;
-
-//======================================================================================//
-//
-//  Running hash for object and children of a given type
-//
-//======================================================================================//
-
-template <typename HashedType>
-class hashed_object
-{
-public:
-    using this_type = hashed_object<HashedType>;
-
-public:
-    // return running hash of existing objects
-    static int64_t           live() { return hash(); }
-    static constexpr int64_t zero() { return static_cast<int64_t>(0); }
-
-protected:
-    // default constructor
-    template <typename _Tp,
-              typename std::enable_if<!std::is_integral<_Tp>::value>::type* = nullptr>
-    explicit hashed_object(const _Tp& _val)
-    : m_hash(std::hash<_Tp>(_val))
-    {
-        hash() += m_hash;
-    }
-
-    template <typename _Tp,
-              typename std::enable_if<std::is_integral<_Tp>::value>::type* = nullptr>
-    explicit hashed_object(const _Tp& _val)
-    : m_hash(_val)
-    {
-        hash() += m_hash;
-    }
-
-    ~hashed_object() { hash() -= m_hash; }
-    explicit hashed_object(const this_type&) = default;
-    explicit hashed_object(this_type&&)      = default;
-    static int64_t& hash();
-
-protected:
-    int64_t m_hash;
-
-private:
-    // number of existing objects
-    static int64_t& thread_number();
-    static int64_t& master_hash();
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename HashedType>
-int64_t&
-hashed_object<HashedType>::thread_number()
-{
-    static std::atomic<int64_t> _all_instance(0);
-    static thread_local int64_t _instance = _all_instance++;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename HashedType>
-int64_t&
-hashed_object<HashedType>::master_hash()
-{
-    static int64_t _instance = 0;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename HashedType>
-int64_t&
-hashed_object<HashedType>::hash()
-{
-    if(thread_number() == 0)
-        return master_hash();
-    static thread_local int64_t _instance = master_hash();
-    return _instance;
-}
 
 //--------------------------------------------------------------------------------------//
 

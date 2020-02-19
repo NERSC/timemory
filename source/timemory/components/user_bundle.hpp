@@ -62,22 +62,23 @@ template <size_t Idx, typename Tag>
 struct user_bundle : public base<user_bundle<Idx, Tag>, void>
 {
 public:
+    using mutex_t  = std::mutex;
+    using lock_t   = std::unique_lock<mutex_t>;
+    using string_t = std::string;
+
     using value_type   = void;
     using this_type    = user_bundle<Idx, Tag>;
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
-    using start_func_t  = std::function<void*(const std::string&, bool)>;
+    using start_func_t  = std::function<void*(const string_t&, bool)>;
     using stop_func_t   = std::function<void(void*)>;
     using get_func_t    = std::function<void(void*, void*&, size_t)>;
-    using delete_func_t = std::function<void(void*&)>;
+    using delete_func_t = std::function<void(void*)>;
 
-    using mutex_t = std::mutex;
-    using lock_t  = std::unique_lock<mutex_t>;
-
-    static std::string label() { return "user_bundle"; }
-    static std::string description() { return "user-defined bundle of tools"; }
-    static value_type  record() {}
+    static string_t   label() { return "user_bundle"; }
+    static string_t   description() { return "user-defined bundle of tools"; }
+    static value_type record() {}
 
     static void global_init(storage_type*);
 
@@ -91,7 +92,6 @@ public:
         , m_stop(std::move(_stop))
         , m_get(std::move(_get))
         , m_del(std::move(_del))
-        , m_data(nullptr)
         {}
 
         ~bundle_data()
@@ -103,7 +103,7 @@ public:
             }
         }
 
-        void start(const std::string& _prefix, bool _flat)
+        void start(const string_t& _prefix, bool _flat)
         {
             if(m_data)
             {
@@ -121,7 +121,7 @@ public:
 
         void cleanup()
         {
-            if(m_data)
+            if(m_data && !m_copy)
                 m_del(m_data);
             m_data = nullptr;
         }
@@ -132,20 +132,23 @@ public:
                 m_get(m_data, ptr, _hash);
         }
 
+        void set_copy(bool val) { m_copy = val; }
+
+        bool          m_copy   = false;
         size_t        m_typeid = 0;
-        start_func_t  m_start  = [](const std::string&, bool) { return nullptr; };
+        void*         m_data   = nullptr;
+        start_func_t  m_start  = [](const string_t&, bool) { return nullptr; };
         stop_func_t   m_stop   = [](void*) {};
         get_func_t    m_get    = [](void*, void*&, size_t) {};
-        delete_func_t m_del    = [](void*&) {};
-        void*         m_data   = nullptr;
+        delete_func_t m_del    = [](void*) {};
     };
 
     using bundle_data_vec_t = std::vector<bundle_data>;
     using typeid_set_t      = std::set<size_t>;
 
-    static inline size_t get_hash(std::string&& key)
+    static inline size_t get_hash(string_t&& key)
     {
-        return std::hash<std::string>()(std::forward<std::string>(key));
+        return ::tim::get_hash(std::forward<string_t>(key));
     }
 
     static size_t bundle_size() { return get_bundle_data().size(); }
@@ -208,12 +211,22 @@ public:
     //
     user_bundle() = default;
 
-    user_bundle(const std::string& _prefix, bool _flat = false)
+    explicit user_bundle(const string_t& _prefix, bool _flat = false)
     : m_flat(_flat)
     , m_prefix(_prefix)
     {}
 
-    user_bundle(const std::string& _prefix, const bundle_data_vec_t& _bundle_vec,
+    user_bundle(const user_bundle& rhs)
+    : m_flat(rhs.m_flat)
+    , m_prefix(rhs.m_prefix)
+    , m_typeids(rhs.m_typeids)
+    , m_bundle(rhs.m_bundle)
+    {
+        for(auto& itr : m_bundle)
+            itr.set_copy(true);
+    }
+
+    user_bundle(const string_t& _prefix, const bundle_data_vec_t& _bundle_vec,
                 bool _flat = false)
     : m_flat(_flat)
     , m_prefix(_prefix)
@@ -226,9 +239,25 @@ public:
             itr.cleanup();
     }
 
+    user_bundle& operator=(const user_bundle& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+
+        m_flat    = rhs.m_flat;
+        m_prefix  = rhs.m_prefix;
+        m_typeids = rhs.m_typeids;
+        m_bundle  = rhs.m_bundle;
+        for(auto& itr : m_bundle)
+            itr.set_copy(true);
+    }
+
+    user_bundle(user_bundle&&) = default;
+    user_bundle& operator=(user_bundle&&) = default;
+
 public:
     //----------------------------------------------------------------------------------//
-    //  Configure the tool for a specific set of tools
+    //  Configure the tool for a specific component
     //
     template <typename Toolset, typename... Tail, typename... Args,
               enable_if_t<(sizeof...(Tail) == 0), int>                = 0,
@@ -248,7 +277,7 @@ public:
         internal_init<Toolset>();
 
         using Toolset_t = component_tuple<Toolset>;
-        auto _start     = [=, &args...](const std::string& _prefix, bool _argflat) {
+        auto _start     = [=, &args...](const string_t& _prefix, bool _argflat) {
             Toolset_t* _result = new Toolset_t(_prefix, true, _flat || _argflat,
                                                std::forward<Args>(args)...);
             _result->start();
@@ -268,12 +297,11 @@ public:
             }
         };
 
-        auto _del = [=](void*& v_result) {
+        auto _del = [=](void* v_result) {
             if(v_result)
             {
                 Toolset_t* _result = static_cast<Toolset_t*>(v_result);
                 delete _result;
-                _result = nullptr;
             }
         };
 
@@ -302,7 +330,7 @@ public:
 
         internal_init();
 
-        auto _start = [=, &args...](const std::string& _prefix, bool _argflat) {
+        auto _start = [=, &args...](const string_t& _prefix, bool _argflat) {
             constexpr bool is_component_type = Toolset::is_component_type;
             Toolset*       _result           = (is_component_type)
                                    ? new Toolset(_prefix, true, _flat || _argflat,
@@ -326,12 +354,11 @@ public:
             }
         };
 
-        auto _del = [=](void*& v_result) {
+        auto _del = [=](void* v_result) {
             if(v_result)
             {
                 Toolset* _result = static_cast<Toolset*>(v_result);
                 delete _result;
-                _result = nullptr;
             }
         };
 
@@ -439,13 +466,13 @@ public:
 
     void* get() { return nullptr; }
 
-    void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
+    void set_prefix(const string_t& _prefix) { m_prefix = _prefix; }
 
     size_t size() const { return m_bundle.size(); }
 
 public:
     //----------------------------------------------------------------------------------//
-    //  Configure the tool for a specific set of tools
+    //  Configure the tool for a specific component
     //
     template <typename Toolset, typename... Tail, typename... Args,
               enable_if_t<(sizeof...(Tail) == 0), int>                = 0,
@@ -462,7 +489,7 @@ public:
         internal_init<Toolset>();
 
         using Toolset_t = component_tuple<Toolset>;
-        auto _start     = [=, &args...](const std::string& _prefix, bool _argflat) {
+        auto _start     = [=, &args...](const string_t& _prefix, bool _argflat) {
             Toolset_t* _result = new Toolset_t(_prefix, true, _flat || _argflat,
                                                std::forward<Args>(args)...);
             _result->start();
@@ -482,12 +509,11 @@ public:
             }
         };
 
-        auto _del = [=](void*& v_result) {
+        auto _del = [=](void* v_result) {
             if(v_result)
             {
                 Toolset_t* _result = static_cast<Toolset_t*>(v_result);
                 delete _result;
-                _result = nullptr;
             }
         };
 
@@ -515,7 +541,7 @@ public:
 
         internal_init();
 
-        auto _start = [=, &args...](const std::string& _prefix, bool _argflat) {
+        auto _start = [=, &args...](const string_t& _prefix, bool _argflat) {
             constexpr bool is_component_type = Toolset::is_component_type;
             Toolset*       _result           = (is_component_type)
                                    ? new Toolset(_prefix, true, _flat || _argflat,
@@ -539,12 +565,11 @@ public:
             }
         };
 
-        auto _del = [=](void*& v_result) {
+        auto _del = [=](void* v_result) {
             if(v_result)
             {
                 Toolset* _result = static_cast<Toolset*>(v_result);
                 delete _result;
-                _result = nullptr;
             }
         };
 
@@ -597,7 +622,7 @@ public:
 
 protected:
     bool              m_flat    = false;
-    std::string       m_prefix  = "";
+    string_t          m_prefix  = "";
     typeid_set_t      m_typeids = get_typeids();
     bundle_data_vec_t m_bundle  = get_bundle_data();
 
@@ -673,13 +698,25 @@ user_bundle<Idx, Tag>::global_init(storage_type*)
 template <>
 inline void
 user_bundle<10101, api::native_tag>::global_init(storage_type*)
-{}
+{
+    /*
+    auto env_tool = tim::get_env<std::string>("USER_TUPLE_COMPONENTS", "");
+    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
+    tim::configure<user_bundle<10101, api::native_tag>>(env_enum);
+    */
+}
 
 // user_list_bundle
 template <>
 inline void
 user_bundle<11011, api::native_tag>::global_init(storage_type*)
-{}
+{
+    /*
+    auto env_tool = tim::get_env<std::string>("USER_LIST_COMPONENTS", "");
+    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
+    tim::configure<user_bundle<11011, api::native_tag>>(env_enum);
+    */
+}
 
 // user_ompt_bundle
 template <>
