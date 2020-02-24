@@ -58,7 +58,7 @@ namespace tim
 //======================================================================================//
 // persistent data for instance counting, threading counting, and exit-hook control
 //
-manager::persistent_data&
+inline manager::persistent_data&
 manager::f_manager_persistent_data()
 {
     static persistent_data _instance{};

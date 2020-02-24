@@ -1379,7 +1379,10 @@ struct generic_operator
     explicit generic_operator(base_type* obj, Args&&... _args)
     {
         if(obj)
-            Op(*obj, std::forward<Args>(_args)...);
+        {
+            Op _tmp(*obj, std::forward<Args>(_args)...);
+            consume_parameters(_tmp);
+        }
     }
 
     template <typename Up                                        = Tp, typename... Args,
@@ -1387,7 +1390,10 @@ struct generic_operator
     explicit generic_operator(type* obj, Args&&... _args)
     {
         if(obj)
-            Op(*obj, std::forward<Args>(_args)...);
+        {
+            Op _tmp(*obj, std::forward<Args>(_args)...);
+            consume_parameters(_tmp);
+        }
     }
 
     template <typename Up                                        = Tp, typename... Args,
@@ -1416,14 +1422,16 @@ struct generic_operator
               enable_if_t<(trait::is_available<Up>::value), int> = 0>
     explicit generic_operator(base_type& obj, Args&&... _args)
     {
-        Op(obj, std::forward<Args>(_args)...);
+        Op _tmp(obj, std::forward<Args>(_args)...);
+        consume_parameters(_tmp);
     }
 
     template <typename Up                                        = Tp, typename... Args,
               enable_if_t<(trait::is_available<Up>::value), int> = 0>
     explicit generic_operator(type& obj, Args&&... _args)
     {
-        Op(obj, std::forward<Args>(_args)...);
+        Op _tmp(obj, std::forward<Args>(_args)...);
+        consume_parameters(_tmp);
     }
 
     template <typename Up                                        = Tp, typename... Args,
@@ -1628,6 +1636,7 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gperf_heap_profiler, false)
 //
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::peak_rss, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::page_rss, true)
+#    if defined(_UNIX)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::stack_rss, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::data_rss, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::num_io_in, true)
@@ -1646,6 +1655,7 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::virtual_memory, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::user_mode_time, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::kernel_mode_time, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::current_peak_rss, true)
+#    endif
 
 //======================================================================================//
 //  timing
@@ -1668,80 +1678,80 @@ TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::user_list_bundle, false)
 //======================================================================================//
 //  caliper
 //
-#    if defined(TIMEMORY_USE_CALIPER)
+#        if defined(TIMEMORY_USE_CALIPER)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::caliper, false)
-#    endif
+#        endif
 
 //======================================================================================//
 //  papi
 //
-#    if defined(TIMEMORY_USE_PAPI)
+#        if defined(TIMEMORY_USE_PAPI)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::papi_array<8>, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::papi_array<16>, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::papi_array<32>, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_roofline_flops, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_roofline_sp_flops, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cpu_roofline_dp_flops, true)
-#    endif
+#        endif
 
 //======================================================================================//
 //  cuda
 //
-#    if defined(TIMEMORY_USE_CUDA)
+#        if defined(TIMEMORY_USE_CUDA)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cuda_event, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cuda_profiler, false)
-#    endif
+#        endif
 
 //======================================================================================//
 //  NVTX
 //
-#    if defined(TIMEMORY_USE_NVTX)
+#        if defined(TIMEMORY_USE_NVTX)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::nvtx_marker, false)
-#    endif
+#        endif
 
 //======================================================================================//
 //  cupti
 //
-#    if defined(TIMEMORY_USE_CUPTI)
+#        if defined(TIMEMORY_USE_CUPTI)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cupti_activity, true)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::cupti_counters, true)
 // TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
 // TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
 // TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
 // TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
-#    endif
+#        endif
 
 //======================================================================================//
 //  likwid
 //
-#    if defined(TIMEMORY_USE_LIKWID)
+#        if defined(TIMEMORY_USE_LIKWID)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_marker, false)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::likwid_nvmarker, false)
-#    endif
+#        endif
 
 //======================================================================================//
 //  tau
 //
-#    if defined(TIMEMORY_USE_TAU)
+#        if defined(TIMEMORY_USE_TAU)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::tau_marker, false)
-#    endif
+#        endif
 
 //======================================================================================//
 //  vtune
 //
-#    if defined(TIMEMORY_USE_VTUNE)
+#        if defined(TIMEMORY_USE_VTUNE)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_profiler, false)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_event, false)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::vtune_frame, false)
-#    endif
+#        endif
 
 //======================================================================================//
 //  gotcha
 //
-#    if defined(TIMEMORY_USE_GOTCHA)
+#        if defined(TIMEMORY_USE_GOTCHA)
 TIMEMORY_DECLARE_EXTERN_OPERATIONS(component::malloc_gotcha, true)
-#    endif
+#        endif
 
-#endif
+#    endif
 
 //--------------------------------------------------------------------------------------//

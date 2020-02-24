@@ -484,24 +484,25 @@ public:
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/bits/manager.hpp"
+#include "timemory/utility/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
 
 #if !defined(__library_ctor__)
-#    if !defined(_WIN32) && !defined(_WIN64)
+#    if !defined(_WINDOWS)
 #        define __library_ctor__ __attribute__((constructor))
 #    else
-#        define __library_ctor__
+#        define __library_ctor__ static
 #    endif
 #endif
 
 //--------------------------------------------------------------------------------------//
 
 #if !defined(__library_dtor__)
-#    if !defined(_WIN32) && !defined(_WIN64)
+#    if !defined(_WINDOWS)
 #        define __library_dtor__ __attribute__((destructor))
 #    else
-#        define __library_dtor__
+#        define __library_dtor__ static
 #    endif
 #endif
 
@@ -517,6 +518,9 @@ extern "C"
 
 #else
 
+#    if defined(_WINDOWS)
+    static
+#    endif
     ::tim::manager* timemory_manager_master_instance()
     {
         using manager_t     = tim::manager;
