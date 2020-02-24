@@ -521,7 +521,8 @@ extern "C"
 #    if defined(_WINDOWS)
     static
 #    endif
-    ::tim::manager* timemory_manager_master_instance()
+        ::tim::manager*
+        timemory_manager_master_instance()
     {
         using manager_t     = tim::manager;
         static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();

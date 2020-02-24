@@ -95,7 +95,7 @@ main(int argc, char** argv)
     tim::enable_signal_detection();
     tim::dmp::initialize(argc, argv);
 
-    tim::auto_tuple<papi_tuple_t>::component_type m("PAPI measurements");
+    tim::component_tuple_t<papi_tuple_t> m("PAPI measurements");
     m.start();
 
     CONFIGURE_TEST_SELECTOR(3);
