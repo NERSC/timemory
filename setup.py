@@ -17,18 +17,20 @@ from distutils.command.install import install
 
 
 cmake_args = ['-DPYTHON_EXECUTABLE={}'.format(sys.executable),
-              '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=OFF']
+              '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON']
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("-h", "--help", help="Print help", action='store_true')
 
 
 def set_cmake_bool_option(opt, enable_opt, disable_opt):
     global cmake_args
-    if enable_opt:
-        cmake_args.append("-D{}:BOOL={}".format(opt, "ON"))
-    if disable_opt:
-        cmake_args.append("-D{}:BOOL={}".format(opt, "OFF"))
-
+    try:
+        if enable_opt:
+            cmake_args.append("-D{}:BOOL={}".format(opt, "ON"))
+        if disable_opt:
+            cmake_args.append("-D{}:BOOL={}".format(opt, "OFF"))
+    except Exception as e:
+        print("Exception: {}".format(e))
 
 def add_arg_bool_option(lc_name, disp_name):
     global parser
@@ -41,11 +43,20 @@ def add_arg_bool_option(lc_name, disp_name):
 
 
 add_arg_bool_option("mpi", "TIMEMORY_USE_MPI")
-add_arg_bool_option("exceptions", "TIMEMORY_EXCEPTIONS")
+add_arg_bool_option("tau", "TIMEMORY_USE_TAU")
+add_arg_bool_option("caliper", "TIMEMORY_USE_CALIPER")
+add_arg_bool_option("upcxx", "TIMEMORY_USE_UPCXX")
+add_arg_bool_option("cuda", "TIMEMORY_USE_CUDA")
+add_arg_bool_option("cupti", "TIMEMORY_USE_CUPTI")
+add_arg_bool_option("papi", "TIMEMORY_USE_PAPI")
+add_arg_bool_option("dyninst", "TIMEMORY_USE_DYNINST")
+add_arg_bool_option("arch", "TIMEMORY_USE_ARCH")
+add_arg_bool_option("vtune", "TIMEMORY_USE_VTUNE")
+add_arg_bool_option("gperftools", "TIMEMORY_USE_GPERF")
 add_arg_bool_option("pybind-install", "PYBIND11_INSTALL")
-add_arg_bool_option("build-examples", "TIMEMORY_BUILD_EXAMPLES")
-parser.add_argument("--cxx-standard", default=11, type=int,
-                    choices=[11, 14, 17, 20],
+add_arg_bool_option("build-testing", "TIMEMORY_BUILD_TESTING")
+parser.add_argument("--cxx-standard", default=14, type=int,
+                    choices=[14, 17, 20],
                     help="Set C++ language standard")
 
 args, left = parser.parse_known_args()
@@ -57,12 +68,20 @@ if args.help:
 sys.argv = sys.argv[:1] + left
 
 set_cmake_bool_option("TIMEMORY_USE_MPI", args.enable_mpi, args.disable_mpi)
-set_cmake_bool_option("TIMEMORY_EXCEPTIONS",
-                      args.enable_exceptions, args.disable_exceptions)
+set_cmake_bool_option("TIMEMORY_USE_TAU", args.enable_tau, args.disable_tau)
+set_cmake_bool_option("TIMEMORY_USE_CALIPER", args.enable_caliper, args.disable_caliper)
+set_cmake_bool_option("TIMEMORY_USE_UPCXX", args.enable_upcxx, args.disable_upcxx)
+set_cmake_bool_option("TIMEMORY_USE_CUDA", args.enable_cuda, args.disable_cuda)
+set_cmake_bool_option("TIMEMORY_USE_CUPTI", args.enable_cupti, args.disable_cupti)
+set_cmake_bool_option("TIMEMORY_USE_PAPI", args.enable_papi, args.disable_papi)
+set_cmake_bool_option("TIMEMORY_USE_DYNINST", args.enable_dyninst, args.disable_dyninst)
+set_cmake_bool_option("TIMEMORY_USE_ARCH", args.enable_arch, args.disable_arch)
+set_cmake_bool_option("TIMEMORY_USE_VTUNE", args.enable_vtune, args.disable_vtune)
+set_cmake_bool_option("TIMEMORY_USE_GPERF", args.enable_gperftools, args.disable_gperftools)
 set_cmake_bool_option("PYBIND11_INSTALL",
                       args.enable_pybind_install, args.disable_pybind_install)
-set_cmake_bool_option("TIMEMORY_BUILD_EXAMPLES",
-                      args.enable_build_examples, args.disable_build_examples)
+set_cmake_bool_option("TIMEMORY_BUILD_TESTING",
+                      args.enable_build_testing, args.disable_build_testing)
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
 
 
