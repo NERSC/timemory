@@ -229,6 +229,8 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         configure();
         value_type tmp;
         auto&      _profiler = _get_profiler();
+        if(!_profiler.get() || !_get_labels())
+            return tmp;
         auto&      _labels   = *_get_labels();
         _profiler->stop();
         if(tmp.size() == 0)
@@ -258,8 +260,11 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         set_started();
         value           = record();
         auto& _profiler = _get_profiler();
-        m_kernel_value  = _profiler->get_kernel_events_and_metrics(*_get_labels());
-        _profiler->start();
+        if(_profiler.get())
+        {
+            m_kernel_value  = _profiler->get_kernel_events_and_metrics(*_get_labels());
+            _profiler->start();
+        }
     }
 
     void stop()
@@ -268,6 +273,12 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
 
         value_type       tmp       = record();
         auto&            _profiler = _get_profiler();
+        if(!_profiler.get())
+        {
+            set_stopped();
+            return;
+        }
+        
         kernel_results_t kernel_data =
             _profiler->get_kernel_events_and_metrics(*_get_labels());
         kernel_results_t kernel_tmp = kernel_data;
@@ -638,7 +649,7 @@ private:
 
         if(_used_devs.size() > 0)
         {
-            if(settings::verbose() > 0 || settings::debug())
+            // if(settings::verbose() > 0 || settings::debug())
             {
                 std::cout << "Devices : " << writer<intset_t>(_used_devs) << std::endl;
                 std::cout << "Event   : " << writer<strset_t>(_used_evts) << std::endl;
@@ -692,17 +703,25 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     strvec_t _events  = std::get<1>(_init);
     strvec_t _metrics = std::get<2>(_init);
 
+    auto _tmp_init = get_initializer()();
+
+    if(_events.empty())
+        _events = std::get<1>(_tmp_init);
+
     // provide defaults events
     if(_events.empty())
     {
-        _events = { "active_warps", "active_cycles", "global_load", "global_store" };
+        // _events = { "active_warps", "active_cycles", "global_load", "global_store" };
     }
+
+    if(_metrics.empty())
+        _metrics = std::get<2>(_tmp_init);
 
     // provide default metrics
     if(_metrics.empty())
     {
-        _metrics = { "inst_per_warp", "branch_efficiency", "gld_efficiency",
-                     "gst_efficiency", "warp_execution_efficiency" };
+        //_metrics = { "inst_per_warp", "branch_efficiency", "gld_efficiency",
+        //             "gst_efficiency", "warp_execution_efficiency" };
     }
 
     const auto& _avail_events = get_available_events(devid);
@@ -711,35 +730,42 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     std::set<std::string> _discarded_events{};
     std::set<std::string> _discarded_metrics{};
 
+    bool _discard = true;
+
     // handle events
-    auto _find_event = [&_avail_events, &_discarded_events](const string_t& evt) {
+    auto _not_event = [&_avail_events, &_discarded_events,
+                       &_discard](const string_t& evt) {
         bool nf = (std::find(std::begin(_avail_events), std::end(_avail_events), evt) ==
                    std::end(_avail_events));
-        if(nf)
+        if(nf && _discard)
             _discarded_events.insert(evt);
         return nf;
     };
 
     // handle metrics
-    auto _find_metric = [&_avail_metric, &_discarded_metrics](const string_t& met) {
+    auto _not_metric = [&_avail_metric, &_discarded_metrics,
+                        &_discard](const string_t& met) {
         bool nf = (std::find(std::begin(_avail_metric), std::end(_avail_metric), met) ==
                    std::end(_avail_metric));
-        if(nf)
+        if(nf && _discard)
             _discarded_metrics.insert(met);
         return nf;
     };
 
     // do the removals
-    _events.erase(std::remove_if(std::begin(_events), std::end(_events), _find_event),
+    _events.erase(std::remove_if(std::begin(_events), std::end(_events), _not_event),
                   std::end(_events));
 
-    _metrics.erase(std::remove_if(std::begin(_metrics), std::end(_metrics), _find_metric),
+    _metrics.erase(std::remove_if(std::begin(_metrics), std::end(_metrics), _not_metric),
                    std::end(_metrics));
+
+    // turn off discarding
+    _discard = false;
 
     // check to see if any requested events are actually metrics
     for(const auto& itr : _discarded_events)
     {
-        bool is_metric = _find_metric(itr);
+        bool is_metric = !(_not_metric(itr));
         if(is_metric)
             _metrics.push_back(itr);
         else
@@ -753,7 +779,7 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     // check to see if any requested metrics are actually events
     for(const auto& itr : _discarded_metrics)
     {
-        bool is_event = _find_event(itr);
+        bool is_event = !(_not_event(itr));
         if(is_event)
             _events.push_back(itr);
         else
