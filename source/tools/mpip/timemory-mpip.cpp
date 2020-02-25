@@ -63,8 +63,8 @@ extern "C"
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 1, MPI_Add_error_class);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 2, MPI_Add_error_code);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 3, MPI_Add_error_string);
-                TIMEMORY_C_GOTCHA(mpip_gotcha_t, 4, MPI_Aint_add);
-                TIMEMORY_C_GOTCHA(mpip_gotcha_t, 5, MPI_Aint_diff);
+                // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 4, MPI_Aint_add);
+                // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 5, MPI_Aint_diff);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 6, MPI_Allgather);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 7, MPI_Allgatherv);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 8, MPI_Alloc_mem);
@@ -146,9 +146,9 @@ extern "C"
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 84, MPI_Get_count);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 85, MPI_Get_elements);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 86, MPI_Get_elements_x);
-                TIMEMORY_C_GOTCHA(mpip_gotcha_t, 87, MPI_Get_library_version);
-                TIMEMORY_C_GOTCHA(mpip_gotcha_t, 88, MPI_Get_processor_name);
-                TIMEMORY_C_GOTCHA(mpip_gotcha_t, 89, MPI_Get_version);
+                // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 87, MPI_Get_library_version);
+                // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 88, MPI_Get_processor_name);
+                // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 89, MPI_Get_version);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 90, MPI_Graph_create);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 91, MPI_Graph_get);
                 TIMEMORY_C_GOTCHA(mpip_gotcha_t, 92, MPI_Graph_map);
