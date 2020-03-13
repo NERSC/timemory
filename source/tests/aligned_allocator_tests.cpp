@@ -33,7 +33,9 @@
 #include <vector>
 #include <x86intrin.h>
 
+#include "timemory/environment/definition.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
+#include "timemory/settings/definition.hpp"
 
 template <typename _Tp>
 using aligned_vector_t = std::vector<_Tp, tim::ert::aligned_allocator<_Tp>>;

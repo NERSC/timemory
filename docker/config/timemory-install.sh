@@ -39,28 +39,28 @@ run-verbose make install -j6
 #                           TAU
 #--------------------------------------------------------------------------------------------#
 
-run-verbose cd ${ROOT_DIR}
-run-verbose wget http://tau.uoregon.edu/tau.tgz
-run-verbose tar -xzf tau.tgz
-run-verbose cd tau-*
-export CFLAGS="-O3 -fPIC"
-export CPPFLAGS="-O3 -fPIC"
+# run-verbose cd ${ROOT_DIR}
+# run-verbose wget http://tau.uoregon.edu/tau.tgz
+# run-verbose tar -xzf tau.tgz
+# run-verbose cd tau-*
+# export CFLAGS="-O3 -fPIC"
+# export CPPFLAGS="-O3 -fPIC"
 # run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich -cuda=/usr/local/cuda
-run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich
-run-verbose make -j6
-run-verbose make install -j6
-unset CFLAGS
-unset CPPFLAGS
+# run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich
+# run-verbose make -j6
+# run-verbose make install -j6
+# unset CFLAGS
+# unset CPPFLAGS
 
 #--------------------------------------------------------------------------------------------#
 #                           UPC++
 #--------------------------------------------------------------------------------------------#
 
-run-verbose git clone https://jrmadsen@bitbucket.org/berkeleylab/upcxx.git
-run-verbose cd upcxx
-export CFLAGS="-fPIC"
-export CPPFLAGS="-fPIC"
-run-verbose ./install /usr/local
+# run-verbose git clone https://jrmadsen@bitbucket.org/berkeleylab/upcxx.git
+# run-verbose cd upcxx
+# export CFLAGS="-fPIC"
+# export CPPFLAGS="-fPIC"
+# run-verbose ./install /usr/local
 
 #--------------------------------------------------------------------------------------------#
 #                           timemory

@@ -44,13 +44,17 @@ namespace tim
 
 namespace impl
 {
-template <typename... _Args>
+template <typename... Args>
 struct mangler
 {
-    static std::string mangle(std::string func, bool is_memfun, bool is_const)
+    static std::string mangle(std::string func, bool is_memfun, bool is_const, bool nsp)
     {
-        auto        nargs = sizeof...(_Args);
-        std::string ret   = "_Z";
+        auto nargs = sizeof...(Args);
+
+        // non-namespaced functions must add "E";
+        auto addE = (func.find("::") < func.find('('));
+
+        std::string ret = "_Z";
         if(func.length() > 0 && func[0] == '&')
             func = func.substr(1);
         auto delim = delimit(func, ":()<>");
@@ -63,27 +67,30 @@ struct mangler
             ret += std::to_string(itr.length());
             ret += itr;
         }
-        ret += "E";
 
+        if(addE || nsp)
+            ret += "E";
         if(nargs == 0)
             ret += "v";
         else
-            ret += apply<std::string>::join("", type_id<_Args>::name()...);
+            ret += apply<std::string>::join("", type_id<Args>::name()...);
 
-        if(settings::verbose() > 1 || settings::debug())
-            printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
+        // if(settings::verbose() > 1 || settings::debug())
+        //    printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
+
         return ret;
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
-struct mangler<std::tuple<_Args...>>
+template <typename... Args>
+struct mangler<std::tuple<Args...>>
 {
-    static std::string mangle(std::string func, bool is_memfun, bool is_const)
+    static std::string mangle(std::string func, bool is_memfun, bool is_const,
+                              bool nsp = false)
     {
-        return mangler<_Args...>::mangle(func, is_memfun, is_const);
+        return mangler<Args...>::mangle(func, is_memfun, is_const, nsp);
     }
 };
 

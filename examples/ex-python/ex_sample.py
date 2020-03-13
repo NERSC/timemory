@@ -6,6 +6,7 @@ import time
 
 nfib = 33
 
+from timemory.util import auto_timer, auto_tuple
 
 def fibonacci(n):
     """

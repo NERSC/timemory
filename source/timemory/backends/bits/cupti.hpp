@@ -24,8 +24,9 @@
 
 #pragma once
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -44,40 +45,9 @@
 #include <vector>
 
 #if defined(TIMEMORY_USE_CUPTI)
+//
 #    include <cupti.h>
-
-//--------------------------------------------------------------------------------------//
-
-#    if !defined(CUDA_DRIVER_API_CALL)
-#        define CUDA_DRIVER_API_CALL(apiFuncCall)                                        \
-            {                                                                            \
-                CUresult _status = apiFuncCall;                                          \
-                if(_status != CUDA_SUCCESS)                                              \
-                {                                                                        \
-                    fprintf(stderr,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %d.\n",      \
-                            __FILE__, __LINE__, #apiFuncCall, _status);                  \
-                }                                                                        \
-            }
-#    endif
-
-//--------------------------------------------------------------------------------------//
-
-#    if !defined(CUPTI_CALL)
-#        define CUPTI_CALL(call)                                                         \
-            {                                                                            \
-                CUptiResult _status = call;                                              \
-                if(_status != CUPTI_SUCCESS)                                             \
-                {                                                                        \
-                    const char* errstr;                                                  \
-                    cuptiGetResultString(_status, &errstr);                              \
-                    fprintf(stderr,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                            __FILE__, __LINE__, #call, errstr);                          \
-                }                                                                        \
-            }
-#    endif
-
+//
 #else  // !defined(TIMEMORY_USE_CUPTI)
 
 // define TIMEMORY_EXTERNAL_CUPTI_DEFS if these are causing problems
@@ -138,13 +108,6 @@ typedef enum
 } _tim_activity_kind_t;
 
 #    endif  // !defined(TIMEMORY_EXTERNAL_CUPTI_DEFS)
-
-#    if !defined(CUDA_DRIVER_API_CALL)
-#        define CUDA_DRIVER_API_CALL(...)
-#    endif
-#    if !defined(CUPTI_CALL)
-#        define CUPTI_CALL(...)
-#    endif
 
 #endif  // !defined(TIMEMORY_USE_CUPTI
 
@@ -223,7 +186,7 @@ init_driver()
 
     if(settings::debug())
         printf("[cupt::%s]> Initializing driver...\n", __FUNCTION__);
-    CUDA_DRIVER_API_CALL(cuInit(0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
 #endif
 }
 
@@ -234,7 +197,7 @@ get_device(int devid)
 {
     device_t device;
 #if defined(TIMEMORY_USE_CUPTI)
-    CUDA_DRIVER_API_CALL(cuDeviceGet(&device, devid));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, devid));
 #else
     consume_parameters(devid);
 #endif
@@ -702,7 +665,7 @@ struct result
 
     bool        is_event_value = true;
     std::string name           = "unk";
-    data_t      data;
+    data_t      data           = {};
 
     result()  = default;
     ~result() = default;
@@ -723,8 +686,22 @@ struct result
         return *this;
     }
 
-    result(result&&) = delete;
-    result& operator=(result&&) = delete;
+    result(result&& rhs)
+    {
+        std::swap(is_event_value, rhs.is_event_value);
+        std::swap(name, rhs.name);
+        std::swap(data, rhs.data);
+    }
+
+    result& operator=(result&& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+        std::swap(is_event_value, rhs.is_event_value);
+        std::swap(name, rhs.name);
+        std::swap(data, rhs.data);
+        return *this;
+    }
 
     explicit result(const std::string& _name, const data_t& _data, bool _is = true)
     : is_event_value(_is)
@@ -1219,8 +1196,8 @@ get_buffer_size()
     {
         size_t attrValueSize = sizeof(size_t);
         // get the buffer size and increase
-        CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
-                                             &attrValueSize, &deviceValue));
+        TIMEMORY_CUPTI_CALL(cuptiActivityGetAttribute(
+            CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE, &attrValueSize, &deviceValue));
         if(settings::verbose() > 1 || settings::debug())
             printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
                    "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE",
@@ -1243,8 +1220,8 @@ get_buffer_pool_limit()
     {
         size_t attrValueSize = sizeof(size_t);
         // get the buffer pool limit and increase
-        CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
-                                             &attrValueSize, &poolValue));
+        TIMEMORY_CUPTI_CALL(cuptiActivityGetAttribute(
+            CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT, &attrValueSize, &poolValue));
         if(settings::verbose() > 1 || settings::debug())
             printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
                    "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT",
@@ -1353,7 +1330,7 @@ enable(const std::vector<activity_kind_t>& _kind_types)
             std::cout << "[cupti::activity::enable]> Enabling " << static_cast<int>(itr)
                       << "..." << std::endl;
         auto ret = cuptiActivityEnable(itr);
-        CUPTI_CALL(ret);
+        TIMEMORY_CUPTI_CALL(ret);
     }
 #else
     consume_parameters(_kind_types);
@@ -1371,7 +1348,7 @@ disable(const std::vector<activity_kind_t>& _kind_types)
     for(const auto& itr : _kind_types)
     {
         auto ret = cuptiActivityDisable(itr);
-        CUPTI_CALL(ret);
+        TIMEMORY_CUPTI_CALL(ret);
     }
 #else
     consume_parameters(_kind_types);
@@ -1387,7 +1364,7 @@ register_callbacks(_ReqBuffFunc _reqbuff, _BuffCompFunc _buffcomp)
 #if defined(TIMEMORY_USE_CUPTI)
     // typedef void (*BuffFunc)(uint8_t**, size_t*, size_t*);
     // Register callbacks for buffer requests and for buffers completed by CUPTI.
-    CUPTI_CALL(cuptiActivityRegisterCallbacks(_reqbuff, _buffcomp));
+    TIMEMORY_CUPTI_CALL(cuptiActivityRegisterCallbacks(_reqbuff, _buffcomp));
 #else
     consume_parameters(_reqbuff, _buffcomp);
 #endif
@@ -1400,7 +1377,7 @@ get_timestamp()
 {
     uint64_t _start = 0;
 #if defined(TIMEMORY_USE_CUPTI)
-    CUPTI_CALL(cuptiGetTimestamp(&_start));
+    TIMEMORY_CUPTI_CALL(cuptiGetTimestamp(&_start));
 #endif
     return _start;
 }

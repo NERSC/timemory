@@ -29,6 +29,7 @@
 //--------------------------------------------------------------------------------------//
 // include these headers for declaration w/o instantiation
 //
+#include "timemory/components/macros.hpp"
 #include "timemory/mpl/types.hpp"
 
 //

@@ -42,8 +42,11 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
 
-/// for tuple_size overloads, clang uses 'class tuple_size' while GCC uses
+///
+/// \macro TSTAG
+/// \brief for tuple_size overloads, clang uses 'class tuple_size' while GCC uses
 /// 'struct tuple_size'... which results in a lot of mismatches-tag warnings
+///
 #if defined(_TIMEMORY_CLANG)
 #    define TSTAG(X) class
 #else
@@ -116,14 +119,183 @@ TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_heap_wrapper, component_list, true_type, typ
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, auto_hybrid, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, component_hybrid, true_type, typename)
 
+// there are timemory-specific variadic wrappers
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_hybrid, true_type, typename)
+
 //======================================================================================//
 
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
+//
+//      convert all variadic wrappers into type lists
+//
+//--------------------------------------------------------------------------------------//
+//
+//              Final result
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+struct type_list_only
+{
+    using type = type_list<Types...>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+//              Second to last result
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Lhs, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, type_list<Rhs...>>
+{
+    using type = typename type_list_only<Lhs..., Rhs...>::type;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+//              Encountered variadic while reducing but tail still exists
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Lhs, typename... Types, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, std::tuple<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs..., Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Lhs, typename... Types, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, component_tuple<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs..., Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Lhs, typename... Types, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, component_list<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs..., Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename Tup, typename Lst, typename... Lhs, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, component_hybrid<Tup, Lst>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs..., Tup, Lst>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Lhs, typename... Types, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, auto_tuple<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs..., Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Lhs, typename... Types, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, auto_list<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs..., Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename Tup, typename Lst, typename... Lhs, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, auto_hybrid<Tup, Lst>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs..., Tup, Lst>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+//              Listed first
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Lhs, typename... Rhs>
+struct type_list_only<type_list<Lhs...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Lhs...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Types, typename... Rhs>
+struct type_list_only<std::tuple<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Types, typename... Rhs>
+struct type_list_only<component_tuple<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Types, typename... Rhs>
+struct type_list_only<component_list<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Types, typename... Rhs>
+struct type_list_only<auto_tuple<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename... Types, typename... Rhs>
+struct type_list_only<auto_list<Types...>, Rhs...>
+{
+    using type = typename type_list_only<typename type_list_only<Types...>::type,
+                                         typename type_list_only<Rhs...>::type>::type;
+};
+
+template <typename Tup, typename Lst, typename... Rhs>
+struct type_list_only<component_hybrid<Tup, Lst>, Rhs...>
+{
+    using tup_types = typename type_list_only<Tup>::type;
+    using lst_types = typename type_list_only<Lst>::type;
+    using type      = component_hybrid<convert_t<tup_types, component_tuple<>>,
+                                  convert_t<lst_types, component_list<>>>;
+};
+
+template <typename Tup, typename Lst, typename... Rhs>
+struct type_list_only<auto_hybrid<Tup, Lst>, Rhs...>
+{
+    using tup_types = typename type_list_only<Tup>::type;
+    using lst_types = typename type_list_only<Lst>::type;
+    using type      = auto_hybrid<convert_t<tup_types, component_tuple<>>,
+                             convert_t<lst_types, component_list<>>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+//              Concatenation of variadic wrappers
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace impl
 {
 template <typename... Types>
 struct concat
+{
+    using type = std::tuple<Types...>;
+};
+
+template <typename... Types>
+struct concat<type_list<Types...>>
 {
     using type = std::tuple<Types...>;
 };
@@ -200,6 +372,30 @@ struct concat<component_hybrid<std::tuple<TupTypes...>, component_list<LstTypes.
     using type       = component_hybrid<tuple_type, list_type>;
 };
 
+template <typename... TupTypes, typename... LstTypes>
+struct concat<component_hybrid<type_list<TupTypes...>, type_list<LstTypes...>>>
+{
+    using tuple_type = component_tuple<TupTypes...>;
+    using list_type  = component_list<LstTypes...>;
+    using type       = component_hybrid<tuple_type, list_type>;
+};
+
+template <typename... TupTypes, typename... LstTypes>
+struct concat<component_hybrid<component_tuple<TupTypes...>, type_list<LstTypes...>>>
+{
+    using tuple_type = component_tuple<TupTypes...>;
+    using list_type  = component_list<LstTypes...>;
+    using type       = component_hybrid<tuple_type, list_type>;
+};
+
+template <typename... TupTypes, typename... LstTypes>
+struct concat<component_hybrid<type_list<TupTypes...>, component_list<LstTypes...>>>
+{
+    using tuple_type = component_tuple<TupTypes...>;
+    using list_type  = component_list<LstTypes...>;
+    using type       = component_hybrid<tuple_type, list_type>;
+};
+
 //--------------------------------------------------------------------------------------//
 //      auto_hybrid
 //--------------------------------------------------------------------------------------//
@@ -222,6 +418,30 @@ struct concat<auto_hybrid<component_tuple<TupTypes...>, std::tuple<LstTypes...>>
 
 template <typename... TupTypes, typename... LstTypes>
 struct concat<auto_hybrid<std::tuple<TupTypes...>, component_list<LstTypes...>>>
+{
+    using tuple_type = component_tuple<TupTypes...>;
+    using list_type  = component_list<LstTypes...>;
+    using type       = auto_hybrid<tuple_type, list_type>;
+};
+
+template <typename... TupTypes, typename... LstTypes>
+struct concat<auto_hybrid<type_list<TupTypes...>, type_list<LstTypes...>>>
+{
+    using tuple_type = component_tuple<TupTypes...>;
+    using list_type  = component_list<LstTypes...>;
+    using type       = auto_hybrid<tuple_type, list_type>;
+};
+
+template <typename... TupTypes, typename... LstTypes>
+struct concat<auto_hybrid<component_tuple<TupTypes...>, type_list<LstTypes...>>>
+{
+    using tuple_type = component_tuple<TupTypes...>;
+    using list_type  = component_list<LstTypes...>;
+    using type       = auto_hybrid<tuple_type, list_type>;
+};
+
+template <typename... TupTypes, typename... LstTypes>
+struct concat<auto_hybrid<type_list<TupTypes...>, component_list<LstTypes...>>>
 {
     using tuple_type = component_tuple<TupTypes...>;
     using list_type  = component_list<LstTypes...>;
@@ -354,6 +574,47 @@ struct concat<auto_hybrid<Tup, Lst>, component_list<Rhs...>, Tail...>
 template <typename... Types>
 using concat = typename impl::concat<Types...>::type;
 
+// template <typename... Types>
+// using concat = typename type_list_only<Types...>::type;
+
 }  // namespace tim
 
 //======================================================================================//
+
+namespace std
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+//   Forward declare intent to define these once all the type-traits have been set
+//                    after including "timemory/components/types.hpp"
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+TSTAG(struct)
+tuple_size<::tim::component_tuple<Types...>>;
+
+template <typename... Types>
+TSTAG(struct)
+tuple_size<::tim::component_list<Types...>>;
+
+template <typename _Tuple, typename _List>
+TSTAG(struct)
+tuple_size<::tim::component_hybrid<_Tuple, _List>>;
+
+template <typename _Tuple, typename _List>
+TSTAG(struct)
+tuple_size<::tim::auto_hybrid<_Tuple, _List>>;
+
+template <typename... Types>
+TSTAG(struct)
+tuple_size<::tim::auto_tuple<Types...>>;
+
+template <typename... Types>
+TSTAG(struct)
+tuple_size<::tim::auto_list<Types...>>;
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace std

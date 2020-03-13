@@ -101,7 +101,7 @@ create_domain(const std::string& _name, bool _enable = true)
     _ret->flags = (_enable) ? 1 : 0;  // enable domain
     return _ret;
 #else
-    consume_parameters(_name);
+    consume_parameters(_name, _enable);
     return nullptr;
 #endif
 }

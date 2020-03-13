@@ -29,16 +29,16 @@
  *
  */
 
-#include "timemory/backends/papi.hpp"
+#pragma once
+
 #include "timemory/backends/threading.hpp"
-#include "timemory/general/hash.hpp"
 #include "timemory/general/types.hpp"
+#include "timemory/hash/declaration.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
 
-#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <fstream>
@@ -53,7 +53,7 @@ namespace tim
 {
 //======================================================================================//
 //
-#if !defined(TIMEMORY_EXTERN_INIT)
+#if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_SOURCE)
 
 //======================================================================================//
 // persistent data for instance counting, threading counting, and exit-hook control
@@ -110,7 +110,7 @@ inline manager::manager()
     if(_first)
     {
         settings::parse();
-        papi::init();
+        // papi::init();
         // std::atexit(manager::exit_hook);
     }
 
@@ -226,6 +226,31 @@ manager::remove_finalizer(const std::string& _key)
 
     _remove_finalizer(m_master_finalizers);
     _remove_finalizer(m_worker_finalizers);
+}
+
+//======================================================================================//
+
+inline void
+manager::cleanup(const std::string& key)
+{
+    if(settings::debug())
+        PRINT_HERE("cleaning %s", key.c_str());
+
+    auto itr = m_finalizer_cleanups.begin();
+    for(; itr != m_finalizer_cleanups.end(); ++itr)
+    {
+        if(itr->first == key)
+            break;
+    }
+
+    if(itr != m_finalizer_cleanups.end())
+    {
+        itr->second();
+        m_finalizer_cleanups.erase(itr);
+    }
+
+    if(settings::debug())
+        PRINT_HERE("%s [size: %i]", "cleaned", (int) m_finalizer_cleanups.size());
 }
 
 //======================================================================================//
@@ -386,7 +411,8 @@ manager::write_metadata(const char* context)
     if(ofs)
     {
         // ensure json write final block during destruction before the file is closed
-        auto oa = trait::output_archive<manager>::get(ofs);
+        using policy_type = policy::output_archive_t<manager>;
+        auto oa           = policy_type::get(ofs);
         oa->setNextName("timemory");
         oa->startNode();
         {
@@ -468,58 +494,5 @@ manager::get_communicator_group()
 //======================================================================================//
 
 }  // namespace tim
-
-//======================================================================================//
-
-#include "timemory/config.hpp"
-#include "timemory/data/storage.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/types.hpp"
-
-//======================================================================================//
-//  non-template version
-//
-#if defined(_WINDOWS)
-inline void
-tim::settings::initialize_storage()
-{
-    //
-    // THIS CAUSES SUPER-LONG COMPILE TIMES BECAUSE IT ALWAYS GETS INSTANTIATED
-    //
-
-    manager::get_storage<tim::available_tuple_t>::initialize();
-
-    // throw std::runtime_error(
-    //    "tim::settings::initialize_storage() without tuple of types has been disabled "
-    //    "because it causes extremely long compile times!");
-}
-#else
-template <typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), char>::type>
-void
-tim::settings::initialize_storage()
-{
-    manager::get_storage<tim::available_tuple_t>::initialize();
-}
-#endif
-
-//--------------------------------------------------------------------------------------//
-//  template version
-//
-template <typename... _Types, typename std::enable_if<(sizeof...(_Types) > 0), int>::type>
-void
-tim::settings::initialize_storage()
-{
-    manager::get_storage<_Types...>::initialize();
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-tim::base::storage::free_shared_manager()
-{
-    if(m_manager)
-        m_manager->remove_finalizer(m_label);
-}
 
 //======================================================================================//

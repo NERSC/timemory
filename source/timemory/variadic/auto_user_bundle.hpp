@@ -23,9 +23,9 @@
 // SOFTWARE.
 //
 
-/** \file timemory/variadic/auto_user_bundle.hpp
- * \headerfile variadic/auto_user_bundle.hpp "timemory/variadic/auto_user_bundle.hpp"
- * Automatic timers. Exist for backwards compatibility. In C++, use auto_tuple.
+/**
+ * \headerfile "timemory/variadic/auto_user_bundle.hpp"
+ * \brief Automatic timers. Exist for backwards compatibility. In C++, use auto_tuple.
  * Usage with macros (recommended):
  *    \param TIMEMORY_AUTO_TIMER("")
  *    \param TIMEMORY_BASIC_AUTO_TIMER("")

@@ -30,8 +30,10 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
+#include "timemory/storage/declaration.hpp"
 
+//--------------------------------------------------------------------------------------//
+/*
 #include "timemory/backends/dmp.hpp"
 #include "timemory/data/base_storage.hpp"
 #include "timemory/data/graph.hpp"
@@ -69,18 +71,20 @@ namespace plotting
 {
 //--------------------------------------------------------------------------------------//
 //
-template <typename... _Types, typename... _Args,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+template <typename... Types,
+          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
 void
-plot(_Args&&...);
-
+plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
+     bool _echo_dart = settings::dart_output(), string_t _json_file = "");
+//
 //--------------------------------------------------------------------------------------//
 //
-template <typename... _Types, typename... _Args,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+template <typename... Types,
+          typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
 void
-plot(_Args&&...);
-
+plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
+     bool _echo_dart = settings::dart_output(), string_t _json_file = "");
+//
 }  // namespace plotting
 
 //======================================================================================//
@@ -89,11 +93,11 @@ plot(_Args&&...);
 namespace impl
 {
 template <typename StorageType, typename Type,
-          typename _HashMap   = typename StorageType::iterator_hash_map_t,
-          typename _GraphData = typename StorageType::graph_data_t>
+          typename HashMap   = typename StorageType::iterator_hash_map_t,
+          typename GraphData = typename StorageType::graph_data_t>
 typename StorageType::iterator
 insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 _HashMap& m_node_ids, _GraphData*& m_data, bool _has_head,
+                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head,
                  bool _is_master);
 
 //======================================================================================//
@@ -444,16 +448,15 @@ public:
     //
     virtual bool global_init() final
     {
-        static auto _lambda = [&]() {
-            m_global_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->global_init();
-            if(m_is_master)
-                Type::global_init(this);
-            return m_global_init;
-        };
         if(!m_global_init)
-            return _lambda();
+            return [&]() {
+                m_global_init = true;
+                if(!m_is_master && master_instance())
+                    master_instance()->global_init();
+                if(m_is_master)
+                    Type::global_init(this);
+                return m_global_init;
+            }();
         return m_global_init;
     }
 
@@ -461,17 +464,16 @@ public:
     //
     virtual bool thread_init() final
     {
-        static auto _lambda = [&]() {
-            m_thread_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->thread_init();
-            bool _global_init = global_init();
-            consume_parameters(_global_init);
-            Type::thread_init(this);
-            return m_thread_init;
-        };
         if(!m_thread_init)
-            return _lambda();
+            return [&]() {
+                m_thread_init = true;
+                if(!m_is_master && master_instance())
+                    master_instance()->thread_init();
+                bool _global_init = global_init();
+                consume_parameters(_global_init);
+                Type::thread_init(this);
+                return m_thread_init;
+            }();
         return m_thread_init;
     }
 
@@ -479,18 +481,17 @@ public:
     //
     virtual bool data_init() final
     {
-        static auto _lambda = [&]() {
-            m_data_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->data_init();
-            bool _global_init = global_init();
-            bool _thread_init = thread_init();
-            consume_parameters(_global_init, _thread_init);
-            check_consistency();
-            return m_data_init;
-        };
         if(!m_data_init)
-            return _lambda();
+            return [&]() {
+                m_data_init = true;
+                if(!m_is_master && master_instance())
+                    master_instance()->data_init();
+                bool _global_init = global_init();
+                bool _thread_init = thread_init();
+                consume_parameters(_global_init, _thread_init);
+                check_consistency();
+                return m_data_init;
+            }();
         return m_data_init;
     }
 
@@ -610,15 +611,98 @@ private:
 public:
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope                                              = scope::tree,
-              enable_if_t<(std::is_same<_Scope, scope::tree>::value), int> = 0>
-    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+    void insert_init()
     {
+        bool _global_init = global_init();
+        bool _thread_init = thread_init();
+        bool _data_init   = data_init();
+        consume_parameters(_global_init, _thread_init, _data_init);
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
             initialize();
-        bool _has_head = _data().has_head();
+    }
 
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Scope>
+    iterator insert(const Type& obj, uint64_t hash_id)
+    {
+        insert_init();
+        uint64_t hash_depth = 0;
+        uint64_t hash_value = 0;
+        IF_CONSTEXPR(std::is_same<Scope, scope::tree>::value)
+        {
+            hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
+            hash_value = hash_id ^ hash_depth;
+        }
+        else IF_CONSTEXPR(std::is_same<Scope, scope::timeline>::value)
+        {
+            hash_depth = _data().depth();
+            hash_value = hash_id ^ (m_timeline_counter++);
+        }
+        else IF_CONSTEXPR(std::is_same<Scope, scope::flat>::value)
+        {
+            hash_depth = 1;
+            hash_value = hash_id ^ hash_depth;
+        }
+        add_hash_id(hash_id, hash_value);
+        return insert<Scope>(hash_value, obj, hash_depth);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Vp>
+    void append(const secondary_data_t<_Vp>& _secondary)
+    {
+        insert_init();
+
+        // get the iterator and check if valid
+        auto&& _itr = std::get<0>(_secondary);
+        if(!_data().graph().is_valid(_itr))
+            return;
+
+        // compute hash of prefix
+        auto _hash_id = add_hash_id(std::get<1>(_secondary));
+        // compute hash w.r.t. parent iterator (so identical kernels from different
+        // call-graph parents do not locate same iterator)
+        auto _hash = _hash_id ^ _itr->id();
+        // add the hash alias
+        add_hash_id(_hash_id, _hash);
+        // compute depth
+        auto _depth = _itr->depth() + 1;
+
+        // see if depth + hash entry exists already
+        auto _nitr = m_node_ids[_depth].find(_hash);
+        if(_nitr != m_node_ids[_depth].end())
+        {
+            // if so, then update
+            _nitr->second->obj() += std::get<2>(_secondary);
+            _nitr->second->obj().laps += 1;
+            auto& _stats = _nitr->second->stats();
+            operation::add_statistics<Type>(_nitr->second->obj(), _stats);
+        }
+        else
+        {
+            // else, create a new entry
+            auto&& _tmp = Type{};
+            _tmp += std::get<2>(_secondary);
+            _tmp.laps = 1;
+            graph_node_t _node(_hash, _tmp, _depth);
+            _node.stats() += _tmp.get();
+            auto& _stats = _node.stats();
+            operation::add_statistics<Type>(_tmp, _stats);
+            m_node_ids[_depth][_hash] = _data().emplace_child(_itr, _node);
+        }
+    }
+
+protected:
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Scope,
+              enable_if_t<(std::is_same<Scope, scope::tree>::value), int> = 0>
+    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+    {
+        bool _has_head = _data().has_head();
         return insert_heirarchy<this_type, Type>(hash_id, obj, hash_depth, m_node_ids,
                                                  m_graph_data_instance, _has_head,
                                                  m_is_master);
@@ -626,14 +710,21 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Scope                                              = scope::tree,
-              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
+    template <typename Scope,
+              enable_if_t<(std::is_same<Scope, scope::timeline>::value), int> = 0>
     iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
     {
-        // check this now to ensure everything is initialized
-        if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
-            initialize();
+        auto         _current = _data().current();
+        graph_node_t _node(hash_id, obj, hash_depth);
+        return _data().emplace_child(_current, _node);
+    }
 
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Scope,
+              enable_if_t<(std::is_same<Scope, scope::flat>::value), int> = 0>
+    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+    {
         static thread_local auto _current = _data().head();
         static thread_local bool _first   = true;
         if(_first)
@@ -659,98 +750,6 @@ public:
         auto         itr                = _data().emplace_child(_current, node);
         m_node_ids[hash_depth][hash_id] = itr;
         return itr;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    template <typename _Scope                                              = scope::tree,
-              enable_if_t<(std::is_same<_Scope, scope::tree>::value), int> = 0>
-    iterator insert(const Type& obj, uint64_t hash_id)
-    {
-        static bool              _global_init = global_init();
-        static thread_local bool _thread_init = thread_init();
-        static bool              _data_init   = data_init();
-        consume_parameters(_global_init, _thread_init, _data_init);
-
-        auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
-        auto itr        = insert<_Scope>(hash_id ^ hash_depth, obj, hash_depth);
-        add_hash_id(hash_id, hash_id ^ hash_depth);
-        return itr;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    template <typename _Scope                                              = scope::tree,
-              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(const Type& obj, uint64_t hash_id)
-    {
-        static bool _global_init = global_init();
-        static bool _thread_init = thread_init();
-        static bool _data_init   = data_init();
-        consume_parameters(_global_init, _thread_init, _data_init);
-
-        // auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
-        uint64_t hash_depth = 1;
-        auto     itr        = insert<_Scope>(hash_id ^ hash_depth, obj, hash_depth);
-        add_hash_id(hash_id, hash_id ^ hash_depth);
-        return itr;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    template <typename _Vp>
-    void append(const secondary_data_t<_Vp>& _secondary)
-    {
-        using stats_policy_type = policy::record_statistics<Type>;
-
-        static bool _global_init = global_init();
-        static bool _thread_init = thread_init();
-        static bool _data_init   = data_init();
-        consume_parameters(_global_init, _thread_init, _data_init);
-
-        // get the iterator and check if valid
-        auto&& _itr = std::get<0>(_secondary);
-        if(!_data().graph().is_valid(_itr))
-            return;
-
-        // compute hash of prefix
-        auto _hash_id = add_hash_id(std::get<1>(_secondary));
-        // compute hash w.r.t. parent iterator (so identical kernels from different
-        // call-graph parents do not locate same iterator)
-        auto _hash = _hash_id ^ _itr->id();
-        // add the hash alias
-        add_hash_id(_hash_id, _hash);
-        // compute depth
-        auto _depth = _itr->depth() + 1;
-
-        // see if depth + hash entry exists already
-        auto _nitr = m_node_ids[_depth].find(_hash);
-        if(_nitr != m_node_ids[_depth].end())
-        {
-            // if so, then update
-            _nitr->second->obj() += std::get<2>(_secondary);
-            _nitr->second->obj().laps += 1;
-            auto& _stats = _nitr->second->stats();
-            IF_CONSTEXPR(trait::record_statistics<Type>::value)
-            {
-                stats_policy_type::apply(_stats, _nitr->second->obj());
-            }
-        }
-        else
-        {
-            // else, create a new entry
-            auto&& _tmp = Type();
-            _tmp += std::get<2>(_secondary);
-            _tmp.laps = 1;
-            graph_node_t _node(_hash, _tmp, _depth);
-            _node.stats() += _tmp.get();
-            auto& _stats = _node.stats();
-            IF_CONSTEXPR(trait::record_statistics<Type>::value)
-            {
-                stats_policy_type::apply(_stats, _tmp);
-            }
-            m_node_ids[_depth][_hash] = _data().emplace_child(_itr, _node);
-        }
     }
 
 protected:
@@ -842,6 +841,7 @@ private:
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
 
 private:
+    uint64_t                  m_timeline_counter    = 1;
     mutable graph_data_t*     m_graph_data_instance = nullptr;
     iterator_hash_map_t       m_node_ids;
     std::unordered_set<Type*> m_stack;
@@ -1302,7 +1302,12 @@ storage<Type, true>::internal_print()
         if(_json_output)
         {
             printf("\n");
-            auto jname = settings::compose_output_filename(label, ".json");
+            auto is_json = (std::is_same<trait::output_archive_t<Type>,
+                                         cereal::MinimalJSONOutputArchive>::value ||
+                            std::is_same<trait::output_archive_t<Type>,
+                                         cereal::PrettyJSONOutputArchive>::value);
+            auto fext    = (is_json) ? ".json" : ".xml";
+            auto jname   = settings::compose_output_filename(label, fext);
             if(jname.length() > 0)
             {
                 printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), m_node_rank,
@@ -1316,12 +1321,14 @@ storage<Type, true>::internal_print()
                     {
                         // ensure write final block during destruction
                         // before the file is closed
-                        auto oa = trait::output_archive<Type>::get(ofs);
+                        using policy_type = policy::output_archive_t<Type>;
+                        auto oa           = policy_type::get(ofs);
                         oa->setNextName("timemory");
                         oa->startNode();
+
                         oa->setNextName("ranks");
                         oa->startNode();
-                        oa->makeArray();
+                        // oa->makeArray();
                         for(uint64_t i = 0; i < _dmp_results.size(); ++i)
                         {
                             oa->startNode();
@@ -1341,6 +1348,7 @@ storage<Type, true>::internal_print()
 
             if(_plot_output)
             {
+                // PRINT_HERE("rank = %i", m_node_rank);
                 if(m_node_rank == 0)
                     plotting::plot<Type>(Type::get_label(), settings::output_path(),
                                          settings::dart_output(), jname);
@@ -1537,7 +1545,7 @@ storage<Type, true>::serialize_me(std::false_type, Archive& ar,
     Type::extra_serialization(ar, version);
     ar.setNextName("graph");
     ar.startNode();
-    ar.makeArray();
+    // ar.makeArray();
     for(auto& itr : graph_list)
     {
         ar.startNode();
@@ -1576,7 +1584,7 @@ storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned in
     Type::extra_serialization(ar, version);
     ar.setNextName("graph");
     ar.startNode();
-    ar.makeArray();
+    // ar.makeArray();
     for(auto& itr : graph_list)
     {
         ar.startNode();
@@ -1592,11 +1600,10 @@ storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned in
 
 //======================================================================================//
 
-template <typename StorageType, typename Type, typename _HashMap, typename _GraphData>
+template <typename StorageType, typename Type, typename HashMap, typename GraphData>
 typename StorageType::iterator
 insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 _HashMap& m_node_ids, _GraphData*& m_data, bool _has_head,
-                 bool _is_master)
+                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master)
 {
     using graph_t      = typename StorageType::graph_t;
     using graph_node_t = typename StorageType::graph_node_t;
@@ -1675,3 +1682,4 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
 }  // namespace impl
 
 }  // namespace tim
+*/

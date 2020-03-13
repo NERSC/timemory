@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 # this is for internal use
-if(NOT TIMEMORY_BUILD_MPIP OR (NOT TIMEMORY_USE_MPI AND NOT TIMEMORY_USE_GOTCHA))
-    return()
+if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
+    if(NOT TIMEMORY_BUILD_MPIP OR NOT TIMEMORY_USE_MPI OR NOT TIMEMORY_USE_GOTCHA)
+        return()
+    endif()
 endif()
 
 project(timemory-mpip-tool)

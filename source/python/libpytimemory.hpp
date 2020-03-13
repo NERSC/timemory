@@ -24,9 +24,11 @@
 
 #pragma once
 
-#if !defined(TIMEMORY_EXTERN_TEMPLATES)
-#    define TIMEMORY_EXTERN_TEMPLATES
+#if !defined(TIMEMORY_USE_EXTERN)
+#    define TIMEMORY_USE_EXTERN
 #endif
+
+#define TIMEMORY_PYBIND11_SOURCE
 
 //======================================================================================//
 // disables a bunch of warnings
@@ -60,18 +62,17 @@
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
 
-#include "timemory/backends/dmp.hpp"
-#include "timemory/enum.h"
-#include "timemory/manager.hpp"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/settings.hpp"
 #include "timemory/timemory.hpp"
+//
+#include "timemory/enum.h"
+#include "timemory/library.h"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/insert.hpp"
+#include "timemory/runtime/invoker.hpp"
+#include "timemory/runtime/properties.hpp"
 #include "timemory/utility/signals.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_timer.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
 
 //======================================================================================//
 

@@ -39,7 +39,7 @@
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 
-using namespace tim::stl_overload;
+using namespace tim::stl;
 using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;

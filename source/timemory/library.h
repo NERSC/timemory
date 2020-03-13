@@ -36,8 +36,8 @@
 //
 #if defined(__cplusplus)
 
+#    include "timemory/data/bits/storage.hpp"
 #    include "timemory/plotting.hpp"
-#    include "timemory/utility/bits/storage.hpp"
 #    include "timemory/variadic/macros.hpp"
 
 //--------------------------------------------------------------------------------------//

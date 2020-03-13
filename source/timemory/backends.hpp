@@ -30,11 +30,11 @@
 
 #pragma once
 
-#include "timemory/backends/clocks.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
-#include "timemory/backends/rusage.hpp"
 #include "timemory/backends/signals.hpp"
+#include "timemory/components/rusage/backends.hpp"
+#include "timemory/components/timing/backends.hpp"
 
 #if defined(TIMEMORY_USE_CALIPER)
 #    include "timemory/backends/caliper.hpp"
@@ -68,7 +68,7 @@
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_USE_CUDA)
-#    include "timemory/backends/cuda.hpp"
+#    include "timemory/components/cuda/backends.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -76,5 +76,5 @@
 #endif
 
 #if defined(TIMEMORY_USE_NVTX)
-#    include "timemory/backends/nvtx.hpp"
+#    include "timemory/components/cuda/backends.hpp"
 #endif

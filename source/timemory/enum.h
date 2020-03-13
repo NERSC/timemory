@@ -103,8 +103,34 @@
 //      Enumeration
 //
 //======================================================================================//
+//
+/// \macro TIMEMORY_COMPONENT_ENUM_SIZE
+/// \brief The number of enumerated components defined by timemory
+//
+#if !defined(TIMEMORY_COMPONENT_ENUM_SIZE)
+#    define TIMEMORY_COMPONENT_ENUM_SIZE 60
+#endif
+//
+/// \macro TIMEMORY_USER_COMPONENT_ENUM
+/// \brief Extra enumerated components provided by a downstream application. If this
+/// macro is used, be sure to end the list with a comma
+///
+/// \code
+/// #define TIMEMORY_USER_COMPONENT_ENUM MY_COMPONENT = TIMEMORY_COMPONENT_ENUM_SIZE + 1,
+//
+#if !defined(TIMEMORY_USER_COMPONENT_ENUM)
+#    define TIMEMORY_USER_COMPONENT_ENUM
+#endif
 
-enum TIMEMORY_COMPONENT
+#if !defined(TIMEMORY_USER_COMPONENT_ENUM_SIZE)
+#    define TIMEMORY_USER_COMPONENT_ENUM_SIZE 0
+#endif
+//
+/// \enum TIMEMORY_COMPONENT_ENUM
+/// \brief Enumerated identifiers for timemory-provided components. If the user wishes
+/// to add to the enumerated components, use \ref TIMEMORY_USER_COMPONENT_ENUM
+//
+enum TIMEMORY_NATIVE_COMPONENT
 {
     CALIPER                  = 0,
     CPU_CLOCK                = 1,
@@ -130,38 +156,45 @@ enum TIMEMORY_COMPONENT
     MALLOC_GOTCHA            = 21,
     MONOTONIC_CLOCK          = 22,
     MONOTONIC_RAW_CLOCK      = 23,
-    NUM_IO_IN                = 24,
-    NUM_IO_OUT               = 25,
-    NUM_MAJOR_PAGE_FAULTS    = 26,
-    NUM_MINOR_PAGE_FAULTS    = 27,
-    NUM_MSG_RECV             = 28,
-    NUM_MSG_SENT             = 29,
-    NUM_SIGNALS              = 30,
-    NUM_SWAP                 = 31,
-    NVTX_MARKER              = 32,
-    PAGE_RSS                 = 33,
-    PAPI_ARRAY               = 34,
-    PEAK_RSS                 = 35,
-    PRIORITY_CONTEXT_SWITCH  = 36,
-    PROCESS_CPU_CLOCK        = 37,
-    PROCESS_CPU_UTIL         = 38,
-    READ_BYTES               = 39,
-    STACK_RSS                = 40,
-    SYS_CLOCK                = 41,
-    TAU_MARKER               = 42,
-    THREAD_CPU_CLOCK         = 43,
-    THREAD_CPU_UTIL          = 44,
-    TRIP_COUNT               = 45,
-    USER_CLOCK               = 46,
-    USER_LIST_BUNDLE         = 47,
-    USER_MODE_TIME           = 48,
-    USER_TUPLE_BUNDLE        = 49,
-    VIRTUAL_MEMORY           = 50,
-    VOLUNTARY_CONTEXT_SWITCH = 51,
-    VTUNE_EVENT              = 52,
-    VTUNE_FRAME              = 53,
-    VTUNE_PROFILER           = 54,
-    WALL_CLOCK               = 55,
-    WRITTEN_BYTES            = 56,
-    TIMEMORY_COMPONENTS_END  = 57
+    USER_MPIP_BUNDLE         = 24,
+    NUM_IO_IN                = 25,
+    NUM_IO_OUT               = 26,
+    NUM_MAJOR_PAGE_FAULTS    = 27,
+    NUM_MINOR_PAGE_FAULTS    = 28,
+    NUM_MSG_RECV             = 29,
+    NUM_MSG_SENT             = 30,
+    NUM_SIGNALS              = 31,
+    NUM_SWAP                 = 32,
+    NVTX_MARKER              = 33,
+    USER_OMPT_BUNDLE         = 34,
+    PAGE_RSS                 = 35,
+    PAPI_ARRAY               = 36,
+    PAPI_VECTOR              = 37,
+    PEAK_RSS                 = 38,
+    PRIORITY_CONTEXT_SWITCH  = 39,
+    PROCESS_CPU_CLOCK        = 40,
+    PROCESS_CPU_UTIL         = 41,
+    READ_BYTES               = 42,
+    STACK_RSS                = 43,
+    SYS_CLOCK                = 44,
+    TAU_MARKER               = 45,
+    THREAD_CPU_CLOCK         = 46,
+    THREAD_CPU_UTIL          = 47,
+    TRIP_COUNT               = 48,
+    USER_CLOCK               = 49,
+    USER_GLOBAL_BUNDLE       = 50,
+    USER_LIST_BUNDLE         = 51,
+    USER_MODE_TIME           = 52,
+    USER_TUPLE_BUNDLE        = 53,
+    VIRTUAL_MEMORY           = 54,
+    VOLUNTARY_CONTEXT_SWITCH = 55,
+    VTUNE_EVENT              = 56,
+    VTUNE_FRAME              = 57,
+    VTUNE_PROFILER           = 58,
+    WALL_CLOCK               = 59,
+    WRITTEN_BYTES            = 60,
+    TIMEMORY_USER_COMPONENT_ENUM TIMEMORY_COMPONENTS_END =
+        (TIMEMORY_COMPONENT_ENUM_SIZE + TIMEMORY_USER_COMPONENT_ENUM_SIZE)
 };
+
+typedef int TIMEMORY_COMPONENT;

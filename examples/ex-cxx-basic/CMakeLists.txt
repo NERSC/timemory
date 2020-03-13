@@ -19,6 +19,7 @@ if(USE_CALIPER)
     list(APPEND COMPONENTS caliper)
 endif()
 
+set(TIMEMORY_EXTRACT_INTERFACE ON)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 add_executable(ex_cxx_basic ex_cxx_basic.cpp)
 target_link_libraries(ex_cxx_basic timemory-cxx-basic-example)

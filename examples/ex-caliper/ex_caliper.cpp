@@ -55,7 +55,7 @@ main(int argc, char** argv)
     tim::settings::memory_precision()  = 3;
     tim::settings::memory_scientific() = false;
     tim::timemory_init(argc, argv);
-    tim::cali::init();
+    tim::backend::cali::init();
 
     std::vector<long> fibvalues;
     for(int i = 1; i < argc; ++i)

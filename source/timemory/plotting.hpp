@@ -30,13 +30,17 @@
 
 #pragma once
 
-#include "timemory/components.hpp"
+#include "plotting/definition.hpp"
+
+/*
+#include "timemory/mpl/available.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/types.hpp"
-#include "timemory/variadic/macros.hpp"
 
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <tuple>
 #include <type_traits>
@@ -50,52 +54,60 @@ using attributes_t = std::map<string_t, string_t>;
 
 //======================================================================================//
 
-namespace impl
+namespace operation
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Tail, typename... _Args,
-          typename std::enable_if<(sizeof...(_Tail) == 0), int>::type = 0>
-void
-_plot(_Args&&...)
-{}
+template <typename Arg, typename... Args>
+auto
+join(const char* sep, Arg&& arg, Args&&... args)
+{
+    std::stringstream ss;
+    ss << std::forward<Arg>(arg);
+    auto tmp =
+        ::std::initializer_list<int>{ (ss << sep << std::forward<Args>(args), 0)... };
+    tim::consume_parameters(tmp);
+    return ss.str();
+}
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Tail,
-          typename std::enable_if<(sizeof...(_Tail) == 0), int>::type = 0>
+template <typename Tp>
 void
-_plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
-      bool echo_dart = settings::dart_output(), string_t _json_file = "")
+plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
 {
-    using storage_type = typename _Tp::storage_type;
+    auto_lock_t lk(type_mutex<std::ostream>());
 
     if(settings::debug() || settings::verbose() > 2)
         PRINT_HERE("%s", "");
 
-    if(std::is_same<typename _Tp::value_type, void>::value)
+    if(std::is_same<typename Tp::value_type, void>::value)
+    {
+        if(settings::debug() || settings::verbose() > 2)
+            PRINT_HERE("%s", "");
         return;
+    }
 
-    if(!settings::json_output() && !trait::requires_json<_Tp>::value)
+    if(!settings::json_output() && !trait::requires_json<Tp>::value)
+    {
+        if(settings::debug() || settings::verbose() > 2)
+            PRINT_HERE("%s", "");
         return;
+    }
 
     if(settings::python_exe().empty())
     {
-        fprintf(stderr, "[%s]> Empty '%s' (env: '%s'). Plot generation is disabled...",
-                demangle<_Tp>().c_str(), "tim::settings::python_exe()",
+        fprintf(stderr, "[%s]> Empty '%s' (env: '%s'). Plot generation is disabled...\n",
+                demangle<Tp>().c_str(), "tim::settings::python_exe()",
                 "TIMEMORY_PYTHON_EXE");
         return;
     }
 
-    auto ret = storage_type::noninit_instance();
-    if(!ret)
-        return;
-
-    if(ret->empty())
-        return;
+    if(settings::debug() || settings::verbose() > 2)
+        PRINT_HERE("%s", "");
 
     if(_prefix.empty())
-        _prefix = _Tp::get_description();
+        _prefix = Tp::get_description();
 
     auto libctor = get_env<std::string>("TIMEMORY_LIBRARY_CTOR", "1");
     auto libdtor = get_env<std::string>("TIMEMORY_LIBRARY_DTOR", "1");
@@ -108,18 +120,25 @@ _plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
     {
         auto _file = _json_file;
         if(_file.empty())
-            _file = settings::compose_output_filename(_Tp::get_label(), ".json");
+            _file = settings::compose_output_filename(Tp::get_label(), ".json");
         {
             std::ifstream ifs(_file.c_str());
             bool          exists = ifs.good();
             ifs.close();
             if(!exists)
+            {
+                fprintf(
+                    stderr,
+                    "[%s]> file '%s' does not exist. Plot generation is disabled...\n",
+                    demangle<Tp>().c_str(), _file.c_str());
                 return;
+            }
         }
 
-        auto cmd = TIMEMORY_JOIN(" ", settings::python_exe(), "-m", "timemory.plotting",
-                                 "-f", _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
-        if(echo_dart)
+        auto cmd = join(" ", settings::python_exe(), "-m", "timemory.plotting", "-f",
+                        _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
+
+        if(_echo_dart)
             cmd += " -e";
 
         if(settings::verbose() > 2 || settings::debug())
@@ -133,156 +152,69 @@ _plot(string_t _prefix = "", const string_t& _dir = settings::output_path(),
             fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL("").c_str(), msg.c_str());
         }
     }
+    else
+    {
+        fprintf(stderr, "[%s]> std::system unavailable. Plot generation is disabled...\n",
+                demangle<Tp>().c_str());
+    }
 
     set_env("TIMEMORY_LIBRARY_CTOR", libctor, 1);
     set_env("TIMEMORY_LIBRARY_DTOR", libdtor, 1);
 }
-
+//
+}  // namespace operation
+//
 //--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename... _Tail, typename... _Args,
-          typename std::enable_if<(sizeof...(_Tail) > 0), int>::type = 0>
-void
-_plot(_Args&&... _args)
+//
+namespace impl
 {
-    _plot<_Tp>(std::forward<_Args>(_args)...);
-    _plot<_Tail...>(std::forward<_Args>(_args)...);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
+//
+template <typename... Types>
 struct plot
 {
-    template <typename... _Args>
-    static void generate(_Args&&... _args)
+    static void generate(string_t _prefix, const string_t& _dir, bool _echo,
+                         string_t _json)
     {
-        _plot<_Types...>(std::forward<_Args>(_args)...);
+        TIMEMORY_FOLD_EXPRESSION(operation::plot<Types>(_prefix, _dir, _echo, _json));
     }
 };
-
+//
 //--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-struct plot<std::tuple<_Types...>>
-{
-    template <typename... _Args>
-    static void generate(_Args&&... _args)
-    {
-        _plot<_Types...>(std::forward<_Args>(_args)...);
-    }
-};
-
+//
+template <typename... Types>
+struct plot<std::tuple<Types...>> : plot<Types...>
+{};
+//
 //--------------------------------------------------------------------------------------//
-
+//
+template <typename... Types>
+struct plot<type_list<Types...>> : plot<Types...>
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace impl
 
 //======================================================================================//
-
-template <typename... _Types, typename... _Args,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type>
-inline void
-plot(_Args&&... _args)
+//
+template <typename... Types, typename std::enable_if<(sizeof...(Types) > 0), int>::type>
+void
+plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
 {
-    impl::plot<_Types...>::generate(std::forward<_Args>(_args)...);
+    impl::plot<Types...>::generate(_prefix, _dir, _echo_dart, _json_file);
 }
-
-//======================================================================================//
-
-template <typename... _Types, typename... _Args,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type>
-inline void
-plot(_Args&&... _args)
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types, typename std::enable_if<(sizeof...(Types) == 0), int>::type>
+void
+plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
 {
-    impl::plot<tim::available_tuple_t>::generate(std::forward<_Args>(_args)...);
+    impl::plot<tim::available_tuple_t>::generate(_prefix, _dir, _echo_dart, _json_file);
 }
-
-//======================================================================================//
-
-inline void
-echo_dart_file(const string_t& filepath, attributes_t attributes)
-{
-    auto attribute_string = [](const string_t& key, const string_t& item) {
-        return TIMEMORY_JOIN("", key, "=", "\"", item, "\"");
-    };
-
-    auto lowercase = [](string_t _str) {
-        for(auto& itr : _str)
-            itr = tolower(itr);
-        return _str;
-    };
-
-    auto contains = [&lowercase](const string_t& str, std::set<string_t> items) {
-        for(const auto& itr : items)
-        {
-            if(lowercase(str).find(itr) != string_t::npos)
-                return true;
-        }
-        return false;
-    };
-
-    auto is_numeric = [](const string_t& str) -> bool {
-        return (str.find_first_not_of("0123456789.e+-*/") == string_t::npos);
-    };
-
-    if(attributes.find("name") == attributes.end())
-    {
-        auto name = filepath;
-        if(name.find("/") != string_t::npos)
-            name = name.substr(name.find_last_of("/") + 1);
-        if(name.find("\\") != string_t::npos)
-            name = name.substr(name.find_last_of("\\") + 1);
-        if(name.find(".") != string_t::npos)
-            name.erase(name.find_last_of("."));
-        attributes["name"] = name;
-    }
-
-    if(attributes.find("type") == attributes.end())
-    {
-        if(contains(filepath, { ".jpeg", ".jpg" }))
-            attributes["type"] = "image/jpeg";
-        else if(contains(filepath, { ".png" }))
-            attributes["type"] = "image/png";
-        else if(contains(filepath, { ".tiff", ".tif" }))
-            attributes["type"] = "image/tiff";
-        else if(contains(filepath, { ".txt" }))
-        {
-            bool          numeric_file = true;
-            std::ifstream ifs;
-            ifs.open(filepath);
-            if(ifs)
-            {
-                while(!ifs.eof())
-                {
-                    string_t entry;
-                    ifs >> entry;
-                    if(ifs.eof())
-                        break;
-                    if(!is_numeric(entry))
-                    {
-                        numeric_file = false;
-                        break;
-                    }
-                }
-            }
-            ifs.close();
-            if(numeric_file)
-                attributes["type"] = "numeric/double";
-            else
-                attributes["type"] = "text/string";
-        }
-    }
-
-    std::stringstream ss;
-    ss << "<DartMeasurementFile";
-    for(const auto& itr : attributes)
-        ss << " " << attribute_string(itr.first, itr.second);
-    // name=\"" << name << "\ type=\"" << type << "\">"
-    ss << ">" << filepath << "</DartMeasurementFile>";
-    std::cout << ss.str() << std::endl;
-}
-
+//
 //======================================================================================//
 
 }  // namespace plotting
 }  // namespace tim
+*/

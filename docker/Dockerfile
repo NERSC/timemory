@@ -26,6 +26,10 @@ ARG ENABLE_DISPLAY=1
 COPY ./config/apt.sh /tmp/apt.sh
 RUN ./apt.sh
 
+# spack configuration
+COPY ./config/spack.sh /tmp/spack.sh
+RUN ./spack.sh
+
 # build the common dependencies
 COPY ./config/timemory-install.sh /tmp/timemory-install.sh
 RUN ./timemory-install.sh

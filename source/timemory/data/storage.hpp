@@ -39,7 +39,8 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/mpl/type_traits.hpp"
+#include "timemory/components/properties.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -59,19 +60,23 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/data/storage_false.hpp"
-#include "timemory/data/storage_true.hpp"
+// #include "timemory/data/storage_false.hpp"
+// #include "timemory/data/storage_true.hpp"
+
+#include "timemory/storage/declaration.hpp"
+#include "timemory/storage/types.hpp"
 
 //--------------------------------------------------------------------------------------//
 
 namespace tim
 {
-//======================================================================================//
 //
-//      front facing storage class
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
-
+//                          front facing storage class
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename _Tp>
 class storage : public impl::storage<_Tp, implements_storage<_Tp>::value>
 {
@@ -89,105 +94,7 @@ class storage : public impl::storage<_Tp, implements_storage<_Tp>::value>
     friend struct impl::storage_deleter<this_type>;
     friend class manager;
 };
-
+//
 //--------------------------------------------------------------------------------------//
-/// args:
-///     1) filename
-///     2) reference an object
-///
-template <typename _Tp>
-void
-generic_serialization(const std::string&, const _Tp&);
-
-//--------------------------------------------------------------------------------------//
-
+//
 }  // namespace tim
-
-//======================================================================================//
-
-template <typename StorageType>
-struct tim::impl::storage_deleter : public std::default_delete<StorageType>
-{
-    using Pointer     = std::unique_ptr<StorageType, storage_deleter<StorageType>>;
-    using singleton_t = tim::singleton<StorageType, Pointer>;
-
-    storage_deleter()  = default;
-    ~storage_deleter() = default;
-
-    void operator()(StorageType* ptr)
-    {
-        StorageType*    master     = singleton_t::master_instance_ptr();
-        std::thread::id master_tid = singleton_t::master_thread_id();
-        std::thread::id this_tid   = std::this_thread::get_id();
-
-        // tim::dmp::barrier();
-
-        if(ptr && master && ptr != master)
-        {
-            ptr->StorageType::stack_clear();
-            master->StorageType::merge(ptr);
-        }
-        else
-        {
-            // sometimes the worker threads get deleted after the master thread
-            // but the singleton class will ensure it is merged so we are
-            // safe to leak here
-            if(ptr && !master && this_tid != master_tid)
-            {
-                ptr->StorageType::free_shared_manager();
-                ptr = nullptr;
-                return;
-            }
-
-            if(ptr)
-            {
-                ptr->StorageType::print();
-            }
-            else if(master)
-            {
-                if(!_printed_master)
-                {
-                    master->StorageType::stack_clear();
-                    master->StorageType::print();
-                    master->StorageType::cleanup();
-                    _printed_master = true;
-                }
-            }
-        }
-
-        if(this_tid == master_tid)
-        {
-            if(ptr)
-            {
-                // ptr->StorageType::disable();
-                ptr->StorageType::free_shared_manager();
-            }
-            delete ptr;
-        }
-        else
-        {
-            if(master && ptr != master)
-                singleton_t::remove(ptr);
-
-            if(ptr)
-                ptr->StorageType::free_shared_manager();
-            delete ptr;
-        }
-
-        if(_printed_master && !_deleted_master)
-        {
-            if(master)
-            {
-                // master->StorageType::disable();
-                master->StorageType::free_shared_manager();
-            }
-            delete master;
-            _deleted_master = true;
-        }
-    }
-
-    bool _printed_master = false;
-    bool _deleted_master = false;
-};
-
-//======================================================================================//

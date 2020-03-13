@@ -30,11 +30,10 @@
 
 #pragma once
 
-#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+#if defined(TIMEMORY_USE_EXTERN)
 
-#    include "timemory/backends/cuda.hpp"
 #    include "timemory/backends/device.hpp"
-#    include "timemory/components/timing.hpp"
+#    include "timemory/components/timing/types.hpp"
 #    include "timemory/ert/configuration.hpp"
 #    include "timemory/ert/counter.hpp"
 #    include "timemory/ert/data.hpp"

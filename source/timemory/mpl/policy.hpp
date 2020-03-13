@@ -35,8 +35,8 @@
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
+#include "timemory/runtime/types.hpp"
+#include "timemory/utility/serializer.hpp"
 
 namespace tim
 {
@@ -84,6 +84,134 @@ struct record_statistics<_Comp, std::tuple<>>
     template <typename... _Args>
     static void apply(_Args&&...)
     {}
+};
+
+//======================================================================================//
+
+template <typename Archive, typename Api>
+struct input_archive
+{
+    using type    = Archive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::JSONInputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::PrettyJSONOutputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::MinimalJSONOutputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//======================================================================================//
+
+template <typename Archive, typename Api>
+struct output_archive
+{
+    using type    = Archive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::ostream& os) { return std::make_shared<type>(os); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct output_archive<cereal::PrettyJSONOutputArchive, Api>
+{
+    using type        = cereal::PrettyJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 2;
+        return value;
+    }
+
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        option_type opts(precision(), indent_char(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+///
+/// partial specialization for MinimalJSONOutputArchive
+///
+template <typename Api>
+struct output_archive<cereal::MinimalJSONOutputArchive, Api>
+{
+    using type        = cereal::MinimalJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 0;
+        return value;
+    }
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        //  The last two options are meaningless for the minimal writer
+        option_type opts(precision(), indent_char(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
 };
 
 //======================================================================================//
@@ -211,11 +339,8 @@ struct omp_tools
     static function_type& get_initializer()
     {
         static function_type _instance = []() {
-            std::string components = "wall_clock";
-            auto        env_var    = tim::get_env("TIMEMORY_OMPT_COMPONENTS", components);
-            std::transform(
-                env_var.begin(), env_var.end(), env_var.begin(),
-                [](unsigned char c) -> unsigned char { return std::tolower(c); });
+            static std::string components = "wall_clock,thread_cpu_clock,thread_cpu_util";
+            static auto env_var = tim::get_env("TIMEMORY_OMPT_COMPONENTS", components);
             ::tim::configure<Bundle>(enumerate_components(delimit(env_var)));
         };
         return _instance;

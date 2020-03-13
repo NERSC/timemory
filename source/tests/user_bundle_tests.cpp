@@ -130,13 +130,17 @@ protected:
         user_tuple_bundle::reset();
 
         auto bundle1_init = [](bundle1_t& _bundle) {
+            PRINT_HERE("%s", "bundle1_init");
             if(details::get_test_name() != "bundle_0" &&
                details::get_test_name() != "bundle_3")
+            {
+                PRINT_HERE("%s<%s, %s>", "initialize", "cpu_clock", "peak_rss");
                 _bundle.initialize<cpu_clock, peak_rss>();
+            }
         };
 
         user_tuple_bundle::configure<bundle0_t, wall_clock, cpu_util>();
-        user_list_bundle::configure<bundle1_t>(false, bundle1_init);
+        user_list_bundle::configure<bundle1_t>(false, false, bundle1_init);
 
         EXPECT_EQ(user_tuple_bundle::bundle_size(), 1);
         EXPECT_EQ(user_list_bundle::bundle_size(), 1);
@@ -518,7 +522,6 @@ main(int argc, char** argv)
     auto ret = RUN_ALL_TESTS();
 
     tim::timemory_finalize();
-
     return ret;
 }
 

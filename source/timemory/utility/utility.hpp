@@ -689,8 +689,8 @@ get_hash(char* cstr)
 template <typename T>
 struct hasher
 {
-    inline size_t operator()(T&& val) { return get_hash(std::forward<T>(val)); }
-    inline size_t operator()(const T& val) { return get_hash(val); }
+    inline size_t operator()(T&& val) const { return get_hash(std::forward<T>(val)); }
+    inline size_t operator()(const T& val) const { return get_hash(val); }
 };
 
 //--------------------------------------------------------------------------------------//

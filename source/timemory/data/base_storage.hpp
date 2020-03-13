@@ -37,11 +37,13 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
+#include "timemory/storage/declaration.hpp"
 
+//--------------------------------------------------------------------------------------//
+/*
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/gperf.hpp"
-#include "timemory/general/hash.hpp"
+#include "timemory/hash/declaration.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -218,3 +220,4 @@ protected:
 }  // namespace tim
 
 //======================================================================================//
+*/

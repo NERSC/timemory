@@ -30,119 +30,22 @@
 
 #pragma once
 
-#if defined(TIMEMORY_EXTERN_INIT) && !defined(TIMEMORY_BUILD_EXTERN_INIT)
-#    include "timemory/components/types.hpp"
-#    include "timemory/data/storage.hpp"
-
-namespace tim
-{
-//======================================================================================//
-// declares:
-//      extern template get_storage_singleton<TYPE>();
-//
-#    if defined(TIMEMORY_USE_CALIPER)
-TIMEMORY_DECLARE_EXTERN_INIT(caliper)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(current_peak_rss)
-TIMEMORY_DECLARE_EXTERN_INIT(cpu_clock)
-#    if defined(TIMEMORY_USE_PAPI)
-TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_dp_flops)
-TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_flops)
-TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_sp_flops)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(cpu_util)
-#    if defined(TIMEMORY_USE_CUDA)
-TIMEMORY_DECLARE_EXTERN_INIT(cuda_event)
-TIMEMORY_DECLARE_EXTERN_INIT(cuda_profiler)
-#    endif
-#    if defined(TIMEMORY_USE_CUPTI)
-TIMEMORY_DECLARE_EXTERN_INIT(cupti_activity)
-TIMEMORY_DECLARE_EXTERN_INIT(cupti_counters)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(data_rss)
-TIMEMORY_DECLARE_EXTERN_INIT(gperf_cpu_profiler)
-TIMEMORY_DECLARE_EXTERN_INIT(gperf_heap_profiler)
-#    if defined(TIMEMORY_USE_CUPTI)
-// TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_flops)
-TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_dp_flops)
-// TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_hp_flops)
-TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_sp_flops)
-#    endif
-#    if defined(TIMEMORY_USE_LIKWID)
-TIMEMORY_DECLARE_EXTERN_INIT(likwid_marker)
-TIMEMORY_DECLARE_EXTERN_INIT(likwid_nvmarker)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(monotonic_clock)
-TIMEMORY_DECLARE_EXTERN_INIT(monotonic_raw_clock)
-TIMEMORY_DECLARE_EXTERN_INIT(num_io_in)
-TIMEMORY_DECLARE_EXTERN_INIT(num_io_out)
-TIMEMORY_DECLARE_EXTERN_INIT(num_major_page_faults)
-TIMEMORY_DECLARE_EXTERN_INIT(num_minor_page_faults)
-TIMEMORY_DECLARE_EXTERN_INIT(num_msg_recv)
-TIMEMORY_DECLARE_EXTERN_INIT(num_msg_sent)
-TIMEMORY_DECLARE_EXTERN_INIT(num_signals)
-TIMEMORY_DECLARE_EXTERN_INIT(num_swap)
-#    if defined(TIMEMORY_USE_NVTX)
-TIMEMORY_DECLARE_EXTERN_INIT(nvtx_marker)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(page_rss)
-#    if defined(TIMEMORY_USE_PAPI)
-TIMEMORY_DECLARE_EXTERN_INIT(papi_array_t)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(peak_rss)
-TIMEMORY_DECLARE_EXTERN_INIT(priority_context_switch)
-TIMEMORY_DECLARE_EXTERN_INIT(process_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_INIT(process_cpu_util)
-TIMEMORY_DECLARE_EXTERN_INIT(read_bytes)
-TIMEMORY_DECLARE_EXTERN_INIT(wall_clock)
-TIMEMORY_DECLARE_EXTERN_INIT(stack_rss)
-TIMEMORY_DECLARE_EXTERN_INIT(system_clock)
-#    if defined(TIMEMORY_USE_TAU)
-TIMEMORY_DECLARE_EXTERN_INIT(tau_marker)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(thread_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_INIT(thread_cpu_util)
-TIMEMORY_DECLARE_EXTERN_INIT(trip_count)
-TIMEMORY_DECLARE_EXTERN_INIT(user_tuple_bundle)
-TIMEMORY_DECLARE_EXTERN_INIT(user_list_bundle)
-TIMEMORY_DECLARE_EXTERN_INIT(user_clock)
-TIMEMORY_DECLARE_EXTERN_INIT(virtual_memory)
-#    if defined(TIMEMORY_USE_VTUNE)
-TIMEMORY_DECLARE_EXTERN_INIT(vtune_event)
-TIMEMORY_DECLARE_EXTERN_INIT(vtune_frame)
-#    endif
-TIMEMORY_DECLARE_EXTERN_INIT(voluntary_context_switch)
-TIMEMORY_DECLARE_EXTERN_INIT(written_bytes)
-TIMEMORY_DECLARE_EXTERN_INIT(user_mode_time)
-TIMEMORY_DECLARE_EXTERN_INIT(kernel_mode_time)
-TIMEMORY_DECLARE_EXTERN_INIT(current_peak_rss)
-#    if defined(TIMEMORY_USE_GOTCHA)
-TIMEMORY_DECLARE_EXTERN_INIT(malloc_gotcha)
-#    endif
-
-}  // namespace tim
-
-//--------------------------------------------------------------------------------------//
-
-#endif  // defined(TIMEMORY_EXTERN_INIT) && !defined(TIMEMORY_BUILD_EXTERN_INIT)
-
-//--------------------------------------------------------------------------------------//
-
 #if defined(TIMEMORY_USE_MPI)
 
 #    include "timemory/backends/mpi.hpp"
-#    include "timemory/manager.hpp"
+#    include "timemory/config.hpp"
+#    include "timemory/manager/declaration.hpp"
 
-extern "C" int
-MPI_Finalize();
+#    if defined(TIMEMORY_USE_EXTERN)
 
-extern "C" int
-MPI_Init(int* argc, char*** argv);
+extern "C"
+{
+    extern void timemory_MPI_Init(int* argc, char*** argv);
+    extern int  MPI_Init(int* argc, char*** argv);
+    extern int  MPI_Init_thread(int* argc, char*** argv, int required, int* provided);
+}
 
-extern "C" int
-MPI_Init_thread(int* argc, char*** argv, int required, int* provided);
-
-#    if !defined(TIMEMORY_EXTERN_INIT)
+#    else
 
 //--------------------------------------------------------------------------------------//
 
@@ -150,7 +53,7 @@ extern "C"
 {
     //----------------------------------------------------------------------------------//
 
-    int timemory_MPI_Finalize(int, int, void*, void*)
+    static int timemory_MPI_Finalize(MPI_Comm, int, void*, void*)
     {
         if(tim::settings::debug())
         {
@@ -161,16 +64,21 @@ extern "C"
         if(manager)
             manager->finalize();
         ::tim::dmp::is_finalized() = true;
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory MPI_Finalize completed!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
         return MPI_SUCCESS;
     }
 
     //----------------------------------------------------------------------------------//
 
-    void timemory_MPI_Init(int* argc, char*** argv)
+    inline void timemory_MPI_Init(int* argc, char*** argv)
     {
         int comm_key = 0;
-        MPI_Comm_create_keyval(nullptr, &timemory_MPI_Finalize, &comm_key, nullptr);
-        MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, nullptr);
+        MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_MPI_Finalize, &comm_key, NULL);
+        MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
 
         static auto _manager = timemory_manager_master_instance();
         tim::consume_parameters(_manager);
@@ -178,7 +86,9 @@ extern "C"
     }
 
     //----------------------------------------------------------------------------------//
-
+    //
+#        if !defined(TIMEMORY_MPI_INIT) || (TIMEMORY_MPI_INIT > 0)
+    //
     int MPI_Init(int* argc, char*** argv)
     {
         if(tim::settings::debug())
@@ -186,9 +96,9 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
                    __LINE__);
         }
-#        if defined(TIMEMORY_USE_TAU)
+#            if defined(TIMEMORY_USE_TAU)
         Tau_init(*argc, *argv);
-#        endif
+#            endif
         auto ret = PMPI_Init(argc, argv);
         timemory_MPI_Init(argc, argv);
         return ret;
@@ -203,16 +113,18 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
                    __FILE__, __LINE__);
         }
-#        if defined(TIMEMORY_USE_TAU)
+#            if defined(TIMEMORY_USE_TAU)
         Tau_init(*argc, *argv);
-#        endif
+#            endif
         auto ret = PMPI_Init_thread(argc, argv, req, prov);
         timemory_MPI_Init(argc, argv);
         return ret;
     }
-
+    //
+#        endif
+    //
     //----------------------------------------------------------------------------------//
 }  // extern "C"
 
-#    endif  // !defined(TIMEMORY_EXTERN_INIT)
+#    endif  // !defined(TIMEMORY_USE_EXTERN)
 #endif      // defined(TIMEMORY_USE_MPI)

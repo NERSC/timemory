@@ -29,7 +29,7 @@
 
 #include "timemory/utility/serializer.hpp"
 
-#if defined(TIMEMORY_EXTERN_INIT)
+#if defined(TIMEMORY_USE_EXTERN)
 
 namespace tim
 {
@@ -45,4 +45,4 @@ get_parse_callbacks()
 
 }  // namespace tim
 
-#endif  // defined(TIMEMORY_EXTERN_INIT)
+#endif  // defined(TIMEMORY_USE_EXTERN)

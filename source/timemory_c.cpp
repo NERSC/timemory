@@ -30,8 +30,8 @@
  *
  */
 
-#if !defined(TIMEMORY_EXTERN_TEMPLATES)
-#    define TIMEMORY_EXTERN_TEMPLATES
+#if !defined(TIMEMORY_USE_EXTERN)
+#    define TIMEMORY_USE_EXTERN
 #endif
 
 #if !defined(MAX_STR_LEN)
@@ -45,10 +45,6 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
-
-#if !defined(TIMEMORY_LIBRARY_TYPE)
-#    define TIMEMORY_LIBRARY_TYPE tim::available_component_list_t
-#endif
 
 using namespace tim::component;
 using auto_timer_t    = typename tim::auto_timer::component_type;

@@ -828,10 +828,7 @@ void
 write_entry(stream& _os, const std::string& _label, const std::tuple<_Types...>& _values,
             index_sequence<_Idx...>, bool c = false, bool l = false)
 {
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret =
-        init_list_type{ (write_entry(_os, _label, std::get<_Idx>(_values), c, l), 0)... };
-    consume_parameters(ret);
+    TIMEMORY_FOLD_EXPRESSION(write_entry(_os, _label, std::get<_Idx>(_values), c, l));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -842,11 +839,9 @@ write_entry(stream& _os, const std::vector<std::string>& _labels,
             const std::tuple<_Types...>& _values, index_sequence<_Idx...>, bool c = false,
             bool l = false)
 {
-    using init_list_type = std::initializer_list<int>;
-    size_t _L            = _labels.size();
-    auto&& ret           = init_list_type{ (
-        write_entry(_os, _labels.at(_Idx % _L), std::get<_Idx>(_values), c, l), 0)... };
-    consume_parameters(ret);
+    size_t _L = _labels.size();
+    TIMEMORY_FOLD_EXPRESSION(
+        write_entry(_os, _labels.at(_Idx % _L), std::get<_Idx>(_values), c, l));
 }
 
 //--------------------------------------------------------------------------------------//

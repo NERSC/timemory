@@ -25,9 +25,9 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 # set the compiler flags
+#
 add_flag_if_avail(
-    "-W" "${OS_FLAG}" "-Wno-unknown-pragmas" "-Wno-ignored-attributes"
-    "-Wno-attributes" "-Wno-unused-command-line-argument")
+    "-W" "${OS_FLAG}" "-Wno-unknown-pragmas" "-Wno-ignored-attributes" "-Wno-attributes")
 
 if(CMAKE_CXX_COMPILER_IS_GNU)
     add_cxx_flag_if_avail("-Wno-class-memaccess")
@@ -36,7 +36,9 @@ endif()
 
 if(TIMEMORY_BUILD_QUIET)
     add_flag_if_avail("-Wno-unused-value" "-Wno-unused-function"
-        "-Wno-unknown-pragmas" "-Wno-deprecated-declarations" "-Wno-implicit-fallthrough")
+        "-Wno-unknown-pragmas" "-Wno-deprecated-declarations" "-Wno-implicit-fallthrough"
+        "-Wno-unused-command-line-argument"
+        )
 endif()
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
@@ -72,10 +74,19 @@ endif()
 # print compilation timing reports (Clang compiler)
 #
 add_interface_library(timemory-compile-timing)
-add_target_flag_if_avail(timemory-compile-timing "-ftime-report")
+if(CMAKE_CXX_COMPILER_IS_CLANG)
+    add_target_flag_if_avail(timemory-compile-timing "-ftime-trace")
+    if(NOT cxx_timemory_compile_timing_ftime_trace)
+        add_target_flag_if_avail(timemory-compile-timing "-ftime-report")
+    endif()
+else()
+    add_target_flag_if_avail(timemory-compile-timing "-ftime-report")
+endif()
+
 if(TIMEMORY_USE_COMPILE_TIMING)
     target_link_libraries(timemory-compile-options INTERFACE timemory-compile-timing)
 endif()
+
 if(NOT cxx_timemory_compile_timing_ftime_report)
     add_disabled_interface(timemory-compile-timing)
 endif()
@@ -108,7 +119,9 @@ if(dl_LIBRARY)
     # This instructs the linker to add all symbols, not only used ones, to the dynamic
     # symbol table. This option is needed for some uses of dlopen or to allow obtaining
     # backtraces from within a program.
-    add_flag_if_avail("-rdynamic")
+    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
+        add_flag_if_avail("-rdynamic")
+    endif()
 endif()
 
 #----------------------------------------------------------------------------------------#

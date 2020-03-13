@@ -33,7 +33,7 @@
 //--------------------------------------------------------------------------------------//
 // auto_user_bundle
 //
-#if defined(TIMEMORY_EXTERN_TEMPLATES) && !defined(TIMEMORY_BUILD_EXTERN_TEMPLATE)
+#if defined(TIMEMORY_USE_EXTERN)
 
 #    include "timemory/components.hpp"
 #    include "timemory/utility/macros.hpp"

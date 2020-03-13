@@ -32,7 +32,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -68,7 +67,7 @@ class component_tuple : public stack_bundle<available_tuple<concat<Types...>>>
     // manager is friend so can use above
     friend class manager;
 
-    template <typename _TupleC, typename _ListC>
+    template <typename TupleC, typename ListC>
     friend class component_hybrid;
 
     template <typename... _Types>
@@ -84,9 +83,6 @@ public:
     using type_tuple        = typename bundle_type::type_tuple;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
-    using data_collect_type = typename bundle_type::data_collect_type;
-    using data_value_type   = typename bundle_type::data_value_type;
-    using data_label_type   = typename bundle_type::data_label_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
 
     using apply_v     = apply<void>;
@@ -94,9 +90,12 @@ public:
     using string_t    = typename bundle_type::string_t;
     using string_hash = typename bundle_type::string_hash;
 
-    template <template <typename> class Op, typename _Tuple = impl_type>
-    using operation_t =
-        typename bundle_type::template generic_operation<Op, _Tuple>::type;
+    template <template <typename> class Op, typename Tuple = impl_type>
+    using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;
+
+    template <template <typename> class Op, typename Tuple = impl_type>
+    using custom_operation_t =
+        typename bundle_type::template custom_operation<Op, Tuple>::type;
 
     // used by gotcha
     using component_type   = component_tuple<Types...>;
@@ -123,6 +122,17 @@ public:
     {
         static initializer_type _instance = [](this_type&) {};
         return _instance;
+    }
+
+public:
+    using concat_type = concat<Types...>;
+
+    template <typename T>
+    static constexpr bool get_config()
+    {
+        using var_config_t =
+            typename contains_one_of<variadic::is_config, concat_type>::type;
+        return is_one_of<T, var_config_t>::value;
     }
 
 public:
@@ -167,16 +177,24 @@ public:
     //----------------------------------------------------------------------------------//
     // public member functions
     //
-    inline void             push();
-    inline void             pop();
-    void                    measure();
-    void                    sample();
-    void                    start();
-    void                    stop();
-    this_type&              record();
-    void                    reset();
-    data_value_type         get() const;
-    data_label_type         get_labeled() const;
+    inline void push();
+    inline void pop();
+    template <typename... Args>
+    void measure(Args&&...);
+    template <typename... Args>
+    void sample(Args&&...);
+    template <typename... Args>
+    void start(Args&&...);
+    template <typename... Args>
+    void stop(Args&&...);
+    template <typename... Args>
+    this_type& record(Args&&...);
+    template <typename... Args>
+    void reset(Args&&...);
+    template <typename... Args>
+    auto get(Args&&...) const;
+    template <typename... Args>
+    auto                    get_labeled(Args&&...) const;
     inline data_type&       data();
     inline const data_type& data() const;
 
@@ -278,7 +296,8 @@ public:
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
-        this->get<bundle_t>()->template insert<T>(m_flat);
+        this->get<bundle_t>()->insert(component::factory::get_opaque<T>(m_flat),
+                                      component::factory::get_typeids<T>());
     }
 
     //----------------------------------------------------------------------------------//
@@ -548,18 +567,6 @@ get(::tim::component_tuple<Types...>&& obj)
     using obj_type = ::tim::component_tuple<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-TSTAG(struct)
-tuple_size<::tim::component_tuple<Types...>>
-{
-public:
-    using value_type = size_t;
-    using type       = typename ::tim::component_tuple<Types...>::type_tuple;
-    static constexpr value_type value = tuple_size<type>::value;
-};
 
 //======================================================================================//
 }  // namespace std

@@ -40,8 +40,11 @@
 #include "timemory/utility/signals.hpp"
 
 using namespace tim::component;
-using namespace tim::stl_overload;
-using namespace tim::stl_overload::ostream;
+using namespace tim::stl;
+using namespace tim::stl::ostream;
+
+using mutex_t = std::mutex;
+using lock_t  = std::unique_lock<mutex_t>;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
@@ -65,6 +68,22 @@ using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu
                                        thread_cpu_clock, process_cpu_clock>;
 
 //--------------------------------------------------------------------------------------//
+
+// dummy
+//
+struct dummy_component : public base<dummy_component, void>
+{
+    using value_type = void;
+    using this_type  = dummy_component;
+    using base_type  = base<this_type, value_type>;
+
+    static std::string label() { return "dummy_component"; }
+    static std::string description() { return "dummy component"; }
+    static value_type  record() {}
+
+    void start() {}
+    void stop() {}
+};
 
 namespace details
 {
@@ -138,6 +157,30 @@ time_fibonacci(int32_t n, int32_t cutoff)
     TIMEMORY_MARKER(auto_tuple_t, "");
     return fibonacci(n, cutoff);
 }
+//--------------------------------------------------------------------------------------//
+// this function consumes approximately "n" milliseconds of real time
+void
+do_sleep(long n)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(n));
+}
+//--------------------------------------------------------------------------------------//
+// this function consumes approximately "t" milliseconds of cpu time
+void
+consume(long n)
+{
+    // a mutex held by one lock
+    mutex_t mutex;
+    // acquire lock
+    lock_t hold_lk(mutex);
+    // associate but defer
+    lock_t try_lk(mutex, std::defer_lock);
+    // get current time
+    auto now = std::chrono::steady_clock::now();
+    // try until time point
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
+        try_lk.try_lock();
+}
 
 }  // namespace details
 
@@ -150,7 +193,7 @@ class tuple_tests : public ::testing::Test
 
 TEST_F(tuple_tests, usage)
 {
-    auto test_1_marker = TIMEMORY_HANDLE(auto_tuple_t, "");
+    auto test_1_marker = TIMEMORY_BLANK_HANDLE(auto_tuple_t, details::get_test_name());
 
     full_measurement_t _use_beg("test_1_usage_begin");
     full_measurement_t _use_delta("test_1_usage_delta");
@@ -186,9 +229,7 @@ TEST_F(tuple_tests, all_threads)
     auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
     auto data_size             = auto_tuple_t::size();
 
-    using pair_t  = std::pair<std::string, measurement_t>;
-    using mutex_t = std::mutex;
-    using lock_t  = std::unique_lock<mutex_t>;
+    using pair_t = std::pair<std::string, measurement_t>;
 
     mutex_t              mtx;
     std::vector<pair_t>  measurements;
@@ -198,7 +239,7 @@ TEST_F(tuple_tests, all_threads)
     std::stringstream    lambda_ss;
 
     {
-        TIMEMORY_MARKER(auto_tuple_t, "");
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name());
 
         auto run_fib = [&](long n, std::promise<void>* p) {
             std::stringstream ss;
@@ -342,7 +383,8 @@ TEST_F(tuple_tests, collapsed_threads)
 
     {
         // run longer fibonacci calculations on two threads
-        TIMEMORY_BASIC_CALIPER(master_thread_a, auto_tuple_t, "[master_thread]/0");
+        TIMEMORY_BLANK_CALIPER(master_thread_a, auto_tuple_t, details::get_test_name(),
+                               "/[master_thread]/0");
         {
             std::thread t1(run_fibonacci, 40);
             t1.join();
@@ -354,7 +396,8 @@ TEST_F(tuple_tests, collapsed_threads)
 
     {
         // run longer fibonacci calculations on two threads
-        TIMEMORY_BASIC_CALIPER(master_thread_a, auto_tuple_t, "[master_thread]/1");
+        TIMEMORY_BLANK_CALIPER(master_thread_a, auto_tuple_t, details::get_test_name(),
+                               "/[master_thread]/1");
 
         std::thread t1(run_fibonacci, 41);
         std::thread t2(run_fibonacci, 40);
@@ -443,16 +486,19 @@ TEST_F(tuple_tests, collapsed_threads)
 
 TEST_F(tuple_tests, measure)
 {
-    tim::component_tuple<page_rss, peak_rss> prss(TIMEMORY_LABEL(""));
+    tim::component_tuple<page_rss, peak_rss> prss(details::get_test_name() + "/" +
+                                                  TIMEMORY_LABEL(""));
     {
-        TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", page_rss, peak_rss);
+        TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE(details::get_test_name() + "/[init]", page_rss,
+                                           peak_rss);
         // just record the peak rss
         prss.measure();
         std::cout << "  Current rss: " << prss << std::endl;
     }
 
     {
-        TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", page_rss, peak_rss);
+        TIMEMORY_VARIADIC_AUTO_TUPLE(details::get_test_name() + "/[delta]", page_rss,
+                                     peak_rss);
         // do something, where you want delta peak rss
         auto                 n = 10000000;
         std::vector<int64_t> v(n, 10);
@@ -505,6 +551,125 @@ TEST_F(tuple_tests, concat)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(tuple_tests, get)
+{
+    using get_tuple_t = tim::component_tuple<wall_clock, dummy_component, cpu_clock>;
+
+    get_tuple_t obj(details::get_test_name());
+    obj.start();
+    details::consume(1000);
+    details::do_sleep(1000);
+    obj.stop();
+
+    using label_t                       = std::tuple<std::string, double>;
+    std::tuple<double, double>   data   = obj.get();
+    std::tuple<label_t, label_t> labels = obj.get_labeled();
+
+    double wc_v;
+    double cc_v;
+    std::tie(wc_v, cc_v) = data;
+
+    label_t wc_l;
+    label_t cc_l;
+    std::tie(wc_l, cc_l) = labels;
+
+    std::cout << "\n" << std::flush;
+    std::cout << std::fixed;
+    std::cout.precision(6);
+    std::cout << std::setw(12) << std::get<0>(wc_l) << " = " << wc_v << "\n";
+    std::cout << std::setw(12) << std::get<0>(cc_l) << " = " << cc_v << "\n";
+    std::cout << "\n" << std::flush;
+
+    ASSERT_TRUE(std::get<0>(wc_l) == "wall");
+    ASSERT_TRUE(std::get<0>(cc_l) == "cpu");
+
+    ASSERT_NEAR(wc_v, 2.0, 1.0e-2);
+    ASSERT_NEAR(cc_v, 1.0, 1.0e-2);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(tuple_tests, explicit_start)
+{
+    using namespace tim::variadic;
+    using config_t     = config<explicit_start>;
+    using config_type  = typename config_t::type;
+    using this_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, config_t>;
+
+    auto ex_check_start_t = this_tuple_t::get_config<explicit_start>();
+    auto ex_check_stop_t  = this_tuple_t::get_config<explicit_stop>();
+
+    std::cout << "\n" << std::flush;
+    std::cout << "config_t     : " << tim::demangle<config_t>() << "\n";
+    std::cout << "config_type  : " << tim::demangle<config_type>() << "\n";
+    std::cout << "this_tuple_t : " << tim::demangle<this_tuple_t>() << "\n";
+    std::cout << std::boolalpha << "start check : " << ex_check_start_t << "\n";
+    std::cout << std::boolalpha << "stop check : " << ex_check_stop_t << "\n";
+
+    std::array<double, 3> value;
+    {
+        this_tuple_t obj(details::get_test_name());
+        details::consume(1000);
+        details::do_sleep(1000);
+        obj.stop();
+        value[0] = obj.get<wall_clock>()->get();
+        value[1] = obj.get<cpu_clock>()->get();
+        value[2] = obj.get<cpu_util>()->get();
+        std::cout << "\n" << std::flush;
+        std::cout << obj << "\n";
+        std::cout << "\n" << std::flush;
+    }
+
+    EXPECT_EQ(ex_check_start_t, true);
+    EXPECT_EQ(ex_check_stop_t, false);
+    ASSERT_NEAR(value[0], 0.0, 1.0e-6);
+    ASSERT_NEAR(value[1], 0.0, 1.0e-6);
+    ASSERT_NEAR(value[2], 0.0, 1.0e-6);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(tuple_tests, auto_start)
+{
+    using namespace tim::variadic;
+    using config_t    = config<auto_start>;
+    using config_type = typename config_t::type;
+    using this_tuple_t =
+        tim::component_tuple_t<wall_clock, cpu_clock, cpu_util, config_t>;
+
+    auto ex_check_start_t = this_tuple_t::get_config<auto_start>();
+    auto ex_check_stop_t  = this_tuple_t::get_config<auto_stop>();
+
+    std::cout << "\n" << std::flush;
+    std::cout << "config_t     : " << tim::demangle<config_t>() << "\n";
+    std::cout << "config_type  : " << tim::demangle<config_type>() << "\n";
+    std::cout << "this_tuple_t : " << tim::demangle<this_tuple_t>() << "\n";
+    std::cout << std::boolalpha << "start check : " << ex_check_start_t << "\n";
+    std::cout << std::boolalpha << "stop check : " << ex_check_stop_t << "\n";
+
+    std::array<double, 3> value;
+    {
+        this_tuple_t obj(details::get_test_name());
+        details::consume(1000);
+        details::do_sleep(1000);
+        obj.stop();
+        value[0] = obj.get<wall_clock>()->get();
+        value[1] = obj.get<cpu_clock>()->get();
+        value[2] = obj.get<cpu_util>()->get();
+        std::cout << "\n" << std::flush;
+        std::cout << obj << "\n";
+        std::cout << "\n" << std::flush;
+    }
+
+    EXPECT_EQ(ex_check_start_t, true);
+    EXPECT_EQ(ex_check_stop_t, false);
+    ASSERT_NEAR(value[0], 2.0, 1.0e-2);
+    ASSERT_NEAR(value[1], 1.0, 1.0e-2);
+    ASSERT_NEAR(value[2], 50.0, 5.0);
+}
+
+//--------------------------------------------------------------------------------------//
+
 int
 main(int argc, char** argv)
 {
@@ -522,6 +687,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

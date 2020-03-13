@@ -14,7 +14,8 @@ enable_testing()
 
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
-add_interface_library(timemory-extern-init)
+add_interface_library(timemory-cereal-xml)
+add_interface_library(timemory-extern)
 add_interface_library(timemory-statistics)
 
 set(TIMEMORY_REQUIRED_INTERFACES
@@ -22,6 +23,7 @@ set(TIMEMORY_REQUIRED_INTERFACES
     timemory-cereal)
 
 add_interface_library(timemory-mpi)
+add_interface_library(timemory-no-mpi-init)
 add_interface_library(timemory-upcxx)
 add_interface_library(timemory-threading)
 
@@ -298,7 +300,7 @@ target_link_libraries(timemory-headers INTERFACE timemory-threading)
 #----------------------------------------------------------------------------------------#
 
 if(NOT WIN32)
-    target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
+    target_compile_definitions(timemory-extern INTERFACE TIMEMORY_USE_EXTERN)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -335,7 +337,8 @@ target_include_directories(timemory-cereal SYSTEM INTERFACE
 
 # timemory-headers always provides timemory-cereal
 target_link_libraries(timemory-headers INTERFACE timemory-cereal)
-
+target_link_libraries(timemory-cereal-xml INTERFACE timemory-cereal)
+target_compile_definitions(timemory-cereal-xml INTERFACE TIMEMORY_USE_XML_ARCHIVE)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -416,6 +419,9 @@ else()
     set(MPI_FOUND OFF)
 endif()
 
+# interface to kill MPI init in headers
+target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_INIT=0)
+
 if(MPI_FOUND)
 
     foreach(_LANG C CXX)
@@ -472,6 +478,11 @@ if(MPI_FOUND)
     # used by python
     if(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
         set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
+    endif()
+
+    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" ON)
+    if(NOT TIMEMORY_USE_MPI_INIT)
+        target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
     endif()
 
 else()
@@ -818,7 +829,11 @@ if(TIMEMORY_USE_GPERF)
     #
     # general set of compiler flags when using gperftools
     #
-    add_target_flag_if_avail(timemory-gperftools-compile-options "-g" "-rdynamic")
+    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
+        add_target_flag_if_avail(timemory-gperftools-compile-options "-g" "-rdynamic")
+    else()
+        add_target_flag_if_avail(timemory-gperftools-compile-options "-g")
+    endif()
 
     # NOTE:
     #   When compiling with programs with gcc, that you plan to link
@@ -997,7 +1012,7 @@ if(UNIX AND NOT APPLE)
             REPO_URL https://github.com/jrmadsen/GOTCHA.git
             REPO_BRANCH cmake-updates)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
-        list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha gotcha-include)
+        #list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha gotcha-include)
     elseif(TIMEMORY_USE_GOTCHA)
         find_package(gotcha QUIET ${TIMEMORY_FIND_REQUIREMENT})
         set(TIMEMORY_BUILD_GOTCHA OFF)
@@ -1012,7 +1027,9 @@ endif()
 if(gotcha_FOUND)
     target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
     target_link_libraries(timemory-gotcha INTERFACE gotcha)
-    add_target_flag_if_avail(timemory-gotcha "-rdynamic")
+    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
+        add_target_flag_if_avail(timemory-gotcha "-rdynamic")
+    endif()
     set_target_properties(timemory-gotcha PROPERTIES
         INTERFACE_LINK_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
 else()
@@ -1064,6 +1081,8 @@ if(TIMEMORY_USE_OMPT)
             REPO_URL https://github.com/NERSC/LLVM-openmp.git
             REPO_BRANCH timemory)
         add_subdirectory(external/llvm-ompt)
+        target_include_directories(timemory-ompt INTERFACE
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
     elseif(OpenMP_FOUND)
         find_library(OMPT_LIBRARY
             NAME ompt ompprof

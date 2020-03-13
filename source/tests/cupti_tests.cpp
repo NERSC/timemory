@@ -291,8 +291,8 @@ TEST_F(cupti_tests, activity)
 TEST_F(cupti_tests, available)
 {
     CUdevice device;
-    CUDA_DRIVER_API_CALL(cuInit(0));
-    CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
 
     auto event_names  = tim::cupti::available_events(device);
     auto metric_names = tim::cupti::available_metrics(device);

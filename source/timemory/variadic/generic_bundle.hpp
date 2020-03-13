@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -76,6 +75,8 @@ public:
     struct generic_deleter;
     template <template <typename> class Op, typename... T>
     struct generic_operation;
+    template <template <typename> class Op, typename... T>
+    struct custom_operation;
 
     using EmptyT = std::tuple<>;
     template <typename U>
@@ -85,28 +86,15 @@ public:
     template <typename... T>
     struct bundle
     {
-        // static_assert(!std::is_pointer<T>::value, "Error! pointer pointer!");
         using type_tuple     = std::tuple<T...>;
         using reference_type = std::tuple<T...>;
         using sample_type    = std::tuple<sample_type_t<T>...>;
         using print_t        = std::tuple<operation::print<T>...>;
-        template <typename _Archive>
-        using serialize_t = std::tuple<
-            operation::generic_operator<T, operation::serialization<T, _Archive>>...>;
     };
 
     template <template <typename...> class TypeL, typename... T>
     struct bundle<TypeL<T...>> : bundle<T...>
-    {
-        // static_assert(!std::is_pointer<T>::value, "Error! pointer pointer!");
-        using type_tuple     = std::tuple<T...>;
-        using reference_type = TypeL<T...>;
-        using sample_type    = TypeL<sample_type_t<T>...>;
-        using print_t        = TypeL<operation::print<T>...>;
-        template <typename _Archive>
-        using serialize_t = TypeL<
-            operation::generic_operator<T, operation::serialization<T, _Archive>>...>;
-    };
+    {};
 
     template <template <typename...> class CompL, template <typename...> class AutoL,
               template <typename...> class DataL, typename... L, typename... T>
@@ -115,13 +103,6 @@ public:
         using component_type = CompL<T...>;
         using auto_type      = AutoL<T...>;
     };
-
-    template <typename C, typename A, typename T>
-    using component_type_definition_t =
-        typename bundle_definitions<C, A, T>::component_type;
-
-    template <typename C, typename A, typename T>
-    using auto_type_definition_t = typename bundle_definitions<C, A, T>::auto_type;
 
     //----------------------------------------------------------------------------------//
     //
@@ -135,19 +116,17 @@ public:
     struct generic_operation<Op, std::tuple<T...>> : generic_operation<Op, T...>
     {};
 
+    //----------------------------------------------------------------------------------//
+    //
     template <template <typename> class Op, typename... T>
-    struct generic_operation<Op, std::tuple<T*...>> : generic_operation<Op, T...>
-    {};
-
-    template <template <typename> class Op, typename... T>
-    struct generic_operation<Op, std::tuple<pointer<T>...>> : generic_operation<Op, T...>
-    {};
-
-    template <template <typename> class Op>
-    struct generic_operation<Op, std::tuple<>>
+    struct custom_operation
     {
-        using type = std::tuple<>;
+        using type = std::tuple<Op<T>...>;
     };
+
+    template <template <typename> class Op, typename... T>
+    struct custom_operation<Op, std::tuple<T...>> : custom_operation<Op, T...>
+    {};
 
     //----------------------------------------------------------------------------------//
     //
@@ -161,20 +140,6 @@ public:
     struct generic_counter<std::tuple<T...>> : generic_counter<T...>
     {};
 
-    template <typename... T>
-    struct generic_counter<std::tuple<T*...>> : generic_counter<T...>
-    {};
-
-    template <typename... T>
-    struct generic_counter<std::tuple<pointer<T>...>> : generic_counter<T...>
-    {};
-
-    template <template <typename...> class TypeL>
-    struct generic_counter<TypeL<>>
-    {
-        using type = std::tuple<>;
-    };
-
     //----------------------------------------------------------------------------------//
     //
     template <typename... T>
@@ -187,20 +152,6 @@ public:
     struct generic_deleter<std::tuple<T...>> : generic_deleter<T...>
     {};
 
-    template <typename... T>
-    struct generic_deleter<std::tuple<T*...>> : generic_deleter<T...>
-    {};
-
-    template <typename... T>
-    struct generic_deleter<std::tuple<pointer<T>...>> : generic_deleter<T...>
-    {};
-
-    template <template <typename...> class TypeL>
-    struct generic_deleter<TypeL<>>
-    {
-        using type = std::tuple<>;
-    };
-
 public:
     using size_type   = int64_t;
     using string_t    = std::string;
@@ -212,10 +163,6 @@ public:
     using sample_type    = typename type_bundler::sample_type;
     using type_tuple     = typename type_bundler::type_tuple;
     using reference_type = typename type_bundler::reference_type;
-    using data_collect_type =
-        typename get_true_types<trait::collects_data, impl_type>::type;
-    using data_value_type = get_data_value_t<data_collect_type>;
-    using data_label_type = get_data_label_t<data_collect_type>;
 
     // used by gotcha component to prevent recursion
     using gotcha_types = typename get_true_types<trait::is_gotcha, type_tuple>::type;
@@ -230,6 +177,9 @@ public:
     template <template <typename> class Op, typename _Tuple = type_tuple>
     using operation_t = typename generic_operation<Op, _Tuple>::type;
 
+    template <template <typename> class Op, typename _Tuple = type_tuple>
+    using custom_operation_t = typename custom_operation<Op, _Tuple>::type;
+
     template <typename _Tuple = type_tuple>
     using deleter_t = typename generic_deleter<_Tuple>::type;
 
@@ -237,9 +187,7 @@ public:
     using counter_t = typename generic_counter<_Tuple>::type;
 
 public:
-    template <typename _Archive>
-    using serialize_t = typename type_bundler::template serialize_t<_Archive>;
-    using print_t     = typename type_bundler::print_t;
+    using print_t = typename type_bundler::print_t;
 
 public:
     explicit generic_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),

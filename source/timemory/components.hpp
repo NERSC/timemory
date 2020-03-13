@@ -37,63 +37,52 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/variadic/types.hpp"
 
+#include "timemory/components/rusage/components.hpp"
+#include "timemory/components/timing/components.hpp"
+#include "timemory/components/trip_count/components.hpp"
+#include "timemory/components/user_bundle/components.hpp"
+
 // general components
-#include "timemory/components/general.hpp"
-#include "timemory/components/rusage.hpp"
-#include "timemory/components/timing.hpp"
-#include "timemory/components/user_bundle.hpp"
+// #include "timemory/components/general.hpp"
 
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
-#    include "timemory/components/caliper.hpp"
+#    include "timemory/components/caliper/components.hpp"
 #endif
 
 // gotcha components
 #if defined(TIMEMORY_USE_GOTCHA)
-#    include "timemory/components/derived/malloc_gotcha.hpp"
-#    include "timemory/components/gotcha.hpp"
+#    include "timemory/components/gotcha/components.hpp"
 #endif
 
-// cuda event
+// cuda
 #if defined(TIMEMORY_USE_CUDA)
-#    include "timemory/components/cuda/event.hpp"
-#    include "timemory/components/cuda/profiler.hpp"
-#endif
-
-// nvtx marker
-#if defined(TIMEMORY_USE_NVTX)
-#    include "timemory/components/cuda/nvtx_marker.hpp"
+#    include "timemory/components/cuda/components.hpp"
 #endif
 
 // likwid
 #if defined(TIMEMORY_USE_LIKWID)
-#    include "timemory/components/likwid.hpp"
+#    include "timemory/components/likwid/components.hpp"
 #endif
 
 // GPU hardware counter components
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti/activity.hpp"
-#    include "timemory/components/cupti/counters.hpp"
-#    include "timemory/components/roofline/gpu.hpp"
+#    include "timemory/components/cupti/components.hpp"
 #endif
 
 // CPU/GPU hardware counter components
 #if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/papi/array.hpp"
-#    include "timemory/components/papi/tuple.hpp"
-#    include "timemory/components/roofline/cpu.hpp"
+#    include "timemory/components/papi/components.hpp"
 #endif
 
 // TAU component
 #if defined(TIMEMORY_USE_TAU)
-#    include "timemory/components/tau.hpp"
+#    include "timemory/components/tau_marker/components.hpp"
 #endif
 
 // VTune components
 #if defined(TIMEMORY_USE_VTUNE)
-#    include "timemory/components/vtune/event.hpp"
-#    include "timemory/components/vtune/frame.hpp"
-#    include "timemory/components/vtune/profiler.hpp"
+#    include "timemory/components/vtune/components.hpp"
 #endif
 
 // OpenMP components
@@ -101,7 +90,18 @@
 #    include "timemory/components/openmp.hpp"
 #endif
 
-#include "timemory/backends/cuda.hpp"
+// Roofline components
+#if defined(TIMEMORY_USE_CUPTI) || defined(TIMEMORY_USE_PAPI)
+#    include "timemory/components/roofline/components.hpp"
+#endif
+
+// gperftools components
+#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||                                         \
+    defined(TIMEMORY_USE_GPERF_CPU_PROFILER) || defined(TIMEMORY_USE_GPERF)
+#    include "timemory/components/gperftools/components.hpp"
+#endif
+
+#include "timemory/components/cuda/backends.hpp"
 
 // device backend
 #include "timemory/backends/device.hpp"

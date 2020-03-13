@@ -22,20 +22,16 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file ctimemory.cpp
- * This is the C++ proxy for the C interface. Compilation of this file is not
- * required for C++ codes but is compiled into "libtimemory.*" (timemory-cxx-library)
- * so that the "libctimemory.*" can be linked during the TiMemory build and
- * "libctimemory.*" can be stand-alone linked to C code.
+/** \file complete_list.cpp
+ * This file instantiates the complete_list collection of components
  *
  */
 
-#define TIMEMORY_BUILD_EXTERN_TEMPLATE
+#define TIMEMORY_BUILD_EXTERN
 
 #include "timemory/components.hpp"
-#include "timemory/components/types.hpp"
 #include "timemory/plotting.hpp"
-#include "timemory/utility/bits/storage.hpp"
+#include "timemory/runtime/properties.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"

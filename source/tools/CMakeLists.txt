@@ -159,3 +159,14 @@ endif()
 if(TIMEMORY_BUILD_KOKKOS_TOOLS)
     add_subdirectory(kokkos-connector)
 endif()
+
+#----------------------------------------------------------------------------------------#
+# Build and install templight-xml tool
+#
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/templight-xml")
+    option(TIMEMORY_BUILD_TEMPLIGHT_XML "Build templight XML summarizer" OFF)
+    mark_as_advanced(TIMEMORY_BUILD_TEMPLIGHT_XML)
+    if(TIMEMORY_BUILD_TEMPLIGHT_XML)
+        add_subdirectory(templight-xml)
+    endif()
+endif()

@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "timemory/manager.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 
 //======================================================================================//
@@ -38,7 +38,6 @@ namespace tim
 template <typename _Tuple, typename _List>
 auto
 get(const component_hybrid<_Tuple, _List>& _obj)
-    -> decltype(std::declval<component_hybrid<_Tuple, _List>>().get())
 {
     return _obj.get();
 }
@@ -48,7 +47,6 @@ get(const component_hybrid<_Tuple, _List>& _obj)
 template <typename _Tuple, typename _List>
 auto
 get_labeled(const component_hybrid<_Tuple, _List>& _obj)
-    -> decltype(std::declval<component_hybrid<_Tuple, _List>>().get_labeled())
 {
     return _obj.get_labeled();
 }

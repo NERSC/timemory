@@ -53,7 +53,7 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "timemory/backends/cuda.hpp"
+#include "timemory/components/cuda/backends.hpp"
 
 namespace tim
 {
@@ -325,7 +325,7 @@ launch(params<_Device>& _p, _Func&& _func, _Args&&... _args)
         _p.grid = 1;
     std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
         std::forward<_Args>(_args)...);
-    CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+    TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
     consume_parameters(_p, _func, _args...);
     throw std::runtime_error(
@@ -348,7 +348,7 @@ launch(const _Intp& _nsize, params<_Device>& _p, _Func&& _func, _Args&&... _args
         _p.grid = 1;
     std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
         std::forward<_Args>(_args)...);
-    CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+    TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
     consume_parameters(_p, _func, _args..., _nsize);
     throw std::runtime_error(
@@ -373,7 +373,7 @@ launch(const _Intp& _nsize, _Stream _stream, params<_Device>& _p, _Func&& _func,
         _p.grid = 1;
     std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _stream>>>(
         std::forward<_Args>(_args)...);
-    CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+    TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
     consume_parameters(_p, _func, _args..., _nsize, _stream);
     throw std::runtime_error(

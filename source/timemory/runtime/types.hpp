@@ -32,7 +32,7 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
-#include "timemory/utility/environment.hpp"
+#include "timemory/environment/declaration.hpp"
 
 #include <unordered_map>
 
@@ -51,10 +51,14 @@ namespace tim
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
 ///      tim::initialize(*obj, tim::enumerate_components({ "cpu_clock", "cpu_util"}));
 ///
-template <typename _StringT, typename... _ExtraArgs,
-          template <typename, typename...> class _Container>
-_Container<TIMEMORY_COMPONENT>
-enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names);
+template <typename StringT, typename... ExtraArgs,
+          template <typename, typename...> class Container>
+std::vector<TIMEMORY_COMPONENT>
+enumerate_components(const Container<StringT, ExtraArgs...>& component_names);
+
+template <typename... ExtraArgs>
+std::set<TIMEMORY_COMPONENT>
+enumerate_components(const std::set<std::string, ExtraArgs...>& component_names);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -69,18 +73,17 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
 ///      tim::initialize(*obj, { CPU_CLOCK, CPU_UTIL });
 //
-///  typename... _ExtraArgs
+///  typename... ExtraArgs
 ///      required because of extra "hidden" template parameters in STL containers
 //
-template <template <typename...> class _CompList, typename... _CompTypes,
-          template <typename, typename...> class _Container, typename _Intp,
-          typename... _ExtraArgs,
-          typename std::enable_if<(std::is_integral<_Intp>::value ||
-                                   std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
+template <template <typename...> class CompList, typename... CompTypes,
+          template <typename, typename...> class Container, typename Intp,
+          typename... ExtraArgs,
+          typename std::enable_if<(std::is_integral<Intp>::value ||
+                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
                                   int>::type = 0>
 void
-initialize(_CompList<_CompTypes...>&               obj,
-           const _Container<_Intp, _ExtraArgs...>& components);
+initialize(CompList<CompTypes...>& obj, const Container<Intp, ExtraArgs...>& components);
 
 template <typename T, typename... Args>
 void
@@ -102,17 +105,17 @@ initialize(T* obj, Args&&... args)
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
 ///      tim::insert(obj.get<user_list_bundle>(), { CPU_CLOCK, CPU_UTIL });
 //
-///  typename... _ExtraArgs
+///  typename... ExtraArgs
 ///      required because of extra "hidden" template parameters in STL containers
 //
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
-          template <typename, typename...> class _Container, typename _Intp,
-          typename... _ExtraArgs,
-          typename std::enable_if<(std::is_integral<_Intp>::value ||
-                                   std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle,
+          template <typename, typename...> class Container, typename Intp,
+          typename... ExtraArgs,
+          typename std::enable_if<(std::is_integral<Intp>::value ||
+                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
                                   int>::type = 0>
 void
-insert(_Bundle<_Idx, _Type>& obj, const _Container<_Intp, _ExtraArgs...>& components);
+insert(Bundle<Idx, Type>& obj, const Container<Intp, ExtraArgs...>& components);
 
 template <typename T, typename... Args>
 void
@@ -135,16 +138,45 @@ insert(T* obj, Args&&... args)
 ///
 ///      auto obj = new optional_t(__FUNCTION__, __LINE__);
 //
-///  typename... _ExtraArgs
+///  typename... ExtraArgs
 ///      required because of extra "hidden" template parameters in STL containers
 //
-template <typename _Bundle_t, template <typename, typename...> class _Container,
-          typename _Intp, typename... _ExtraArgs,
-          typename std::enable_if<(std::is_integral<_Intp>::value ||
-                                   std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
+template <typename Bundle_t, template <typename, typename...> class Container,
+          typename Intp, typename... ExtraArgs,
+          typename std::enable_if<(std::is_integral<Intp>::value ||
+                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
                                   int>::type = 0>
 void
-configure(const _Container<_Intp, _ExtraArgs...>& components, bool flat = false);
+configure(const Container<Intp, ExtraArgs...>& components, bool flat = false);
+
+//======================================================================================//
+
+namespace runtime
+{
+//
+template <typename Tp, typename... Args>
+void
+initialize(Tp& obj, int idx, Args&&...);
+//
+template <typename Tp, typename... Args>
+void
+insert(Tp& obj, int idx, Args&&...);
+//
+template <typename Tp, typename... Args>
+void
+configure(int idx, Args&&... args);
+//
+template <typename Tp, typename... Args>
+void
+configure(Tp& obj, int idx, Args&&... args);
+//
+int
+enumerate(std::string key);
+//
+int
+enumerate(const char* key);
+//
+}  // namespace runtime
 
 //======================================================================================//
 
@@ -152,10 +184,10 @@ namespace env
 {
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class _CompList, typename... _CompTypes,
-          typename std::enable_if<(sizeof...(_CompTypes) > 0), int>::type = 0>
-inline void
-initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
+template <template <typename...> class CompList, typename... CompTypes,
+          typename std::enable_if<(sizeof...(CompTypes) > 0), int>::type = 0>
+void
+initialize(CompList<CompTypes...>& obj, const std::string& env_var,
            const std::string& default_env)
 {
     auto env_result = tim::get_env(env_var, default_env);
@@ -164,10 +196,10 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class _CompList, typename... _CompTypes,
-          typename std::enable_if<(sizeof...(_CompTypes) == 0), int>::type = 0>
-inline void
-initialize(_CompList<_CompTypes...>&, const std::string&, const std::string&)
+template <template <typename...> class CompList, typename... CompTypes,
+          typename std::enable_if<(sizeof...(CompTypes) == 0), int>::type = 0>
+void
+initialize(CompList<CompTypes...>&, const std::string&, const std::string&)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -182,10 +214,9 @@ initialize(T* obj, Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
-inline void
-insert(_Bundle<_Idx, _Type>& obj, const std::string& env_var,
-       const std::string& default_env)
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle>
+void
+insert(Bundle<Idx, Type>& obj, const std::string& env_var, const std::string& default_env)
 {
     auto env_result = tim::get_env(env_var, default_env);
     ::tim::insert(obj, enumerate_components(tim::delimit(env_result)));
@@ -203,12 +234,12 @@ insert(T* obj, Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Bundle>
-inline void
+template <typename Bundle>
+void
 configure(const std::string& env_var, const std::string& default_env, bool flat = false)
 {
     auto env_result = tim::get_env(env_var, default_env);
-    ::tim::configure<_Bundle>(enumerate_components(tim::delimit(env_result)), flat);
+    ::tim::configure<Bundle>(enumerate_components(tim::delimit(env_result)), flat);
 }
 
 //--------------------------------------------------------------------------------------//

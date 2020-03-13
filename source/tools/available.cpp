@@ -23,35 +23,31 @@
 //  IN THE SOFTWARE.
 
 #include "available.hpp"
-#include "timemory/timemory.hpp"
-
+//
+#include "timemory/components/types.hpp"
+//
 #include "timemory/components/base.hpp"
-#include "timemory/components/caliper.hpp"
-#include "timemory/components/cuda/event.hpp"
-#include "timemory/components/cuda/nvtx_marker.hpp"
-#include "timemory/components/cuda/profiler.hpp"
-#include "timemory/components/cupti/activity.hpp"
-#include "timemory/components/cupti/counters.hpp"
-#include "timemory/components/derived/malloc_gotcha.hpp"
-#include "timemory/components/general.hpp"
-#include "timemory/components/gotcha.hpp"
-#include "timemory/components/likwid.hpp"
-#include "timemory/components/papi/array.hpp"
-#include "timemory/components/papi/tuple.hpp"
 #include "timemory/components/placeholder.hpp"
 #include "timemory/components/properties.hpp"
-#include "timemory/components/roofline/cpu.hpp"
-#include "timemory/components/roofline/gpu.hpp"
-#include "timemory/components/rusage.hpp"
 #include "timemory/components/skeletons.hpp"
-#include "timemory/components/tau.hpp"
-#include "timemory/components/timing.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/components/user_bundle.hpp"
-#include "timemory/components/vtune/event.hpp"
-#include "timemory/components/vtune/frame.hpp"
-#include "timemory/components/vtune/profiler.hpp"
-
+//
+#include "timemory/components/caliper/components.hpp"
+#include "timemory/components/cuda/components.hpp"
+#include "timemory/components/cupti/components.hpp"
+#include "timemory/components/general.hpp"
+#include "timemory/components/gotcha/components.hpp"
+#include "timemory/components/gperftools/components.hpp"
+#include "timemory/components/likwid/components.hpp"
+#include "timemory/components/papi/components.hpp"
+#include "timemory/components/roofline/components.hpp"
+#include "timemory/components/rusage/components.hpp"
+#include "timemory/components/tau_marker/components.hpp"
+#include "timemory/components/timing/components.hpp"
+#include "timemory/components/user_bundle/components.hpp"
+#include "timemory/components/vtune/components.hpp"
+//
+#include "timemory/timemory.hpp"
+//
 #include <array>
 #include <iomanip>
 #include <iostream>
@@ -64,7 +60,6 @@ using namespace tim;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 using str_vec_t      = std::vector<string_t>;
-using str_set_t      = tim::component::idset_t;
 using info_type      = std::tuple<string_t, bool, str_vec_t>;
 
 template <typename _Tp, size_t _N>
@@ -586,8 +581,8 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, _N>& options,
     tim::cupti::device_t device;
 
 #if defined(TIMEMORY_USE_CUPTI)
-    CUDA_DRIVER_API_CALL(cuInit(0));
-    CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
 #endif
 
     auto _cupti_events  = tim::cupti::available_events_info(device);

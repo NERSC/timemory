@@ -34,10 +34,6 @@
 
 using namespace tim::component;
 
-#if !defined(TIMEMORY_LIBRARY_TYPE)
-#    define TIMEMORY_LIBRARY_TYPE tim::available_component_list_t
-#endif
-
 #if defined(__GNUC__)
 #    define API tim_api __attribute__((weak))
 #else
@@ -56,6 +52,7 @@ extern "C"
 }
 
 //======================================================================================//
+
 struct timemory_trace;
 using trace_bundle_t     = user_bundle<0, timemory_trace>;
 using traceset_t         = tim::component_tuple<trace_bundle_t>;
@@ -283,12 +280,12 @@ extern "C"
     {
         static thread_local auto& _stack = get_components_stack();
 
-        component_enum_t comp({ static_cast<TIMEMORY_COMPONENT>(types) });
+        component_enum_t comp({ types });
         va_list          args;
         va_start(args, types);
         for(int i = 0; i < TIMEMORY_COMPONENTS_END; ++i)
         {
-            auto enum_arg = static_cast<TIMEMORY_COMPONENT>(va_arg(args, int));
+            auto enum_arg = va_arg(args, int);
             if(enum_arg >= TIMEMORY_COMPONENTS_END)
                 break;
             comp.push_back(enum_arg);
@@ -362,7 +359,7 @@ extern "C"
         va_start(args, id);
         for(int i = 0; i < TIMEMORY_COMPONENTS_END; ++i)
         {
-            auto enum_arg = static_cast<TIMEMORY_COMPONENT>(va_arg(args, int));
+            auto enum_arg = va_arg(args, int);
             if(enum_arg >= TIMEMORY_COMPONENTS_END)
                 break;
             comp.push_back(enum_arg);
@@ -432,7 +429,7 @@ extern "C"
         va_start(args, name);
         for(int i = 0; i < TIMEMORY_COMPONENTS_END; ++i)
         {
-            auto enum_arg = static_cast<TIMEMORY_COMPONENT>(va_arg(args, int));
+            auto enum_arg = va_arg(args, int);
             if(enum_arg >= TIMEMORY_COMPONENTS_END)
                 break;
             comp.push_back(enum_arg);
@@ -532,7 +529,7 @@ extern "C"
         tim::configure<trace_bundle_t>(comp);
         tim::manager::use_exit_hook(false);
         tim::settings::destructor_report() = false;
-        tim::set_env("TIMEMORY_DESTRUCTOR_REPORT", "OFF");
+        tim::set_env<std::string>("TIMEMORY_DESTRUCTOR_REPORT", "OFF");
     }
 
     //----------------------------------------------------------------------------------//

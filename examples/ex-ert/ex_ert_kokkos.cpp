@@ -178,7 +178,7 @@ public:
                         _counter, _Device::name(), _label, _itrp);
 
 #if !defined(_WINDOWS)
-        using namespace tim::stl_overload::ostream;
+        using namespace tim::stl::ostream;
         if(settings::verbose() > 1 || settings::debug())
             std::cout << "[RECORD]> " << _data << std::endl;
 #endif

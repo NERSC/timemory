@@ -97,12 +97,12 @@ extern "C"
 #    define declare_attribute(attr) __declspec(attr)
 #endif
 
-template <typename _Tp>
-using vector_t = std::vector<_Tp>;
+template <typename Tp>
+using vector_t = std::vector<Tp>;
 using string_t = std::string;
 
-template <typename _Tp>
-using vector_t = std::vector<_Tp>;
+template <typename Tp>
+using vector_t = std::vector<Tp>;
 using string_t = std::string;
 
 using namespace tim::component;
@@ -119,11 +119,11 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
+template <typename Tp>
 struct custom_print
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = component::base<_Tp, value_type>;
+    using value_type = typename Tp::value_type;
+    using base_type  = component::base<Tp, value_type>;
 
     custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj, std::ostream& os,
                  bool /*endline*/)
@@ -140,19 +140,19 @@ struct custom_print
 
 namespace operation
 {
-template <typename _Tp, bool _Sample = ::tim::trait::file_sampler<_Tp>::value>
+template <typename Tp, bool _Sample = ::tim::trait::file_sampler<Tp>::value>
 struct file_sample;
 
-template <typename _Tp>
-struct file_sample<_Tp, true>
+template <typename Tp>
+struct file_sample<Tp, true>
 {
-    explicit file_sample(_Tp& obj) { obj.measure(); }
+    explicit file_sample(Tp& obj) { obj.measure(); }
 };
 
-template <typename _Tp>
-struct file_sample<_Tp, false>
+template <typename Tp>
+struct file_sample<Tp, false>
 {
-    explicit file_sample(_Tp&) {}
+    explicit file_sample(Tp&) {}
 };
 
 }  // namespace operation
@@ -163,8 +163,7 @@ template <typename... Types>
 class custom_component_tuple : public component_tuple<Types...>
 {
 public:
-    using apply_print_t = modifiers<custom_print, Types...>;
-    using base_type     = component_tuple<Types...>;
+    using base_type = component_tuple<Types...>;
 
 public:
     explicit custom_component_tuple(const string_t& key)
@@ -191,13 +190,17 @@ public:
     using apply_v   = typename base_type::apply_v;
     using impl_type = typename base_type::impl_type;
 
-    template <typename... _Types>
+    template <template <typename> class Op, typename Tuple = impl_type>
+    using custom_operation_t =
+        typename base_type::template custom_operation<Op, Tuple>::type;
+
+    template <typename... T>
     struct opsample;
-    template <template <typename...> class _TypeL, typename... _Types>
-    struct opsample<_TypeL<_Types...>>
+
+    template <template <typename...> class Tuple, typename... T>
+    struct opsample<Tuple<T...>>
     {
-        using type =
-            _TypeL<operation::file_sample<_Types, trait::file_sampler<_Types>::value>...>;
+        using type = Tuple<operation::file_sample<T, trait::file_sampler<T>::value>...>;
     };
 
     void sample()
@@ -207,6 +210,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    //
     friend std::ostream& operator<<(std::ostream&                           os,
                                     const custom_component_tuple<Types...>& obj)
     {
@@ -217,7 +221,8 @@ public:
         auto&&            key   = obj.key();
         auto&&            width = obj.output_width();
 
-        apply<void>::access_with_indices<apply_print_t>(data, std::ref(ssd), false);
+        using print_t = custom_operation_t<custom_print, impl_type>;
+        apply<void>::access_with_indices<print_t>(data, std::ref(ssd), false);
 
         ssp << std::setw(width) << std::left << key;
         os << ssp.str() << ssd.str();

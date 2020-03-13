@@ -30,10 +30,10 @@
 
 #pragma once
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
-#include "timemory/components/timing.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/components.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
@@ -63,16 +63,16 @@ namespace ert
 //--------------------------------------------------------------------------------------//
 //  measure floating-point or integer operations
 //
-template <typename _Device, typename _Tp, typename _Counter>
+template <typename _Device, typename _Tp, typename Counter>
 class counter
 {
 public:
     using string_t      = std::string;
     using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
-    using counter_type  = _Counter;
-    using ert_data_t    = exec_data<_Counter>;
-    using this_type     = counter<_Device, _Tp, _Counter>;
+    using counter_type  = Counter;
+    using ert_data_t    = exec_data<Counter>;
+    using this_type     = counter<_Device, _Tp, Counter>;
     using callback_type = std::function<void(uint64_t, this_type&)>;
     using data_type     = typename ert_data_t::value_type;
     using data_ptr_t    = std::shared_ptr<ert_data_t>;
@@ -211,7 +211,7 @@ public:
                         _counter, _Device::name(), _label, _itrp);
 
 #if !defined(_WINDOWS)
-        using namespace tim::stl_overload::ostream;
+        using namespace tim::stl::ostream;
         if(settings::verbose() > 1 || settings::debug())
             std::cout << "[RECORD]> " << _data << std::endl;
 #endif
@@ -311,11 +311,11 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Counter>
+template <typename Counter>
 inline void
-serialize(std::string fname, exec_data<_Counter>& obj)
+serialize(std::string fname, exec_data<Counter>& obj)
 {
-    using exec_data_vec_t = std::vector<exec_data<_Counter>>;
+    using exec_data_vec_t = std::vector<exec_data<Counter>>;
 
     int dmp_rank = dmp::rank();
     int dmp_size = dmp::size();
@@ -331,7 +331,7 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         //------------------------------------------------------------------------------//
         //  Used to convert a result to a serialization
         //
-        auto send_serialize = [&](const exec_data<_Counter>& src) {
+        auto send_serialize = [&](const exec_data<Counter>& src) {
             std::stringstream ss;
             {
                 cereal::JSONOutputArchive::Options opt(16, space, 0);
@@ -345,8 +345,8 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         //  Used to convert the serialization to a result
         //
         auto recv_serialize = [&](const std::string& src) {
-            exec_data<_Counter> ret;
-            std::stringstream   ss;
+            exec_data<Counter> ret;
+            std::stringstream  ss;
             ss << src;
             {
                 cereal::JSONInputArchive ia(ss);
@@ -415,7 +415,8 @@ serialize(std::string fname, exec_data<_Counter>& obj)
         if(ofs)
         {
             // ensure json write final block during destruction before the file is closed
-            auto oa = trait::output_archive<_Counter>::get(ofs);
+            using policy_type = policy::output_archive_t<Counter>;
+            auto oa           = policy_type::get(ofs);
             oa->setNextName("timemory");
             oa->startNode();
             oa->setNextName("ranks");

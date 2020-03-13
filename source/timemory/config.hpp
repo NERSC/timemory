@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/signals.hpp"

@@ -22,13 +22,15 @@ matrix:
             - gcc-6
             - g++-6
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--papi --mpi --build-libs static'"
     # GCC 7
@@ -41,14 +43,16 @@ matrix:
             - gcc
             - g++
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
             - lcov
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && COVERAGE=1 && BUILD_TYPE=Debug && BUILD_ARGS='--build-libs static --papi'"
     #
@@ -64,13 +68,15 @@ matrix:
             - gcc-8
             - g++-8
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --papi -- -DCMAKE_CXX_STANDARD=14'"
     # Clang 5.0
@@ -86,13 +92,15 @@ matrix:
             - clang-5.0
             - clang++-5.0
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static --mpi --papi'"
     # Clang 7
@@ -105,13 +113,15 @@ matrix:
             - clang-7
             - clang++-7
             - build-essential
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
+            - openmpi-common
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs static --caliper --mpi --papi'"
     # ------------------------------------------------------------------------ #
@@ -138,6 +148,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --mpi --papi --gotcha'"
     # GCC 7
@@ -159,6 +170,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static --mpi --papi --caliper'"
     #
@@ -181,6 +193,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared --mpi --papi -- -DCMAKE_CXX_STANDARD=17'"
     # Clang 5.0
@@ -203,6 +216,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi'"
     # Clang 7
@@ -222,6 +236,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
             - graphviz
+            - ccache
       env:
         - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper --mpi --papi -- -DCMAKE_CXX_STANDARD=17'"
 

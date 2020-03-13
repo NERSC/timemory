@@ -39,7 +39,7 @@
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 
-using namespace tim::stl_overload;
+using namespace tim::stl;
 using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
@@ -275,6 +275,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "timemory/components/types.hpp"
+#include "timemory/api.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/serializer.hpp"
-
+//
 #include <type_traits>
 
 //======================================================================================//
@@ -57,22 +57,42 @@ class manager;
 namespace trait
 {
 //--------------------------------------------------------------------------------------//
-/// this is a helper trait
+/// trait that signifies that a component has an accumulation value
 ///
-template <typename>
-struct sfinae_true : true_type
+template <typename T>
+struct base_has_accum : true_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies that a component has an "last" value which may be different
+/// than the "value" value
+///
+template <typename T>
+struct base_has_last : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation (e.g. PAPI) is available
 ///
 template <typename T>
-struct is_available : true_type
+struct is_available : TIMEMORY_DEFAULT_AVAILABLE
 {};
 
 template <typename T>
 struct is_available<T*> : is_available<std::remove_pointer_t<T>>
 {};
+
+//--------------------------------------------------------------------------------------//
+/// \class data
+/// \brief trait to specify the value type of a component before the definition of
+/// the component
+///
+template <typename T>
+struct data
+{
+    using type       = T;
+    using value_type = type_list<>;
+};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation is enabled at runtime
@@ -220,8 +240,12 @@ struct component_value_type;
 template <typename T>
 struct component_value_type<T, true>
 {
-    using type       = T;
-    using value_type = typename T::value_type;
+    using type = T;
+    static constexpr bool decl_value_v =
+        !(std::is_same<type_list<>, typename data<T>::value_type>::value);
+    using value_type = std::conditional_t<(decl_value_v), typename data<T>::value_type,
+                                          typename T::value_type>;
+    // using value_type = typename T::value_type;
 };
 
 template <typename T>
@@ -236,12 +260,13 @@ struct collects_data
 {
     using type       = T;
     using value_type = typename component_value_type<T, is_available<T>::value>::type;
-    static constexpr bool value = !(std::is_same<type, void>::value);
+    static constexpr bool value =
+        (!std::is_same<value_type, void>::value &&
+         !std::is_same<value_type, void*>::value &&
+         !std::is_same<value_type, type_list<>>::value && is_available<T>::value);
+    static_assert(std::is_void<value_type>::value != value,
+                  "Error value_type is void and value is true");
 };
-
-template <typename T>
-struct collects_data<T*> : public collects_data<T>
-{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates the type supports calling a function with a certain
@@ -292,7 +317,7 @@ struct thread_scope_only : false_type
 /// serialize(...) function
 ///
 template <typename T>
-struct split_serialization : false_type
+struct custom_serialization : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -358,129 +383,63 @@ template <typename T>
 struct pretty_json : std::true_type
 {};
 
+template <typename Api>
+struct api_input_archive
+{
+    using type = TIMEMORY_INPUT_ARCHIVE;
+};
+
+template <typename Api>
+struct api_output_archive
+{
+    using default_type = TIMEMORY_OUTPUT_ARCHIVE;
+
+    using type = conditional_t<
+        (std::is_same<default_type, type_list<>>::value),
+        conditional_t<(pretty_json<void>::value), cereal::PrettyJSONOutputArchive,
+                      cereal::MinimalJSONOutputArchive>,
+        default_type>;
+};
+
 //--------------------------------------------------------------------------------------//
 /// trait the configures output archive type
 ///
-template <typename T>
+template <typename T, typename Api>
 struct input_archive
 {
-    using type    = cereal::JSONInputArchive;
-    using pointer = std::shared_ptr<type>;
-
-    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+    using type = typename api_input_archive<Api>::type;
 };
 
 //--------------------------------------------------------------------------------------//
 /// trait the configures output archive type
 ///
-template <typename T>
+template <typename T, typename Api>
 struct output_archive
 {
-    using subtype = conditional_t<(!pretty_json<T>::value || !pretty_json<void>::value) &&
-                                      !std::is_same<T, manager>::value,
-                                  cereal::MinimalJsonWriter, cereal::PrettyJsonWriter>;
-    using type    = cereal::BaseJSONOutputArchive<subtype>;
-    using pointer = std::shared_ptr<type>;
-    using option_type = typename type::Options;
-    using indent_type = typename option_type::IndentChar;
+    using api_type = typename api_output_archive<Api>::type;
 
-    static unsigned int& precision()
-    {
-        static unsigned int value = 16;
-        return value;
-    }
-    static unsigned int& indent_length()
-    {
-        static unsigned int value = 2;
-        return value;
-    }
-    static indent_type& indent_char()
-    {
-        static indent_type value = indent_type::space;
-        return value;
-    }
+    using minimal_type = cereal::MinimalJSONOutputArchive;
+    using pretty_type  = cereal::PrettyJSONOutputArchive;
 
-    static pointer get(std::ostream& os)
-    {
-        constexpr auto spacing = option_type::IndentChar::space;
-        //  Option args: precision, spacing, indent size
-        option_type opts(precision(), spacing, indent_length());
-        return std::make_shared<type>(os, opts);
-    }
+    static constexpr bool is_pretty_v = pretty_json<T>::value;
+    static constexpr bool is_json =
+        (std::is_same<api_type, cereal::PrettyJSONOutputArchive>::value ||
+         std::is_same<api_type, cereal::MinimalJSONOutputArchive>::value);
+
+    using type =
+        conditional_t<(is_json), conditional_t<(is_pretty_v), pretty_type, api_type>,
+                      api_type>;
 };
 
-//--------------------------------------------------------------------------------------//
-/// explicit specialization for PrettyJSONOutputArchive
-///
 template <>
-struct output_archive<cereal::PrettyJSONOutputArchive>
+struct output_archive<manager, api::native_tag>
 {
-    using subtype     = cereal::PrettyJsonWriter;
-    using type        = cereal::PrettyJSONOutputArchive;
-    using pointer     = std::shared_ptr<type>;
-    using option_type = typename type::Options;
-    using indent_type = typename option_type::IndentChar;
-
-    static unsigned int& precision()
-    {
-        static unsigned int value = 16;
-        return value;
-    }
-    static unsigned int& indent_length()
-    {
-        static unsigned int value = 2;
-        return value;
-    }
-    static indent_type& indent_char()
-    {
-        static indent_type value = indent_type::space;
-        return value;
-    }
-
-    static pointer get(std::ostream& os)
-    {
-        //  Option args: precision, spacing, indent size
-        option_type opts(precision(), indent_type(), indent_length());
-        return std::make_shared<type>(os, opts);
-    }
+    using type = cereal::BaseJSONOutputArchive<cereal::PrettyJsonWriter>;
 };
 
-//--------------------------------------------------------------------------------------//
-/// explicit specialization for MinimalJSONOutputArchive
-///
-template <>
-struct output_archive<cereal::MinimalJSONOutputArchive>
-{
-    using subtype     = cereal::MinimalJsonWriter;
-    using type        = cereal::MinimalJSONOutputArchive;
-    using pointer     = std::shared_ptr<type>;
-    using option_type = typename type::Options;
-    using indent_type = typename option_type::IndentChar;
-
-    static unsigned int& precision()
-    {
-        static unsigned int value = 16;
-        return value;
-    }
-    static unsigned int& indent_length()
-    {
-        static unsigned int value = 0;
-        return value;
-    }
-    static indent_type& indent_char()
-    {
-        static indent_type value = indent_type::space;
-        return value;
-    }
-
-    static pointer get(std::ostream& os)
-    {
-        //  Option args: precision, spacing, indent size
-        //  The last two options are meaningless for the minimal writer
-        option_type opts(precision(), indent_type(), indent_length());
-        return std::make_shared<type>(os, opts);
-    }
-};
+template <typename Api>
+struct output_archive<manager, Api> : output_archive<manager, api::native_tag>
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait the configures type to always flat_storage the call-tree
@@ -526,15 +485,6 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-/// trait for configuring OMPT components
-///
-template <typename T>
-struct omp_tools
-{
-    using type = ::tim::component_tuple<::tim::component::user_ompt_bundle>;
-};
-
-//--------------------------------------------------------------------------------------//
 
 template <typename _Trait>
 inline std::string
@@ -565,7 +515,24 @@ namespace tim
 template <typename T, typename V>
 struct generates_output
 {
+    using value_type            = V;
     static constexpr bool value = (!(std::is_same<V, void>::value));
+};
+
+template <typename T>
+struct generates_output<T, type_list<>>
+{
+    using V                     = typename T::value_type;
+    using value_type            = V;
+    static constexpr bool value = (!(std::is_same<V, void>::value));
+};
+
+template <typename T>
+struct generates_output<T, void>
+{
+    using V                     = void;
+    using value_type            = V;
+    static constexpr bool value = false;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -577,8 +544,28 @@ struct generates_output
 template <typename T, typename V>
 struct implements_storage
 {
-    static constexpr bool value =
-        (trait::is_available<T>::value && !(std::is_same<V, void>::value));
+    using value_type               = V;
+    static constexpr bool avail_v  = trait::is_available<T>::value;
+    static constexpr bool output_v = generates_output<T, V>::value;
+    static constexpr bool value    = (avail_v && output_v);
+};
+
+template <typename T>
+struct implements_storage<T, type_list<>>
+{
+    using V                        = typename T::value_type;
+    using value_type               = V;
+    static constexpr bool avail_v  = trait::is_available<T>::value;
+    static constexpr bool output_v = generates_output<T, V>::value;
+    static constexpr bool value    = (avail_v && output_v);
+};
+
+template <typename T>
+struct implements_storage<T, void>
+{
+    using V                     = void;
+    using value_type            = V;
+    static constexpr bool value = false;
 };
 
 }  // namespace tim
@@ -589,25 +576,60 @@ struct implements_storage
 //
 //======================================================================================//
 
+#if !defined(TIMEMORY_DEFINE_CONCRETE_TRAIT)
+#    define TIMEMORY_DEFINE_CONCRETE_TRAIT(TRAIT, COMPONENT, VALUE)                      \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct TRAIT<COMPONENT> : VALUE                                                  \
+        {};                                                                              \
+        }                                                                                \
+        }
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_DEFINE_TEMPLATE_TRAIT)
+#    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <TYPE T>                                                                \
+        struct TRAIT<COMPONENT<T>> : VALUE                                               \
+        {};                                                                              \
+        }                                                                                \
+        }
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_DEFINE_VARIADIC_TRAIT)
+#    define TIMEMORY_DEFINE_VARIADIC_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <TYPE... T>                                                             \
+        struct TRAIT<COMPONENT<T...>> : VALUE                                            \
+        {};                                                                              \
+        }                                                                                \
+        }
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //                              RECORD MAX
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::peak_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::stack_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::data_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::virtual_memory, true_type)
-
 //--------------------------------------------------------------------------------------//
 //
 //                              REPORT SUM
 //
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(report_sum, component::current_peak_rss, false_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -627,24 +649,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(report_sum, component::current_peak_rss, false_ty
 //
 //--------------------------------------------------------------------------------------//
 
-#if defined(_LINUX) || (defined(_UNIX) && !defined(_MACOS))
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::data_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::virtual_memory, true_type)
-
-#endif
-
 //--------------------------------------------------------------------------------------//
 //
 //                              START PRIORITY
 //
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, component::cuda_event,
-                               priority_constant<128>)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -652,24 +661,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, component::cuda_event,
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, component::cuda_event,
-                               priority_constant<-128>)
-
 //--------------------------------------------------------------------------------------//
 //
 //                              CUSTOM UNIT PRINTING
 //
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::written_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::current_peak_rss,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::cupti_counters, true_type)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::cpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::gpu_roofline, true_type,
-                               typename)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -677,22 +673,11 @@ TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::gpu_roofline, tr
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::written_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::cupti_counters,
-                               true_type)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_label_printing, component::cpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_label_printing, component::gpu_roofline, true_type,
-                               typename)
-
 //--------------------------------------------------------------------------------------//
 //
 //                              CUSTOM LAPS PRINTING
 //
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_laps_printing, component::trip_count, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -700,35 +685,11 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_laps_printing, component::trip_count, true
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_TEMPLATE_TRAIT(array_serialization, component::papi_array, true_type,
-                               size_t)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::papi_tuple, true_type, int)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::cpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::cupti_counters, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::read_bytes, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::written_bytes, true_type)
-
-//--------------------------------------------------------------------------------------//
-//
-//                              THREAD SCOPE ONLY
-//
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(thread_scope_only, component::thread_cpu_clock, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(thread_scope_only, component::thread_cpu_util, true_type)
-
 //--------------------------------------------------------------------------------------//
 //
 //                              REQUIRES JSON
 //
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_VARIADIC_TRAIT(requires_json, component::cpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_json, component::cpu_roofline_flops, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_json, component::cpu_roofline_sp_flops, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_json, component::cpu_roofline_dp_flops, true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -736,68 +697,17 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_json, component::cpu_roofline_dp_flops, 
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_VARIADIC_TRAIT(supports_custom_record, component::cpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::cpu_roofline_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::cpu_roofline_sp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::cpu_roofline_dp_flops,
-                               true_type)
-
-TIMEMORY_DEFINE_VARIADIC_TRAIT(supports_custom_record, component::gpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::gpu_roofline_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::gpu_roofline_hp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::gpu_roofline_sp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_custom_record, component::gpu_roofline_dp_flops,
-                               true_type)
-
 //--------------------------------------------------------------------------------------//
 //
 //                              ITERABLE MEASUREMENT
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_VARIADIC_TRAIT(iterable_measurement, component::cpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::cpu_roofline_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::cpu_roofline_sp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::cpu_roofline_dp_flops,
-                               true_type)
-
-TIMEMORY_DEFINE_VARIADIC_TRAIT(iterable_measurement, component::gpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::gpu_roofline_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::gpu_roofline_hp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::gpu_roofline_sp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(iterable_measurement, component::gpu_roofline_dp_flops,
-                               true_type)
-
 //--------------------------------------------------------------------------------------//
 //
-//                              SPLIT SERIALIZATION
+//                              CUSTOM SERIALIZATION
 //
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_VARIADIC_TRAIT(split_serialization, component::gpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(split_serialization, component::gpu_roofline_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(split_serialization, component::gpu_roofline_hp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(split_serialization, component::gpu_roofline_sp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(split_serialization, component::gpu_roofline_dp_flops,
-                               true_type)
 
 //--------------------------------------------------------------------------------------//
 //
@@ -805,247 +715,14 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(split_serialization, component::gpu_roofline_dp_f
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::cupti_activity, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::cupti_counters, true_type)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(secondary_data, component::gpu_roofline, true_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::gpu_roofline_flops, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::gpu_roofline_hp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::gpu_roofline_sp_flops,
-                               true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::gpu_roofline_dp_flops,
-                               true_type)
-
 //--------------------------------------------------------------------------------------//
 //
 //                              REQUIRES PREFIX
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::caliper, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::nvtx_marker, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::gperf_heap_profiler, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_marker, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_nvmarker, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_event, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_frame, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::tau_marker, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::malloc_gotcha, true_type)
-
 //--------------------------------------------------------------------------------------//
 //
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
-//
-//      PAPI
-//
-#if !defined(TIMEMORY_USE_PAPI)
-TIMEMORY_DEFINE_TEMPLATE_TRAIT(is_available, component::papi_array, false_type, size_t)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::papi_tuple, false_type, int)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::cpu_roofline, false_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_flops, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_sp_flops, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_dp_flops, false_type)
-#endif
-
-//
-//      CUDA
-//
-#if !defined(TIMEMORY_USE_CUDA)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cuda_event, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cuda_profiler, false_type)
-#endif
-
-//
-//      CUDA and NVTX
-//
-#if !defined(TIMEMORY_USE_NVTX) || !defined(TIMEMORY_USE_CUDA)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::nvtx_marker, false_type)
-#endif
-
-//
-//      CUDA and CUPTI
-//
-#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_activity, false_type)
-TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::gpu_roofline, false_type,
-                               typename)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_flops, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_hp_flops, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_sp_flops, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_dp_flops, false_type)
-#endif
-
-//
-//      CALIPER
-//
-#if !defined(TIMEMORY_USE_CALIPER)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper, false_type)
-#endif
-
-//
-//      GPERF and GPERF_HEAP_PROFILER
-//
-#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_heap_profiler, false_type)
-#endif
-
-//
-//      GPERF AND GPERF_CPU_PROFILER
-//
-#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_cpu_profiler, false_type)
-#endif
-
-//
-//      LIKWID
-//
-#if !defined(TIMEMORY_USE_LIKWID)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_marker, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
-#else
-#    if !defined(TIMEMORY_USE_CUDA)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
-#    endif
-#endif
-
-//
-//      VTUNE
-//
-#if !defined(TIMEMORY_USE_VTUNE)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_event, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_frame, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_profiler, false_type)
-#endif
-
-//
-//      TAU
-//
-#if !defined(TIMEMORY_USE_TAU)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tau_marker, false_type)
-#endif
-
-//
-//      GOTCHA
-//
-#if !defined(TIMEMORY_USE_GOTCHA)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::malloc_gotcha, false_type)
-#endif
-
-//
-//      WINDOWS (non-UNIX)
-//
-#if !defined(_UNIX)
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::stack_rss, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::data_rss, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_major_page_faults, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_minor_page_faults, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_recv, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_sent, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_signals, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_swap, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mode_time, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::kernel_mode_time, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::current_peak_rss, false_type)
-
-#endif
-
-//
-//      UNIX
-//
-#if defined(UNIX)
-
-/// \param TIMEMORY_USE_UNMAINTAINED_RUSAGE
-/// \brief This macro enables the globally disable rusage structures that are
-/// unmaintained by the Linux kernel and are zero on macOS
-///
-#    if !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE)
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::stack_rss, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::data_rss, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_swap, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_recv, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_sent, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_signals, false_type)
-
-#        if defined(_MACOS)
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
-
-#        endif
-#    endif  // !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE)
-
-#endif
-
-//======================================================================================//
-
-namespace tim
-{
-namespace trait
-{
-//--------------------------------------------------------------------------------------//
-//
-//                              GOTCHA
-//
-//--------------------------------------------------------------------------------------//
-//  disable if not enabled via preprocessor TIMEMORY_USE_GOTCHA
-//
-#if !defined(TIMEMORY_USE_GOTCHA)
-
-template <size_t _N, typename _Comp, typename _Diff>
-struct is_available<component::gotcha<_N, _Comp, _Diff>> : false_type
-{};
-
-#endif  // TIMEMORY_USE_GOTCHA
-
-template <size_t _N, typename _Comp, typename _Diff>
-struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : true_type
-{};
-
-// start gotchas later
-template <size_t _N, typename _Comp, typename _Diff>
-struct start_priority<component::gotcha<_N, _Comp, _Diff>> : priority_constant<256>
-{};
-
-// stop gotchas early
-template <size_t _N, typename _Comp, typename _Diff>
-struct stop_priority<component::gotcha<_N, _Comp, _Diff>> : priority_constant<-256>
-{};
-
-//--------------------------------------------------------------------------------------//
-//
-//                              User-bundle
-//
-//--------------------------------------------------------------------------------------//
-
-template <size_t _Idx, typename _Type>
-struct is_user_bundle<component::user_bundle<_Idx, _Type>> : true_type
-{};
-
-template <size_t _Idx, typename _Type>
-struct requires_prefix<component::user_bundle<_Idx, _Type>> : true_type
-{};
-
-//--------------------------------------------------------------------------------------//
-}  // namespace trait
-}  // namespace tim
-
-//======================================================================================//
-
-#include "timemory/mpl/bits/type_traits.hpp"
-
-//======================================================================================//

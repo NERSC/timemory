@@ -22,16 +22,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_BUILD_EXTERN_INIT
-#define TIMEMORY_BUILD_EXTERN_TEMPLATE
+#define TIMEMORY_BUILD_EXTERN
+#define TIMEMORY_BUILD_EXTERN
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/components/timing.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/components.hpp"
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
-#include "timemory/manager.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/operations.hpp"
 #include "timemory/plotting.hpp"
 

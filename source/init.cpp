@@ -27,19 +27,17 @@
  *
  */
 
+#include "timemory/extern/init.hpp"
 #include "timemory/components.hpp"
-#include "timemory/general/hash.hpp"
-#include "timemory/manager.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/plotting.hpp"
-#include "timemory/timemory.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
 
 using namespace tim::component;
 
-#if defined(TIMEMORY_EXTERN_INIT)
+#if defined(TIMEMORY_USE_EXTERN)
 
 extern "C"
 {
@@ -54,7 +52,7 @@ extern "C"
 {
     //----------------------------------------------------------------------------------//
 
-    int timemory_MPI_Finalize(int, int, void*, void*)
+    int timemory_MPI_Finalize(MPI_Comm, int, void*, void*)
     {
         if(tim::settings::debug())
         {
@@ -65,6 +63,11 @@ extern "C"
         if(manager)
             manager->finalize();
         ::tim::dmp::is_finalized() = true;
+        if(tim::settings::debug())
+        {
+            printf("[%s@%s:%i]> timemory MPI_Finalize completed!\n", __FUNCTION__,
+                   __FILE__, __LINE__);
+        }
         return MPI_SUCCESS;
     }
 
@@ -73,8 +76,8 @@ extern "C"
     void timemory_MPI_Init(int* argc, char*** argv)
     {
         int comm_key = 0;
-        MPI_Comm_create_keyval(nullptr, &timemory_MPI_Finalize, &comm_key, nullptr);
-        MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, nullptr);
+        MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_MPI_Finalize, &comm_key, NULL);
+        MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
 
         static auto _manager = timemory_manager_master_instance();
         tim::consume_parameters(_manager);
@@ -82,7 +85,9 @@ extern "C"
     }
 
     //----------------------------------------------------------------------------------//
-
+    //
+#        if !defined(TIMEMORY_MPI_INIT) || (TIMEMORY_MPI_INIT > 0)
+    //
     int MPI_Init(int* argc, char*** argv)
     {
         if(tim::settings::debug())
@@ -90,9 +95,9 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
                    __LINE__);
         }
-#        if defined(TIMEMORY_USE_TAU)
+#            if defined(TIMEMORY_USE_TAU)
         Tau_init(*argc, *argv);
-#        endif
+#            endif
         auto ret = PMPI_Init(argc, argv);
         timemory_MPI_Init(argc, argv);
         return ret;
@@ -107,14 +112,16 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
                    __FILE__, __LINE__);
         }
-#        if defined(TIMEMORY_USE_TAU)
+#            if defined(TIMEMORY_USE_TAU)
         Tau_init(*argc, *argv);
-#        endif
+#            endif
         auto ret = PMPI_Init_thread(argc, argv, req, prov);
         timemory_MPI_Init(argc, argv);
         return ret;
     }
-
+    //
+#        endif
+    //
     //----------------------------------------------------------------------------------//
 }
 
@@ -122,42 +129,4 @@ extern "C"
 
 //======================================================================================//
 
-namespace tim
-{
-//--------------------------------------------------------------------------------------//
-//
-//
-env_settings*
-env_settings::instance()
-{
-    static std::atomic<int>           _count;
-    static env_settings*              _instance = new env_settings();
-    static thread_local int           _id       = _count++;
-    static thread_local env_settings* _local =
-        (_id == 0) ? _instance : new env_settings(_instance, _id);
-    return _local;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-//
-graph_hash_map_ptr_t
-get_hash_ids()
-{
-    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_map_t>();
-    return _inst;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-//
-graph_hash_alias_ptr_t
-get_hash_aliases()
-{
-    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_alias_t>();
-    return _inst;
-}
-
-}  // namespace tim
-
-#endif  // defined(TIMEMORY_EXTERN_INIT)
+#endif  // defined(TIMEMORY_USE_EXTERN)

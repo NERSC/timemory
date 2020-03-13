@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/components/timing.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/components.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"

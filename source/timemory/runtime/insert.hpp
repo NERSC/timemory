@@ -31,30 +31,29 @@
 
 #pragma once
 
-#include "timemory/components/types.hpp"
-#include "timemory/enum.h"
-#include "timemory/runtime/enumerate.hpp"
 #include "timemory/runtime/types.hpp"
 
-#include <unordered_map>
+#include <initializer_list>
+#include <string>
+#include <type_traits>
 
 namespace tim
 {
 //======================================================================================//
 
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
-          typename _EnumT = int>
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle,
+          typename EnumT = int>
 inline void
-insert(_Bundle<_Idx, _Type>& obj, std::initializer_list<_EnumT> components)
+insert(Bundle<Idx, Type>& obj, std::initializer_list<EnumT> components)
 {
-    insert(obj, std::vector<_EnumT>(components));
+    insert(obj, std::vector<EnumT>(components));
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle>
 inline void
-insert(_Bundle<_Idx, _Type>& obj, const std::initializer_list<std::string>& components)
+insert(Bundle<Idx, Type>& obj, const std::initializer_list<std::string>& components)
 {
     insert(obj, enumerate_components(components));
 }
@@ -63,11 +62,10 @@ insert(_Bundle<_Idx, _Type>& obj, const std::initializer_list<std::string>& comp
 //
 /// this is for initializing with a container of string
 //
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
-          typename... _ExtraArgs, template <typename, typename...> class _Container>
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle,
+          typename... ExtraArgs, template <typename, typename...> class Container>
 inline void
-insert(_Bundle<_Idx, _Type>&                         obj,
-       const _Container<std::string, _ExtraArgs...>& components)
+insert(Bundle<Idx, Type>& obj, const Container<std::string, ExtraArgs...>& components)
 {
     insert(obj, enumerate_components(components));
 }
@@ -76,110 +74,34 @@ insert(_Bundle<_Idx, _Type>&                         obj,
 //
 /// this is for initializing with a string
 //
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle>
 inline void
-insert(_Bundle<_Idx, _Type>& obj, const std::string& components)
+insert(Bundle<Idx, Type>& obj, const std::string& components)
 {
     insert(obj, enumerate_components(tim::delimit(components)));
 }
 
-//======================================================================================//
-
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
-inline void
-insert(const TIMEMORY_COMPONENT& comp, _Bundle<_Idx, _Type>& obj)
-{
-    using namespace component;
-    switch(comp)
-    {
-        case CALIPER: obj.template insert<caliper>(); break;
-        case CPU_CLOCK: obj.template insert<cpu_clock>(); break;
-        case CPU_ROOFLINE_DP_FLOPS: obj.template insert<cpu_roofline_dp_flops>(); break;
-        case CPU_ROOFLINE_FLOPS: obj.template insert<cpu_roofline_flops>(); break;
-        case CPU_ROOFLINE_SP_FLOPS: obj.template insert<cpu_roofline_sp_flops>(); break;
-        case CPU_UTIL: obj.template insert<cpu_util>(); break;
-        case CUDA_EVENT: obj.template insert<cuda_event>(); break;
-        case CUDA_PROFILER: obj.template insert<cuda_profiler>(); break;
-        case CUPTI_ACTIVITY: obj.template insert<cupti_activity>(); break;
-        case CUPTI_COUNTERS: obj.template insert<cupti_counters>(); break;
-        case CURRENT_PEAK_RSS: obj.template insert<current_peak_rss>(); break;
-        case DATA_RSS: obj.template insert<data_rss>(); break;
-        case GPERF_CPU_PROFILER: obj.template insert<gperf_cpu_profiler>(); break;
-        case GPERF_HEAP_PROFILER: obj.template insert<gperf_heap_profiler>(); break;
-        case GPU_ROOFLINE_DP_FLOPS: obj.template insert<gpu_roofline_dp_flops>(); break;
-        case GPU_ROOFLINE_FLOPS: obj.template insert<gpu_roofline_flops>(); break;
-        case GPU_ROOFLINE_HP_FLOPS: obj.template insert<gpu_roofline_hp_flops>(); break;
-        case GPU_ROOFLINE_SP_FLOPS: obj.template insert<gpu_roofline_sp_flops>(); break;
-        case KERNEL_MODE_TIME: obj.template insert<kernel_mode_time>(); break;
-        case LIKWID_MARKER: obj.template insert<likwid_marker>(); break;
-        case LIKWID_NVMARKER: obj.template insert<likwid_nvmarker>(); break;
-        case MALLOC_GOTCHA: obj.template insert<malloc_gotcha>(); break;
-        case MONOTONIC_CLOCK: obj.template insert<monotonic_clock>(); break;
-        case MONOTONIC_RAW_CLOCK: obj.template insert<monotonic_raw_clock>(); break;
-        case NUM_IO_IN: obj.template insert<num_io_in>(); break;
-        case NUM_IO_OUT: obj.template insert<num_io_out>(); break;
-        case NUM_MAJOR_PAGE_FAULTS: obj.template insert<num_major_page_faults>(); break;
-        case NUM_MINOR_PAGE_FAULTS: obj.template insert<num_minor_page_faults>(); break;
-        case NUM_MSG_RECV: obj.template insert<num_msg_recv>(); break;
-        case NUM_MSG_SENT: obj.template insert<num_msg_sent>(); break;
-        case NUM_SIGNALS: obj.template insert<num_signals>(); break;
-        case NUM_SWAP: obj.template insert<num_swap>(); break;
-        case NVTX_MARKER: obj.template insert<nvtx_marker>(); break;
-        case PAGE_RSS: obj.template insert<page_rss>(); break;
-        case PAPI_ARRAY: obj.template insert<papi_array_t>(); break;
-        case PEAK_RSS: obj.template insert<peak_rss>(); break;
-        case PRIORITY_CONTEXT_SWITCH:
-            obj.template insert<priority_context_switch>();
-            break;
-        case PROCESS_CPU_CLOCK: obj.template insert<process_cpu_clock>(); break;
-        case PROCESS_CPU_UTIL: obj.template insert<process_cpu_util>(); break;
-        case READ_BYTES: obj.template insert<read_bytes>(); break;
-        case STACK_RSS: obj.template insert<stack_rss>(); break;
-        case SYS_CLOCK: obj.template insert<system_clock>(); break;
-        case TAU_MARKER: obj.template insert<tau_marker>(); break;
-        case THREAD_CPU_CLOCK: obj.template insert<thread_cpu_clock>(); break;
-        case THREAD_CPU_UTIL: obj.template insert<thread_cpu_util>(); break;
-        case TRIP_COUNT: obj.template insert<trip_count>(); break;
-        case USER_CLOCK: obj.template insert<user_clock>(); break;
-        case USER_LIST_BUNDLE: obj.template insert<user_list_bundle>(); break;
-        case USER_MODE_TIME: obj.template insert<user_mode_time>(); break;
-        case USER_TUPLE_BUNDLE: obj.template insert<user_tuple_bundle>(); break;
-        case VIRTUAL_MEMORY: obj.template insert<virtual_memory>(); break;
-        case VOLUNTARY_CONTEXT_SWITCH:
-            obj.template insert<voluntary_context_switch>();
-            break;
-        case VTUNE_EVENT: obj.template insert<vtune_event>(); break;
-        case VTUNE_FRAME: obj.template insert<vtune_frame>(); break;
-        case VTUNE_PROFILER: obj.template insert<vtune_profiler>(); break;
-        case WALL_CLOCK: obj.template insert<wall_clock>(); break;
-        case WRITTEN_BYTES: obj.template insert<written_bytes>(); break;
-        case TIMEMORY_COMPONENTS_END:
-        default: break;
-    }
-}
-
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
-          template <typename, typename...> class _Container, typename _Intp,
-          typename... _ExtraArgs,
-          typename std::enable_if<(std::is_integral<_Intp>::value ||
-                                   std::is_same<_Intp, TIMEMORY_COMPONENT>::value),
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle,
+          template <typename, typename...> class Container, typename Intp,
+          typename... ExtraArgs,
+          typename std::enable_if<(std::is_integral<Intp>::value ||
+                                   std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
                                   int>::type>
 void
-insert(_Bundle<_Idx, _Type>& obj, const _Container<_Intp, _ExtraArgs...>& components)
+insert(Bundle<Idx, Type>& obj, const Container<Intp, ExtraArgs...>& components)
 {
     for(auto itr : components)
-        insert(static_cast<TIMEMORY_COMPONENT>(itr), obj);
+        runtime::insert(obj, itr);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle,
-          template <typename, typename...> class _Container, typename... _ExtraArgs>
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle,
+          template <typename, typename...> class Container, typename... ExtraArgs>
 void
-insert(_Bundle<_Idx, _Type>&                         obj,
-       const _Container<const char*, _ExtraArgs...>& components)
+insert(Bundle<Idx, Type>& obj, const Container<const char*, ExtraArgs...>& components)
 {
     std::vector<std::string> _components;
     _components.reserve(components.size());
@@ -190,12 +112,12 @@ insert(_Bundle<_Idx, _Type>&                         obj,
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Idx, typename _Type, template <size_t, typename> class _Bundle>
+template <size_t Idx, typename Type, template <size_t, typename> class Bundle>
 void
-insert(_Bundle<_Idx, _Type>& obj, const int ncomponents, const int* components)
+insert(Bundle<Idx, Type>& obj, const int ncomponents, const int* components)
 {
     for(int i = 0; i < ncomponents; ++i)
-        insert(static_cast<TIMEMORY_COMPONENT>(components[i]), obj);
+        runtime::insert(obj, components[i]);
 }
 
 //======================================================================================//

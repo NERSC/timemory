@@ -1164,7 +1164,7 @@ int
 main(int argc, char** argv)
 {
 #if defined(DYNINST_API_RT)
-    tim::set_env("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
+    tim::set_env<std::string>("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
 #endif
 
     int  instrumented = 0;      // count of instrumented functions

@@ -40,9 +40,6 @@
 #endif
 
 #include <functional>
-#include <iomanip>
-#include <sstream>
-#include <string>
 #include <tuple>
 #include <type_traits>
 

@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file timemory/manager.hpp
- * \headerfile timemory/manager.hpp "timemory/manager.hpp"
+/**
+ * \headerfile "timemory/manager.hpp"
  * Static singleton handler that is not templated. In general, this is the
  * first object created and last object destroyed. It should be utilized to
  * store type-independent data
@@ -35,11 +35,13 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/backends/mpi.hpp"
-#include "timemory/data/base_storage.hpp"
-#include "timemory/general/hash.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/filters.hpp"
+#include "timemory/backends/dmp.hpp"
+//#include "timemory/data/base_storage.hpp"
+#include "timemory/hash/declaration.hpp"
+//#include "timemory/mpl/apply.hpp"
+//#include "timemory/mpl/filters.hpp"
+#include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/utility.hpp"
@@ -51,7 +53,7 @@
 #include <deque>
 #include <functional>
 #include <map>
-#include <memory>
+//#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
@@ -63,13 +65,9 @@
 
 namespace tim
 {
+//
 //--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-class component_tuple;
-
-//--------------------------------------------------------------------------------------//
-
+//
 class tim_api manager
 {
 public:
@@ -104,6 +102,7 @@ public:
     void add_finalizer(const std::string&, _Func&&, bool);
     void remove_cleanup(const std::string&);
     void remove_finalizer(const std::string&);
+    void cleanup(const std::string&);
     void cleanup();
     void finalize();
 
@@ -134,14 +133,13 @@ public:
 private:
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
     void _init_storage()
     {
-        using storage_type = typename _Tp::storage_type;
+        using storage_type = typename Tp::storage_type;
 
         static thread_local auto tmp = []() {
-            if(!component::state<_Tp>::has_storage())
+            if(!component::state<Tp>::has_storage())
             {
                 auto ret = storage_type::instance();
                 if(ret)
@@ -149,8 +147,8 @@ private:
 
                 if(settings::debug())
                     printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                           demangle<_Tp>().c_str(), (void*) ret,
-                           (component::state<_Tp>::has_storage()) ? "true" : "false",
+                           demangle<Tp>().c_str(), (void*) ret,
+                           (component::state<Tp>::has_storage()) ? "true" : "false",
                            (ret) ? ((ret->empty()) ? "true" : "false") : "false");
             }
             return true;
@@ -158,21 +156,19 @@ private:
         tim::consume_parameters(tmp);
     }
 
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
     void _init_storage()
     {
-        _init_storage<_Tp>();
-        _init_storage<_Tail...>();
+        _init_storage<Tp>();
+        _init_storage<Tail...>();
     }
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
     void _print_storage()
     {
-        using storage_type = typename _Tp::storage_type;
+        using storage_type = typename Tp::storage_type;
 
         auto ret = storage_type::noninit_instance();
         if(ret && !ret->empty())
@@ -180,26 +176,24 @@ private:
 
         if(settings::debug())
             printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                   demangle<_Tp>().c_str(), (void*) ret,
-                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   demangle<Tp>().c_str(), (void*) ret,
+                   (component::state<Tp>::has_storage()) ? "true" : "false",
                    (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
     void _print_storage()
     {
-        _print_storage<_Tp>();
-        _print_storage<_Tail...>();
+        _print_storage<Tp>();
+        _print_storage<Tail...>();
     }
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
     void _clear()
     {
-        using storage_type = typename _Tp::storage_type;
+        using storage_type = typename Tp::storage_type;
 
         auto ret = storage_type::noninit_instance();
         if(ret)
@@ -207,26 +201,25 @@ private:
 
         if(settings::debug())
             printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                   demangle<_Tp>().c_str(), (void*) ret,
-                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   demangle<Tp>().c_str(), (void*) ret,
+                   (component::state<Tp>::has_storage()) ? "true" : "false",
                    (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
     void _clear()
     {
-        _clear<_Tp>();
-        _clear<_Tail...>();
+        _clear<Tp>();
+        _clear<Tail...>();
     }
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive, typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    template <typename _Archive, typename Tp, typename... Tail,
+              enable_if_t<(sizeof...(Tail) == 0), int> = 0>
     void _serialize(_Archive& ar)
     {
-        using storage_type = typename _Tp::storage_type;
+        using storage_type = typename Tp::storage_type;
 
         auto ret = storage_type::noninit_instance();
         if(ret && !ret->empty())
@@ -234,27 +227,26 @@ private:
 
         if(settings::debug())
             printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                   demangle<_Tp>().c_str(), (void*) ret,
-                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   demangle<Tp>().c_str(), (void*) ret,
+                   (component::state<Tp>::has_storage()) ? "true" : "false",
                    (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
-    template <typename _Archive, typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    template <typename _Archive, typename Tp, typename... Tail,
+              enable_if_t<(sizeof...(Tail) > 0), int> = 0>
     void _serialize(_Archive& ar)
     {
-        _serialize<_Archive, _Tp>(ar);
-        _serialize<_Archive, _Tail...>(ar);
+        _serialize<_Archive, Tp>(ar);
+        _serialize<_Archive, Tail...>(ar);
     }
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
     void _size(uint64_t& _sz)
     {
-        auto label         = tim::demangle<_Tp>();
-        using storage_type = typename _Tp::storage_type;
+        auto label         = tim::demangle<Tp>();
+        using storage_type = typename Tp::storage_type;
         label += std::string(" (") + tim::demangle<storage_type>() + ")";
 
         auto ret = storage_type::noninit_instance();
@@ -263,17 +255,16 @@ private:
 
         if(settings::debug())
             printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",
-                   demangle<_Tp>().c_str(), (void*) ret,
-                   (component::state<_Tp>::has_storage()) ? "true" : "false",
+                   demangle<Tp>().c_str(), (void*) ret,
+                   (component::state<Tp>::has_storage()) ? "true" : "false",
                    (ret) ? ((ret->empty()) ? "true" : "false") : "false");
     }
 
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    template <typename Tp, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
     void _size(uint64_t& _sz)
     {
-        _size<_Tp>(_sz);
-        _size<_Tail...>(_sz);
+        _size<Tp>(_sz);
+        _size<Tail...>(_sz);
     }
 
     //----------------------------------------------------------------------------------//
@@ -290,8 +281,9 @@ private:
                 return "";
             std::stringstream ss;
             {
-                using archive_type = trait::output_archive<manager>::type;
-                auto oa            = trait::output_archive<manager>::get(ss);
+                using archive_type = trait::output_archive_t<manager>;
+                using policy_type  = policy::output_archive_t<manager>;
+                auto oa            = policy_type::get(ss);
                 oa->setNextName("timemory");
                 oa->startNode();
                 {
@@ -390,10 +382,10 @@ public:
     //
     /// used by storage classes to ensure that the singleton instance is managed
     /// via the master thread of holding the manager instance
-    template <typename _Tp>
-    auto get_singleton() -> decltype(_Tp::instance())
+    template <typename Tp>
+    auto get_singleton() -> decltype(Tp::instance())
     {
-        return _Tp::instance();
+        return Tp::instance();
     }
 
 private:
@@ -492,7 +484,7 @@ public:
 #    if !defined(_WINDOWS)
 #        define __library_ctor__ __attribute__((constructor))
 #    else
-#        define __library_ctor__ static
+#        define __library_ctor__
 #    endif
 #endif
 
@@ -502,7 +494,7 @@ public:
 #    if !defined(_WINDOWS)
 #        define __library_dtor__ __attribute__((destructor))
 #    else
-#        define __library_dtor__ static
+#        define __library_dtor__
 #    endif
 #endif
 
@@ -510,7 +502,7 @@ public:
 
 extern "C"
 {
-#if defined(TIMEMORY_EXTERN_INIT)
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_SOURCE)
 
     extern ::tim::manager*       timemory_manager_master_instance();
     __library_ctor__ extern void timemory_library_constructor();
@@ -518,19 +510,15 @@ extern "C"
 
 #else
 
-#    if defined(_WINDOWS)
-    static
-#    endif
-        ::tim::manager*
-        timemory_manager_master_instance()
+    static ::tim::manager* timemory_manager_master_instance()
     {
-        using manager_t     = tim::manager;
-        static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+        using manager_t    = tim::manager;
+        static auto _pinst = tim::get_shared_ptr_pair<manager_t>();
         tim::manager::set_persistent_master(_pinst.first);
         return _pinst.first.get();
     }
 
-    __library_ctor__ void timemory_library_constructor()
+    static __library_ctor__ void timemory_library_constructor()
     {
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
         if(!library_ctor)
@@ -563,8 +551,6 @@ extern "C"
 
         std::atexit(tim::timemory_finalize);
     }
-
-    __library_dtor__ void timemory_library_destructor() {}
 
 #endif
 }

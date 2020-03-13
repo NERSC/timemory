@@ -59,10 +59,9 @@ class auto_tuple
 public:
     using this_type           = auto_tuple<Types...>;
     using base_type           = component_tuple<Types...>;
+    using auto_type           = this_type;
     using component_type      = typename base_type::component_type;
     using type_tuple          = typename component_type::type_tuple;
-    using data_value_type     = typename component_type::data_value_type;
-    using data_label_type     = typename component_type::data_label_type;
     using data_type           = typename component_type::data_type;
     using sample_type         = typename component_type::sample_type;
     using type                = convert_t<typename component_type::type, auto_tuple<>>;
@@ -82,6 +81,17 @@ public:
     static constexpr bool is_component        = false;
     static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
+
+public:
+    using concat_type = concat<Types...>;
+
+    template <typename T>
+    static constexpr bool get_config()
+    {
+        using var_config_t =
+            typename contains_one_of<variadic::is_config, concat_type>::type;
+        return is_one_of<T, var_config_t>::value;
+    }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -144,26 +154,6 @@ public:
     inline operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_tuple
-    inline void measure()
-    {
-        if(m_enabled)
-            m_temporary_object.measure();
-    }
-    inline void sample()
-    {
-        if(m_enabled)
-            m_temporary_object.sample();
-    }
-    inline void start()
-    {
-        if(m_enabled)
-            m_temporary_object.start();
-    }
-    inline void stop()
-    {
-        if(m_enabled)
-            m_temporary_object.stop();
-    }
     inline void push()
     {
         if(m_enabled)
@@ -174,36 +164,63 @@ public:
         if(m_enabled)
             m_temporary_object.pop();
     }
-    template <typename... _Args>
-    inline void mark_begin(_Args&&... _args)
+    template <typename... Args>
+    inline void measure(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_begin(std::forward<_Args>(_args)...);
+            m_temporary_object.measure(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void mark_end(_Args&&... _args)
+    template <typename... Args>
+    inline void sample(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+            m_temporary_object.sample(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void store(_Args&&... _args)
+    template <typename... Args>
+    inline void start(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.store(std::forward<_Args>(_args)...);
+            m_temporary_object.start(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void audit(_Args&&... _args)
+    template <typename... Args>
+    inline void stop(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.audit(std::forward<_Args>(_args)...);
+            m_temporary_object.stop(std::forward<Args>(args)...);
     }
-
-    inline data_value_type get() const { return m_temporary_object.get(); }
-
-    inline data_label_type get_labeled() const
+    template <typename... Args>
+    inline void mark_begin(Args&&... args)
     {
-        return m_temporary_object.get_labeled();
+        if(m_enabled)
+            m_temporary_object.mark_begin(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline void mark_end(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_end(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline void store(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.store(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline void audit(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.audit(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline auto get(Args&&... args) const
+    {
+        return m_temporary_object.get(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline auto get_labeled(Args&&... args) const
+    {
+        return m_temporary_object.get_labeled(std::forward<Args>(args)...);
     }
 
     inline bool enabled() const { return m_enabled; }
@@ -219,16 +236,16 @@ public:
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
-    template <typename _Tp>
+    template <typename Tp>
     decltype(auto) get()
     {
-        return m_temporary_object.template get<_Tp>();
+        return m_temporary_object.template get<Tp>();
     }
 
-    template <typename _Tp>
+    template <typename Tp>
     decltype(auto) get() const
     {
-        return m_temporary_object.template get<_Tp>();
+        return m_temporary_object.template get<Tp>();
     }
 
     inline void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
@@ -241,7 +258,6 @@ protected:
         if(m_enabled)
         {
             _func(*this);
-            m_temporary_object.start();
         }
     }
 
@@ -253,7 +269,6 @@ protected:
         {
             _func(*this);
             m_temporary_object.construct(std::forward<Args>(args)...);
-            m_temporary_object.start();
         }
     }
 
@@ -285,7 +300,10 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_
     if(m_enabled)
     {
         init(_func);
-        m_temporary_object.start();
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
     }
 }
 
@@ -303,7 +321,10 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
     if(m_enabled)
     {
         init(_func);
-        m_temporary_object.start();
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
     }
 }
 
@@ -322,7 +343,10 @@ auto_tuple<Types...>::auto_tuple(size_t _hash, bool flat, bool report_at_exit,
     if(m_enabled)
     {
         init(_func);
-        m_temporary_object.start();
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
     }
 }
 
@@ -337,7 +361,10 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_
 {
     if(m_enabled)
     {
-        m_temporary_object.start();
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
     }
 }
 
@@ -356,7 +383,10 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, bool flat,
     {
         init(func);
         m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
-        m_temporary_object.start();
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
     }
 }
 
@@ -375,7 +405,10 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store, boo
     {
         init(func);
         m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
-        m_temporary_object.start();
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
     }
 }
 
@@ -395,7 +428,10 @@ auto_tuple<Types...>::auto_tuple(size_t _hash, bool store, bool flat, const Func
     {
         init(func);
         m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
-        m_temporary_object.start();
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
     }
 }
 
@@ -404,45 +440,46 @@ auto_tuple<Types...>::auto_tuple(size_t _hash, bool store, bool flat, const Func
 template <typename... Types>
 auto_tuple<Types...>::~auto_tuple()
 {
-    if(m_enabled)
+    IF_CONSTEXPR(!get_config<variadic::explicit_stop>())
     {
-        // stop the timer
-        m_temporary_object.stop();
-
-        // report timer at exit
-        if(m_report_at_exit)
+        if(m_enabled)
         {
-            std::stringstream ss;
-            ss << m_temporary_object;
-            if(ss.str().length() > 0)
-                std::cout << ss.str() << std::endl;
-        }
+            // stop the timer
+            m_temporary_object.stop();
 
-        if(m_reference_object)
-        {
-            *m_reference_object += m_temporary_object;
+            // report timer at exit
+            if(m_report_at_exit)
+            {
+                std::stringstream ss;
+                ss << m_temporary_object;
+                if(ss.str().length() > 0)
+                    std::cout << ss.str() << std::endl;
+            }
+
+            if(m_reference_object)
+            {
+                *m_reference_object += m_temporary_object;
+            }
         }
     }
 }
 
 //======================================================================================//
 
-template <typename... _Types,
-          typename _Ret = typename auto_tuple<_Types...>::data_value_type>
-_Ret
-get(const auto_tuple<_Types...>& _obj)
+template <typename... Types>
+auto
+get(const auto_tuple<Types...>& _obj)
 {
-    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+    return get(_obj.get_component());
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types,
-          typename _Ret = typename auto_tuple<_Types...>::data_label_type>
-_Ret
-get_labeled(const auto_tuple<_Types...>& _obj)
+template <typename... Types>
+auto
+get_labeled(const auto_tuple<Types...>& _obj)
 {
-    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
+    return get_labeled(_obj.get_component());
 }
 
 //======================================================================================//
@@ -500,18 +537,6 @@ get(tim::auto_tuple<Types...>&& obj)
     using obj_type = tim::auto_tuple<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-TSTAG(struct)
-tuple_size<::tim::auto_tuple<Types...>>
-{
-public:
-    using value_type                  = size_t;
-    using type                        = typename ::tim::auto_tuple<Types...>::type_tuple;
-    static constexpr value_type value = tuple_size<type>::value;
-};
 
 //======================================================================================//
 

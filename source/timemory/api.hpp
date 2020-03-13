@@ -31,6 +31,78 @@
  *
  */
 
+#if !defined(TIMEMORY_DEFAULT_API)
+#    define TIMEMORY_DEFAULT_API ::tim::api::native_tag
+#endif
+
+#if !defined(TIMEMORY_API)
+#    define TIMEMORY_API TIMEMORY_DEFAULT_API
+#endif
+
+#if defined(DISABLE_TIMEMORY)
+#    if !defined(TIMEMORY_DEFAULT_AVAILABLE)
+#        define TIMEMORY_DEFAULT_AVAILABLE false_type
+#    endif
+#else
+#    if !defined(TIMEMORY_DEFAULT_AVAILABLE)
+#        define TIMEMORY_DEFAULT_AVAILABLE true_type
+#    endif
+#endif
+
+#if !defined(TIMEMORY_DEFAULT_STATISTICS_TYPE)
+#    if defined(TIMEMORY_USE_STATISTICS)
+#        define TIMEMORY_DEFAULT_STATISTICS_TYPE std::true_type
+#    else
+#        define TIMEMORY_DEFAULT_STATISTICS_TYPE std::false_type
+#    endif
+#endif
+
+#if !defined(TIMEMORY_DEFAULT_PLOTTING)
+#    if defined(TIMEMORY_USE_PLOTTING)
+#        define TIMEMORY_DEFAULT_PLOTTING true
+#    else
+#        define TIMEMORY_DEFAULT_PLOTTING false
+#    endif
+#endif
+
+#if !defined(TIMEMORY_DEFAULT_ENABLED)
+#    define TIMEMORY_DEFAULT_ENABLED true
+#endif
+
+#if !defined(TIMEMORY_PYTHON_PLOTTER)
+#    define TIMEMORY_PYTHON_PLOTTER "python"
+#endif
+
+#if !defined(TIMEMORY_USE_XML_ARCHIVE)
+//
+#    if !defined(TIMEMORY_DEFAULT_INPUT_ARCHIVE)
+#        define TIMEMORY_DEFAULT_INPUT_ARCHIVE cereal::JSONInputArchive
+#    endif
+//
+#    if !defined(TIMEMORY_DEFAULT_OUTPUT_ARCHIVE)
+#        define TIMEMORY_DEFAULT_OUTPUT_ARCHIVE ::tim::type_list<>
+#    endif
+//
+#else
+//
+#    if !defined(TIMEMORY_DEFAULT_INPUT_ARCHIVE)
+#        define TIMEMORY_DEFAULT_INPUT_ARCHIVE cereal::XMLInputArchive
+#    endif
+//
+#    if !defined(TIMEMORY_DEFAULT_OUTPUT_ARCHIVE)
+#        define TIMEMORY_DEFAULT_OUTPUT_ARCHIVE cereal::XMLOutputArchive
+#    endif
+//
+#endif
+
+#if !defined(TIMEMORY_INPUT_ARCHIVE)
+#    define TIMEMORY_INPUT_ARCHIVE TIMEMORY_DEFAULT_INPUT_ARCHIVE
+#endif
+
+#if !defined(TIMEMORY_OUTPUT_ARCHIVE)
+#    define TIMEMORY_OUTPUT_ARCHIVE TIMEMORY_DEFAULT_OUTPUT_ARCHIVE
+#endif
+
 namespace tim
 {
 namespace api

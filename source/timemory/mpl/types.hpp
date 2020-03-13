@@ -42,16 +42,36 @@
 
 #include "timemory/api.hpp"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/utility/types.hpp"
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_DEFAULT_STATISTICS_TYPE)
-#    if defined(TIMEMORY_USE_STATISTICS)
-#        define TIMEMORY_DEFAULT_STATISTICS_TYPE std::true_type
-#    else
-#        define TIMEMORY_DEFAULT_STATISTICS_TYPE std::false_type
-#    endif
+#if !defined(TIMEMORY_FOLD_EXPRESSION)
+#    define TIMEMORY_FOLD_EXPRESSION(...)                                                \
+        ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DELETED_OBJECT)
+#    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
+        NAME()            = delete;                                                      \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DEFAULT_OBJECT)
+#    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
+        NAME()            = default;                                                     \
+        NAME(const NAME&) = default;                                                     \
+        NAME(NAME&&)      = default;                                                     \
+        NAME& operator=(const NAME&) = default;                                          \
+        NAME& operator=(NAME&&) = default;
 #endif
 
 //======================================================================================//
@@ -65,11 +85,23 @@ using true_type                      = std::true_type;
 using false_type                     = std::false_type;
 using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
 
-template <typename T, typename V = typename T::value_type>
-struct generates_output;
+///
+/// \class storage_initializer
+///
+/// \brief This provides an object that can initialize the storage opaquely, e.g.
+/// \code
+/// namespace
+/// {
+///     tim::storage_initializer storage = tim::storage_initalizer::get<T>();
+/// }
+///
+struct storage_initializer
+{
+    TIMEMORY_DEFAULT_OBJECT(storage_initializer)
 
-template <typename T, typename V = typename T::value_type>
-struct implements_storage;
+    template <typename T>
+    static storage_initializer get();
+};
 
 //======================================================================================//
 // type-traits for customization
@@ -77,7 +109,16 @@ struct implements_storage;
 namespace trait
 {
 template <typename T>
+struct base_has_accum;
+
+template <typename T>
+struct base_has_last;
+
+template <typename T>
 struct is_available;
+
+template <typename T>
+struct data;
 
 template <typename T>
 struct runtime_enabled;
@@ -146,7 +187,7 @@ template <typename T>
 struct thread_scope_only;
 
 template <typename T>
-struct split_serialization;
+struct custom_serialization;
 
 template <typename T>
 struct record_statistics;
@@ -169,10 +210,16 @@ struct units;
 template <typename T>
 struct echo_enabled;
 
-template <typename T>
+template <typename Api = api::native_tag>
+struct api_input_archive;
+
+template <typename Api = api::native_tag>
+struct api_output_archive;
+
+template <typename T, typename Api = api::native_tag>
 struct input_archive;
 
-template <typename T>
+template <typename T, typename Api = api::native_tag>
 struct output_archive;
 
 template <typename T>
@@ -193,7 +240,27 @@ struct report_values;
 template <typename T>
 struct omp_tools;
 
+//--------------------------------------------------------------------------------------//
+//
+//                              ALIASES
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+using input_archive_t = typename input_archive<T, TIMEMORY_API>::type;
+
+template <typename T>
+using output_archive_t = typename output_archive<T, TIMEMORY_API>::type;
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace trait
+
+template <typename T, typename V = typename trait::data<T>::value_type>
+struct generates_output;
+
+template <typename T, typename V = typename trait::data<T>::value_type>
+struct implements_storage;
 
 //======================================================================================//
 //  components that provide the invocation (i.e. WHAT the components need to do)
@@ -292,6 +359,9 @@ template <typename T>
 struct get_data;
 
 template <typename T>
+struct get_labeled_data;
+
+template <typename T>
 struct base_printer;
 
 template <typename T>
@@ -312,7 +382,7 @@ struct add_secondary;
 template <typename T>
 struct add_statistics;
 
-template <typename T, typename _Archive>
+template <typename T>
 struct serialization;
 
 template <typename T, bool Enabled = trait::echo_enabled<T>::value>
@@ -321,7 +391,7 @@ struct echo_measurement;
 template <typename T>
 struct copy;
 
-template <typename T, typename _Op>
+template <typename T, typename Op>
 struct pointer_operator;
 
 template <typename T>
@@ -330,7 +400,7 @@ struct pointer_deleter;
 template <typename T>
 struct pointer_counter;
 
-template <typename T, typename _Op>
+template <typename T, typename Op>
 struct generic_operator;
 
 template <typename T>
@@ -477,8 +547,29 @@ struct instance_tracker;
 template <typename _Comp, typename T = typename trait::statistics<_Comp>::type>
 struct record_statistics;
 
+template <typename Archive, typename Api = api::native_tag>
+struct input_archive;
+
+template <typename Archive, typename Api = api::native_tag>
+struct output_archive;
+
 template <typename T, typename Toolset>
 struct omp_tools;
+
+//--------------------------------------------------------------------------------------//
+//
+//                              ALIASES
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+using input_archive_t = input_archive<trait::input_archive_t<T>, TIMEMORY_API>;
+
+template <typename T>
+using output_archive_t = output_archive<trait::output_archive_t<T>, TIMEMORY_API>;
+//
+//--------------------------------------------------------------------------------------//
+//
 
 }  // namespace policy
 
@@ -489,12 +580,12 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 // shorthand for available, non-void
 //
-template <typename _Up>
+template <typename Up>
 struct is_enabled
 {
-    using _Vp = typename _Up::value_type;
+    using Vp = typename Up::value_type;
     static constexpr bool value =
-        (trait::is_available<_Up>::value && !(std::is_same<_Vp, void>::value));
+        (trait::is_available<Up>::value && !(std::is_same<Vp, void>::value));
 };
 
 template <typename U>
@@ -503,11 +594,11 @@ using is_enabled_t = typename is_enabled<U>::type;
 //--------------------------------------------------------------------------------------//
 // shorthand for non-void
 //
-template <typename _Up>
+template <typename Up>
 struct has_data
 {
-    using _Vp                   = typename _Up::value_type;
-    static constexpr bool value = (!(std::is_same<_Vp, void>::value));
+    using Vp                    = typename Up::value_type;
+    static constexpr bool value = (!std::is_same<Vp, void>::value);
 };
 
 template <typename U>
@@ -522,7 +613,7 @@ using has_data_t = typename has_data<U>::type;
 //
 //======================================================================================//
 
-template <typename... _Tp>
+template <typename... Tp>
 struct type_list
 {};
 
@@ -535,74 +626,6 @@ struct type_list
 // for pre-C++14 tuple expansion to arguments
 namespace impl
 {
-//--------------------------------------------------------------------------------------//
-// Stores a tuple of indices.  Used by tuple and pair, and by bind() to
-// extract the elements in a tuple.
-template <size_t... _Indexes>
-struct Index_tuple
-{};
-
-//--------------------------------------------------------------------------------------//
-// Concatenates two Index_tuples.
-template <typename _Itup1, typename _Itup2>
-struct Itup_cat;
-
-//--------------------------------------------------------------------------------------//
-
-template <size_t... _Ind1, size_t... _Ind2>
-struct Itup_cat<Index_tuple<_Ind1...>, Index_tuple<_Ind2...>>
-{
-    using __type = Index_tuple<_Ind1..., (_Ind2 + sizeof...(_Ind1))...>;
-};
-
-//--------------------------------------------------------------------------------------//
-// Builds an Index_tuple<0, 1, 2, ..., _Num-1>.
-template <size_t _Num, size_t _Off = 0>
-struct Build_index_tuple
-: Itup_cat<typename Build_index_tuple<_Num / 2, _Off>::__type,
-           typename Build_index_tuple<_Num - _Num / 2, _Off>::__type>
-{};
-
-//--------------------------------------------------------------------------------------//
-
-template <size_t _Off>
-struct Build_index_tuple<1, _Off>
-{
-    using __type = Index_tuple<0 + _Off>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <size_t _Off>
-struct Build_index_tuple<0, _Off>
-{
-    using __type = Index_tuple<>;
-};
-
-//--------------------------------------------------------------------------------------//
-/// Class template integer_sequence
-template <typename _Tp, _Tp... _Idx>
-struct integer_sequence
-{
-    using value_type = _Tp;
-    static constexpr size_t size() noexcept { return sizeof...(_Idx); }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, _Tp _Num,
-          typename _ISeq = typename Build_index_tuple<_Num>::__type>
-struct Make_integer_sequence;
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, _Tp _Num, size_t... _Idx>
-struct Make_integer_sequence<_Tp, _Num, Index_tuple<_Idx...>>
-{
-    static_assert(_Num >= 0, "Cannot make integer sequence of negative length");
-    using __type = integer_sequence<_Tp, static_cast<_Tp>(_Idx)...>;
-};
-
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
@@ -635,26 +658,61 @@ struct tuple_concat<std::tuple<Ts0...>, std::tuple<Ts1...>, Rest...>
 {};
 
 //--------------------------------------------------------------------------------------//
+//
+//          type_list concatenation
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+struct type_concat
+{
+    using type = type_list<Types...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct type_concat<>
+{
+    using type = type_list<>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Ts>
+struct type_concat<type_list<Ts...>>
+{
+    using type = type_list<Ts...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Ts0, typename... Ts1, typename... Rest>
+struct type_concat<type_list<Ts0...>, type_list<Ts1...>, Rest...>
+: type_concat<type_list<Ts0..., Ts1...>, Rest...>
+{};
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace impl
 
 //======================================================================================//
 
 /// Alias template make_integer_sequence
-template <typename _Tp, _Tp _Num>
-using make_integer_sequence = typename impl::Make_integer_sequence<_Tp, _Num>::__type;
+template <typename Tp, Tp Num>
+using make_integer_sequence = std::make_integer_sequence<Tp, Num>;
 
 /// Alias template index_sequence
-template <size_t... _Idx>
-using index_sequence = impl::integer_sequence<size_t, _Idx...>;
+template <size_t... Idx>
+using index_sequence = std::integer_sequence<size_t, Idx...>;
 
 /// Alias template make_index_sequence
-template <size_t _Num>
-using make_index_sequence = make_integer_sequence<size_t, _Num>;
+template <size_t Num>
+using make_index_sequence = std::make_integer_sequence<size_t, Num>;
 
 /// Alias template index_sequence_for
-template <typename... _Types>
-using index_sequence_for = make_index_sequence<sizeof...(_Types)>;
+template <typename... Types>
+using index_sequence_for = std::make_index_sequence<sizeof...(Types)>;
 
 /// Alias template for enable_if
 template <bool B, typename T = void>
@@ -664,11 +722,14 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 template <typename T>
 using decay_t = typename std::decay<T>::type;
 
-template <bool _Val, typename _Lhs, typename _Rhs>
-using conditional_t = typename std::conditional<_Val, _Lhs, _Rhs>::type;
+template <bool Val, typename Lhs, typename Rhs>
+using conditional_t = typename std::conditional<(Val), Lhs, Rhs>::type;
 
 template <typename... Ts>
 using tuple_concat_t = typename impl::tuple_concat<Ts...>::type;
+
+template <typename... Ts>
+using type_concat_t = typename impl::type_concat<Ts...>::type;
 
 template <typename U>
 using remove_pointer_t = typename std::remove_pointer<U>::type;
@@ -681,20 +742,20 @@ using add_pointer_t = conditional_t<(std::is_pointer<U>::value), U, U*>;
 ///
 /// get the index of a type in expansion
 ///
-template <typename _Tp, typename Type>
+template <typename Tp, typename Type>
 struct index_of;
 
-template <typename _Tp, template <typename...> class _Tuple, typename... Types>
-struct index_of<_Tp, _Tuple<_Tp, Types...>>
+template <typename Tp, template <typename...> class Tuple, typename... Types>
+struct index_of<Tp, Tuple<Tp, Types...>>
 {
     static constexpr size_t value = 0;
 };
 
-template <typename _Tp, typename Head, template <typename...> class _Tuple,
+template <typename Tp, typename Head, template <typename...> class Tuple,
           typename... Tail>
-struct index_of<_Tp, _Tuple<Head, Tail...>>
+struct index_of<Tp, Tuple<Head, Tail...>>
 {
-    static constexpr size_t value = 1 + index_of<_Tp, _Tuple<Tail...>>::value;
+    static constexpr size_t value = 1 + index_of<Tp, Tuple<Tail...>>::value;
 };
 
 //======================================================================================//
@@ -751,20 +812,34 @@ struct convert<InTuple<In...>, OutTuple<Out...>>
 {
     using type = OutTuple<In...>;
 
-    using input_type     = InTuple<In...>;
-    using output_type    = OutTuple<Out...>;
-    using init_list_type = std::initializer_list<int>;
+    using input_type  = InTuple<In...>;
+    using output_type = OutTuple<Out...>;
 
     static output_type apply(const input_type& _in)
     {
         output_type _out{};
-        auto&&      ret = init_list_type{ (
+        TIMEMORY_FOLD_EXPRESSION(
             std::get<index_of<Out, output_type>::value>(_out) =
-                static_cast<Out>(std::get<index_of<In, input_type>::value>(_in)),
-            0)... };
-        consume_parameters(ret);
+                static_cast<Out>(std::get<index_of<In, input_type>::value>(_in)));
         return _out;
     }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename In, typename Out>
+struct pointer_convert
+{
+    using type = add_pointer_t<Out>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename...> class InTuple, typename... In,
+          template <typename...> class OutTuple, typename... Out>
+struct pointer_convert<InTuple<In...>, OutTuple<Out...>>
+{
+    using type = OutTuple<add_pointer_t<In>...>;
 };
 
 }  // namespace impl
@@ -778,24 +853,24 @@ struct wrapper_index_sequence;
 template <typename T>
 struct nonwrapper_index_sequence;
 
-template <template <typename...> class Tuple, typename... _Types>
-struct wrapper_index_sequence<Tuple<_Types...>>
+template <template <typename...> class Tuple, typename... Types>
+struct wrapper_index_sequence<Tuple<Types...>>
 {
-    static constexpr auto size  = sizeof...(_Types);
+    static constexpr auto size  = sizeof...(Types);
     static constexpr auto value = make_index_sequence<size>{};
     using type                  = decltype(make_index_sequence<size>{});
 };
 
-template <template <typename...> class Tuple, typename... _Types>
-struct nonwrapper_index_sequence<Tuple<_Types...>>
+template <template <typename...> class Tuple, typename... Types>
+struct nonwrapper_index_sequence<Tuple<Types...>>
 {
-    static constexpr auto size  = sizeof...(_Types);
+    static constexpr auto size  = sizeof...(Types);
     static constexpr auto value = std::tuple<>{};
     using type                  = std::tuple<>;
 };
 }  // namespace impl
 
-template <typename _Tp>
+template <typename Tp>
 struct get_index_sequence
 {
     static constexpr auto size  = 0;
@@ -803,40 +878,43 @@ struct get_index_sequence
     using type                  = std::tuple<>;
 };
 
-template <typename _Lhs, typename _Rhs>
-struct get_index_sequence<std::pair<_Lhs, _Rhs>>
+template <typename Lhs, typename Rhs>
+struct get_index_sequence<std::pair<Lhs, Rhs>>
 {
     static constexpr auto size  = 2;
     static constexpr auto value = index_sequence<0, 1>{};
     using type                  = index_sequence<0, 1>;
 };
 
-template <typename... _Types>
-struct get_index_sequence<std::tuple<_Types...>>
+template <typename... Types>
+struct get_index_sequence<std::tuple<Types...>>
 {
-    static constexpr auto size  = std::tuple_size<std::tuple<_Types...>>::value;
+    static constexpr auto size  = std::tuple_size<std::tuple<Types...>>::value;
     static constexpr auto value = make_index_sequence<size>{};
     using type                  = decltype(make_index_sequence<size>{});
 };
 
-template <template <typename...> class Tuple, typename... _Types>
-struct get_index_sequence<Tuple<_Types...>>
+template <template <typename...> class Tuple, typename... Types>
+struct get_index_sequence<Tuple<Types...>>
 {
-    using base_type = conditional_t<(concept ::is_variadic<Tuple<_Types...>>::value),
-                                    impl::wrapper_index_sequence<Tuple<_Types...>>,
-                                    impl::nonwrapper_index_sequence<Tuple<_Types...>>>;
+    using base_type = conditional_t<(concepts ::is_variadic<Tuple<Types...>>::value),
+                                    impl::wrapper_index_sequence<Tuple<Types...>>,
+                                    impl::nonwrapper_index_sequence<Tuple<Types...>>>;
     static constexpr auto size  = base_type::size;
     static constexpr auto value = base_type::value;
     using type                  = typename base_type::type;
 };
 
-template <typename _Tp>
-using get_index_sequence_t = typename get_index_sequence<decay_t<_Tp>>::type;
+template <typename Tp>
+using get_index_sequence_t = typename get_index_sequence<decay_t<Tp>>::type;
 
 //======================================================================================//
 
 template <typename T, typename U>
 using convert_t = typename impl::convert<T, U>::type;
+
+template <typename T, typename U>
+using pointer_convert_t = typename impl::pointer_convert<T, U>::type;
 
 template <typename T>
 using unwrap_t = typename impl::unwrapper<T>::type;
@@ -856,10 +934,9 @@ convert(const _In& _in) -> decltype(impl::convert<_In, _Out>::apply(_in))
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Func, typename _End = std::function<void()>>
+template <typename Tp, typename Func, typename End = std::function<void()>>
 auto
-iterate(_Tp& _val, _Func&& _func, _End&& _end = []() {})
-    -> decltype(std::begin(_val), _Tp())
+iterate(Tp& _val, Func&& _func, End&& _end = []() {}) -> decltype(std::begin(_val), Tp())
 {
     for(auto itr = std::begin(_val); itr != std::end(_val); ++itr)
         _func(*itr);
@@ -867,53 +944,52 @@ iterate(_Tp& _val, _Func&& _func, _End&& _end = []() {})
     return _val;
 }
 
-template <typename _Tp, typename _Func, typename _End = std::function<void()>>
+template <typename Tp, typename Func, typename End = std::function<void()>>
 auto
-iterate(_Tp& _val, _Func&& _func, _End&& _end = []() {})
-    -> decltype(_func(_val), std::vector<_Tp>())
+iterate(Tp& _val, Func&& _func, End&& _end = []() {})
+    -> decltype(_func(_val), std::vector<Tp>())
 {
     _func(_val);
     _end();
-    return std::vector<_Tp>({ _val });
+    return std::vector<Tp>({ _val });
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp,
-          typename std::enable_if<(std::is_arithmetic<_Tp>::value), int>::type = 0>
+template <typename Tp,
+          typename std::enable_if<(std::is_arithmetic<Tp>::value), int>::type = 0>
 constexpr auto
-get_size(const _Tp&, std::tuple<>) -> size_t
+get_size(const Tp&, std::tuple<>) -> size_t
 {
     return 1;
 }
 
-template <typename _Tp>
+template <typename Tp>
 auto
-get_size(const _Tp& _val, std::tuple<>) -> decltype(_val.size(), size_t())
+get_size(const Tp& _val, std::tuple<>) -> decltype(_val.size(), size_t())
 {
     return _val.size();
 }
 
-template <typename _Tp, size_t... _Idx>
+template <typename Tp, size_t... Idx>
 constexpr auto
-get_size(const _Tp& _val, index_sequence<_Idx...>)
-    -> decltype(std::get<0>(_val), size_t())
+get_size(const Tp& _val, index_sequence<Idx...>) -> decltype(std::get<0>(_val), size_t())
 {
-    return std::tuple_size<_Tp>::value;
+    return std::tuple_size<Tp>::value;
 }
 
-template <typename _Tp>
+template <typename Tp>
 auto
-get_size(const _Tp& _val)
-    -> decltype(get_size(_val, get_index_sequence<decay_t<_Tp>>::value))
+get_size(const Tp& _val)
+    -> decltype(get_size(_val, get_index_sequence<decay_t<Tp>>::value))
 {
-    return get_size(_val, get_index_sequence<decay_t<_Tp>>::value);
+    return get_size(_val, get_index_sequence<decay_t<Tp>>::value);
 }
 
-template <typename _Tp>
+template <typename Tp>
 struct get_tuple_size
 {
-    static constexpr size_t value = get_index_sequence<decay_t<_Tp>>::size;
+    static constexpr size_t value = get_index_sequence<decay_t<Tp>>::size;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -943,16 +1019,16 @@ using identity_t = typename identity<T>::type;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
-assign(_Tp& _targ, const _Tp& _val, ...)
+assign(Tp& _targ, const Tp& _val, ...)
 {
     _targ = _val;
 }
 
-template <typename _Tp, typename _Vp, typename ValueType = typename _Tp::value_type>
+template <typename Tp, typename Vp, typename ValueType = typename Tp::value_type>
 auto
-assign(_Tp& _targ, const _Vp& _val, std::tuple<>) -> decltype(_targ[0], void())
+assign(Tp& _targ, const Vp& _val, std::tuple<>) -> decltype(_targ[0], void())
 {
     auto _n = get_size(_val);
     resize(_targ, _n);
@@ -961,38 +1037,32 @@ assign(_Tp& _targ, const _Vp& _val, std::tuple<>) -> decltype(_targ[0], void())
                get_index_sequence<decay_t<ValueType>>::value);
 }
 
-template <typename _Tp, size_t... _Idx>
+template <typename Tp, size_t... Idx>
 auto
-assign(_Tp& _targ, const _Tp& _val, index_sequence<_Idx...>)
+assign(Tp& _targ, const Tp& _val, index_sequence<Idx...>)
     -> decltype(std::get<0>(_val), void())
 {
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (assign(std::get<_Idx>(_targ), std::get<_Idx>(_val),
-                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_targ))>>::value),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        assign(std::get<Idx>(_targ), std::get<Idx>(_val),
+               get_index_sequence<decay_t<decltype(std::get<Idx>(_targ))>>::value));
 }
 
-template <typename _Tp, typename _Vp, size_t... _Idx,
-          enable_if_t<!(std::is_same<_Tp, _Vp>::value), int> = 0>
+template <typename Tp, typename Vp, size_t... Idx,
+          enable_if_t<!(std::is_same<Tp, Vp>::value), int> = 0>
 auto
-assign(_Tp& _targ, const _Vp& _val, index_sequence<_Idx...>)
+assign(Tp& _targ, const Vp& _val, index_sequence<Idx...>)
     -> decltype(std::get<0>(_targ) = *std::begin(_val), void())
 {
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (assign(std::get<_Idx>(_targ), *(std::begin(_val) + _Idx),
-                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_targ))>>::value),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        assign(std::get<Idx>(_targ), *(std::begin(_val) + Idx),
+               get_index_sequence<decay_t<decltype(std::get<Idx>(_targ))>>::value));
 }
 
-template <typename _Tp, typename _Vp>
+template <typename Tp, typename Vp>
 void
-assign(_Tp& _targ, const _Vp& _val)
+assign(Tp& _targ, const Vp& _val)
 {
-    assign(_targ, _val, get_index_sequence<decay_t<_Tp>>::value);
+    assign(_targ, _val, get_index_sequence<decay_t<Tp>>::value);
 }
 
 }  // namespace mpl
@@ -1000,89 +1070,3 @@ assign(_Tp& _targ, const _Vp& _val)
 //======================================================================================//
 
 }  // namespace tim
-
-//======================================================================================//
-
-#define TIMEMORY_STATISTICS_TYPE(COMPONENT, TYPE)                                        \
-    namespace tim                                                                        \
-    {                                                                                    \
-    namespace trait                                                                      \
-    {                                                                                    \
-    template <>                                                                          \
-    struct statistics<COMPONENT>                                                         \
-    {                                                                                    \
-        using type = TYPE;                                                               \
-    };                                                                                   \
-    }                                                                                    \
-    }
-
-//--------------------------------------------------------------------------------------//
-
-#define TIMEMORY_TEMPLATE_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)                \
-    namespace tim                                                                        \
-    {                                                                                    \
-    namespace trait                                                                      \
-    {                                                                                    \
-    template <TEMPLATE_TYPE T>                                                           \
-    struct statistics<COMPONENT<T>>                                                      \
-    {                                                                                    \
-        using type = TYPE;                                                               \
-    };                                                                                   \
-    }                                                                                    \
-    }
-
-//--------------------------------------------------------------------------------------//
-
-#define TIMEMORY_VARIADIC_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)                \
-    namespace tim                                                                        \
-    {                                                                                    \
-    namespace trait                                                                      \
-    {                                                                                    \
-    template <TEMPLATE_TYPE... T>                                                        \
-    struct statistics<COMPONENT<T...>>                                                   \
-    {                                                                                    \
-        using type = TYPE;                                                               \
-    };                                                                                   \
-    }                                                                                    \
-    }
-
-//======================================================================================//
-
-#define TIMEMORY_DEFINE_CONCRETE_TRAIT(TRAIT, COMPONENT, VALUE)                          \
-    namespace tim                                                                        \
-    {                                                                                    \
-    namespace trait                                                                      \
-    {                                                                                    \
-    template <>                                                                          \
-    struct TRAIT<COMPONENT> : VALUE                                                      \
-    {};                                                                                  \
-    }                                                                                    \
-    }
-
-//--------------------------------------------------------------------------------------//
-
-#define TIMEMORY_DEFINE_TEMPLATE_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                    \
-    namespace tim                                                                        \
-    {                                                                                    \
-    namespace trait                                                                      \
-    {                                                                                    \
-    template <TYPE T>                                                                    \
-    struct TRAIT<COMPONENT<T>> : VALUE                                                   \
-    {};                                                                                  \
-    }                                                                                    \
-    }
-
-//--------------------------------------------------------------------------------------//
-
-#define TIMEMORY_DEFINE_VARIADIC_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                    \
-    namespace tim                                                                        \
-    {                                                                                    \
-    namespace trait                                                                      \
-    {                                                                                    \
-    template <TYPE... T>                                                                 \
-    struct TRAIT<COMPONENT<T...>> : VALUE                                                \
-    {};                                                                                  \
-    }                                                                                    \
-    }
-
-//======================================================================================//

@@ -34,85 +34,61 @@
 
 namespace tim
 {
+//
 //--------------------------------------------------------------------------------------//
 // use this function to get rid of "unused parameter" warnings
+//
 template <typename... _Args>
 void
 consume_parameters(_Args&&...)
 {}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Deleter>
-class singleton;
-
-//--------------------------------------------------------------------------------------//
-
-namespace impl
-{
+//
 //--------------------------------------------------------------------------------------//
 //
-template <typename StorageType>
-struct storage_deleter;
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-using storage_singleton_t =
-    singleton<_Tp, std::unique_ptr<_Tp, impl::storage_deleter<_Tp>>>;
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, bool ImplementsStorage>
-class storage
-{};
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace impl
-
-//--------------------------------------------------------------------------------------//
-
-namespace base
-{
-class storage;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type>
-class storage;
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-impl::storage_singleton_t<_Tp>*
-get_storage_singleton();
-
+template <typename _Tp, typename _Deleter>
+class singleton;
+//
 //--------------------------------------------------------------------------------------//
 // clang-format off
 namespace cupti { struct result; }
 // clang-format on
 //--------------------------------------------------------------------------------------//
-
+//
 namespace scope
 {
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \class flat
 /// \brief Dummy struct to designates flat (no hierarchy) storage
 struct flat
 {};
-
-/// \class thread
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class tree
 /// \brief Dummy struct to designates tree (hierarchical) storage
 struct tree
 {};
-
-}  // namespace scope
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
+/// \class timeline
+/// \brief Dummy struct to designates timeline (hierarchical, non-duplicated) storage
+struct timeline
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace scope
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace lifetime
 {
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \class lifetime::scoped
 /// \brief Dummy struct for meta-programming to designate that a component activates
 /// it's features at the first start() invocation and deactivates it's features when
@@ -122,7 +98,9 @@ namespace lifetime
 ///
 struct scoped
 {};
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \class lifetime::persistent
 /// \brief Dummy struct for meta-programming to designate that a component activates its
 /// features in {global,thread}_init and deactivates it's features in
@@ -130,18 +108,27 @@ struct scoped
 ///
 struct persistent
 {};
-
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace lifetime
-
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace audit
 {
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \class incoming
 /// \brief Used by component audit member function to designate the
 /// parameters being passed are incoming (e.g. before a gotcha wrappee is invoked)
 ///
 struct incoming
 {};
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \class outgoing
 /// \brief Used by component audit member function to designate the
 /// parameters being passed are outgoing (e.g. the return value from a gotcha wrappee)
@@ -149,7 +136,9 @@ struct incoming
 // audit the return type
 struct outgoing
 {};
-
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace audit
 
 //--------------------------------------------------------------------------------------//

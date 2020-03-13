@@ -52,11 +52,17 @@ configure_file(
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
     @ONLY)
 
+configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-target-extract.cmake.in
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
+    @ONLY)
+
 install(
     FILES
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-components.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-target-extract.cmake
     DESTINATION
         ${CMAKE_INSTALL_CONFIGDIR})
 
@@ -82,9 +88,9 @@ endif()
 
 if(TIMEMORY_USE_GPERF)
     foreach(_TYPE cpu heap)
-        configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gperf-${_TYPE}-profile.sh
+        configure_file(${PROJECT_SOURCE_DIR}/scripts/gperf-${_TYPE}-profile.sh
             ${CMAKE_BINARY_DIR}/gperf-${_TYPE}-profile.sh COPYONLY)
     endforeach()
-    configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gprof2dot.py
+    configure_file(${PROJECT_SOURCE_DIR}/scripts/gprof2dot.py
         ${CMAKE_BINARY_DIR}/gprof2dot.py COPYONLY)
 endif()

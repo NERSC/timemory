@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -67,47 +66,51 @@ is_finite(const _Tp& val)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
-_Tp abs(_Tp);
+inline _Tp abs(_Tp);
 
 template <typename _Tp>
-_Tp sqrt(_Tp);
+inline _Tp sqrt(_Tp);
 
 template <typename _Tp>
-_Tp
+inline _Tp
 pow(_Tp, double);
 
 template <typename _Tp>
-_Tp sqr(_Tp);
+inline _Tp sqr(_Tp);
 
 template <typename _Tp>
-_Tp sqr(_Tp);
+inline _Tp sqr(_Tp);
 
 template <typename _Tp>
-_Tp
+inline _Tp
 min(const _Tp&, const _Tp&);
 
 template <typename _Tp>
-_Tp
+inline _Tp
 max(const _Tp&, const _Tp&);
 
 template <typename _Tp, typename _Up = _Tp>
-void
+inline void
+assign(_Tp&, _Up&&);
+
+template <typename _Tp, typename _Up = _Tp>
+inline void
 plus(_Tp&, const _Up&);
 
 template <typename _Tp, typename _Up = _Tp>
-void
+inline void
 minus(_Tp&, const _Up&);
 
 template <typename _Tp, typename _Up = _Tp>
-void
+inline void
 multiply(_Tp&, const _Up&);
 
 template <typename _Tp, typename _Up = _Tp>
-void
+inline void
 divide(_Tp&, const _Up&);
 
 template <typename _Tp>
-_Tp
+inline _Tp
 percent_diff(const _Tp&, const _Tp&);
 
 //--------------------------------------------------------------------------------------//
@@ -145,10 +148,7 @@ auto
 abs(_Tuple<_Types...> _val, index_sequence<_Idx...>)
     -> decltype(std::get<0>(_val), _Tuple<_Types...>())
 {
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp =
-        init_list_t({ (std::get<_Idx>(_val) = abs(std::get<_Idx>(_val)), 0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(std::get<_Idx>(_val) = abs(std::get<_Idx>(_val)));
     return _val;
 }
 
@@ -194,10 +194,7 @@ auto
 sqrt(_Tuple<_Types...> _val, index_sequence<_Idx...>)
     -> decltype(std::get<0>(_val), _Tuple<_Types...>())
 {
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp =
-        init_list_t({ (std::get<_Idx>(_val) = sqrt(std::get<_Idx>(_val)), 0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(std::get<_Idx>(_val) = sqrt(std::get<_Idx>(_val)));
     return _val;
 }
 
@@ -243,10 +240,7 @@ auto
 pow(_Tuple<_Types...> _val, double _m, index_sequence<_Idx...>)
     -> decltype(std::get<0>(_val), _Tuple<_Types...>())
 {
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp =
-        init_list_t({ (std::get<_Idx>(_val) = pow(std::get<_Idx>(_val), _m), 0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(std::get<_Idx>(_val) = pow(std::get<_Idx>(_val), _m));
     return _val;
 }
 
@@ -333,13 +327,10 @@ min(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>)
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _Tp _ret{};
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (std::get<_Idx>(_ret) =
-               min(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                   get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        std::get<_Idx>(_ret) =
+            min(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value));
     return _ret;
 }
 
@@ -419,13 +410,10 @@ max(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>)
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     _Tp _ret{};
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (std::get<_Idx>(_ret) =
-               max(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                   get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        std::get<_Idx>(_ret) =
+            max(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+                get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value));
     return _ret;
 }
 
@@ -436,6 +424,22 @@ max(const _Tp& _lhs, const _Tp& _rhs)
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
     return max(_lhs, _rhs, get_index_sequence<_Tp>::value);
 }
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Up>
+inline void
+assign(_Tp& _lhs, _Up&& _rhs)
+{
+    _lhs = std::forward<_Up>(_rhs);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <>
+inline void
+assign(std::tuple<>&, std::tuple<>&&)
+{}
 
 //--------------------------------------------------------------------------------------//
 
@@ -495,12 +499,9 @@ plus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (plus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        plus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+             get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0));
 }
 
 template <typename _Tp, typename _Up>
@@ -561,12 +562,9 @@ minus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (minus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        minus(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+              get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0));
 }
 
 template <typename _Tp, typename _Up>
@@ -661,12 +659,9 @@ multiply(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t({ (
+    TIMEMORY_FOLD_EXPRESSION(
         multiply(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
-        0)... });
-    consume_parameters(tmp);
+                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0));
 }
 
 template <typename _Tp, typename _Up, size_t... _Idx,
@@ -676,12 +671,9 @@ multiply(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t({ (
+    TIMEMORY_FOLD_EXPRESSION(
         multiply(std::get<_Idx>(_lhs), _rhs,
-                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
-        0)... });
-    consume_parameters(tmp);
+                 get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0));
 }
 
 template <typename _Tp, typename _Up>
@@ -777,12 +769,9 @@ divide(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (divide(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        divide(std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+               get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0));
 }
 
 template <typename _Tp, typename _Up, size_t... _Idx,
@@ -792,12 +781,9 @@ divide(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<_Tp>, std::tuple<>>::value, "Error! tuple<>");
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (divide(std::get<_Idx>(_lhs), _rhs,
-                  get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        divide(std::get<_Idx>(_lhs), _rhs,
+               get_index_sequence<decay_t<decltype(std::get<_Idx>(_lhs))>>::value, 0));
 }
 
 template <typename _Tp, typename _Up>
@@ -880,13 +866,10 @@ percent_diff(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>)
     -> decltype(std::get<0>(_lhs), _Tp())
 {
     _Tp _ret{};
-    using init_list_t = std::initializer_list<int>;
-    auto&& tmp        = init_list_t(
-        { (std::get<_Idx>(_ret) = percent_diff(
-               std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
-               get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value),
-           0)... });
-    consume_parameters(tmp);
+    TIMEMORY_FOLD_EXPRESSION(
+        std::get<_Idx>(_ret) = percent_diff(
+            std::get<_Idx>(_lhs), std::get<_Idx>(_rhs),
+            get_index_sequence<decay_t<decltype(std::get<_Idx>(_ret))>>::value));
     return _ret;
 }
 

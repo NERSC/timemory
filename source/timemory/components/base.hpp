@@ -40,6 +40,8 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 
+#include <array>
+
 //======================================================================================//
 
 namespace tim
@@ -62,6 +64,8 @@ struct base
     using vector_t = std::vector<U>;
 
 public:
+    static constexpr bool has_accum_v          = trait::base_has_accum<Tp>::value;
+    static constexpr bool has_last_v           = trait::base_has_last<Tp>::value;
     static constexpr bool implements_storage_v = implements_storage<Tp, Value>::value;
     static constexpr bool has_secondary_data   = trait::secondary_data<Tp>::value;
     static constexpr bool is_sampler_v         = trait::sampler<Tp>::value;
@@ -71,7 +75,8 @@ public:
 
     using Type             = Tp;
     using value_type       = Value;
-    using accum_type       = Value;
+    using accum_type       = conditional_t<has_accum_v, value_type, EmptyT>;
+    using last_type        = conditional_t<has_last_v, value_type, EmptyT>;
     using sample_type      = conditional_t<is_sampler_v, operation::sample<Tp>, EmptyT>;
     using sample_list_type = conditional_t<is_sampler_v, vector_t<sample_type>, EmptyT>;
 
@@ -91,6 +96,7 @@ private:
     friend struct operation::init_storage<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
+    friend struct operation::insert_node<Tp>;
     friend struct operation::pop_node<Tp>;
     friend struct operation::record<Tp>;
     friend struct operation::reset<Tp>;
@@ -106,13 +112,9 @@ private:
     friend struct operation::print_storage<Tp>;
     friend struct operation::copy<Tp>;
     friend struct operation::sample<Tp>;
-    friend struct operation::finalize::get<Tp, implements_storage_v>;
-
-    template <typename Up>
-    friend struct operation::insert_node;
-
-    template <typename Up, typename Archive>
-    friend struct operation::serialization;
+    friend struct operation::serialization<Tp>;
+    friend struct operation::finalize::get<Tp, true>;
+    friend struct operation::finalize::get<Tp, false>;
 
     template <typename _Ret, typename _Lhs, typename _Rhs>
     friend struct operation::compose;
@@ -121,15 +123,6 @@ private:
 
 public:
     base()
-    : is_running(false)
-    , is_on_stack(false)
-    , is_transient(false)
-    , is_flat(false)
-    , depth_change(false)
-    , laps(0)
-    , value(value_type())
-    , accum(value_type())
-    , graph_itr(graph_iterator{ nullptr })
     {
         if(!storage_type::is_finalizing())
         {
@@ -151,8 +144,8 @@ public:
     static void thread_init(storage_type*) {}
     static void global_finalize(storage_type*) {}
     static void thread_finalize(storage_type*) {}
-    template <typename _Archive>
-    static void extra_serialization(_Archive&, const unsigned int)
+    template <typename Archive>
+    static void extra_serialization(Archive&, const unsigned int)
     {}
 
 public:
@@ -168,11 +161,12 @@ public:
     ///     - std::string
     ///     - value_type
     ///
-    static void append(graph_iterator itr, const Type& rhs)
+    template <typename T = Type>
+    static void append(graph_iterator itr, const T& rhs)
     {
         auto _storage = storage_type::instance();
         if(_storage)
-            operation::add_secondary<Type>(_storage, itr, rhs);
+            operation::add_secondary<T>(_storage, itr, rhs);
     }
 
 public:
@@ -188,7 +182,8 @@ public:
         depth_change = false;
         laps         = 0;
         value        = value_type{};
-        accum        = value_type{};
+        accum        = accum_type{};
+        last         = last_type{};
         samples      = sample_type{};
     }
 
@@ -232,6 +227,7 @@ public:
         }
     }
 
+    /*
     //----------------------------------------------------------------------------------//
     // mark a point in the execution, by default, this does nothing
     //
@@ -246,6 +242,7 @@ public:
     // store a value, by default, this does nothing
     //
     void store() {}
+    */
 
     //----------------------------------------------------------------------------------//
     // set the firsts notify that start has been called
@@ -274,12 +271,12 @@ public:
     //----------------------------------------------------------------------------------//
     // default get
     //
-    value_type get() const { return (is_transient) ? value : accum; }
+    auto get() const { return this->load(); }
 
     //----------------------------------------------------------------------------------//
     // default get_display if not defined by type
     //
-    value_type get_display() const { return (is_transient) ? value : accum; }
+    auto get_display() const { return this->load(); }
 
     //----------------------------------------------------------------------------------//
     // add a sample
@@ -413,37 +410,84 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // serialization
+    // serialization load (input)
     //
     template <typename Archive, typename Up = Type,
-              enable_if_t<!(trait::split_serialization<Up>::value), int> = 0>
-    void serialize(Archive& ar, const unsigned int)
+              enable_if_t<!(trait::custom_serialization<Up>::value), int> = 0>
+    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
     {
-        // operation::serialization<Type, Archive>(*this, ar, version);
-        auto _data = static_cast<const Type&>(*this).get();
-        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("repr_data", _data), cereal::make_nvp("value", value),
-           cereal::make_nvp("accum", accum), cereal::make_nvp("units", Type::get_unit()),
-           cereal::make_nvp("display_units", Type::get_display_unit()));
+        // clang-format off
+        ar(cereal::make_nvp("is_transient", is_transient),
+           cereal::make_nvp("laps", laps),
+           cereal::make_nvp("value", value),
+           cereal::make_nvp("accum", accum),
+           cereal::make_nvp("last", last),
+           cereal::make_nvp("samples", samples));
+        // clang-format on
     }
+
+    //----------------------------------------------------------------------------------//
+    // serialization store (output)
+    //
+    template <typename Archive, typename Up = Type,
+              enable_if_t<!(trait::custom_serialization<Up>::value), int> = 0>
+    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int version) const
+    {
+        operation::serialization<Type>(static_cast<const Type&>(*this), ar, version);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // serialization
+    //
+    /*
+    template <typename Archive, typename Up = Type,
+              enable_if_t<!(trait::custom_serialization<Up>::value), int> = 0>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        // operation::serialization<Type>(static_cast<Type&>(*this), ar, version);
+        // clang-format off
+        ar(cereal::make_nvp("is_transient", is_transient),
+           cereal::make_nvp("laps", laps),
+           cereal::make_nvp("value", value),
+           cereal::make_nvp("accum", accum),
+           cereal::make_nvp("last", last),
+           cereal::make_nvp("samples", samples),
+           cereal::make_nvp("repr_data", static_cast<Type&>(*this).get()),
+           cereal::make_nvp("repr_display", static_cast<Type&>(*this).get_display()),
+           cereal::make_nvp("units", Type::get_unit()),
+           cereal::make_nvp("display_units", Type::get_display_unit()));
+        // clang-format on
+    }
+    */
 
     int64_t           nlaps() const { return laps; }
     int64_t           get_laps() const { return laps; }
     const value_type& get_value() const { return value; }
     const accum_type& get_accum() const { return accum; }
+    const last_type&  get_last() const { return last; }
     const bool&       get_is_transient() const { return is_transient; }
     sample_list_type  get_samples() const { return samples; }
 
 protected:
-    const value_type& load() const { return (is_transient) ? accum : value; }
+    template <typename Up = Tp, enable_if_t<(Up::has_accum_v), int> = 0>
+    const value_type& load() const
+    {
+        return (is_transient) ? accum : value;
+    }
+
+    template <typename Up = Tp, enable_if_t<!(Up::has_accum_v), int> = 0>
+    const value_type& load() const
+    {
+        return value;
+    }
 
 protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
     template <typename Scope, typename Up = base_type,
-              enable_if_t<(Up::implements_storage_v), int>                 = 0,
-              enable_if_t<!(std::is_same<Scope, scope::flat>::value), int> = 0>
+              enable_if_t<(Up::implements_storage_v), int>                = 0,
+              enable_if_t<(std::is_same<Scope, scope::tree>::value), int> = 0>
     void insert_node(Scope&&, const int64_t& _hash)
     {
         if(!is_on_stack)
@@ -461,18 +505,18 @@ protected:
     }
 
     template <typename Scope, typename Up = base_type,
-              enable_if_t<(Up::implements_storage_v), int>                = 0,
-              enable_if_t<(std::is_same<Scope, scope::flat>::value), int> = 0>
+              enable_if_t<(Up::implements_storage_v), int>                 = 0,
+              enable_if_t<!(std::is_same<Scope, scope::tree>::value), int> = 0>
     void insert_node(Scope&&, const int64_t& _hash)
     {
         if(!is_on_stack)
         {
-            is_flat        = true;
+            is_flat        = std::is_same<Scope, scope::flat>::value;
             auto  _storage = get_storage();
             Type& obj      = static_cast<Type&>(*this);
             graph_itr      = _storage->template insert<Scope>(obj, _hash);
             is_on_stack    = true;
-            depth_change   = false;
+            depth_change   = std::is_same<Scope, scope::timeline>::value;
             _storage->stack_push(&obj);
         }
     }
@@ -615,6 +659,7 @@ protected:
     int64_t          laps         = 0;
     value_type       value        = value_type{};
     accum_type       accum        = accum_type{};
+    last_type        last         = last_type{};
     sample_list_type samples      = sample_type{};
     graph_iterator   graph_itr    = graph_iterator{ nullptr };
 
@@ -741,6 +786,52 @@ public:
         return _instance;
     }
 
+    //
+    // generate a default output filename from
+    // (potentially demangled) typeid(Type).name() and strip out
+    // namespace and any template parameters + replace any spaces
+    // with underscores
+    //
+    static std::string label()
+    {
+        std::string       _label = demangle<Type>();
+        std::stringstream msg;
+        msg << "Warning! " << _label << " does not provide a custom label!";
+#if defined(DEBUG)
+        // throw error when debugging
+        throw std::runtime_error(msg.str().c_str());
+#else
+        // warn when not debugging
+        if(settings::debug())
+            std::cerr << msg.str() << std::endl;
+#endif
+        if(_label.find(':') != std::string::npos)
+            _label = _label.substr(_label.find_last_of(':'));
+        if(_label.find('<') != std::string::npos)
+            _label = _label.substr(0, _label.find_first_of('<'));
+        while(_label.find(' ') != std::string::npos)
+            _label = _label.replace(_label.find(' '), 1, "_");
+        while(_label.find("__") != std::string::npos)
+            _label = _label.replace(_label.find("__"), 2, "_");
+        return _label;
+    }
+
+    static std::string description()
+    {
+        std::string       _label = demangle<Type>();
+        std::stringstream msg;
+        msg << "Warning! " << _label << " does not provide a custom description!";
+#if defined(DEBUG)
+        // throw error when debugging
+        throw std::runtime_error(msg.str().c_str());
+#else
+        // warn when not debugging
+        if(settings::debug())
+            std::cerr << msg.str() << std::endl;
+#endif
+        return _label;
+    }
+
     static std::string get_label()
     {
         static std::string _instance = Type::label();
@@ -775,7 +866,6 @@ public:
 
     using Type             = Tp;
     using value_type       = void;
-    using accum_type       = void;
     using sample_type      = EmptyT;
     using sample_list_type = EmptyT;
 
@@ -789,6 +879,7 @@ private:
     friend struct operation::init_storage<Tp>;
     friend struct operation::construct<Tp>;
     friend struct operation::set_prefix<Tp>;
+    friend struct operation::insert_node<Tp>;
     friend struct operation::pop_node<Tp>;
     friend struct operation::record<Tp>;
     friend struct operation::reset<Tp>;
@@ -802,12 +893,7 @@ private:
     friend struct operation::print<Tp>;
     friend struct operation::print_storage<Tp>;
     friend struct operation::copy<Tp>;
-
-    template <typename Up>
-    friend struct operation::insert_node;
-
-    template <typename Up, typename Archive>
-    friend struct operation::serialization;
+    friend struct operation::serialization<Tp>;
 
     template <typename _Ret, typename _Lhs, typename _Rhs>
     friend struct operation::compose;
@@ -830,8 +916,8 @@ public:
     static void thread_init(storage_type*) {}
     static void global_finalize(storage_type*) {}
     static void thread_finalize(storage_type*) {}
-    template <typename _Archive>
-    static void extra_serialization(_Archive&, const unsigned int)
+    template <typename Archive>
+    static void extra_serialization(Archive&, const unsigned int)
     {}
 
 public:
@@ -925,7 +1011,7 @@ public:
     int64_t nlaps() const { return 0; }
     int64_t get_laps() const { return 0; }
 
-    void* get() { return nullptr; }
+    void get() {}
 
     //----------------------------------------------------------------------------------//
     // assign the type to a pointer
@@ -998,6 +1084,9 @@ public:
     static std::string label()
     {
         std::string _label = demangle<Type>();
+        if(settings::debug())
+            fprintf(stderr, "Warning! '%s' does not provide a custom label!\n",
+                    _label.c_str());
         if(_label.find(':') != std::string::npos)
             _label = _label.substr(_label.find_last_of(':'));
         if(_label.find('<') != std::string::npos)
@@ -1006,6 +1095,15 @@ public:
             _label = _label.replace(_label.find(' '), 1, "_");
         while(_label.find("__") != std::string::npos)
             _label = _label.replace(_label.find("__"), 2, "_");
+        return _label;
+    }
+
+    static std::string description()
+    {
+        std::string _label = demangle<Type>();
+        if(settings::debug())
+            fprintf(stderr, "Warning! '%s' does not provide a custom description!\n",
+                    _label.c_str());
         return _label;
     }
 
@@ -1025,6 +1123,40 @@ public:
 //----------------------------------------------------------------------------------//
 
 }  // namespace component
+
+//----------------------------------------------------------------------------------//
+//
+namespace variadic
+{
+//
+template <typename... Types>
+struct config
+: component::base<config<Types...>, void>
+, type_list<Types...>
+{
+    using type = type_list<Types...>;
+    void start() {}
+    void stop() {}
+};
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename T>
+struct is_config : false_type
+{};
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+struct is_config<config<Types...>> : true_type
+{};
+//
+//----------------------------------------------------------------------------------//
+//
+}  // namespace variadic
+//
+//----------------------------------------------------------------------------------//
+//
 }  // namespace tim
 
 //======================================================================================//

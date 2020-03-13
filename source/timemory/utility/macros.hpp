@@ -122,11 +122,11 @@
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(CONSTEXPR_IF)
+#if !defined(IF_CONSTEXPR)
 #    if defined(CXX17)
-#        define IF_CONSTEXPR if constexpr
+#        define IF_CONSTEXPR(...) if constexpr(__VA_ARGS__)
 #    else
-#        define IF_CONSTEXPR if
+#        define IF_CONSTEXPR(...) if(__VA_ARGS__)
 #    endif
 #endif
 
@@ -283,7 +283,7 @@
 //      extern storage singleton
 //
 #    define TIMEMORY_DECLARE_EXTERN_INIT(TYPE)                                           \
-        extern template impl::storage_singleton_t<storage<component::TYPE>>*             \
+        extern template storage_singleton<storage<component::TYPE>>*                     \
         get_storage_singleton<storage<component::TYPE>>();                               \
         extern template class impl::storage<component::TYPE,                             \
                                             implements_storage<component::TYPE>::value>; \
@@ -297,7 +297,7 @@
                     component::TYPE, implements_storage<component::TYPE>::value>>>>;
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
-        template impl::storage_singleton_t<storage<component::TYPE>>*                    \
+        template storage_singleton<storage<component::TYPE>>*                            \
         get_storage_singleton<storage<component::TYPE>>();                               \
         template class impl::storage<component::TYPE,                                    \
                                      implements_storage<component::TYPE>::value>;        \

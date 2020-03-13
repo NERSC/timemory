@@ -35,7 +35,6 @@
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
-#include <algorithm>
 #include <cstdint>
 #include <future>
 #include <unordered_map>

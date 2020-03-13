@@ -28,6 +28,7 @@
 #endif
 
 #include "ex_gotcha_lib.hpp"
+#include "timemory/components/user_bundle.hpp"
 #include "timemory/timemory.hpp"
 
 #include <array>

@@ -26,26 +26,18 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/variadic/types.hpp"
-
+//
 #include "timemory/runtime/configure.hpp"
 
 #include <omp.h>
 #include <ompt.h>
-
-#if !defined(TIMEMORY_OMPT_API_TAG)
-#    define TIMEMORY_OMPT_API_TAG ::tim::api::native_tag
-#endif
-
-// for callback declarations
-#if !defined(CBDECL)
-#    define CBDECL(NAME) (ompt_callback_t) & NAME
-#endif
 
 static ompt_set_callback_t             ompt_set_callback;
 static ompt_get_task_info_t            ompt_get_task_info;
@@ -124,7 +116,7 @@ struct identifier<ompt_callbacks_t>
             { ompt_callback_device_unload, "device_unload" },
             { ompt_callback_sync_region_wait, "sync_region_wait" },
             { ompt_callback_mutex_released, "mutex_released" },
-            { ompt_callback_dependences, "dependences" },
+            { ompt_callback_task_dependences, "task_dependences" },
             { ompt_callback_task_dependence, "task_dependence" },
             { ompt_callback_work, "work" },
             { ompt_callback_master, "master" },
@@ -137,8 +129,6 @@ struct identifier<ompt_callbacks_t>
             { ompt_callback_nest_lock, "nest_lock" },
             { ompt_callback_flush, "flush" },
             { ompt_callback_cancel, "cancel" },
-            { ompt_callback_reduction, "reduction" },
-            { ompt_callback_dispatch, "dispatch" },
         };
 
         auto itr = _instance.find(eid);
@@ -174,14 +164,6 @@ struct ompt_wrapper
     using component_type = Components;
 
     static void callback(Args... args) { Connector(Mode{}, args...); }
-
-    /*
-    static std::string key()
-    {
-        static std::string _instance = identifier<Enumeration>(Eid);
-        return _instance;
-    }
-    */
 };
 
 //--------------------------------------------------------------------------------------//
@@ -208,7 +190,7 @@ public:
     //----------------------------------------------------------------------------------//
     // parallel begin
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_data_t* parent_task_data, const ompt_frame_t* parent_task_frame,
+    context_handler(ompt_data_t* parent_task_data, const omp_frame_t* parent_task_frame,
                     ompt_data_t* parallel_data, uint32_t requested_team_size,
                     const void* codeptr)
     {
@@ -229,7 +211,7 @@ public:
     //----------------------------------------------------------------------------------//
     // task create
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_data_t* parent_task_data, const ompt_frame_t* parent_frame,
+    context_handler(ompt_data_t* parent_task_data, const omp_frame_t* parent_frame,
                     ompt_data_t* new_task_data, int type, int has_dependences,
                     const void* codeptr)
     {
@@ -258,7 +240,7 @@ public:
     //----------------------------------------------------------------------------------//
     // callback work
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_work_t wstype, ompt_scope_endpoint_t endpoint,
+    context_handler(ompt_work_type_t wstype, ompt_scope_endpoint_t endpoint,
                     ompt_data_t* parallel_data, ompt_data_t* task_data, uint64_t count,
                     const void* codeptr)
     {
@@ -268,7 +250,7 @@ public:
     //----------------------------------------------------------------------------------//
     // callback thread begin
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_thread_t thread_type, ompt_data_t* thread_data)
+    context_handler(ompt_thread_type_t thread_type, ompt_data_t* thread_data)
     {
         consume_parameters(thread_type, thread_data);
     }
@@ -291,7 +273,7 @@ public:
     //----------------------------------------------------------------------------------//
     // callback sync region
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_sync_region_t kind, ompt_scope_endpoint_t endpoint,
+    context_handler(ompt_sync_region_kind_t kind, ompt_scope_endpoint_t endpoint,
                     ompt_data_t* parallel_data, ompt_data_t* task_data,
                     const void* codeptr)
     {
@@ -306,21 +288,19 @@ public:
     //----------------------------------------------------------------------------------//
     // callback mutex acquire
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_mutex_t kind, unsigned int hint, unsigned int impl,
-                    ompt_wait_id_t wait_id, const void* codeptr)
+    context_handler(ompt_mutex_kind_t kind, unsigned int hint, unsigned int impl,
+                    omp_wait_id_t wait_id, const void* codeptr)
     {
         m_key = "ompt_mutex";
         switch(kind)
         {
+            case ompt_mutex: break;
             case ompt_mutex_lock: m_key += "_lock"; break;
             case ompt_mutex_nest_lock: m_key += "_nest_lock"; break;
-            case ompt_mutex_test_lock: m_key += "_test_lock"; break;
-            case ompt_mutex_test_nest_lock: m_key += "_test_nest_lock"; break;
             case ompt_mutex_critical: m_key += "_critical"; break;
             case ompt_mutex_atomic: m_key += "_atomic"; break;
             case ompt_mutex_ordered: m_key += "_ordered"; break;
-            // case ompt_mutex: m_key += "_generic"; break;
-            default: m_key += "_generic"; break;
+            default: m_key += "_unknown"; break;
         }
         m_id = std::hash<size_t>()(static_cast<int>(kind) + static_cast<int>(wait_id)) +
                std::hash<std::string>()(m_key);
@@ -331,21 +311,19 @@ public:
     // callback mutex acquired
     // callback mutex released
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_mutex_t kind, ompt_wait_id_t wait_id, const void* codeptr)
+    context_handler(ompt_mutex_kind_t kind, omp_wait_id_t wait_id, const void* codeptr)
     {
         consume_parameters(codeptr);
         m_key = "ompt_mutex";
         switch(kind)
         {
+            case ompt_mutex: break;
             case ompt_mutex_lock: m_key += "_lock"; break;
             case ompt_mutex_nest_lock: m_key += "_nest_lock"; break;
-            case ompt_mutex_test_lock: m_key += "_test_lock"; break;
-            case ompt_mutex_test_nest_lock: m_key += "_test_nest_lock"; break;
             case ompt_mutex_critical: m_key += "_critical"; break;
             case ompt_mutex_atomic: m_key += "_atomic"; break;
             case ompt_mutex_ordered: m_key += "_ordered"; break;
-            // case ompt_mutex: m_key += "_generic"; break;
-            default: m_key += "_generic"; break;
+            default: m_key += "_unknown"; break;
         }
         m_id = std::hash<size_t>()(static_cast<int>(kind) + static_cast<int>(wait_id)) +
                std::hash<std::string>()(m_key);
@@ -354,8 +332,9 @@ public:
     //----------------------------------------------------------------------------------//
     // callback target
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_target_t kind, ompt_scope_endpoint_t endpoint, int device_num,
-                    ompt_data_t* task_data, ompt_id_t target_id, const void* codeptr)
+    context_handler(ompt_target_type_t kind, ompt_scope_endpoint_t endpoint,
+                    int device_num, ompt_data_t* task_data, ompt_id_t target_id,
+                    const void* codeptr)
     {
         m_key = apply<std::string>::join("_", "ompt_target_device", device_num);
         m_id =
@@ -498,8 +477,7 @@ private:
 //--------------------------------------------------------------------------------------//
 
 extern "C" int
-ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
-                ompt_data_t* tool_data)
+ompt_initialize(ompt_function_lookup_t lookup, ompt_data_t* tool_data)
 {
     using namespace tim::component;
     using api_type       = TIMEMORY_OMPT_API_TAG;
@@ -510,7 +488,7 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
     if(!tim::trait::is_available<omp_tools<api_type>>::value)
         return 1;
 
-    tim::consume_parameters(initial_device_num, tool_data);
+    tim::consume_parameters(tool_data);
 
     auto register_callback = [](ompt_callbacks_t name, ompt_callback_t cb) {
         int ret = ompt_set_callback(name, cb);
@@ -572,7 +550,7 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
 
     using parallel_begin_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::begin_callback,
-                             ompt_data_t*, const ompt_frame_t*, ompt_data_t*, uint32_t,
+                             ompt_data_t*, const omp_frame_t*, ompt_data_t*, uint32_t,
                              const void*>;
 
     using parallel_end_cb_t =
@@ -581,7 +559,7 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
 
     using task_create_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::begin_callback,
-                             ompt_data_t*, const ompt_frame_t*, ompt_data_t*, int, int,
+                             ompt_data_t*, const omp_frame_t*, ompt_data_t*, int, int,
                              const void*>;
 
     using task_schedule_cb_t =
@@ -594,12 +572,12 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
                              ompt_data_t*, ompt_data_t*, const void*>;
 
     using work_cb_t = openmp::ompt_wrapper<
-        component_type, connector_type, openmp::mode::measure_callback, ompt_work_t,
+        component_type, connector_type, openmp::mode::measure_callback, ompt_work_type_t,
         ompt_scope_endpoint_t, ompt_data_t*, ompt_data_t*, uint64_t, const void*>;
 
     using thread_begin_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::begin_callback,
-                             ompt_thread_t, ompt_data_t*>;
+                             ompt_thread_type_t, ompt_data_t*>;
 
     using thread_end_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::end_callback,
@@ -612,24 +590,24 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
 
     using sync_region_cb_t =
         openmp::ompt_wrapper<component_type, connector_type,
-                             openmp::mode::measure_callback, ompt_sync_region_t,
+                             openmp::mode::measure_callback, ompt_sync_region_kind_t,
                              ompt_scope_endpoint_t, ompt_data_t*, ompt_data_t*,
                              const void*>;
 
     using mutex_acquire_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::begin_callback,
-                             ompt_mutex_t, unsigned int, unsigned int, ompt_wait_id_t,
+                             ompt_mutex_kind_t, unsigned int, unsigned int, omp_wait_id_t,
                              const void*>;
 
     using mutex_acquired_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::end_callback,
-                             ompt_mutex_t, ompt_wait_id_t, const void*>;
+                             ompt_mutex_kind_t, omp_wait_id_t, const void*>;
 
     using mutex_released_cb_t = mutex_acquired_cb_t;
 
     using target_cb_t =
         openmp::ompt_wrapper<component_type, connector_type, openmp::mode::begin_callback,
-                             ompt_target_t, ompt_scope_endpoint_t, int, ompt_data_t*,
+                             ompt_target_type_t, ompt_scope_endpoint_t, int, ompt_data_t*,
                              ompt_id_t, const void*>;
 
     using target_data_op_cb_t =
@@ -642,35 +620,38 @@ ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
                              ompt_id_t, ompt_id_t, unsigned int>;
 
     timemory_ompt_register_callback(ompt_callback_parallel_begin,
-                                    CBDECL(parallel_begin_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(parallel_begin_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_parallel_end,
-                                    CBDECL(parallel_end_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(parallel_end_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_task_create,
-                                    CBDECL(task_create_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(task_create_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_task_schedule,
-                                    CBDECL(task_schedule_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(task_schedule_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_implicit_task,
-                                    CBDECL(implicit_task_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(implicit_task_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_thread_begin,
-                                    CBDECL(thread_begin_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(thread_begin_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_thread_end,
-                                    CBDECL(thread_end_cb_t::callback));
-    timemory_ompt_register_callback(ompt_callback_target, CBDECL(target_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(thread_end_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_target,
+                                    TIMEMORY_OMPT_CBDECL(target_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_target_data_op,
-                                    CBDECL(target_data_op_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(target_data_op_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_target_submit,
-                                    CBDECL(target_submit_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(target_submit_cb_t::callback));
 
-    timemory_ompt_register_callback(ompt_callback_master, CBDECL(master_cb_t::callback));
-    timemory_ompt_register_callback(ompt_callback_work, CBDECL(work_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_master,
+                                    TIMEMORY_OMPT_CBDECL(master_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_work,
+                                    TIMEMORY_OMPT_CBDECL(work_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_sync_region,
-                                    CBDECL(sync_region_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(sync_region_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_mutex_acquire,
-                                    CBDECL(mutex_acquire_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(mutex_acquire_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_mutex_acquired,
-                                    CBDECL(mutex_acquired_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(mutex_acquired_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_mutex_released,
-                                    CBDECL(mutex_released_cb_t::callback));
+                                    TIMEMORY_OMPT_CBDECL(mutex_released_cb_t::callback));
 
     if(tim::settings::verbose() > 0 || tim::settings::debug())
         printf("\n");
@@ -694,10 +675,8 @@ ompt_start_tool(unsigned int omp_version, const char* runtime_version)
 {
     printf("\n[timemory]> OpenMP version: %u, runtime version: %s\n\n", omp_version,
            runtime_version);
-    uint64_t     tool_data = 0;
-    static auto* data =
-        new ompt_start_tool_result_t{ &ompt_initialize, &ompt_finalize, { tool_data } };
-    return (ompt_start_tool_result_t*) data;
+    static auto data = ompt_start_tool_result_t{ &ompt_initialize, &ompt_finalize, 0 };
+    return (ompt_start_tool_result_t*) &data;
 }
 
 //--------------------------------------------------------------------------------------//

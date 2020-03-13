@@ -86,7 +86,7 @@ get_tid()
 
 TEST_F(threading_tests, openmp)
 {
-    tim::trait::runtime_enabled<omp_tools<tim::api::native_tag>>::set(false);
+    // tim::trait::runtime_enabled<omp_tools<tim::api::native_tag>>::set(false);
 
     TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());
 

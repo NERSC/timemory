@@ -34,13 +34,12 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
-#include <stdio.h>
 #include <string>
 
 #include "timemory/backends/dmp.hpp"
@@ -71,7 +70,7 @@ class component_list : public heap_bundle<available_tuple<concat<Types...>>>
     // manager is friend so can use above
     friend class manager;
 
-    template <typename _TupleC, typename _ListC>
+    template <typename TupleC, typename ListC>
     friend class component_hybrid;
 
     template <typename... _Types>
@@ -87,9 +86,6 @@ public:
     using type_tuple        = typename bundle_type::type_tuple;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
-    using data_collect_type = typename bundle_type::data_collect_type;
-    using data_value_type   = typename bundle_type::data_value_type;
-    using data_label_type   = typename bundle_type::data_label_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
 
     using apply_v     = apply<void>;
@@ -97,9 +93,12 @@ public:
     using string_t    = typename bundle_type::string_t;
     using string_hash = typename bundle_type::string_hash;
 
-    template <template <typename> class Op, typename _Tuple = impl_type>
-    using operation_t =
-        typename bundle_type::template generic_operation<Op, _Tuple>::type;
+    template <template <typename> class Op, typename Tuple = impl_type>
+    using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;
+
+    template <template <typename> class Op, typename Tuple = impl_type>
+    using custom_operation_t =
+        typename bundle_type::template custom_operation<Op, Tuple>::type;
 
     // used by gotcha
     using component_type   = component_list<Types...>;
@@ -172,16 +171,24 @@ public:
     static void                  print_storage();
     static void                  init_storage();
 
-    inline void             push();
-    inline void             pop();
-    void                    measure();
-    void                    sample();
-    void                    start();
-    void                    stop();
-    this_type&              record();
-    void                    reset();
-    data_value_type         get() const;
-    data_label_type         get_labeled() const;
+    inline void push();
+    inline void pop();
+    template <typename... Args>
+    void measure(Args&&...);
+    template <typename... Args>
+    void sample(Args&&...);
+    template <typename... Args>
+    void start(Args&&...);
+    template <typename... Args>
+    void stop(Args&&...);
+    template <typename... Args>
+    this_type& record(Args&&...);
+    template <typename... Args>
+    void reset(Args&&...);
+    template <typename... Args>
+    auto get(Args&&...) const;
+    template <typename... Args>
+    auto                    get_labeled(Args&&...) const;
     inline data_type&       data();
     inline const data_type& data() const;
 
@@ -398,10 +405,6 @@ public:
               enable_if_t<!(is_one_of<T*, data_type>::value), int> = 0>
     T* get()
     {
-        // void*       ptr   = nullptr;
-        // static auto _hash = std::hash<std::string>()(demangle<T>());
-        // get(ptr, _hash);
-        // return static_cast<T*>(ptr);
         return nullptr;
     }
 
@@ -409,10 +412,6 @@ public:
               enable_if_t<!(is_one_of<T*, data_type>::value), int> = 0>
     const T* get() const
     {
-        // void*       ptr   = nullptr;
-        // static auto _hash = std::hash<std::string>()(demangle<T>());
-        // get(ptr, _hash);
-        // return static_cast<T*>(ptr);
         return nullptr;
     }
 
@@ -431,6 +430,7 @@ public:
                     char> = 0>
     void init(Args&&... _args)
     {
+        PRINT_HERE("%s", demangle<T>().c_str());
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
         {
@@ -464,11 +464,14 @@ public:
               enable_if_t<(!is_one_of<T*, data_type>::value &&
                            trait::is_available<T>::value && has_user_bundle_v),
                           int> = 0>
-    void init(Args&&...)
+    void init(Args&&... args)
     {
+        PRINT_HERE("%s", demangle<T>().c_str());
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
-        this->get<bundle_t>()->template insert<T>(m_flat);
+        this->get<bundle_t>()->insert(
+            component::factory::get_opaque<T>(m_flat, std::forward<Args>(args)...),
+            component::factory::get_typeids<T>());
     }
 
     //----------------------------------------------------------------------------------//
@@ -481,31 +484,22 @@ public:
                           long> = 0>
     void init(Args&&...)
     {
-        /*
         static std::atomic<int> _count(0);
         if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
         {
-            std::string _id = demangle<T>();
-            printf("[component_list::init]> skipping unavailable type '%s'...\n",
-                   _id.c_str());
+            PRINT_HERE("%s %s", "skipping init because type is unavailable or because",
+                       "wrapper does not contain a user_bundle");
         }
-        */
     }
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
-    void initialize()
+    template <typename T, typename... Tail, typename... Args>
+    void initialize(Args&&... args)
     {
-        this->init<T>();
-    }
-
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
-    void initialize()
-    {
-        this->init<T>();
-        this->initialize<Tail...>();
+        this->init<T>(std::forward<Args>(args)...);
+        TIMEMORY_FOLD_EXPRESSION(this->init<Tail>(std::forward<Args>(args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -635,18 +629,6 @@ get(tim::component_list<Types...>&& obj)
     using obj_type = tim::component_list<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-TSTAG(struct)
-tuple_size<::tim::component_list<Types...>>
-{
-public:
-    using value_type = size_t;
-    using type       = typename ::tim::component_list<Types...>::type_tuple;
-    static constexpr value_type value = tuple_size<type>::value;
-};
 
 //======================================================================================//
 }  // namespace std

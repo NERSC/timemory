@@ -37,8 +37,8 @@
 #include "timemory/timemory.hpp"
 
 using namespace tim;
-using namespace tim::stl_overload;
-using namespace tim::stl_overload::ostream;
+using namespace tim::stl;
+using namespace tim::stl::ostream;
 
 //--------------------------------------------------------------------------------------//
 

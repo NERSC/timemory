@@ -32,10 +32,12 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/data/statistics.hpp"
-#include "timemory/mpl/stl_overload.hpp"
+#include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/stl.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/mpl/zip.hpp"
@@ -166,10 +168,8 @@ public:
                       std::ios_base::fmtflags _format, const std::tuple<Tp...>& _data,
                       const _Wp& _width, const _Pp& _prec, index_sequence<_Idx...>)
     {
-        using init_list_type = std::initializer_list<int>;
-        auto&& ret           = init_list_type{ (
-            write(_os, _format, std::get<_Idx>(_data), _width, _prec), 0)... };
-        consume_parameters(ret);
+        TIMEMORY_FOLD_EXPRESSION(
+            write(_os, _format, std::get<_Idx>(_data), _width, _prec));
     }
 
     template <typename... Tp, typename _Wp, typename _Pp>
@@ -382,17 +382,12 @@ public:
     template <template <typename...> class Tuple, typename... Tp>
     static bool is_empty(const Tuple<Tp...>& obj)
     {
-        using init_list_type = std::initializer_list<int>;
-        using input_type     = Tuple<Tp...>;
-
+        using input_type   = Tuple<Tp...>;
         constexpr size_t N = sizeof...(Tp);
         std::bitset<N>   _bits;
-
-        auto&& ret =
-            init_list_type{ (_bits[index_of<Tp, input_type>::value] =
-                                 (std::get<index_of<Tp, input_type>::value>(obj).empty()),
-                             0)... };
-        consume_parameters(ret);
+        TIMEMORY_FOLD_EXPRESSION(
+            _bits[index_of<Tp, input_type>::value] =
+                (std::get<index_of<Tp, input_type>::value>(obj).empty()));
         return _bits.all();
     }
 
@@ -409,6 +404,44 @@ public:
 
     template <bool _Enabled, typename Arg, enable_if_t<(_Enabled == false), int> = 0>
     static void print_tag(std::ostream&, const Arg&)
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+struct serialization
+{
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    // TIMEMORY_DELETED_OBJECT(serialization)
+
+    template <typename Archive, typename Up = Tp,
+              enable_if_t<(is_enabled<Up>::value), char> = 0>
+    serialization(const Up& obj, Archive& ar, const unsigned int)
+    {
+        if(!trait::runtime_enabled<type>::get())
+            return;
+
+        // clang-format off
+        ar(cereal::make_nvp("is_transient", obj.get_is_transient()),
+           cereal::make_nvp("laps", obj.get_laps()),
+           cereal::make_nvp("value", obj.get_value()),
+           cereal::make_nvp("accum", obj.get_accum()),
+           cereal::make_nvp("last", obj.get_last()),
+           cereal::make_nvp("samples", obj.get_samples()),
+           cereal::make_nvp("repr_data", obj.get()),
+           cereal::make_nvp("repr_display", obj.get_display()),
+           cereal::make_nvp("units", type::get_unit()),
+           cereal::make_nvp("display_units", type::get_display_unit()));
+        // clang-format on
+    }
+
+    template <typename Archive, typename Up = Tp,
+              enable_if_t<!(is_enabled<Up>::value), char> = 0>
+    serialization(const Up&, Archive&, const unsigned int)
     {}
 };
 
@@ -1351,7 +1384,8 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
     auto send_serialize = [&](const result_type& src) {
         std::stringstream ss;
         {
-            auto oa = trait::output_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
+                                             api::native_tag>::get(ss);
             (*oa)(cereal::make_nvp("data", src));
         }
         return ss.str();
@@ -1365,7 +1399,8 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
         std::stringstream ss;
         ss << src;
         {
-            auto ia = trait::input_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            auto ia =
+                policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
             if(settings::debug())
                 printf("[RECV: %i]> data size: %lli\n", mpi_rank,
@@ -1430,7 +1465,8 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
     auto send_serialize = [=](const result_type& src) {
         std::stringstream ss;
         {
-            auto oa = trait::output_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
+                                             api::native_tag>::get(ss);
             (*oa)(cereal::make_nvp("data", src));
         }
         return ss.str();
@@ -1444,7 +1480,8 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
         std::stringstream ss;
         ss << src;
         {
-            auto ia = trait::input_archive<cereal::MinimalJSONOutputArchive>::get(ss);
+            auto ia =
+                policy::input_archive<cereal::JSONInputArchive, api::native_tag>::get(ss);
             (*ia)(cereal::make_nvp("data", ret));
         }
         return ret;

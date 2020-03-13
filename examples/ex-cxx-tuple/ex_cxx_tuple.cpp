@@ -38,7 +38,7 @@
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"
 
-using namespace tim::stl_overload;
+using namespace tim::stl;
 using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
@@ -122,6 +122,7 @@ main(int argc, char** argv)
 
     print_mpi_storage();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
 
     exit(num_fail);

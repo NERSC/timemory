@@ -26,11 +26,11 @@
  * This file defines the extern init for manager
  *
  */
-
+/*
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
 
-#if defined(TIMEMORY_EXTERN_INIT)
+#if defined(TIMEMORY_USE_EXTERN)
 
 //======================================================================================//
 #    if !defined(_WINDOWS)
@@ -48,8 +48,8 @@ extern "C"
 {
     ::tim::manager* timemory_manager_master_instance()
     {
-        using manager_t     = tim::manager;
-        static auto& _pinst = tim::get_shared_ptr_pair<manager_t>();
+        using manager_t    = tim::manager;
+        static auto _pinst = tim::get_shared_ptr_pair<manager_t>();
         tim::manager::set_persistent_master(_pinst.first);
         return _pinst.first.get();
     }
@@ -67,14 +67,6 @@ extern "C"
 
         if(_debug || _verbose > 3)
             printf("[%s]> initializing manager...\n", __FUNCTION__);
-
-        /*
-        static auto              _master = tim::manager::master_instance();
-        static thread_local auto _worker = tim::manager::instance();
-
-        if(!_master)
-            _master = tim::manager::master_instance();
-        */
 
         auto        _inst        = timemory_manager_master_instance();
         static auto _dir         = tim::settings::output_path();
@@ -105,8 +97,6 @@ extern "C"
             tim::settings::initialize_storage();
         }
     }
-
-    __library_dtor__ void timemory_library_destructor() {}
 }
 
 //======================================================================================//
@@ -147,4 +137,5 @@ manager::master_instance()
 
 }  // namespace tim
 
-#endif  // defined(TIMEMORY_EXTERN_INIT)
+#endif  // defined(TIMEMORY_USE_EXTERN)
+*/

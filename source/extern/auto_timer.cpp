@@ -30,13 +30,13 @@
  *
  */
 
-#define TIMEMORY_BUILD_EXTERN_TEMPLATE
+#define TIMEMORY_BUILD_EXTERN
 
-#include "timemory/variadic/auto_timer.hpp"  // for auto_timer_list_t, auto_...
-#include "timemory/components.hpp"           // for papi_array_t
-#include "timemory/components/types.hpp"     // for cpu_roofline_dp_flops
+#include "timemory/variadic/auto_timer.hpp"
+#include "timemory/components.hpp"
 #include "timemory/plotting.hpp"
-#include "timemory/utility/macros.hpp"  // for TIMEMORY_INSTANTIATE_EXT...
+#include "timemory/runtime/properties.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"

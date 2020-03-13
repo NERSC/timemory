@@ -31,7 +31,12 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
+#include "timemory/ert/types.hpp"
+#include "timemory/hash/types.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/runtime/types.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <tuple>
@@ -59,10 +64,9 @@ using complete_types_t = type_list<
     component::process_cpu_util, component::read_bytes, component::stack_rss,
     component::system_clock, component::tau_marker, component::thread_cpu_clock,
     component::thread_cpu_util, component::trip_count, component::user_clock,
-    component::user_list_bundle, component::user_mode_time, component::user_tuple_bundle,
-    component::virtual_memory, component::voluntary_context_switch,
-    component::vtune_event, component::vtune_frame, component::vtune_profiler,
-    component::wall_clock, component::written_bytes>;
+    component::user_global_bundle, component::user_mode_time, component::virtual_memory,
+    component::voluntary_context_switch, component::vtune_event, component::vtune_frame,
+    component::vtune_profiler, component::wall_clock, component::written_bytes>;
 
 using complete_tuple_t           = convert_t<complete_types_t, std::tuple<>>;
 using complete_component_list_t  = convert_t<complete_types_t, component_list<>>;
@@ -82,4 +86,24 @@ using available_auto_tuple_t      = convert_t<available_types_t, auto_tuple<>>;
 using complete_list_t  = complete_component_list_t;
 using available_list_t = available_component_list_t;
 
+using global_bundle_t = component_tuple<component::user_global_bundle>;
+using ompt_bundle_t   = component_tuple<component::user_ompt_bundle>;
+using mpip_bundle_t   = component_tuple<component::user_mpip_bundle>;
+
 }  // namespace tim
+
+#if !defined(TIMEMORY_LIBRARY_TYPE)
+#    define TIMEMORY_LIBRARY_TYPE tim::available_component_list_t
+#endif
+
+#if !defined(TIMEMORY_BUNDLE_TYPE)
+#    define TIMEMORY_BUNDLE_TYPE tim::global_bundle_t
+#endif
+
+#if !defined(TIMEMORY_OMPT_BUNDLE_TYPE)
+#    define TIMEMORY_OMPT_BUNDLE_TYPE tim::ompt_bundle_t
+#endif
+
+#if !defined(TIMEMORY_MPIP_BUNDLE_TYPE)
+#    define TIMEMORY_MPIP_BUNDLE_TYPE tim::mpip_bundle_t
+#endif

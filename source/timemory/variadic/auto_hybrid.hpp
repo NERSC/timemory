@@ -46,17 +46,18 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _CompTuple, typename _CompList>
+template <typename CompTuple, typename CompList>
 class auto_hybrid
 {
-    static_assert((_CompTuple::is_component_tuple || _CompTuple::is_auto_tuple) &&
-                      (_CompList::is_component_list || _CompList::is_auto_list),
-                  "Error! _CompTuple must be tim::component_tuple<...> and _CompList "
+    static_assert((concepts::is_stack_wrapper<CompTuple>::value &&
+                   concepts::is_heap_wrapper<CompList>::value),
+                  "Error! CompTuple must be tim::component_tuple<...> and CompList "
                   "must be tim::component_list<...>");
 
 public:
-    using this_type           = auto_hybrid<_CompTuple, _CompList>;
-    using base_type           = component_hybrid<_CompTuple, _CompList>;
+    using this_type           = auto_hybrid<CompTuple, CompList>;
+    using base_type           = component_hybrid<CompTuple, CompList>;
+    using auto_type           = this_type;
     using tuple_type          = typename base_type::tuple_type;
     using list_type           = typename base_type::list_type;
     using component_type      = typename base_type::component_type;
@@ -64,8 +65,6 @@ public:
     using type_tuple          = typename component_type::type_tuple;
     using tuple_type_list     = typename component_type::tuple_type_list;
     using list_type_list      = typename component_type::list_type_list;
-    using data_value_type     = typename component_type::data_value_type;
-    using data_label_type     = typename component_type::data_label_type;
     using string_t            = std::string;
     using captured_location_t = typename component_type::captured_location_t;
     using type =
@@ -137,26 +136,6 @@ public:
     inline operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_hybrid
-    inline void measure()
-    {
-        if(m_enabled)
-            m_temporary_object.measure();
-    }
-    inline void sample()
-    {
-        if(m_enabled)
-            m_temporary_object.sample();
-    }
-    inline void start()
-    {
-        if(m_enabled)
-            m_temporary_object.start();
-    }
-    inline void stop()
-    {
-        if(m_enabled)
-            m_temporary_object.stop();
-    }
     inline void push()
     {
         if(m_enabled)
@@ -167,36 +146,63 @@ public:
         if(m_enabled)
             m_temporary_object.pop();
     }
-    template <typename... _Args>
-    inline void mark_begin(_Args&&... _args)
+    template <typename... Args>
+    inline void measure(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_begin(std::forward<_Args>(_args)...);
+            m_temporary_object.measure(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void mark_end(_Args&&... _args)
+    template <typename... Args>
+    inline void sample(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+            m_temporary_object.sample(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void store(_Args&&... _args)
+    template <typename... Args>
+    inline void start(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.store(std::forward<_Args>(_args)...);
+            m_temporary_object.start(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void audit(_Args&&... _args)
+    template <typename... Args>
+    inline void stop(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.audit(std::forward<_Args>(_args)...);
+            m_temporary_object.stop(std::forward<Args>(args)...);
     }
-
-    inline data_value_type get() const { return m_temporary_object.get(); }
-
-    inline data_label_type get_labeled() const
+    template <typename... Args>
+    inline void mark_begin(Args&&... args)
     {
-        return m_temporary_object.get_labeled();
+        if(m_enabled)
+            m_temporary_object.mark_begin(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline void mark_end(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_end(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline void store(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.store(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline void audit(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.audit(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline auto get(Args&&... args) const
+    {
+        return m_temporary_object.get(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    inline auto get_labeled(Args&&... args) const
+    {
+        return m_temporary_object.get_labeled(std::forward<Args>(args)...);
     }
 
     inline bool enabled() const { return m_enabled; }
@@ -250,10 +256,10 @@ private:
 
 //======================================================================================//
 
-template <typename _CompTuple, typename _CompList>
+template <typename CompTuple, typename CompList>
 template <typename _Func>
-auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool flat,
-                                                bool report_at_exit, const _Func& _func)
+auto_hybrid<CompTuple, CompList>::auto_hybrid(const string_t& object_tag, bool flat,
+                                              bool report_at_exit, const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
@@ -269,11 +275,11 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _CompTuple, typename _CompList>
+template <typename CompTuple, typename CompList>
 template <typename _Func>
-auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& object_loc,
-                                                bool flat, bool report_at_exit,
-                                                const _Func& _func)
+auto_hybrid<CompTuple, CompList>::auto_hybrid(const captured_location_t& object_loc,
+                                              bool flat, bool report_at_exit,
+                                              const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
@@ -289,10 +295,10 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const captured_location_t& objec
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _CompTuple, typename _CompList>
+template <typename CompTuple, typename CompList>
 template <typename _Func>
-auto_hybrid<_CompTuple, _CompList>::auto_hybrid(size_t _hash, bool flat,
-                                                bool report_at_exit, const _Func& _func)
+auto_hybrid<CompTuple, CompList>::auto_hybrid(size_t _hash, bool flat,
+                                              bool report_at_exit, const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
@@ -308,9 +314,9 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(size_t _hash, bool flat,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _CompTuple, typename _CompList>
-auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp, bool flat,
-                                                bool report_at_exit)
+template <typename CompTuple, typename CompList>
+auto_hybrid<CompTuple, CompList>::auto_hybrid(component_type& tmp, bool flat,
+                                              bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(tmp.clone(true, flat))
@@ -324,8 +330,8 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp, bool flat,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _CompTuple, typename _CompList>
-auto_hybrid<_CompTuple, _CompList>::~auto_hybrid()
+template <typename CompTuple, typename CompList>
+auto_hybrid<CompTuple, CompList>::~auto_hybrid()
 {
     if(m_enabled)
     {
@@ -350,22 +356,20 @@ auto_hybrid<_CompTuple, _CompList>::~auto_hybrid()
 
 //======================================================================================//
 
-template <typename _Tuple, typename _List,
-          typename _Ret = typename auto_hybrid<_Tuple, _List>::data_value_type>
-_Ret
+template <typename _Tuple, typename _List>
+auto
 get(const auto_hybrid<_Tuple, _List>& _obj)
 {
-    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+    return get(_obj.get_component());
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tuple, typename _List,
-          typename _Ret = typename auto_hybrid<_Tuple, _List>::data_label_type>
-_Ret
+template <typename _Tuple, typename _List>
+auto
 get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
 {
-    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
+    return get_labeled(_obj.get_component());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -376,21 +380,5 @@ using auto_hybrid_t = typename auto_hybrid<T...>::type;
 //======================================================================================//
 
 }  // namespace tim
-
-//--------------------------------------------------------------------------------------//
-
-namespace std
-{
-template <typename _Tuple, typename _List>
-TSTAG(struct)
-tuple_size<::tim::auto_hybrid<_Tuple, _List>>
-{
-public:
-    using value_type                  = size_t;
-    static constexpr value_type value = tuple_size<typename _Tuple::type_tuple>::value +
-                                        tuple_size<typename _List::type_tuple>::value;
-};
-
-}  // namespace std
 
 //--------------------------------------------------------------------------------------//

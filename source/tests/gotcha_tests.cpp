@@ -24,7 +24,6 @@
 //
 
 #include "gotcha_tests_lib.hpp"
-#include "timemory/components/derived/malloc_gotcha.hpp"
 
 #include "gtest/gtest.h"
 
@@ -472,7 +471,7 @@ TEST_F(gotcha_tests, member_functions)
             using func_t = decltype(&DoWork::execute_fp4);
             print_func_info<func_t>(TIMEMORY_STRINGIZE(DoWork::execute_fp4));
 
-            TIMEMORY_CXX_MEMFUN_GOTCHA(memfun_gotcha_t, 1, DoWork::execute_fp4);
+            TIMEMORY_CXX_GOTCHA_MEMFUN(memfun_gotcha_t, 1, DoWork::execute_fp4);
         }
         {
             using func_t = decltype(&DoWork::execute_fp8);

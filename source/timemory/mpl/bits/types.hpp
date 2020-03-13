@@ -43,7 +43,7 @@
 
 namespace tim
 {
-namespace stl_overload
+namespace stl
 {
 namespace ostream
 {
@@ -81,16 +81,15 @@ template <template <typename...> class _Tuple, typename... _Types, size_t... _Id
 void
 tuple_printer(const _Tuple<_Types...>& obj, std::ostream& os, index_sequence<_Idx...>)
 {
-    using namespace ::tim::stl_overload::ostream;
-    using initlist_type = std::initializer_list<int>;
-
+    using namespace ::tim::stl::ostream;
     constexpr size_t _N = sizeof...(_Types);
+
     if(_N > 0)
         os << "(";
     char delim[_N];
-    consume_parameters(initlist_type{ (delim[_Idx] = ',', 0)... });
+    TIMEMORY_FOLD_EXPRESSION(delim[_Idx] = ',');
     delim[_N - 1] = '\0';
-    consume_parameters(initlist_type{ (os << std::get<_Idx>(obj) << delim[_Idx], 0)... });
+    TIMEMORY_FOLD_EXPRESSION(os << std::get<_Idx>(obj) << delim[_Idx]);
     if(_N > 0)
         os << ")";
 }
@@ -293,6 +292,6 @@ template <typename _Lhs, typename _Rhs,
 _Lhs
 operator/(_Lhs, const _Rhs&);
 
-}  // namespace stl_overload
+}  // namespace stl
 
 }  // namespace tim

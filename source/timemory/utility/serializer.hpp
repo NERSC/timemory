@@ -56,7 +56,7 @@
 
 // archives
 #include <cereal/archives/json.hpp>
-#if defined(TIMEMORY_INCLUDE_XML_ARCHIVE)
+#if defined(TIMEMORY_USE_XML_ARCHIVE)
 #    include <cereal/archives/xml.hpp>
 #endif
 
@@ -69,7 +69,7 @@ using setting_callback_vec_t = std::vector<setting_callback_t>;
 
 namespace tim
 {
-#if defined(TIMEMORY_EXTERN_INIT)
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_SOURCE)
 
 extern setting_callback_vec_t&
 get_parse_callbacks();

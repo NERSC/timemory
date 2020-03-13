@@ -29,153 +29,183 @@
 
 namespace tim
 {
-namespace concept
+namespace concepts
 {
-    using false_type = std::false_type;
-    using true_type  = std::true_type;
+using false_type = std::false_type;
+using true_type  = std::true_type;
 
-    //----------------------------------------------------------------------------------//
-    /// concept the specifies that a variadic type is empty
-    ///
-    template <typename T>
-    struct is_empty : false_type
-    {};
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a variadic type is empty
+///
+template <typename T>
+struct is_empty : false_type
+{};
 
-    template <template <typename...> class Tuple>
-    struct is_empty<Tuple<>> : true_type
-    {};
+template <template <typename...> class Tuple>
+struct is_empty<Tuple<>> : true_type
+{};
 
-    //----------------------------------------------------------------------------------//
-    /// concept the specifies that a type is a generic variadic wrapper
-    ///
-    template <typename T>
-    struct is_variadic : false_type
-    {};
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a generic variadic wrapper
+///
+template <typename T>
+struct is_variadic : false_type
+{};
 
-    //----------------------------------------------------------------------------------//
-    /// concept the specifies that a type is a timemory variadic wrapper
-    ///
-    template <typename T>
-    struct is_wrapper : false_type
-    {};
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a timemory variadic wrapper
+///
+template <typename T>
+struct is_wrapper : false_type
+{};
 
-    //----------------------------------------------------------------------------------//
-    /// concept the specifies that a type is a timemory variadic wrapper
-    /// and components are stack-allocated
-    ///
-    template <typename T>
-    struct is_stack_wrapper : false_type
-    {};
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a timemory variadic wrapper
+/// and components are stack-allocated
+///
+template <typename T>
+struct is_stack_wrapper : false_type
+{};
 
-    //----------------------------------------------------------------------------------//
-    /// concept the specifies that a type is a timemory variadic wrapper
-    /// and components are heap-allocated
-    ///
-    template <typename T>
-    struct is_heap_wrapper : false_type
-    {};
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a timemory variadic wrapper
+/// and components are heap-allocated
+///
+template <typename T>
+struct is_heap_wrapper : false_type
+{};
 
-    //----------------------------------------------------------------------------------//
-    /// concept the specifies that a type is a timemory variadic wrapper
-    /// and components are stack- and heap- allocated
-    ///
-    template <typename T>
-    struct is_hybrid_wrapper : false_type
-    {};
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a timemory variadic wrapper
+/// and components are stack- and heap- allocated
+///
+template <typename T>
+struct is_hybrid_wrapper : false_type
+{};
 
-    //----------------------------------------------------------------------------------//
-    /// converts a boolean to an integer
-    ///
-    template <bool B, typename T = int>
-    struct bool_int
-    {
-        static constexpr T value = (B) ? 1 : 0;
-    };
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a timemory variadic wrapper
+/// that does not perform auto start/stop, e.g. component_{tuple,list,hybrid}
+///
+template <typename T>
+struct is_comp_wrapper : false_type
+{};
 
-    //----------------------------------------------------------------------------------//
-    /// counts a series of booleans
-    ///
-    template <bool... B>
-    struct sum_bool_int;
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a timemory variadic wrapper
+/// that performs auto start/stop, e.g. auto_{tuple,list,hybrid}
+///
+template <typename T>
+struct is_auto_wrapper : false_type
+{};
 
-    template <>
-    struct sum_bool_int<>
-    {
-        using value_type                  = int;
-        static constexpr value_type value = 0;
-    };
+//----------------------------------------------------------------------------------//
+/// converts a boolean to an integer
+///
+template <bool B, typename T = int>
+struct bool_int
+{
+    static constexpr T value = (B) ? 1 : 0;
+};
 
-    template <bool B>
-    struct sum_bool_int<B>
-    {
-        using value_type                  = int;
-        static constexpr value_type value = bool_int<B>::value;
-    };
+//----------------------------------------------------------------------------------//
+/// counts a series of booleans
+///
+template <bool... B>
+struct sum_bool_int;
 
-    template <bool B, bool... BoolTail>
-    struct sum_bool_int<B, BoolTail...>
-    {
-        using value_type = int;
-        static constexpr value_type value =
-            bool_int<B>::value + sum_bool_int<BoolTail...>::value;
-    };
+template <>
+struct sum_bool_int<>
+{
+    using value_type                  = int;
+    static constexpr value_type value = 0;
+};
 
-    //----------------------------------------------------------------------------------//
-    /// determines whether variadic structures are compatible
-    ///
-    template <typename Lhs, typename Rhs>
-    struct compatible_wrappers
-    {
-        static constexpr int variadic_count = (bool_int<is_variadic<Lhs>::value>::value +
-                                               bool_int<is_variadic<Rhs>::value>::value);
-        static constexpr int wrapper_count  = (bool_int<is_wrapper<Lhs>::value>::value +
-                                              bool_int<is_wrapper<Rhs>::value>::value);
-        static constexpr int heap_count = (bool_int<is_heap_wrapper<Lhs>::value>::value +
-                                           bool_int<is_heap_wrapper<Rhs>::value>::value);
-        static constexpr int stack_count =
-            (bool_int<is_stack_wrapper<Lhs>::value>::value +
-             bool_int<is_stack_wrapper<Rhs>::value>::value);
-        static constexpr int hybrid_count =
-            (bool_int<is_hybrid_wrapper<Lhs>::value>::value +
-             bool_int<is_hybrid_wrapper<Rhs>::value>::value);
+template <bool B>
+struct sum_bool_int<B>
+{
+    using value_type                  = int;
+    static constexpr value_type value = bool_int<B>::value;
+};
 
-        //  valid configs:
-        //
-        //      1. both heap/stack/hybrid
-        //      2. hybrid + stack or heap wrapper
-        //      3. wrapper + variadic
-        //
-        //  invalid configs:
-        //
-        //      1. hybrid + non-wrapper variadic
-        //      2. one stack + one heap
-        //      3. zero variadic
-        //      4. variadic and zero wrappers
-        //
+template <bool B, bool... BoolTail>
+struct sum_bool_int<B, BoolTail...>
+{
+    using value_type = int;
+    static constexpr value_type value =
+        bool_int<B>::value + sum_bool_int<BoolTail...>::value;
+};
 
-        static constexpr bool valid_1 =
-            (hybrid_count == 2 || stack_count == 2 || heap_count == 2);
-        static constexpr bool valid_2 =
-            (hybrid_count == 1 && (stack_count + heap_count) == 1);
-        static constexpr bool valid_3 = (wrapper_count == 1 && variadic_count == 2);
+//----------------------------------------------------------------------------------//
+/// determines whether variadic structures are compatible
+///
+template <typename Lhs, typename Rhs>
+struct compatible_wrappers
+{
+    static constexpr int variadic_count = (bool_int<is_variadic<Lhs>::value>::value +
+                                           bool_int<is_variadic<Rhs>::value>::value);
+    static constexpr int wrapper_count  = (bool_int<is_wrapper<Lhs>::value>::value +
+                                          bool_int<is_wrapper<Rhs>::value>::value);
+    static constexpr int heap_count     = (bool_int<is_heap_wrapper<Lhs>::value>::value +
+                                       bool_int<is_heap_wrapper<Rhs>::value>::value);
+    static constexpr int stack_count    = (bool_int<is_stack_wrapper<Lhs>::value>::value +
+                                        bool_int<is_stack_wrapper<Rhs>::value>::value);
+    static constexpr int hybrid_count = (bool_int<is_hybrid_wrapper<Lhs>::value>::value +
+                                         bool_int<is_hybrid_wrapper<Rhs>::value>::value);
 
-        static constexpr bool invalid_1 = (hybrid_count == 1 && wrapper_count == 1);
-        static constexpr bool invalid_2 =
-            (hybrid_count == 1 && (stack_count + heap_count) == 1);
-        static constexpr bool invalid_3 = (variadic_count == 0);
-        static constexpr bool invalid_4 = (variadic_count == 2 && wrapper_count == 0);
+    //  valid configs:
+    //
+    //      1. both heap/stack/hybrid
+    //      2. hybrid + stack or heap wrapper
+    //      3. wrapper + variadic
+    //
+    //  invalid configs:
+    //
+    //      1. hybrid + non-wrapper variadic
+    //      2. one stack + one heap
+    //      3. zero variadic
+    //      4. variadic and zero wrappers
+    //
 
-        using value_type = bool;
+    static constexpr bool valid_1 =
+        (hybrid_count == 2 || stack_count == 2 || heap_count == 2);
+    static constexpr bool valid_2 =
+        (hybrid_count == 1 && (stack_count + heap_count) == 1);
+    static constexpr bool valid_3 = (wrapper_count == 1 && variadic_count == 2);
 
-        static constexpr bool value = (!invalid_1 && !invalid_2 && !invalid_3 &&
-                                       !invalid_4 && (valid_1 || valid_2 || valid_3))
-                                          ? true
-                                          : false;
+    static constexpr bool invalid_1 = (hybrid_count == 1 && wrapper_count == 1);
+    static constexpr bool invalid_2 =
+        (hybrid_count == 1 && (stack_count + heap_count) == 1);
+    static constexpr bool invalid_3 = (variadic_count == 0);
+    static constexpr bool invalid_4 = (variadic_count == 2 && wrapper_count == 0);
 
-        using type = std::conditional_t<(value), true_type, false_type>;
-    };
+    using value_type = bool;
 
-}  // namespace concept
+    static constexpr bool value = (!invalid_1 && !invalid_2 && !invalid_3 && !invalid_4 &&
+                                   (valid_1 || valid_2 || valid_3))
+                                      ? true
+                                      : false;
+
+    using type = std::conditional_t<(value), true_type, false_type>;
+};
+
+}  // namespace concepts
+
+template <typename T>
+using is_empty_t = typename concepts ::is_empty<T>::type;
+
+template <typename T>
+using is_variadic_t = typename concepts ::is_variadic<T>::type;
+
+template <typename T>
+using is_wrapper_t = typename concepts ::is_wrapper<T>::type;
+
+template <typename T>
+using is_stack_wrapper_t = typename concepts ::is_stack_wrapper<T>::type;
+
+template <typename T>
+using is_heap_wrapper_t = typename concepts ::is_heap_wrapper<T>::type;
+
 }  // namespace tim
 
 //======================================================================================//
@@ -183,11 +213,11 @@ namespace concept
 #define TIMEMORY_DEFINE_CONCRETE_CONCEPT(CONCEPT, COMPONENT, VALUE)                      \
     namespace tim                                                                        \
     {                                                                                    \
-    namespace concept                                                                    \
+    namespace concepts                                                                   \
     {                                                                                    \
-        template <>                                                                      \
-        struct CONCEPT<COMPONENT> : VALUE                                                \
-        {};                                                                              \
+    template <>                                                                          \
+    struct CONCEPT<COMPONENT> : VALUE                                                    \
+    {};                                                                                  \
     }                                                                                    \
     }
 
@@ -196,11 +226,11 @@ namespace concept
 #define TIMEMORY_DEFINE_TEMPLATE_CONCEPT(CONCEPT, COMPONENT, VALUE, TYPE)                \
     namespace tim                                                                        \
     {                                                                                    \
-    namespace concept                                                                    \
+    namespace concepts                                                                   \
     {                                                                                    \
-        template <TYPE T>                                                                \
-        struct CONCEPT<COMPONENT<T>> : VALUE                                             \
-        {};                                                                              \
+    template <TYPE T>                                                                    \
+    struct CONCEPT<COMPONENT<T>> : VALUE                                                 \
+    {};                                                                                  \
     }                                                                                    \
     }
 
@@ -209,10 +239,10 @@ namespace concept
 #define TIMEMORY_DEFINE_VARIADIC_CONCEPT(CONCEPT, COMPONENT, VALUE, TYPE)                \
     namespace tim                                                                        \
     {                                                                                    \
-    namespace concept                                                                    \
+    namespace concepts                                                                   \
     {                                                                                    \
-        template <TYPE... T>                                                             \
-        struct CONCEPT<COMPONENT<T...>> : VALUE                                          \
-        {};                                                                              \
+    template <TYPE... T>                                                                 \
+    struct CONCEPT<COMPONENT<T...>> : VALUE                                              \
+    {};                                                                                  \
     }                                                                                    \
     }

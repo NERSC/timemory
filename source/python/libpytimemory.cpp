@@ -59,6 +59,31 @@ manager_wrapper::get()
 }
 
 //======================================================================================//
+
+template <typename... Types>
+struct pyenumeration
+{
+    template <typename T>
+    static void generate(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
+    {
+        using property_t = tim::component::properties<T>;
+        _pyenum.value(property_t::enum_string(),
+                      static_cast<TIMEMORY_NATIVE_COMPONENT>(property_t::value));
+    }
+
+    static void components(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
+    {
+        TIMEMORY_FOLD_EXPRESSION(generate<Types>(_pyenum));
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+struct pyenumeration<tim::type_list<Types...>> : pyenumeration<Types...>
+{};
+
+//======================================================================================//
 //  Python wrappers
 //======================================================================================//
 
@@ -105,66 +130,14 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Components submodule
     //
     //==================================================================================//
-    py::enum_<TIMEMORY_COMPONENT> components_enum(tim, "component", py::arithmetic(),
-                                                  "Components for TiMemory module");
+
+    py::enum_<TIMEMORY_NATIVE_COMPONENT> components_enum(
+        tim, "component", py::arithmetic(), "Components for timemory module");
+
     //----------------------------------------------------------------------------------//
-    components_enum.value("caliper", CALIPER)
-        .value("cpu_clock", CPU_CLOCK)
-        .value("cpu_roofline_dp_flops", CPU_ROOFLINE_DP_FLOPS)
-        .value("cpu_roofline_flops", CPU_ROOFLINE_FLOPS)
-        .value("cpu_roofline_sp_flops", CPU_ROOFLINE_SP_FLOPS)
-        .value("cpu_util", CPU_UTIL)
-        .value("cuda_event", CUDA_EVENT)
-        .value("cuda_profiler", CUDA_PROFILER)
-        .value("cupti_activity", CUPTI_ACTIVITY)
-        .value("cupti_counters", CUPTI_COUNTERS)
-        .value("current_peak_rss", CURRENT_PEAK_RSS)
-        .value("data_rss", DATA_RSS)
-        .value("gperf_cpu_profiler", GPERF_CPU_PROFILER)
-        .value("gperf_heap_profiler", GPERF_HEAP_PROFILER)
-        .value("gpu_roofline_dp_flops", GPU_ROOFLINE_DP_FLOPS)
-        .value("gpu_roofline_flops", GPU_ROOFLINE_FLOPS)
-        .value("gpu_roofline_hp_flops", GPU_ROOFLINE_HP_FLOPS)
-        .value("gpu_roofline_sp_flops", GPU_ROOFLINE_SP_FLOPS)
-        .value("kernel_mode_time", KERNEL_MODE_TIME)
-        .value("likwid_marker", LIKWID_MARKER)
-        .value("likwid_nvmarker", LIKWID_NVMARKER)
-        .value("malloc_gotcha", MALLOC_GOTCHA)
-        .value("monotonic_clock", MONOTONIC_CLOCK)
-        .value("monotonic_raw_clock", MONOTONIC_RAW_CLOCK)
-        .value("num_io_in", NUM_IO_IN)
-        .value("num_io_out", NUM_IO_OUT)
-        .value("num_major_page_faults", NUM_MAJOR_PAGE_FAULTS)
-        .value("num_minor_page_faults", NUM_MINOR_PAGE_FAULTS)
-        .value("num_msg_recv", NUM_MSG_RECV)
-        .value("num_msg_sent", NUM_MSG_SENT)
-        .value("num_signals", NUM_SIGNALS)
-        .value("num_swap", NUM_SWAP)
-        .value("nvtx_marker", NVTX_MARKER)
-        .value("page_rss", PAGE_RSS)
-        .value("papi_array", PAPI_ARRAY)
-        .value("peak_rss", PEAK_RSS)
-        .value("priority_context_switch", PRIORITY_CONTEXT_SWITCH)
-        .value("process_cpu_clock", PROCESS_CPU_CLOCK)
-        .value("process_cpu_util", PROCESS_CPU_UTIL)
-        .value("read_bytes", READ_BYTES)
-        .value("stack_rss", STACK_RSS)
-        .value("sys_clock", SYS_CLOCK)
-        .value("tau_marker", TAU_MARKER)
-        .value("thread_cpu_clock", THREAD_CPU_CLOCK)
-        .value("thread_cpu_util", THREAD_CPU_UTIL)
-        .value("trip_count", TRIP_COUNT)
-        .value("user_clock", USER_CLOCK)
-        .value("user_list_bundle", USER_LIST_BUNDLE)
-        .value("user_mode_time", USER_MODE_TIME)
-        .value("user_tuple_bundle", USER_TUPLE_BUNDLE)
-        .value("virtual_memory", VIRTUAL_MEMORY)
-        .value("voluntary_context_switch", VOLUNTARY_CONTEXT_SWITCH)
-        .value("vtune_event", VTUNE_EVENT)
-        .value("vtune_frame", VTUNE_FRAME)
-        .value("vtune_profiler", VTUNE_PROFILER)
-        .value("wall_clock", WALL_CLOCK)
-        .value("written_bytes", WRITTEN_BYTES);
+
+    using component_pyenumeration_t = pyenumeration<tim::complete_types_t>;
+    component_pyenumeration_t::components(components_enum);
 
     //==================================================================================//
     //
@@ -174,7 +147,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::module sig = tim.def_submodule("signals", "Signals submodule");
     //----------------------------------------------------------------------------------//
     py::enum_<sys_signal_t> sys_signal_enum(sig, "sys_signal", py::arithmetic(),
-                                            "Signals for TiMemory module");
+                                            "Signals for timemory module");
     //----------------------------------------------------------------------------------//
     sys_signal_enum.value("Hangup", sys_signal_t::Hangup)
         .value("Interrupt", sys_signal_t::Interrupt)
@@ -210,8 +183,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto get_available_cupti_events = [=](int device) {
 #if defined(TIMEMORY_USE_CUPTI)
         CUdevice cu_device;
-        CUDA_DRIVER_API_CALL(cuInit(0));
-        CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
         return tim::cupti::available_events(cu_device);
 #else
         tim::consume_parameters(device);
@@ -222,8 +195,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto get_available_cupti_metrics = [=](int device) {
 #if defined(TIMEMORY_USE_CUPTI)
         CUdevice cu_device;
-        CUDA_DRIVER_API_CALL(cuInit(0));
-        CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
         auto     ret = tim::cupti::available_metrics(cu_device);
         py::list l;
         for(const auto& itr : ret)
@@ -399,7 +372,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             "Enable signal detection");
     //----------------------------------------------------------------------------------//
     tim.def("has_mpi_support", [&]() { return tim::mpi::is_supported(); },
-            "Return if the TiMemory library has MPI support");
+            "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_children", set_rusage_child,
             "Set the rusage to record child processes");
@@ -691,7 +664,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             {
                 _sitr = itr.cast<std::string>();
                 if(_sitr.length() > 0)
-                    _citr = tim::enumerate_component(_sitr);
+                    _citr = tim::runtime::enumerate(_sitr);
                 else
                     continue;
             } catch(...)
@@ -918,7 +891,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     // ---------------------------------------------------------------------- //
     opts.def("add_args_and_parse_known", &pytim::opt::add_args_and_parse_known,
              "Combination of timing.add_arguments and timing.parse_args. Returns "
-             "TiMemory args and replaces sys.argv with the unknown args (used to "
+             "timemory args and replaces sys.argv with the unknown args (used to "
              "fix issue with unittest module)",
              py::arg("parser") = py::none(), py::arg("fpath") = ".");
     // ---------------------------------------------------------------------- //

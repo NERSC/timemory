@@ -64,11 +64,15 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--cuda", help="TIMEMORY_USE_CUDA=ON",
                         default=False, action='store_true')
+    parser.add_argument("--nvtx", help="TIMEMORY_USE_NVTX=ON",
+                        default=False, action='store_true')
     parser.add_argument("--cupti", help="TIMEMORY_USE_CUPTI=ON",
                         default=False, action='store_true')
     parser.add_argument("--upcxx", help="TIMEMORY_USE_UPCXX=ON",
                         default=False, action='store_true')
     parser.add_argument("--gotcha", help="TIMEMORY_USE_GOTCHA=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--gperf", help="TIMEMORY_USE_GPERF=ON",
                         default=False, action='store_true')
     parser.add_argument("--caliper", help="TIMEMORY_USE_CALIPER=ON",
                         default=False, action='store_true')
@@ -78,15 +82,38 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--mpi", help="TIMEMORY_USE_MPI=ON",
                         default=False, action='store_true')
+    parser.add_argument("--mpi-init", help="TIMEMORY_USE_MPI_INIT=ON",
+                        default=False, action='store_true')
     parser.add_argument("--python", help="TIMEMORY_BUILD_PYTHON=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--ompt", help="TIMEMORY_BUILD_OMPT=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--kokkos", help="TIMEMORY_BUILD_KOKKOS_TOOLS=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--dyninst", help="TIMEMORY_USE_DYNINST=ON",
                         default=False, action='store_true')
     parser.add_argument("--extra-optimizations",
                         help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
                         default=False, action='store_true')
+    parser.add_argument("--lto", help="TIMEMORY_BUILD_LTO=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--developer", help="TIMEMORY_BUILD_DEVELOPER=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--xray", help="TIMEMORY_BUILD_XRAY=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--stats", help="TIMEMORY_USE_STATISTICS=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--timing", help="TIMEMORY_USE_COMPILE_TIMING=ON",
+                        default=False, action='store_true')
     parser.add_argument("--build-libs", help="Build library type(s)", default=("shared"),
                         nargs='*', type=str, choices=("static", "shared"))
-    parser.add_argument(
-        "--generate", help="Generate the tests only", action='store_true')
+    parser.add_argument("--tls-model", help="Thread-local static model",
+                        default=('global-dynamic'), type=str,
+                        choices=('global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'))
+    parser.add_argument("--cxx-standard", help="C++ standard", type=str,
+                        default="17", choices=("14", "17", "20"))
+    parser.add_argument("--generate", help="Generate the tests only",
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -116,6 +143,11 @@ def configure():
 
     os.environ["PYCTEST_TESTING"] = "ON"
     os.environ["TIMEMORY_PLOT_OUTPUT"] = "ON"
+
+    # update PYTHONPATH for the unit tests
+    pypath = os.environ.get("PYTHONPATH", "").split(":")
+    pypath = [pyct.BINARY_DIRECTORY] + pypath
+    os.environ["PYTHONPATH"] = ":".join(pypath)
 
     return args
 
@@ -157,10 +189,16 @@ def run_pyctest():
     build_opts = {
         "BUILD_SHARED_LIBS": "ON" if "shared" in args.build_libs else "OFF",
         "BUILD_STATIC_LIBS": "ON" if "static" in args.build_libs else "OFF",
+        "CMAKE_CXX_STANDARD": "{}".format(args.cxx_standard),
+        "TIMEMORY_TLS_MODEL": "{}".format(args.tls_model),
+        "TIMEMORY_CCACHE_BUILD": "ON",
+        "TIMEMORY_BUILD_LTO": "ON" if args.lto else "OFF",
+        "TIMEMORY_BUILD_OMPT": "ON" if args.ompt else "OFF",
         "TIMEMORY_BUILD_TOOLS": "ON" if args.tools else "OFF",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
+        "TIMEMORY_BUILD_DEVELOPER": "ON" if args.developer else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON" if args.extra_optimizations else "OFF",
         "TIMEMORY_USE_MPI": "ON" if args.mpi else "OFF",
@@ -168,14 +206,19 @@ def run_pyctest():
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
         "TIMEMORY_USE_PAPI": "ON" if args.papi else "OFF",
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
+        "TIMEMORY_USE_NVTX": "ON" if args.nvtx else "OFF",
+        "TIMEMORY_USE_XRAY": "ON" if args.xray else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
-        "TIMEMORY_USE_GPERF": "OFF",
+        "TIMEMORY_USE_GPERF": "ON" if args.gperf else "OFF",
         "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
         "TIMEMORY_USE_LIKWID": "ON" if args.likwid else "OFF",
         "TIMEMORY_USE_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_USE_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
+        "TIMEMORY_USE_STATISTICS": "ON" if args.stats else "OFF",
+        "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
+        "TIMEMORY_USE_MPI_INIT": "ON" if args.mpi_init else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
         "USE_PAPI": "ON" if args.papi else "OFF",
@@ -183,46 +226,16 @@ def run_pyctest():
         "USE_CALIPER": "ON" if args.caliper else "OFF",
     }
 
-    if args.mpi and args.tools:
-        build_opts["TIMEMORY_BUILD_MPIP"] = "ON" if args.mpip else "OFF"
+    if args.tools:
+        build_opts["TIMEMORY_BUILD_MPIP"] = "ON" if (
+            args.mpi and args.mpip) else "OFF"
+        build_opts["TIMEMORY_BUILD_KOKKOS_TOOLS"] = "ON" if args.kokkos else "OFF"
+        build_opts["TIMEMORY_BUILD_DYNINST_TOOLS"] = "ON" if args.dyninst else "OFF"
 
     if args.python:
         pyver = "{}.{}.{}".format(
             sys.version_info[0], sys.version_info[1], sys.version_info[2])
         pyct.BUILD_NAME = "{} PY-{}".format(pyct.BUILD_NAME, pyver)
-
-    if args.extra_optimizations:
-        pyct.BUILD_NAME = "{} OPT".format(pyct.BUILD_NAME)
-
-    if args.arch:
-        pyct.BUILD_NAME = "{} ARCH".format(pyct.BUILD_NAME)
-
-    if args.mpi:
-        pyct.BUILD_NAME = "{} MPI".format(pyct.BUILD_NAME)
-
-    if args.papi:
-        pyct.BUILD_NAME = "{} PAPI".format(pyct.BUILD_NAME)
-
-    if args.cuda:
-        pyct.BUILD_NAME = "{} CUDA".format(pyct.BUILD_NAME)
-
-    if args.cupti:
-        pyct.BUILD_NAME = "{} CUPTI".format(pyct.BUILD_NAME)
-
-    if args.caliper:
-        pyct.BUILD_NAME = "{} CALIPER".format(pyct.BUILD_NAME)
-
-    if args.gotcha:
-        pyct.BUILD_NAME = "{} GOTCHA".format(pyct.BUILD_NAME)
-
-    if args.upcxx:
-        pyct.BUILD_NAME = "{} UPCXX".format(pyct.BUILD_NAME)
-
-    if args.tau:
-        pyct.BUILD_NAME = "{} TAU".format(pyct.BUILD_NAME)
-
-    if args.likwid:
-        pyct.BUILD_NAME = "{} LIKWID".format(pyct.BUILD_NAME)
 
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
@@ -250,6 +263,36 @@ def run_pyctest():
         else:
             build_opts["TIMEMORY_USE_COVERAGE"] = "OFF"
         pyct.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;/usr/.*")
+
+    # Use the options to create a build name with configuration
+    build_name = set()
+    mangled_tags = {"EXTRA_OPTIMIZATIONS": "OPT", "KOKKOS_TOOLS": "KOKKOS",
+                    "DYNINST_TOOLS": "DYNINST"}
+    exclude_keys = ("TESTING", "EXAMPLES", "GOOGLE_TEST", "CCACHE_BUILD",
+                    "gperftools_COMPONENTS")
+    for opt_key, opt_val in build_opts.items():
+        tag = None
+        key = None
+        if opt_val == "OFF" or opt_val is None:
+            continue
+        else:
+            if "TIMEMORY_BUILD_" in opt_key:
+                tag = opt_key.replace("TIMEMORY_BUILD_", "")
+                key = tag
+            elif "TIMEMORY_USE_" in opt_key:
+                tag = opt_key.replace("TIMEMORY_USE_", "")
+                key = tag
+            elif "TIMEMORY_" in opt_key:
+                key = opt_key.replace("TIMEMORY_", "")
+                tag = "{}_{}".format(key, opt_val)
+
+        # if valid and turned on
+        if tag is not None and key is not None and key not in exclude_keys:
+            tag = mangled_tags.get(tag, tag)
+            build_name.add(tag)
+
+    build_name = sorted(build_name)
+    pyct.BUILD_NAME += " {}".format(" ".join(build_name))
 
     # split and join with dashes
     pyct.BUILD_NAME = '-'.join(pyct.BUILD_NAME.replace('/', '-').split())
@@ -359,7 +402,8 @@ def run_pyctest():
                          "CPUPROFILE_REALTIME=1",
                          "CALI_CONFIG_PROFILE=runtime-report",
                          "TIMEMORY_DART_OUTPUT=ON",
-                         "TIMEMORY_DART_COUNT=1"])
+                         "TIMEMORY_DART_COUNT=1",
+                         "TIMEMORY_PLOT_OUTPUT=ON"])
 
     pyct.test(construct_name("ex-optional-off"),
               construct_command(["./ex_optional_off"], args),
@@ -439,12 +483,28 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
-    pyct.test(construct_name("ex-gotcha-mpi"),
-              construct_command(["./ex_gotcha_mpi"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.gotcha:
+        pyct.test(construct_name("ex-gotcha"),
+                  construct_command(["./ex_gotcha"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
+        pyct.test(construct_name("ex-gotcha-replacement"),
+                  construct_command(["./ex_gotcha_replacement"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
+        if args.mpi:
+            pyct.test(construct_name("ex-gotcha-mpi"),
+                      construct_command(["./ex_gotcha_mpi"], args),
+                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                       "LABELS": pyct.PROJECT_NAME,
+                       "TIMEOUT": "300",
+                       "ENVIRONMENT": test_env})
 
     if args.python:
         pyct.test(construct_name("ex-python-caliper"),
@@ -496,13 +556,6 @@ def run_pyctest():
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "480",
                    "ENVIRONMENT": test_env})
-
-    pyct.test(construct_name("ex-gotcha"),
-              construct_command(["./ex_gotcha"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
 
     if args.likwid:
         pyct.test(construct_name("ex-likwid"),
@@ -557,6 +610,8 @@ def run_pyctest():
             cov.SetWorkingDirectory(pyct.SOURCE_DIRECTORY)
             cov.Execute()
             print("{}".format(cov.Output()))
+    else:
+        print("BUILD_NAME: {}".format(pyct.BUILD_NAME))
 
 
 #------------------------------------------------------------------------------#

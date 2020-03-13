@@ -22,66 +22,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file general/types.hpp
- * \headerfile general/types.hpp "timemory/general/types.hpp"
- * Provides some additional info for timemory/components/types.hpp
- *
+/** \headerfile "timemory/general/types.hpp"
+ *  General forward declaration
  */
 
 #pragma once
 
-#include "timemory/enum.h"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/settings.hpp"
-
-#include <array>
-#include <ostream>
-#include <sstream>
-#include <string>
-#include <tuple>
-#include <utility>
-#include <vector>
-
 namespace tim
 {
-//======================================================================================//
-// generate a master instance and a nullptr on the first pass
-// generate a worker instance on subsequent and return master and worker
 //
-template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
-          typename _Pair = std::pair<_Ptr, _Ptr>>
-_Pair&
-get_shared_ptr_pair()
-{
-    static auto              _master = std::make_shared<_Tp>();
-    static std::atomic<int>  _counter(0);
-    static thread_local auto _worker   = _Ptr((_counter++ == 0) ? nullptr : new _Tp());
-    static thread_local auto _instance = _Pair{ _master, _worker };
-    return _instance;
-}
-
 //--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
-          typename _Pair = std::pair<_Ptr, _Ptr>>
-_Ptr
-get_shared_ptr_pair_instance()
-{
-    static thread_local auto& _pinst = get_shared_ptr_pair<_Tp>();
-    static thread_local auto& _inst  = _pinst.second.get() ? _pinst.second : _pinst.first;
-    return _inst;
-}
-
+//
+class source_location;
+//
 //--------------------------------------------------------------------------------------//
-
-template <typename _Tp, typename _Ptr = std::shared_ptr<_Tp>,
-          typename _Pair = std::pair<_Ptr, _Ptr>>
-_Ptr
-get_shared_ptr_pair_master_instance()
-{
-    static auto& _pinst = get_shared_ptr_pair<_Tp>();
-    static auto  _inst  = _pinst.first;
-    return _inst;
-}
-
+//
 }  // namespace tim
+
+#if !defined(TIMEMORY_SOURCE_LOCATION)
+
+#    define _AUTO_LOCATION_COMBINE(X, Y) X##Y
+#    define _AUTO_LOCATION(Y) _AUTO_LOCATION_COMBINE(timemory_source_location_, Y)
+
+#    define TIMEMORY_SOURCE_LOCATION(MODE, ...)                                          \
+        ::tim::source_location(MODE, __FUNCTION__, __LINE__, __FILE__, __VA_ARGS__)
+
+#    define TIMEMORY_CAPTURE_MODE(MODE_TYPE) ::tim::source_location::mode::MODE_TYPE
+
+#    define TIMEMORY_CAPTURE_ARGS(...) _AUTO_LOCATION(__LINE__).get_captured(__VA_ARGS__)
+
+#    define TIMEMORY_INLINE_SOURCE_LOCATION(MODE, ...)                                   \
+        ::tim::source_location::get_captured_inline(                                     \
+            TIMEMORY_CAPTURE_MODE(MODE), __FUNCTION__, __LINE__, __FILE__, __VA_ARGS__)
+
+#    define _TIM_STATIC_SRC_LOCATION(MODE, ...)                                          \
+        static thread_local auto _AUTO_LOCATION(__LINE__) =                              \
+            TIMEMORY_SOURCE_LOCATION(TIMEMORY_CAPTURE_MODE(MODE), __VA_ARGS__)
+
+#endif

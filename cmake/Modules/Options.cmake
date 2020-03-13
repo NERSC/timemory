@@ -335,3 +335,6 @@ macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
         endif()
     endif()
 endmacro()
+
+option(TIMEMORY_SOURCE_GROUP "Enable source_group" OFF)
+mark_as_advanced(TIMEMORY_SOURCE_GROUP)

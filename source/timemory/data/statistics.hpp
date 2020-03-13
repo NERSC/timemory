@@ -33,7 +33,6 @@
 
 //----------------------------------------------------------------------------//
 
-#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <functional>
@@ -43,7 +42,7 @@
 
 #include "timemory/data/functional.hpp"
 #include "timemory/mpl/math.hpp"
-#include "timemory/mpl/stl_overload.hpp"
+#include "timemory/mpl/stl.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/stream.hpp"
@@ -52,14 +51,14 @@ namespace tim
 {
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 struct statistics
 {
 public:
-    using value_type   = _Tp;
-    using compute_type = math::compute<_Tp>;
-    template <typename V>
-    using compute_value_t = math::compute<_Tp, V>;
+    using value_type   = Tp;
+    using compute_type = math::compute<Tp>;
+    template <typename Vp>
+    using compute_value_t = math::compute<Tp, Vp>;
 
 public:
     inline statistics()                  = default;
@@ -219,7 +218,7 @@ public:
     // friend operator for output
     friend std::ostream& operator<<(std::ostream& os, const statistics& obj)
     {
-        using namespace tim::stl_overload::ostream;
+        using namespace tim::stl::ostream;
         os << "[sum: " << obj.get_sum() << "] [min: " << obj.get_min()
            << "] [max: " << obj.get_max() << "] [sqr: " << obj.get_sqr()
            << "] [count: " << obj.get_count() << "]";
@@ -254,27 +253,27 @@ namespace std
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-::tim::statistics<_Tp>
-max(::tim::statistics<_Tp> lhs, const _Tp& rhs)
+template <typename Tp>
+::tim::statistics<Tp>
+max(::tim::statistics<Tp> lhs, const Tp& rhs)
 {
     return lhs.get_max(rhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-::tim::statistics<_Tp>
-min(::tim::statistics<_Tp> lhs, const _Tp& rhs)
+template <typename Tp>
+::tim::statistics<Tp>
+min(::tim::statistics<Tp> lhs, const Tp& rhs)
 {
     return lhs.get_min(rhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 ::tim::statistics<tuple<>>&
-operator+=(::tim::statistics<tuple<>>& _lhs, const _Tp&)
+operator+=(::tim::statistics<tuple<>>& _lhs, const Tp&)
 {
     return _lhs;
 }

@@ -30,10 +30,11 @@
 
 #pragma once
 
-#include "timemory/manager.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/variadic/generic_bundle.hpp"
-
+#include "timemory/variadic/types.hpp"
 //======================================================================================//
 //
 //      tim::get functions
@@ -64,6 +65,7 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
         _func(*this);
         set_prefix(key);
         apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
 
@@ -83,6 +85,7 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
         _func(*this);
         set_prefix(loc.get_id());
         apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
 
@@ -101,6 +104,7 @@ inline component_tuple<Types...>::component_tuple(size_t _hash, const bool& stor
         _func(*this);
         set_prefix(_hash);
         apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
 
@@ -109,6 +113,7 @@ inline component_tuple<Types...>::component_tuple(size_t _hash, const bool& stor
 template <typename... Types>
 component_tuple<Types...>::~component_tuple()
 {
+    IF_CONSTEXPR(get_config<variadic::auto_stop>()) { stop(); }
     pop();
 }
 
@@ -162,29 +167,33 @@ component_tuple<Types...>::pop()
 // measure functions
 //
 template <typename... Types>
+template <typename... Args>
 inline void
-component_tuple<Types...>::measure()
+component_tuple<Types...>::measure(Args&&... args)
 {
-    apply_v::access<operation_t<operation::measure>>(m_data);
+    apply_v::access<operation_t<operation::measure>>(m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
 // sample functions
 //
 template <typename... Types>
+template <typename... Args>
 void
-component_tuple<Types...>::sample()
+component_tuple<Types...>::sample(Args&&... args)
 {
     sample_type _samples{};
-    apply_v::access2<operation_t<operation::sample>>(m_data, _samples);
+    apply_v::access2<operation_t<operation::sample>>(m_data, _samples,
+                                                     std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
 // start/stop functions
 //
 template <typename... Types>
+template <typename... Args>
 inline void
-component_tuple<Types...>::start()
+component_tuple<Types...>::start(Args&&... args)
 {
     using standard_start_t = operation_t<operation::standard_start>;
 
@@ -203,16 +212,19 @@ component_tuple<Types...>::start()
     ++m_laps;
 
     // start components
-    apply_v::out_of_order<priority_start_t, 1>(m_data);
-    apply_v::access<standard_start_t>(m_data);
-    apply_v::out_of_order<delayed_start_t, 1>(m_data);
+    apply_v::out_of_order<priority_start_t, priority_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
+    apply_v::access<standard_start_t>(m_data, std::forward<Args>(args)...);
+    apply_v::out_of_order<delayed_start_t, delayed_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
+template <typename... Args>
 inline void
-component_tuple<Types...>::stop()
+component_tuple<Types...>::stop(Args&&... args)
 {
     using standard_stop_t = operation_t<operation::standard_stop>;
 
@@ -225,9 +237,11 @@ component_tuple<Types...>::stop()
     using delayed_stop_t  = operation_t<operation::delayed_stop, delayed_tuple_t>;
 
     // stop components
-    apply_v::out_of_order<priority_stop_t, 1>(m_data);
-    apply_v::access<standard_stop_t>(m_data);
-    apply_v::out_of_order<delayed_stop_t, 1>(m_data);
+    apply_v::out_of_order<priority_stop_t, priority_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
+    apply_v::access<standard_stop_t>(m_data, std::forward<Args>(args)...);
+    apply_v::out_of_order<delayed_stop_t, delayed_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
 
     // pop components off of the call-stack stack
     pop();
@@ -237,11 +251,12 @@ component_tuple<Types...>::stop()
 // recording
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::this_type&
-component_tuple<Types...>::record()
+template <typename... Args>
+inline component_tuple<Types...>&
+component_tuple<Types...>::record(Args&&... args)
 {
     ++m_laps;
-    apply_v::access<operation_t<operation::record>>(m_data);
+    apply_v::access<operation_t<operation::record>>(m_data, std::forward<Args>(args)...);
     return *this;
 }
 
@@ -249,10 +264,11 @@ component_tuple<Types...>::record()
 // reset data
 //
 template <typename... Types>
+template <typename... Args>
 inline void
-component_tuple<Types...>::reset()
+component_tuple<Types...>::reset(Args&&... args)
 {
-    apply_v::access<operation_t<operation::reset>>(m_data);
+    apply_v::access<operation_t<operation::reset>>(m_data, std::forward<Args>(args)...);
     m_laps = 0;
 }
 
@@ -260,12 +276,17 @@ component_tuple<Types...>::reset()
 // get data
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::data_value_type
-component_tuple<Types...>::get() const
+template <typename... Args>
+inline auto
+component_tuple<Types...>::get(Args&&... args) const
 {
-    using get_data_t = operation_t<operation::get_data, data_collect_type>;
+    using data_collect_type = get_data_type_t<type_tuple>;
+    using data_value_type   = get_data_value_t<type_tuple>;
+    using get_data_t        = operation_t<operation::get_data, data_collect_type>;
+
     data_value_type _ret_data;
-    apply_v::out_of_order<get_data_t, 2>(m_data, _ret_data);
+    apply_v::out_of_order<get_data_t, data_collect_type, 2>(m_data, _ret_data,
+                                                            std::forward<Args>(args)...);
     return _ret_data;
 }
 
@@ -273,12 +294,17 @@ component_tuple<Types...>::get() const
 // reset data
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::data_label_type
-component_tuple<Types...>::get_labeled() const
+template <typename... Args>
+inline auto
+component_tuple<Types...>::get_labeled(Args&&... args) const
 {
-    using get_data_t = operation_t<operation::get_data, data_collect_type>;
+    using data_collect_type = get_data_type_t<type_tuple>;
+    using data_label_type   = get_data_label_t<type_tuple>;
+    using get_data_t        = operation_t<operation::get_labeled_data, data_collect_type>;
+
     data_label_type _ret_data;
-    apply_v::out_of_order<get_data_t, 2>(m_data, _ret_data);
+    apply_v::out_of_order<get_data_t, data_collect_type, 2>(m_data, _ret_data,
+                                                            std::forward<Args>(args)...);
     return _ret_data;
 }
 
@@ -286,7 +312,7 @@ component_tuple<Types...>::get_labeled() const
 // this_type operators
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::this_type&
+inline component_tuple<Types...>&
 component_tuple<Types...>::operator-=(const this_type& rhs)
 {
     apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
@@ -297,7 +323,7 @@ component_tuple<Types...>::operator-=(const this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::this_type&
+inline component_tuple<Types...>&
 component_tuple<Types...>::operator-=(this_type& rhs)
 {
     apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
@@ -308,7 +334,7 @@ component_tuple<Types...>::operator-=(this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::this_type&
+inline component_tuple<Types...>&
 component_tuple<Types...>::operator+=(const this_type& rhs)
 {
     apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
@@ -319,7 +345,7 @@ component_tuple<Types...>::operator+=(const this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::this_type&
+inline component_tuple<Types...>&
 component_tuple<Types...>::operator+=(this_type& rhs)
 {
     apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);

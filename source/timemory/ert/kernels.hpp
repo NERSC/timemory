@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
+#include "timemory/components/cuda/backends.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/mpl/apply.hpp"

@@ -160,48 +160,139 @@ struct dummy
 #    define TIMEMORY_DEFINE_VARIADIC_TRAIT(...)
 
 #else
-
-// versioning header
+//
+//   versioning header
+//
 #    include "timemory/version.h"
-
-#    include "timemory/components.hpp"
-#    include "timemory/manager.hpp"
-#    include "timemory/settings.hpp"
+//
+#    include "timemory/enum.h"
 #    include "timemory/units.hpp"
 #    include "timemory/utility/macros.hpp"
+//
+#    include "timemory/components.hpp"  // 5.0
+#    include "timemory/settings.hpp"    // 3.1
 #    include "timemory/utility/mangler.hpp"
 #    include "timemory/utility/utility.hpp"
-#    include "timemory/variadic/auto_hybrid.hpp"
-#    include "timemory/variadic/auto_list.hpp"
-#    include "timemory/variadic/auto_timer.hpp"
-#    include "timemory/variadic/auto_user_bundle.hpp"
-#    include "timemory/variadic/macros.hpp"
-
-#    include "timemory/enum.h"
-
-// definitions of types
-#    include "timemory/types.hpp"
-#    include "timemory/utility/bits/storage.hpp"
-
-// allocator
-#    include "timemory/ert/aligned_allocator.hpp"
-#    include "timemory/ert/configuration.hpp"
+//
+#    include "timemory/variadic/auto_hybrid.hpp"  // 9.7
+#    include "timemory/variadic/auto_list.hpp"    // 5.6
+#    include "timemory/variadic/auto_timer.hpp"   // 3.8
+#    include "timemory/variadic/auto_tuple.hpp"
+#    include "timemory/variadic/auto_user_bundle.hpp"  // 5.5
+//
+#    include "timemory/types.hpp"                      // 3.5
+#    include "timemory/variadic/macros.hpp"            // 3.2
+//
+#    include "timemory/ert/aligned_allocator.hpp"      // 3.5
+#    include "timemory/ert/configuration.hpp"          // 4
+//
+//   component definitions
+//
+#    include "timemory/components/user_bundle/definition.hpp"
 
 //======================================================================================//
 
-#    include "timemory/extern/auto_timer.hpp"
-#    include "timemory/extern/auto_user_bundle.hpp"
-#    include "timemory/extern/complete_list.hpp"
-#    include "timemory/extern/ert.hpp"
 #    include "timemory/extern/init.hpp"
 
-//======================================================================================//
+#    if defined(TIMEMORY_USE_EXTERN)
+//
+#        include "timemory/extern/auto_timer.hpp"
+#        include "timemory/extern/auto_user_bundle.hpp"
+#        include "timemory/extern/complete_list.hpp"
+#        include "timemory/extern/ert.hpp"
+//
+//--------------------------------------------------------------------------------------//
+//
+//                      PROVIDE THE SYMBOLS VIA EXTERN
+//
+//--------------------------------------------------------------------------------------//
+//
+#        include "timemory/components/caliper/extern.hpp"
+#        include "timemory/components/cuda/extern.hpp"
+#        include "timemory/components/cupti/extern.hpp"
+#        include "timemory/components/gotcha/extern.hpp"
+#        include "timemory/components/gperftools/extern.hpp"
+#        include "timemory/components/likwid/extern.hpp"
+#        include "timemory/components/papi/extern.hpp"
+#        include "timemory/components/roofline/extern.hpp"
+#        include "timemory/components/rusage/extern.hpp"
+#        include "timemory/components/tau_marker/extern.hpp"
+#        include "timemory/components/timing/extern.hpp"
+#        include "timemory/components/trip_count/extern.hpp"
+#        include "timemory/components/user_bundle/extern.hpp"
+#        include "timemory/components/vtune/extern.hpp"
+//
+#    endif
 
+//======================================================================================//
+//
 #    include "timemory/config.hpp"
 #    include "timemory/data/storage.hpp"
-#    include "timemory/plotting.hpp"
-#    include "timemory/utility/conditional.hpp"
-
+#    include "timemory/plotting.hpp"             // 3.5
+#    include "timemory/utility/conditional.hpp"  // 0.1
+//
+//======================================================================================//
+//
+// 3.5 total
+#    include "timemory/runtime/configure.hpp"    // 3.5
+#    include "timemory/runtime/enumerate.hpp"    // 3.5
+#    include "timemory/runtime/initialize.hpp"   // 3.1
+#    include "timemory/runtime/insert.hpp"       // 3.1
+#    include "timemory/runtime/properties.hpp"   // 3.2
+//
+//======================================================================================//
+//
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_SOURCE)
+//
+#        include "timemory/containers/definition.hpp"
+#        include "timemory/environment/definition.hpp"
+#        include "timemory/hash/definition.hpp"
+#        include "timemory/manager/definition.hpp"
+#        include "timemory/plotting/definition.hpp"
+#        include "timemory/settings/definition.hpp"
+#        include "timemory/storage/definition.hpp"
+//
+#    elif defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_SOURCE)
+//
+#        include "timemory/containers/extern.hpp"
+#        include "timemory/environment/extern.hpp"
+#        include "timemory/hash/extern.hpp"
+#        include "timemory/manager/extern.hpp"
+#        include "timemory/plotting/extern.hpp"
+#        include "timemory/settings/extern.hpp"
+#        include "timemory/storage/extern.hpp"
+//
+#    endif
+//
+//======================================================================================//
+//
+namespace tim
+{
 //--------------------------------------------------------------------------------------//
+/// args:
+///     1) filename
+///     2) reference an object
+///
+template <typename Tp>
+void
+generic_serialization(const std::string& fname, const Tp& obj)
+{
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
+    {
+        // ensure json write final block during destruction before the file is closed
+        using policy_type = policy::output_archive_t<Tp>;
+        auto oa           = policy_type::get(ofs);
+        oa->setNextName("timemory");
+        oa->startNode();
+        (*oa)(cereal::make_nvp("data", obj));
+        oa->finishNode();
+    }
+    if(ofs)
+        ofs << std::endl;
+    ofs.close();
+}
+//
+}  // namespace tim
 
 #endif  // ! defined(DISABLE_TIMEMORY)

@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/timemory.hpp"
+
 #include <cstdio>
 #include <cstdlib>
 
@@ -34,7 +35,7 @@ using namespace tim::component;
 //
 // bundle of tools
 //
-using tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock>;
+using tuple_t = tim::auto_tuple<wall_clock, cpu_clock>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -51,6 +52,10 @@ main(int argc, char** argv)
 {
     tim::settings::destructor_report() = true;
     tim::timemory_init(argc, argv);
+    tim::settings::parse();
+    tim::settings::output_path() = TIMEMORY_JOIN("-", "timemory", argv[0], "output");
+    tim::settings::file_output() = false;
+    tim::settings::text_output() = false;
 
     long nfib = (argc > 1) ? atol(argv[1]) : 40;
     int  nitr = (argc > 2) ? atoi(argv[2]) : 10;
