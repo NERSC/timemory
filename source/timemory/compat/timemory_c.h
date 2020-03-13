@@ -62,11 +62,6 @@
 #    include "timemory/enum.h"
 #    include "timemory/compat/library.h"
 
-// for sprintf macro,
-#    if defined(__cplusplus)
-#        include <memory>
-#    endif
-
 //======================================================================================//
 //
 //      C timemory macros

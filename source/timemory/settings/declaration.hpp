@@ -91,7 +91,7 @@ struct settings
     // logical settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, suppress_parsing, "TIMEMORY_SUPPRESS_PARSING",
                                     false)
-    TIMEMORY_STATIC_STATIC_ACCESSOR(static, bool, enabled, "TIMEMORY_ENABLED",
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, enabled, "TIMEMORY_ENABLED",
                                     TIMEMORY_DEFAULT_ENABLED)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, auto_output, "TIMEMORY_AUTO_OUTPUT", true)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, cout_output, "TIMEMORY_COUT_OUTPUT", true)
@@ -104,10 +104,10 @@ struct settings
                                     TIMEMORY_DEFAULT_PLOTTING)
 
     // general settings
-    TIMEMORY_STATIC_STATIC_ACCESSOR(static, int, verbose, "TIMEMORY_VERBOSE", 0)
-    TIMEMORY_STATIC_STATIC_ACCESSOR(static, bool, debug, "TIMEMORY_DEBUG", false)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, debug, "TIMEMORY_DEBUG", false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER", true)
-    TIMEMORY_STATIC_STATIC_ACCESSOR(static, bool, flat_profile, "TIMEMORY_FLAT_PROFILE",
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE",
                                     false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS",
                                     true)
@@ -376,7 +376,7 @@ struct settings
     //----------------------------------------------------------------------------------//
 
     /// default setting for auto_{list,tuple,hybrid} "report_at_exit" member variable
-    TIMEMORY_STATIC_STATIC_ACCESSOR(static, bool, destructor_report,
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, destructor_report,
                                     "TIMEMORY_DESTRUCTOR_REPORT", false)
 
     //----------------------------------------------------------------------------------//
@@ -432,7 +432,13 @@ public:
     static void parse();
 
     template <typename Archive>
-    static void serialize_settings(Archive& ar);
+    void serialize(Archive& ar, const unsigned int);
+
+    template <typename Archive>
+    static void serialize_settings(Archive& ar)
+    {
+        ar(cereal::make_nvp("settings", settings::instance()));
+    }
 
     template <size_t Idx = 0>
     static int64_t indent_width(int64_t _w = settings::width());
@@ -485,7 +491,7 @@ settings::data_width(int64_t _idx, int64_t _w)
 //
 template <typename Archive>
 void
-settings::serialize_settings(Archive& ar)
+settings::serialize(Archive& ar, const unsigned int)
 {
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_SUPPRESS_PARSING", suppress_parsing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_ENABLED", enabled)

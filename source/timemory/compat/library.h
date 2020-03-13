@@ -109,6 +109,9 @@ extern "C"
 
     extern void timemory_end_record(uint64_t id);
 
+    extern void timemory_push_region(const char* name);
+    extern void timemory_pop_region(const char* name);
+
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 

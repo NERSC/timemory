@@ -312,12 +312,11 @@ manager::write_metadata(const char* context)
         {
             oa->setNextName("metadata");
             oa->startNode();
+            // settings
             {
-                oa->setNextName("settings");
-                oa->startNode();
                 settings::serialize_settings(*oa);
-                oa->finishNode();
             }
+            // output
             {
                 oa->setNextName("output");
                 oa->startNode();
@@ -325,8 +324,11 @@ manager::write_metadata(const char* context)
                       cereal::make_nvp("json", m_json_files));
                 oa->finishNode();
             }
-            auto _env = env_settings::instance()->get();
-            (*oa)(cereal::make_nvp("environment", _env));
+            // environment
+            {
+                env_settings::serialize_environment(*oa);
+            }
+            //
             oa->finishNode();
         }
         oa->finishNode();

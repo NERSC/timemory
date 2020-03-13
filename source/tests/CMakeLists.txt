@@ -38,6 +38,13 @@ set(ENV{TIMEMORY_ENABLED} OFF)
 
 add_subdirectory(external)
 
+if(TARGET custom-record-functions)
+    add_timemory_google_test(library_tests
+        DISCOVER_TESTS
+        SOURCES         library_tests.cpp
+        LINK_LIBRARIES  custom-record-functions)
+endif()
+
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp

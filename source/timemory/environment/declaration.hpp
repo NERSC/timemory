@@ -96,6 +96,13 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int);
 
+    template <typename Archive>
+    static void serialize_environment(Archive& ar)
+    {
+        if(instance())
+            ar(*instance(), 0);
+    }
+
 private:
     static mutex_t&          mutex();
     static std::atomic_bool& lock_flag();

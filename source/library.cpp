@@ -28,6 +28,7 @@
 #include <cstdarg>
 #include <deque>
 #include <iostream>
+#include <stack>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -57,6 +58,7 @@ struct timemory_trace;
 using trace_bundle_t     = user_bundle<0, timemory_trace>;
 using traceset_t         = tim::component_tuple<trace_bundle_t>;
 using toolset_t          = TIMEMORY_LIBRARY_TYPE;
+using region_map_t       = std::unordered_map<std::string, std::stack<uint64_t>>;
 using record_map_t       = std::unordered_map<uint64_t, toolset_t>;
 using trace_map_t        = std::unordered_map<size_t, std::vector<traceset_t*>>;
 using component_enum_t   = std::vector<TIMEMORY_COMPONENT>;
@@ -80,6 +82,15 @@ static trace_map_t&
 get_trace_map()
 {
     static thread_local trace_map_t _instance;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static region_map_t&
+get_region_map()
+{
+    static thread_local region_map_t _instance;
     return _instance;
 }
 
@@ -188,10 +199,11 @@ extern "C"
             printf("%s\n\n", spacer.c_str());
         }
 
-        tim::settings::auto_output() = true;   // print when destructing
-        tim::settings::cout_output() = true;   // print to stdout
-        tim::settings::text_output() = true;   // print text files
-        tim::settings::json_output() = false;  // print to json
+        tim::settings::auto_output() = true;  // print when destructing
+        tim::settings::cout_output() = true;  // print to stdout
+        tim::settings::text_output() = true;  // print text files
+        tim::settings::json_output() = true;  // print to json
+
         tim::timemory_init(argc, argv);
     }
 
@@ -540,6 +552,31 @@ extern "C"
         timemory_finalize_library();
     }
 
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_push_region(const char* name)
+    {
+        auto& region_map = get_region_map();
+        auto  idx        = timemory_get_begin_record(name);
+        region_map[name].push(idx);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_pop_region(const char* name)
+    {
+        auto& region_map = get_region_map();
+        auto  itr        = region_map.find(name);
+        if(itr == region_map.end() || (itr != region_map.end() && itr->second.empty()))
+            fprintf(stderr, "Warning! region '%s' does not exist!\n", name);
+        else
+        {
+            uint64_t idx = itr->second.top();
+            timemory_end_record(idx);
+            itr->second.pop();
+        }
+    }
+
     //==================================================================================//
     //
     //      Symbols for Fortran
@@ -593,6 +630,10 @@ extern "C"
     }
 
     void timemory_end_record_(uint64_t id) { return timemory_end_record(id); }
+
+    void timemory_push_region_(const char* name) { return timemory_push_region(name); }
+
+    void timemory_pop_region_(const char* name) { return timemory_pop_region(name); }
 
     //======================================================================================//
 

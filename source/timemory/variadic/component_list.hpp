@@ -430,15 +430,13 @@ public:
                     char> = 0>
     void init(Args&&... _args)
     {
-        PRINT_HERE("%s", demangle<T>().c_str());
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
         {
             if(settings::debug())
             {
-                std::string _id = demangle(typeid(T).name());
                 printf("[component_list::init]> initializing type '%s'...\n",
-                       _id.c_str());
+                       demangle(typeid(T).name()).c_str());
             }
             _obj = new T(std::forward<Args>(_args)...);
             set_prefix(_obj);
@@ -466,7 +464,6 @@ public:
                           int> = 0>
     void init(Args&&... args)
     {
-        PRINT_HERE("%s", demangle<T>().c_str());
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
         this->get<bundle_t>()->insert(
