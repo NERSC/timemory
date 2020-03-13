@@ -42,9 +42,6 @@
 #include "timemory/components/trip_count/components.hpp"
 #include "timemory/components/user_bundle/components.hpp"
 
-// general components
-// #include "timemory/components/general.hpp"
-
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
 #    include "timemory/components/caliper/components.hpp"
@@ -101,21 +98,7 @@
 #    include "timemory/components/gperftools/components.hpp"
 #endif
 
-#include "timemory/components/cuda/backends.hpp"
-
-// device backend
-#include "timemory/backends/device.hpp"
-
-//======================================================================================//
-//
-//      helpers for generating components
-//
-//======================================================================================//
-
-// #include "timemory/runtime/enumerate.hpp"
-// #include "timemory/runtime/configure.hpp"
-// #include "timemory/runtime/insert.hpp"
-// #include "timemory/runtime/initialize.hpp"
+#include "timemory/backends.hpp"
 
 //======================================================================================//
 //

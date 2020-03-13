@@ -227,7 +227,6 @@ struct dummy
 //======================================================================================//
 //
 #    include "timemory/config.hpp"
-#    include "timemory/data/storage.hpp"
 #    include "timemory/plotting.hpp"             // 3.5
 #    include "timemory/utility/conditional.hpp"  // 0.1
 //

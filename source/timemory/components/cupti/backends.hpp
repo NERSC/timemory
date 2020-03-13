@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/backends/bits/cupti.hpp"
+#include "timemory/backends/types/cupti.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/backends/cupti.hpp"

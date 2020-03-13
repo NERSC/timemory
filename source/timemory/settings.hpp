@@ -30,29 +30,4 @@
 
 #pragma once
 
-//======================================================================================//
-
-#include "timemory/api.hpp"
-#include "timemory/environment/declaration.hpp"
-#include "timemory/environment/types.hpp"
-#include "timemory/units.hpp"
-#include "timemory/utility/filepath.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
-
-#include <cstdint>
-#include <cstring>
-#include <iostream>
-#include <limits>
-#include <string>
-#include <vector>
-
-#if defined(_UNIX)
-#    include <unistd.h>
-extern "C"
-{
-    extern char** environ;
-}
-#endif
-
 #include "timemory/settings/declaration.hpp"

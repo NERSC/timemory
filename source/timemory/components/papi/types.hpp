@@ -44,6 +44,6 @@ TIMEMORY_COMPONENT_ALIAS(papi_array_t, papi_array<TIMEMORY_PAPI_ARRAY_SIZE>)
 //
 //======================================================================================//
 
-#include "timemory/backends/bits/papi.hpp"
+#include "timemory/backends/types/papi.hpp"
 #include "timemory/components/papi/properties.hpp"
 #include "timemory/components/papi/traits.hpp"

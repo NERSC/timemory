@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "timemory/backends/types.hpp"
+//
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/signals.hpp"

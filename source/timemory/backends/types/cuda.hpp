@@ -22,14 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \headerfile "timemory/plotting.hpp"
- * Routines for plotting via Python in C++
- *
- */
-
 #pragma once
-
-#include "timemory/plotting/declaration.hpp"
-//
-#include "timemory/plotting/definition.hpp"

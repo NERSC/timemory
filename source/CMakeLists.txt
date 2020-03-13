@@ -5,12 +5,11 @@ include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
 #
-file(GLOB c_headers                 ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB cxx_headers               ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
-file(GLOB cxx_headers_variadic      ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
-file(GLOB cxx_headers_backends      ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
-file(GLOB cxx_headers_ert           ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
-file(GLOB cxx_headers_details       ${CMAKE_CURRENT_LIST_DIR}/timemory/details/*.hpp)
+file(GLOB c_headers                     ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
+file(GLOB cxx_headers                   ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_variadic          ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
+file(GLOB_RECURSE cxx_headers_backends  ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
+file(GLOB cxx_headers_ert               ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
 file(GLOB_RECURSE
     cxx_headers_components          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
@@ -32,7 +31,7 @@ file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 file(GLOB_RECURSE
     cxx_extern_sources              ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
 
-set(_CATEGORIES backends components compat data ert extern general mpl runtime utility variadic)
+set(_CATEGORIES backends mpl utility variadic)
 # bits folder
 set(cxx_headers_category_bits)
 foreach(_CATEGORY ${_CATEGORIES})
@@ -46,7 +45,7 @@ endforeach()
 # all the headers
 set(timemory_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
-    ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
+    ${cxx_headers_backends} ${cxx_headers_ert}
     ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_extern}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
     ${cxx_headers_category_bits}

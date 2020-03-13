@@ -42,6 +42,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
+#include "timemory/utility/singleton.hpp"
 #include "timemory/utility/types.hpp"
 //
 #include "timemory/hash/declaration.hpp"
@@ -914,6 +915,35 @@ private:
 private:
     std::unordered_set<Type*> m_stack;
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace impl
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename _Tp>
+class storage : public impl::storage<_Tp, implements_storage<_Tp>::value>
+{
+    static constexpr bool implements_storage_v = implements_storage<_Tp>::value;
+    using this_type                            = storage<_Tp>;
+    using base_type                            = impl::storage<_Tp, implements_storage_v>;
+    using deleter_t                            = impl::storage_deleter<base_type>;
+    using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
+    using singleton_t                          = singleton<base_type, smart_pointer>;
+    using pointer                              = typename singleton_t::pointer;
+    using auto_lock_t                          = typename singleton_t::auto_lock_t;
+    using iterator                             = typename base_type::iterator;
+    using const_iterator                       = typename base_type::const_iterator;
+
+    friend struct impl::storage_deleter<this_type>;
+    friend class manager;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace impl
+{
 //
 //--------------------------------------------------------------------------------------//
 //

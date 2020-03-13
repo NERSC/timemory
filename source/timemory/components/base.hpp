@@ -32,10 +32,10 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/data/statistics.hpp"
-#include "timemory/data/storage.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/storage/declaration.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"

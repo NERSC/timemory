@@ -39,6 +39,7 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings.hpp"
+#include "timemory/storage/declaration.hpp"
 #include "timemory/utility/serializer.hpp"
 
 // this file needs to be able to see the full definition of components

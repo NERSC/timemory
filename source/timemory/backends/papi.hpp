@@ -33,7 +33,7 @@
 // define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs in bits/papi.hpp
 // cause problems
 
-#include "timemory/backends/bits/papi.hpp"
+#include "timemory/backends/types/papi.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
