@@ -54,13 +54,9 @@ TIMEMORY_EXTERN_TEMPLATE(
 //
 TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<list_bundle_idx, api::native_tag>, void>)
 //
-#if defined(TIMEMORY_USE_OMPT)
 TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<ompt_bundle_idx, api::native_tag>, void>)
-#endif
 //
-#if defined(TIMEMORY_USE_MPIP)
 TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<mpip_bundle_idx, api::native_tag>, void>)
-#endif
 //
 //--------------------------------------------------------------------------------------//
 //

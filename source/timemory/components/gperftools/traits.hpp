@@ -42,14 +42,14 @@
 //
 //      GPERF and GPERF_HEAP_PROFILER
 //
-#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_heap_profiler, false_type)
 #endif
 
 //
 //      GPERF AND GPERF_CPU_PROFILER
 //
-#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_cpu_profiler, false_type)
 #endif
 

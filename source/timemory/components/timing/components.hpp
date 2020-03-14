@@ -29,12 +29,19 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/base/declaration.hpp"
+#include "timemory/components/base/definition.hpp"
+#include "timemory/components/base/templates.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/math.hpp"
+#include "timemory/mpl/stl.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
 #include "timemory/components/timing/backends.hpp"
 #include "timemory/components/timing/types.hpp"
+
+#include <utility>
 
 //======================================================================================//
 
@@ -334,8 +341,10 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
+        auto tmp  = record();
+        auto diff = tmp;
+        math::minus(diff, value);
+        math::plus(accum, diff);
         value = std::move(tmp);
         set_stopped();
     }

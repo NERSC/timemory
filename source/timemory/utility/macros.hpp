@@ -232,115 +232,6 @@
 
 //======================================================================================//
 //
-//      EXTERN TEMPLATE DECLARE AND INSTANTIATE
-//
-//======================================================================================//
-
-#if !defined(_WINDOWS)
-#    define _EXTERN_NAME_COMBINE(X, Y) X##Y
-#    define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
-#    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
-
-//--------------------------------------------------------------------------------------//
-//      extern declaration
-//
-#    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
-        extern template class ::tim::component_tuple<__VA_ARGS__>;                       \
-        extern template class ::tim::auto_tuple<__VA_ARGS__>;                            \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
-
-#    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
-        extern template class ::tim::component_list<__VA_ARGS__>;                        \
-        extern template class ::tim::auto_list<__VA_ARGS__>;                             \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
-
-#    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
-        extern template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),       \
-                                                      _EXTERN_LIST_ALIAS(_ALIAS)>;       \
-        extern template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),            \
-                                                 _EXTERN_LIST_ALIAS(_ALIAS)>;
-
-//--------------------------------------------------------------------------------------//
-//      extern instantiation
-//
-#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
-        template class ::tim::component_tuple<__VA_ARGS__>;                              \
-        template class ::tim::auto_tuple<__VA_ARGS__>;                                   \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
-
-#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
-        template class ::tim::component_list<__VA_ARGS__>;                               \
-        template class ::tim::auto_list<__VA_ARGS__>;                                    \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
-
-#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
-        template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),              \
-                                               _EXTERN_LIST_ALIAS(_ALIAS)>;              \
-        template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                   \
-                                          _EXTERN_LIST_ALIAS(_ALIAS)>;
-
-//--------------------------------------------------------------------------------------//
-//      extern storage singleton
-//
-#    define TIMEMORY_DECLARE_EXTERN_INIT(TYPE)                                           \
-        extern template storage_singleton<storage<component::TYPE>>*                     \
-        get_storage_singleton<storage<component::TYPE>>();                               \
-        extern template class impl::storage<component::TYPE,                             \
-                                            implements_storage<component::TYPE>::value>; \
-        extern template class storage<component::TYPE>;                                  \
-        extern template class singleton<                                                 \
-            impl::storage<component::TYPE, implements_storage<component::TYPE>::value>,  \
-            std::unique_ptr<                                                             \
-                impl::storage<component::TYPE,                                           \
-                              implements_storage<component::TYPE>::value>,               \
-                impl::storage_deleter<impl::storage<                                     \
-                    component::TYPE, implements_storage<component::TYPE>::value>>>>;
-
-#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
-        template storage_singleton<storage<component::TYPE>>*                            \
-        get_storage_singleton<storage<component::TYPE>>();                               \
-        template class impl::storage<component::TYPE,                                    \
-                                     implements_storage<component::TYPE>::value>;        \
-        template class storage<component::TYPE>;                                         \
-        template class singleton<                                                        \
-            impl::storage<component::TYPE, implements_storage<component::TYPE>::value>,  \
-            std::unique_ptr<                                                             \
-                impl::storage<component::TYPE,                                           \
-                              implements_storage<component::TYPE>::value>,               \
-                impl::storage_deleter<impl::storage<                                     \
-                    component::TYPE, implements_storage<component::TYPE>::value>>>>;
-
-#else
-
-#    define _EXTERN_NAME_COMBINE(X, Y) X##Y
-#    define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
-#    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
-
-//--------------------------------------------------------------------------------------//
-//      extern declaration
-//
-#    define TIMEMORY_DECLARE_EXTERN_TUPLE(...)
-#    define TIMEMORY_DECLARE_EXTERN_LIST(...)
-#    define TIMEMORY_DECLARE_EXTERN_HYBRID(...)
-
-//--------------------------------------------------------------------------------------//
-//      extern instantiation
-//
-#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(...)
-
-//--------------------------------------------------------------------------------------//
-//      extern storage
-//
-#    define TIMEMORY_EXTERN_INIT_TYPE(...)
-#    define TIMEMORY_DECLARE_EXTERN_INIT(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(...)
-
-#endif
-
-//======================================================================================//
-//
 //      Quick way to create a globally accessible setting
 //
 //======================================================================================//
@@ -381,8 +272,10 @@
 #    if defined(DEBUG)
 #        define DEBUG_PRINT_HERE(fmt, ...)                                               \
             if(::tim::settings::debug())                                                 \
-            fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,       \
-                    __LINE__, __VA_ARGS__)
+            {                                                                            \
+                fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,   \
+                        __LINE__, __VA_ARGS__);                                          \
+            }
 #    else
 #        define DEBUG_PRINT_HERE(fmt, ...)
 #    endif

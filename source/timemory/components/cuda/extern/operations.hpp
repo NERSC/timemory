@@ -35,12 +35,8 @@
 
 //======================================================================================//
 //
-#if defined(TIMEMORY_USE_CUDA)
 TIMEMORY_EXTERN_OPERATIONS(component::cuda_event, true)
 TIMEMORY_EXTERN_OPERATIONS(component::cuda_profiler, false)
-#    if defined(TIMEMORY_USE_NVTX)
 TIMEMORY_EXTERN_OPERATIONS(component::nvtx_marker, false)
-#    endif
-#endif
 //
 //======================================================================================//

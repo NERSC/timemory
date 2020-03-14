@@ -29,12 +29,10 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||          \
-    defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/gperftools/traits.hpp"
-#    include "timemory/components/gperftools/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/gperftools/components.hpp"
+#include "timemory/components/gperftools/traits.hpp"
+#include "timemory/components/gperftools/types.hpp"
 
 //======================================================================================//
 //
@@ -43,17 +41,10 @@ namespace tim
 namespace component
 {
 //
-#    if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
 TIMEMORY_EXTERN_TEMPLATE(struct base<gperf_heap_profiler, void>)
-#    endif
-//
-#    if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
 TIMEMORY_EXTERN_TEMPLATE(struct base<gperf_cpu_profiler, void>)
-#    endif
 //
 }  // namespace component
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_GPERFTOOLS

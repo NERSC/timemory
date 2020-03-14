@@ -283,7 +283,7 @@ main(int argc, char** argv)
     // overall timing
     //
     auto _main = TIMEMORY_BLANK_HANDLE(auto_tuple_t, argv[0]);
-    _main.report_at_exit(true);
+    //_main.report_at_exit(true);
 
     //
     // run amypx calculations

@@ -29,7 +29,7 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_GPERFTOOLS)
+// #if defined(TIMEMORY_USE_GPERFTOOLSTOOLS)
 
 //======================================================================================//
 //
@@ -39,4 +39,4 @@
 //
 //======================================================================================//
 
-// #endif  // TIMEMORY_USE_GPERFTOOLS
+// #endif  // TIMEMORY_USE_GPERFTOOLSTOOLS

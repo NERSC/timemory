@@ -81,9 +81,11 @@ timemory_handle_generic(environment  _GLOBAL  timemory-hash)
 timemory_handle_generic(settings     _GLOBAL  timemory-hash timemory-environment)
 timemory_handle_generic(manager      _GLOBAL  timemory-hash timemory-environment timemory-settings)
 
-timemory_handle_generic(containers   _EXTERN  timemory-hash timemory-environment timemory-settings)
-timemory_handle_generic(storage      _EXTERN  timemory-hash timemory-environment timemory-settings)
-timemory_handle_generic(plotting     _EXTERN  timemory-hash timemory-environment timemory-settings)
+set(_EXTERN_DEPENDS timemory-hash timemory-environment timemory-settings timemory-manager)
+
+timemory_handle_generic(containers   _EXTERN  ${_EXTERN_DEPENDS})
+timemory_handle_generic(storage      _EXTERN  ${_EXTERN_DEPENDS})
+timemory_handle_generic(plotting     _EXTERN  ${_EXTERN_DEPENDS})
 
 #
 #   native

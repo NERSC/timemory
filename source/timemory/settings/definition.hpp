@@ -39,6 +39,7 @@
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/serializer.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <sstream>

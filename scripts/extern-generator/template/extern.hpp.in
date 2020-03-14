@@ -29,8 +29,6 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_@CHECK@)
-
 //======================================================================================//
 //
 #include "timemory/@FOLDER@/macros.hpp"
@@ -40,5 +38,3 @@
 #include "timemory/@FOLDER@/declaration.hpp"
 //
 //======================================================================================//
-
-// #endif  // TIMEMORY_USE_@CHECK@

@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file components/user_bundle.hpp
- * \headerfile components/user_bundle.hpp "timemory/components/user_bundle.hpp"
+/**
+ * \headerfile "timemory/components/user_bundle/definition.hpp"
  * Defines the user_bundle component which can be used to inject components
  * at runtime. There are very useful for dynamically assembling collections
  * of tools at runtime
@@ -53,7 +53,7 @@
 //
 #    else
 //
-#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) extern __VA_ARGS__
+#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) __VA_ARGS__
 //
 #    endif
 //

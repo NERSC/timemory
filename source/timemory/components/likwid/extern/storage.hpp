@@ -29,14 +29,12 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_LIKWID)
-
-#    include "timemory/components/likwid/components.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/likwid/components.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
@@ -44,5 +42,3 @@ TIMEMORY_EXTERN_STORAGE(component::likwid_marker, likwid_marker)
 TIMEMORY_EXTERN_STORAGE(component::likwid_nvmarker, likwid_nvmarker)
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_LIKWID

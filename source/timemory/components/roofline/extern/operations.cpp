@@ -26,14 +26,12 @@
 /// define TIMEMORY_SOURCE to select appropriate macros
 ///
 
-#if defined(TIMEMORY_USE_PAPI) || defined(TIMEMORY_USE_CUPTI)
-
-//
-// include headers needed for full instantiation
-//
-#    include "timemory/data/bits/storage.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/storage/definition.hpp"
+#include "timemory/mpl/operations.hpp"
+#include "timemory/components/types.hpp"
+#include "timemory/manager/declaration.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 // clang-format off
@@ -43,5 +41,3 @@
 //
 // clang-format on
 //======================================================================================//
-
-#endif

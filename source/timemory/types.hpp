@@ -43,67 +43,134 @@
 
 namespace tim
 {
+//
 //--------------------------------------------------------------------------------------//
 //
+// clang-format off
 //
 using complete_types_t = type_list<
-    component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
-    component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
-    component::cuda_event, component::cuda_profiler, component::cupti_activity,
-    component::cupti_counters, component::current_peak_rss, component::data_rss,
-    component::gperf_cpu_profiler, component::gperf_heap_profiler,
-    component::gpu_roofline_dp_flops, component::gpu_roofline_flops,
-    component::gpu_roofline_hp_flops, component::gpu_roofline_sp_flops,
-    component::kernel_mode_time, component::likwid_marker, component::likwid_nvmarker,
-    component::malloc_gotcha, component::monotonic_clock, component::monotonic_raw_clock,
-    component::num_io_in, component::num_io_out, component::num_major_page_faults,
-    component::num_minor_page_faults, component::num_msg_recv, component::num_msg_sent,
-    component::num_signals, component::num_swap, component::nvtx_marker,
-    component::page_rss, component::papi_array_t, component::peak_rss,
-    component::priority_context_switch, component::process_cpu_clock,
-    component::process_cpu_util, component::read_bytes, component::stack_rss,
-    component::system_clock, component::tau_marker, component::thread_cpu_clock,
-    component::thread_cpu_util, component::trip_count, component::user_clock,
-    component::user_global_bundle, component::user_mode_time, component::virtual_memory,
-    component::voluntary_context_switch, component::vtune_event, component::vtune_frame,
-    component::vtune_profiler, component::wall_clock, component::written_bytes>;
-
+    component::caliper,
+    component::cpu_clock,
+    component::cpu_roofline_dp_flops,
+    component::cpu_roofline_flops,
+    component::cpu_roofline_sp_flops,
+    component::cpu_util,
+    component::cuda_event,
+    component::cuda_profiler,
+    component::cupti_activity,
+    component::cupti_counters,
+    component::current_peak_rss,
+    component::data_rss,
+    component::gperf_cpu_profiler,
+    component::gperf_heap_profiler,
+    component::gpu_roofline_dp_flops,
+    component::gpu_roofline_flops,
+    component::gpu_roofline_hp_flops,
+    component::gpu_roofline_sp_flops,
+    component::kernel_mode_time,
+    component::likwid_marker,
+    component::likwid_nvmarker,
+    component::malloc_gotcha,
+    component::monotonic_clock,
+    component::monotonic_raw_clock,
+    component::num_io_in,
+    component::num_io_out,
+    component::num_major_page_faults,
+    component::num_minor_page_faults,
+    component::num_msg_recv,
+    component::num_msg_sent,
+    component::num_signals,
+    component::num_swap,
+    component::nvtx_marker,
+    component::page_rss,
+    component::papi_array_t,
+    component::papi_vector,
+    component::peak_rss,
+    component::priority_context_switch,
+    component::process_cpu_clock,
+    component::process_cpu_util,
+    component::read_bytes,
+    component::stack_rss,
+    component::system_clock,
+    component::tau_marker,
+    component::thread_cpu_clock,
+    component::thread_cpu_util,
+    component::trip_count,
+    component::user_clock,
+    component::user_global_bundle,
+    component::user_mode_time,
+    component::virtual_memory,
+    component::voluntary_context_switch,
+    component::vtune_event,
+    component::vtune_frame,
+    component::vtune_profiler,
+    component::wall_clock,
+    component::written_bytes>;
+//
+//--------------------------------------------------------------------------------------//
+//
+// clang-format on
+//
+//--------------------------------------------------------------------------------------//
+//
 using complete_tuple_t           = convert_t<complete_types_t, std::tuple<>>;
 using complete_component_list_t  = convert_t<complete_types_t, component_list<>>;
 using complete_component_tuple_t = convert_t<complete_types_t, component_tuple<>>;
 using complete_auto_list_t       = convert_t<complete_types_t, auto_list<>>;
 using complete_auto_tuple_t      = convert_t<complete_types_t, auto_tuple<>>;
-
+//
+//--------------------------------------------------------------------------------------//
+//
 using available_types_t = convert_t<available_tuple<complete_types_t>, type_list<>>;
-
+//
+//--------------------------------------------------------------------------------------//
+//
 using available_tuple_t           = convert_t<available_types_t, std::tuple<>>;
 using available_component_list_t  = convert_t<available_types_t, component_list<>>;
 using available_component_tuple_t = convert_t<available_types_t, component_tuple<>>;
 using available_auto_list_t       = convert_t<available_types_t, auto_list<>>;
 using available_auto_tuple_t      = convert_t<available_types_t, auto_tuple<>>;
-
-// backwards-compatibility
+//
+//--------------------------------------------------------------------------------------//
+//
+//  backwards-compatibility
+//
 using complete_list_t  = complete_component_list_t;
 using available_list_t = available_component_list_t;
-
+//
+//--------------------------------------------------------------------------------------//
+//
 using global_bundle_t = component_tuple<component::user_global_bundle>;
 using ompt_bundle_t   = component_tuple<component::user_ompt_bundle>;
 using mpip_bundle_t   = component_tuple<component::user_mpip_bundle>;
-
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #if !defined(TIMEMORY_LIBRARY_TYPE)
 #    define TIMEMORY_LIBRARY_TYPE tim::available_component_list_t
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #if !defined(TIMEMORY_BUNDLE_TYPE)
 #    define TIMEMORY_BUNDLE_TYPE tim::global_bundle_t
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #if !defined(TIMEMORY_OMPT_BUNDLE_TYPE)
 #    define TIMEMORY_OMPT_BUNDLE_TYPE tim::ompt_bundle_t
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #if !defined(TIMEMORY_MPIP_BUNDLE_TYPE)
 #    define TIMEMORY_MPIP_BUNDLE_TYPE tim::mpip_bundle_t
 #endif
+//
+//--------------------------------------------------------------------------------------//
+//

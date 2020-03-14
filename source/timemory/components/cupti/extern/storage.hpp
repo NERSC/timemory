@@ -29,14 +29,12 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CUPTI)
-
-#    include "timemory/components/cupti/components.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/cupti/components.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
@@ -44,5 +42,3 @@ TIMEMORY_EXTERN_STORAGE(component::cupti_activity, cupti_activity)
 TIMEMORY_EXTERN_STORAGE(component::cupti_counters, cupti_counters)
 //
 //======================================================================================//
-
-#endif

@@ -29,6 +29,7 @@
 #include "timemory/data/graph.hpp"
 #include "timemory/settings.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <numeric>

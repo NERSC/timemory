@@ -33,12 +33,8 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/mpl/operations.hpp"
 
-#if defined(TIMEMORY_USE_GOTCHA)
-
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::malloc_gotcha, true)
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_GOTCHA

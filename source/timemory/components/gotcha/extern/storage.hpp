@@ -29,19 +29,15 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_GOTCHA)
-
-#    include "timemory/components/gotcha/components.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/gotcha/components.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_EXTERN_STORAGE(component::malloc_gotcha, malloc_gotcha)
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_GOTCHA

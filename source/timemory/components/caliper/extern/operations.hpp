@@ -25,7 +25,9 @@
 #pragma once
 
 #include "timemory/components/caliper/components.hpp"
+#include "timemory/components/caliper/types.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/environment/declaration.hpp"
 #include "timemory/mpl/operations.hpp"
 
 //======================================================================================//

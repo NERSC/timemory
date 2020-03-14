@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_GOTCHA)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/gotcha/traits.hpp"
-#    include "timemory/components/gotcha/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/gotcha/traits.hpp"
+#include "timemory/components/gotcha/types.hpp"
 
 //======================================================================================//
 //
@@ -48,5 +46,3 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<malloc_gotcha, double>)
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_GOTCHA

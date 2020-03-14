@@ -30,21 +30,14 @@
 #pragma once
 
 #include "timemory/components/gperftools/components.hpp"
+#include "timemory/components/gperftools/types.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/environment/declaration.hpp"
 #include "timemory/mpl/operations.hpp"
 
-// #if defined(TIMEMORY_USE_GPERFTOOLS)
-
 //======================================================================================//
 //
-#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
 TIMEMORY_EXTERN_OPERATIONS(component::gperf_heap_profiler, false)
-#endif
-//
-#if !defined(TIMEMORY_USE_GPERF) && !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
 TIMEMORY_EXTERN_OPERATIONS(component::gperf_cpu_profiler, false)
-#endif
 //
 //======================================================================================//
-
-// #endif  // TIMEMORY_USE_GPERFTOOLS

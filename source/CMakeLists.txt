@@ -113,6 +113,30 @@ endif()
 
 set(_LINKER_LANGUAGE CXX)
 
+function(TIMEMORY_GET_INTERNAL_DEPENDS VAR)
+    # set the depends before creating the library so it does not
+    # link to itself
+    set(DEPENDS)
+    foreach(DEP ${ARGN})
+        if(TARGET ${DEP})
+            list(APPEND DEPENDS ${DEP})
+        endif()
+        if(TARGET ${DEP}-${LINK})
+            list(APPEND DEPENDS ${DEP}-${LINK})
+        endif()
+        if(TARGET ${DEP}-component-${LINK})
+            list(APPEND DEPENDS ${DEP}-component-${LINK})
+        endif()
+        if(TARGET timemory-${DEP}-${LINK})
+            list(APPEND DEPENDS timemory-${DEP}-${LINK})
+        endif()
+        if(TARGET timemory-${DEP}-component-${LINK})
+            list(APPEND DEPENDS timemory-${DEP}-component-${LINK})
+        endif()
+    endforeach()
+    set(${VAR} "${DEPENDS}" PARENT_SCOPE)
+endfunction()
+
 #----------------------------------------------------------------------------------------#
 #
 #                   GLOBAL libraries which are basically used everywhere
@@ -146,6 +170,9 @@ foreach(COMP ${TIMEMORY_GLOBAL})
     foreach(LINK ${_LIB_TYPES})
         string(TOUPPER "${LINK}" UPP_LINK)
         set(TARGET_NAME timemory-${COMP}-${LINK})
+
+        timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
+
         build_library(${${LINK}_OPTIONS}
             TARGET_NAME         ${TARGET_NAME}
             OUTPUT_NAME         timemory-${COMP}
@@ -155,21 +182,6 @@ foreach(COMP ${TIMEMORY_GLOBAL})
             SOURCES             ${${COMP}_SOURCES}
                                 ${${COMP}_HEADERS}
             CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
-
-        set(DEPENDS)
-        foreach(DEP ${${COMP}_DEPENDS})
-            if(NOT TARGET ${DEP})
-                if(TARGET ${DEP}-${LINK})
-                    list(APPEND DEPENDS ${DEP}-${LINK})
-                elseif(TARGET timemory-${DEP}-${LINK})
-                    list(APPEND DEPENDS timemory-${DEP}-${LINK})
-                else()
-                    message(FATAL_ERROR "Unknown global library dependency: ${DEP}")
-                endif()
-            else()
-                list(APPEND DEPENDS ${DEP})
-            endif()
-        endforeach()
 
         target_link_libraries(${TARGET_NAME} PUBLIC
             timemory-headers
@@ -189,7 +201,16 @@ foreach(COMP ${TIMEMORY_GLOBAL})
 
         target_compile_definitions(${TARGET_NAME} PUBLIC  ${_USE_EXTERN})
         target_compile_definitions(${TARGET_NAME} PRIVATE
-            TIMEMORY_SOURCE TIMEMORY_${UPP_COMP}_SOURCE)
+            TIMEMORY_SOURCE
+            TIMEMORY_GLOBAL_SOURCE
+            TIMEMORY_${UPP_COMP}_SOURCE)
+
+        if(NOT WIN32)
+            target_compile_definitions(${TARGET_NAME} PUBLIC
+                TIMEMORY_USE_GLOBAL_EXTERN
+                TIMEMORY_USE_${UPP_COMP}_EXTERN)
+        endif()
+
     endforeach()
 
 endforeach()
@@ -264,8 +285,14 @@ foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
     set(_SOURCES ${${COMP}_SOURCES} ${${COMP}_HEADERS})
 
     foreach(LINK ${_LIB_TYPES})
+
         string(TOUPPER "${LINK}" UPP_LINK)
         set(TARGET_NAME timemory-${COMP}-component-${LINK})
+
+        # set the depends before creating the library so it does not
+        # link to itself
+        timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
+
         build_library(${${LINK}_OPTIONS}
             TARGET_NAME         ${TARGET_NAME}
             OUTPUT_NAME         timemory-${COMP}-component
@@ -274,25 +301,6 @@ foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
             OUTPUT_DIR          ${PROJECT_BINARY_DIR}/components
             SOURCES             ${_SOURCES}
             CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
-
-        set(DEPENDS)
-        foreach(DEP ${${COMP}_DEPENDS})
-            if(NOT TARGET ${DEP})
-                if(TARGET ${DEP}-${LINK})
-                    list(APPEND DEPENDS ${DEP}-${LINK})
-                elseif(TARGET ${DEP}-component-${LINK})
-                    list(APPEND DEPENDS ${DEP}-component-${LINK})
-                elseif(TARGET timemory-${DEP}-${LINK})
-                    list(APPEND DEPENDS timemory-${DEP}-${LINK})
-                elseif(TARGET timemory-${DEP}-component-${LINK})
-                    list(APPEND DEPENDS timemory-${DEP}-component-${LINK})
-                else()
-                    message(FATAL_ERROR "Unknown component library dependency: ${DEP}")
-                endif()
-            else()
-                list(APPEND DEPENDS ${DEP})
-            endif()
-        endforeach()
 
         target_link_libraries(${TARGET_NAME} PUBLIC
             timemory-headers
@@ -313,7 +321,15 @@ foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
 
         target_compile_definitions(${TARGET_NAME} PUBLIC  ${_USE_EXTERN})
         target_compile_definitions(${TARGET_NAME} PRIVATE
-            TIMEMORY_SOURCE TIMEMORY_${UPP_COMP}_SOURCE)
+            TIMEMORY_SOURCE
+            TIMEMORY_COMPONENT_SOURCE
+            TIMEMORY_${UPP_COMP}_SOURCE)
+
+        if(NOT WIN32)
+            target_compile_definitions(${TARGET_NAME} PUBLIC
+                TIMEMORY_USE_COMPONENT_EXTERN
+                TIMEMORY_USE_${UPP_COMP}_EXTERN)
+        endif()
     endforeach()
 
 endforeach()
@@ -356,6 +372,9 @@ foreach(COMP ${TIMEMORY_EXTERN})
     foreach(LINK ${_LIB_TYPES})
         string(TOUPPER "${LINK}" UPP_LINK)
         set(TARGET_NAME timemory-${COMP}-${LINK})
+
+        timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
+
         build_library(${${LINK}_OPTIONS}
             TARGET_NAME         ${TARGET_NAME}
             OUTPUT_NAME         timemory-${COMP}
@@ -366,29 +385,11 @@ foreach(COMP ${TIMEMORY_EXTERN})
                                 ${${COMP}_HEADERS}
             CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
 
-        set(DEPENDS)
-        foreach(DEP ${${COMP}_DEPENDS})
-            if(NOT TARGET ${DEP})
-                if(TARGET ${DEP}-${LINK})
-                    list(APPEND DEPENDS ${DEP}-${LINK})
-                elseif(TARGET ${DEP}-component-${LINK})
-                    list(APPEND DEPENDS ${DEP}-component-${LINK})
-                elseif(TARGET timemory-${DEP}-${LINK})
-                    list(APPEND DEPENDS timemory-${DEP}-${LINK})
-                elseif(TARGET timemory-${DEP}-component-${LINK})
-                    list(APPEND DEPENDS timemory-${DEP}-component-${LINK})
-                else()
-                    message(FATAL_ERROR "Unknown extern library dependency: ${DEP}")
-                endif()
-            else()
-                list(APPEND DEPENDS ${DEP})
-            endif()
-        endforeach()
-
         target_link_libraries(${TARGET_NAME} PUBLIC
             timemory-headers
             timemory-vector
             timemory-external-${LINK}
+            ${TIMEMORY_${UPP_LINK}_COMPONENT_LIBRARIES}
             ${DEPENDS})
 
         target_link_libraries(${TARGET_NAME} PRIVATE
@@ -403,7 +404,10 @@ foreach(COMP ${TIMEMORY_EXTERN})
 
         target_compile_definitions(${TARGET_NAME} PUBLIC  ${_USE_EXTERN})
         target_compile_definitions(${TARGET_NAME} PRIVATE
-            TIMEMORY_SOURCE TIMEMORY_${UPP_COMP}_SOURCE)
+            TIMEMORY_SOURCE
+            TIMEMORY_EXTERN_SOURCE
+            TIMEMORY_${UPP_COMP}_SOURCE)
+
     endforeach()
 
 endforeach()
@@ -432,7 +436,8 @@ if(_BUILD_SHARED_CXX)
         timemory-headers
         timemory-vector
         timemory-external-shared
-        ${TIMEMORY_SHARED_COMPONENT_LIBRARIES})
+        ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
+        ${TIMEMORY_SHARED_EXTERN_LIBRARIES})
 
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
@@ -467,7 +472,8 @@ if(_BUILD_STATIC_CXX)
         timemory-headers
         timemory-vector
         timemory-external-static
-        ${TIMEMORY_STATIC_COMPONENT_LIBRARIES})
+        ${TIMEMORY_STATIC_COMPONENT_LIBRARIES}
+        ${TIMEMORY_STATIC_EXTERN_LIBRARIES})
 
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options

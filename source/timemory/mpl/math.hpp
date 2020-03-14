@@ -94,11 +94,11 @@ inline void
 assign(_Tp&, _Up&&);
 
 template <typename _Tp, typename _Up = _Tp>
-inline void
+inline _Tp&
 plus(_Tp&, const _Up&);
 
 template <typename _Tp, typename _Up = _Tp>
-inline void
+inline _Tp&
 minus(_Tp&, const _Up&);
 
 template <typename _Tp, typename _Up = _Tp>
@@ -505,10 +505,11 @@ plus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
 }
 
 template <typename _Tp, typename _Up>
-void
+_Tp&
 plus(_Tp& _lhs, const _Up& _rhs)
 {
     plus(_lhs, _rhs, get_index_sequence<_Tp>::value, 0);
+    return _lhs;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -568,10 +569,11 @@ minus(_Tp& _lhs, const _Up& _rhs, index_sequence<_Idx...>, int)
 }
 
 template <typename _Tp, typename _Up>
-void
+_Tp&
 minus(_Tp& _lhs, const _Up& _rhs)
 {
     minus(_lhs, _rhs, get_index_sequence<_Tp>::value, 0);
+    return _lhs;
 }
 
 //--------------------------------------------------------------------------------------//

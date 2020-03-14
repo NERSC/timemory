@@ -107,8 +107,7 @@ struct settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, debug, "TIMEMORY_DEBUG", false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER", true)
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE",
-                                    false)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS",
                                     true)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
@@ -376,8 +375,8 @@ struct settings
     //----------------------------------------------------------------------------------//
 
     /// default setting for auto_{list,tuple,hybrid} "report_at_exit" member variable
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, destructor_report,
-                                    "TIMEMORY_DESTRUCTOR_REPORT", false)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT",
+                                    false)
 
     //----------------------------------------------------------------------------------//
     //     For plotting

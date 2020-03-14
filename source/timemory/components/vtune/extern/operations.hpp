@@ -33,8 +33,6 @@
 #include "timemory/components/vtune/components.hpp"
 #include "timemory/mpl/operations.hpp"
 
-#if defined(TIMEMORY_USE_VTUNE)
-
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::vtune_event, false)
@@ -42,5 +40,3 @@ TIMEMORY_EXTERN_OPERATIONS(component::vtune_frame, false)
 TIMEMORY_EXTERN_OPERATIONS(component::vtune_profiler, false)
 //
 //======================================================================================//
-
-#endif

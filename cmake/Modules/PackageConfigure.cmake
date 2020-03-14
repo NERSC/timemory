@@ -86,7 +86,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
 endif()
 
-if(TIMEMORY_USE_GPERF)
+if(TIMEMORY_USE_GPERFTOOLS)
     foreach(_TYPE cpu heap)
         configure_file(${PROJECT_SOURCE_DIR}/scripts/gperf-${_TYPE}-profile.sh
             ${CMAKE_BINARY_DIR}/gperf-${_TYPE}-profile.sh COPYONLY)

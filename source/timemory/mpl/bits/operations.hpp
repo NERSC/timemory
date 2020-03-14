@@ -44,6 +44,7 @@
 #include "timemory/settings.hpp"
 #include "timemory/utility/serializer.hpp"
 
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <iostream>

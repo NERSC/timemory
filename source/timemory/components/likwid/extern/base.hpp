@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_LIKWID)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/likwid/traits.hpp"
-#    include "timemory/components/likwid/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/likwid/traits.hpp"
+#include "timemory/components/likwid/types.hpp"
 
 //======================================================================================//
 //
@@ -49,5 +47,3 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<likwid_nvmarker, void>)
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_LIKWID

@@ -196,31 +196,15 @@ struct dummy
 
 #    if defined(TIMEMORY_USE_EXTERN)
 //
-#        include "timemory/extern/auto_timer.hpp"
-#        include "timemory/extern/auto_user_bundle.hpp"
-#        include "timemory/extern/complete_list.hpp"
-#        include "timemory/extern/ert.hpp"
-//
 //--------------------------------------------------------------------------------------//
 //
 //                      PROVIDE THE SYMBOLS VIA EXTERN
 //
 //--------------------------------------------------------------------------------------//
 //
-#        include "timemory/components/caliper/extern.hpp"
-#        include "timemory/components/cuda/extern.hpp"
-#        include "timemory/components/cupti/extern.hpp"
-#        include "timemory/components/gotcha/extern.hpp"
-#        include "timemory/components/gperftools/extern.hpp"
-#        include "timemory/components/likwid/extern.hpp"
-#        include "timemory/components/papi/extern.hpp"
-#        include "timemory/components/roofline/extern.hpp"
-#        include "timemory/components/rusage/extern.hpp"
-#        include "timemory/components/tau_marker/extern.hpp"
-#        include "timemory/components/timing/extern.hpp"
-#        include "timemory/components/trip_count/extern.hpp"
-#        include "timemory/components/user_bundle/extern.hpp"
-#        include "timemory/components/vtune/extern.hpp"
+#        include "timemory/extern/ert.hpp"
+//
+#        include "timemory/components/extern.hpp"
 //
 #    endif
 

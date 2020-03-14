@@ -33,8 +33,6 @@
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/mpl/operations.hpp"
 
-// #if defined(TIMEMORY_USE_USER_BUNDLE)
-
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::user_global_bundle, false)
@@ -43,14 +41,8 @@ TIMEMORY_EXTERN_OPERATIONS(component::user_tuple_bundle, false)
 //
 TIMEMORY_EXTERN_OPERATIONS(component::user_list_bundle, false)
 //
-#if defined(TIMEMORY_USE_OMPT)
 TIMEMORY_EXTERN_OPERATIONS(component::user_ompt_bundle, false)
-#endif
 //
-#if defined(TIMEMORY_USE_MPIP)
 TIMEMORY_EXTERN_OPERATIONS(component::user_mpip_bundle, false)
-#endif
 //
 //======================================================================================//
-
-// #endif  // TIMEMORY_USE_USER_BUNDLE

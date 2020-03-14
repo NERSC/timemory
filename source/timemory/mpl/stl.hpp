@@ -57,21 +57,21 @@ operator<<(std::ostream&, const std::pair<T, U>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 std::ostream&
-operator<<(std::ostream&, const std::tuple<_Types...>&);
+operator<<(std::ostream&, const std::tuple<Types...>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
+template <typename Tp, typename... Extra>
 std::ostream&
-operator<<(std::ostream&, const std::vector<_Tp, _Extra...>&);
+operator<<(std::ostream&, const std::vector<Tp, Extra...>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
+template <typename Tp, size_t N>
 std::ostream&
-operator<<(std::ostream&, const std::array<_Tp, _N>&);
+operator<<(std::ostream&, const std::array<Tp, N>&);
 
 //--------------------------------------------------------------------------------------//
 
@@ -83,27 +83,27 @@ operator<<(std::ostream&, const std::array<_Tp, _N>&);
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N, typename _Other>
-std::array<_Tp, _N>&
-operator+=(std::array<_Tp, _N>&, _Other&&);
+template <typename Tp, size_t N, typename _Other>
+std::array<Tp, N>&
+operator+=(std::array<Tp, N>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs, typename _Other>
-std::pair<_Lhs, _Rhs>&
-operator+=(std::pair<_Lhs, _Rhs>&, _Other&&);
+template <typename Lhs, typename Rhs, typename _Other>
+std::pair<Lhs, Rhs>&
+operator+=(std::pair<Lhs, Rhs>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra, typename _Other>
-std::vector<_Tp, _Extra...>&
-operator+=(std::vector<_Tp, _Extra...>&, _Other&&);
+template <typename Tp, typename... Extra, typename _Other>
+std::vector<Tp, Extra...>&
+operator+=(std::vector<Tp, Extra...>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, typename _Other>
-std::tuple<_Types...>&
-operator+=(std::tuple<_Types...>&, _Other&&);
+template <typename... Types, typename _Other>
+std::tuple<Types...>&
+operator+=(std::tuple<Types...>&, _Other&&);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -111,27 +111,27 @@ operator+=(std::tuple<_Types...>&, _Other&&);
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-std::array<_Tp, _N>&
-operator-=(std::array<_Tp, _N>&, const std::array<_Tp, _N>&);
+template <typename Tp, size_t N>
+std::array<Tp, N>&
+operator-=(std::array<Tp, N>&, const std::array<Tp, N>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-std::tuple<_Types...>&
-operator-=(std::tuple<_Types...>&, const std::tuple<_Types...>&);
+template <typename... Types>
+std::tuple<Types...>&
+operator-=(std::tuple<Types...>&, const std::tuple<Types...>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
-std::pair<_Lhs, _Rhs>&
-operator-=(std::pair<_Lhs, _Rhs>&, const std::pair<_Lhs, _Rhs>&);
+template <typename Lhs, typename Rhs>
+std::pair<Lhs, Rhs>&
+operator-=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
-std::vector<_Tp, _Extra...>&
-operator-=(std::vector<_Tp, _Extra...>&, const std::vector<_Tp, _Extra...>&);
+template <typename Tp, typename... Extra>
+std::vector<Tp, Extra...>&
+operator-=(std::vector<Tp, Extra...>&, const std::vector<Tp, Extra...>&);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -139,27 +139,27 @@ operator-=(std::vector<_Tp, _Extra...>&, const std::vector<_Tp, _Extra...>&);
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-std::array<_Tp, _N>&
-operator*=(std::array<_Tp, _N>&, const std::array<_Tp, _N>&);
+template <typename Tp, size_t N>
+std::array<Tp, N>&
+operator*=(std::array<Tp, N>&, const std::array<Tp, N>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
-std::pair<_Lhs, _Rhs>&
-operator*=(std::pair<_Lhs, _Rhs>&, const std::pair<_Lhs, _Rhs>&);
+template <typename Lhs, typename Rhs>
+std::pair<Lhs, Rhs>&
+operator*=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-std::tuple<_Types...>&
-operator*=(std::tuple<_Types...>&, const std::tuple<_Types...>&);
+template <typename... Types>
+std::tuple<Types...>&
+operator*=(std::tuple<Types...>&, const std::tuple<Types...>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
-std::vector<_Tp, _Extra...>&
-operator*=(std::vector<_Tp, _Extra...>&, const std::vector<_Tp, _Extra...>&);
+template <typename Tp, typename... Extra>
+std::vector<Tp, Extra...>&
+operator*=(std::vector<Tp, Extra...>&, const std::vector<Tp, Extra...>&);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -167,27 +167,27 @@ operator*=(std::vector<_Tp, _Extra...>&, const std::vector<_Tp, _Extra...>&);
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-std::array<_Tp, _N>&
-operator/=(std::array<_Tp, _N>&, const std::array<_Tp, _N>&);
+template <typename Tp, size_t N>
+std::array<Tp, N>&
+operator/=(std::array<Tp, N>&, const std::array<Tp, N>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
-std::pair<_Lhs, _Rhs>&
-operator/=(std::pair<_Lhs, _Rhs>&, const std::pair<_Lhs, _Rhs>&);
+template <typename Lhs, typename Rhs>
+std::pair<Lhs, Rhs>&
+operator/=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-std::tuple<_Types...>&
-operator/=(std::tuple<_Types...>&, const std::tuple<_Types...>&);
+template <typename... Types>
+std::tuple<Types...>&
+operator/=(std::tuple<Types...>&, const std::tuple<Types...>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
-std::vector<_Tp, _Extra...>&
-operator/=(std::vector<_Tp, _Extra...>&, const std::vector<_Tp, _Extra...>&);
+template <typename Tp, typename... Extra>
+std::vector<Tp, Extra...>&
+operator/=(std::vector<Tp, Extra...>&, const std::vector<Tp, Extra...>&);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -195,9 +195,9 @@ operator/=(std::vector<_Tp, _Extra...>&, const std::vector<_Tp, _Extra...>&);
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-const std::array<_Tp, _N>
-operator+(std::array<_Tp, _N> lhs, const std::array<_Tp, _N>& rhs)
+template <typename Tp, size_t N>
+const std::array<Tp, N>
+operator+(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::plus(lhs, rhs);
     return lhs;
@@ -205,9 +205,9 @@ operator+(std::array<_Tp, _N> lhs, const std::array<_Tp, _N>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-const std::tuple<_Types...>
-operator+(std::tuple<_Types...> lhs, const std::tuple<_Types...>& rhs)
+template <typename... Types>
+const std::tuple<Types...>
+operator+(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 {
     math::plus(lhs, rhs);
     return lhs;
@@ -215,9 +215,9 @@ operator+(std::tuple<_Types...> lhs, const std::tuple<_Types...>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
-const std::pair<_Lhs, _Rhs>
-operator+(std::pair<_Lhs, _Rhs> lhs, const std::pair<_Lhs, _Rhs>& rhs)
+template <typename Lhs, typename Rhs>
+const std::pair<Lhs, Rhs>
+operator+(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 {
     math::plus(lhs, rhs);
     return lhs;
@@ -225,9 +225,9 @@ operator+(std::pair<_Lhs, _Rhs> lhs, const std::pair<_Lhs, _Rhs>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
-const std::vector<_Tp, _Extra...>
-operator+(std::vector<_Tp, _Extra...> lhs, const std::vector<_Tp, _Extra...>& rhs)
+template <typename Tp, typename... Extra>
+const std::vector<Tp, Extra...>
+operator+(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 {
     math::plus(lhs, rhs);
     return lhs;
@@ -239,9 +239,9 @@ operator+(std::vector<_Tp, _Extra...> lhs, const std::vector<_Tp, _Extra...>& rh
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-const std::array<_Tp, _N>
-operator-(std::array<_Tp, _N> lhs, const std::array<_Tp, _N>& rhs)
+template <typename Tp, size_t N>
+const std::array<Tp, N>
+operator-(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::minus(lhs, rhs);
     return lhs;
@@ -249,9 +249,9 @@ operator-(std::array<_Tp, _N> lhs, const std::array<_Tp, _N>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-const std::tuple<_Types...>
-operator-(std::tuple<_Types...> lhs, const std::tuple<_Types...>& rhs)
+template <typename... Types>
+const std::tuple<Types...>
+operator-(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 {
     math::minus(lhs, rhs);
     return lhs;
@@ -259,9 +259,9 @@ operator-(std::tuple<_Types...> lhs, const std::tuple<_Types...>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
-const std::pair<_Lhs, _Rhs>
-operator-(std::pair<_Lhs, _Rhs> lhs, const std::pair<_Lhs, _Rhs>& rhs)
+template <typename Lhs, typename Rhs>
+const std::pair<Lhs, Rhs>
+operator-(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 {
     math::minus(lhs, rhs);
     return lhs;
@@ -269,9 +269,9 @@ operator-(std::pair<_Lhs, _Rhs> lhs, const std::pair<_Lhs, _Rhs>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
-const std::vector<_Tp, _Extra...>
-operator-(std::vector<_Tp, _Extra...> lhs, const std::vector<_Tp, _Extra...>& rhs)
+template <typename Tp, typename... Extra>
+const std::vector<Tp, Extra...>
+operator-(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 {
     math::minus(lhs, rhs);
     return lhs;
@@ -283,9 +283,8 @@ operator-(std::vector<_Tp, _Extra...> lhs, const std::vector<_Tp, _Extra...>& rh
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-const std::array<_Tp, _N> operator*(std::array<_Tp, _N>        lhs,
-                                    const std::array<_Tp, _N>& rhs)
+template <typename Tp, size_t N>
+const std::array<Tp, N> operator*(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -293,9 +292,9 @@ const std::array<_Tp, _N> operator*(std::array<_Tp, _N>        lhs,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-const std::tuple<_Types...> operator*(std::tuple<_Types...>        lhs,
-                                      const std::tuple<_Types...>& rhs)
+template <typename... Types>
+const std::tuple<Types...> operator*(std::tuple<Types...>        lhs,
+                                     const std::tuple<Types...>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -303,9 +302,9 @@ const std::tuple<_Types...> operator*(std::tuple<_Types...>        lhs,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
-const std::pair<_Lhs, _Rhs> operator*(std::pair<_Lhs, _Rhs>        lhs,
-                                      const std::pair<_Lhs, _Rhs>& rhs)
+template <typename Lhs, typename Rhs>
+const std::pair<Lhs, Rhs> operator*(std::pair<Lhs, Rhs>        lhs,
+                                    const std::pair<Lhs, Rhs>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -313,9 +312,9 @@ const std::pair<_Lhs, _Rhs> operator*(std::pair<_Lhs, _Rhs>        lhs,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
-const std::vector<_Tp, _Extra...> operator*(std::vector<_Tp, _Extra...>        lhs,
-                                            const std::vector<_Tp, _Extra...>& rhs)
+template <typename Tp, typename... Extra>
+const std::vector<Tp, Extra...> operator*(std::vector<Tp, Extra...>        lhs,
+                                          const std::vector<Tp, Extra...>& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -327,9 +326,9 @@ const std::vector<_Tp, _Extra...> operator*(std::vector<_Tp, _Extra...>        l
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-const std::array<_Tp, _N>
-operator/(std::array<_Tp, _N> lhs, const std::array<_Tp, _N>& rhs)
+template <typename Tp, size_t N>
+const std::array<Tp, N>
+operator/(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs)
 {
     math::divide(lhs, rhs);
     return lhs;
@@ -337,9 +336,9 @@ operator/(std::array<_Tp, _N> lhs, const std::array<_Tp, _N>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-const std::tuple<_Types...>
-operator/(std::tuple<_Types...> lhs, const std::tuple<_Types...>& rhs)
+template <typename... Types>
+const std::tuple<Types...>
+operator/(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs)
 {
     math::divide(lhs, rhs);
     return lhs;
@@ -347,9 +346,9 @@ operator/(std::tuple<_Types...> lhs, const std::tuple<_Types...>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Lhs, typename _Rhs>
-const std::pair<_Lhs, _Rhs>
-operator/(std::pair<_Lhs, _Rhs> lhs, const std::pair<_Lhs, _Rhs>& rhs)
+template <typename Lhs, typename Rhs>
+const std::pair<Lhs, Rhs>
+operator/(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs)
 {
     math::divide(lhs, rhs);
     return lhs;
@@ -357,15 +356,17 @@ operator/(std::pair<_Lhs, _Rhs> lhs, const std::pair<_Lhs, _Rhs>& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Extra>
-const std::vector<_Tp, _Extra...>
-operator/(std::vector<_Tp, _Extra...> lhs, const std::vector<_Tp, _Extra...>& rhs)
+template <typename Tp, typename... Extra>
+const std::vector<Tp, Extra...>
+operator/(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 {
     math::divide(lhs, rhs);
     return lhs;
 }
 
 }  // namespace stl
+
+using namespace stl;
 
 }  // namespace tim
 

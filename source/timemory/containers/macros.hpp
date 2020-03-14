@@ -31,6 +31,212 @@
 
 //======================================================================================//
 //
-// Define macros for containers
+//                              Define macros for containers
 //
 //======================================================================================//
+//
+#if defined(TIMEMORY_CONTAINERS_SOURCE)
+//
+#    define TIMEMORY_CONTAINERS_LINKAGE(...) __VA_ARGS__
+//
+#else
+//
+#    if !defined(TIMEMORY_USE_EXTERN)
+//
+#        define TIMEMORY_CONTAINERS_LINKAGE(...) inline __VA_ARGS__
+//
+#    else
+//
+#        define TIMEMORY_EXTERN_CONTAINERS
+//
+#        define TIMEMORY_CONTAINERS_LINKAGE(...) extern __VA_ARGS__
+//
+#    endif
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_EXTERN_NAME_COMBINE)
+#    define TIMEMORY_EXTERN_NAME_COMBINE(X, Y) X##Y
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_EXTERN_TUPLE_ALIAS)
+#    define TIMEMORY_EXTERN_TUPLE_ALIAS(Y) TIMEMORY_EXTERN_NAME_COMBINE(extern_tuple_, Y)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_EXTERN_LIST_ALIAS)
+#    define TIMEMORY_EXTERN_LIST_ALIAS(Y) TIMEMORY_EXTERN_NAME_COMBINE(extern_list_, Y)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//      extern declaration
+//
+#if !defined(TIMEMORY_DECLARE_EXTERN_TUPLE)
+#    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
+        namespace tim                                                                    \
+        {                                                                                \
+        extern template class component_tuple<__VA_ARGS__>;                              \
+        extern template class auto_tuple<__VA_ARGS__>;                                   \
+        using TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS) = component_tuple<__VA_ARGS__>;        \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_DECLARE_EXTERN_LIST)
+#    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
+        namespace tim                                                                    \
+        {                                                                                \
+        extern template class component_list<__VA_ARGS__>;                               \
+        extern template class auto_list<__VA_ARGS__>;                                    \
+        using TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS) = component_list<__VA_ARGS__>;          \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_DECLARE_EXTERN_HYBRID)
+#    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
+        namespace tim                                                                    \
+        {                                                                                \
+        extern template class component_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),      \
+                                               TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;      \
+        extern template class auto_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),           \
+                                          TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;           \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//      extern instantiation
+//
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_TUPLE)
+#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
+        namespace tim                                                                    \
+        {                                                                                \
+        template class component_tuple<__VA_ARGS__>;                                     \
+        template class auto_tuple<__VA_ARGS__>;                                          \
+        using TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS) = component_tuple<__VA_ARGS__>;        \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_LIST)
+#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
+        namespace tim                                                                    \
+        {                                                                                \
+        template class component_list<__VA_ARGS__>;                                      \
+        template class auto_list<__VA_ARGS__>;                                           \
+        using TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS) = component_list<__VA_ARGS__>;          \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_HYBRID)
+#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
+        namespace tim                                                                    \
+        {                                                                                \
+        template class component_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),             \
+                                        TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;             \
+        template class auto_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),                  \
+                                   TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;                  \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//                      generic for build
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_EXTERN)
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_CONTAINERS_SOURCE)
+//
+//--------------------------------------------------------------------------------------//
+//
+#        if !defined(TIMEMORY_EXTERN_TUPLE)
+#            define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                   \
+                TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
+#        endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#        if !defined(TIMEMORY_EXTERN_LIST)
+#            define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                    \
+                TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
+#        endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#        if !defined(TIMEMORY_EXTERN_HYBRID)
+#            define TIMEMORY_EXTERN_HYBRID(_ALIAS)                                       \
+                TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)
+#        endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    else
+//
+//--------------------------------------------------------------------------------------//
+//
+#        if !defined(TIMEMORY_EXTERN_TUPLE)
+#            define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                   \
+                TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
+#        endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#        if !defined(TIMEMORY_EXTERN_LIST)
+#            define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                    \
+                TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
+#        endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#        if !defined(TIMEMORY_EXTERN_HYBRID)
+#            define TIMEMORY_EXTERN_HYBRID(_ALIAS) TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)
+#        endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#else
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_TUPLE)
+#        define TIMEMORY_EXTERN_TUPLE(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_LIST)
+#        define TIMEMORY_EXTERN_LIST(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_HYBRID)
+#        define TIMEMORY_EXTERN_HYBRID(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//

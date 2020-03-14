@@ -43,6 +43,12 @@
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
+namespace std
+{
+template <typename Iter, typename Func>
+void sort(Iter, Iter, Func);
+}
+
 namespace tim
 {
 namespace utility

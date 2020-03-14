@@ -29,29 +29,29 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_PAPI) || defined(TIMEMORY_USE_CUPTI)
-
-#    include "timemory/components/macros.hpp"
-#    include "timemory/components/roofline/components.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/roofline/components.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
-#    if defined(TIMEMORY_USE_PAPI)
+#if defined(TIMEMORY_USE_PAPI_EXTERN)
+//
 TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_sp_flops, cpu_roofline_sp_flops)
 TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_dp_flops, cpu_roofline_dp_flops)
 TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_flops, cpu_roofline_flops)
-#    endif
-
-#    if defined(TIMEMORY_USE_CUPTI)
+//
+#endif
+//
+#if defined(TIMEMORY_USE_CUPTI_EXTERN)
+//
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_sp_flops, gpu_roofline_sp_flops)
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_dp_flops, gpu_roofline_dp_flops)
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_flops, gpu_roofline_flops)
-#    endif
+//
+#endif
 //
 //======================================================================================//
-
-#endif

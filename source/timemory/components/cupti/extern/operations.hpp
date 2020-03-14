@@ -33,13 +33,9 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/mpl/operations.hpp"
 
-#if defined(TIMEMORY_USE_CUPTI)
-
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::cupti_activity, true)
 TIMEMORY_EXTERN_OPERATIONS(component::cupti_counters, true)
 //
 //======================================================================================//
-
-#endif

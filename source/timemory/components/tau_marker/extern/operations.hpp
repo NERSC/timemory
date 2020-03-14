@@ -33,12 +33,8 @@
 #include "timemory/components/tau_marker/components.hpp"
 #include "timemory/mpl/operations.hpp"
 
-#if defined(TIMEMORY_USE_TAU)
-
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::tau_marker, false)
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_TAU

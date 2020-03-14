@@ -35,17 +35,20 @@
 
 //======================================================================================//
 //
-#if defined(TIMEMORY_USE_PAPI)
+#if defined(TIMEMORY_USE_PAPI_EXTERN)
+//
 TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_sp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_dp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_flops, true)
+//
 #endif
-
-#if defined(TIMEMORY_USE_CUPTI)
+//
+#if defined(TIMEMORY_USE_CUPTI_EXTERN)
+//
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
+//
 #endif
-
 //
 //======================================================================================//

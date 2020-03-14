@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_PAPI)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/papi/traits.hpp"
-#    include "timemory/components/papi/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/papi/traits.hpp"
+#include "timemory/components/papi/types.hpp"
 
 //======================================================================================//
 //
@@ -51,5 +49,3 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<papi_array<32>, std::array<long long, 32>>)
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif

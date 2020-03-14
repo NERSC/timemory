@@ -44,6 +44,7 @@
 #include "timemory/utility/macros.hpp"
 //
 
+#include <algorithm>
 #include <atomic>
 #include <fstream>
 #include <iosfwd>

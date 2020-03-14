@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_TAU)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/tau_marker/traits.hpp"
-#    include "timemory/components/tau_marker/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/tau_marker/traits.hpp"
+#include "timemory/components/tau_marker/types.hpp"
 
 //======================================================================================//
 //
@@ -48,5 +46,3 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<tau_marker, void>)
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_TAU

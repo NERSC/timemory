@@ -33,13 +33,9 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/mpl/operations.hpp"
 
-#if defined(TIMEMORY_USE_LIKWID)
-
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::likwid_marker, false)
 TIMEMORY_EXTERN_OPERATIONS(component::likwid_nvmarker, false)
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_LIKWID

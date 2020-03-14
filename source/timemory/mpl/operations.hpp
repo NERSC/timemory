@@ -94,7 +94,8 @@ struct init_storage
     template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
     init_storage()
     {
-        this_type::init();
+        static thread_local auto _instance = storage_type::instance();
+        _instance->initialize();
     }
 
     template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
@@ -1915,18 +1916,31 @@ struct generic_counter
 //--------------------------------------------------------------------------------------//
 
 }  // namespace operation
-
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
 storage_initializer
 storage_initializer::get()
 {
-    static thread_local auto _once = []() {
-        operation::init_storage<T>::init();
+    using storage_type = storage<T>;
+
+    static auto _master = []() {
+        auto _instance = storage_type::master_instance();
+        if(_instance)
+            _instance->initialize();
         return storage_initializer{};
     }();
-    return _once;
+
+    static thread_local auto _worker = []() {
+        auto _instance = storage_type::instance();
+        if(_instance)
+            _instance->initialize();
+        return storage_initializer{};
+    }();
+
+    consume_parameters(_master);
+    return _worker;
 }
 //
 //--------------------------------------------------------------------------------------//

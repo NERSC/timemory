@@ -29,28 +29,16 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||          \
-    defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-
-#    include "timemory/components/gperftools/components.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/gperftools/components.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
-
-// #if defined(TIMEMORY_USE_GPERFTOOLS)
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
-#    if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
 TIMEMORY_EXTERN_STORAGE(component::gperf_heap_profiler, gperf_heap_profiler)
-#    endif
-//
-#    if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
 TIMEMORY_EXTERN_STORAGE(component::gperf_cpu_profiler, gperf_cpu_profiler)
-#    endif
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_GPERFTOOLS

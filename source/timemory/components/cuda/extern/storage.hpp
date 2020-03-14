@@ -29,23 +29,17 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CUDA)
-
-#    include "timemory/components/cuda/components.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/cuda/components.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_EXTERN_STORAGE(component::cuda_event, cuda_event)
 TIMEMORY_EXTERN_STORAGE(component::cuda_profiler, cuda_profiler)
-#    if defined(TIMEMORY_USE_NVTX)
 TIMEMORY_EXTERN_STORAGE(component::nvtx_marker, nvtx_marker)
-#    endif
 //
 //======================================================================================//
-
-#endif

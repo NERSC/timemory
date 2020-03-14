@@ -29,8 +29,8 @@
 
 #pragma once
 
-#include "timemory/@FOLDER@/types.hpp"
 #include "timemory/@FOLDER@/macros.hpp"
+#include "timemory/@FOLDER@/types.hpp"
 
 namespace tim
 {

@@ -22,23 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-///
-/// define TIMEMORY_SOURCE to select appropriate macros
-///
-#if !defined(TIMEMORY_SOURCE)
-#    define TIMEMORY_SOURCE
-#endif
-
-// #if defined(TIMEMORY_USE_CONTAINERS)
-
 //======================================================================================//
 // clang-format off
 //
+#include "timemory/containers/types.hpp"
+#include "timemory/containers/declaration.hpp"
 #include "timemory/containers/definition.hpp"
 //
-#include "timemory/containers/extern.hpp"
+// #include "timemory/containers/extern.hpp"
 //
 // clang-format on
 //======================================================================================//
-
-// #endif  // TIMEMORY_USE_CONTAINERS

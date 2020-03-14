@@ -156,7 +156,7 @@ if(TIMEMORY_USE_SANITIZER)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)
 endif()
 
-if(TIMEMORY_USE_GPERF)
+if(TIMEMORY_USE_GPERFTOOLS)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools-cpu)
 endif()
 
@@ -825,7 +825,7 @@ if(NOT TIMEMORY_FORCE_GPERF_PYTHON)
     endif()
 endif()
 
-if(TIMEMORY_USE_GPERF)
+if(TIMEMORY_USE_GPERFTOOLS)
     #
     # general set of compiler flags when using gperftools
     #
@@ -868,10 +868,10 @@ if(TIMEMORY_USE_GPERF)
     set(_DEFINITIONS)
     foreach(_COMP ${_GPERF_COMPONENTS})
         if("tcmalloc" MATCHES "${_COMP}")
-            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERF_HEAP_PROFILER)
+            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
         endif()
         if("profiler")
-            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERF_CPU_PROFILER)
+            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERFTOOLS_PROFILER)
         endif()
     endforeach()
 
@@ -889,7 +889,7 @@ if(TIMEMORY_USE_GPERF)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-all-gperftools
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "tcmalloc_and_profiler (preference for shared)"
         FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
@@ -897,7 +897,7 @@ if(TIMEMORY_USE_GPERF)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-cpu
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF_CPU_PROFILER
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_PROFILER
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "CPU profiler"
         FIND_ARGS               QUIET COMPONENTS profiler)
@@ -905,7 +905,7 @@ if(TIMEMORY_USE_GPERF)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-heap
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF_HEAP_PROFILER
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_TCMALLOC
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "heap profiler and heap checker"
         FIND_ARGS               QUIET COMPONENTS tcmalloc)
@@ -917,7 +917,7 @@ if(TIMEMORY_USE_GPERF)
         DESCRIPTION             "threading-optimized malloc replacement"
         FIND_ARGS               QUIET COMPONENTS tcmalloc_minimal)
 
-    if(TIMEMORY_USE_GPERF_STATIC)
+    if(TIMEMORY_USE_GPERFTOOLS_STATIC)
         # set local overloads
         set(gperftools_PREFER_SHARED OFF)
         set(gperftools_PREFER_STATIC ON)

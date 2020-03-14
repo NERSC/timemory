@@ -29,14 +29,12 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_PAPI)
-
-#    include "timemory/components/macros.hpp"
-#    include "timemory/components/papi/components.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/papi/components.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
@@ -46,5 +44,3 @@ TIMEMORY_EXTERN_STORAGE(component::papi_array16_t, papi_array16)
 TIMEMORY_EXTERN_STORAGE(component::papi_array32_t, papi_array32)
 //
 //======================================================================================//
-
-#endif

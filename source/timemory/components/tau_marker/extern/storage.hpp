@@ -29,19 +29,15 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_TAU)
-
-#    include "timemory/components/macros.hpp"
-#    include "timemory/components/tau_marker/components.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/tau_marker/components.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_EXTERN_STORAGE(component::tau_marker, tau_marker)
 //
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_TAU

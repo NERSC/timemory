@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/data/statistics.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
@@ -702,7 +703,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
     void stop()
     {
         auto tmp          = record();
-        auto diff         = tmp - value;
+        auto diff         = (tmp - value);
         std::get<0>(diff) = std::abs(std::get<0>(diff));
         accum += diff;
         value = std::move(tmp);

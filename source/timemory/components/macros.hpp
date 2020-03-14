@@ -52,7 +52,9 @@
         }                                                                                \
         }
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /**
  * \macro TIMEMORY_BUNDLE_INDEX
  * \brief Declare a bundle index
@@ -68,7 +70,9 @@
         }                                                                                \
         }
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /**
  * \macro TIMEMORY_DECLARE_TEMPLATE_COMPONENT
  * \brief Declare a templated component type in the tim::component namespace
@@ -85,7 +89,9 @@
         }                                                                                \
         }
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /**
  * \macro TIMEMORY_COMPONENT_ALIAS
  * \brief Declare a non-templated alias to a component in the tim::component namespace
@@ -178,9 +184,9 @@
         }                                                                                \
         }
 #endif
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 #if !defined(TIMEMORY_DEFINE_TEMPLATE_TRAIT)
 #    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
         namespace tim                                                                    \
@@ -193,9 +199,9 @@
         }                                                                                \
         }
 #endif
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 #if !defined(TIMEMORY_DEFINE_VARIADIC_TRAIT)
 #    define TIMEMORY_DEFINE_VARIADIC_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
         namespace tim                                                                    \
@@ -229,9 +235,9 @@
         }                                                                                \
         }
 #endif
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 #if !defined(TIMEMORY_TEMPLATE_STATISTICS_TYPE)
 #    define TIMEMORY_TEMPLATE_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
         namespace tim                                                                    \
@@ -246,9 +252,9 @@
         }                                                                                \
         }
 #endif
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 #if !defined(TIMEMORY_VARIADIC_STATISTICS_TYPE)
 #    define TIMEMORY_VARIADIC_STATISTICS_TYPE(COMPONENT, TYPE, TEMPLATE_TYPE)            \
         namespace tim                                                                    \
@@ -273,11 +279,15 @@
 #if !defined(_EXTERN_NAME_COMBINE)
 #    define _EXTERN_NAME_COMBINE(X, Y) X##Y
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #if !defined(_EXTERN_TUPLE_ALIAS)
 #    define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #if !defined(_EXTERN_LIST_ALIAS)
 #    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
 #endif
@@ -285,7 +295,9 @@
 //--------------------------------------------------------------------------------------//
 
 #if !defined(_WINDOWS)
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
 #        define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                               \
             namespace tim                                                                \
@@ -299,9 +311,12 @@
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,    \
                                 impl::storage_deleter<impl::storage<                     \
                                     TYPE, implements_storage<TYPE>::value>>>>;           \
+            extern template storage_initializer storage_initializer::get<TYPE>();        \
             }
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
 #        define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                           \
             namespace tim                                                                \
@@ -315,6 +330,7 @@
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,    \
                                 impl::storage_deleter<impl::storage<                     \
                                     TYPE, implements_storage<TYPE>::value>>>>;           \
+            template storage_initializer storage_initializer::get<TYPE>();               \
             }                                                                            \
             namespace                                                                    \
             {                                                                            \
@@ -324,17 +340,25 @@
                 tim::storage_initializer::get<TYPE>();                                   \
             }
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #else  // elif defined(WINDOWS)
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
 #        define TIMEMORY_DECLARE_EXTERN_STORAGE(...)
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
 #        define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(...)
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #endif
 
 //======================================================================================//
@@ -344,7 +368,9 @@
 //======================================================================================//
 
 #if !defined(_WINDOWS)
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_DECLARE_EXTERN_OPERATIONS)
 #        define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)             \
             namespace tim                                                                \
@@ -386,9 +412,9 @@
             }                                                                            \
             }
 #    endif
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 #    if !defined(TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS)
 #        define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)         \
             namespace tim                                                                \
@@ -430,71 +456,107 @@
             }                                                                            \
             }
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #else  // elif defined(_WINDOWS)
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_DECLARE_EXTERN_OPERATIONS)
 #        define TIMEMORY_DECLARE_EXTERN_OPERATIONS(...)
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS)
 #        define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(...)
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #endif
 
 //======================================================================================//
 
 #if defined(TIMEMORY_USE_EXTERN)
-
-#    if defined(TIMEMORY_SOURCE)
-
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_COMPONENT_SOURCE)
+//
+//--------------------------------------------------------------------------------------//
+//
 #        if !defined(TIMEMORY_EXTERN_OPERATIONS)
 #            define TIMEMORY_EXTERN_OPERATIONS(...)                                      \
                 TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(__VA_ARGS__)
 #        endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #        if !defined(TIMEMORY_EXTERN_STORAGE)
 #            define TIMEMORY_EXTERN_STORAGE(...)                                         \
                 TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
 #        endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #        if !defined(TIMEMORY_EXTERN_TEMPLATE)
 #            define TIMEMORY_EXTERN_TEMPLATE(...) template __VA_ARGS__;
 #        endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    else
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #        if !defined(TIMEMORY_EXTERN_OPERATIONS)
 #            define TIMEMORY_EXTERN_OPERATIONS(...)                                      \
                 TIMEMORY_DECLARE_EXTERN_OPERATIONS(__VA_ARGS__)
 #        endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #        if !defined(TIMEMORY_EXTERN_STORAGE)
 #            define TIMEMORY_EXTERN_STORAGE(...)                                         \
                 TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
 #        endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #        if !defined(TIMEMORY_EXTERN_TEMPLATE)
 #            define TIMEMORY_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
 #        endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #else
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_EXTERN_OPERATIONS)
 #        define TIMEMORY_EXTERN_OPERATIONS(...)
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_EXTERN_STORAGE)
 #        define TIMEMORY_EXTERN_STORAGE(...)
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #    if !defined(TIMEMORY_EXTERN_TEMPLATE)
 #        define TIMEMORY_EXTERN_TEMPLATE(...)
 #    endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 #endif
 
 //======================================================================================//

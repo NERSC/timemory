@@ -240,9 +240,9 @@ add_option(TIMEMORY_USE_CLANG_TIDY
     "Enable running clang-tidy" OFF)
 add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE})
-add_option(TIMEMORY_USE_GPERF
+add_option(TIMEMORY_USE_GPERFTOOLS
     "Enable gperftools" ON)
-add_option(TIMEMORY_USE_GPERF_STATIC
+add_option(TIMEMORY_USE_GPERFTOOLS_STATIC
     "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF)

@@ -42,12 +42,12 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build flags" FORCE)
 endif()
 
-set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
+set(BUILD_SHARED_LIBS ON)
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ language standard")
 set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
 set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "C++ language flags required")
 set(CMAKE_CUDA_STANDARD_REQUIRED ON CACHE BOOL "CUDA language flags required")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Use link path to set default rpath")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
 option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_SAMPLE "Build sample test" OFF)
 
@@ -105,6 +105,10 @@ endif()
 # CMake INTERFACE target for timemory that provides include path
 set(COMPONENTS headers vector)
 
+if(TIMEMORY_KOKKOS_TOOLS_IN_SOURCE AND TARGET timemory-cxx-shared)
+    list(APPEND COMPONENTS cxx-shared)
+endif()
+
 foreach(_OPT ${_OPTIONS_LIST})
     if(${_OPT})
         list(APPEND COMPONENTS ${${_OPT}_COMPONENTS})
@@ -153,20 +157,34 @@ if(USE_ROOFLINE AND USE_CUDA)
 endif()
 
 # general options
-option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG "Build various connector configurations" ON)
 set(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS "all" CACHE STRING "List of connector configurations to build")
+if(TIMEMORY_KOKKOS_TOOLS_IN_SOURCE)
+    add_option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG "Build various connector configurations" ON)
+    add_feature(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS "List of connector configurations to build")
+else()
+    option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG "Build various connector configurations" ON)
+endif()
 string(TOUPPER "${${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS}" _CONNECTORS)
+
+##--------------------------------------------------------------------------------------##
+
+if(NOT ${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG)
+    message(STATUS "")
+    message(STATUS "[${PROJECT_NAME} Disabled building explicit configurations with '${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG=OFF'")
+    message(STATUS "")
+    return()
+endif()
 
 ##--------------------------------------------------------------------------------------##
 
 message(STATUS "")
 message(STATUS "Building explicit connector configurations: ${_CONNECTORS}")
-message(STATUS "    Disable building explicit configurations with '-DBUILD_CONFIG=OFF'")
-message(STATUS "    Reduce explicit configurations with semi-colon delimited '-DBUILD_CONNECTORS=\"...\"'")
+message(STATUS "    Disable building explicit configurations with '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG=OFF'")
+message(STATUS "    Reduce explicit configurations with semi-colon delimited '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS=\"...\"'")
 message(STATUS "")
 message(STATUS "Generating a custom configuration:")
-message(STATUS "    '-DUSER_CONNECTOR_CONFIG=\"...\"' --> name for the configuration")
-message(STATUS "    '-DUSER_CONNECTOR_TYPES=\"...\"'  --> semi-colon delimited list of components")
+message(STATUS "    '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}USER_CONNECTOR_CONFIG=\"...\"' --> name for the configuration")
+message(STATUS "    '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}USER_CONNECTOR_TYPES=\"...\"'  --> semi-colon delimited list of components")
 message(STATUS "")
 
 ##--------------------------------------------------------------------------------------##

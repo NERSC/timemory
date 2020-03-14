@@ -39,7 +39,7 @@
 #include "timemory/components/timing/backends.hpp"
 
 #if defined(TIMEMORY_USE_CALIPER)
-#    include "timemory/backends/caliper.hpp"
+#    include "timemory/components/caliper/backends.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_GOTCHA)
@@ -58,8 +58,8 @@
 #    include "timemory/backends/papi.hpp"
 #endif
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||          \
-    defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||     \
+    defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
 #    include "timemory/backends/gperf.hpp"
 #endif
 

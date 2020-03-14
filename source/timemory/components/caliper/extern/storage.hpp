@@ -24,19 +24,15 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CALIPER)
-
-#    include "timemory/components/caliper/components.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/caliper/components.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_EXTERN_STORAGE(component::caliper, caliper)
 //
 //======================================================================================//
-
-#endif

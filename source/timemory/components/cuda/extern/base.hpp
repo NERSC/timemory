@@ -29,11 +29,10 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CUDA)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/cuda/traits.hpp"
-#    include "timemory/components/cuda/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/cuda/components.hpp"
+#include "timemory/components/cuda/traits.hpp"
+#include "timemory/components/cuda/types.hpp"
 
 //======================================================================================//
 //
@@ -44,13 +43,9 @@ namespace component
 //
 TIMEMORY_EXTERN_TEMPLATE(struct base<cuda_event, float>)
 TIMEMORY_EXTERN_TEMPLATE(struct base<cuda_profiler, void>)
-#    if defined(TIMEMORY_USE_NVTX)
 TIMEMORY_EXTERN_TEMPLATE(struct base<nvtx_marker, void>)
-#    endif
 //
 }  // namespace component
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif

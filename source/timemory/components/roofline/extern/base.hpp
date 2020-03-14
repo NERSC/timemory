@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_PAPI) || defined(TIMEMORY_USE_CUPTI)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/roofline/traits.hpp"
-#    include "timemory/components/roofline/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/roofline/traits.hpp"
+#include "timemory/components/roofline/types.hpp"
 
 //======================================================================================//
 //
@@ -42,7 +40,7 @@ namespace tim
 namespace component
 {
 //
-#    if defined(TIMEMORY_USE_PAPI)
+#if defined(TIMEMORY_USE_PAPI_EXTERN)
 //
 TIMEMORY_EXTERN_TEMPLATE(
     struct base<cpu_roofline<float>, std::pair<std::vector<long long>, double>>)
@@ -59,9 +57,11 @@ TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<float>)
 //
 TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<double>)
 //
-#    endif
-
-#    if defined(TIMEMORY_USE_CUPTI)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
 TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<float, double>,
                                      std::tuple<typename cupti_activity::value_type,
@@ -81,11 +81,9 @@ TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<float>)
 //
 TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<double>)
 //
-#    endif
+#endif
 //
 }  // namespace component
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif

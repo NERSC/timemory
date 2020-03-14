@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_PAPI)
-
-#    include "timemory/components/macros.hpp"
-#    include "timemory/components/papi/components.hpp"
-#    include "timemory/mpl/operations.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/papi/components.hpp"
+#include "timemory/mpl/operations.hpp"
 
 //======================================================================================//
 //
@@ -43,5 +41,3 @@ TIMEMORY_EXTERN_OPERATIONS(component::papi_array16_t, true)
 TIMEMORY_EXTERN_OPERATIONS(component::papi_array32_t, true)
 //
 //======================================================================================//
-
-#endif

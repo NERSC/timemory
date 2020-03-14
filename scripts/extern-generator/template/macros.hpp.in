@@ -34,3 +34,26 @@
 //                              Define macros for @FOLDER@
 //
 //======================================================================================//
+//
+#if defined(TIMEMORY_@CHECK@_SOURCE)
+//
+#    define TIMEMORY_@CHECK@_LINKAGE(...) __VA_ARGS__
+//
+#else
+//
+#    if !defined(TIMEMORY_USE_EXTERN)
+//
+#        define TIMEMORY_@CHECK@_LINKAGE(...) inline __VA_ARGS__
+//
+#    else
+//
+#        define TIMEMORY_EXTERN_@CHECK@
+//
+#        define TIMEMORY_@CHECK@_LINKAGE(...) extern __VA_ARGS__
+//
+#    endif
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//

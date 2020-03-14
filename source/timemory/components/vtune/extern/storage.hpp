@@ -29,14 +29,12 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_VTUNE)
-
-#    include "timemory/components/macros.hpp"
-#    include "timemory/components/vtune/components.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/vtune/components.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 
 //======================================================================================//
 //
@@ -45,5 +43,3 @@ TIMEMORY_EXTERN_STORAGE(component::vtune_frame, vtune_frame)
 TIMEMORY_EXTERN_STORAGE(component::vtune_profiler, vtune_profiler)
 //
 //======================================================================================//
-
-#endif

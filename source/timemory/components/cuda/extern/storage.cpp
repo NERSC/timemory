@@ -22,12 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(TIMEMORY_USE_CUDA)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/mpl/operations.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/storage/definition.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/mpl/operations.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 // clang-format off
@@ -37,5 +35,3 @@
 //
 // clang-format on
 //======================================================================================//
-
-#endif

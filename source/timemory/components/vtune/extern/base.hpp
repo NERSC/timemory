@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_VTUNE)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/vtune/traits.hpp"
-#    include "timemory/components/vtune/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/vtune/traits.hpp"
+#include "timemory/components/vtune/types.hpp"
 
 //======================================================================================//
 //
@@ -50,5 +48,3 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<vtune_profiler, void>)
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif

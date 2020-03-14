@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #if defined(DEBUG)
-#undef DEBUG
+#    undef DEBUG
 #endif
 
 #include "timemory/library.h"

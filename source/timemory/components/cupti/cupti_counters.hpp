@@ -35,6 +35,7 @@
 #include "timemory/components/cupti/types.hpp"
 #include "timemory/settings.hpp"
 
+#include <algorithm>
 #include <iterator>
 #include <numeric>
 #include <set>

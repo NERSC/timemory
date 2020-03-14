@@ -32,6 +32,7 @@
 #include "timemory/hash/macros.hpp"
 #include "timemory/hash/types.hpp"
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -54,7 +55,7 @@ get_shared_ptr_pair()
     static auto              _master = std::make_shared<Tp>();
     static std::atomic<int>  _counter(0);
     static thread_local auto _worker   = Ptr((_counter++ == 0) ? nullptr : new Tp());
-    static thread_local auto _instance = Pair{ _master, _worker };
+    static thread_local auto _instance = Pair(_master, _worker);
     return _instance;
 }
 //

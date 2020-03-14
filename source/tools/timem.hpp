@@ -27,35 +27,6 @@
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
 
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/type_traits.hpp"
-
-namespace tim
-{
-//--------------------------------------------------------------------------------------//
-//  configure to record statistics
-//
-namespace trait
-{
-template <>
-struct record_statistics<component::page_rss> : std::true_type
-{
-    using type = double;
-};
-/*
-template <>
-struct record_statistics<component::virtual_memory> : std::true_type
-{};
-template <>
-struct record_statistics<component::read_bytes> : std::true_type
-{};
-template <>
-struct record_statistics<component::written_bytes> : std::true_type
-{};
-*/
-}  // namespace trait
-}  // namespace tim
-
 #include "timemory/timemory.hpp"
 
 // C includes

@@ -32,6 +32,7 @@
 #pragma once
 
 // forward declare any types
+#include "timemory/components/base/types.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/mpl/types.hpp"
@@ -93,8 +94,8 @@
 #endif
 
 // gperftools components
-#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||                                         \
-    defined(TIMEMORY_USE_GPERF_CPU_PROFILER) || defined(TIMEMORY_USE_GPERF)
+#if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||                                         \
+    defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) || defined(TIMEMORY_USE_GPERFTOOLS)
 #    include "timemory/components/gperftools/components.hpp"
 #endif
 

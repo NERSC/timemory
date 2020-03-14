@@ -22,14 +22,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) ||          \
-    defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
-
-#    include "timemory/mpl/operations.hpp"
-#    include "timemory/plotting/declaration.hpp"
-//
-#    include "timemory/components.hpp"
-#    include "timemory/storage/declaration.hpp"
+#include "timemory/components/types.hpp"
+#include "timemory/manager/declaration.hpp"
+#include "timemory/mpl/operations.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/plotting/declaration.hpp"
 
 //======================================================================================//
 // clang-format off
@@ -40,5 +37,3 @@
 //
 // clang-format on
 //======================================================================================//
-
-#endif  // TIMEMORY_USE_GPERFTOOLS

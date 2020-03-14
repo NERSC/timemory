@@ -29,11 +29,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CUPTI)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/cupti/traits.hpp"
-#    include "timemory/components/cupti/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/cupti/traits.hpp"
+#include "timemory/components/cupti/types.hpp"
 
 //======================================================================================//
 //
@@ -49,5 +47,3 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<cupti_counters, cupti::profiler::results_t>
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif

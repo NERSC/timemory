@@ -198,8 +198,8 @@ inline void
 storage::stop_profiler()
 {
     // disable gperf if profiling
-#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER) ||           \
-    defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) ||     \
+    defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
     try
     {
         if(storage_once_flag()++ == 0)

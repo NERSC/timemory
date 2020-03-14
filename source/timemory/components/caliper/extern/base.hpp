@@ -24,10 +24,11 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CALIPER)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/caliper/types.hpp"
+#include "timemory/components/base.hpp"
+//
+#include "timemory/components/caliper/types.hpp"
+//
+#include "timemory/components/caliper/components.hpp"
 
 //======================================================================================//
 //
@@ -42,5 +43,3 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<caliper, void>)
 }  // namespace tim
 //
 //======================================================================================//
-
-#endif
