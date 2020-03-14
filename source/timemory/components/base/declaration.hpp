@@ -166,6 +166,13 @@ public:
     void get(void*& ptr, size_t typeid_hash) const;    /// assign type to a pointer
     auto get() const { return this->load(); }          /// default get routine
     auto get_display() const { return this->load(); }  /// default display routine
+
+    template <typename Up = Tp, typename Vp = Value,
+              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+    void print(std::ostream&) const;
+
+    template <typename Up = Tp, typename Vp = Value,
+              enable_if_t<!(implements_storage<Up, Vp>::value), int> = 0>
     void print(std::ostream&) const;
 
     bool operator<(const base_type& rhs) const { return (load() < rhs.load()); }

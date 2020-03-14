@@ -105,7 +105,8 @@ timemory_handle_category(TIMEMORY_USE_GOTCHA        gotcha      timemory-gotcha)
 timemory_handle_category(TIMEMORY_USE_GPERFTOOLS    gperftools  timemory-gperftools)
 timemory_handle_category(TIMEMORY_USE_LIKWID        likwid      timemory-likwid)
 timemory_handle_category(TIMEMORY_USE_PAPI          papi        timemory-papi)
-timemory_handle_category(TIMEMORY_USE_ROOFLINE      roofline    timemory-cpu-roofline timemory-gpu-roofline)
+timemory_handle_category(TIMEMORY_USE_ROOFLINE      roofline    timemory-papi timemory-cupti
+    timemory-cpu-roofline timemory-gpu-roofline timemory-roofline)
 timemory_handle_category(TIMEMORY_USE_TAU           tau_marker  timemory-tau)
 timemory_handle_category(TIMEMORY_USE_VTUNE         vtune       timemory-vtune)
 

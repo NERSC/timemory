@@ -407,7 +407,7 @@ macro(BUILD_LIBRARY)
     if(NOT WIN32 AND NOT XCODE)
         list(APPEND LIBRARY_EXTRA_PROPERTIES
             VERSION                     ${PROJECT_VERSION}
-            SOVERSION                   ${PROJECT_VERSION_MAJOR})
+            SOVERSION                   ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
     endif()
 
     if(NOT WIN32)

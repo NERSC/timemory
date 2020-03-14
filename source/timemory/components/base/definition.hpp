@@ -307,15 +307,6 @@ base<Tp, Value>::get_description()
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Value>
-void
-base<Tp, Value>::print(std::ostream& os) const
-{
-    operation::base_printer<Tp>(os, static_cast<const Tp&>(*this));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 //              operator + - * /    (base_type)
 //
 //--------------------------------------------------------------------------------------//

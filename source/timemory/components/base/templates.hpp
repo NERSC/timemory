@@ -362,6 +362,26 @@ base<Tp, Value>::append(graph_iterator itr, const T& rhs)
         operation::add_secondary<T>(_storage, itr, rhs);
 }
 //
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+template <typename Up, typename Vp,
+          enable_if_t<(implements_storage<Up, Vp>::value), int>>
+void
+base<Tp, Value>::print(std::ostream& os) const
+{
+    operation::base_printer<Up>(os, static_cast<const Up&>(*this));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+template <typename Up, typename Vp,
+          enable_if_t<!(implements_storage<Up, Vp>::value), int>>
+void
+base<Tp, Value>::print(std::ostream&) const
+{}
+//
 //======================================================================================//
 //
 //                                  VOID BASE
