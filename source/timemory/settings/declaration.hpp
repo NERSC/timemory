@@ -397,7 +397,7 @@ struct settings
     //----------------------------------------------------------------------------------//
 
 public:
-    static tim_api std::vector<std::string> get_environment()
+    static std::vector<std::string> get_environment()
     {
 #if defined(_UNIX)
         std::vector<std::string> _environ;

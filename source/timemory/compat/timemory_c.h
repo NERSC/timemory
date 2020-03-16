@@ -96,7 +96,7 @@
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_C_BLANK_MARKER(c_str, ...)                                          \
-        c_timemory_create_auto_tuple(c_str, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
+        c_timemory_create_auto_tuple(TIMEMORY_C_BLANK_LABEL(c_str), __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 #    define TIMEMORY_C_BASIC_MARKER(c_str, ...)                                          \
         c_timemory_create_auto_tuple(TIMEMORY_C_BASIC_LABEL(c_str), __VA_ARGS__,         \

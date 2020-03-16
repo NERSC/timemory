@@ -185,12 +185,14 @@ env_settings::mutex()
 //
 //--------------------------------------------------------------------------------------//
 //
+/*
 TIMEMORY_ENVIRONMENT_LINKAGE(std::atomic_bool&)
 env_settings::lock_flag()
 {
     static std::atomic_bool _instance(false);
     return _instance;
 }
+*/
 //
 //--------------------------------------------------------------------------------------//
 //

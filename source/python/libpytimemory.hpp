@@ -24,7 +24,7 @@
 
 #pragma once
 
-#if !defined(TIMEMORY_USE_EXTERN)
+#if !defined(TIMEMORY_USE_EXTERN) && !(defined(_WIN32) || defined(_WIN64))
 #    define TIMEMORY_USE_EXTERN
 #endif
 

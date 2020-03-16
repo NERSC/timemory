@@ -60,7 +60,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class tim_api manager
+class manager
 {
 public:
     using this_type        = manager;

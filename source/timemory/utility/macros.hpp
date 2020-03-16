@@ -191,6 +191,7 @@
 
 // Define macros for WIN32 for importing/exporting external symbols to DLLs
 #if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
+#    if !defined(tim_api)
 #    if defined(_TIMEMORY_DLL)
 #        define tim_api __declspec(dllexport)
 #    else
@@ -200,8 +201,11 @@
 #            define tim_api
 #        endif
 #    endif
+#endif
 #else
-#    define tim_api
+#    if !defined(tim_api)
+#        define tim_api
+#endif
 #endif
 
 //======================================================================================//
@@ -228,6 +232,8 @@
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
+
+#include <Windows.h>
 #endif
 
 //======================================================================================//

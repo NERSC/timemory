@@ -148,7 +148,12 @@ set(TIMEMORY_STATIC_GLOBAL_LIBRARIES)
 
 foreach(COMP ${TIMEMORY_GLOBAL})
 
-    if(WIN32 OR "${${COMP}_SOURCES}" STREQUAL "")
+    if(WIN32)
+        list(APPEND CXX_LIBRARY_SOURCES ${${COMP}_HEADERS})
+        continue()
+    endif()
+
+    if("${${COMP}_SOURCES}" STREQUAL "")
         continue()
     endif()
 
@@ -207,11 +212,9 @@ foreach(COMP ${TIMEMORY_GLOBAL})
             TIMEMORY_GLOBAL_SOURCE
             TIMEMORY_${UPP_COMP}_SOURCE)
 
-        if(NOT WIN32)
-            target_compile_definitions(${TARGET_NAME} PUBLIC
-                TIMEMORY_USE_GLOBAL_EXTERN
-                TIMEMORY_USE_${UPP_COMP}_EXTERN)
-        endif()
+        target_compile_definitions(${TARGET_NAME} PUBLIC
+            TIMEMORY_USE_GLOBAL_EXTERN
+            TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
     endforeach()
 
@@ -265,7 +268,12 @@ set(TIMEMORY_STATIC_COMPONENT_LIBRARIES )
 
 foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
 
-    if(WIN32 OR "${${COMP}_SOURCES}" STREQUAL "")
+    if(WIN32)
+        list(APPEND CXX_LIBRARY_SOURCES ${${COMP}_HEADERS})
+        continue()
+    endif()
+
+    if("${${COMP}_SOURCES}" STREQUAL "")
         continue()
     endif()
 
@@ -329,14 +337,24 @@ foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
             TIMEMORY_COMPONENT_SOURCE
             TIMEMORY_${UPP_COMP}_SOURCE)
 
-        if(NOT WIN32)
-            target_compile_definitions(${TARGET_NAME} PUBLIC
-                TIMEMORY_USE_COMPONENT_EXTERN
-                TIMEMORY_USE_${UPP_COMP}_EXTERN)
-        endif()
+        target_compile_definitions(${TARGET_NAME} PUBLIC
+            TIMEMORY_USE_COMPONENT_EXTERN
+            TIMEMORY_USE_${UPP_COMP}_EXTERN)
+
     endforeach()
 
 endforeach()
+
+if(WIN32)
+    foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
+        if(TARGET timemory-${COMP}-component-shared)
+            if(_WIN32_DEPENDS)
+                add_dependencies(timemory-${COMP}-component-shared ${_WIN32_DEPENDS})
+            endif()
+            list(APPEND _WIN32_DEPENDS timemory-${COMP}-component-shared) 
+        endif()
+    endforeach()
+endif()
 
 set(TIMEMORY_COMPONENT_LIBRARIES
     ${TIMEMORY_SHARED_COMPONENT_LIBRARIES} ${TIMEMORY_STATIC_COMPONENT_LIBRARIES})
@@ -354,7 +372,12 @@ set(TIMEMORY_STATIC_EXTERN_LIBRARIES)
 
 foreach(COMP ${TIMEMORY_EXTERN})
 
-    if(WIN32 OR "${${COMP}_SOURCES}" STREQUAL "")
+    if(WIN32)
+        list(APPEND CXX_LIBRARY_SOURCES ${${COMP}_HEADERS})
+        continue()
+    endif()
+
+    if("${${COMP}_SOURCES}" STREQUAL "")
         continue()
     endif()
 
