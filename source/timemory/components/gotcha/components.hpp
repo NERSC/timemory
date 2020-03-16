@@ -104,27 +104,21 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
 
     static get_initializer_t& get_initializer()
     {
-        static get_initializer_t _instance = []() {
-            for(const auto& itr : get_data())
-                itr.constructor();
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    /// reject listed functions are never wrapped by GOTCHA
-    static get_select_list_t& get_reject_list()
-    {
-        static get_select_list_t _instance = []() { return select_list_t{}; };
-        return _instance;
+        return get_persistent_data().m_initializer;
     }
 
     //----------------------------------------------------------------------------------//
     /// when a permit list is provided, only these functions are wrapped by GOTCHA
     static get_select_list_t& get_permit_list()
     {
-        static get_select_list_t _instance = []() { return select_list_t{}; };
-        return _instance;
+        return get_persistent_data().m_permit_list;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// reject listed functions are never wrapped by GOTCHA
+    static get_select_list_t& get_reject_list()
+    {
+        return get_persistent_data().m_reject_list;
     }
 
     //----------------------------------------------------------------------------------//
@@ -137,11 +131,20 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
 
     //----------------------------------------------------------------------------------//
 
+    static void add_global_suppression(const std::string& func)
+    {
+        get_suppresses().insert(func);
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t N, typename Ret, typename... Args>
     static void construct(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
+
+        component_type::init_storage();
 
         static_assert(N < Nt, "Error! N must be less than Nt!");
         auto& _data = get_data()[N];
@@ -151,9 +154,6 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
 
         if(!_data.filled)
         {
-            // static int _incr = _priority;
-            // _priority        = _incr++;
-
             auto _label = demangle(_func);
             if(_tool.length() > 0 && _label.find(_tool + "/") != 0)
             {
@@ -165,15 +165,22 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
             // ensure the hash to string pairing is stored
             storage_type::instance()->add_hash_id(_label);
 
-            _data.filled      = true;
-            _data.priority    = _priority;
-            _data.tool_id     = _label;
-            _data.wrap_id     = _func;
-            _data.ready       = get_default_ready();
-            _data.constructor = [=]() {
-                this_type::construct<N, Ret, Args...>(_data.wrap_id);
+            _data.filled   = true;
+            _data.priority = _priority;
+            _data.tool_id  = _label;
+            _data.wrap_id  = _func;
+            _data.ready    = get_default_ready();
+
+            if(get_suppresses().find(_func) != get_suppresses().end())
+            {
+                _data.suppression = &gotcha_suppression::get();
+                _data.ready       = false;
+            }
+
+            _data.constructor = [_func,_priority,_tool]() {
+                this_type::construct<N, Ret, Args...>(_func, _priority, _tool);
             };
-            _data.destructor = [=]() { this_type::revert<N, Ret, Args...>(); };
+            _data.destructor = []() { this_type::revert<N>(); };
             _data.binding = std::move(construct_binder<N, Ret, Args...>(_data.wrap_id));
             error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.tool_id);
             check_error<N>(ret_wrap, "binding");
@@ -186,6 +193,9 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
                 backend::gotcha::set_priority(_data.tool_id, _data.priority);
             check_error<N>(ret_prio, "set priority");
         }
+
+        if(!_data.ready)
+            revert<N>();
     }
 
     //----------------------------------------------------------------------------------//
@@ -199,7 +209,7 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t N, typename Ret, typename... Args>
+    template <size_t N>
     static void revert()
     {
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
@@ -214,33 +224,20 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
             error_t ret_prio = backend::gotcha::set_priority(_data.tool_id, -1);
             check_error<N>(ret_prio, "get priority");
 
-            /*
-            _data.wrapper = 0x0;
-            _data.binding = std::move(revert_binder<N, Ret, Args...>(_data.wrap_id));
-
-            error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.wrap_id);
-            check_error<N>(ret_wrap, "unwrap binding");
-            */
-
-            _data.ready = get_default_ready();
+            if(get_suppresses().find(_data.tool_id) != get_suppresses().end())
+                _data.ready = false;
+            else
+                _data.ready = get_default_ready();
         }
     }
 
     //----------------------------------------------------------------------------------//
 
-    static bool& is_configured()
-    {
-        static bool _instance = false;
-        return _instance;
-    }
+    static bool& is_configured() { return get_persistent_data().m_is_configured; }
 
     //----------------------------------------------------------------------------------//
 
-    static std::mutex& get_mutex()
-    {
-        static std::mutex _mtx;
-        return _mtx;
-    }
+    static std::mutex& get_mutex() { return get_persistent_data().m_mutex; }
 
     //----------------------------------------------------------------------------------//
 
@@ -426,6 +423,12 @@ private:
     struct gotcha_data
     {
         gotcha_data() = default;
+        ~gotcha_data() = default;
+
+        gotcha_data(const gotcha_data&) = delete;
+        gotcha_data(gotcha_data&&) = delete;
+        gotcha_data& operator=(const gotcha_data&) = delete;
+        gotcha_data& operator=(gotcha_data&&) = delete;
 
         bool          ready        = get_default_ready();  /// ready to be used
         bool          filled       = false;                /// structure is populated
@@ -439,14 +442,24 @@ private:
         wrappid_t     tool_id      = "";       /// the function name (unmangled)
         constructor_t constructor  = []() {};  /// wrap the function
         destructor_t  destructor   = []() {};  /// unwrap the function
+        bool*         suppression  = nullptr;  /// turn on/off some suppression variable
     };
 
     //----------------------------------------------------------------------------------//
     //
     struct persistent_data
     {
-        array_t<gotcha_data> m_data;
-        std::atomic<int64_t> m_started{ 0 };
+        bool                  m_is_configured = false;
+        std::atomic<int64_t>  m_started{ 0 };
+        array_t<gotcha_data>  m_data;
+        std::mutex            m_mutex;
+        std::set<std::string> m_suppress    = { "malloc", "calloc", "free" };
+        get_initializer_t     m_initializer = []() {
+            for(const auto& itr : get_data())
+                itr.constructor();
+        };
+        get_select_list_t m_reject_list = []() { return select_list_t{}; };
+        get_select_list_t m_permit_list = []() { return select_list_t{}; };
     };
 
     //----------------------------------------------------------------------------------//
@@ -468,12 +481,20 @@ private:
     static std::atomic<int64_t>& get_started() { return get_persistent_data().m_started; }
 
     //----------------------------------------------------------------------------------//
-    /// \brief get_thread_started()
-    /// Thread-local counter of activate gotchas
+    /// \fn get_thread_started()
+    /// \brief Thread-local counter of activate gotchas
     static int64_t& get_thread_started()
     {
         static thread_local int64_t _instance = 0;
         return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// \fn get_suppresses()
+    /// \brief global suppression when being used
+    static std::set<std::string>& get_suppresses()
+    {
+        return get_persistent_data().m_suppress;
     }
 
     //----------------------------------------------------------------------------------//
@@ -626,52 +647,6 @@ private:
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size != 0), int>::type      = 0,
-              typename std::enable_if<!(std::is_same<Ret, void>::value), int>::type = 0>
-    static binding_t revert_binder(const std::string& _func)
-    {
-        auto& _data = get_data()[N];
-        return binding_t{ _func.c_str(), _data.wrappee, &_data.wrapper };
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size != 0), int>::type     = 0,
-              typename std::enable_if<(std::is_same<Ret, void>::value), int>::type = 0>
-    static binding_t revert_binder(const std::string& _func)
-    {
-        auto& _data = get_data()[N];
-        return binding_t{ _func.c_str(), _data.wrappee, &_data.wrapper };
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size == 0), int>::type      = 0,
-              typename std::enable_if<!(std::is_same<Ret, void>::value), int>::type = 0>
-    static binding_t revert_binder(const std::string& _func)
-    {
-        auto& _data = get_data()[N];
-        void* _orig = gotcha_get_wrappee(_data.wrappee);
-        return binding_t{ _func.c_str(), _data.wrappee, &_orig };
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t N, typename Ret, typename... Args, typename This = this_type,
-              typename std::enable_if<(This::components_size == 0), int>::type     = 0,
-              typename std::enable_if<(std::is_same<Ret, void>::value), int>::type = 0>
-    static binding_t revert_binder(const std::string& _func)
-    {
-        auto& _data = get_data()[N];
-        void* _orig = gotcha_get_wrappee(_data.wrappee);
-        return binding_t{ _func.c_str(), _data.wrappee, &_orig };
-    }
-
-    //----------------------------------------------------------------------------------//
-
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
               enable_if_t<(This::differentiator_is_component), int> = 0,
               enable_if_t<!(std::is_same<Ret, void>::value), int>   = 0>
@@ -688,10 +663,10 @@ private:
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
               enable_if_t<!(This::differentiator_is_component), int> = 0,
               enable_if_t<!(std::is_same<Ret, void>::value), int>    = 0>
-    static Ret invoke(Comp&, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
+    static Ret invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
     {
-        gotcha_suppression::auto_toggle suppress_lock(_ready);
-        Ret                             _ret = _func(std::forward<Args>(_args)...);
+        // gotcha_suppression::auto_toggle suppress_lock(_ready);
+        Ret _ret = _func(std::forward<Args>(_args)...);
         return _ret;
     }
 
@@ -713,9 +688,9 @@ private:
     template <typename Comp, typename Ret, typename... Args, typename This = this_type,
               enable_if_t<!(This::differentiator_is_component), int> = 0,
               enable_if_t<(std::is_same<Ret, void>::value), int>     = 0>
-    static void invoke(Comp&, bool& _ready, Ret (*_func)(Args...), Args&&... _args)
+    static void invoke(Comp&, bool&, Ret (*_func)(Args...), Args&&... _args)
     {
-        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        // gotcha_suppression::auto_toggle suppress_lock(_ready);
         _func(std::forward<Args>(_args)...);
     }
 
@@ -793,33 +768,62 @@ private:
             return (_orig) ? (*_orig)(_args...) : Ret{};
         }
 
-        // make sure the function is not recursively entered (important for
-        // allocation-based wrappers)
-        _data.ready = false;
-        // gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
+        bool did_data_toggle = false;
+        bool did_glob_toggle = false;
+
+        auto toggle_suppress_on = [](bool* _suppress, bool& _did)
+        {
+            if(_suppress && *_suppress == false)
+            {
+                *(_suppress) = true;
+                _did           = true;
+            }
+        };
+
+        auto toggle_suppress_off = [](bool* _suppress, bool& _did)
+        {
+            if(_suppress && _did == true && *_suppress == true)
+            {
+                *(_suppress) = false;
+                _did           = false;
+            }
+        };
 
         if(_orig)
         {
+
+            // make sure the function is not recursively entered
+            // (important for allocation-based wrappers)
+            _data.ready = false;
+            toggle_suppress_on(_data.suppression, did_data_toggle);
+
             // component_type is always: component_{tuple,list,hybrid}
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+
+            _data.ready = true;
             Ret _ret = invoke<component_type>(_obj, _data.ready, _orig,
                                               std::forward<Args>(_args)...);
+            _data.ready = false;
+
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
             _obj.audit(_data.tool_id, _ret);
             _obj.stop();
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             // allow re-entrance into wrapper
+            toggle_suppress_off(_data.suppression, did_data_toggle);
             _data.ready = true;
 
             return _ret;
         }
+
         if(settings::debug())
             PRINT_HERE("%s", "nullptr to original function!");
-
-        // allow re-entrance into wrapper
-        _data.ready = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("%s", "should not be here!");
@@ -856,29 +860,59 @@ private:
             return;
         }
 
-        // make sure the function is not recursively entered (important for
-        // allocation-based wrappers)
-        _data.ready = false;
-        // gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
+        bool did_data_toggle = false;
+        bool did_glob_toggle = false;
+
+        auto toggle_suppress_on = [](bool* _suppress, bool& _did)
+        {
+            if(_suppress && *_suppress == false)
+            {
+                *(_suppress) = true;
+                _did           = true;
+            }
+        };
+
+        auto toggle_suppress_off = [](bool* _suppress, bool& _did)
+        {
+            if(_suppress && _did == true && *_suppress == true)
+            {
+                *(_suppress) = false;
+                _did           = false;
+            }
+        };
 
         if(_orig)
         {
+            // make sure the function is not recursively entered
+            // (important for allocation-based wrappers)
+            _data.ready = false;
+            toggle_suppress_on(_data.suppression, did_data_toggle);
+
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.construct(_args...);
             _obj.start();
             _obj.audit(_data.tool_id, _args...);
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+
+            _data.ready = true;
             invoke<component_type>(_obj, _data.ready, _orig,
                                    std::forward<Args>(_args)...);
+            _data.ready = false;
+
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
             _obj.audit(_data.tool_id);
             _obj.stop();
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+
+            // allow re-entrance into wrapper
+            toggle_suppress_off(_data.suppression, did_data_toggle);
+            _data.ready = true;
         }
         else if(settings::debug())
         {
             PRINT_HERE("%s", "nullptr to original function!");
         }
-
-        // allow re-entrance into wrapper
-        _data.ready = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("%s", "should not be here!");

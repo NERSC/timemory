@@ -64,7 +64,7 @@ struct pointer_operator
 
     TIMEMORY_DELETED_OBJECT(pointer_operator)
 
-    template <typename Up = Tp, typename... Args,
+    template <typename Up                                        = Tp, typename... Args,
               enable_if_t<(trait::is_available<Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, Args&&... args)
     {
@@ -75,7 +75,7 @@ struct pointer_operator
             Op(*obj, std::forward<Args>(args)...);
     }
 
-    template <typename Up = Tp, typename... Args,
+    template <typename Up                                        = Tp, typename... Args,
               enable_if_t<(trait::is_available<Up>::value), int> = 0>
     explicit pointer_operator(type* obj, Args&&... args)
     {
@@ -86,7 +86,7 @@ struct pointer_operator
             Op(*obj, std::forward<Args>(args)...);
     }
 
-    template <typename Up = Tp, typename... Args,
+    template <typename Up                                        = Tp, typename... Args,
               enable_if_t<(trait::is_available<Up>::value), int> = 0>
     explicit pointer_operator(base_type* obj, base_type* rhs, Args&&... args)
     {
@@ -97,7 +97,7 @@ struct pointer_operator
             Op(*obj, *rhs, std::forward<Args>(args)...);
     }
 
-    template <typename Up = Tp, typename... Args,
+    template <typename Up                                        = Tp, typename... Args,
               enable_if_t<(trait::is_available<Up>::value), int> = 0>
     explicit pointer_operator(type* obj, type* rhs, Args&&... args)
     {

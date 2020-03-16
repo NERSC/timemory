@@ -69,12 +69,11 @@ typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
     static thread_local auto _instance = []() {
-        gotcha_suppress::auto_toggle suppress_lock(gotcha_suppress::get());
-        auto                         main_inst = storage_type::master_instance();
-        auto                         this_inst = storage_type::instance();
-        bool                         this_glob = true;
-        bool                         this_work = true;
-        bool                         this_data = this_inst->data_init();
+        auto main_inst = storage_type::master_instance();
+        auto this_inst = storage_type::instance();
+        bool this_glob = true;
+        bool this_work = true;
+        bool this_data = this_inst->data_init();
         return get_type{ main_inst, this_inst, this_glob, this_work, this_data };
     }();
     return _instance;
@@ -88,9 +87,8 @@ typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
     static thread_local auto _instance = []() {
-        gotcha_suppress::auto_toggle suppress_lock(gotcha_suppress::get());
-        auto                         main_inst = storage_type::master_instance();
-        auto                         this_inst = storage_type::instance();
+        auto main_inst = storage_type::master_instance();
+        auto this_inst = storage_type::instance();
         return get_type{ main_inst, this_inst, false, false, false };
     }();
     return _instance;
@@ -105,8 +103,7 @@ init_storage<Tp>::init()
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    gotcha_suppress::auto_toggle suppress_lock(gotcha_suppress::get());
-    static thread_local auto     _init = this_type::get();
+    static thread_local auto _init = this_type::get();
     consume_parameters(_init);
 }
 //

@@ -80,13 +80,18 @@ public:
         , m_if_equal(_if_equal)
         {
             if(m_value == m_if_equal)
-                m_value = !m_value;
+            {
+                m_value      = !m_value;
+                m_did_toggle = true;
+            }
         }
 
         ~auto_toggle()
         {
-            if(m_value != m_if_equal)
+            if(m_value != m_if_equal && m_did_toggle)
+            {
                 m_value = !m_value;
+            }
         }
 
         auto_toggle(const auto_toggle&) = delete;
@@ -97,6 +102,7 @@ public:
     private:
         bool& m_value;
         bool  m_if_equal;
+        bool  m_did_toggle = false;
     };
 };
 //
@@ -127,11 +133,11 @@ private:
     //  instead of gotcha_wrappee
     //
     template <typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, bool& _ready, Ret (*)(Args...),
+    static auto invoke_sfinae_impl(Tp& _obj, int, bool&, Ret (*)(Args...),
                                    Args&&... _args)
         -> decltype(_obj(std::forward<Args>(_args)...), Ret())
     {
-        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        // gotcha_suppression::auto_toggle suppress_lock(_ready);
         return _obj(std::forward<Args>(_args)...);
     }
 
@@ -139,11 +145,11 @@ private:
     //  Call the original gotcha_wrappee
     //
     template <typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, bool& _ready, Ret (*_func)(Args...),
+    static auto invoke_sfinae_impl(Tp&, long, bool&, Ret (*_func)(Args...),
                                    Args&&... _args)
         -> decltype(_func(std::forward<Args>(_args)...), Ret())
     {
-        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        // gotcha_suppression::auto_toggle suppress_lock(_ready);
         return _func(std::forward<Args>(_args)...);
     }
 
@@ -227,11 +233,11 @@ private:
     //  instead of gotcha_wrappee
     //
     template <typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, bool& _ready, Ret (*)(Args...),
+    static auto invoke_sfinae_impl(Tp& _obj, int, bool&, Ret (*)(Args...),
                                    Args&&... _args)
         -> decltype(_obj(std::forward<Args>(_args)...), Ret())
     {
-        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        // gotcha_suppression::auto_toggle suppress_lock(_ready);
         _obj(std::forward<Args>(_args)...);
     }
 
@@ -239,11 +245,11 @@ private:
     //  Call the original gotcha_wrappee
     //
     template <typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, bool& _ready, Ret (*_func)(Args...),
+    static auto invoke_sfinae_impl(Tp&, long, bool&, Ret (*_func)(Args...),
                                    Args&&... _args)
         -> decltype(_func(std::forward<Args>(_args)...), Ret())
     {
-        gotcha_suppression::auto_toggle suppress_lock(_ready);
+        // gotcha_suppression::auto_toggle suppress_lock(_ready);
         _func(std::forward<Args>(_args)...);
     }
 

@@ -33,7 +33,6 @@
 #include "timemory/operations/types.hpp"
 
 #include "timemory/components/base.hpp"
-#include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/policy.hpp"
@@ -476,7 +475,6 @@ struct init_storage
     using string_t         = std::string;
     using storage_type     = storage<type>;
     using this_type        = init_storage<Tp>;
-    using gotcha_suppress  = component::gotcha_suppression;
     using master_pointer_t = decltype(storage_type::master_instance());
     using pointer_t        = decltype(storage_type::instance());
     using get_type         = std::tuple<master_pointer_t, pointer_t, bool, bool, bool>;
