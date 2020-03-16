@@ -115,6 +115,9 @@ static const int device_to_host_v   = 2;
 static const int device_to_device_v = 3;
 #endif
 
+const char*
+get_error_string(error_t err);
+
 // half-precision floating point
 #if !defined(TIMEMORY_CUDA_FP16)
 

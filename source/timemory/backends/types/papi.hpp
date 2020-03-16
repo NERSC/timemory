@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file backends/bits/papi.hpp
- * \headerfile backends/bits/papi.hpp "timemory/backends/bits/papi.hpp"
+/**
+ * \headerfile "timemory/backends/types/papi.hpp"
  * This provides a fake PAPI interface to simplify compilation when PAPI is not
  * available, similar to mpi.hpp
  *

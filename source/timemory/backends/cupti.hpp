@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/backends/bits/cupti.hpp"
+#include "timemory/backends/types/cupti.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/macros.hpp"

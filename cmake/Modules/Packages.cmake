@@ -82,7 +82,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-papi
     #
     timemory-cuda
-    timemory-cudart
+    # timemory-cudart
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
@@ -104,7 +104,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-statistics
     timemory-papi
     timemory-cuda
-    timemory-cudart
+    # timemory-cudart
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
@@ -122,7 +122,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-statistics
     timemory-papi-static
     timemory-cuda
-    timemory-cudart-static
+    # timemory-cudart-static
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
@@ -764,7 +764,7 @@ if(CUPTI_FOUND)
     target_link_libraries(timemory-cupti INTERFACE
         ${CUPTI_LIBRARIES}
         timemory-cuda
-        timemory-cudart
+        # timemory-cudart
         timemory-cudart-device)
 
     target_link_directories(timemory-cupti INTERFACE
@@ -1185,7 +1185,7 @@ target_link_libraries(timemory-gpu-roofline INTERFACE
     timemory-roofline-options
     timemory-cupti
     timemory-cuda
-    timemory-cudart
+    # timemory-cudart
     timemory-cudart-device)
 
 generate_composite_interface(timemory-roofline
