@@ -31,6 +31,7 @@
 
 #include "timemory/hash/macros.hpp"
 #include "timemory/hash/types.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <atomic>
 #include <memory>

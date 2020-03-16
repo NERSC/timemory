@@ -497,6 +497,9 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
+    #if defined(_WINDOWS)
+    static
+    #endif
     ::tim::manager* timemory_manager_master_instance()
     {
         static auto _pinst = tim::get_shared_ptr_pair<tim::manager>();

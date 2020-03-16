@@ -105,7 +105,11 @@ public:
 
 private:
     static mutex_t&          mutex();
-    static std::atomic_bool& lock_flag();
+    static std::atomic_bool& lock_flag()
+    {
+        static std::atomic_bool _instance(false);
+        return _instance;
+    }
 
     void collapse();
 

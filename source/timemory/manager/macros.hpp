@@ -39,7 +39,7 @@
 #    if !defined(_WINDOWS)
 #        define __library_ctor__ __attribute__((constructor))
 #    else
-#        define __library_ctor__
+#        define __library_ctor__ static
 #    endif
 #endif
 //
@@ -49,7 +49,7 @@
 #    if !defined(_WINDOWS)
 #        define __library_dtor__ __attribute__((destructor))
 #    else
-#        define __library_dtor__
+#        define __library_dtor__ 
 #    endif
 #endif
 //

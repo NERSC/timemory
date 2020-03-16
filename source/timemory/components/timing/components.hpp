@@ -58,7 +58,7 @@ namespace component
 // Do not use a single CPU time as an amount of time; it doesnâ€™t work that way.
 // units are reported in number of clock ticks per second
 //
-// this struct extracts only the CPU time spent in kernel-mode
+// this component extracts only the CPU time spent in kernel-mode
 struct system_clock : public base<system_clock>
 {
     using ratio_t    = std::nano;
@@ -91,10 +91,10 @@ struct system_clock : public base<system_clock>
 
 //--------------------------------------------------------------------------------------//
 // uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesnâ€™t work that way.
+// Do not use a single CPU time as an amount of time; it doesn't work that way.
 // units are reported in number of clock ticks per second
 //
-// this struct extracts only the CPU time spent in user-mode
+// this component extracts only the CPU time spent in user-mode
 struct user_clock : public base<user_clock>
 {
     using ratio_t    = std::nano;
@@ -130,7 +130,7 @@ struct user_clock : public base<user_clock>
 // Do not use a single CPU time as an amount of time; it doesnâ€™t work that way.
 // units are reported in number of clock ticks per second
 //
-// this struct extracts only the CPU time spent in both user- and kernel- mode
+// this component extracts only the CPU time spent in both user- and kernel- mode
 struct cpu_clock : public base<cpu_clock>
 {
     using ratio_t    = std::nano;
@@ -309,7 +309,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
 // uses clock() -- only relevant as a time when a different is computed
 // Do not use a single CPU time as an amount of time; it doesnâ€™t work that way.
 //
-// this struct extracts only the CPU time spent in both user- and kernel- mode
+// this component extracts only the CPU time spent in both user- and kernel- mode
 // and divides by wall clock time
 struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
 {
@@ -372,7 +372,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
 // this computes the CPU utilization percentage for ONLY the calling process (excludes
 // child processes)
 //
-// this struct extracts only the CPU time spent in both user- and kernel- mode
+// this component extracts only the CPU time spent in both user- and kernel- mode
 // and divides by wall clock time
 struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64_t>>
 {
@@ -433,7 +433,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
 // this computes the CPU utilization percentage for ONLY the calling thread (excludes
 // sibling and child threads)
 //
-// this struct extracts only the CPU time spent in both user- and kernel- mode
+// this component extracts only the CPU time spent in both user- and kernel- mode
 // and divides by wall clock time
 struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t>>
 {
