@@ -247,18 +247,18 @@ private:
         persistent_data& operator=(const persistent_data&) = delete;
         persistent_data& operator=(persistent_data&&) = delete;
 
-        std::atomic_int32_t instance_count{ 0 };
-        std::atomic_int32_t thread_count{ 0 };
-        bool                use_exit_hook = true;
-        pointer_t           master_instance;
-        bool&               debug   = settings::debug();
-        int&                verbose = settings::verbose();
+        std::atomic<int32_t> instance_count{ 0 };
+        std::atomic<int32_t> thread_count{ 0 };
+        bool                 use_exit_hook = true;
+        pointer_t            master_instance;
+        bool&                debug   = settings::debug();
+        int&                 verbose = settings::verbose();
     };
 
     /// single instance of all the global static data
     static persistent_data& f_manager_persistent_data();
     /// number of timing manager instances
-    static std::atomic_int32_t& f_manager_instance_count()
+    static std::atomic<int32_t>& f_manager_instance_count()
     {
         return f_manager_persistent_data().instance_count;
     }
