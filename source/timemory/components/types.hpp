@@ -71,9 +71,6 @@ struct nothing : base<nothing, skeleton::base>
 
 namespace variadic
 {
-template <typename... Types>
-struct properties;
-
 struct auto_start;
 struct auto_stop;
 struct explicit_start;
@@ -82,6 +79,11 @@ struct explicit_stop;
 struct tree_scope;
 struct flat_scope;
 struct timeline_scope;
+
+struct exit_report;
+struct no_init;
+struct no_fini;
+struct no_store;
 }  // namespace variadic
 
 }  // namespace tim
@@ -113,6 +115,12 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::explicit_stop, false_type
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::tree_scope, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::flat_scope, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::timeline_scope, false_type)
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::exit_report, false_type)
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::no_init, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::no_fini, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::no_store, false_type)
 
 //======================================================================================//
 

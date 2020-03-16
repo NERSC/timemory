@@ -189,14 +189,36 @@ public:
 public:
     using print_t = typename type_bundler::print_t;
 
+private:
+    using concat_type = concat<Types...>;
+
+    template <typename T, typename Config>
+    static constexpr bool get_config(Config&& = variadic::config<>{})
+    {
+        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
+        return (is_one_of<T, var_config_t>::value || is_one_of<T, Config>::value);
+    }
+
 public:
     explicit generic_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
-                            bool _flat = settings::flat_profile())
+                            bool _flat     = settings::flat_profile(),
+                            bool _timeline = settings::timeline_profile())
     : m_store(_store && settings::enabled())
     , m_flat(_flat)
+    , m_timeline(_timeline)
     , m_is_pushed(false)
     , m_laps(0)
     , m_hash(_hash)
+    {}
+
+    template <typename... T>
+    explicit generic_bundle(uint64_t hash, bool store, variadic::config<T...> config)
+    : m_store(store && settings::enabled())
+    , m_flat(get_config<variadic::flat_scope>(config))
+    , m_timeline(get_config<variadic::timeline_scope>(config))
+    , m_is_pushed(false)
+    , m_laps(0)
+    , m_hash(hash)
     {}
 
     ~generic_bundle()                     = default;
@@ -264,6 +286,7 @@ protected:
     // objects
     bool     m_store     = false;
     bool     m_flat      = false;
+    bool     m_timeline  = false;
     bool     m_is_pushed = false;
     int64_t  m_laps      = 0;
     uint64_t m_hash      = 0;

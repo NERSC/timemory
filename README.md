@@ -6,11 +6,6 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/8xk72ootwsefi8c1/branch/master?svg=true)](https://ci.appveyor.com/project/jrmadsen/timemory/branch/master)
 [![codecov](https://codecov.io/gh/NERSC/timemory/branch/master/graph/badge.svg)](https://codecov.io/gh/NERSC/timemory)
 
-[![Conda Recipe](https://img.shields.io/badge/recipe-timemory-green.svg)](https://anaconda.org/jrmadsen/timemory)
-[![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/version.svg)](https://anaconda.org/jrmadsen/timemory)
-[![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/platforms.svg)](https://anaconda.org/jrmadsen/timemory)
-[![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/downloads.svg)](https://anaconda.org/jrmadsen/timemory)
-
 [timemory on GitHub (Source code)](https://github.com/NERSC/timemory)
 
 [timemory General Documentation](https://timemory.readthedocs.io)
@@ -19,30 +14,42 @@
 
 [timemory Testing Dashboard (CDash)](https://cdash.nersc.gov/index.php?project=TiMemory)
 
-|                |                                                   |
-| -------------- | ------------------------------------------------- |
-| GitHub         | `git clone https://github.com/NERSC/timemory.git` |
-| PyPi           | `pip install timemory`                            |
-| Anaconda Cloud | `conda install -c jrmadsen timemory`              |
+|        |                                                   |
+| ------ | ------------------------------------------------- |
+| GitHub | `git clone https://github.com/NERSC/timemory.git` |
+| PyPi   | `pip install timemory`                            |
 
+## Overview
 
-Timemory is a performance measurement and analysis framework.
+- Timemory is designed as a __*modular*__ framework for performance measurement and analysis
+- The goals of timemory are to provide:
+    - __*Common instrumentation framework*__
+        - Eliminate need for projects to explicitly support multiple instrumentation frameworks
+    - High performance when enabled
+    - Low overhead when enabled at compile time but disabled at runtime
 
 ## Why Use timemory?
 
-- __*Timemory is arguably the most customizable performance measurement and analysis API available*__
-- __*High-performance*__: very low overhead when enabled and borderline negligible runtime disabled
+- __*Timemory is a universal adaptor framework for performance measurement and analysis*__
+    - Arguably the most customizable performance measurement and analysis API available
+    - Template meta-programming on the backend allows timemory to adapt to the special needs
+      of any existing API
+    - Projects with existing instrumentation APIs can wrap their own instrumentation into a component
 - Ability to arbitrarily switch and combine different measurement types anywhere in application
+    - Intermixed recording different measurements in different parts of the code
+    - Intermixed flat profiling, tracing, and timeline profiling
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
     - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 
-### Support for Multiple Instrumentation Marker APIs
+### Support for Multiple Instrumentation APIs
 
 - NVTX for Nsight-Systems and NVprof
 - [LIKWID](https://github.com/RRZE-HPC/likwid)
 - [Caliper](https://github.com/LLNL/Caliper)
 - [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
 - ittnotify (Intel VTune and Advisor)
+- OMPT (OpenMP tools)
+- MPIP
 
 ### Create Your Own Performance and Analysis Tools
 
@@ -53,12 +60,14 @@ Timemory is a performance measurement and analysis framework.
 
 ### Generic Bundling of Multiple Tools
 
-- CPU hardware counters via PAPI
+- CPU and GPU hardware counters via PAPI
 - NVIDIA GPU hardware counters via CUPTI
 - NVIDIA GPU tracing via CUPTI
 - Generating a Roofline for performance-critical sections on the CPU and NVIDIA GPUs
+    - Classical Roofline (FLOPs)
+    - Instruction Roofline
 - Memory usage
-- Tool insertiong around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
+- Tool insertion around `malloc`, `calloc`, `free`, `cudaMalloc`, `cudaFree`
 - Wall-clock, cpu-clock, system-clock timing
 - Number of bytes read/written to file-system (and rate)
 - Number of context switches
@@ -128,8 +137,8 @@ Use the following and set `TIMEMORY_PAPI_EVENTS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3
 the environment:
 
 ```cpp
-using auto_tuple_t = tim::auto_tuple<tim::component::papi_array_t>;
-TIMEMORY_CALIPER(roi, auto_tuple_t, "");
+using hwcounters_t = tim::auto_tuple<tim::component::papi_vector>;
+TIMEMORY_CALIPER(roi, hwcounters_t, "");
 //
 // do something in region of interest...
 //
@@ -157,24 +166,28 @@ There are numerous instrumentation APIs available but very few provide the abili
 tools/components that will fully integrate with the instrumentation API in their code. The
 simplicity of creating a custom component that inherits category-based formatting properties
 (`is_timing_category`) and timing unit conversion (`uses_timing_units`)
-can be easily demonstrated in ~50 LOC with the `wall_clock` component:
+can be easily demonstrated with the `wall_clock` component and the simplicity and adaptability
+of forwarding timemory markers to external instrumentation is easily demonstrated with the
+`tau_marker` component:
 
 ```cpp
+TIMEMORY_DECLARE_COMPONENT(wall_clock)
+TIMEMORY_DECLARE_COMPONENT(tau_marker)
+
+// type-traits for wall-clock
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::wall_clock, true_type)
+TIMEMORY_STATISTICS_TYPE(component::wall_clock, double)
+
 namespace tim
 {
-namespace component { struct wall_clock; }
-
-namespace trait
-{
-template <> struct is_timing_category<component::wall_clock> : std::true_type {};
-template <> struct uses_timing_units<component::wall_clock> : std::true_type {};
-}  // namespace trait
-
 namespace component
 {
 //
 // the system's real time (i.e. wall time) clock, expressed as the
 // amount of time since the epoch.
+//
+// NOTE: 'value', 'accum', 'get_units()', etc. are provided by base class
 //
 struct wall_clock : public base<wall_clock, int64_t>
 {
@@ -183,22 +196,28 @@ struct wall_clock : public base<wall_clock, int64_t>
     using base_type  = base<wall_clock, value_type>;
 
     static std::string label() { return "wall"; }
-    static std::string description() { return "wall time"; }
+    static std::string description() { return "wall-clock timer"; }
+
     static value_type  record()
     {
-        return tim::get_clock_real_now<int64_t, ratio_t>();
+        // use STL steady_clock to get time-stamp in nanoseconds
+        using clock_type    = std::chrono::steady_clock;
+        using duration_type = std::chrono::duration<clock_type::rep, ratio_t>;
+        return std::chrono::duration_cast<duration_type>(
+            clock_type::now().time_since_epoch()).count();
     }
 
     double get_display() const { return get(); }
+
     double get() const
     {
+        // get_unit() provided by base_clock via uses_timing_units type-trait
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val) / ratio_t::den * get_unit();
     }
 
     void start()
     {
-        set_started();
         value = record();
     }
 
@@ -207,12 +226,148 @@ struct wall_clock : public base<wall_clock, int64_t>
         auto tmp = record();
         accum += (tmp - value);
         value = std::move(tmp);
-        set_stopped();
     }
+};
+
+//
+// forwards timemory instrumentation to TAU instrumentation.
+//
+struct tau_marker : public base<tau_marker, void>
+{
+    // timemory component api
+    using value_type = void;
+    using this_type  = tau_marker;
+    using base_type  = base<this_type, value_type>;
+
+    static std::string label() { return "tau"; }
+    static std::string description() { return "TAU_start and TAU_stop instrumentation"; }
+
+    static void global_init(storage_type*) { Tau_set_node(dmp::rank()); }
+    static void thread_init(storage_type*) { TAU_REGISTER_THREAD();     }
+
+    tau_marker() = default;
+    tau_marker(const std::string& _prefix) : m_prefix(_prefix) {}
+
+    void start() { Tau_start(m_prefix.c_str()); }
+    void stop()  { Tau_stop(m_prefix.c_str());  }
+
+    void set_prefix(const std::string& _prefix) { m_prefix = _prefix; }
+    // This 'set_prefix(...)' member function is a great example of the template
+    // meta-programming provided by timemory: at compile-time, timemory checks
+    // whether components have this member function and, if and only if it exists,
+    // timemory will call this member function for the component and provide the
+    // marker label.
+
+private:
+    std::string m_prefix = "";
 };
 
 }  // namespace component
 }  // namespace tim
+```
+
+Using the two tools together in C++ is as easy as the following:
+
+```cpp
+#include <timemory/timemory.hpp>
+
+using namespace tim::component;
+using comp_bundle_t = tim::component_tuple_t <wall_clock, tau_marker>;
+using auto_bundle_t = tim::auto_tuple_t      <wall_clock, tau_marker>;
+// "auto" types automatically start/stop based on scope
+
+void foo()
+{
+    comp_bundle_t t("foo");
+    t.start();
+    // do something
+    t.stop();
+}
+
+void bar()
+{
+    auto_bundle_t t("foo");
+    // do something
+}
+
+int main(int argc, char** argv)
+{
+    tim::init(argc, argv);
+    foo();
+    bar();
+    tim::finalize();
+}
+```
+
+Using the pure template interface will cause longer compile-times and is only available in C++
+so a library interface for C, C++, and Fortran is also available:
+
+```cpp
+#include <timemory/timemory.hpp>
+
+using namespace tim::component;
+using comp_bundle_t = tim::component_tuple_t <wall_clock, tau_marker>;
+using auto_bundle_t = tim::auto_tuple_t      <wall_clock, tau_marker>;
+// "auto" types automatically start/stop based on scope
+
+void foo()
+{
+    uint64_t idx = timemory_get_begin_record("foo");
+    // do something
+    timemory_end_record(idx);
+}
+
+void bar()
+{
+    timemory_push_region("bar");
+    // do something
+    timemory_pop_region("bar");
+}
+
+int main(int argc, char** argv)
+{
+    timemory_init_library(argc, argv);
+    timemory_push_components("wall_clock,tau_marker");
+    foo();
+    bar();
+    timemory_pop_components();
+    timemory_finalize_library();
+}
+```
+
+In Python:
+
+```python
+import timemory
+from timemory.profiler import profile
+from timemory.util import auto_tuple
+
+def get_config(items=["wall_clock", "tau_marker"]):
+    """
+    Converts strings to enumerations
+    """
+    return [getattr(timemory.component, x) for x in items]
+
+@profile(["wall_clock", "tau_marker"])
+def foo():
+    """
+    @profile (also available as context-manager) enables full python instrumentation
+    of every subsequent python call
+    """
+    # ...
+
+@auto_tuple(get_config())
+def bar():
+    """
+    @auto_tuple (also available as context-manager) enables instrumentation
+    of only this function
+    """
+    # ...
+
+if __name__ == "__main__":
+    foo()
+    bar()
+    timemory.finalize()
 ```
 
 ## GOTCHA and timemory

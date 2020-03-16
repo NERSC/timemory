@@ -88,16 +88,23 @@ public:
     template <typename T>
     static constexpr bool get_config()
     {
-        using var_config_t =
-            typename contains_one_of<variadic::is_config, concat_type>::type;
-        return is_one_of<T, var_config_t>::value;
+        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
+        return (is_one_of<T, var_config_t>::value);
+    }
+
+    template <typename T, typename Config>
+    static constexpr bool get_config(Config&&)
+    {
+        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
+        return (is_one_of<T, var_config_t>::value || is_one_of<T, Config>::value);
     }
 
 public:
+    //
     //----------------------------------------------------------------------------------//
     //
     static void init_storage() { component_type::init_storage(); }
-
+    //
     //----------------------------------------------------------------------------------//
     //
     static initializer_type& get_initializer()
@@ -105,35 +112,59 @@ public:
         static initializer_type _instance = [](this_type&) {};
         return _instance;
     }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    static initializer_type& get_finalizer()
+    {
+        static initializer_type _instance = [](this_type&) {};
+        return _instance;
+    }
 
 public:
-    template <typename Func = initializer_type>
+    template <typename... T, typename Init = initializer_type,
+              typename Fini = initializer_type>
+    explicit auto_tuple(const string_t&, variadic::config<T...>,
+                        const Init& = this_type::get_initializer(),
+                        const Fini& = this_type::get_finalizer());
+
+    template <typename... T, typename Init = initializer_type,
+              typename Fini = initializer_type>
+    explicit auto_tuple(const captured_location_t&, variadic::config<T...>,
+                        const Init& = this_type::get_initializer(),
+                        const Fini& = this_type::get_finalizer());
+
+    template <typename Init = initializer_type, typename Fini = initializer_type>
     explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
-                        const Func&         = this_type::get_initializer());
+                        const Init&         = this_type::get_initializer(),
+                        const Fini&         = this_type::get_finalizer());
 
-    template <typename Func = initializer_type>
+    template <typename Init = initializer_type, typename Fini = initializer_type>
     explicit auto_tuple(const captured_location_t&, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
-                        const Func&         = this_type::get_initializer());
+                        const Init&         = this_type::get_initializer(),
+                        const Fini&         = this_type::get_finalizer());
 
-    template <typename Func = initializer_type>
+    template <typename Init = initializer_type, typename Fini = initializer_type>
     explicit auto_tuple(size_t, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report(),
-                        const Func&         = this_type::get_initializer());
+                        const Init&         = this_type::get_initializer(),
+                        const Fini&         = this_type::get_finalizer());
 
     explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
                         bool report_at_exit = settings::destructor_report());
 
-    template <typename Func, typename Arg, typename... Args>
-    auto_tuple(const string_t&, bool store, bool flat, const Func&, Arg&&, Args&&...);
-
-    template <typename Func, typename Arg, typename... Args>
-    auto_tuple(const captured_location_t&, bool store, bool flat, const Func&, Arg&&,
+    template <typename Init, typename Fini, typename Arg, typename... Args>
+    auto_tuple(const string_t&, bool store, bool flat, const Init&, const Fini&, Arg&&,
                Args&&...);
 
-    template <typename Func, typename Arg, typename... Args>
-    auto_tuple(size_t, bool store, bool flat, const Func&, Arg&&, Args&&...);
+    template <typename Init, typename Fini, typename Arg, typename... Args>
+    auto_tuple(const captured_location_t&, bool store, bool flat, const Init&,
+               const Fini&, Arg&&, Args&&...);
+
+    template <typename Init, typename Fini, typename Arg, typename... Args>
+    auto_tuple(size_t, bool store, bool flat, const Init&, const Fini&, Arg&&, Args&&...);
 
     inline ~auto_tuple();
 
@@ -152,6 +183,12 @@ public:
 
     inline operator component_type&() { return m_temporary_object; }
     inline operator const component_type&() const { return m_temporary_object; }
+
+    template <typename Func>
+    void set_finalizer(Func&& func)
+    {
+        m_fini = std::forward<Func>(func);
+    }
 
     // partial interface to underlying component_tuple
     inline void push()
@@ -248,27 +285,24 @@ public:
         return m_temporary_object.template get<Tp>();
     }
 
-    inline void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
+    inline void get(void*& ptr, size_t hash) { m_temporary_object.get(ptr, hash); }
 
 protected:
-    template <typename Func, typename... Args,
-              enable_if_t<(sizeof...(Args) == 0), int> = 0>
-    void init(Func&& _func, Args&&...)
+    template <typename Func>
+    void init(Func&& init)
     {
         if(m_enabled)
-        {
-            _func(*this);
-        }
+            init(*this);
     }
 
-    template <typename Func, typename... Args,
-              enable_if_t<(sizeof...(Args) > 0), int> = 0>
-    void init(Func&& _func, Args&&... args)
+    template <typename Func, typename Arg, typename... Args>
+    void init(Func&& init, Arg&& arg, Args&&... args)
     {
         if(m_enabled)
         {
-            _func(*this);
-            m_temporary_object.construct(std::forward<Args>(args)...);
+            init(*this);
+            m_temporary_object.construct(std::forward<Arg>(arg),
+                                         std::forward<Args>(args)...);
         }
     }
 
@@ -280,26 +314,77 @@ public:
     }
 
 protected:
-    bool            m_enabled        = true;
-    bool            m_report_at_exit = false;
-    component_type  m_temporary_object;
-    component_type* m_reference_object = nullptr;
+    bool             m_enabled        = true;
+    bool             m_report_at_exit = false;
+    component_type   m_temporary_object;
+    component_type*  m_reference_object = nullptr;
+    initializer_type m_fini             = this_type::get_finalizer();
 };
 
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename Func>
-auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_exit,
-                                 const Func& _func)
+template <typename... T, typename Init, typename Fini>
+auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...> config,
+                                 const Init& init_func, const Fini& fini_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit)
+, m_report_at_exit(get_config<variadic::exit_report>(config))
+, m_temporary_object(
+      m_enabled ? component_type(key, m_enabled, get_config<variadic::flat_scope>(config))
+                : component_type{})
+, m_reference_object(nullptr)
+, m_fini(fini_func)
+{
+    if(m_enabled)
+    {
+        init(init_func);
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>(config))
+        {
+            m_temporary_object.start();
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+template <typename... T, typename Init, typename Fini>
+auto_tuple<Types...>::auto_tuple(const captured_location_t& loc,
+                                 variadic::config<T...> config, const Init& init_func,
+                                 const Fini& fini_func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(get_config<variadic::exit_report>(config))
+, m_temporary_object(
+      m_enabled ? component_type(loc, m_enabled, get_config<variadic::flat_scope>(config))
+                : component_type{})
+, m_reference_object(nullptr)
+, m_fini(fini_func)
+{
+    if(m_enabled)
+    {
+        init(init_func);
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+template <typename Init, typename Fini>
+auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_exit,
+                                 const Init& init_func, const Fini& fini_func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
 , m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
+, m_fini(fini_func)
 {
     if(m_enabled)
     {
-        init(_func);
+        init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>())
         {
             m_temporary_object.start();
@@ -310,17 +395,19 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename Func>
+template <typename Init, typename Fini>
 auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
-                                 bool report_at_exit, const Func& _func)
+                                 bool report_at_exit, const Init& init_func,
+                                 const Fini& fini_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit)
+, m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
 , m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
+, m_fini(fini_func)
 {
     if(m_enabled)
     {
-        init(_func);
+        init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>())
         {
             m_temporary_object.start();
@@ -331,18 +418,18 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename Func>
-auto_tuple<Types...>::auto_tuple(size_t _hash, bool flat, bool report_at_exit,
-                                 const Func& _func)
+template <typename Init, typename Fini>
+auto_tuple<Types...>::auto_tuple(size_t hash, bool flat, bool report_at_exit,
+                                 const Init& init_func, const Fini& fini_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
-                               : component_type{})
+, m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
+, m_temporary_object(m_enabled ? component_type(hash, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
+, m_fini(fini_func)
 {
     if(m_enabled)
     {
-        init(_func);
+        init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>())
         {
             m_temporary_object.start();
@@ -355,7 +442,7 @@ auto_tuple<Types...>::auto_tuple(size_t _hash, bool flat, bool report_at_exit,
 template <typename... Types>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_exit)
 : m_enabled(true)
-, m_report_at_exit(report_at_exit)
+, m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
 , m_temporary_object(component_type(tmp.clone(true, flat)))
 , m_reference_object(&tmp)
 {
@@ -371,18 +458,19 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename Func, typename Arg, typename... Args>
+template <typename Init, typename Fini, typename Arg, typename... Args>
 auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, bool flat,
-                                 const Func& func, Arg&& arg, Args&&... args)
+                                 const Init& init_func, const Fini& fini_func, Arg&& arg,
+                                 Args&&... args)
 : m_enabled(store && settings::enabled())
-, m_report_at_exit(settings::destructor_report())
+, m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
 , m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
+, m_fini(fini_func)
 {
     if(m_enabled)
     {
-        init(func);
-        m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
+        init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>())
         {
             m_temporary_object.start();
@@ -393,18 +481,19 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename Func, typename Arg, typename... Args>
+template <typename Init, typename Fini, typename Arg, typename... Args>
 auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store, bool flat,
-                                 const Func& func, Arg&& arg, Args&&... args)
+                                 const Init& init_func, const Fini& fini_func, Arg&& arg,
+                                 Args&&... args)
 : m_enabled(store && settings::enabled())
-, m_report_at_exit(settings::destructor_report())
+, m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
 , m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
+, m_fini(fini_func)
 {
     if(m_enabled)
     {
-        init(func);
-        m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
+        init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>())
         {
             m_temporary_object.start();
@@ -415,19 +504,19 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store, boo
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename Func, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(size_t _hash, bool store, bool flat, const Func& func,
-                                 Arg&& arg, Args&&... args)
+template <typename Init, typename Fini, typename Arg, typename... Args>
+auto_tuple<Types...>::auto_tuple(size_t hash, bool store, bool flat,
+                                 const Init& init_func, const Fini& fini_func, Arg&& arg,
+                                 Args&&... args)
 : m_enabled(store && settings::enabled())
-, m_report_at_exit(settings::destructor_report())
-, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
-                               : component_type{})
+, m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
+, m_temporary_object(m_enabled ? component_type(hash, m_enabled, flat) : component_type{})
 , m_reference_object(nullptr)
+, m_fini(fini_func)
 {
     if(m_enabled)
     {
-        init(func);
-        m_temporary_object.construct(std::forward<Arg>(arg), std::forward<Args>(args)...);
+        init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>())
         {
             m_temporary_object.start();
@@ -460,6 +549,8 @@ auto_tuple<Types...>::~auto_tuple()
             {
                 *m_reference_object += m_temporary_object;
             }
+
+            m_fini(*this);
         }
     }
 }
@@ -487,10 +578,9 @@ get_labeled(const auto_tuple<Types...>& _obj)
 }  // namespace tim
 
 //======================================================================================//
-
-//--------------------------------------------------------------------------------------//
+//
 // variadic versions
-
+//
 #define TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE(tag, ...)                                     \
     using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
     TIMEMORY_BLANK_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
@@ -507,28 +597,31 @@ get_labeled(const auto_tuple<Types...>& _obj)
 //
 //      std::get operator
 //
+//======================================================================================//
+//
 namespace std
 {
+//
 //--------------------------------------------------------------------------------------//
-
+//
 template <std::size_t N, typename... Types>
 typename std::tuple_element<N, std::tuple<Types...>>::type&
 get(tim::auto_tuple<Types...>& obj)
 {
     return get<N>(obj.data());
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 template <std::size_t N, typename... Types>
 const typename std::tuple_element<N, std::tuple<Types...>>::type&
 get(const tim::auto_tuple<Types...>& obj)
 {
     return get<N>(obj.data());
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 template <std::size_t N, typename... Types>
 auto
 get(tim::auto_tuple<Types...>&& obj)
@@ -537,9 +630,9 @@ get(tim::auto_tuple<Types...>&& obj)
     using obj_type = tim::auto_tuple<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
-
-//======================================================================================//
-
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace std
-
+//
 //======================================================================================//

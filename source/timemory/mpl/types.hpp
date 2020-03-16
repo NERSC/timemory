@@ -281,6 +281,9 @@ template <typename T>
 struct set_flat_profile;
 
 template <typename T>
+struct set_timeline_profile;
+
+template <typename T>
 struct insert_node;
 
 template <typename T>

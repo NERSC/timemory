@@ -328,6 +328,9 @@ using is_one_of = typename impl::is_one_of<Tp, Types>;
 template <template <typename> class Predicate, typename Types>
 using contains_one_of = typename impl::contains_one_of<Predicate, Types>;
 
+template <template <typename> class Predicate, typename Types>
+using contains_one_of_t = typename contains_one_of<Predicate, Types>::type;
+
 //======================================================================================//
 
 ///

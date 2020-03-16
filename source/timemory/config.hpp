@@ -39,25 +39,53 @@
 
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
 /// initialization (creates manager and configures output path)
 void
 timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /// initialization (creates manager and configures output path)
 void
 timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /// initialization (creates manager, configures output path, mpi_init)
 void
 timemory_init(int* argc, char*** argv, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
-
+//
+//--------------------------------------------------------------------------------------//
+//
 /// finalization of the specified types
 void
 timemory_finalize();
-
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Args>
+void
+init(Args&&... args)
+{
+    timemory_init(std::forward<Args>(args)...);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+finalize()
+{
+    timemory_finalize();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//

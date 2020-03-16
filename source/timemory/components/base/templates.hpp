@@ -365,8 +365,7 @@ base<Tp, Value>::append(graph_iterator itr, const T& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, typename Vp,
-          enable_if_t<(implements_storage<Up, Vp>::value), int>>
+template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
 void
 base<Tp, Value>::print(std::ostream& os) const
 {

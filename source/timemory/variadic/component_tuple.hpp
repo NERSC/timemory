@@ -116,9 +116,19 @@ public:
     static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
 
+public:
+    //
     //----------------------------------------------------------------------------------//
     //
     static initializer_type& get_initializer()
+    {
+        static initializer_type _instance = [](this_type&) {};
+        return _instance;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    static initializer_type& get_finalizer()
     {
         static initializer_type _instance = [](this_type&) {};
         return _instance;
@@ -130,28 +140,47 @@ public:
     template <typename T>
     static constexpr bool get_config()
     {
-        using var_config_t =
-            typename contains_one_of<variadic::is_config, concat_type>::type;
-        return is_one_of<T, var_config_t>::value;
+        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
+        return (is_one_of<T, var_config_t>::value);
+    }
+
+    template <typename T, typename Config>
+    static constexpr bool get_config(Config&&)
+    {
+        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
+        return (is_one_of<T, var_config_t>::value || is_one_of<T, Config>::value);
     }
 
 public:
     component_tuple();
 
+    template <typename... T, typename Func = initializer_type>
+    explicit component_tuple(const string_t& key, variadic::config<T...>,
+                             const Func& = get_initializer(),
+                             const Func& = get_finalizer());
+
+    template <typename... T, typename Func = initializer_type>
+    explicit component_tuple(const captured_location_t& loc, variadic::config<T...>,
+                             const Func& = get_initializer(),
+                             const Func& = get_finalizer());
+
     template <typename Func = initializer_type>
     explicit component_tuple(const string_t& key, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer());
+                             const Func&      = get_initializer(),
+                             const Func&      = get_finalizer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(const captured_location_t& loc, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer());
+                             const Func&      = get_initializer(),
+                             const Func&      = get_finalizer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(size_t _hash, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer());
+                             const Func&      = get_initializer(),
+                             const Func&      = get_finalizer());
 
     ~component_tuple();
 
@@ -479,6 +508,12 @@ public:
     const string_t& prefix() const { return bundle_type::prefix(); }
     const string_t& get_prefix() const { return bundle_type::get_prefix(); }
 
+    template <typename Func>
+    void set_finalizer(Func&& func)
+    {
+        m_fini = std::forward<Func>(func);
+    }
+
 protected:
     static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
     void           update_width() const { bundle_type::update_width(); }
@@ -490,6 +525,8 @@ protected:
     inline const data_type& get_data() const;
     inline void             set_prefix(const string_t&) const;
     inline void             set_prefix(size_t) const;
+    inline void             set_flat_profile(bool);
+    inline void             set_timeline_profile(bool);
 
 protected:
     // objects
@@ -498,7 +535,9 @@ protected:
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
     using bundle_type::m_store;
+    using bundle_type::m_timeline;
     mutable data_type m_data = data_type{};
+    initializer_type  m_fini = this_type::get_finalizer();
 };
 
 //======================================================================================//

@@ -187,7 +187,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         auto&      _profiler = _get_profiler();
         if(!_profiler.get() || !_get_labels())
             return tmp;
-        auto&      _labels   = *_get_labels();
+        auto& _labels = *_get_labels();
         _profiler->stop();
         if(tmp.size() == 0)
         {
@@ -218,7 +218,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         auto& _profiler = _get_profiler();
         if(_profiler.get())
         {
-            m_kernel_value  = _profiler->get_kernel_events_and_metrics(*_get_labels());
+            m_kernel_value = _profiler->get_kernel_events_and_metrics(*_get_labels());
             _profiler->start();
         }
     }
@@ -227,14 +227,14 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     {
         using namespace stl;
 
-        value_type       tmp       = record();
-        auto&            _profiler = _get_profiler();
+        value_type tmp       = record();
+        auto&      _profiler = _get_profiler();
         if(!_profiler.get())
         {
             set_stopped();
             return;
         }
-        
+
         kernel_results_t kernel_data =
             _profiler->get_kernel_events_and_metrics(*_get_labels());
         kernel_results_t kernel_tmp = kernel_data;

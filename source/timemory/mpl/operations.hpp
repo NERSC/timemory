@@ -258,7 +258,7 @@ struct set_flat_profile
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        set_flat_profile_sfinae(obj, 0, flat);
+        sfinae(obj, 0, flat);
     }
 
 private:
@@ -266,8 +266,7 @@ private:
     //  If the component has a set_flat_profile(bool) member function
     //
     template <typename T = type>
-    auto set_flat_profile_sfinae(T& obj, int, bool flat)
-        -> decltype(obj.set_flat_profile(flat), void())
+    auto sfinae(T& obj, int, bool flat) -> decltype(obj.set_flat_profile(flat), void())
     {
         obj.set_flat_profile(flat);
     }
@@ -276,7 +275,46 @@ private:
     //  If the component does not have a set_flat_profile(bool) member function
     //
     template <typename T = type>
-    auto set_flat_profile_sfinae(T&, long, bool) -> decltype(void(), void())
+    auto sfinae(T&, long, bool) -> decltype(void(), void())
+    {}
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+struct set_timeline_profile
+{
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+    using string_t   = std::string;
+
+    TIMEMORY_DELETED_OBJECT(set_timeline_profile)
+
+    set_timeline_profile(type& obj, bool flat)
+    {
+        if(!trait::runtime_enabled<type>::get())
+            return;
+
+        sfinae(obj, 0, flat);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //  If the component has a set_timeline_profile(bool) member function
+    //
+    template <typename T = type>
+    auto sfinae(T& obj, int, bool flat)
+        -> decltype(obj.set_timeline_profile(flat), void())
+    {
+        obj.set_timeline_profile(flat);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the component does not have a set_timeline_profile(bool) member function
+    //
+    template <typename T = type>
+    auto sfinae(T&, long, bool) -> decltype(void(), void())
     {}
 };
 

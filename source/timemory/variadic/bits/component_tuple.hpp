@@ -53,18 +53,22 @@ inline component_tuple<Types...>::component_tuple()
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename _Func>
-inline component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
-                                                  const bool& flat, const _Func& _func)
-: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, flat)
+template <typename... T, typename Func>
+inline component_tuple<Types...>::component_tuple(const string_t&        key,
+                                                  variadic::config<T...> config,
+                                                  const Func&            init_func,
+                                                  const Func&            fini_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), store, config)
 , m_data(data_type{})
+, m_fini(fini_func)
 {
     if(settings::enabled())
     {
-        init_storage();
-        _func(*this);
+        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
+        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
         set_prefix(key);
-        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        set_flat_profile(get_config<variadic::flat_scope>(config));
+        set_timeline_profile(get_config<variadic::timeline_scope>(config));
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -72,19 +76,74 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename _Func>
+template <typename... T, typename Func>
+inline component_tuple<Types...>::component_tuple(const captured_location_t& loc,
+                                                  variadic::config<T...>     config,
+                                                  const Func&                init_func,
+                                                  const Func&                fini_func)
+: bundle_type(loc.get_hash(), store, config)
+, m_data(data_type{})
+, m_fini(fini_func)
+{
+    if(settings::enabled())
+    {
+        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
+        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
+        set_prefix(key);
+        set_flat_profile(get_config<variadic::flat_scope>(config));
+        set_timeline_profile(get_config<variadic::timeline_scope>(config));
+        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename Func>
+inline component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
+                                                  const bool& flat, const Func& init_func,
+                                                  const Func& fini_func)
+: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
+              flat || get_config<variadic::flat_scope>())
+, m_data(data_type{})
+, m_fini(fini_func)
+{
+    if(settings::enabled())
+    {
+        if(store)
+        {
+            init_storage();
+        }
+        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
+        set_prefix(key);
+        set_flat_profile(flat || get_config<variadic::flat_scope>());
+        set_timeline_profile(get_config<variadic::timeline_scope>());
+        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename Func>
 inline component_tuple<Types...>::component_tuple(const captured_location_t& loc,
                                                   const bool& store, const bool& flat,
-                                                  const _Func& _func)
-: bundle_type(loc.get_hash(), store, flat)
+                                                  const Func& init_func,
+                                                  const Func& fini_func)
+: bundle_type(loc.get_hash(), store, flat || get_config<variadic::flat_scope>())
 , m_data(data_type{})
+, m_fini(fini_func)
 {
     if(settings::enabled())
     {
-        init_storage();
-        _func(*this);
+        if(store)
+        {
+            init_storage();
+        }
+        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
         set_prefix(loc.get_id());
-        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        set_flat_profile(flat || get_config<variadic::flat_scope>());
+        set_timeline_profile(get_config<variadic::timeline_scope>());
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -92,18 +151,24 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename _Func>
-inline component_tuple<Types...>::component_tuple(size_t _hash, const bool& store,
-                                                  const bool& flat, const _Func& _func)
-: bundle_type(_hash, store, flat)
+template <typename Func>
+inline component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
+                                                  const bool& flat, const Func& init_func,
+                                                  const Func& fini_func)
+: bundle_type(hash, store, flat || get_config<variadic::flat_scope>())
 , m_data(data_type{})
+, m_fini(fini_func)
 {
     if(settings::enabled())
     {
-        init_storage();
-        _func(*this);
-        set_prefix(_hash);
-        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        if(store)
+        {
+            init_storage();
+        }
+        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
+        set_prefix(hash);
+        set_flat_profile(flat || get_config<variadic::flat_scope>());
+        set_timeline_profile(get_config<variadic::timeline_scope>());
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -115,6 +180,7 @@ component_tuple<Types...>::~component_tuple()
 {
     IF_CONSTEXPR(get_config<variadic::auto_stop>()) { stop(); }
     pop();
+    m_fini(*this);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -398,6 +464,26 @@ component_tuple<Types...>::set_prefix(size_t _hash) const
     auto itr = get_hash_ids()->find(_hash);
     if(itr != get_hash_ids()->end())
         apply_v::access<operation_t<operation::set_prefix>>(m_data, itr->second);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+inline void
+component_tuple<Types...>::set_flat_profile(bool val)
+{
+    m_flat = val;
+    apply_v::access<operation_t<operation::set_flat_profile>>(m_data, val);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+inline void
+component_tuple<Types...>::set_timeline_profile(bool val)
+{
+    m_timeline = val;
+    apply_v::access<operation_t<operation::set_timeline_profile>>(m_data, val);
 }
 
 //--------------------------------------------------------------------------------------//
