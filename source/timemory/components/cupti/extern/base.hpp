@@ -30,6 +30,8 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/cupti/types.hpp"
+#include "timemory/components/cupti/backends.hpp"
 #include "timemory/components/cupti/traits.hpp"
 #include "timemory/components/cupti/types.hpp"
 

@@ -51,12 +51,6 @@ TIMEMORY_EXTERN_TEMPLATE(
 TIMEMORY_EXTERN_TEMPLATE(
     struct base<cpu_roofline<float, double>, std::pair<std::vector<long long>, double>>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<float, double>)
-//
-TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<float>)
-//
-TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<double>)
-//
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -74,6 +68,36 @@ TIMEMORY_EXTERN_TEMPLATE(
 TIMEMORY_EXTERN_TEMPLATE(
     struct base<gpu_roofline<double>, std::tuple<typename cupti_activity::value_type,
                                                  typename cupti_counters::value_type>>)
+//
+#endif
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+
+#include "timemory/components/roofline/components.hpp"
+
+//======================================================================================//
+//
+namespace tim
+{
+namespace component
+{
+//
+#if defined(TIMEMORY_USE_PAPI_EXTERN)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<float, double>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<float>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<double>)
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
 TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<float, double>)
 //

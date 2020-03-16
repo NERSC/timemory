@@ -215,7 +215,7 @@ def run_pyctest():
         "TIMEMORY_USE_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
-        "TIMEMORY_USE_GPERFTOOLS": "ON" if args.gperf else "OFF",
+        "TIMEMORY_USE_GPERFTOOLS": "ON" if args.gperftools else "OFF",
         "TIMEMORY_USE_STATISTICS": "ON" if args.stats else "OFF",
         "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
         "TIMEMORY_USE_MPI_INIT": "ON" if args.mpi_init else "OFF",
