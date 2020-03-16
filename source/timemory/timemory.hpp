@@ -231,7 +231,7 @@ struct dummy
 //
 #        if defined(_WINDOWS)
 #            error "Windows does not support extern"
-#endif
+#        endif
 #        include "timemory/containers/extern.hpp"
 #        include "timemory/environment/extern.hpp"
 #        include "timemory/hash/extern.hpp"

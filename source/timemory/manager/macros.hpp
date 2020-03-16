@@ -49,7 +49,7 @@
 #    if !defined(_WINDOWS)
 #        define __library_dtor__ __attribute__((destructor))
 #    else
-#        define __library_dtor__ 
+#        define __library_dtor__
 #    endif
 #endif
 //

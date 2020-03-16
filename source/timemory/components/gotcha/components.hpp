@@ -177,7 +177,7 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
                 _data.ready       = false;
             }
 
-            _data.constructor = [_func,_priority,_tool]() {
+            _data.constructor = [_func, _priority, _tool]() {
                 this_type::construct<N, Ret, Args...>(_func, _priority, _tool);
             };
             _data.destructor = []() { this_type::revert<N>(); };
@@ -422,11 +422,11 @@ private:
     /// Holds the properties for wrapping and unwrapping a binding
     struct gotcha_data
     {
-        gotcha_data() = default;
+        gotcha_data()  = default;
         ~gotcha_data() = default;
 
         gotcha_data(const gotcha_data&) = delete;
-        gotcha_data(gotcha_data&&) = delete;
+        gotcha_data(gotcha_data&&)      = delete;
         gotcha_data& operator=(const gotcha_data&) = delete;
         gotcha_data& operator=(gotcha_data&&) = delete;
 
@@ -771,27 +771,24 @@ private:
         bool did_data_toggle = false;
         bool did_glob_toggle = false;
 
-        auto toggle_suppress_on = [](bool* _suppress, bool& _did)
-        {
+        auto toggle_suppress_on = [](bool* _suppress, bool& _did) {
             if(_suppress && *_suppress == false)
             {
                 *(_suppress) = true;
-                _did           = true;
+                _did         = true;
             }
         };
 
-        auto toggle_suppress_off = [](bool* _suppress, bool& _did)
-        {
+        auto toggle_suppress_off = [](bool* _suppress, bool& _did) {
             if(_suppress && _did == true && *_suppress == true)
             {
                 *(_suppress) = false;
-                _did           = false;
+                _did         = false;
             }
         };
 
         if(_orig)
         {
-
             // make sure the function is not recursively entered
             // (important for allocation-based wrappers)
             _data.ready = false;
@@ -806,7 +803,7 @@ private:
             toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
             _data.ready = true;
-            Ret _ret = invoke<component_type>(_obj, _data.ready, _orig,
+            Ret _ret    = invoke<component_type>(_obj, _data.ready, _orig,
                                               std::forward<Args>(_args)...);
             _data.ready = false;
 
@@ -863,21 +860,19 @@ private:
         bool did_data_toggle = false;
         bool did_glob_toggle = false;
 
-        auto toggle_suppress_on = [](bool* _suppress, bool& _did)
-        {
+        auto toggle_suppress_on = [](bool* _suppress, bool& _did) {
             if(_suppress && *_suppress == false)
             {
                 *(_suppress) = true;
-                _did           = true;
+                _did         = true;
             }
         };
 
-        auto toggle_suppress_off = [](bool* _suppress, bool& _did)
-        {
+        auto toggle_suppress_off = [](bool* _suppress, bool& _did) {
             if(_suppress && _did == true && *_suppress == true)
             {
                 *(_suppress) = false;
-                _did           = false;
+                _did         = false;
             }
         };
 

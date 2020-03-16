@@ -494,13 +494,14 @@ manager::master_instance()
 extern "C"
 {
 #if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_MANAGER_SOURCE)
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    #if defined(_WINDOWS)
+//
+//----------------------------------------------------------------------------------//
+//
+#    if defined(_WINDOWS)
     static
-    #endif
-    ::tim::manager* timemory_manager_master_instance()
+#    endif
+        ::tim::manager*
+        timemory_manager_master_instance()
     {
         static auto _pinst = tim::get_shared_ptr_pair<tim::manager>();
         tim::manager::set_persistent_master(_pinst.first);
