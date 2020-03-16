@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
+#include "timemory/data/statistics.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/type_traits.hpp"

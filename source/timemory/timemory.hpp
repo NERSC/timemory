@@ -33,6 +33,7 @@
 #if defined(DISABLE_TIMEMORY)
 
 #    include <ostream>
+#    include <string>
 
 namespace tim
 {
@@ -161,6 +162,14 @@ struct dummy
 
 #else
 //
+#    if defined(TIMEMORY_USE_EXTERN)
+//
+#        include "timemory/components/extern.hpp"
+#        include "timemory/extern/ert.hpp"
+//
+#    endif
+
+//
 //   versioning header
 //
 #    include "timemory/version.h"
@@ -186,27 +195,9 @@ struct dummy
 #    include "timemory/ert/aligned_allocator.hpp"      // 3.5
 #    include "timemory/ert/configuration.hpp"          // 4
 //
-//   component definitions
-//
-#    include "timemory/components/user_bundle/definition.hpp"
-
 //======================================================================================//
 
 #    include "timemory/extern/init.hpp"
-
-#    if defined(TIMEMORY_USE_EXTERN)
-//
-//--------------------------------------------------------------------------------------//
-//
-//                      PROVIDE THE SYMBOLS VIA EXTERN
-//
-//--------------------------------------------------------------------------------------//
-//
-#        include "timemory/extern/ert.hpp"
-//
-#        include "timemory/components/extern.hpp"
-//
-#    endif
 
 //======================================================================================//
 //
@@ -231,6 +222,7 @@ struct dummy
 #        include "timemory/environment/definition.hpp"
 #        include "timemory/hash/definition.hpp"
 #        include "timemory/manager/definition.hpp"
+#        include "timemory/operations/definition.hpp"
 #        include "timemory/plotting/definition.hpp"
 #        include "timemory/settings/definition.hpp"
 #        include "timemory/storage/definition.hpp"
@@ -241,6 +233,7 @@ struct dummy
 #        include "timemory/environment/extern.hpp"
 #        include "timemory/hash/extern.hpp"
 #        include "timemory/manager/extern.hpp"
+#        include "timemory/operations/extern.hpp"
 #        include "timemory/plotting/extern.hpp"
 #        include "timemory/settings/extern.hpp"
 #        include "timemory/storage/extern.hpp"

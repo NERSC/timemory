@@ -31,7 +31,7 @@
 
 #include "timemory/components/cupti/components.hpp"
 #include "timemory/components/macros.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 
 //======================================================================================//
 //

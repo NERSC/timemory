@@ -26,7 +26,7 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/components/rusage/components.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 
 //======================================================================================//
 //

@@ -39,6 +39,8 @@
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/properties.hpp"
 //
+#include "timemory/operations/extern.hpp"
+//
 #include "timemory/plotting/definition.hpp"
 //
 #include "timemory/containers/types/complete_list.hpp"

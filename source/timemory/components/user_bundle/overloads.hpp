@@ -24,7 +24,7 @@
 //
 
 /**
- * \headerfile "timemory/components/user_bundle/definition.hpp"
+ * \headerfile "timemory/components/user_bundle/overloads.hpp"
  * Defines the user_bundle component which can be used to inject components
  * at runtime. There are very useful for dynamically assembling collections
  * of tools at runtime
@@ -85,17 +85,6 @@ get_bundle_components(const std::string& custom_env, const StringT& fallback_env
     return env_enum;
 }
 }  // namespace env
-//
-//--------------------------------------------------------------------------------------//
-//
-// generic user_bundle
-//
-//--------------------------------------------------------------------------------------//
-//
-template <size_t Idx, typename Tag>
-void
-user_bundle<Idx, Tag>::global_init(storage_type*)
-{}
 //
 //--------------------------------------------------------------------------------------//
 //

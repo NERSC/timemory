@@ -26,6 +26,8 @@
 //
 #include "timemory/components/user_bundle/components.hpp"
 //
+#include "timemory/operations/extern.hpp"
+//
 #include "timemory/components/user_bundle/extern.hpp"
 
 //

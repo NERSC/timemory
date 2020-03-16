@@ -22,10 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/mpl/operations.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/plotting/definition.hpp"
 #include "timemory/storage/definition.hpp"
 

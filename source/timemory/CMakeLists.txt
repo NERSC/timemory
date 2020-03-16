@@ -86,6 +86,7 @@ set(_EXTERN_DEPENDS timemory-hash timemory-environment timemory-settings timemor
 timemory_handle_generic(containers   _EXTERN  ${_EXTERN_DEPENDS})
 timemory_handle_generic(storage      _EXTERN  ${_EXTERN_DEPENDS})
 timemory_handle_generic(plotting     _EXTERN  ${_EXTERN_DEPENDS})
+timemory_handle_generic(operations   _EXTERN  ${_EXTERN_DEPENDS})
 
 #
 #   native

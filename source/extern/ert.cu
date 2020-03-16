@@ -32,7 +32,7 @@
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/manager/declaration.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/plotting.hpp"
 
 namespace tim

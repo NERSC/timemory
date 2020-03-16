@@ -33,7 +33,7 @@
 #include "timemory/components/gperftools/types.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 
 //======================================================================================//
 //

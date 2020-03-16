@@ -26,10 +26,10 @@
 /// define TIMEMORY_SOURCE to select appropriate macros
 ///
 
-#include "timemory/mpl/operations.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/plotting/definition.hpp"
 #include "timemory/storage/definition.hpp"
 

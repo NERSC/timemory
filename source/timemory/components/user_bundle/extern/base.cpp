@@ -24,8 +24,8 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/manager/declaration.hpp"
-#include "timemory/mpl/operations.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 
@@ -34,7 +34,7 @@
 //
 #include "timemory/components/user_bundle/types.hpp"
 #include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/user_bundle/definition.hpp"
+#include "timemory/components/user_bundle/overloads.hpp"
 #include "timemory/components/user_bundle/extern/base.hpp"
 //
 // clang-format on

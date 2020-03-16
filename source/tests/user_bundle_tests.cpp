@@ -24,6 +24,7 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/components/user_bundle/overloads.hpp"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/insert.hpp"
 #include "timemory/timemory.hpp"

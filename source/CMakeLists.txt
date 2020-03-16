@@ -173,6 +173,8 @@ foreach(COMP ${TIMEMORY_GLOBAL})
 
         timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
 
+        list(APPEND timemory_headers ${${COMP}_HEADERS})
+
         build_library(${${LINK}_OPTIONS}
             TARGET_NAME         ${TARGET_NAME}
             OUTPUT_NAME         timemory-${COMP}
@@ -293,6 +295,8 @@ foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
         # link to itself
         timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
 
+        list(APPEND timemory_headers ${${COMP}_HEADERS})
+
         build_library(${${LINK}_OPTIONS}
             TARGET_NAME         ${TARGET_NAME}
             OUTPUT_NAME         timemory-${COMP}-component
@@ -374,6 +378,8 @@ foreach(COMP ${TIMEMORY_EXTERN})
         set(TARGET_NAME timemory-${COMP}-${LINK})
 
         timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
+
+        list(APPEND timemory_headers ${${COMP}_HEADERS})
 
         build_library(${${LINK}_OPTIONS}
             TARGET_NAME         ${TARGET_NAME}
@@ -605,6 +611,8 @@ macro(INSTALL_HEADER_FILES)
         install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
     endforeach()
 endmacro()
+
+list(REMOVE_DUPLICATES timemory_headers)
 
 install_header_files(${timemory_headers})
 

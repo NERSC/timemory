@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 

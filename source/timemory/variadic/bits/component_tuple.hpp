@@ -35,6 +35,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/variadic/generic_bundle.hpp"
 #include "timemory/variadic/types.hpp"
+
 //======================================================================================//
 //
 //      tim::get functions

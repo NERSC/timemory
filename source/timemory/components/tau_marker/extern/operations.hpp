@@ -31,7 +31,7 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/components/tau_marker/components.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 
 //======================================================================================//
 //

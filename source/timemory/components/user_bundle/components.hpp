@@ -324,6 +324,15 @@ private:
     }
 };
 //
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, typename Tag>
+void
+user_bundle<Idx, Tag>::global_init(storage_type*)
+{}
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace component
 }  // namespace tim
 //

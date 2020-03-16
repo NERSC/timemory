@@ -47,7 +47,7 @@
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/types.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/utility/macros.hpp"

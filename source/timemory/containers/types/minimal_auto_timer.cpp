@@ -26,6 +26,8 @@
 //
 #include "timemory/plotting/definition.hpp"
 //
+#include "timemory/operations/extern.hpp"
+//
 #include "timemory/containers/types/minimal_auto_timer.hpp"
 //
 //======================================================================================//

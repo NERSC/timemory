@@ -31,6 +31,7 @@
 #endif
 
 #include "timemory/library.h"
+#include "timemory/operations/definition.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
 #include <cstdint>
 #include <cstdio>

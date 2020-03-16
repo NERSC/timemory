@@ -31,7 +31,7 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/components/roofline/components.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 
 //======================================================================================//
 //

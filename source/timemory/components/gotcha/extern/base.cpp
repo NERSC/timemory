@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/plotting/declaration.hpp"
 //
 #include "timemory/components.hpp"

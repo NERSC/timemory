@@ -28,7 +28,7 @@
 #include "timemory/components/timing/components.hpp"
 #include "timemory/components/timing/types.hpp"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/mpl/operations.hpp"
+#include "timemory/operations/definition.hpp"
 
 //======================================================================================//
 //

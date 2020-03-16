@@ -37,20 +37,21 @@
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_json, void, std::false_type)
 
-//--------------------------------------------------------------------------------------//
-// include rest of headers
-//
-#include "timemory/timemory.hpp"
+#include "timemory/components/types.hpp"
 
 //
 // configure these two types to always record statistics
 //
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes,
-                               std::true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::read_bytes, std::true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, std::false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, component::monotonic_clock, std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::read_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, component::monotonic_clock, true_type)
+
+//--------------------------------------------------------------------------------------//
+// include rest of headers
+//
+#include "timemory/timemory.hpp"
 
 //
 // shorthand

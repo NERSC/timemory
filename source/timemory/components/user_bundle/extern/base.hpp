@@ -32,6 +32,8 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/user_bundle/traits.hpp"
 #include "timemory/components/user_bundle/types.hpp"
+//
+#include "timemory/components/user_bundle/overloads.hpp"
 
 //======================================================================================//
 //
