@@ -1028,7 +1028,7 @@ else()
     set(gotcha_FOUND OFF)
 endif()
 
-if(gotcha_FOUND AND (TARGET Gotcha OR TARGET gotcha))
+if(gotcha_FOUND)
     target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
     foreach(_LIB gotcha gotcha-include Gotcha Gotcha::gotcha Gotcha::Gotcha)
         if(TARGET ${_LIB})
