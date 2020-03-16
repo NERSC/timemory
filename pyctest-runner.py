@@ -72,7 +72,7 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--gotcha", help="TIMEMORY_USE_GOTCHA=ON",
                         default=False, action='store_true')
-    parser.add_argument("--gperf", help="TIMEMORY_USE_GPERF=ON",
+    parser.add_argument("--gperftools", help="TIMEMORY_USE_GPERFTOOLS=ON",
                         default=False, action='store_true')
     parser.add_argument("--caliper", help="TIMEMORY_USE_CALIPER=ON",
                         default=False, action='store_true')
@@ -209,13 +209,13 @@ def run_pyctest():
         "TIMEMORY_USE_NVTX": "ON" if args.nvtx else "OFF",
         "TIMEMORY_USE_XRAY": "ON" if args.xray else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
-        "TIMEMORY_USE_GPERF": "ON" if args.gperf else "OFF",
         "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
         "TIMEMORY_USE_LIKWID": "ON" if args.likwid else "OFF",
         "TIMEMORY_USE_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_USE_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_USE_CALIPER": "ON" if args.caliper else "OFF",
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
+        "TIMEMORY_USE_GPERFTOOLS": "ON" if args.gperf else "OFF",
         "TIMEMORY_USE_STATISTICS": "ON" if args.stats else "OFF",
         "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
         "TIMEMORY_USE_MPI_INIT": "ON" if args.mpi_init else "OFF",
@@ -238,7 +238,7 @@ def run_pyctest():
         pyct.BUILD_NAME = "{} PY-{}".format(pyct.BUILD_NAME, pyver)
 
     if args.profile is not None:
-        build_opts["TIMEMORY_USE_GPERF"] = "ON"
+        build_opts["TIMEMORY_USE_GPERFTOOLS"] = "ON"
         components = "profiler" if args.profile == "cpu" else "tcmalloc"
         build_opts["TIMEMORY_gperftools_COMPONENTS"] = components
         pyct.BUILD_NAME = "{} {}".format(

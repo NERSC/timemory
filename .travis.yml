@@ -32,7 +32,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--papi --mpi --build-libs static'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--papi --mpi --build-libs static --mpip --python --ompt --kokkos --stats --tools'"
     # GCC 7
     - os: linux
       dist: bionic
@@ -54,7 +54,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && COVERAGE=1 && BUILD_TYPE=Debug && BUILD_ARGS='--build-libs static --papi'"
+        - MATRIX_EVAL="CC=$(which gcc) && CXX=$(which g++) && COVERAGE=1 && BUILD_TYPE=Debug && BUILD_ARGS='--build-libs static --papi --mpip --python --ompt --kokkos --stats --tools'"
     #
     # GCC 8
     - os: linux
@@ -78,7 +78,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --papi -- -DCMAKE_CXX_STANDARD=14'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static --mpi --papi  --mpip --python --ompt --kokkos --stats --tools'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -102,7 +102,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static --mpi --papi --mpip --python --ompt --kokkos --stats --tools '"
     # Clang 7
     - os: linux
       dist: bionic
@@ -123,7 +123,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs static --caliper --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs static --caliper --mpi --papi --mpip --python --ompt --kokkos --stats --tools '"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
@@ -150,7 +150,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --mpi --papi --gotcha'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared --mpi --papi --gotcha --mpip --python --ompt --kokkos --stats --tools'"
     # GCC 7
     - os: linux
       dist: bionic
@@ -172,7 +172,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static --mpi --papi --caliper'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static --mpi --papi --caliper --mpip --python --ompt --kokkos --stats --tools'"
     #
     # GCC 8
     - os: linux
@@ -195,7 +195,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared --mpi --papi -- -DCMAKE_CXX_STANDARD=17'"
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared --mpi --papi  --mpip --python --ompt --kokkos --stats --tools --cxx-standard=17'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -218,7 +218,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi --mpip --python --ompt --kokkos --stats --tools --cxx-standard=17'"
     # Clang 7
     - os: linux
       dist: bionic
@@ -238,7 +238,7 @@ matrix:
             - graphviz
             - ccache
       env:
-        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper --mpi --papi -- -DCMAKE_CXX_STANDARD=17'"
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper --mpi --papi --mpip --python --ompt --kokkos --stats --tools --cxx-standard=17'"
 
     # ------------------------------------------------------------------------ #
 
