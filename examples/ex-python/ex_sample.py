@@ -1,13 +1,33 @@
 #!@PYTHON_EXECUTABLE@
 
-import timemory
+import os
 import json
 import time
 
 nfib = 33
 
-from timemory.util import auto_timer, auto_tuple
+#
+#   CONFIG ENV BEFORE LOADING TIMEMORY
+#
+if int(os.environ.get("EX_SAMPLE_NO_ENV", "0")) < 1:
+    clinit = os.environ.get("TIMEMORY_COMPONENT_LIST_INIT", "").split()
+    events = os.environ.get("TIMEMORY_CUPTI_EVENTS", "").split()
+    metrics = os.environ.get("TIMEMORY_CUPTI_METRICS", "").split()
 
+    clinit += ["cupti_counters"]
+    events += ["active_warps", "global_load"]
+    metrics += ["achieved_occupancy", "global_store"]
+
+    os.environ["TIMEMORY_COMPONENT_LIST_INIT"] = "{}".format(",".join(clinit))
+    os.environ["TIMEMORY_CUPTI_EVENTS"] = "{}".format(",".join(events))
+    os.environ["TIMEMORY_CUPTI_METRICS"] = "{}".format(",".join(metrics))
+
+import timemory
+
+
+#
+#    RUN FIBONACCI CALCULATION
+#
 def fibonacci(n):
     """
     Use this function to get CPU usage
