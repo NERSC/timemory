@@ -41,7 +41,7 @@
 #    if !defined(TIMEMORY_USE_EXTERN)
 #        define TIMEMORY_ENVIRONMENT_LINKAGE(...) inline __VA_ARGS__
 #    else
-#        define TIMEMORY_ENVIRONMENT_LINKAGE(...) extern __VA_ARGS__
+#        define TIMEMORY_ENVIRONMENT_LINKAGE(...) __VA_ARGS__
 #        define TIMEMORY_EXTERN_ENVIRONMENT
 #    endif
 #endif
