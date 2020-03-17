@@ -32,6 +32,7 @@
 
 #include "timemory/library.h"
 #include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
 #include <cstdint>
