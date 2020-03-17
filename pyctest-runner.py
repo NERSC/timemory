@@ -191,7 +191,7 @@ def run_pyctest():
         "BUILD_STATIC_LIBS": "ON" if "static" in args.build_libs else "OFF",
         "CMAKE_CXX_STANDARD": "{}".format(args.cxx_standard),
         "TIMEMORY_TLS_MODEL": "{}".format(args.tls_model),
-        "TIMEMORY_CCACHE_BUILD": "ON",
+        "TIMEMORY_CCACHE_BUILD": "OFF",
         "TIMEMORY_BUILD_LTO": "ON" if args.lto else "OFF",
         "TIMEMORY_BUILD_OMPT": "ON" if args.ompt else "OFF",
         "TIMEMORY_BUILD_TOOLS": "ON" if args.tools else "OFF",
