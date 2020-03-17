@@ -66,14 +66,14 @@ struct exp_intercept : public base<exp_intercept, void>
 using namespace tim;
 using namespace tim::component;
 
-constexpr size_t _N    = 10;
+constexpr size_t N     = 10;
 using general_bundle_t = user_bundle<0>;
 using exp_timer_t      = tim::component_tuple<>;
 using tool_tuple_t     = tim::component_tuple<general_bundle_t>;
-using put_gotcha_t     = tim::component::gotcha<_N, tool_tuple_t, char>;
-using mpi_gotcha_t     = tim::component::gotcha<_N, tool_tuple_t, double>;
-using exp_gotcha_t     = tim::component::gotcha<_N, exp_timer_t, exp_intercept>;
-using fake_gotcha_t    = tim::component::gotcha<_N, tim::component_tuple<>, float>;
+using put_gotcha_t     = tim::component::gotcha<N, tool_tuple_t, char>;
+using mpi_gotcha_t     = tim::component::gotcha<N, tool_tuple_t, double>;
+using exp_gotcha_t     = tim::component::gotcha<N, exp_timer_t, exp_intercept>;
+using fake_gotcha_t    = tim::component::gotcha<N, tim::component_tuple<>, float>;
 using gotcha_tuple_t   = tim::auto_tuple_t<tool_tuple_t, user_tuple_bundle>;
 
 #if !defined(TIMEMORY_USE_MPI)

@@ -111,6 +111,7 @@ public:
 
     ~user_bundle()
     {
+        // gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
         for(auto& itr : m_bundle)
             itr.cleanup();
     }

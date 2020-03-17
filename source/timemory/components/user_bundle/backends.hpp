@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/components/gotcha/backends.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/settings.hpp"
@@ -108,7 +109,10 @@ struct opaque
     void cleanup()
     {
         if(m_data && !m_copy)
+        {
+            // gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
             m_del(m_data);
+        }
         m_data = nullptr;
     }
 

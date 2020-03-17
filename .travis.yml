@@ -25,6 +25,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
             - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
@@ -46,6 +47,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
             - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
@@ -71,6 +73,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
             - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
@@ -95,6 +98,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
             - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev
@@ -116,6 +120,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
             - openmpi-common
+            - libfabric-dev
             - libpapi-dev
             - papi-tools
             - libgoogle-perftools-dev

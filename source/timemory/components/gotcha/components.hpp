@@ -876,14 +876,14 @@ private:
             }
         };
 
+        // make sure the function is not recursively entered
+        // (important for allocation-based wrappers)
+        _data.ready = false;
+        toggle_suppress_on(_data.suppression, did_data_toggle);
+        toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+
         if(_orig)
         {
-            // make sure the function is not recursively entered
-            // (important for allocation-based wrappers)
-            _data.ready = false;
-            toggle_suppress_on(_data.suppression, did_data_toggle);
-
-            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
             component_type _obj(_data.tool_id, true, settings::flat_profile());
             _obj.construct(_args...);
             _obj.start();
@@ -898,16 +898,17 @@ private:
             toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
             _obj.audit(_data.tool_id);
             _obj.stop();
-            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
-
-            // allow re-entrance into wrapper
-            toggle_suppress_off(_data.suppression, did_data_toggle);
-            _data.ready = true;
         }
         else if(settings::debug())
         {
             PRINT_HERE("%s", "nullptr to original function!");
         }
+
+        // allow re-entrance into wrapper
+        toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+        toggle_suppress_off(_data.suppression, did_data_toggle);
+        _data.ready = true;
+
 #else
         consume_parameters(_args...);
         PRINT_HERE("%s", "should not be here!");
@@ -1371,12 +1372,12 @@ public:
 
     template <typename... LhsTypes, typename... RhsTypes,
               template <typename...> class Lhs, template <typename...> class Rhs,
-              template <typename, typename> class _Hybrid>
-    struct gotcha_spec<_Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>>
+              template <typename, typename> class Hybrid>
+    struct gotcha_spec<Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>>
     {
-        using gotcha_component_type = _Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>;
+        using gotcha_component_type = Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>;
         using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
-        using component_type = _Hybrid<Lhs<LhsTypes..., gotcha_type>, Rhs<RhsTypes...>>;
+        using component_type = Hybrid<Lhs<LhsTypes..., gotcha_type>, Rhs<RhsTypes...>>;
     };
 
 private:
@@ -1387,7 +1388,7 @@ private:
     void** m_last_addr = nullptr;
 #endif
 };
-
+//
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_GOTCHA)

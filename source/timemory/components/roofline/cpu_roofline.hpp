@@ -497,11 +497,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    ~cpu_roofline()                       = default;
-    cpu_roofline(const cpu_roofline& rhs) = default;
-    cpu_roofline(cpu_roofline&& rhs)      = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    // ~cpu_roofline()                       = default;
+    // cpu_roofline(const cpu_roofline& rhs) = default;
+    // cpu_roofline(cpu_roofline&& rhs)      = default;
+    // this_type& operator=(const this_type&) = default;
+    // this_type& operator=(this_type&&) = default;
 
     //----------------------------------------------------------------------------------//
 

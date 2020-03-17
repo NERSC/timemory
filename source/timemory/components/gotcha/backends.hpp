@@ -66,6 +66,11 @@ private:
     template <typename Tp>
     friend struct operation::init_storage;
 
+    template <size_t, typename Tp>
+    friend struct user_bundle;
+
+    friend struct opaque;
+
     static bool& get()
     {
         static thread_local bool _instance = false;

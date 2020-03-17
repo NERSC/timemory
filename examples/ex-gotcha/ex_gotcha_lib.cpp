@@ -24,7 +24,8 @@
 
 #include "ex_gotcha_lib.hpp"
 
-#include "timemory/timemory.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -51,7 +52,7 @@ work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
         sum += func(val);
 #if defined(VERBOSE)
         printf("\t[itr: %2i]> %-6s %-4s(%7.3f) = %20.3f\n", i,
-               tim::demangle(typeid(_Tp).name()).c_str(), fname.c_str(), val, sum);
+               tim::demangle<Tp>().c_str(), fname.c_str(), val, sum);
 #endif
         val = incr(val, i + 1);
     }
