@@ -9,7 +9,7 @@ project(timemory-Caliper-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-caliper-example)
 set(COMPONENTS compile-options analysis-tools caliper)
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cxx)
 
 add_executable(ex_caliper ex_caliper.cpp)
 target_link_libraries(ex_caliper timemory-caliper-example)
