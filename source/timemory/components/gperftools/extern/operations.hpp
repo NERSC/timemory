@@ -34,6 +34,7 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
 
 //======================================================================================//
 //

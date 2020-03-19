@@ -302,8 +302,6 @@
 #        define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                               \
             namespace tim                                                                \
             {                                                                            \
-            extern template storage_singleton<storage<TYPE>>*                            \
-            get_storage_singleton<storage<TYPE>>();                                      \
             extern template class impl::storage<TYPE, implements_storage<TYPE>::value>;  \
             extern template class storage<TYPE>;                                         \
             extern template class singleton<                                             \
@@ -311,6 +309,8 @@
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,    \
                                 impl::storage_deleter<impl::storage<                     \
                                     TYPE, implements_storage<TYPE>::value>>>>;           \
+            extern template storage_singleton<storage<TYPE>>*                            \
+                                                get_storage_singleton<storage<TYPE>>();  \
             extern template storage_initializer storage_initializer::get<TYPE>();        \
             }
 #    endif
@@ -321,8 +321,6 @@
 #        define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                           \
             namespace tim                                                                \
             {                                                                            \
-            template storage_singleton<storage<TYPE>>*                                   \
-            get_storage_singleton<storage<TYPE>>();                                      \
             template class impl::storage<TYPE, implements_storage<TYPE>::value>;         \
             template class storage<TYPE>;                                                \
             template class singleton<                                                    \
@@ -330,6 +328,8 @@
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,    \
                                 impl::storage_deleter<impl::storage<                     \
                                     TYPE, implements_storage<TYPE>::value>>>>;           \
+            template storage_singleton<storage<TYPE>>*                                   \
+                                         get_storage_singleton<storage<TYPE>>();         \
             template storage_initializer storage_initializer::get<TYPE>();               \
             }                                                                            \
             namespace                                                                    \
@@ -380,6 +380,8 @@
             extern template struct init_storage<COMPONENT_NAME>;                         \
             extern template struct construct<COMPONENT_NAME>;                            \
             extern template struct set_prefix<COMPONENT_NAME>;                           \
+            extern template struct set_flat_profile<COMPONENT_NAME>;                     \
+            extern template struct set_timeline_profile<COMPONENT_NAME>;                 \
             extern template struct insert_node<COMPONENT_NAME>;                          \
             extern template struct pop_node<COMPONENT_NAME>;                             \
             extern template struct record<COMPONENT_NAME>;                               \
@@ -396,19 +398,31 @@
             extern template struct delayed_stop<COMPONENT_NAME>;                         \
             extern template struct mark_begin<COMPONENT_NAME>;                           \
             extern template struct mark_end<COMPONENT_NAME>;                             \
+            extern template struct store<COMPONENT_NAME>;                                \
             extern template struct audit<COMPONENT_NAME>;                                \
             extern template struct plus<COMPONENT_NAME>;                                 \
             extern template struct minus<COMPONENT_NAME>;                                \
             extern template struct multiply<COMPONENT_NAME>;                             \
             extern template struct divide<COMPONENT_NAME>;                               \
             extern template struct get<COMPONENT_NAME>;                                  \
-            extern template struct copy<COMPONENT_NAME>;                                 \
+            extern template struct base_printer<COMPONENT_NAME>;                         \
+            extern template struct print<COMPONENT_NAME>;                                \
+            extern template struct print_header<COMPONENT_NAME>;                         \
+            extern template struct print_statistics<COMPONENT_NAME>;                     \
+            extern template struct print_storage<COMPONENT_NAME>;                        \
+            extern template struct add_secondary<COMPONENT_NAME>;                        \
+            extern template struct add_statistics<COMPONENT_NAME>;                       \
+            extern template struct serialization<COMPONENT_NAME>;                        \
             extern template struct echo_measurement<                                     \
                 COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;             \
+            extern template struct copy<COMPONENT_NAME>;                                 \
+            extern template struct assemble<COMPONENT_NAME>;                             \
+            extern template struct dismantle<COMPONENT_NAME>;                            \
             extern template struct finalize::get<COMPONENT_NAME, HAS_DATA>;              \
             extern template struct finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;          \
             extern template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;          \
             extern template struct finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;          \
+            extern template struct finalize::print<COMPONENT_NAME, HAS_DATA>;            \
             }                                                                            \
             }
 #    endif
@@ -424,6 +438,8 @@
             template struct init_storage<COMPONENT_NAME>;                                \
             template struct construct<COMPONENT_NAME>;                                   \
             template struct set_prefix<COMPONENT_NAME>;                                  \
+            template struct set_flat_profile<COMPONENT_NAME>;                            \
+            template struct set_timeline_profile<COMPONENT_NAME>;                        \
             template struct insert_node<COMPONENT_NAME>;                                 \
             template struct pop_node<COMPONENT_NAME>;                                    \
             template struct record<COMPONENT_NAME>;                                      \
@@ -440,19 +456,31 @@
             template struct delayed_stop<COMPONENT_NAME>;                                \
             template struct mark_begin<COMPONENT_NAME>;                                  \
             template struct mark_end<COMPONENT_NAME>;                                    \
+            template struct store<COMPONENT_NAME>;                                       \
             template struct audit<COMPONENT_NAME>;                                       \
             template struct plus<COMPONENT_NAME>;                                        \
             template struct minus<COMPONENT_NAME>;                                       \
             template struct multiply<COMPONENT_NAME>;                                    \
             template struct divide<COMPONENT_NAME>;                                      \
             template struct get<COMPONENT_NAME>;                                         \
-            template struct copy<COMPONENT_NAME>;                                        \
+            template struct base_printer<COMPONENT_NAME>;                                \
+            template struct print<COMPONENT_NAME>;                                       \
+            template struct print_header<COMPONENT_NAME>;                                \
+            template struct print_statistics<COMPONENT_NAME>;                            \
+            template struct print_storage<COMPONENT_NAME>;                               \
+            template struct add_secondary<COMPONENT_NAME>;                               \
+            template struct add_statistics<COMPONENT_NAME>;                              \
+            template struct serialization<COMPONENT_NAME>;                               \
             template struct echo_measurement<                                            \
                 COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;             \
+            template struct copy<COMPONENT_NAME>;                                        \
+            template struct assemble<COMPONENT_NAME>;                                    \
+            template struct dismantle<COMPONENT_NAME>;                                   \
             template struct finalize::get<COMPONENT_NAME, HAS_DATA>;                     \
             template struct finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;                 \
             template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                 \
             template struct finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;                 \
+            template struct finalize::print<COMPONENT_NAME, HAS_DATA>;                   \
             }                                                                            \
             }
 #    endif
@@ -479,7 +507,7 @@
 
 //======================================================================================//
 
-#if defined(TIMEMORY_USE_EXTERN)
+#if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_COMPONENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //

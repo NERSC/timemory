@@ -85,6 +85,7 @@ public:
 private:
     friend class impl::storage<Tp, implements_storage_v>;
     friend class storage<Tp>;
+    friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
     friend struct operation::construct<Tp>;
@@ -378,6 +379,8 @@ public:
 
 private:
     friend class impl::storage<Tp, implements_storage_v>;
+    friend class storage<Tp>;
+    friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
     friend struct operation::construct<Tp>;
@@ -434,8 +437,6 @@ public:
     void start();
     void stop();
 
-    void mark_begin() {}
-    void mark_end() {}
     void set_started();
     void set_stopped();
 
@@ -447,6 +448,10 @@ public:
     int64_t nlaps() const { return 0; }
     int64_t get_laps() const { return 0; }
 
+    // used by operation::finalize::print<Type>
+    void operator-=(const base_type&) {}
+    void operator-=(const Type&) {}
+
 private:
     template <typename Scope = scope::tree, typename... Args>
     void insert_node(Scope&&, Args&&...);
@@ -455,6 +460,8 @@ private:
 
 protected:
     static void cleanup() {}
+
+    static Type dummy() { return Tp{}; }
 
     void plus(const base_type& rhs)
     {

@@ -41,13 +41,11 @@
 //
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN)
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_CONTAINERS_EXTERN)
 //
 #        define TIMEMORY_CONTAINERS_LINKAGE(...) inline __VA_ARGS__
 //
 #    else
-//
-#        define TIMEMORY_EXTERN_CONTAINERS
 //
 #        define TIMEMORY_CONTAINERS_LINKAGE(...) extern __VA_ARGS__
 //
@@ -157,7 +155,7 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_EXTERN)
+#if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONTAINERS_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //

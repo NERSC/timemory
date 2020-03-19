@@ -15,6 +15,7 @@ project(timemory-Examples C CXX)
 
 add_subdirectory(ex-c)
 add_subdirectory(ex-minimal)
+add_subdirectory(ex-assemble)
 add_subdirectory(ex-optional)
 add_subdirectory(ex-cxx-basic)
 add_subdirectory(ex-cxx-tuple)

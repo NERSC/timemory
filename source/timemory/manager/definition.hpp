@@ -444,7 +444,8 @@ manager::get_communicator_group()
 //
 //----------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_MANAGER_SOURCE)
+#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)) ||           \
+    defined(TIMEMORY_MANAGER_SOURCE)
 //
 //----------------------------------------------------------------------------------//
 //

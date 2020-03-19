@@ -47,8 +47,12 @@
 /// \brief for tuple_size overloads, clang uses 'class tuple_size' while GCC uses
 /// 'struct tuple_size'... which results in a lot of mismatches-tag warnings
 ///
-#if defined(_TIMEMORY_CLANG)
-#    define TSTAG(X) class
+#if defined(TIMEMORY_USE_TSTAG)
+#    if defined(_TIMEMORY_CLANG)
+#        define TSTAG(X) class
+#    else
+#        define TSTAG(X) X
+#    endif
 #else
 #    define TSTAG(X) X
 #endif

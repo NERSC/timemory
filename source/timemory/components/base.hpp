@@ -28,8 +28,5 @@
 //
 #include "timemory/components/base/declaration.hpp"
 //
-#if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_COMPONENT_SOURCE)
+#include "timemory/components/base/definition.hpp"
 //
-#    include "timemory/components/base/definition.hpp"
-//
-#endif

@@ -1,0 +1,12 @@
+
+file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+
+build_intermediate_library(
+    NAME                hash
+    TARGET              hash
+    CATEGORY            GLOBAL
+    FOLDER              global
+    HEADERS             ${header_files}
+    SOURCES             ${source_files}
+    PROPERTY_DEPENDS    GLOBAL)

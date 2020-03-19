@@ -22,10 +22,6 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#if !defined(TIMEMORY_USE_EXTERN) && !(defined(_WIN32) || defined(_WIN64))
-#    define TIMEMORY_USE_EXTERN
-#endif
-
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>

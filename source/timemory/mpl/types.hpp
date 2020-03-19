@@ -740,7 +740,32 @@ assign(Tp& _targ, const Vp& _val)
     assign(_targ, _val, get_index_sequence<decay_t<Tp>>::value);
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename Tuple, typename T>
+struct push_back;
+
+template <template <typename...> class Tuple, typename... Types, typename T>
+struct push_back<Tuple<Types...>, T>
+{
+    using type = Tuple<Types..., T>;
+};
+
+template <template <typename, typename> class Hybrid, template <typename...> class Lhs,
+          typename... LhsTypes, template <typename...> class Rhs, typename... RhsTypes,
+          typename T>
+struct push_back<Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>, T>
+{
+    using type = Hybrid<Lhs<LhsTypes..., T>, Rhs<RhsTypes...>>;
+};
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace mpl
+
+template <typename Tuple, typename T>
+using push_back_t = typename mpl::push_back<Tuple, T>::type;
+
 }  // namespace tim
 
 #include "timemory/operations/types.hpp"

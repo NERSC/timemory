@@ -47,13 +47,13 @@
 //
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN)
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
 //
 #        define TIMEMORY_USER_BUNDLE_LINKAGE(...) inline __VA_ARGS__
 //
 #    else
 //
-#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) __VA_ARGS__
+#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) extern __VA_ARGS__
 //
 #    endif
 //
@@ -122,7 +122,8 @@ user_bundle<mpip_bundle_idx, api::native_tag>::global_init(storage_type*);
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)) ||       \
+    defined(TIMEMORY_USER_BUNDLE_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //

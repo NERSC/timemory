@@ -508,7 +508,8 @@ manager::filtered_get_storage<Types...>::size(pointer_t _manager)
 //
 extern "C"
 {
-#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_MANAGER_SOURCE)
+#if(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)) &&             \
+    !defined(TIMEMORY_MANAGER_SOURCE)
 
     extern ::tim::manager*       timemory_manager_master_instance();
     __library_ctor__ extern void timemory_library_constructor();

@@ -33,8 +33,11 @@
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
 
+#include <initializer_list>
+#include <sstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 namespace tim
 {
@@ -47,6 +50,12 @@ namespace tim
 //
 namespace plotting
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+void
+plot(std::string _label, std::string _prefix, const std::string& _dir, bool _echo_dart,
+     std::string _json_file);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -63,6 +72,29 @@ template <typename... Types,
 void
 plot(std::string _prefix = "", const std::string& _dir = settings::output_path(),
      bool _echo_dart = settings::dart_output(), std::string _json_file = "");
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace operation
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Arg, typename... Args>
+auto
+join(const char* sep, Arg&& arg, Args&&... args)
+{
+    std::stringstream ss;
+    ss << std::forward<Arg>(arg);
+    auto tmp =
+        ::std::initializer_list<int>{ (ss << sep << std::forward<Args>(args), 0)... };
+    tim::consume_parameters(tmp);
+    return ss.str();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -1023,22 +1023,19 @@ struct malloc_gotcha : base<malloc_gotcha, double>
     using base_type::set_stopped;
     using base_type::value;
 
-    template <typename Type>
-    struct gotcha_spec;
+    template <typename Tp>
+    using gotcha_component_type = push_back_t<Tp, this_type>;
 
-    template <typename Type>
-    using gotcha_type = typename gotcha_spec<Type>::gotcha_type;
+    template <typename Tp>
+    using gotcha_type = gotcha<data_size, push_back_t<Tp, this_type>, type_list<>>;
 
-    template <typename Type>
-    using component_type = typename gotcha_spec<Type>::component_type;
-
-    template <typename Type>
-    using gotcha_component_type = typename gotcha_spec<Type>::gotcha_component_type;
+    template <typename Tp>
+    using component_type = push_back_t<Tp, gotcha_type<Tp>>;
 
 public:
     //----------------------------------------------------------------------------------//
 
-    template <typename Type>
+    template <typename Tp, typename... Types>
     static void configure();
 
     //----------------------------------------------------------------------------------//
@@ -1361,25 +1358,6 @@ private:
         return _instance;
     }
 
-public:
-    template <typename... Types, template <typename...> class Tuple>
-    struct gotcha_spec<Tuple<Types...>>
-    {
-        using gotcha_component_type = Tuple<Types..., this_type>;
-        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
-        using component_type        = Tuple<Types..., gotcha_type>;
-    };
-
-    template <typename... LhsTypes, typename... RhsTypes,
-              template <typename...> class Lhs, template <typename...> class Rhs,
-              template <typename, typename> class Hybrid>
-    struct gotcha_spec<Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>>
-    {
-        using gotcha_component_type = Hybrid<Lhs<LhsTypes...>, Rhs<RhsTypes...>>;
-        using gotcha_type           = gotcha<data_size, gotcha_component_type, this_type>;
-        using component_type = Hybrid<Lhs<LhsTypes..., gotcha_type>, Rhs<RhsTypes...>>;
-    };
-
 private:
     uintmax_t   prefix_hash = string_hash()("");
     uintmax_t   prefix_idx  = std::numeric_limits<uintmax_t>::max();
@@ -1393,12 +1371,16 @@ private:
 //
 #if defined(TIMEMORY_USE_GOTCHA)
 //
-template <typename Type>
+template <typename Type, typename... Types>
 inline void
 malloc_gotcha::configure()
 {
-    using local_gotcha_spec_t              = gotcha_spec<Type>;
-    using local_gotcha_type                = typename local_gotcha_spec_t::gotcha_type;
+    // static_assert(!std::is_same<Type, malloc_gotcha>::value,
+    //              "Error! Cannot configure with self as the type!");
+
+    using tuple_t           = component_tuple<Type, Types..., malloc_gotcha>;
+    using local_gotcha_type = gotcha<data_size, tuple_t, type_list<>>;
+
     local_gotcha_type::get_default_ready() = false;
     local_gotcha_type::get_initializer()   = []() {
     //

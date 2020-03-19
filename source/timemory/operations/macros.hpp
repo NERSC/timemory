@@ -41,7 +41,7 @@
 //
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN)
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_OPERATIONS_EXTERN)
 //
 #        define TIMEMORY_OPERATIONS_LINKAGE(...) inline __VA_ARGS__
 //

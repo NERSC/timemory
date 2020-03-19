@@ -44,6 +44,11 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
+#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)) ||       \
+    defined(TIMEMORY_ENVIRONMENT_SOURCE)
+//
+//--------------------------------------------------------------------------------------//
+//
 //                              environment
 //
 //--------------------------------------------------------------------------------------//
@@ -176,26 +181,6 @@ env_settings::collapse()
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_ENVIRONMENT_LINKAGE(mutex_t&)
-env_settings::mutex()
-{
-    static mutex_t m_mutex;
-    return m_mutex;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-/*
-TIMEMORY_ENVIRONMENT_LINKAGE(std::atomic_bool&)
-env_settings::lock_flag()
-{
-    static std::atomic_bool _instance(false);
-    return _instance;
-}
-*/
-//
-//--------------------------------------------------------------------------------------//
-//
 // specialization for string since the above will have issues if string includes spaces
 //
 template <>
@@ -302,10 +287,6 @@ print_env(std::ostream& os) { os << (*env_settings::instance()); }
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_ENVIRONMENT_SOURCE)
-//
-//--------------------------------------------------------------------------------------//
-//
 TIMEMORY_ENVIRONMENT_LINKAGE(tim::env_settings*)
 env_settings::instance()
 {
@@ -319,7 +300,7 @@ env_settings::instance()
 //
 //--------------------------------------------------------------------------------------//
 //
-#endif  // TIMEMORY_EXTERN_ENVIRONMENT
+#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_ENVIRONMENT_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //

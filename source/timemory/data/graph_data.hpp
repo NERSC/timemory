@@ -47,12 +47,12 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Node>
+template <typename NodeT>
 class graph_data
 {
 public:
-    using this_type          = graph_data<_Node>;
-    using graph_t            = tim::graph<_Node>;
+    using this_type          = graph_data<NodeT>;
+    using graph_t            = tim::graph<NodeT>;
     using iterator           = typename graph_t::iterator;
     using const_iterator     = typename graph_t::const_iterator;
     using inverse_insert_t   = std::vector<std::pair<int64_t, iterator>>;
@@ -62,7 +62,7 @@ public:
 public:
     // graph_data() = default;
 
-    explicit graph_data(const _Node& rhs, int64_t _depth, graph_data* _master = nullptr)
+    explicit graph_data(const NodeT& rhs, int64_t _depth, graph_data* _master = nullptr)
     : m_has_head(true)
     , m_depth(_depth)
     , m_sea_level(_depth)
@@ -129,7 +129,7 @@ public:
         auto _id    = _current->id();
         auto _depth = _current->depth();
 
-        _Node node(_id, _Node::get_dummy(), _depth);
+        NodeT node(_id, NodeT::get_dummy(), _depth);
         m_depth     = _depth;
         m_sea_level = _depth;
 
@@ -200,18 +200,18 @@ public:
         return std::accumulate(_hierarchy.begin(), _hierarchy.end(), 0);
     }
 
-    inline iterator append_child(_Node& node)
+    inline iterator append_child(NodeT& node)
     {
         ++m_depth;
         return (m_current = m_graph.append_child(m_current, node));
     }
 
-    inline iterator append_head(_Node& node)
+    inline iterator append_head(NodeT& node)
     {
         return m_graph.append_child(m_head, node);
     }
 
-    inline iterator emplace_child(iterator _itr, _Node& node)
+    inline iterator emplace_child(iterator _itr, NodeT& node)
     {
         return m_graph.append_child(_itr, node);
     }

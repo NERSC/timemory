@@ -229,19 +229,19 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    inline int64_t laps() const { return m_laps; }
+    int64_t laps() const { return m_laps; }
 
     //----------------------------------------------------------------------------------//
     //
-    inline std::string key() const { return get_hash_ids()->find(m_hash)->second; }
+    std::string key() const { return get_hash_ids()->find(m_hash)->second; }
 
     //----------------------------------------------------------------------------------//
     //
-    inline uint64_t hash() const { return m_hash; }
+    uint64_t hash() const { return m_hash; }
 
     //----------------------------------------------------------------------------------//
     //
-    inline void rekey(const string_t& _key)
+    void rekey(const string_t& _key)
     {
         m_hash = add_hash_id(_key);
         compute_width(_key);
@@ -249,19 +249,19 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    inline bool& store() { return m_store; }
+    bool& store() { return m_store; }
 
     //----------------------------------------------------------------------------------//
     //
-    inline const bool& store() const { return m_store; }
+    const bool& store() const { return m_store; }
 
     //----------------------------------------------------------------------------------//
     //
-    inline const string_t& prefix() const { return get_persistent_data().prefix; }
+    const string_t& prefix() const { return get_persistent_data().prefix; }
 
     //----------------------------------------------------------------------------------//
     //
-    inline const string_t& get_prefix() const { return prefix(); }
+    const string_t& get_prefix() const { return prefix(); }
 
 protected:
     //----------------------------------------------------------------------------------//
@@ -273,14 +273,14 @@ protected:
 
     //----------------------------------------------------------------------------------//
     //
-    inline void compute_width(const string_t& _key) const
+    void compute_width(const string_t& _key) const
     {
         output_width(_key.length() + get_prefix().length() + 1);
     }
 
     //----------------------------------------------------------------------------------//
     //
-    inline void update_width() const { compute_width(key()); }
+    void update_width() const { compute_width(key()); }
 
 protected:
     // objects

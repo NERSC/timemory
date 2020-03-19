@@ -125,14 +125,6 @@ public:
         static initializer_type _instance = [](this_type&) {};
         return _instance;
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    static initializer_type& get_finalizer()
-    {
-        static initializer_type _instance = [](this_type&) {};
-        return _instance;
-    }
 
 public:
     using concat_type = concat<Types...>;
@@ -156,31 +148,26 @@ public:
 
     template <typename... T, typename Func = initializer_type>
     explicit component_tuple(const string_t& key, variadic::config<T...>,
-                             const Func& = get_initializer(),
-                             const Func& = get_finalizer());
+                             const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
     explicit component_tuple(const captured_location_t& loc, variadic::config<T...>,
-                             const Func& = get_initializer(),
-                             const Func& = get_finalizer());
+                             const Func& = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(const string_t& key, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer(),
-                             const Func&      = get_finalizer());
+                             const Func&      = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(const captured_location_t& loc, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer(),
-                             const Func&      = get_finalizer());
+                             const Func&      = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(size_t _hash, const bool& store = true,
                              const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer(),
-                             const Func&      = get_finalizer());
+                             const Func&      = get_initializer());
 
     ~component_tuple();
 
@@ -206,8 +193,8 @@ public:
     //----------------------------------------------------------------------------------//
     // public member functions
     //
-    inline void push();
-    inline void pop();
+    void push();
+    void pop();
     template <typename... Args>
     void measure(Args&&...);
     template <typename... Args>
@@ -223,9 +210,9 @@ public:
     template <typename... Args>
     auto get(Args&&...) const;
     template <typename... Args>
-    auto                    get_labeled(Args&&...) const;
-    inline data_type&       data();
-    inline const data_type& data() const;
+    auto             get_labeled(Args&&...) const;
+    data_type&       data();
+    const data_type& data() const;
 
     using bundle_type::hash;
     using bundle_type::key;
@@ -241,6 +228,26 @@ public:
     {
         using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// provide preliminary info to the objects with matching arguments
+    //
+    template <typename... Args>
+    void assemble(Args&&... _args)
+    {
+        using assemble_t = operation_t<operation::assemble>;
+        apply_v::access<assemble_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// provide conclusive info to the objects with matching arguments
+    //
+    template <typename... Args>
+    void dismantle(Args&&... _args)
+    {
+        using dismantle_t = operation_t<operation::dismantle>;
+        apply_v::access<dismantle_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -289,19 +296,19 @@ public:
     // get member functions taking either a type
     //
     template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
-    inline T* get()
+    T* get()
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
     template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
-    inline const T* get() const
+    const T* get() const
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
     template <typename T, enable_if_t<!(is_one_of<T, data_type>::value), int> = 0>
-    inline T* get() const
+    T* get() const
     {
         void*       ptr   = nullptr;
         static auto _hash = std::hash<std::string>()(demangle<T>());
@@ -309,7 +316,7 @@ public:
         return static_cast<T*>(ptr);
     }
 
-    inline void get(void*& ptr, size_t _hash) const
+    void get(void*& ptr, size_t _hash) const
     {
         using get_t = operation_t<operation::get>;
         apply_v::access<get_t>(m_data, ptr, _hash);
@@ -359,7 +366,7 @@ public:
     ///
     template <typename T, typename Func, typename... Args,
               enable_if_t<(is_one_of<T, data_type>::value == true), int> = 0>
-    inline void type_apply(Func&& _func, Args&&... _args)
+    void type_apply(Func&& _func, Args&&... _args)
     {
         auto&& _obj = get<T>();
         ((_obj).*(_func))(std::forward<Args>(_args)...);
@@ -367,7 +374,7 @@ public:
 
     template <typename T, typename Func, typename... Args,
               enable_if_t<(is_one_of<T, data_type>::value == false), int> = 0>
-    inline void type_apply(Func&&, Args&&...)
+    void type_apply(Func&&, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -508,12 +515,6 @@ public:
     const string_t& prefix() const { return bundle_type::prefix(); }
     const string_t& get_prefix() const { return bundle_type::get_prefix(); }
 
-    template <typename Func>
-    void set_finalizer(Func&& func)
-    {
-        m_fini = std::forward<Func>(func);
-    }
-
 protected:
     static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
     void           update_width() const { bundle_type::update_width(); }
@@ -521,12 +522,12 @@ protected:
 
 protected:
     // protected member functions
-    inline data_type&       get_data();
-    inline const data_type& get_data() const;
-    inline void             set_prefix(const string_t&) const;
-    inline void             set_prefix(size_t) const;
-    inline void             set_flat_profile(bool);
-    inline void             set_timeline_profile(bool);
+    data_type&       get_data();
+    const data_type& get_data() const;
+    void             set_prefix(const string_t&) const;
+    void             set_prefix(size_t) const;
+    void             set_flat_profile(bool);
+    void             set_timeline_profile(bool);
 
 protected:
     // objects
@@ -537,7 +538,6 @@ protected:
     using bundle_type::m_store;
     using bundle_type::m_timeline;
     mutable data_type m_data = data_type{};
-    initializer_type  m_fini = this_type::get_finalizer();
 };
 
 //======================================================================================//

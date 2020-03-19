@@ -100,6 +100,20 @@ struct is_auto_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a gotcha type
+///
+template <typename T>
+struct is_gotcha : false_type
+{};
+
+//----------------------------------------------------------------------------------//
+/// concepts the specifies that a type is a user_bundle type
+///
+template <typename T>
+struct is_user_bundle : false_type
+{};
+
+//----------------------------------------------------------------------------------//
 /// converts a boolean to an integer
 ///
 template <bool B, typename T = int>

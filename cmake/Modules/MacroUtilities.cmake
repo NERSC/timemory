@@ -28,14 +28,14 @@ MACRO(CACHE_LIST _OP _LIST)
     # apply operation on list
     list(${_OP} _TMP_CACHE_LIST ${ARGN})
     # replace list
-    set(${_LIST} ${_TMP_CACHE_LIST})
-    if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
-        set(${_LIST} ${_TMP_CACHE_LIST} PARENT_SCOPE)
-    endif()
+    # set(${_LIST} ${_TMP_CACHE_LIST})
+    # if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+    #     set(${_LIST} ${_TMP_CACHE_LIST} PARENT_SCOPE)
+    # endif()
     # apply operation on list
     #list(${_OP} ${_LIST} ${ARGN})
     # replace list
-    #set(${_LIST} ${${_LIST}} CACHE INTERNAL "Cached list ${_LIST}")
+    set(${_LIST} "${_TMP_CACHE_LIST}" CACHE INTERNAL "" FORCE)
 ENDMACRO()
 
 
@@ -370,7 +370,7 @@ ENDMACRO()
 macro(BUILD_LIBRARY)
 
     # options
-    set(_options    PIC)
+    set(_options    PIC NO_CACHE_LIST)
     # single-value
     set(_onevalue   TYPE
                     OUTPUT_NAME
@@ -467,13 +467,191 @@ macro(BUILD_LIBRARY)
         POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC}
         ${LIBRARY_EXTRA_PROPERTIES})
 
-    # add to cached list of compiled libraries
-    set(COMPILED_TYPES "SHARED" "STATIC" "MODULE")
-    if("${LIBRARY_TYPE}" IN_LIST COMPILED_TYPES)
-        cache_list(APPEND ${PROJECT_NAME_UC}_COMPILED_LIBRARIES ${LIBRARY_TARGET_NAME})
+    if(NOT LIBRARY_NO_CACHE_LIST)
+        # add to cached list of compiled libraries
+        set(COMPILED_TYPES "SHARED" "STATIC" "MODULE")
+        if("${LIBRARY_TYPE}" IN_LIST COMPILED_TYPES)
+            cache_list(APPEND ${PROJECT_NAME_UC}_COMPILED_LIBRARIES ${LIBRARY_TARGET_NAME})
+        endif()
     endif()
     unset(COMPILED_TYPES)
 
+endmacro()
+
+
+#----------------------------------------------------------------------------------------#
+# finds dependencies
+#
+function(TIMEMORY_GET_INTERNAL_DEPENDS VAR LINK)
+    # set the depends before creating the library so it does not
+    # link to itself
+    set(DEPENDS)
+    foreach(DEP ${ARGN})
+        if(TARGET ${DEP})
+            list(APPEND DEPENDS ${DEP})
+        endif()
+        if(TARGET ${DEP}-${LINK})
+            list(APPEND DEPENDS ${DEP}-${LINK})
+        endif()
+        if(TARGET ${DEP}-component-${LINK})
+            list(APPEND DEPENDS ${DEP}-component-${LINK})
+        endif()
+        if(TARGET timemory-${DEP}-${LINK})
+            list(APPEND DEPENDS timemory-${DEP}-${LINK})
+        endif()
+        if(TARGET timemory-${DEP}-component-${LINK})
+            list(APPEND DEPENDS timemory-${DEP}-component-${LINK})
+        endif()
+    endforeach()
+    set(${VAR} "${DEPENDS}" PARENT_SCOPE)
+endfunction()
+
+#----------------------------------------------------------------------------------------#
+# finds dependencies
+#
+function(TIMEMORY_GET_PROPERTY_DEPENDS VAR LINK)
+    # set the depends before creating the library so it does not
+    # link to itself
+    set(DEPENDS)
+    foreach(DEP ${ARGN})
+        get_property(TMP GLOBAL PROPERTY TIMEMORY_${LINK}_${DEP}_LIBRARIES)
+        list(APPEND DEPENDS ${TMP})
+    endforeach()
+    set(${VAR} "${DEPENDS}" PARENT_SCOPE)
+endfunction()
+
+
+#----------------------------------------------------------------------------------------#
+# require variable
+#
+function(CHECK_REQUIRED VAR)
+    if(NOT DEFINED ${VAR} OR "${${VAR}}" STREQUAL "")
+        message(FATAL_ERROR "Variable '${VAR}' must be defined and not empty")
+    endif()
+endfunction()
+
+#----------------------------------------------------------------------------------------#
+# macro to build a library of type: shared, static, object
+#
+macro(BUILD_INTERMEDIATE_LIBRARY)
+
+    # single-value
+    set(_onevalue   NAME
+                    TARGET
+                    CATEGORY
+                    FOLDER)
+    # multi-value
+    set(_multival   HEADERS
+                    SOURCES
+                    DEPENDS
+                    PROPERTY_DEPENDS
+                    PUBLIC_LINK
+                    PRIVATE_LINK)
+
+    cmake_parse_arguments(
+        COMP "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
+
+    if(WIN32)
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_CXX_LIBRARY_SOURCES
+            ${COMP_HEADERS} ${COMP_SOURCES})
+        return()
+    endif()
+
+    check_required(COMP_NAME)
+    check_required(COMP_TARGET)
+    check_required(COMP_CATEGORY)
+    check_required(COMP_FOLDER)
+    check_required(COMP_SOURCES)
+
+    string(TOUPPER "${COMP_NAME}" UPP_COMP)
+
+    set(_LIB_TYPES)
+    if(_BUILD_SHARED_CXX)
+        list(APPEND _LIB_TYPES shared)
+        set(shared_OPTIONS PIC TYPE SHARED)
+    endif()
+
+    if(_BUILD_STATIC_CXX)
+        list(APPEND _LIB_TYPES static)
+        set(static_OPTIONS TYPE STATIC)
+    endif()
+
+    set(_SOURCES ${COMP_SOURCES} ${COMP_HEADERS})
+
+    foreach(LINK ${_LIB_TYPES})
+
+        string(TOUPPER "${LINK}" UPP_LINK)
+        set(TARGET_NAME timemory-${COMP_TARGET}-${LINK})
+
+        # set the depends before creating the library so it does not
+        # link to itself
+        timemory_get_internal_depends(DEPENDS ${LINK} ${COMP_DEPENDS})
+        timemory_get_property_depends(PROPERTY_DEPENDS ${UPP_LINK} ${COMP_PROPERTY_DEPENDS})
+
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_HEADERS ${COMP_HEADERS})
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_SOURCES ${COMP_SOURCES})
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_${UPP_LINK}_${COMP_CATEGORY}_LIBRARIES
+            timemory-${COMP_TARGET}-${LINK})
+
+        build_library(
+            NO_CACHE_LIST
+            ${${LINK}_OPTIONS}
+            TARGET_NAME         ${TARGET_NAME}
+            OUTPUT_NAME         timemory-${COMP_TARGET}
+            LANGUAGE            CXX
+            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
+            OUTPUT_DIR          ${PROJECT_BINARY_DIR}/${COMP_FOLDER}
+            SOURCES             ${_SOURCES}
+            CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
+
+        target_link_libraries(${TARGET_NAME} PUBLIC
+            timemory-headers
+            timemory-vector
+            timemory-external-${LINK}
+            ${DEPENDS}
+            ${PROPERTY_DEPENDS}
+            ${COMP_PUBLIC_LINK})
+
+        target_link_libraries(${TARGET_NAME} PRIVATE
+            timemory-compile-options
+            timemory-develop-options
+            ${_ANALYSIS_TOOLS}
+            ${_ARCH_LIBRARY}
+            ${COMP_PRIVATE_LINK})
+
+        if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG)
+        endif()
+
+        target_compile_definitions(${TARGET_NAME} PRIVATE
+            TIMEMORY_SOURCE
+            TIMEMORY_${COMP_CATEGORY}_SOURCE
+            TIMEMORY_${UPP_COMP}_SOURCE)
+
+        target_compile_definitions(${TARGET_NAME} PUBLIC
+            TIMEMORY_USE_${COMP_CATEGORY}_EXTERN
+            TIMEMORY_USE_${UPP_COMP}_EXTERN)
+
+        string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
+
+        install(TARGETS ${TARGET_NAME}
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
+            EXPORT      ${PROJECT_NAME}-library-depends)
+
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_TARGETS ${TARGET_NAME})
+
+    endforeach()
+
+endmacro()
+
+
+# C/C++ development headers
+macro(INSTALL_HEADER_FILES)
+    foreach(_header ${ARGN})
+        file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})
+        get_filename_component(_destpath ${_relative} DIRECTORY)
+        install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
+    endforeach()
 endmacro()
 
 

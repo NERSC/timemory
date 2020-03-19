@@ -41,13 +41,11 @@
 //
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN)
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN)
 //
 #        define TIMEMORY_SETTINGS_LINKAGE(...) inline __VA_ARGS__
 //
 #    else
-//
-#        define TIMEMORY_EXTERN_SETTINGS
 //
 #        define TIMEMORY_SETTINGS_LINKAGE(...) extern __VA_ARGS__
 //
@@ -144,7 +142,7 @@
             template settings& settings::instance<API>();                                \
             }
 //
-#    elif defined(TIMEMORY_USE_EXTERN)
+#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
 //
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \

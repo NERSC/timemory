@@ -207,6 +207,7 @@ def run_pyctest():
         "TIMEMORY_USE_PAPI": "ON" if args.papi else "OFF",
         "TIMEMORY_USE_CUDA": "ON" if args.cuda else "OFF",
         "TIMEMORY_USE_NVTX": "ON" if args.nvtx else "OFF",
+        "TIMEMORY_USE_OMPT": "ON" if args.ompt else "OFF",
         "TIMEMORY_USE_XRAY": "ON" if args.xray else "OFF",
         "TIMEMORY_USE_CUPTI": "ON" if args.cupti else "OFF",
         "TIMEMORY_USE_UPCXX": "ON" if args.upcxx else "OFF",
@@ -225,6 +226,9 @@ def run_pyctest():
         "USE_MPI": "ON" if args.mpi else "OFF",
         "USE_CALIPER": "ON" if args.caliper else "OFF",
     }
+
+    if args.ompt:
+        build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
 
     if args.tools:
         build_opts["TIMEMORY_BUILD_MPIP"] = "ON" if (
@@ -404,6 +408,13 @@ def run_pyctest():
                          "TIMEMORY_DART_OUTPUT=ON",
                          "TIMEMORY_DART_COUNT=1",
                          "TIMEMORY_PLOT_OUTPUT=ON"])
+
+    pyct.test(construct_name("ex-assemble"),
+              construct_command(["./ex_assemble"], args),
+              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+               "LABELS": pyct.PROJECT_NAME,
+               "TIMEOUT": "300",
+               "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("ex-optional-off"),
               construct_command(["./ex_optional_off"], args),

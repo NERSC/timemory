@@ -13,6 +13,7 @@ set(TIMEMORY_KOKKOS_TOOLS_IN_SOURCE OFF)
 # external project (i.e. in kokkos-tools) references interface libraries via "timemory::timemory-XYZ"
 # interal project (i.e. in timemory) references interface libraries via "timemory-XYZ"
 set(TIMEMORY_KOKKOS_TOOLS_PREFIX "timemory::")
+set(TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
 # the prefix for the options
 set(TIMEMORY_KOKKOS_TOOLS_OPTION "")
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
@@ -22,6 +23,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kokkos-tools)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kokkos-tools)
     set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME kokkos)
+    set(TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/timemory/kokkos-tools)
 endif()
 
 include(CheckLanguage)
@@ -136,7 +138,7 @@ set_target_properties(kp_timemory PROPERTIES
     PREFIX          ""
     LINKER_LANGUAGE ${LINKER_LANGUAGE})
 
-install(TARGETS kp_timemory DESTINATION ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
+install(TARGETS kp_timemory DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
 
 #
 #   Build the sample
@@ -226,7 +228,7 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         PREFIX ""
         LINKER_LANGUAGE ${LINKER_LANGUAGE})
     install(TARGETS kp_timemory_${_NAME}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
+        DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
 endfunction()
 
 ##--------------------------------------------------------------------------------------##

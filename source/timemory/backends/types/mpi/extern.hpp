@@ -22,37 +22,84 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file init.cpp
- * This file defined the extern init
+/** \file extern/init.hpp
+ * \headerfile extern/init.hpp "timemory/extern/init.hpp"
+ * Provides extern initialization
  *
  */
 
-#include "timemory/extern/init.hpp"
-#include "timemory/components.hpp"
-#include "timemory/environment/declaration.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/plotting.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
+#pragma once
 
-using namespace tim::component;
+#if defined(TIMEMORY_USE_MPI)
 
-#if defined(TIMEMORY_USE_EXTERN)
+#    include "timemory/backends/mpi.hpp"
+#    include "timemory/config.hpp"
+#    include "timemory/manager/declaration.hpp"
 
+#    if defined(TIMEMORY_USE_TAU)
+#        define TAU_ENABLED
+#        define TAU_DOT_H_LESS_HEADERS
+#        include "TAU.h"
+#    endif
+
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TAU_INIT)
+#        if defined(TIMEMORY_USE_TAU)
+#            define TAU_INIT(...) Tau_init(__VA_ARGS__)
+#        else
+#            define TAU_INIT(...)
+#        endif
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+
+//--------------------------------------------------------------------------------------//
+//
+#    if defined(TIMEMORY_MPI_INIT_SOURCE)
+//
+#        define TIMEMORY_MPI_INIT_LINKAGE(...) __VA_ARGS__
+//
+#    else
+//
+#        if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+#            define TIMEMORY_MPI_INIT_LINKAGE(...) inline __VA_ARGS__
+#        else
+#            define TIMEMORY_MPI_INIT_LINKAGE(...) extern __VA_ARGS__
+#        endif
+//
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+
+//--------------------------------------------------------------------------------------//
+//
 extern "C"
 {
-    extern ::tim::manager* timemory_manager_master_instance();
-}
-
-//======================================================================================//
-
-#    if defined(TIMEMORY_USE_MPI)
-
-extern "C"
-{
+    //
     //----------------------------------------------------------------------------------//
-
-    int timemory_MPI_Finalize(MPI_Comm, int, void*, void*)
+    //
+#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MPI_INIT_EXTERN) ||         \
+        defined(TIMEMORY_MPI_INIT_SOURCE)
+    extern ::tim::manager* timemory_manager_master_instance();
+#    endif
+    //
+    //----------------------------------------------------------------------------------//
+    //
+#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    extern void timemory_MPI_Init(int* argc, char*** argv);
+    extern int  MPI_Init(int* argc, char*** argv);
+#        if !defined(TIMEMORY_MPI_INIT) || (TIMEMORY_MPI_INIT > 0)
+    extern int MPI_Init_thread(int* argc, char*** argv, int required, int* provided);
+#        endif
+#    else
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    static int timemory_MPI_Finalize(MPI_Comm, int, void*, void*)
     {
         if(tim::settings::debug())
         {
@@ -70,10 +117,10 @@ extern "C"
         }
         return MPI_SUCCESS;
     }
-
+    //
     //----------------------------------------------------------------------------------//
-
-    void timemory_MPI_Init(int* argc, char*** argv)
+    //
+    TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Init(int* argc, char*** argv)
     {
         int comm_key = 0;
         MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_MPI_Finalize, &comm_key, NULL);
@@ -83,10 +130,12 @@ extern "C"
         tim::consume_parameters(_manager);
         ::tim::timemory_init(*argc, *argv);
     }
-
+    //
     //----------------------------------------------------------------------------------//
     //
 #        if !defined(TIMEMORY_MPI_INIT) || (TIMEMORY_MPI_INIT > 0)
+    //
+    //----------------------------------------------------------------------------------//
     //
     int MPI_Init(int* argc, char*** argv)
     {
@@ -95,16 +144,14 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
                    __LINE__);
         }
-#            if defined(TIMEMORY_USE_TAU)
-        Tau_init(*argc, *argv);
-#            endif
+        TAU_INIT(*argc, *argv);
         auto ret = PMPI_Init(argc, argv);
         timemory_MPI_Init(argc, argv);
         return ret;
     }
-
+    //
     //----------------------------------------------------------------------------------//
-
+    //
     int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
     {
         if(tim::settings::debug())
@@ -112,21 +159,21 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
                    __FILE__, __LINE__);
         }
-#            if defined(TIMEMORY_USE_TAU)
-        Tau_init(*argc, *argv);
-#            endif
+        TAU_INIT(*argc, *argv);
         auto ret = PMPI_Init_thread(argc, argv, req, prov);
         timemory_MPI_Init(argc, argv);
         return ret;
     }
     //
+    //----------------------------------------------------------------------------------//
+    //
 #        endif
+#    endif
     //
     //----------------------------------------------------------------------------------//
+    //
 }
-
-#    endif
-
-//======================================================================================//
-
-#endif  // defined(TIMEMORY_USE_EXTERN)
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif  // defined(TIMEMORY_USE_MPI)

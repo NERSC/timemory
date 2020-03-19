@@ -206,13 +206,27 @@ public:
         return *this;
     }
 
+    // Operators (this_type)
+    inline statistics& operator-=(const statistics& rhs)
+    {
+        if(m_cnt > 0)
+        {
+            compute_type::minus(m_sum, rhs.m_sum);
+            compute_type::minus(m_sqr, rhs.m_sqr);
+            m_min = compute_type::min(m_min, rhs.m_min);
+            m_max = compute_type::max(m_max, rhs.m_max);
+            m_cnt += std::abs(m_cnt - rhs.m_cnt);
+        }
+        return *this;
+    }
+
 private:
     // summation of each history^1
     int64_t    m_cnt = 0;
-    value_type m_sum = value_type();
-    value_type m_sqr = value_type();
-    value_type m_min = value_type();
-    value_type m_max = value_type();
+    value_type m_sum = value_type{};
+    value_type m_sqr = value_type{};
+    value_type m_min = value_type{};
+    value_type m_max = value_type{};
 
 public:
     // friend operator for output

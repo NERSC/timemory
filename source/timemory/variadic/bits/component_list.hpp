@@ -159,7 +159,7 @@ component_list<Types...>::clone(bool store, bool flat)
 // insert into graph
 //
 template <typename... Types>
-inline void
+void
 component_list<Types...>::push()
 {
     uint64_t count = 0;
@@ -179,7 +179,7 @@ component_list<Types...>::push()
 // pop out of grapsh
 //
 template <typename... Types>
-inline void
+void
 component_list<Types...>::pop()
 {
     if(m_store && m_is_pushed)
@@ -236,8 +236,7 @@ component_list<Types...>::start(Args&&... args)
     // push components into the call-stack
     push();
 
-    // increment laps
-    ++m_laps;
+    assemble(*this);
 
     // start components
     apply_v::out_of_order<priority_start_t, priority_tuple_t, 1>(
@@ -270,6 +269,11 @@ component_list<Types...>::stop(Args&&... args)
     apply_v::access<standard_stop_t>(m_data, std::forward<Args>(args)...);
     apply_v::out_of_order<delayed_stop_t, delayed_tuple_t, 1>(
         m_data, std::forward<Args>(args)...);
+
+    // increment laps
+    ++m_laps;
+
+    dismantle(*this);
 
     // pop components off of the call-stack stack
     pop();
@@ -393,7 +397,7 @@ component_list<Types...>::print_storage()
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline typename component_list<Types...>::data_type&
+typename component_list<Types...>::data_type&
 component_list<Types...>::data()
 {
     return m_data;
@@ -402,7 +406,7 @@ component_list<Types...>::data()
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline const typename component_list<Types...>::data_type&
+const typename component_list<Types...>::data_type&
 component_list<Types...>::data() const
 {
     return m_data;
@@ -411,7 +415,7 @@ component_list<Types...>::data() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_list<Types...>::set_prefix(const string_t& key) const
 {
     apply_v::access<operation_t<operation::set_prefix>>(m_data, key);
@@ -420,7 +424,7 @@ component_list<Types...>::set_prefix(const string_t& key) const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_list<Types...>::set_prefix(size_t _hash) const
 {
     auto itr = get_hash_ids()->find(_hash);
@@ -432,7 +436,7 @@ component_list<Types...>::set_prefix(size_t _hash) const
 //
 template <typename... Types>
 template <typename T>
-inline void
+void
 component_list<Types...>::set_prefix(T* obj) const
 {
     using _PrefixOp = operation::pointer_operator<T, operation::set_prefix<T>>;
@@ -443,7 +447,7 @@ component_list<Types...>::set_prefix(T* obj) const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_list<Types...>::init_storage()
 {
     static thread_local bool _once = []() {

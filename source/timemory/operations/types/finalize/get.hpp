@@ -168,10 +168,9 @@ get<Type, true>::get(storage_type& data, result_type& ret)
         //--------------------------------------------------------------------------//
         //
         auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
-            return (std::get<0>(_lhs) == std::get<0>(_rhs) &&
-                    std::get<2>(_lhs) == std::get<2>(_rhs) &&
-                    std::get<3>(_lhs) == std::get<3>(_rhs) &&
-                    std::get<4>(_lhs) == std::get<4>(_rhs));
+            return (_lhs.hash() == _rhs.hash() && _lhs.prefix() == _rhs.prefix() &&
+                    _lhs.depth() == _rhs.depth() &&
+                    _lhs.rolling_hash() == _rhs.rolling_hash());
         };
 
         //--------------------------------------------------------------------------//

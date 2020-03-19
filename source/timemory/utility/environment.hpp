@@ -242,8 +242,9 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_EXTERN_INIT)
+//
+#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+//
 inline env_settings*
 env_settings::instance()
 {
@@ -254,8 +255,9 @@ env_settings::instance()
         (_id == 0) ? _instance : new env_settings(_instance, _id);
     return _local;
 }
+//
 #endif
-
+//
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>

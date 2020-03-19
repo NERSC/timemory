@@ -171,8 +171,8 @@ public:
     static void                  print_storage();
     static void                  init_storage();
 
-    inline void push();
-    inline void pop();
+    void push();
+    void pop();
     template <typename... Args>
     void measure(Args&&...);
     template <typename... Args>
@@ -188,9 +188,9 @@ public:
     template <typename... Args>
     auto get(Args&&...) const;
     template <typename... Args>
-    auto                    get_labeled(Args&&...) const;
-    inline data_type&       data();
-    inline const data_type& data() const;
+    auto             get_labeled(Args&&...) const;
+    data_type&       data();
+    const data_type& data() const;
 
     using bundle_type::hash;
     using bundle_type::key;
@@ -206,6 +206,26 @@ public:
     {
         using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// provide preliminary info to the objects with matching arguments
+    //
+    template <typename... Args>
+    void assemble(Args&&... _args)
+    {
+        using assemble_t = operation_t<operation::assemble>;
+        apply_v::access<assemble_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// provide conclusive info to the objects with matching arguments
+    //
+    template <typename... Args>
+    void dismantle(Args&&... _args)
+    {
+        using dismantle_t = operation_t<operation::dismantle>;
+        apply_v::access<dismantle_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -415,7 +435,7 @@ public:
         return nullptr;
     }
 
-    inline void get(void*& ptr, size_t _hash)
+    void get(void*& ptr, size_t _hash)
     {
         using get_t = operation_t<operation::get>;
         apply_v::access<get_t>(m_data, ptr, _hash);
@@ -546,10 +566,10 @@ protected:
 
 protected:
     // protected member functions
-    inline data_type&       get_data();
-    inline const data_type& get_data() const;
-    inline void             set_prefix(const string_t&) const;
-    inline void             set_prefix(size_t) const;
+    data_type&       get_data();
+    const data_type& get_data() const;
+    void             set_prefix(const string_t&) const;
+    void             set_prefix(size_t) const;
 
     template <typename T>
     void set_prefix(T* obj) const;

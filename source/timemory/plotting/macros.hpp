@@ -34,3 +34,24 @@
 // Define macros for plotting
 //
 //======================================================================================//
+//
+#if defined(TIMEMORY_PLOTTING_SOURCE)
+//
+#    define TIMEMORY_PLOTTING_LINKAGE(...) __VA_ARGS__
+//
+#else
+//
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_PLOTTING_EXTERN)
+//
+#        define TIMEMORY_PLOTTING_LINKAGE(...) inline __VA_ARGS__
+//
+#    else
+//
+#        define TIMEMORY_PLOTTING_LINKAGE(...) extern __VA_ARGS__
+//
+#    endif
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//

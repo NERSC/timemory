@@ -104,7 +104,12 @@ public:
     }
 
 private:
-    static mutex_t&          mutex();
+    static mutex_t& mutex()
+    {
+        static mutex_t m_mutex;
+        return m_mutex;
+    }
+
     static std::atomic_bool& lock_flag()
     {
         static std::atomic_bool _instance(false);

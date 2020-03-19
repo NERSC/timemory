@@ -31,6 +31,7 @@
 
 #include "timemory/backends/gperf.hpp"
 #include "timemory/storage/macros.hpp"
+#include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
 //
 #include "timemory/backends/dmp.hpp"
@@ -289,33 +290,15 @@ public:
     //----------------------------------------------------------------------------------//
     //  forward decl of some internal types
     //
-    struct result_node;
-    struct graph_node;
-    friend struct result_node;
-    friend struct graph_node;
+    using result_node = node::result<Type>;
+    using graph_node  = node::graph<Type>;
+
+    friend struct node::result<Type>;
+    friend struct node::graph<Type>;
 
     using strvector_t  = std::vector<string_t>;
     using uintvector_t = std::vector<uint64_t>;
     using EmptyT       = std::tuple<>;
-
-protected:
-    template <typename _Tp>
-    struct write_serialization;
-
-    struct storage_data
-    {
-        using type         = typename trait::statistics<Type>::type;
-        using stats_policy = policy::record_statistics<Type, type>;
-        using stats_type   = typename stats_policy::statistics_type;
-        using node_type    = std::tuple<uint64_t, Type, int64_t, stats_type>;
-        using result_type  = std::tuple<uint64_t, Type, string_t, int64_t, uint64_t,
-                                       uintvector_t, stats_type>;
-    };
-
-    using storage_stats_t        = typename storage_data::stats_type;
-    using storage_stats_policy_t = typename storage_data::stats_policy;
-    using storage_node_t         = typename storage_data::node_type;
-    using storage_result_t       = typename storage_data::result_type;
 
 public:
     using base_type      = base::storage;
@@ -325,18 +308,19 @@ public:
     using singleton_t    = singleton<this_type, smart_pointer>;
     using pointer        = typename singleton_t::pointer;
     using auto_lock_t    = typename singleton_t::auto_lock_t;
-    using node_type      = storage_node_t;
-    using stats_type     = storage_stats_t;
-    using result_type    = storage_result_t;
+    using node_type      = typename node::data<Type>::node_type;
+    using stats_type     = typename node::data<Type>::stats_type;
+    using result_type    = typename node::data<Type>::result_type;
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
+    using printer_t      = operation::finalize::print<Type, true>;
 
     friend struct impl::storage_deleter<this_type>;
-    friend struct write_serialization<this_type>;
     friend struct operation::finalize::get<Type, true>;
     friend struct operation::finalize::mpi_get<Type, true>;
     friend struct operation::finalize::upc_get<Type, true>;
     friend struct operation::finalize::dmp_get<Type, true>;
+    friend struct operation::finalize::print<Type, true>;
     friend class tim::manager;
 
 public:
@@ -353,89 +337,6 @@ public:
 private:
     static singleton_t* get_singleton() { return get_storage_singleton<this_type>(); }
     static std::atomic<int64_t>& instance_count();
-
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    //      Result returned from get()
-    //
-    //----------------------------------------------------------------------------------//
-    struct result_node : public result_type
-    {
-        using base_type = result_type;
-
-        result_node()                   = default;
-        ~result_node()                  = default;
-        result_node(const result_node&) = default;
-        result_node(result_node&&)      = default;
-        result_node& operator=(const result_node&) = default;
-        result_node& operator=(result_node&&) = default;
-
-        result_node(base_type&& _base)
-        : base_type(std::forward<base_type>(_base))
-        {}
-
-        result_node(uint64_t _hash, const Type& _data, const string_t& _prefix,
-                    int64_t _depth, uint64_t _rolling, const uintvector_t& _hierarchy,
-                    const stats_type& _stats);
-
-        uint64_t&     hash() { return std::get<0>(*this); }
-        Type&         data() { return std::get<1>(*this); }
-        string_t&     prefix() { return std::get<2>(*this); }
-        int64_t&      depth() { return std::get<3>(*this); }
-        uint64_t&     rolling_hash() { return std::get<4>(*this); }
-        uintvector_t& hierarchy() { return std::get<5>(*this); }
-        stats_type&   stats() { return std::get<6>(*this); }
-
-        const uint64_t&     hash() const { return std::get<0>(*this); }
-        const Type&         data() const { return std::get<1>(*this); }
-        const string_t&     prefix() const { return std::get<2>(*this); }
-        const int64_t&      depth() const { return std::get<3>(*this); }
-        const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
-        const uintvector_t& hierarchy() const { return std::get<5>(*this); }
-        const stats_type&   stats() const { return std::get<6>(*this); }
-
-        uint64_t&       id() { return std::get<0>(*this); }
-        const uint64_t& id() const { return std::get<0>(*this); }
-
-        Type&       obj() { return std::get<1>(*this); }
-        const Type& obj() const { return std::get<1>(*this); }
-    };
-
-    //----------------------------------------------------------------------------------//
-    //
-    //      Storage type in graph
-    //
-    //----------------------------------------------------------------------------------//
-    struct graph_node : public node_type
-    {
-        using this_type       = graph_node;
-        using base_type       = node_type;
-        using data_value_type = typename Type::value_type;
-        using data_base_type  = typename Type::base_type;
-        using string_t        = std::string;
-
-        uint64_t&   id() { return std::get<0>(*this); }
-        Type&       obj() { return std::get<1>(*this); }
-        int64_t&    depth() { return std::get<2>(*this); }
-        stats_type& stats() { return std::get<3>(*this); }
-
-        const uint64_t&   id() const { return std::get<0>(*this); }
-        const Type&       obj() const { return std::get<1>(*this); }
-        const int64_t&    depth() const { return std::get<2>(*this); }
-        const stats_type& stats() const { return std::get<3>(*this); }
-
-        string_t get_prefix() const { return master_instance()->get_prefix(*this); }
-
-        graph_node();
-        explicit graph_node(base_type&& _base);
-        graph_node(const uint64_t& _id, const Type& _obj, int64_t _depth);
-        ~graph_node() = default;
-
-        bool        operator==(const graph_node& rhs) const;
-        bool        operator!=(const graph_node& rhs) const;
-        static Type get_dummy();
-    };
 
 public:
     using graph_node_t   = graph_node;
@@ -489,6 +390,8 @@ public:
     dmp_result_t   upc_get();
     dmp_result_t   dmp_get();
 
+    std::shared_ptr<printer_t> get_printer() const { return m_printer; }
+
     const iterator_hash_map_t get_node_ids() const { return m_node_ids; }
 
     void stack_push(Type* obj) { m_stack.insert(obj); }
@@ -524,48 +427,11 @@ protected:
     string_t get_prefix(iterator _node) { return get_prefix(*_node); }
     string_t get_prefix(const uint64_t& _id);
 
-    template <typename _Tp>
-    struct write_serialization
-    {
-        template <typename _Up>
-        struct is_enabled
-        {
-            using _Vp = typename _Up::value_type;
-            static constexpr bool value =
-                (trait::is_available<_Up>::value && !(std::is_same<_Vp, void>::value));
-        };
-
-        using storage_t = this_type;
-
-        template <typename _Archive, typename _Type = Type,
-                  typename std::enable_if<(is_enabled<_Type>::value), char>::type = 0>
-        static void serialize(storage_t& _obj, _Archive& ar, const unsigned int version,
-                              const result_array_t& result)
-        {
-            typename tim::trait::array_serialization<Type>::type type;
-            _obj.serialize_me(type, ar, version, result);
-        }
-
-        template <typename _Archive, typename _Type = Type,
-                  typename std::enable_if<!(is_enabled<_Type>::value), char>::type = 0>
-        static void serialize(storage_t&, _Archive&, const unsigned int,
-                              const result_array_t&)
-        {}
-    };
-
 private:
     void check_consistency();
 
-    template <typename _Archive>
-    void do_serialize(_Archive& ar);
-
     template <typename Archive>
-    void serialize_me(std::true_type, Archive&, const unsigned int,
-                      const result_array_t&);
-
-    template <typename Archive>
-    void serialize_me(std::false_type, Archive&, const unsigned int,
-                      const result_array_t&);
+    void do_serialize(Archive& ar);
 
     void internal_print();
 
@@ -573,10 +439,11 @@ private:
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
 
 private:
-    uint64_t                  m_timeline_counter    = 1;
-    mutable graph_data_t*     m_graph_data_instance = nullptr;
-    iterator_hash_map_t       m_node_ids;
-    std::unordered_set<Type*> m_stack;
+    uint64_t                   m_timeline_counter    = 1;
+    mutable graph_data_t*      m_graph_data_instance = nullptr;
+    iterator_hash_map_t        m_node_ids;
+    std::unordered_set<Type*>  m_stack;
+    std::shared_ptr<printer_t> m_printer;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -722,16 +589,23 @@ template <typename Archive>
 void
 storage<Type, true>::serialize(Archive& ar, const unsigned int version)
 {
-    using serial_write_t = write_serialization<this_type>;
+    using bool_type = typename trait::array_serialization<Type>::type;
 
     auto   num_instances = instance_count().load();
     auto&& _results      = dmp_get();
     for(uint64_t i = 0; i < _results.size(); ++i)
     {
+        if(_results.at(i).empty())
+            continue;
+
         ar.startNode();
+
         ar(cereal::make_nvp("rank", i));
         ar(cereal::make_nvp("concurrency", num_instances));
-        serial_write_t::serialize(*this, ar, 1, _results.at(i));
+        m_printer->print_metadata(bool_type{}, ar, _results.at(i).front().data());
+        Type::extra_serialization(ar, 1);
+        save(ar, _results.at(i));
+
         ar.finishNode();
     }
     consume_parameters(version);
@@ -748,78 +622,6 @@ storage<Type, true>::do_serialize(Archive& ar)
     if(m_is_master)
         merge();
     ar(cereal::make_nvp(_label, *this));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-template <typename Archive>
-void
-storage<Type, true>::serialize_me(std::false_type, Archive& ar,
-                                  const unsigned int    version,
-                                  const result_array_t& graph_list)
-{
-    if(graph_list.size() == 0)
-        return;
-
-    ar(cereal::make_nvp("type", Type::get_label()),
-       cereal::make_nvp("description", Type::get_description()),
-       cereal::make_nvp("unit_value", Type::get_unit()),
-       cereal::make_nvp("unit_repr", Type::get_display_unit()));
-    Type::extra_serialization(ar, version);
-    ar.setNextName("graph");
-    ar.startNode();
-    ar.makeArray();
-    for(auto& itr : graph_list)
-    {
-        ar.startNode();
-        ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
-           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
-           cereal::make_nvp("rolling_hash", itr.rolling_hash()),
-           // cereal::make_nvp("heirarchy", itr.hierarchy()),
-           cereal::make_nvp("stats", itr.stats()));
-        ar.finishNode();
-    }
-    ar.finishNode();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-template <typename Archive>
-void
-storage<Type, true>::serialize_me(std::true_type, Archive& ar, const unsigned int version,
-                                  const result_array_t& graph_list)
-{
-    if(graph_list.size() == 0)
-        return;
-
-    // remove those const in case not marked const
-    auto& _graph_list = const_cast<result_array_t&>(graph_list);
-
-    Type& obj           = _graph_list.front().data();
-    auto  labels        = obj.label_array();
-    auto  descripts     = obj.description_array();
-    auto  units         = obj.unit_array();
-    auto  display_units = obj.display_unit_array();
-    ar(cereal::make_nvp("type", labels), cereal::make_nvp("description", descripts),
-       cereal::make_nvp("unit_value", units),
-       cereal::make_nvp("unit_repr", display_units));
-    Type::extra_serialization(ar, version);
-    ar.setNextName("graph");
-    ar.startNode();
-    ar.makeArray();
-    for(auto& itr : graph_list)
-    {
-        ar.startNode();
-        ar(cereal::make_nvp("hash", itr.hash()), cereal::make_nvp("prefix", itr.prefix()),
-           cereal::make_nvp("depth", itr.depth()), cereal::make_nvp("entry", itr.data()),
-           cereal::make_nvp("rolling_hash", itr.rolling_hash()),
-           // cereal::make_nvp("heirarchy", itr.hierarchy()),
-           cereal::make_nvp("stats", itr.stats()));
-        ar.finishNode();
-    }
-    ar.finishNode();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -843,9 +645,11 @@ public:
     using singleton_t    = singleton<this_type, smart_pointer>;
     using pointer        = typename singleton_t::pointer;
     using auto_lock_t    = typename singleton_t::auto_lock_t;
+    using printer_t      = operation::finalize::print<Type, false>;
 
     friend class tim::manager;
     friend struct impl::storage_deleter<this_type>;
+    friend struct operation::finalize::print<Type, false>;
 
     using result_node    = std::tuple<>;
     using graph_t        = std::tuple<>;
@@ -895,12 +699,14 @@ public:
     iterator pop() { return nullptr; }
     iterator insert(int64_t, const Type&, const string_t&) { return nullptr; }
 
-    template <typename _Archive>
-    void serialize(_Archive&, const unsigned int)
+    template <typename Archive>
+    void serialize(Archive&, const unsigned int)
     {}
 
     void stack_push(Type* obj) { m_stack.insert(obj); }
     void stack_pop(Type* obj);
+
+    std::shared_ptr<printer_t> get_printer() const { return m_printer; }
 
 protected:
     void get_shared_manager();
@@ -908,12 +714,13 @@ protected:
     void merge(this_type* itr);
 
 private:
-    template <typename _Archive>
-    void do_serialize(_Archive&)
+    template <typename Archive>
+    void do_serialize(Archive&)
     {}
 
 private:
-    std::unordered_set<Type*> m_stack;
+    std::unordered_set<Type*>  m_stack;
+    std::shared_ptr<printer_t> m_printer;
 };
 //
 //--------------------------------------------------------------------------------------//

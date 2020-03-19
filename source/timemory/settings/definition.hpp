@@ -66,7 +66,8 @@ settings::initialize_storage()
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_SETTINGS_SOURCE)
+#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)) ||          \
+    defined(TIMEMORY_SETTINGS_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -106,6 +107,17 @@ settings::toupper(std::string str)
 //----------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_LINKAGE(std::string)
+settings::get_input_prefix()
+{
+    static auto& _dir    = input_path();
+    static auto& _prefix = input_prefix();
+
+    return filepath::osrepr(_dir + std::string("/") + _prefix);
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_LINKAGE(std::string)
 settings::get_output_prefix(bool fake)
 {
     static auto& _dir         = output_path();
@@ -125,31 +137,13 @@ settings::get_output_prefix(bool fake)
     if(!fake && (debug() || verbose() > 2))
         PRINT_HERE("creating output directory: '%s'", _dir.c_str());
 
+    if(fake)
+        tim::consume_parameters(get_input_prefix());
+
     auto ret = (fake) ? 0 : makedir(_dir);
     return (ret == 0) ? filepath::osrepr(_dir + std::string("/") + _prefix)
                       : filepath::osrepr(std::string("./") + _prefix);
 }
-//
-//----------------------------------------------------------------------------------//
-//
-/*
-TIMEMORY_SETTINGS_LINKAGE(std::vector<std::string>)
-settings::get_environment()
-{
-#    if defined(_UNIX)
-    std::vector<std::string> _environ;
-    if(environ != nullptr)
-    {
-        int idx = 0;
-        while(environ[idx] != nullptr)
-            _environ.push_back(environ[idx++]);
-    }
-    return _environ;
-#    else
-    return std::vector<std::string>();
-#    endif
-}
-*/
 //
 //----------------------------------------------------------------------------------//
 //
@@ -186,6 +180,43 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
         if(ret != 0)
             _prefix = filepath::osrepr(std::string("./"));
     }
+
+    auto _rank_suffix = (_mpi_init && _mpi_rank >= 0)
+                            ? (std::string("_") + std::to_string(_mpi_rank))
+                            : std::string("");
+    if(_ext.find('.') != 0)
+        _ext = std::string(".") + _ext;
+    auto plast = _prefix.length() - 1;
+    if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
+        _prefix += "_";
+    auto fpath = path_t(_prefix + _tag + _rank_suffix + _ext);
+    while(fpath.find("//") != std::string::npos)
+        fpath.replace(fpath.find("//"), 2, "/");
+    return std::move(fpath);
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_LINKAGE(std::string)
+settings::compose_input_filename(const std::string& _tag, std::string _ext,
+                                 bool _mpi_init, const int32_t _mpi_rank,
+                                 std::string _explicit)
+{
+    if(settings::input_path().empty())
+        settings::input_path() = settings::output_path();
+
+    if(settings::input_prefix().empty())
+        settings::input_prefix() = settings::output_prefix();
+
+    auto _prefix = (_explicit.length() > 0) ? _explicit : get_input_prefix();
+
+    auto only_ascii = [](char c) { return !isascii(c); };
+
+    _prefix.erase(std::remove_if(_prefix.begin(), _prefix.end(), only_ascii),
+                  _prefix.end());
+
+    if(_explicit.length() > 0)
+        _prefix = filepath::osrepr(std::string("./"));
 
     auto _rank_suffix = (_mpi_init && _mpi_rank >= 0)
                             ? (std::string("_") + std::to_string(_mpi_rank))

@@ -59,6 +59,8 @@ struct base_printer : public common_utils
     using base_type  = typename type::base_type;
     using widths_t   = std::vector<int64_t>;
 
+    template <typename Up                                        = value_type,
+              enable_if_t<!(std::is_same<Up, void>::value), int> = 0>
     explicit base_printer(std::ostream& _os, const type& _obj)
     {
         auto _value = static_cast<const type&>(_obj).get_display();
@@ -82,6 +84,11 @@ struct base_printer : public common_utils
 
         _os << ss_value.str() << ss_extra.str();
     }
+
+    template <typename Up                                       = value_type,
+              enable_if_t<(std::is_same<Up, void>::value), int> = 0>
+    explicit base_printer(std::ostream&, const type&)
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//

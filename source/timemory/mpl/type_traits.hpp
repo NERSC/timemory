@@ -380,7 +380,7 @@ struct echo_enabled : true_type
 /// then the JSON will be compact
 ///
 template <typename T>
-struct pretty_json : std::true_type
+struct pretty_json : std::false_type
 {};
 
 template <typename Api>
@@ -394,11 +394,14 @@ struct api_output_archive
 {
     using default_type = TIMEMORY_OUTPUT_ARCHIVE;
 
-    using type = conditional_t<
-        (std::is_same<default_type, type_list<>>::value),
-        conditional_t<(pretty_json<void>::value), cereal::PrettyJSONOutputArchive,
-                      cereal::MinimalJSONOutputArchive>,
-        default_type>;
+    static constexpr bool is_default_v = std::is_same<default_type, type_list<>>::value;
+    static constexpr bool is_pretty_v  = pretty_json<void>::value;
+
+    using type =
+        conditional_t<(is_default_v),
+                      conditional_t<(is_pretty_v), cereal::PrettyJSONOutputArchive,
+                                    cereal::MinimalJSONOutputArchive>,
+                      default_type>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -421,10 +424,11 @@ struct output_archive
     using minimal_type = cereal::MinimalJSONOutputArchive;
     using pretty_type  = cereal::PrettyJSONOutputArchive;
 
-    static constexpr bool is_pretty_v = pretty_json<T>::value;
-    static constexpr bool is_json =
-        (std::is_same<api_type, cereal::PrettyJSONOutputArchive>::value ||
-         std::is_same<api_type, cereal::MinimalJSONOutputArchive>::value);
+    static constexpr bool is_pretty_v =
+        (pretty_json<T>::value && pretty_json<void>::value);
+
+    static constexpr bool is_json = (std::is_same<api_type, pretty_type>::value ||
+                                     std::is_same<api_type, minimal_type>::value);
 
     using type =
         conditional_t<(is_json), conditional_t<(is_pretty_v), pretty_type, api_type>,

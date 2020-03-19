@@ -30,10 +30,6 @@
  *
  */
 
-#if !defined(TIMEMORY_USE_EXTERN) && !(defined(_WIN32) || defined(_WIN64))
-#    define TIMEMORY_USE_EXTERN
-#endif
-
 #if !defined(MAX_STR_LEN)
 #    define MAX_STR_LEN 512
 #endif
@@ -47,7 +43,7 @@
 #include <vector>
 
 using namespace tim::component;
-using auto_timer_t    = typename tim::auto_timer::component_type;
+using auto_timer_t    = tim::auto_timer;
 using complete_list_t = TIMEMORY_LIBRARY_TYPE;
 
 //======================================================================================//

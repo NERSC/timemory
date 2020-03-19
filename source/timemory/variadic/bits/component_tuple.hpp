@@ -32,6 +32,7 @@
 
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/operations/types/set.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/variadic/generic_bundle.hpp"
 #include "timemory/variadic/types.hpp"
@@ -45,7 +46,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline component_tuple<Types...>::component_tuple()
+component_tuple<Types...>::component_tuple()
 {
     if(settings::enabled())
         init_storage();
@@ -55,13 +56,11 @@ inline component_tuple<Types...>::component_tuple()
 //
 template <typename... Types>
 template <typename... T, typename Func>
-inline component_tuple<Types...>::component_tuple(const string_t&        key,
-                                                  variadic::config<T...> config,
-                                                  const Func&            init_func,
-                                                  const Func&            fini_func)
+component_tuple<Types...>::component_tuple(const string_t&        key,
+                                           variadic::config<T...> config,
+                                           const Func&            init_func)
 : bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), store, config)
 , m_data(data_type{})
-, m_fini(fini_func)
 {
     if(settings::enabled())
     {
@@ -78,13 +77,11 @@ inline component_tuple<Types...>::component_tuple(const string_t&        key,
 //
 template <typename... Types>
 template <typename... T, typename Func>
-inline component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                                  variadic::config<T...>     config,
-                                                  const Func&                init_func,
-                                                  const Func&                fini_func)
+component_tuple<Types...>::component_tuple(const captured_location_t& loc,
+                                           variadic::config<T...>     config,
+                                           const Func&                init_func)
 : bundle_type(loc.get_hash(), store, config)
 , m_data(data_type{})
-, m_fini(fini_func)
 {
     if(settings::enabled())
     {
@@ -101,13 +98,11 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
 //
 template <typename... Types>
 template <typename Func>
-inline component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
-                                                  const bool& flat, const Func& init_func,
-                                                  const Func& fini_func)
+component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
+                                           const bool& flat, const Func& init_func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
               flat || get_config<variadic::flat_scope>())
 , m_data(data_type{})
-, m_fini(fini_func)
 {
     if(settings::enabled())
     {
@@ -127,13 +122,11 @@ inline component_tuple<Types...>::component_tuple(const string_t& key, const boo
 //
 template <typename... Types>
 template <typename Func>
-inline component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                                  const bool& store, const bool& flat,
-                                                  const Func& init_func,
-                                                  const Func& fini_func)
+component_tuple<Types...>::component_tuple(const captured_location_t& loc,
+                                           const bool& store, const bool& flat,
+                                           const Func& init_func)
 : bundle_type(loc.get_hash(), store, flat || get_config<variadic::flat_scope>())
 , m_data(data_type{})
-, m_fini(fini_func)
 {
     if(settings::enabled())
     {
@@ -153,12 +146,10 @@ inline component_tuple<Types...>::component_tuple(const captured_location_t& loc
 //
 template <typename... Types>
 template <typename Func>
-inline component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
-                                                  const bool& flat, const Func& init_func,
-                                                  const Func& fini_func)
+component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
+                                           const bool& flat, const Func& init_func)
 : bundle_type(hash, store, flat || get_config<variadic::flat_scope>())
 , m_data(data_type{})
-, m_fini(fini_func)
 {
     if(settings::enabled())
     {
@@ -177,17 +168,16 @@ inline component_tuple<Types...>::component_tuple(size_t hash, const bool& store
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-component_tuple<Types...>::~component_tuple()
+inline component_tuple<Types...>::~component_tuple()
 {
     IF_CONSTEXPR(get_config<variadic::auto_stop>()) { stop(); }
     pop();
-    m_fini(*this);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline component_tuple<Types...>
+component_tuple<Types...>
 component_tuple<Types...>::clone(bool store, bool flat)
 {
     component_tuple tmp(*this);
@@ -200,7 +190,7 @@ component_tuple<Types...>::clone(bool store, bool flat)
 // insert into graph
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::push()
 {
     if(m_store && !m_is_pushed)
@@ -218,7 +208,7 @@ component_tuple<Types...>::push()
 // pop out of graph
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::pop()
 {
     if(m_store && m_is_pushed)
@@ -235,7 +225,7 @@ component_tuple<Types...>::pop()
 //
 template <typename... Types>
 template <typename... Args>
-inline void
+void
 component_tuple<Types...>::measure(Args&&... args)
 {
     apply_v::access<operation_t<operation::measure>>(m_data, std::forward<Args>(args)...);
@@ -259,7 +249,7 @@ component_tuple<Types...>::sample(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-inline void
+void
 component_tuple<Types...>::start(Args&&... args)
 {
     using standard_start_t = operation_t<operation::standard_start>;
@@ -275,8 +265,7 @@ component_tuple<Types...>::start(Args&&... args)
     // push components into the call-stack
     push();
 
-    // increment laps
-    ++m_laps;
+    assemble(*this);
 
     // start components
     apply_v::out_of_order<priority_start_t, priority_tuple_t, 1>(
@@ -290,7 +279,7 @@ component_tuple<Types...>::start(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-inline void
+void
 component_tuple<Types...>::stop(Args&&... args)
 {
     using standard_stop_t = operation_t<operation::standard_stop>;
@@ -310,6 +299,11 @@ component_tuple<Types...>::stop(Args&&... args)
     apply_v::out_of_order<delayed_stop_t, delayed_tuple_t, 1>(
         m_data, std::forward<Args>(args)...);
 
+    // increment laps
+    ++m_laps;
+
+    dismantle(*this);
+
     // pop components off of the call-stack stack
     pop();
 }
@@ -319,7 +313,7 @@ component_tuple<Types...>::stop(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-inline component_tuple<Types...>&
+component_tuple<Types...>&
 component_tuple<Types...>::record(Args&&... args)
 {
     ++m_laps;
@@ -332,7 +326,7 @@ component_tuple<Types...>::record(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-inline void
+void
 component_tuple<Types...>::reset(Args&&... args)
 {
     apply_v::access<operation_t<operation::reset>>(m_data, std::forward<Args>(args)...);
@@ -344,7 +338,7 @@ component_tuple<Types...>::reset(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-inline auto
+auto
 component_tuple<Types...>::get(Args&&... args) const
 {
     using data_collect_type = get_data_type_t<type_tuple>;
@@ -362,7 +356,7 @@ component_tuple<Types...>::get(Args&&... args) const
 //
 template <typename... Types>
 template <typename... Args>
-inline auto
+auto
 component_tuple<Types...>::get_labeled(Args&&... args) const
 {
     using data_collect_type = get_data_type_t<type_tuple>;
@@ -379,7 +373,7 @@ component_tuple<Types...>::get_labeled(Args&&... args) const
 // this_type operators
 //
 template <typename... Types>
-inline component_tuple<Types...>&
+component_tuple<Types...>&
 component_tuple<Types...>::operator-=(const this_type& rhs)
 {
     apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
@@ -390,7 +384,7 @@ component_tuple<Types...>::operator-=(const this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline component_tuple<Types...>&
+component_tuple<Types...>&
 component_tuple<Types...>::operator-=(this_type& rhs)
 {
     apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
@@ -401,7 +395,7 @@ component_tuple<Types...>::operator-=(this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline component_tuple<Types...>&
+component_tuple<Types...>&
 component_tuple<Types...>::operator+=(const this_type& rhs)
 {
     apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
@@ -412,7 +406,7 @@ component_tuple<Types...>::operator+=(const this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline component_tuple<Types...>&
+component_tuple<Types...>&
 component_tuple<Types...>::operator+=(this_type& rhs)
 {
     apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
@@ -423,7 +417,7 @@ component_tuple<Types...>::operator+=(this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::print_storage()
 {
     apply_v::type_access<operation::print_storage, data_type>();
@@ -432,7 +426,7 @@ component_tuple<Types...>::print_storage()
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline typename component_tuple<Types...>::data_type&
+typename component_tuple<Types...>::data_type&
 component_tuple<Types...>::data()
 {
     return m_data;
@@ -441,7 +435,7 @@ component_tuple<Types...>::data()
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline const typename component_tuple<Types...>::data_type&
+const typename component_tuple<Types...>::data_type&
 component_tuple<Types...>::data() const
 {
     return m_data;
@@ -450,7 +444,7 @@ component_tuple<Types...>::data() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::set_prefix(const string_t& _key) const
 {
     apply_v::access<operation_t<operation::set_prefix>>(m_data, _key);
@@ -459,7 +453,7 @@ component_tuple<Types...>::set_prefix(const string_t& _key) const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::set_prefix(size_t _hash) const
 {
     auto itr = get_hash_ids()->find(_hash);
@@ -470,7 +464,7 @@ component_tuple<Types...>::set_prefix(size_t _hash) const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::set_flat_profile(bool val)
 {
     m_flat = val;
@@ -480,7 +474,7 @@ component_tuple<Types...>::set_flat_profile(bool val)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::set_timeline_profile(bool val)
 {
     m_timeline = val;
@@ -490,7 +484,7 @@ component_tuple<Types...>::set_timeline_profile(bool val)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline void
+void
 component_tuple<Types...>::init_storage()
 {
     static thread_local bool _once = []() {

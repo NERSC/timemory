@@ -201,11 +201,11 @@ public:
     const list_type&  get_rhs() const { return m_list; }
 
 public:
-    inline int64_t  laps() const { return m_tuple.laps(); }
-    inline string_t key() const { return m_tuple.key(); }
-    inline uint64_t hash() const { return m_tuple.hash(); }
-    inline bool     store() const { return m_tuple.store(); }
-    inline void     rekey(const string_t& _key)
+    int64_t  laps() const { return m_tuple.laps(); }
+    string_t key() const { return m_tuple.key(); }
+    uint64_t hash() const { return m_tuple.hash(); }
+    bool     store() const { return m_tuple.store(); }
+    void     rekey(const string_t& _key)
     {
         m_tuple.rekey(_key);
         m_list.rekey(_key);
@@ -219,7 +219,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     // insert into graph
-    inline void push()
+    void push()
     {
         m_tuple.push();
         m_list.push();
@@ -227,7 +227,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     // pop out of graph
-    inline void pop()
+    void pop()
     {
         m_tuple.pop();
         m_list.pop();
@@ -275,6 +275,26 @@ public:
     {
         m_tuple.construct(std::forward<Args>(args)...);
         m_list.construct(std::forward<Args>(args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// provide preliminary info to the objects with matching arguments
+    //
+    template <typename... Args>
+    void assemble(Args&&... args)
+    {
+        m_tuple.assemble(std::forward<Args>(args)...);
+        m_list.assemble(std::forward<Args>(args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// provide conclusive info to the objects with matching arguments
+    //
+    template <typename... Args>
+    void dismantle(Args&&... args)
+    {
+        m_tuple.dismantle(std::forward<Args>(args)...);
+        m_list.dismantle(std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -502,10 +522,7 @@ public:
     }
 
 public:
-    inline data_type data() const
-    {
-        return std::tuple_cat(m_tuple.data(), m_list.data());
-    }
+    data_type data() const { return std::tuple_cat(m_tuple.data(), m_list.data()); }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -525,7 +542,7 @@ public:
         return m_list.template get<_Tp>();
     }
 
-    inline void get(void*& ptr, size_t _hash)
+    void get(void*& ptr, size_t _hash)
     {
         m_tuple.get(ptr, _hash);
         if(!ptr)

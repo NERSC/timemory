@@ -22,21 +22,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file extern/ert.hpp
- * \headerfile extern/ert.hpp "timemory/extern/ert.hpp"
- * Extern template declarations
- *
- */
+#define TIMEMORY_BUILD_EXTERN
+#define TIMEMORY_BUILD_EXTERN
 
-#pragma once
-
-#if defined(TIMEMORY_USE_EXTERN)
-
-#    include "timemory/backends/device.hpp"
-#    include "timemory/components/timing/types.hpp"
-#    include "timemory/ert/configuration.hpp"
-#    include "timemory/ert/counter.hpp"
-#    include "timemory/ert/data.hpp"
+#include "timemory/backends/device.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/components.hpp"
+#include "timemory/ert/configuration.hpp"
+#include "timemory/ert/counter.hpp"
+#include "timemory/ert/data.hpp"
+#include "timemory/manager/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting.hpp"
 
 namespace tim
 {
@@ -44,26 +41,14 @@ namespace ert
 {
 //
 //
-// extern template struct exec_data<component::wall_clock>;
+template class exec_data<component::wall_clock>;
 //
-// extern template struct counter<device::cpu, float, component::wall_clock>;
-// extern template struct counter<device::cpu, double, component::wall_clock>;
-extern template struct configuration<device::cpu, float, component::wall_clock>;
-extern template struct configuration<device::cpu, double, component::wall_clock>;
+template class counter<device::cpu, float, component::wall_clock>;
+template class counter<device::cpu, double, component::wall_clock>;
 //
-#    if defined(TIMEMORY_USE_CUDA)
-//
-// extern template struct counter<device::gpu, float, component::wall_clock>;
-// extern template struct counter<device::gpu, double, component::wall_clock>;
-// extern template struct counter<device::gpu, cuda::fp16_t, component::wall_clock>;
-// extern template struct configuration<device::gpu, float, component::wall_clock>;
-// extern template struct configuration<device::gpu, double, component::wall_clock>;
-// extern template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
-//
-#    endif
+template struct configuration<device::cpu, float, component::wall_clock>;
+template struct configuration<device::cpu, double, component::wall_clock>;
 //
 //
 }  // namespace ert
 }  // namespace tim
-
-#endif

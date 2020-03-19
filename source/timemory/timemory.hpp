@@ -165,7 +165,7 @@ struct dummy
 #    if defined(TIMEMORY_USE_EXTERN)
 //
 #        include "timemory/components/extern.hpp"
-#        include "timemory/extern/ert.hpp"
+#        include "timemory/ert/extern.hpp"
 //
 #    endif
 
@@ -196,10 +196,6 @@ struct dummy
 #    include "timemory/ert/configuration.hpp"          // 4
 //
 //======================================================================================//
-
-#    include "timemory/extern/init.hpp"
-
-//======================================================================================//
 //
 #    include "timemory/config.hpp"
 #    include "timemory/plotting.hpp"             // 3.5
@@ -216,30 +212,13 @@ struct dummy
 //
 //======================================================================================//
 //
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_SOURCE)
+#    if !defined(_WINDOWS) && defined(TIMEMORY_USE_EXTERN)
 //
-#        include "timemory/containers/definition.hpp"
-#        include "timemory/environment/definition.hpp"
-#        include "timemory/hash/definition.hpp"
-#        include "timemory/manager/definition.hpp"
-#        include "timemory/operations/definition.hpp"
-#        include "timemory/plotting/definition.hpp"
-#        include "timemory/settings/definition.hpp"
-#        include "timemory/storage/definition.hpp"
+#        include "timemory/extern.hpp"
 //
-#    elif defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_SOURCE)
+#    else
 //
-#        if defined(_WINDOWS)
-#            error "Windows does not support extern"
-#        endif
-#        include "timemory/containers/extern.hpp"
-#        include "timemory/environment/extern.hpp"
-#        include "timemory/hash/extern.hpp"
-#        include "timemory/manager/extern.hpp"
-#        include "timemory/operations/extern.hpp"
-#        include "timemory/plotting/extern.hpp"
-#        include "timemory/settings/extern.hpp"
-#        include "timemory/storage/extern.hpp"
+#        include "timemory/definition.hpp"
 //
 #    endif
 //

@@ -41,13 +41,11 @@
 //
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN)
+#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_HASH_EXTERN)
 //
 #        define TIMEMORY_HASH_LINKAGE(...) inline __VA_ARGS__
 //
 #    else
-//
-#        define TIMEMORY_EXTERN_HASH
 //
 #        define TIMEMORY_HASH_LINKAGE(...) extern __VA_ARGS__
 //

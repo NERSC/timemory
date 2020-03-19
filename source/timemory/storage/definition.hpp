@@ -264,6 +264,7 @@ storage<Type, true>::storage()
     }
 
     get_shared_manager();
+    m_printer = std::make_shared<printer_t>(Type::get_label(), this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -548,75 +549,6 @@ storage<Type, true>::insert_init()
     // check this now to ensure everything is initialized
     if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
         initialize();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-//                     impl::storage<Type, true>::result_node
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-storage<Type, true>::result_node::result_node(uint64_t _hash, const Type& _data,
-                                              const string_t& _prefix, int64_t _depth,
-                                              uint64_t            _rolling,
-                                              const uintvector_t& _hierarchy,
-                                              const stats_type&   _stats)
-: base_type(_hash, _data, _prefix, _depth, _rolling, _hierarchy, _stats)
-{}
-//
-//--------------------------------------------------------------------------------------//
-//
-//                     impl::storage<Type, true>::graph_node
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-storage<Type, true>::graph_node::graph_node()
-: base_type(0, Type{}, 0, stats_type{})
-{}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-storage<Type, true>::graph_node::graph_node(base_type&& _base)
-: base_type(std::forward<base_type>(_base))
-{}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-storage<Type, true>::graph_node::graph_node(const uint64_t& _id, const Type& _obj,
-                                            int64_t _depth)
-: base_type(_id, _obj, _depth, stats_type{})
-{}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-bool
-storage<Type, true>::graph_node::operator==(const graph_node& rhs) const
-{
-    return (id() == rhs.id() && depth() == rhs.depth());
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-bool
-storage<Type, true>::graph_node::operator!=(const graph_node& rhs) const
-{
-    return !(*this == rhs);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-Type
-storage<Type, true>::graph_node::get_dummy()
-{
-    using object_base_t = typename Type::base_type;
-    return object_base_t::dummy();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -923,9 +855,6 @@ storage<Type, true>::internal_print()
     if(!m_initialized && !m_finalized)
         return;
 
-    auto requires_json = trait::requires_json<Type>::value;
-    auto label         = Type::get_label();
-
     if(!singleton_t::is_master(this))
     {
         singleton_t::master_instance()->merge(this);
@@ -942,13 +871,6 @@ storage<Type, true>::internal_print()
             return;
         }
 
-        bool _json_forced = requires_json;
-        bool _file_output = settings::file_output();
-        bool _cout_output = settings::cout_output();
-        bool _json_output = (settings::json_output() || _json_forced) && _file_output;
-        bool _text_output = settings::text_output() && _file_output;
-        bool _plot_output = settings::plot_output() && _json_output;
-
         // if the graph wasn't ever initialized, exit
         if(!m_graph_data_instance)
         {
@@ -963,326 +885,11 @@ storage<Type, true>::internal_print()
             return;
         }
 
-        if(!_file_output && !_cout_output && !_json_forced)
-        {
-            instance_count().store(0);
-            return;
-        }
+        if(!m_printer)
+            m_printer.reset(new printer_t(Type::get_label(), this));
 
-        dmp::barrier();
-        m_node_init       = dmp::is_initialized();
-        m_node_rank       = dmp::rank();
-        m_node_size       = dmp::size();
-        auto _results     = this->get();
-        auto _dmp_results = this->dmp_get();
-        dmp::barrier();
+        m_printer->execute();
 
-        if(settings::debug())
-            printf("[%s]|%i> dmp results size: %i\n", label.c_str(), m_node_rank,
-                   (int) _dmp_results.size());
-
-        if(_dmp_results.size() > 0)
-        {
-            if(m_node_rank != 0)
-            {
-                instance_count().store(0);
-                return;
-            }
-            else
-            {
-                _results.clear();
-                for(const auto& sitr : _dmp_results)
-                {
-                    for(const auto& ritr : sitr)
-                        _results.push_back(ritr);
-                }
-            }
-        }
-        else if(m_node_init && m_node_rank > 0)
-        {
-            instance_count().store(0);
-            return;
-        }
-
-#if defined(DEBUG)
-        if(tim::settings::debug() && tim::settings::verbose() > 3)
-        {
-            printf("\n");
-            size_t w = 0;
-            for(const auto& itr : _results)
-                w = std::max<size_t>(w, itr.prefix().length());
-            for(const auto& itr : _results)
-            {
-                std::cout << std::setw(w) << std::left << itr.prefix() << " : "
-                          << itr.data();
-                auto _hierarchy = itr.hierarchy();
-                for(size_t i = 0; i < _hierarchy.size(); ++i)
-                {
-                    if(i == 0)
-                        std::cout << " :: ";
-                    std::cout << get_prefix(_hierarchy[i]);
-                    if(i + 1 < _hierarchy.size())
-                        std::cout << "/";
-                }
-                std::cout << std::endl;
-            }
-            printf("\n");
-        }
-#endif
-
-        settings::indent_width<Type, 0>(Type::get_width());
-        settings::indent_width<Type, 1>(4);
-        settings::indent_width<Type, 2>(4);
-
-        int64_t _max_depth = 0;
-        // find the max width
-        for(const auto mitr : _dmp_results)
-        {
-            for(const auto& itr : mitr)
-            {
-                const auto& itr_obj    = itr.data();
-                const auto& itr_prefix = itr.prefix();
-                const auto& itr_depth  = itr.depth();
-                if(itr_depth < 0 || itr_depth > settings::max_depth())
-                    continue;
-                _max_depth = std::max<int64_t>(_max_depth, itr_depth);
-                // find global max
-                settings::indent_width<Type, 0>(itr_prefix.length());
-                settings::indent_width<Type, 1>(std::log10(itr_obj.nlaps()) + 1);
-                settings::indent_width<Type, 2>(std::log10(itr_depth) + 1);
-            }
-        }
-
-        // return type of get() function
-        using get_return_type = decltype(std::declval<const Type>().get());
-        using compute_type    = math::compute<get_return_type>;
-
-        auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
-        if(!slk.owns_lock())
-            slk.lock();
-
-        std::ofstream*       fout = nullptr;
-        decltype(std::cout)* cout = nullptr;
-
-        //--------------------------------------------------------------------------//
-        // output to json file
-        //
-        if(_json_output)
-        {
-            printf("\n");
-            auto is_json = (std::is_same<trait::output_archive_t<Type>,
-                                         cereal::MinimalJSONOutputArchive>::value ||
-                            std::is_same<trait::output_archive_t<Type>,
-                                         cereal::PrettyJSONOutputArchive>::value);
-            auto fext    = (is_json) ? ".json" : ".xml";
-            auto jname   = settings::compose_output_filename(label, fext);
-            if(jname.length() > 0)
-            {
-                printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), m_node_rank,
-                       jname.c_str());
-                add_json_output(label, jname);
-                {
-                    using serial_write_t        = write_serialization<this_type>;
-                    auto          num_instances = instance_count().load();
-                    std::ofstream ofs(jname.c_str());
-                    if(ofs)
-                    {
-                        // ensure write final block during destruction
-                        // before the file is closed
-                        using policy_type = policy::output_archive_t<Type>;
-                        auto oa           = policy_type::get(ofs);
-                        oa->setNextName("timemory");
-                        oa->startNode();
-
-                        oa->setNextName("ranks");
-                        oa->startNode();
-                        oa->makeArray();
-                        for(uint64_t i = 0; i < _dmp_results.size(); ++i)
-                        {
-                            oa->startNode();
-                            (*oa)(cereal::make_nvp("rank", i));
-                            (*oa)(cereal::make_nvp("concurrency", num_instances));
-                            serial_write_t::serialize(*this, *oa, 1, _dmp_results.at(i));
-                            oa->finishNode();
-                        }
-                        oa->finishNode();
-                        oa->finishNode();
-                    }
-                    if(ofs)
-                        ofs << std::endl;
-                    ofs.close();
-                }
-            }
-
-            if(_plot_output)
-            {
-                // PRINT_HERE("rank = %i", m_node_rank);
-                if(m_node_rank == 0)
-                    plotting::plot<Type>(Type::get_label(), settings::output_path(),
-                                         settings::dart_output(), jname);
-            }
-        }
-        else if(_file_output && _text_output)
-        {
-            printf("\n");
-        }
-
-        //--------------------------------------------------------------------------//
-        // output to text file
-        //
-        if(_file_output && _text_output)
-        {
-            auto fname = settings::compose_output_filename(label, ".txt");
-            if(fname.length() > 0)
-            {
-                fout = new std::ofstream(fname.c_str());
-                if(fout && *fout)
-                {
-                    printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), m_node_rank,
-                           fname.c_str());
-                    add_text_output(label, fname);
-                }
-                else
-                {
-                    delete fout;
-                    fout = nullptr;
-                    fprintf(stderr, "[storage<%s>::%s @ %i]|%i> Error opening '%s'...\n",
-                            label.c_str(), __FUNCTION__, __LINE__, m_node_rank,
-                            fname.c_str());
-                }
-            }
-        }
-
-        //--------------------------------------------------------------------------//
-        // output to cout
-        //
-        if(_cout_output)
-        {
-            cout = &std::cout;
-            printf("\n");
-        }
-
-        auto stream_fmt   = Type::get_format_flags();
-        auto stream_width = Type::get_width();
-        auto stream_prec  = Type::get_precision();
-
-        utility::stream _stream('|', '-', stream_fmt, stream_width, stream_prec);
-        for(auto itr = _results.begin(); itr != _results.end(); ++itr)
-        {
-            auto& itr_obj    = itr->data();
-            auto& itr_prefix = itr->prefix();
-            auto& itr_depth  = itr->depth();
-            auto  itr_laps   = itr_obj.nlaps();
-
-            if(itr_depth < 0 || itr_depth > settings::max_depth())
-                continue;
-
-            // counts the number of non-exclusive values
-            int64_t nexclusive = 0;
-            // the sum of the exclusive values
-            get_return_type exclusive_values{};
-
-            // if we are not at the bottom of the call stack (i.e. completely
-            // inclusive)
-            if(itr_depth < _max_depth)
-            {
-                // get the next iteration
-                auto eitr = itr;
-                std::advance(eitr, 1);
-                // counts the number of non-exclusive values
-                nexclusive = 0;
-                // the sum of the exclusive values
-                exclusive_values = get_return_type{};
-                // continue while not at end of graph until first sibling is
-                // encountered
-                if(eitr != _results.end())
-                {
-                    auto eitr_depth = eitr->depth();
-                    while(eitr_depth != itr_depth)
-                    {
-                        auto& eitr_obj = eitr->data();
-
-                        // if one level down, this is an exclusive value
-                        if(eitr_depth == itr_depth + 1)
-                        {
-                            // if first exclusive value encountered: assign; else:
-                            // combine
-                            if(nexclusive == 0)
-                                exclusive_values = eitr_obj.get();
-                            else
-                                compute_type::plus(exclusive_values, eitr_obj.get());
-                            // increment. beyond 0 vs. 1, this value plays no role
-                            ++nexclusive;
-                        }
-                        // increment iterator for next while check
-                        ++eitr;
-                        if(eitr == _results.end())
-                            break;
-                        eitr_depth = eitr->depth();
-                    }
-                }
-            }
-
-            auto itr_self  = compute_type::percent_diff(exclusive_values, itr_obj.get());
-            auto itr_stats = itr->stats();
-
-            bool _first = std::distance(_results.begin(), itr) == 0;
-            if(_first)
-                operation::print_header<Type>(itr_obj, _stream, itr_stats);
-
-            operation::print<Type>(itr_obj, _stream, itr_prefix, itr_laps, itr_depth,
-                                   itr_self, itr_stats);
-
-            _stream.add_row();
-        }
-
-        if(cout != nullptr)
-            *cout << _stream << std::flush;
-        if(fout != nullptr)
-            *fout << _stream << std::flush;
-
-        if(fout)
-        {
-            fout->close();
-            delete fout;
-            fout = nullptr;
-        }
-
-        bool _dart_output = settings::dart_output();
-
-        // if only a specific type should be echoed
-        if(settings::dart_type().length() > 0)
-        {
-            auto dtype = settings::dart_type();
-            if(operation::echo_measurement<Type>::lowercase(dtype) !=
-               operation::echo_measurement<Type>::lowercase(label))
-                _dart_output = false;
-        }
-
-        if(_dart_output)
-        {
-            printf("\n");
-            uint64_t _nitr = 0;
-            for(auto& itr : _results)
-            {
-                auto& itr_depth = itr.depth();
-
-                if(itr_depth < 0 || itr_depth > settings::max_depth())
-                    continue;
-
-                // if only a specific number of measurements should be echoed
-                if(settings::dart_count() > 0 && _nitr >= settings::dart_count())
-                    continue;
-
-                auto&       itr_obj       = itr.data();
-                auto&       itr_hierarchy = itr.hierarchy();
-                strvector_t str_hierarchy{};
-                for(const auto& hitr : itr_hierarchy)
-                    str_hierarchy.push_back(get_prefix(hitr));
-                operation::echo_measurement<Type>(itr_obj, str_hierarchy);
-                ++_nitr;
-            }
-        }
         instance_count().store(0);
     }
     else
@@ -1338,6 +945,7 @@ storage<Type, false>::storage()
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
     get_shared_manager();
     component::state<Type>::has_storage() = true;
+    // m_printer = std::make_shared<printer_t>(Type::get_label(), this);
 }
 //
 //--------------------------------------------------------------------------------------//

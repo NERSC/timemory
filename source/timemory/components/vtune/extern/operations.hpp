@@ -32,6 +32,7 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/vtune/components.hpp"
 #include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
 
 //======================================================================================//
 //

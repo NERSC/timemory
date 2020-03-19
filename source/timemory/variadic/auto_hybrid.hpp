@@ -99,122 +99,133 @@ public:
 
 public:
     template <typename _Func = initializer_type>
-    inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report(),
-                                const _Func& _func  = this_type::get_initializer());
+    explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
+                         bool         report_at_exit = settings::destructor_report(),
+                         const _Func& _func          = this_type::get_initializer());
 
     template <typename _Func = initializer_type>
-    inline explicit auto_hybrid(const captured_location_t&,
-                                bool flat           = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report(),
-                                const _Func& _func  = this_type::get_initializer());
+    explicit auto_hybrid(const captured_location_t&, bool flat = settings::flat_profile(),
+                         bool         report_at_exit = settings::destructor_report(),
+                         const _Func& _func          = this_type::get_initializer());
 
     template <typename _Func = initializer_type>
-    inline explicit auto_hybrid(size_t, bool flat = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report(),
-                                const _Func& _func  = this_type::get_initializer());
+    explicit auto_hybrid(size_t, bool flat = settings::flat_profile(),
+                         bool         report_at_exit = settings::destructor_report(),
+                         const _Func& _func          = this_type::get_initializer());
 
-    inline explicit auto_hybrid(component_type& tmp, bool flat = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report());
+    explicit auto_hybrid(component_type& tmp, bool flat = settings::flat_profile(),
+                         bool report_at_exit = settings::destructor_report());
 
-    inline ~auto_hybrid();
+    ~auto_hybrid();
 
     // copy and move
-    inline auto_hybrid(const this_type&) = default;
-    inline auto_hybrid(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
+    auto_hybrid(const this_type&) = default;
+    auto_hybrid(this_type&&)      = default;
+    this_type& operator=(const this_type&) = default;
+    this_type& operator=(this_type&&) = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 
 public:
     // public member functions
-    inline component_type&       get_component() { return m_temporary_object; }
-    inline const component_type& get_component() const { return m_temporary_object; }
+    component_type&       get_component() { return m_temporary_object; }
+    const component_type& get_component() const { return m_temporary_object; }
 
-    inline operator component_type&() { return m_temporary_object; }
-    inline operator const component_type&() const { return m_temporary_object; }
+    operator component_type&() { return m_temporary_object; }
+    operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_hybrid
-    inline void push()
+    void push()
     {
         if(m_enabled)
             m_temporary_object.push();
     }
-    inline void pop()
+    void pop()
     {
         if(m_enabled)
             m_temporary_object.pop();
     }
     template <typename... Args>
-    inline void measure(Args&&... args)
+    void measure(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.measure(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void sample(Args&&... args)
+    void sample(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.sample(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void start(Args&&... args)
+    void start(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.start(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void stop(Args&&... args)
+    void stop(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.stop(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void mark_begin(Args&&... args)
+    void assemble(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.assemble(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void dismantle(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.dismantle(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void mark_begin(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.mark_begin(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void mark_end(Args&&... args)
+    void mark_end(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void store(Args&&... args)
+    void store(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.store(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void audit(Args&&... args)
+    void audit(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.audit(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline auto get(Args&&... args) const
+    auto get(Args&&... args) const
     {
         return m_temporary_object.get(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline auto get_labeled(Args&&... args) const
+    auto get_labeled(Args&&... args) const
     {
         return m_temporary_object.get_labeled(std::forward<Args>(args)...);
     }
 
-    inline bool enabled() const { return m_enabled; }
-    inline void report_at_exit(bool val) { m_report_at_exit = val; }
-    inline bool report_at_exit() const { return m_report_at_exit; }
+    bool enabled() const { return m_enabled; }
+    void report_at_exit(bool val) { m_report_at_exit = val; }
+    bool report_at_exit() const { return m_report_at_exit; }
 
-    inline bool      store() const { return m_temporary_object.store(); }
-    inline data_type data() const { return m_temporary_object.data(); }
-    inline int64_t   laps() const { return m_temporary_object.laps(); }
-    inline string_t  key() const { return m_temporary_object.key(); }
-    inline uint64_t  hash() const { return m_temporary_object.hash(); }
-    inline void      rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    bool      store() const { return m_temporary_object.store(); }
+    data_type data() const { return m_temporary_object.data(); }
+    int64_t   laps() const { return m_temporary_object.laps(); }
+    string_t  key() const { return m_temporary_object.key(); }
+    uint64_t  hash() const { return m_temporary_object.hash(); }
+    void      rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     tuple_type&       get_tuple() { return m_temporary_object.get_tuple(); }
@@ -238,7 +249,7 @@ public:
         return m_temporary_object.template get<_Tp>();
     }
 
-    inline void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
+    void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
@@ -376,6 +387,32 @@ get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
 
 template <typename... T>
 using auto_hybrid_t = typename auto_hybrid<T...>::type;
+
+//======================================================================================//
+
+template <typename... Lhs, typename... Rhs>
+class auto_hybrid<type_list<Lhs...>, type_list<Rhs...>>
+: public auto_hybrid<component_tuple<Lhs...>, component_list<Rhs...>>
+{
+public:
+    using real_type = auto_hybrid<component_tuple<Lhs...>, component_list<Rhs...>>;
+
+    using this_type       = typename real_type::base_type;
+    using base_type       = typename real_type::base_type;
+    using auto_type       = typename real_type::auto_type;
+    using tuple_type      = typename real_type::tuple_type;
+    using list_type       = typename real_type::list_type;
+    using component_type  = typename real_type::component_type;
+    using data_type       = typename real_type::data_type;
+    using type_tuple      = typename real_type::type_tuple;
+    using tuple_type_list = typename real_type::tuple_type_list;
+    using list_type_list  = typename real_type::list_type_list;
+
+    template <typename... Args>
+    auto_hybrid(Args&&... args)
+    : base_type(std::forward<Args>(args)...)
+    {}
+};
 
 //======================================================================================//
 

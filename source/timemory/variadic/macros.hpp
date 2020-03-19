@@ -148,27 +148,30 @@ using string = tim::apply<std::string>;
 #    define TIMEMORY_CONDITIONAL_BLANK_MARKER(COND, TYPE, ...)                           \
         _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
         std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> _TIM_VARIABLE(__LINE__) =              \
-            std::unique_ptr<TYPE>(((COND)) ? new TIMEMORY_AUTO_TYPE(TYPE)(               \
-                                                 TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))     \
-                                           : nullptr)
+            std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)>(                                   \
+                ((COND))                                                                 \
+                    ? new TIMEMORY_AUTO_TYPE(TYPE)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))   \
+                    : nullptr)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CONDITIONAL_BASIC_MARKER(COND, TYPE, ...)                           \
         _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
         std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> _TIM_VARIABLE(__LINE__) =              \
-            std::unique_ptr<TYPE>(((COND)) ? new TIMEMORY_AUTO_TYPE(TYPE)(               \
-                                                 TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))     \
-                                           : nullptr)
+            std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)>(                                   \
+                ((COND))                                                                 \
+                    ? new TIMEMORY_AUTO_TYPE(TYPE)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))   \
+                    : nullptr)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CONDITIONAL_MARKER(COND, TYPE, ...)                                 \
         _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
         std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> _TIM_VARIABLE(__LINE__) =              \
-            std::unique_ptr<TYPE>(((COND)) ? new TIMEMORY_AUTO_TYPE(TYPE)(               \
-                                                 TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))     \
-                                           : nullptr)
+            std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)>(                                   \
+                ((COND))                                                                 \
+                    ? new TIMEMORY_AUTO_TYPE(TYPE)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))   \
+                    : nullptr)
 
 //======================================================================================//
 //

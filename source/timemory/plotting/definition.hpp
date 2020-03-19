@@ -49,61 +49,30 @@ namespace plotting
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace operation
-{
+#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_PLOTTING_EXTERN)) ||          \
+    defined(TIMEMORY_PLOTTING_SOURCE)
+
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Arg, typename... Args>
-auto
-join(const char* sep, Arg&& arg, Args&&... args)
-{
-    std::stringstream ss;
-    ss << std::forward<Arg>(arg);
-    auto tmp =
-        ::std::initializer_list<int>{ (ss << sep << std::forward<Args>(args), 0)... };
-    tim::consume_parameters(tmp);
-    return ss.str();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
+TIMEMORY_PLOTTING_LINKAGE(void)
+plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
+     string_t _json_file)
 {
     auto_lock_t lk(type_mutex<std::ostream>());
 
     if(settings::debug() || settings::verbose() > 2)
         PRINT_HERE("%s", "");
 
-    if(std::is_same<typename Tp::value_type, void>::value)
-    {
-        if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "");
-        return;
-    }
-
-    if(!settings::json_output() && !trait::requires_json<Tp>::value)
-    {
-        if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "");
-        return;
-    }
-
     if(settings::python_exe().empty())
     {
         fprintf(stderr, "[%s]> Empty '%s' (env: '%s'). Plot generation is disabled...\n",
-                demangle<Tp>().c_str(), "tim::settings::python_exe()",
-                "TIMEMORY_PYTHON_EXE");
+                _label.c_str(), "tim::settings::python_exe()", "TIMEMORY_PYTHON_EXE");
         return;
     }
 
     if(settings::debug() || settings::verbose() > 2)
         PRINT_HERE("%s", "");
-
-    if(_prefix.empty())
-        _prefix = Tp::get_description();
 
     set_env<std::string>("TIMEMORY_BANNER", "OFF");
     set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
@@ -111,8 +80,6 @@ plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_fil
     if(std::system(nullptr))
     {
         auto _file = _json_file;
-        if(_file.empty())
-            _file = settings::compose_output_filename(Tp::get_label(), ".json");
         {
             std::ifstream ifs(_file.c_str());
             bool          exists = ifs.good();
@@ -122,13 +89,13 @@ plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_fil
                 fprintf(
                     stderr,
                     "[%s]> file '%s' does not exist. Plot generation is disabled...\n",
-                    demangle<Tp>().c_str(), _file.c_str());
+                    _label.c_str(), _file.c_str());
                 return;
             }
         }
 
-        auto cmd = join(" ", settings::python_exe(), "-m", "timemory.plotting", "-f",
-                        _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
+        auto cmd = operation::join(" ", settings::python_exe(), "-m", "timemory.plotting",
+                                   "-f", _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
 
         if(_echo_dart)
             cmd += " -e";
@@ -147,8 +114,48 @@ plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_fil
     else
     {
         fprintf(stderr, "[%s]> std::system unavailable. Plot generation is disabled...\n",
-                demangle<Tp>().c_str());
+                _label.c_str());
     }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_PLOTTING_SOURCE)
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace operation
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
+{
+    if(std::is_same<typename Tp::value_type, void>::value)
+    {
+        if(settings::debug() || settings::verbose() > 2)
+            PRINT_HERE("%s", "");
+        return;
+    }
+
+    if(!settings::json_output() && !trait::requires_json<Tp>::value)
+    {
+        if(settings::debug() || settings::verbose() > 2)
+            PRINT_HERE("%s", "");
+        return;
+    }
+
+    if(_prefix.empty())
+        _prefix = Tp::get_description();
+
+    if(_json_file.empty())
+        _json_file = settings::compose_output_filename(Tp::get_label(), ".json");
+
+    auto _label = demangle<Tp>();
+
+    plot(_label, _prefix, _dir, _echo_dart, _json_file);
 }
 //
 //--------------------------------------------------------------------------------------//

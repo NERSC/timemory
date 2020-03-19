@@ -102,6 +102,7 @@ struct settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, time_output, "TIMEMORY_TIME_OUTPUT", false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, plot_output, "TIMEMORY_PLOT_OUTPUT",
                                     TIMEMORY_DEFAULT_PLOTTING)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, diff_output, "TIMEMORY_DIFF_OUTPUT", false)
 
     // general settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
@@ -144,6 +145,15 @@ struct settings
                                     "timemory-output/")  // folder
     TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, output_prefix, "TIMEMORY_OUTPUT_PREFIX",
                                     "")  // file prefix
+
+    // input control (for computing differences)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, input_path, "TIMEMORY_INPUT_PATH",
+                                    "")  // folder
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, input_prefix, "TIMEMORY_INPUT_PREFIX",
+                                    "")  // file prefix
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, input_extensions,
+                                    "TIMEMORY_INPUT_EXTENSIONS",
+                                    "json,xml")  // extensions
 
     // dart control
     /// only echo this measurement type
@@ -418,6 +428,7 @@ public:
 public:
     static string_t tolower(string_t str);
     static string_t toupper(string_t str);
+    static string_t get_input_prefix();
     static string_t get_output_prefix(bool fake = false);
     static void     store_command_line(int argc, char** argv);
     static string_t compose_output_filename(const string_t& _tag, string_t _ext,
@@ -425,6 +436,10 @@ public:
                                             const int32_t _mpi_rank = -1,
                                             bool          fake      = false,
                                             std::string   _explicit = "");
+    static string_t compose_input_filename(const string_t& _tag, string_t _ext,
+                                           bool          _mpi_init = false,
+                                           const int32_t _mpi_rank = -1,
+                                           std::string   _explicit = "");
 
     /// initialize the storage of the specified types
     template <typename... Types>
@@ -504,6 +519,7 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_OUTPUT", dart_output)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TIME_OUTPUT", time_output)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PLOT_OUTPUT", plot_output)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DIFF_OUTPUT", diff_output)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_VERBOSE", verbose)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DEBUG", debug)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_BANNER", banner)
@@ -532,6 +548,9 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_OUTPUT_PER_NODE", mpi_output_per_node)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PATH", output_path)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PREFIX", output_prefix)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_INPUT_PATH", input_path)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_INPUT_PREFIX", input_prefix)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_INPUT_EXTENSIONS", input_extensions)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_TYPE", dart_type)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_COUNT", dart_count)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_LABEL", dart_label)

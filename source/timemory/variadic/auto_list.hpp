@@ -121,102 +121,114 @@ public:
     ~auto_list();
 
     // copy and move
-    inline auto_list(const this_type&) = default;
-    inline auto_list(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
+    auto_list(const this_type&) = default;
+    auto_list(this_type&&)      = default;
+    this_type& operator=(const this_type&) = default;
+    this_type& operator=(this_type&&) = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 
 public:
     // public member functions
-    inline component_type&       get_component() { return m_temporary_object; }
-    inline const component_type& get_component() const { return m_temporary_object; }
+    component_type&       get_component() { return m_temporary_object; }
+    const component_type& get_component() const { return m_temporary_object; }
 
-    inline operator component_type&() { return m_temporary_object; }
-    inline operator const component_type&() const { return m_temporary_object; }
+    operator component_type&() { return m_temporary_object; }
+    operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
-    inline void push()
+    void push()
     {
         if(m_enabled)
             m_temporary_object.push();
     }
-    inline void pop()
+    void pop()
     {
         if(m_enabled)
             m_temporary_object.pop();
     }
     template <typename... Args>
-    inline void measure(Args&&... args)
+    void measure(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.measure(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void sample(Args&&... args)
+    void sample(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.sample(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void start(Args&&... args)
+    void start(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.start(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void stop(Args&&... args)
+    void stop(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.stop(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void mark_begin(Args&&... args)
+    void assemble(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.assemble(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void dismantle(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.dismantle(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void mark_begin(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.mark_begin(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void mark_end(Args&&... args)
+    void mark_end(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void store(Args&&... args)
+    void store(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.store(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline void audit(Args&&... args)
+    void audit(Args&&... args)
     {
         if(m_enabled)
             m_temporary_object.audit(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline auto get(Args&&... args) const
+    auto get(Args&&... args) const
     {
         return m_temporary_object.get(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    inline auto get_labeled(Args&&... args) const
+    auto get_labeled(Args&&... args) const
     {
         return m_temporary_object.get_labeled(std::forward<Args>(args)...);
     }
 
-    inline bool enabled() const { return m_enabled; }
-    inline void report_at_exit(bool val) { m_report_at_exit = val; }
-    inline bool report_at_exit() const { return m_report_at_exit; }
+    bool enabled() const { return m_enabled; }
+    void report_at_exit(bool val) { m_report_at_exit = val; }
+    bool report_at_exit() const { return m_report_at_exit; }
 
-    inline bool             store() const { return m_temporary_object.store(); }
-    inline data_type&       data() { return m_temporary_object.data(); }
-    inline const data_type& data() const { return m_temporary_object.data(); }
-    inline int64_t          laps() const { return m_temporary_object.laps(); }
-    inline string_t         key() const { return m_temporary_object.key(); }
-    inline uint64_t         hash() const { return m_temporary_object.hash(); }
-    inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    bool             store() const { return m_temporary_object.store(); }
+    data_type&       data() { return m_temporary_object.data(); }
+    const data_type& data() const { return m_temporary_object.data(); }
+    int64_t          laps() const { return m_temporary_object.laps(); }
+    string_t         key() const { return m_temporary_object.key(); }
+    uint64_t         hash() const { return m_temporary_object.hash(); }
+    void             rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     template <typename _Tp>
@@ -231,7 +243,7 @@ public:
         return m_temporary_object.template get<_Tp>();
     }
 
-    inline void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
+    void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
 
     template <typename _Tp, typename... _Args>
     void init(_Args&&... _args)

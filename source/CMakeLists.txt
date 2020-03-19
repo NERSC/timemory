@@ -28,8 +28,6 @@ file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
-file(GLOB_RECURSE
-    cxx_extern_sources              ${CMAKE_CURRENT_LIST_DIR}/extern/*.cpp)
 
 set(_CATEGORIES backends mpl utility variadic)
 # bits folder
@@ -43,7 +41,7 @@ foreach(_CATEGORY ${_CATEGORIES})
 endforeach()
 
 # all the headers
-set(timemory_headers
+set(timemory_glob_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
     ${cxx_headers_backends} ${cxx_headers_ert}
     ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_extern}
@@ -52,7 +50,7 @@ set(timemory_headers
     ${cxx_headers_general} ${cxx_headers_runtime} ${compat_headers})
 
 if(TIMEMORY_SOURCE_GROUP)
-    source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_headers})
+    source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_glob_headers})
 endif()
 
 # this is only needed for windows
@@ -60,40 +58,18 @@ file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 
 #----------------------------------------------------------------------------------------#
-# this includes compile definitions for headers
-#
-add_subdirectory(timemory)
-
-message(STATUS "Enabled  extern components libraries: ${TIMEMORY_ENABLED_COMPONENTS}")
-message(STATUS "Disabled extern components libraries: ${TIMEMORY_DISABLED_COMPONENTS}")
-
-set(_USE_EXTERN TIMEMORY_USE_EXTERN)
-if(WIN32)
-    set(_USE_EXTERN )
-endif()
-
-# need to compile these as CUDA or else roofline and ert does not work
-if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER)
-    set_source_files_properties(${cxx_extern_sources} PROPERTIES
-        LANGUAGE        CUDA
-        LINKER_LANGUAGE CUDA)
-endif()
-
-#----------------------------------------------------------------------------------------#
 # build library setup
 #
 # directly compile sources
-set(C_LIBRARY_SOURCES        ${c_sources}   ${c_headers})
-# routinely have problems with OBJECT libraries on Windows
+set(C_LIBRARY_SOURCES       ${c_sources}   ${c_headers})
+set(CXX_LIBRARY_SOURCES     ${cxx_sources} ${timemory_glob_headers} ${cereal_headers})
+
+#----------------------------------------------------------------------------------------#
+# build the C++ libraries
+#
+set(_USE_EXTERN TIMEMORY_USE_EXTERN)
 if(WIN32)
-    set(CXX_EXTERN_SOURCES   )
-    set(CXX_EXTERN_TARGETS   "")
-    set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${cxx_extern_sources} ${timemory_headers}
-                             ${cereal_headers})
-else()
-    set(CXX_EXTERN_SOURCES   ${cxx_extern_sources})
-    set(CXX_EXTERN_TARGETS   "$<TARGET_OBJECTS:timemory-cxx-object>")
-    set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
+    set(_USE_EXTERN )
 endif()
 
 set(_ARCH_LIBRARY )
@@ -101,351 +77,40 @@ if(TIMEMORY_USE_ARCH)
     set(_ARCH_LIBRARY timemory-arch)
 endif()
 
-#----------------------------------------------------------------------------------------#
-# build the C++ libraries
-#
-set(_PRIVATE_INTERFACES )
-
 set(_ANALYSIS_TOOLS timemory-analysis-tools)
 if(NOT _GPERF_IN_LIBRARY)
     set(_ANALYSIS_TOOLS)
 endif()
 
 set(_LINKER_LANGUAGE CXX)
-
-function(TIMEMORY_GET_INTERNAL_DEPENDS VAR)
-    # set the depends before creating the library so it does not
-    # link to itself
-    set(DEPENDS)
-    foreach(DEP ${ARGN})
-        if(TARGET ${DEP})
-            list(APPEND DEPENDS ${DEP})
-        endif()
-        if(TARGET ${DEP}-${LINK})
-            list(APPEND DEPENDS ${DEP}-${LINK})
-        endif()
-        if(TARGET ${DEP}-component-${LINK})
-            list(APPEND DEPENDS ${DEP}-component-${LINK})
-        endif()
-        if(TARGET timemory-${DEP}-${LINK})
-            list(APPEND DEPENDS timemory-${DEP}-${LINK})
-        endif()
-        if(TARGET timemory-${DEP}-component-${LINK})
-            list(APPEND DEPENDS timemory-${DEP}-component-${LINK})
-        endif()
-    endforeach()
-    set(${VAR} "${DEPENDS}" PARENT_SCOPE)
-endfunction()
-
-#----------------------------------------------------------------------------------------#
-#
-#                   GLOBAL libraries which are basically used everywhere
-#
-#----------------------------------------------------------------------------------------#
-
-set(TIMEMORY_SHARED_GLOBAL_LIBRARIES)
-set(TIMEMORY_STATIC_GLOBAL_LIBRARIES)
-
-foreach(COMP ${TIMEMORY_GLOBAL})
-
-    if(WIN32)
-        list(APPEND CXX_LIBRARY_SOURCES ${${COMP}_HEADERS})
-        continue()
-    endif()
-
-    if("${${COMP}_SOURCES}" STREQUAL "")
-        continue()
-    endif()
-
-    string(TOUPPER "${COMP}" UPP_COMP)
-
-    set(_LIB_TYPES)
-    if(_BUILD_SHARED_CXX)
-        list(APPEND _LIB_TYPES shared)
-        set(shared_OPTIONS PIC TYPE SHARED)
-        list(APPEND TIMEMORY_SHARED_GLOBAL_LIBRARIES timemory-${COMP}-shared)
-    endif()
-
-    if(_BUILD_STATIC_CXX)
-        list(APPEND _LIB_TYPES static)
-        set(static_OPTIONS TYPE STATIC)
-        list(APPEND TIMEMORY_STATIC_GLOBAL_LIBRARIES timemory-${COMP}-static)
-    endif()
-
-    foreach(LINK ${_LIB_TYPES})
-        string(TOUPPER "${LINK}" UPP_LINK)
-        set(TARGET_NAME timemory-${COMP}-${LINK})
-
-        timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
-
-        list(APPEND timemory_headers ${${COMP}_HEADERS})
-
-        build_library(${${LINK}_OPTIONS}
-            TARGET_NAME         ${TARGET_NAME}
-            OUTPUT_NAME         timemory-${COMP}
-            LANGUAGE            CXX
-            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
-            OUTPUT_DIR          ${PROJECT_BINARY_DIR}/global
-            SOURCES             ${${COMP}_SOURCES}
-                                ${${COMP}_HEADERS}
-            CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
-
-        target_link_libraries(${TARGET_NAME} PUBLIC
-            timemory-headers
-            timemory-vector
-            timemory-external-${LINK}
-            ${DEPENDS})
-
-        target_link_libraries(${TARGET_NAME} PRIVATE
-            timemory-compile-options
-            timemory-develop-options
-            ${_ANALYSIS_TOOLS}
-            ${_ARCH_LIBRARY})
-
-        if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-            target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG)
-        endif()
-
-        target_compile_definitions(${TARGET_NAME} PUBLIC  ${_USE_EXTERN})
-        target_compile_definitions(${TARGET_NAME} PRIVATE
-            TIMEMORY_SOURCE
-            TIMEMORY_GLOBAL_SOURCE
-            TIMEMORY_${UPP_COMP}_SOURCE)
-
-        target_compile_definitions(${TARGET_NAME} PUBLIC
-            TIMEMORY_USE_GLOBAL_EXTERN
-            TIMEMORY_USE_${UPP_COMP}_EXTERN)
-
-    endforeach()
-
-endforeach()
-
-#----------------------------------------------------------------------------------------#
-#
-#                   OBJECT libraries
-#
-#----------------------------------------------------------------------------------------#
-
-# routinely have problems with OBJECT libraries on Windows
-if(NOT WIN32 AND (_BUILD_SHARED_CXX OR _BUILD_STATIC_CXX))
-    build_library(
-        PIC
-        TYPE                OBJECT
-        TARGET_NAME         timemory-cxx-object
-        OUTPUT_NAME         timemory
-        LANGUAGE            CXX
-        LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
-        SOURCES             ${CXX_EXTERN_SOURCES}
-        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        COMPILE_DEFINITIONS ${_USE_EXTERN})
-
-    target_link_libraries(timemory-cxx-object PUBLIC
-        timemory-headers
-        timemory-vector
-        timemory-external-shared
-        timemory-external-static)
-
-    target_link_libraries(timemory-cxx-object PRIVATE
-        timemory-compile-options
-        timemory-develop-options
-        ${_ANALYSIS_TOOLS}
-        ${_ARCH_LIBRARY})
-
-    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        target_compile_definitions(timemory-cxx-object PRIVATE DEBUG)
-    endif()
-
+if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER)
+    set(_LINKER_LANGUAGE CUDA)
 endif()
 
 #----------------------------------------------------------------------------------------#
 #
-#                   COMPONENT libraries
+#                   Intermediate libraries
 #
 #----------------------------------------------------------------------------------------#
 
-set(TIMEMORY_SHARED_COMPONENT_LIBRARIES )
-set(TIMEMORY_STATIC_COMPONENT_LIBRARIES )
 
-foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
+add_subdirectory(timemory)
 
-    if(WIN32)
-        list(APPEND CXX_LIBRARY_SOURCES ${${COMP}_HEADERS})
-        continue()
-    endif()
-
-    if("${${COMP}_SOURCES}" STREQUAL "")
-        continue()
-    endif()
-
-    string(TOUPPER "${COMP}" UPP_COMP)
-
-    set(_LIB_TYPES)
-    if(_BUILD_SHARED_CXX)
-        list(APPEND _LIB_TYPES shared)
-        set(shared_OPTIONS PIC TYPE SHARED)
-        list(APPEND TIMEMORY_SHARED_COMPONENT_LIBRARIES timemory-${COMP}-component-shared)
-    endif()
-
-    if(_BUILD_STATIC_CXX)
-        list(APPEND _LIB_TYPES static)
-        set(static_OPTIONS TYPE STATIC)
-        list(APPEND TIMEMORY_STATIC_COMPONENT_LIBRARIES timemory-${COMP}-component-static)
-    endif()
-
-    set(_SOURCES ${${COMP}_SOURCES} ${${COMP}_HEADERS})
-
-    foreach(LINK ${_LIB_TYPES})
-
-        string(TOUPPER "${LINK}" UPP_LINK)
-        set(TARGET_NAME timemory-${COMP}-component-${LINK})
-
-        # set the depends before creating the library so it does not
-        # link to itself
-        timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
-
-        list(APPEND timemory_headers ${${COMP}_HEADERS})
-
-        build_library(${${LINK}_OPTIONS}
-            TARGET_NAME         ${TARGET_NAME}
-            OUTPUT_NAME         timemory-${COMP}-component
-            LANGUAGE            CXX
-            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
-            OUTPUT_DIR          ${PROJECT_BINARY_DIR}/components
-            SOURCES             ${_SOURCES}
-            CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
-
-        target_link_libraries(${TARGET_NAME} PUBLIC
-            timemory-headers
-            timemory-vector
-            timemory-external-${LINK}
-            ${DEPENDS}
-            ${TIMEMORY_${UPP_LINK}_GLOBAL_LIBRARIES})
-
-        target_link_libraries(${TARGET_NAME} PRIVATE
-            timemory-compile-options
-            timemory-develop-options
-            ${_ANALYSIS_TOOLS}
-            ${_ARCH_LIBRARY})
-
-        if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-            target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG)
-        endif()
-
-        target_compile_definitions(${TARGET_NAME} PUBLIC  ${_USE_EXTERN})
-        target_compile_definitions(${TARGET_NAME} PRIVATE
-            TIMEMORY_SOURCE
-            TIMEMORY_COMPONENT_SOURCE
-            TIMEMORY_${UPP_COMP}_SOURCE)
-
-        target_compile_definitions(${TARGET_NAME} PUBLIC
-            TIMEMORY_USE_COMPONENT_EXTERN
-            TIMEMORY_USE_${UPP_COMP}_EXTERN)
-
-    endforeach()
-
-endforeach()
-
-if(WIN32)
-    foreach(COMP ${TIMEMORY_ENABLED_COMPONENTS})
-        if(TARGET timemory-${COMP}-component-shared)
-            if(_WIN32_DEPENDS)
-                add_dependencies(timemory-${COMP}-component-shared ${_WIN32_DEPENDS})
-            endif()
-            list(APPEND _WIN32_DEPENDS timemory-${COMP}-component-shared) 
-        endif()
-    endforeach()
-endif()
-
-set(TIMEMORY_COMPONENT_LIBRARIES
-    ${TIMEMORY_SHARED_COMPONENT_LIBRARIES} ${TIMEMORY_STATIC_COMPONENT_LIBRARIES})
-
-message(STATUS "TIMEMORY_COMPONENT_LIBRARIES: ${TIMEMORY_COMPONENT_LIBRARIES}")
 
 #----------------------------------------------------------------------------------------#
 #
-#               EXTERN libraries which are have no subsequent dependencies
+#                       MASTER CXX libraries
 #
 #----------------------------------------------------------------------------------------#
 
-set(TIMEMORY_SHARED_EXTERN_LIBRARIES)
-set(TIMEMORY_STATIC_EXTERN_LIBRARIES)
+get_property(CXX_EXTRA_SOURCES GLOBAL PROPERTY TIMEMORY_CXX_LIBRARY_SOURCES)
 
-foreach(COMP ${TIMEMORY_EXTERN})
-
-    if(WIN32)
-        list(APPEND CXX_LIBRARY_SOURCES ${${COMP}_HEADERS})
-        continue()
-    endif()
-
-    if("${${COMP}_SOURCES}" STREQUAL "")
-        continue()
-    endif()
-
-    string(TOUPPER "${COMP}" UPP_COMP)
-
-    set(_LIB_TYPES)
-    if(_BUILD_SHARED_CXX)
-        list(APPEND _LIB_TYPES shared)
-        set(shared_OPTIONS PIC TYPE SHARED)
-        list(APPEND TIMEMORY_SHARED_EXTERN_LIBRARIES timemory-${COMP}-shared)
-    endif()
-
-    if(_BUILD_STATIC_CXX)
-        list(APPEND _LIB_TYPES static)
-        set(static_OPTIONS TYPE STATIC)
-        list(APPEND TIMEMORY_STATIC_EXTERN_LIBRARIES timemory-${COMP}-static)
-    endif()
-
-    foreach(LINK ${_LIB_TYPES})
-        string(TOUPPER "${LINK}" UPP_LINK)
-        set(TARGET_NAME timemory-${COMP}-${LINK})
-
-        timemory_get_internal_depends(DEPENDS ${${COMP}_DEPENDS})
-
-        list(APPEND timemory_headers ${${COMP}_HEADERS})
-
-        build_library(${${LINK}_OPTIONS}
-            TARGET_NAME         ${TARGET_NAME}
-            OUTPUT_NAME         timemory-${COMP}
-            LANGUAGE            CXX
-            LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
-            OUTPUT_DIR          ${PROJECT_BINARY_DIR}/extern
-            SOURCES             ${${COMP}_SOURCES}
-                                ${${COMP}_HEADERS}
-            CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
-
-        target_link_libraries(${TARGET_NAME} PUBLIC
-            timemory-headers
-            timemory-vector
-            timemory-external-${LINK}
-            ${TIMEMORY_${UPP_LINK}_COMPONENT_LIBRARIES}
-            ${DEPENDS})
-
-        target_link_libraries(${TARGET_NAME} PRIVATE
-            timemory-compile-options
-            timemory-develop-options
-            ${_ANALYSIS_TOOLS}
-            ${_ARCH_LIBRARY})
-
-        if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-            target_compile_definitions(${TARGET_NAME} PRIVATE DEBUG)
-        endif()
-
-        target_compile_definitions(${TARGET_NAME} PUBLIC  ${_USE_EXTERN})
-        target_compile_definitions(${TARGET_NAME} PRIVATE
-            TIMEMORY_SOURCE
-            TIMEMORY_EXTERN_SOURCE
-            TIMEMORY_${UPP_COMP}_SOURCE)
-
-    endforeach()
-
-endforeach()
-
-#----------------------------------------------------------------------------------------#
-#
-#                       EXTERN CXX libraries
-#
-#----------------------------------------------------------------------------------------#
+timemory_get_property_depends(TIMEMORY_SHARED_GLOBAL_LIBRARIES SHARED GLOBAL)
+timemory_get_property_depends(TIMEMORY_STATIC_GLOBAL_LIBRARIES STATIC GLOBAL)
+timemory_get_property_depends(TIMEMORY_SHARED_EXTERN_LIBRARIES SHARED EXTERN)
+timemory_get_property_depends(TIMEMORY_STATIC_EXTERN_LIBRARIES STATIC EXTERN)
+timemory_get_property_depends(TIMEMORY_SHARED_COMPONENT_LIBRARIES SHARED COMPONENT)
+timemory_get_property_depends(TIMEMORY_STATIC_COMPONENT_LIBRARIES STATIC COMPONENT)
 
 if(_BUILD_SHARED_CXX)
     build_library(
@@ -458,6 +123,7 @@ if(_BUILD_SHARED_CXX)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
                             ${CXX_EXTERN_TARGETS}
+                            ${CXX_EXTRA_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
@@ -465,6 +131,7 @@ if(_BUILD_SHARED_CXX)
         timemory-headers
         timemory-vector
         timemory-external-shared
+        ${TIMEMORY_SHARED_GLOBAL_LIBRARIES}
         ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
         ${TIMEMORY_SHARED_EXTERN_LIBRARIES})
 
@@ -473,6 +140,8 @@ if(_BUILD_SHARED_CXX)
         timemory-develop-options
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
+
+    target_compile_definitions(timemory-cxx-shared PUBLIC ${_USE_EXTERN})
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
@@ -494,6 +163,7 @@ if(_BUILD_STATIC_CXX)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
                             ${CXX_EXTERN_TARGETS}
+                            ${CXX_EXTRA_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
@@ -501,6 +171,7 @@ if(_BUILD_STATIC_CXX)
         timemory-headers
         timemory-vector
         timemory-external-static
+        ${TIMEMORY_STATIC_GLOBAL_LIBRARIES}
         ${TIMEMORY_STATIC_COMPONENT_LIBRARIES}
         ${TIMEMORY_STATIC_EXTERN_LIBRARIES})
 
@@ -620,43 +291,37 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+list(REMOVE_DUPLICATES TIMEMORY_COMPILED_LIBRARIES)
+
 # C/C++ compiled libraries
 install(
     TARGETS ${TIMEMORY_COMPILED_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
 
-# C/C++ development headers
-macro(INSTALL_HEADER_FILES)
-    foreach(_header ${ARGN})
-        file(RELATIVE_PATH _relative ${CMAKE_CURRENT_LIST_DIR} ${_header})
-        get_filename_component(_destpath ${_relative} DIRECTORY)
-        install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
-    endforeach()
-endmacro()
+get_property(timemory_headers GLOBAL PROPERTY TIMEMORY_HEADERS)
+get_property(timemory_sources GLOBAL PROPERTY TIMEMORY_SOURCES)
 
+list(APPEND timemory_headers ${timemory_sources} ${timemory_glob_headers})
 list(REMOVE_DUPLICATES timemory_headers)
 
 install_header_files(${timemory_headers})
-
-install(FILES ${cxx_headers_backend}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/backends
-    COMPONENT development)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}-library-depends
     DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
     NAMESPACE ${PROJECT_NAME}::)
 
-export(
-    TARGETS
-        ${TIMEMORY_COMPILED_LIBRARIES}
-        ${TIMEMORY_INTERFACE_LIBRARIES}
-        ${TIMEMORY_ADDITIONAL_EXPORT_TARGETS}
-    NAMESPACE
-        ${PROJECT_NAME}::
-    FILE
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-build.cmake)
+get_property(TIMEMORY_INTERMEDIATE_LIBRARIES GLOBAL PROPERTY TIMEMORY_INTERMEDIATE_TARGETS)
+
+set(LIBRARIES ${TIMEMORY_COMPILED_LIBRARIES}
+              ${TIMEMORY_INTERFACE_LIBRARIES}
+              ${TIMEMORY_INTERMEDIATE_LIBRARIES}
+              ${TIMEMORY_PACKAGE_LIBRARIES})
+
+export(TARGETS  ${LIBRARIES}
+    NAMESPACE   ${PROJECT_NAME}::
+    FILE        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-build.cmake)
 
 
 #----------------------------------------------------------------------------------------#
