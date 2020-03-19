@@ -35,9 +35,9 @@ using tim::type_list;
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_DECLARE_COMPONENT(derivedd_cpu_util)
-TIMEMORY_STATISTICS_TYPE(component::derivedd_cpu_util, double)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::derivedd_cpu_util,
+TIMEMORY_DECLARE_COMPONENT(derived_cpu_util)
+TIMEMORY_STATISTICS_TYPE(component::derived_cpu_util, double)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::derived_cpu_util,
                                true_type)
 
 //--------------------------------------------------------------------------------------//
@@ -47,7 +47,7 @@ namespace tim
 namespace trait
 {
 template <>
-struct derivation_types<derivedd_cpu_util>
+struct derivation_types<derived_cpu_util>
 {
     using type = std::tuple<type_list<wall_clock, cpu_clock>,
                             type_list<wall_clock, user_clock, system_clock>>;
@@ -56,15 +56,15 @@ struct derivation_types<derivedd_cpu_util>
 
 namespace component
 {
-struct derivedd_cpu_util : public base<derivedd_cpu_util, double>
+struct derived_cpu_util : public base<derived_cpu_util, double>
 {
     using ratio_t    = std::nano;
     using value_type = double;
-    using this_type  = derivedd_cpu_util;
+    using this_type  = derived_cpu_util;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "derivedd_cpu_util"; }
-    static std::string description() { return "cpu utilization (derivedd)"; }
+    static std::string label() { return "derived_cpu_util"; }
+    static std::string description() { return "cpu utilization (derived)"; }
 
     double get() const { return (is_transient) ? accum : value; }
     double get_display() const { return get(); }
@@ -102,13 +102,13 @@ struct derivedd_cpu_util : public base<derivedd_cpu_util, double>
 //
 // bundle of tools
 //
-using pair_tuple_t = tim::auto_tuple<derivedd_cpu_util, wall_clock, cpu_clock>;
-using pair_list_t  = tim::auto_list<derivedd_cpu_util, wall_clock, cpu_clock, peak_rss>;
+using pair_tuple_t = tim::auto_tuple<derived_cpu_util, wall_clock, cpu_clock>;
+using pair_list_t  = tim::auto_list<derived_cpu_util, wall_clock, cpu_clock, peak_rss>;
 
 using triplet_tuple_t =
-    tim::auto_tuple<derivedd_cpu_util, wall_clock, user_clock, system_clock, peak_rss>;
+    tim::auto_tuple<derived_cpu_util, wall_clock, user_clock, system_clock, peak_rss>;
 using triplet_list_t =
-    tim::auto_list<derivedd_cpu_util, wall_clock, user_clock, system_clock>;
+    tim::auto_list<derived_cpu_util, wall_clock, user_clock, system_clock>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -132,17 +132,17 @@ main(int argc, char** argv)
 
     // initially, provide all necessary info to compute
     pair_list_t::get_initializer() = [&](pair_list_t& pl) {
-        pl.initialize<wall_clock, cpu_clock, derivedd_cpu_util>();
+        pl.initialize<wall_clock, cpu_clock, derived_cpu_util>();
     };
 
     // initially, don't provide system_clock
     triplet_list_t::get_initializer() = [&](triplet_list_t& tl) {
-        tl.initialize<wall_clock, user_clock, derivedd_cpu_util>();
+        tl.initialize<wall_clock, user_clock, derived_cpu_util>();
     };
 
     for(int i = 0; i < nitr; ++i)
     {
-        // should always report derivedd_cpu_util
+        // should always report derived_cpu_util
         TIMEMORY_BLANK_MARKER(pair_tuple_t, "pair_tuple     ");
         long ans = fib(nfib);
 
@@ -153,7 +153,7 @@ main(int argc, char** argv)
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
         {
-            // should always report derivedd_cpu_util
+            // should always report derived_cpu_util
             TIMEMORY_BLANK_MARKER(triplet_tuple_t, "triplet_tuple/", i);
             ans += fib(nfib - 1);
         }
@@ -171,10 +171,10 @@ main(int argc, char** argv)
         {
             // add system_clock to initialization
             triplet_list_t::get_initializer() = [&](triplet_list_t& tl) {
-                tl.initialize<wall_clock, user_clock, system_clock, derivedd_cpu_util>();
+                tl.initialize<wall_clock, user_clock, system_clock, derived_cpu_util>();
             };
 
-            // remove derivedd_cpu_util from initialization
+            // remove derived_cpu_util from initialization
             pair_list_t::get_initializer() = [&](pair_list_t& pl) {
                 pl.initialize<wall_clock, cpu_clock>();
             };
