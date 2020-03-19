@@ -33,17 +33,51 @@
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/macros.hpp"
+#include "timemory/variadic/types.hpp"
 
 #include <functional>
 #include <iosfwd>
 
+namespace std
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+TSTAG(struct)
+tuple_size<::tim::type_list<Types...>>
+{
+public:
+    static constexpr size_t value = sizeof...(Types);
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace std
+
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct remove_pointers;
+//
+template <template <typename...> class Tuple, typename... Tp>
+struct remove_pointers<Tuple<Tp...>>
+{
+    using type = Tuple<std::remove_pointer_t<Tp>...>;
+};
+//
+template <typename Tp>
+using remove_pointers_t = typename remove_pointers<Tp>::type;
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace utility
 {
 struct stream;
 }
-
 //
 //--------------------------------------------------------------------------------------//
 //

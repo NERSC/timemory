@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(timemory-Assemble-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-assemble-example)
-set(COMPONENTS headers compile-options analysis-tools OPTIONAL_COMPONENTS)
+set(COMPONENTS headers compile-options analysis-tools OPTIONAL_COMPONENTS cxx)
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 

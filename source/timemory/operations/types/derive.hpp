@@ -39,10 +39,48 @@
 //
 //======================================================================================//
 
+#include "timemory/utility/utility.hpp"
+
 namespace tim
 {
 namespace operation
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+//
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct fold_derive;
+
+template <template <typename...> class CompT, typename... C>
+struct fold_derive<CompT<C...>>
+{
+public:
+    TIMEMORY_DELETED_OBJECT(fold_derive)
+
+    template <typename Up, typename Arg, typename... Args>
+    fold_derive(bool& b, Up& obj, Arg&& arg, Args&&...)
+    {
+        if(!b)
+            sfinae(b, obj, 0, std::forward<Arg>(arg));
+    }
+
+private:
+    //  satisfies mpl condition and accepts arguments
+    template <typename Up, typename Arg>
+    auto sfinae(bool& b, Up& obj, int, Arg&& arg)
+        -> decltype(obj.derive(arg.template get<C>()...), void())
+    {
+        b = obj.derive(arg.template get<C>()...);
+    }
+
+    template <typename Up, typename Arg>
+    void sfinae(bool&, Up&, long, Arg&&)
+    {}
+};
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -57,10 +95,35 @@ struct derive
     using value_type = typename type::value_type;
     using base_type  = typename type::base_type;
 
+    using derived_tuple_t                   = typename trait::derivation_types<Tp>::type;
+    static constexpr size_t derived_tuple_v = std::tuple_size<derived_tuple_t>::value;
+    template <size_t Idx>
+    using derived_t = typename std::tuple_element<Idx, derived_tuple_t>::type;
+
     TIMEMORY_DELETED_OBJECT(derive)
 
+public:
     template <typename... Args>
     explicit derive(type& obj, Args&&... args);
+
+    template <typename Arg, size_t N = derived_tuple_v,
+              std::enable_if_t<(N > 0), int> = 0>
+    explicit derive(type& obj, Arg&& arg)
+    {
+        bool b = false;
+        sfinae(b, obj, make_index_sequence<N>{}, std::forward<Arg>(arg));
+        if(!b)
+            sfinae(obj, 0, 0, std::forward<Arg>(arg));
+    }
+
+private:
+    //  satisfies mpl condition and accepts arguments
+    template <typename Up, size_t... Idx, typename... Args>
+    auto sfinae(bool& b, Up& obj, index_sequence<Idx...>, Args&&... args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(
+            fold_derive<derived_t<Idx>>(b, obj, std::forward<Args>(args)...));
+    }
 
 private:
     //  satisfies mpl condition and accepts arguments

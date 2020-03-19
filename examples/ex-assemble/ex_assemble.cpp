@@ -42,20 +42,18 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::assembled_cpu_util
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp>
-struct remove_pointers;
-
-template <template <typename...> class Tuple, typename... Tp>
-struct remove_pointers<Tuple<Tp...>>
-{
-    using type = Tuple<std::remove_pointer_t<Tp>...>;
-};
-
-template <typename Tp>
-using remove_pointers_t = typename remove_pointers<Tp>::type;
-
 namespace tim
 {
+namespace trait
+{
+template <>
+struct derivation_types<assembled_cpu_util>
+{
+    using type = std::tuple<type_list<wall_clock, cpu_clock>,
+                            type_list<wall_clock, user_clock, system_clock>>;
+};
+}  // namespace trait
+
 namespace component
 {
 struct assembled_cpu_util : public base<assembled_cpu_util, double>
@@ -68,68 +66,33 @@ struct assembled_cpu_util : public base<assembled_cpu_util, double>
     static std::string label() { return "assembled_cpu_util"; }
     static std::string description() { return "cpu utilization (assembled)"; }
 
-    struct pair_match;
-    struct triplet_match;
-    struct no_match;
-
-    template <typename Tp>
-    struct assembled_match
-    {
-        using TupleT = remove_pointers_t<Tp>;
-
-        static constexpr bool pair_v =
-            (is_one_of<wall_clock, TupleT>::value && is_one_of<cpu_clock, TupleT>::value);
-
-        static constexpr bool triplet_v = (is_one_of<wall_clock, TupleT>::value &&
-                                           is_one_of<user_clock, TupleT>::value &&
-                                           is_one_of<system_clock, TupleT>::value);
-        using type                      = conditional_t<(pair_v), pair_match,
-                                   conditional_t<(triplet_v), triplet_match, no_match>>;
-    };
-
-    template <typename Tp>
-    using assembled_match_t = typename assembled_match<Tp>::type;
-
     double get() const { return (is_transient) ? accum : value; }
-
     double get_display() const { return get(); }
+    void   start() {}
+    void   stop() {}
 
-    void start() {}
-    void stop() {}
-
-    template <template <typename...> class Tuple, typename T, typename... Tail,
-              typename MatchT = assembled_match_t<Tuple<T, Tail...>>,
-              enable_if_t<(std::is_same<MatchT, pair_match>::value), int> = 0>
-    void derive(const Tuple<T, Tail...>& wrapper)
+    bool derive(const wall_clock* wc, const cpu_clock* cc)
     {
-        compute(wrapper.template get<wall_clock>(), wrapper.template get<cpu_clock>());
-    }
-
-    template <template <typename...> class Tuple, typename T, typename... Tail,
-              typename MatchT = assembled_match_t<Tuple<T, Tail...>>,
-              enable_if_t<(std::is_same<MatchT, triplet_match>::value), int> = 0>
-    void derive(const Tuple<T, Tail...>& wrapper)
-    {
-        compute(wrapper.template get<wall_clock>(), wrapper.template get<user_clock>(),
-                wrapper.template get<system_clock>());
-    }
-
-    void compute(const wall_clock* wc, const cpu_clock* cc)
-    {
+        // DEBUG_PRINT_HERE("%s: %p %p", "successful derivation", wc, cc);
         if(wc && cc)
         {
             value = 100.0 * (cc->get() / wc->get());
             accum += value;
+            return true;
         }
+        return false;
     }
 
-    void compute(const wall_clock* wc, const user_clock* uc, const system_clock* sc)
+    bool derive(const wall_clock* wc, const user_clock* uc, const system_clock* sc)
     {
+        // DEBUG_PRINT_HERE("%s: %p %p %p", "successful derivation", wc, uc, sc);
         if(wc && uc && sc)
         {
             value = 100.0 * ((uc->get() + sc->get()) / wc->get());
             accum += value;
+            return true;
         }
+        return false;
     }
 };
 }  // namespace component
@@ -139,13 +102,13 @@ struct assembled_cpu_util : public base<assembled_cpu_util, double>
 //
 // bundle of tools
 //
-using pair_tuple_t = tim::auto_tuple<wall_clock, cpu_clock, assembled_cpu_util>;
-using pair_list_t  = tim::auto_list<wall_clock, cpu_clock, peak_rss, assembled_cpu_util>;
+using pair_tuple_t = tim::auto_tuple<assembled_cpu_util, wall_clock, cpu_clock>;
+using pair_list_t  = tim::auto_list<assembled_cpu_util, wall_clock, cpu_clock, peak_rss>;
 
 using triplet_tuple_t =
-    tim::auto_tuple<wall_clock, user_clock, system_clock, peak_rss, assembled_cpu_util>;
+    tim::auto_tuple<assembled_cpu_util, wall_clock, user_clock, system_clock, peak_rss>;
 using triplet_list_t =
-    tim::auto_list<wall_clock, user_clock, system_clock, assembled_cpu_util>;
+    tim::auto_list<assembled_cpu_util, wall_clock, user_clock, system_clock>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -169,7 +132,7 @@ main(int argc, char** argv)
 
     // initially, provide all necessary info to compute
     pair_list_t::get_initializer() = [&](pair_list_t& pl) {
-        pl.initialize<wall_clock, cpu_clock, peak_rss, assembled_cpu_util>();
+        pl.initialize<wall_clock, cpu_clock, assembled_cpu_util>();
     };
 
     // initially, don't provide system_clock
@@ -213,7 +176,7 @@ main(int argc, char** argv)
 
             // remove assembled_cpu_util from initialization
             pair_list_t::get_initializer() = [&](pair_list_t& pl) {
-                pl.initialize<wall_clock, cpu_clock, peak_rss>();
+                pl.initialize<wall_clock, cpu_clock>();
             };
         }
     }
