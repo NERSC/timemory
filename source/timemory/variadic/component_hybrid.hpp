@@ -291,10 +291,10 @@ public:
     /// provide conclusive info to the objects with matching arguments
     //
     template <typename... Args>
-    void dismantle(Args&&... args)
+    void derive(Args&&... args)
     {
-        m_tuple.dismantle(std::forward<Args>(args)...);
-        m_list.dismantle(std::forward<Args>(args)...);
+        m_tuple.derive(std::forward<Args>(args)...);
+        m_list.derive(std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//

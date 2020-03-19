@@ -417,7 +417,7 @@
                 COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;             \
             extern template struct copy<COMPONENT_NAME>;                                 \
             extern template struct assemble<COMPONENT_NAME>;                             \
-            extern template struct dismantle<COMPONENT_NAME>;                            \
+            extern template struct derive<COMPONENT_NAME>;                               \
             extern template struct finalize::get<COMPONENT_NAME, HAS_DATA>;              \
             extern template struct finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;          \
             extern template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;          \
@@ -475,7 +475,7 @@
                 COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;             \
             template struct copy<COMPONENT_NAME>;                                        \
             template struct assemble<COMPONENT_NAME>;                                    \
-            template struct dismantle<COMPONENT_NAME>;                                   \
+            template struct derive<COMPONENT_NAME>;                                      \
             template struct finalize::get<COMPONENT_NAME, HAS_DATA>;                     \
             template struct finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;                 \
             template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                 \

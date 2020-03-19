@@ -23,8 +23,8 @@
 // SOFTWARE.
 
 /**
- * \file timemory/operations/types/dismantle.hpp
- * \brief Definition for various functions for dismantle in operations
+ * \file timemory/operations/types/derive.hpp
+ * \brief Definition for various functions for derive in operations
  */
 
 #pragma once
@@ -51,31 +51,31 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-struct dismantle
+struct derive
 {
     using type       = Tp;
     using value_type = typename type::value_type;
     using base_type  = typename type::base_type;
 
-    TIMEMORY_DELETED_OBJECT(dismantle)
+    TIMEMORY_DELETED_OBJECT(derive)
 
     template <typename... Args>
-    explicit dismantle(type& obj, Args&&... args);
+    explicit derive(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, typename... Args>
     auto sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.dismantle(std::forward<Args>(args)...), void())
+        -> decltype(obj.derive(std::forward<Args>(args)...), void())
     {
-        obj.dismantle(std::forward<Args>(args)...);
+        obj.derive(std::forward<Args>(args)...);
     }
 
     //  satisfies mpl condition but does not accept arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.dismantle(), void())
+    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.derive(), void())
     {
-        obj.dismantle();
+        obj.derive();
     }
 
     //  no member function or does not satisfy mpl condition
@@ -90,7 +90,7 @@ private:
 //
 template <typename Tp>
 template <typename... Args>
-dismantle<Tp>::dismantle(type& obj, Args&&... args)
+derive<Tp>::derive(type& obj, Args&&... args)
 {
     sfinae(obj, 0, 0, std::forward<Args>(args)...);
 }

@@ -244,10 +244,10 @@ public:
     /// provide conclusive info to the objects with matching arguments
     //
     template <typename... Args>
-    void dismantle(Args&&... _args)
+    void derive(Args&&... _args)
     {
-        using dismantle_t = operation_t<operation::dismantle>;
-        apply_v::access<dismantle_t>(m_data, std::forward<Args>(_args)...);
+        using derive_t = operation_t<operation::derive>;
+        apply_v::access<derive_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

@@ -90,10 +90,7 @@ struct assembled_cpu_util : public base<assembled_cpu_util, double>
     template <typename Tp>
     using assembled_match_t = typename assembled_match<Tp>::type;
 
-    double get() const
-    {
-        return (is_transient) ? accum : value;
-    }
+    double get() const { return (is_transient) ? accum : value; }
 
     double get_display() const { return get(); }
 
@@ -103,7 +100,7 @@ struct assembled_cpu_util : public base<assembled_cpu_util, double>
     template <template <typename...> class Tuple, typename T, typename... Tail,
               typename MatchT = assembled_match_t<Tuple<T, Tail...>>,
               enable_if_t<(std::is_same<MatchT, pair_match>::value), int> = 0>
-    void dismantle(const Tuple<T, Tail...>& wrapper)
+    void derive(const Tuple<T, Tail...>& wrapper)
     {
         compute(wrapper.template get<wall_clock>(), wrapper.template get<cpu_clock>());
     }
@@ -111,7 +108,7 @@ struct assembled_cpu_util : public base<assembled_cpu_util, double>
     template <template <typename...> class Tuple, typename T, typename... Tail,
               typename MatchT = assembled_match_t<Tuple<T, Tail...>>,
               enable_if_t<(std::is_same<MatchT, triplet_match>::value), int> = 0>
-    void dismantle(const Tuple<T, Tail...>& wrapper)
+    void derive(const Tuple<T, Tail...>& wrapper)
     {
         compute(wrapper.template get<wall_clock>(), wrapper.template get<user_clock>(),
                 wrapper.template get<system_clock>());
@@ -165,7 +162,7 @@ main(int argc, char** argv)
 {
     tim::timemory_init(argc, argv);
     tim::settings::destructor_report() = true;
-    tim::settings::width() = 12;
+    tim::settings::width()             = 12;
 
     long nfib = (argc > 1) ? atol(argv[1]) : 40;
     int  nitr = (argc > 2) ? atoi(argv[2]) : 10;

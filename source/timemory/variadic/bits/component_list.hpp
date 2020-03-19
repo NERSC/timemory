@@ -273,7 +273,7 @@ component_list<Types...>::stop(Args&&... args)
     // increment laps
     ++m_laps;
 
-    dismantle(*this);
+    derive(*this);
 
     // pop components off of the call-stack stack
     pop();

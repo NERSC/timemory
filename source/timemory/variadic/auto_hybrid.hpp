@@ -176,10 +176,10 @@ public:
             m_temporary_object.assemble(std::forward<Args>(args)...);
     }
     template <typename... Args>
-    void dismantle(Args&&... args)
+    void derive(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.dismantle(std::forward<Args>(args)...);
+            m_temporary_object.derive(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void mark_begin(Args&&... args)
