@@ -43,8 +43,9 @@
 #include <vector>
 
 using namespace tim::component;
-using auto_timer_t    = tim::auto_timer;
-using complete_list_t = TIMEMORY_LIBRARY_TYPE;
+using auto_timer_t      = tim::auto_timer;
+using library_toolset_t = TIMEMORY_LIBRARY_TYPE;
+using complete_list_t   = typename library_toolset_t::component_type;
 
 //======================================================================================//
 //
@@ -103,7 +104,7 @@ extern "C"
             return nullptr;
         using namespace tim::component;
         std::string key_tag(timer_tag);
-        auto*       obj = new auto_timer_t(key_tag, true, tim::settings::flat_profile());
+        auto*       obj = new auto_timer_t(key_tag, tim::settings::flat_profile());
         obj->start();
         return (void*) obj;
     }

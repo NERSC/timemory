@@ -33,9 +33,10 @@
 
 using namespace tim::component;
 
-using api_t         = tim::api::native_tag;
-using mpi_toolset_t = TIMEMORY_LIBRARY_TYPE;
-using mpip_handle_t = mpip_handle<mpi_toolset_t, api_t>;
+using api_t             = tim::api::native_tag;
+using library_toolset_t = TIMEMORY_LIBRARY_TYPE;
+using mpi_toolset_t     = typename library_toolset_t::component_type;
+using mpip_handle_t     = mpip_handle<mpi_toolset_t, api_t>;
 
 extern "C"
 {

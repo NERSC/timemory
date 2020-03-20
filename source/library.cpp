@@ -57,7 +57,8 @@ extern "C"
 struct timemory_trace;
 using trace_bundle_t     = user_bundle<0, timemory_trace>;
 using traceset_t         = tim::component_tuple<trace_bundle_t>;
-using toolset_t          = TIMEMORY_LIBRARY_TYPE;
+using library_toolset_t  = TIMEMORY_LIBRARY_TYPE;
+using toolset_t          = typename library_toolset_t::component_type;
 using region_map_t       = std::unordered_map<std::string, std::stack<uint64_t>>;
 using record_map_t       = std::unordered_map<uint64_t, toolset_t>;
 using trace_map_t        = std::unordered_map<size_t, std::vector<traceset_t*>>;

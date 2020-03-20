@@ -75,7 +75,6 @@ uint64_t
 get_cu_storage_size()
 {
     return tim::storage<cpu_util>::instance()->size();
-    ;
 }
 
 uint64_t

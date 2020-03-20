@@ -358,6 +358,13 @@ TEST_F(library_tests, auto_timers)
     auto uc_n = uc_size_orig + 2;
     auto sc_n = sc_size_orig + 2;
 
+    printf("\n");
+    printf("wc_size_now = %lu\n", (long unsigned) wc_n);
+    printf("cu_size_now = %lu\n", (long unsigned) cu_n);
+    printf("cc_size_now = %lu\n", (long unsigned) cc_n);
+    printf("pr_size_now = %lu\n", (long unsigned) pr_n);
+    printf("\n");
+
     ASSERT_EQ(get_wc_storage_size(), wc_n);
     ASSERT_EQ(get_cu_storage_size(), cu_n);
     ASSERT_EQ(get_cc_storage_size(), cc_n);
