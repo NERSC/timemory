@@ -13,6 +13,7 @@ import traceback
 import warnings
 import multiprocessing as mp
 import pyctest.pyctest as pyct
+import pyctest.pycmake as pycm
 import pyctest.helpers as helpers
 
 clobber_notes = True
@@ -114,6 +115,8 @@ def configure():
                         default="17", choices=("14", "17", "20"))
     parser.add_argument("--generate", help="Generate the tests only",
                         action='store_true')
+    parser.add_argument("-j", "--cpu-count", type=int, default=mp.cpu_count(),
+                        help="Parallel build jobs to run")
 
     args = parser.parse_args()
 
@@ -326,8 +329,8 @@ def run_pyctest():
     # parallel build
     #
     if platform.system() != "Windows":
-        pyct.BUILD_COMMAND = "{} -- -j{} VERBOSE=1".format(
-            pyct.BUILD_COMMAND, mp.cpu_count())
+        pyct.BUILD_COMMAND = "{} -- -j{} {}".format(
+            pyct.BUILD_COMMAND, args.cpu_count, " ".join(pycm.ARGUMENTS))
     else:
         pyct.BUILD_COMMAND = "{} -- /MP -A x64".format(
             pyct.BUILD_COMMAND)
