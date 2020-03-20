@@ -9,6 +9,13 @@ if(TIMEMORY_USE_CUDA)
     set(DEVICE_LANGUAGE CUDA)
 endif()
 
+set(_LIBRARY)
+if(TARGET timemory-cxx-shared)
+    set(_LIBRARY timemory-cxx-shared)
+elseif(TARGET timemory-cxx-static)
+    set(_LIBRARY timemory-cxx-static)
+endif()
+
 # add_library(no-store-merge INTERFACE)
 # add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 
@@ -49,25 +56,29 @@ add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools timemory-ompt)
+                    timemory-plotting timemory-analysis-tools timemory-ompt
+                    ${_LIBRARY})
 
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS
     SOURCES         stl_overload_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 add_timemory_google_test(user_bundle_tests
     DISCOVER_TESTS
     SOURCES         user_bundle_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 add_timemory_google_test(mangle_tests
     DISCOVER_TESTS
     SOURCES         mangle_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 add_timemory_google_test(tuple_tests
     DISCOVER_TESTS
@@ -79,25 +90,29 @@ add_timemory_google_test(macro_tests
     DISCOVER_TESTS
     SOURCES         macro_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 add_timemory_google_test(hybrid_tests
     DISCOVER_TESTS
     SOURCES         hybrid_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    ${HYBRID_COMPONENTS} timemory-plotting timemory-analysis-tools)
+                    ${HYBRID_COMPONENTS} timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 add_timemory_google_test(timing_tests
     DISCOVER_TESTS
     SOURCES         timing_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 add_timemory_google_test(rusage_tests
     DISCOVER_TESTS
     SOURCES         rusage_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 if(TIMEMORY_USE_PAPI)
     add_timemory_google_test(papi_tests
@@ -105,21 +120,24 @@ if(TIMEMORY_USE_PAPI)
         SOURCES         papi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options
                         timemory-develop-options timemory-plotting timemory-analysis-tools
-                        timemory-arch)
+                        timemory-arch
+                        ${_LIBRARY})
 endif()
 
 add_timemory_google_test(apply_tests
     DISCOVER_TESTS
     SOURCES         apply_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 if(TIMEMORY_USE_ARCH)
     add_timemory_google_test(aligned_allocator_tests
         DISCOVER_TESTS
         SOURCES         aligned_allocator_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch timemory-compile-options
-                        timemory-develop-options timemory-plotting timemory-analysis-tools)
+                        timemory-develop-options timemory-plotting timemory-analysis-tools
+                        ${_LIBRARY})
 endif()
 
 set_source_files_properties(cuda_tests.cpp cupti_tests.cpp
@@ -163,20 +181,23 @@ if(_HAS_PROFILER)
         SOURCES         gperf_cpu_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                         timemory-gperftools-cpu timemory-plotting timemory-analysis-tools
+                        ${_LIBRARY}
         ENVIRONMENT     "CPUPROFILE_FREQUENCY=1000;CPUPROFILE_REALTIME=1")
 endif()
 
 add_timemory_google_test(gperf_fake_cpu_tests
     DISCOVER_TESTS
     SOURCES         gperf_cpu_tests.cpp
-    LINK_LIBRARIES  timemory-headers timemory-plotting timemory-analysis-tools)
+    LINK_LIBRARIES  timemory-headers timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 if(_HAS_TCMALLOC)
     add_timemory_google_test(gperf_heap_tests
         DISCOVER_TESTS
         SOURCES         gperf_heap_tests.cpp
         LINK_LIBRARIES  timemory-headers    timemory-arch   timemory-compile-options timemory-develop-options
-                        timemory-gperftools-heap timemory-plotting timemory-analysis-tools)
+                        timemory-gperftools-heap timemory-plotting timemory-analysis-tools
+                        ${_LIBRARY})
 endif()
 
 if(TIMEMORY_USE_GOTCHA)
@@ -187,21 +208,24 @@ if(TIMEMORY_USE_GOTCHA)
                         timemory-gotcha     timemory-mpi
                         timemory-papi       timemory-vector
                         timemory-arch       gotcha-tests-lib
-                        timemory-plotting timemory-analysis-tools)
+                        timemory-plotting   timemory-analysis-tools
+                        ${_LIBRARY})
 endif()
 
 add_timemory_google_test(priority_tests
     DISCOVER_TESTS
     SOURCES         priority_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 if(TIMEMORY_USE_MPI)
     add_timemory_google_test(mpi_tests
         DISCOVER_TESTS
         SOURCES         mpi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                        timemory-plotting timemory-analysis-tools timemory-mpi)
+                        timemory-plotting timemory-analysis-tools timemory-mpi
+                        ${_LIBRARY})
 endif()
 
 if(TIMEMORY_USE_UPCXX)
@@ -209,11 +233,13 @@ if(TIMEMORY_USE_UPCXX)
         DISCOVER_TESTS
         SOURCES         upcxx_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                        timemory-plotting timemory-analysis-tools timemory-upcxx)
+                        timemory-plotting timemory-analysis-tools timemory-upcxx
+                        ${_LIBRARY})
 endif()
 
 add_timemory_google_test(variadic_tests
     DISCOVER_TESTS
     SOURCES         variadic_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools timemory-mpi)
+                    timemory-plotting timemory-analysis-tools timemory-mpi
+                    ${_LIBRARY})

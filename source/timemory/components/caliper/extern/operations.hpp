@@ -31,6 +31,22 @@
 #include "timemory/operations/definition.hpp"
 #include "timemory/plotting/definition.hpp"
 
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+//--------------------------------------------------------------------------------------//
+//
+template <>
+inline storage_initializer
+storage_initializer::get<component::caliper>()
+{
+    return storage_initializer{};
+}
+//
+//--------------------------------------------------------------------------------------//
+}
+//
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::caliper, false)

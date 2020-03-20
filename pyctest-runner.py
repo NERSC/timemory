@@ -412,8 +412,8 @@ def run_pyctest():
                          "TIMEMORY_DART_COUNT=1",
                          "TIMEMORY_PLOT_OUTPUT=ON"])
 
-    pyct.test(construct_name("ex-assemble"),
-              construct_command(["./ex_assemble"], args),
+    pyct.test(construct_name("ex-derived"),
+              construct_command(["./ex_derived"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "300",

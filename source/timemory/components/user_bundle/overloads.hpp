@@ -53,7 +53,7 @@
 //
 #    else
 //
-#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) extern __VA_ARGS__
+#        define TIMEMORY_USER_BUNDLE_LINKAGE(...) __VA_ARGS__
 //
 #    endif
 //
