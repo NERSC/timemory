@@ -81,7 +81,7 @@ TEST_F(mangle_tests, sample)
 
     using namespace tim::component;
     std::cout << "\n" << tim::demangle(function_name) << "\n";
-    std::cout << "\n" << tim::demangle<tim::auto_tuple<real_clock, cuda_event>>() << "\n";
+    std::cout << "\n" << tim::demangle<tim::auto_tuple<wall_clock, cuda_event>>() << "\n";
     std::cout << std::endl;
 }
 
@@ -97,7 +97,7 @@ TEST_F(mangle_tests, cuda_kernel)
     details::demangle(function_name);
     using namespace tim::component;
     std::cout << tim::demangle(function_name) << "\n";
-    std::cout << tim::demangle<tim::auto_tuple<real_clock, cuda_event>>() << "\n";
+    std::cout << tim::demangle<tim::auto_tuple<wall_clock, cuda_event>>() << "\n";
 }
 
 //--------------------------------------------------------------------------------------//
@@ -109,7 +109,7 @@ TEST_F(mangle_tests, data_type) { details::demangle<double>(); }
 TEST_F(mangle_tests, struct_type)
 {
     using namespace tim::component;
-    details::demangle<real_clock>();
+    details::demangle<wall_clock>();
 }
 
 //--------------------------------------------------------------------------------------//

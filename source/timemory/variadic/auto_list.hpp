@@ -231,30 +231,36 @@ public:
     void             rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
-    template <typename _Tp>
+    template <typename Tp>
     decltype(auto) get()
     {
-        return m_temporary_object.template get<_Tp>();
+        return m_temporary_object.template get<Tp>();
     }
 
-    template <typename _Tp>
+    template <typename Tp>
     decltype(auto) get() const
     {
-        return m_temporary_object.template get<_Tp>();
+        return m_temporary_object.template get<Tp>();
     }
 
     void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
 
-    template <typename _Tp, typename... _Args>
-    void init(_Args&&... _args)
+    template <typename T>
+    auto get_component()
     {
-        m_temporary_object.template init<_Tp>(std::forward<_Args>(_args)...);
+        return get<T>();
     }
 
-    template <typename... T>
-    void initialize()
+    template <typename Tp, typename... Args>
+    void init(Args&&... _args)
     {
-        m_temporary_object.template initialize<T...>();
+        m_temporary_object.template init<Tp>(std::forward<Args>(_args)...);
+    }
+
+    template <typename... Tp, typename... Args>
+    void initialize(Args&&... _args)
+    {
+        m_temporary_object.template initialize<Tp...>(std::forward<Args>(_args)...);
     }
 
 public:

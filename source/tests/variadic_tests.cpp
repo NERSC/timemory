@@ -178,8 +178,8 @@ TEST_F(variadic_tests, variadic)
 
 TEST_F(variadic_tests, concat)
 {
-    using lhs_t = tim::component_tuple<real_clock, system_clock>;
-    using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
+    using lhs_t = tim::component_tuple<wall_clock, system_clock>;
+    using rhs_t = tim::component_tuple<wall_clock, cpu_clock>;
 
     using join_t0 = typename tim::component_tuple<lhs_t, rhs_t>::type;
     using join_t1 = typename tim::auto_tuple<lhs_t, rhs_t, user_clock>::type;
@@ -246,8 +246,8 @@ TEST_F(variadic_tests, concat)
 
 TEST_F(variadic_tests, get)
 {
-    using lhs_t = tim::component_tuple<real_clock, system_clock, cpu_roofline<double>>;
-    using rhs_t = tim::component_tuple<real_clock, cpu_clock, cpu_roofline<float>>;
+    using lhs_t = tim::component_tuple<wall_clock, system_clock, cpu_roofline<double>>;
+    using rhs_t = tim::component_tuple<wall_clock, cpu_clock, cpu_roofline<float>>;
     using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;
     using rhs_l = tim::convert_t<rhs_t, tim::component_list<>>;
 

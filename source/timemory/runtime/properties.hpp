@@ -28,6 +28,7 @@
 #include "timemory/components/properties.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
+#include "timemory/runtime/macros.hpp"
 
 #include <set>
 #include <string>
@@ -78,7 +79,7 @@ do_enumerator_init(Tp& obj, int idx, Args&&... args)
     {
         using type = enumerator_t<I>;
         if(!std::is_same<type, component::placeholder<component::nothing>>::value)
-            obj.template init<type>(std::forward<Args>(args)...);
+            obj.template initialize<type>(std::forward<Args>(args)...);
     }
 }
 //
@@ -296,6 +297,46 @@ inline int
 enumerate(const char* key)
 {
     return enumerate(std::string(key));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+//                      Non-variadic specializations
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+initialize(Tp& obj, int idx)
+{
+    enumerator_init(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+insert(Tp& obj, int idx, bool flat)
+{
+    enumerator_insert(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, flat);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+configure(int idx, bool flat)
+{
+    enumerator_configure<Tp>(idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, flat);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+configure(Tp& obj, int idx, bool flat)
+{
+    enumerator_configure(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, flat);
 }
 //
 //--------------------------------------------------------------------------------------//

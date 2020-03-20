@@ -285,6 +285,12 @@ public:
 
     void get(void*& ptr, size_t hash) { m_temporary_object.get(ptr, hash); }
 
+    template <typename T>
+    auto get_component()
+    {
+        return get<T>();
+    }
+
 protected:
     template <typename Func>
     void init(Func&& init)

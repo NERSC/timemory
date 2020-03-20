@@ -531,7 +531,7 @@ public:
 //--------------------------------------------------------------------------------------//
 // some short-hand aliases
 //
-using counter_type   = component::real_clock;
+using counter_type   = component::wall_clock;
 using ert_data_t     = ert::exec_data<counter_type>;
 using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 using init_list_t    = std::set<uint64_t>;

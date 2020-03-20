@@ -43,8 +43,8 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-using auto_user_bundle_tuple_t = component_tuple<component::user_tuple_bundle>;
-using auto_user_bundle_list_t  = component_list<component::user_list_bundle>;
+using auto_user_bundle_tuple_t = auto_tuple<component::user_tuple_bundle>;
+using auto_user_bundle_list_t  = auto_list<component::user_list_bundle>;
 using auto_user_bundle = auto_hybrid<auto_user_bundle_tuple_t, auto_user_bundle_list_t>;
 
 //--------------------------------------------------------------------------------------//

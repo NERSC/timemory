@@ -75,7 +75,7 @@ using cpu_roofline_t = cpu_roofline_flops;
 //--------------------------------------------------------------------------------------//
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
+    tim::auto_tuple<wall_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
 
 //--------------------------------------------------------------------------------------//
 // amypx calculation
@@ -276,7 +276,7 @@ main(int argc, char** argv)
 
     params_t params(grid_size, block_size, 0, 0);
 
-    real_clock total;
+    wall_clock total;
     total.start();
 
     //
@@ -339,7 +339,7 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
                    int64_t num_streams, int64_t grid_size, int64_t block_size)
 {
     using namespace tim;
-    using counter_t         = component::real_clock;
+    using counter_t         = component::wall_clock;
     using ert_data_t        = ert::exec_data<counter_t>;
     using ert_params_t      = ert::exec_params;
     using ert_data_ptr_t    = std::shared_ptr<ert_data_t>;

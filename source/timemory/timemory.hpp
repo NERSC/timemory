@@ -164,8 +164,7 @@ struct dummy
 //
 #    if defined(TIMEMORY_USE_EXTERN)
 //
-#        include "timemory/components/extern.hpp"
-#        include "timemory/ert/extern.hpp"
+#        include "timemory/extern.hpp"
 //
 #    endif
 

@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/macros.hpp"
@@ -114,6 +115,7 @@ public:
     static int32_t   total_instance_count() { return f_manager_instance_count().load(); }
     static void      use_exit_hook(bool val) { f_use_exit_hook() = val; }
     static void      exit_hook();
+    static int32_t   get_thread_count() { return f_thread_counter().load(); }
 
 private:
     template <typename Tp>
@@ -206,6 +208,7 @@ private:
 public:
     // Public member functions
     int32_t instance_count() const { return m_instance_count; }
+    int64_t get_tid() const { return m_thread_index; }
 
 protected:
     // protected static functions
@@ -222,6 +225,7 @@ private:
     /// instance id
     int32_t         m_instance_count;
     int32_t         m_rank;
+    int64_t         m_thread_index    = threading::get_id();
     string_t        m_metadata_prefix = "";
     std::thread::id m_thread_id;
     /// increment the shared_ptr count here to ensure these instances live
@@ -263,7 +267,10 @@ private:
         return f_manager_persistent_data().instance_count;
     }
     /// num-threads based on number of managers created
-    static auto& f_thread_counter() { return f_manager_persistent_data().thread_count; }
+    static std::atomic<int32_t>& f_thread_counter()
+    {
+        return f_manager_persistent_data().thread_count;
+    }
     /// suppresses the exit hook during termination
     static bool& f_use_exit_hook() { return f_manager_persistent_data().use_exit_hook; }
     static auto& f_debug() { return f_manager_persistent_data().debug; }

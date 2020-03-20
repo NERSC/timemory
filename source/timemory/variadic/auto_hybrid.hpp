@@ -243,13 +243,37 @@ public:
     list_type&        get_rhs() { return m_temporary_object.get_list(); }
     const list_type&  get_rhs() const { return m_temporary_object.get_list(); }
 
-    template <typename _Tp>
+    template <typename Tp>
     decltype(auto) get()
     {
-        return m_temporary_object.template get<_Tp>();
+        return m_temporary_object.template get<Tp>();
+    }
+
+    template <typename Tp>
+    decltype(auto) get() const
+    {
+        return m_temporary_object.template get<Tp>();
+    }
+
+    template <typename T>
+    auto get_component()
+    {
+        return get<T>();
     }
 
     void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
+
+    template <typename Tp, typename... Args>
+    void init(Args&&... _args)
+    {
+        m_temporary_object.template init<Tp>(std::forward<Args>(_args)...);
+    }
+
+    template <typename... Tp, typename... Args>
+    void initialize(Args&&... _args)
+    {
+        m_temporary_object.template initialize<Tp...>(std::forward<Args>(_args)...);
+    }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)

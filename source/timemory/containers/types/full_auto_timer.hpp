@@ -59,7 +59,7 @@
 // clang-format off
 //
 TIMEMORY_EXTERN_TUPLE(full_auto_timer_t,
-                      component::real_clock,
+                      component::wall_clock,
                       component::system_clock,
                       component::user_clock,
                       component::cpu_util,

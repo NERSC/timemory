@@ -65,7 +65,7 @@ using namespace tim::cuda;
 //--------------------------------------------------------------------------------------//
 // some short-hand aliases
 //
-using counter_type   = tim::component::real_clock;
+using counter_type   = tim::component::wall_clock;
 using fp16_t         = tim::cuda::fp16_t;
 using ert_data_t     = ert::exec_data<counter_type>;
 using ert_data_ptr_t = std::shared_ptr<ert_data_t>;

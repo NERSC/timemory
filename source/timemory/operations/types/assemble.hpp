@@ -74,9 +74,9 @@ private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, typename Arg>
     auto sfinae(bool& b, Up& obj, int, Arg&& arg)
-        -> decltype(obj.assemble(arg.template get<C>()...), void())
+        -> decltype(obj.assemble(arg.template get_component<C>()...), void())
     {
-        b = obj.assemble(arg.template get<C>()...);
+        b = obj.assemble(arg.template get_component<C>()...);
     }
 
     template <typename Up, typename Arg>

@@ -34,7 +34,7 @@
 
 //======================================================================================//
 //
-TIMEMORY_EXTERN_STORAGE(component::real_clock, real_clock)
+TIMEMORY_EXTERN_STORAGE(component::wall_clock, wall_clock)
 TIMEMORY_EXTERN_STORAGE(component::system_clock, system_clock)
 TIMEMORY_EXTERN_STORAGE(component::user_clock, user_clock)
 TIMEMORY_EXTERN_STORAGE(component::cpu_clock, cpu_clock)

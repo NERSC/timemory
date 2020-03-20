@@ -33,6 +33,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
 #include "timemory/environment/declaration.hpp"
+#include "timemory/runtime/macros.hpp"
 
 #include <unordered_map>
 

@@ -48,8 +48,8 @@ using float_type = float;
 
 using roofline_t   = cpu_roofline<float_type>;
 using fib_list_t   = std::vector<int64_t>;
-using auto_tuple_t = tim::auto_tuple_t<real_clock, cpu_clock, cpu_util, roofline_t>;
-using auto_list_t  = tim::auto_list_t<real_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_list_t  = tim::auto_list_t<wall_clock, cpu_clock, cpu_util, roofline_t>;
 using device_t     = tim::device::cpu;
 using roofline_ert_config_t = typename roofline_t::ert_config_type<float_type>;
 
@@ -136,7 +136,7 @@ main(int argc, char** argv)
     //
     auto _main = TIMEMORY_BLANK_HANDLE(auto_tuple_t, "overall_timer");
     _main.report_at_exit(true);
-    real_clock total;
+    wall_clock total;
     total.start();
 
     //
@@ -224,7 +224,7 @@ random_fibonacci(float_type n)
 void
 check_const(const auto_list_t& l)
 {
-    const real_clock* rc = l.get<real_clock>();
+    const wall_clock* rc = l.get<wall_clock>();
     std::cout << "[demangle-test]> type: " << tim::demangle(typeid(rc).name())
               << std::endl;
 }
@@ -234,7 +234,7 @@ check_const(const auto_list_t& l)
 void
 check(auto_list_t& l)
 {
-    real_clock* rc = l.get<real_clock>();
+    wall_clock* rc = l.get<wall_clock>();
     std::cout << "[demangle-test]> type: " << tim::demangle(typeid(rc).name())
               << std::endl;
 }

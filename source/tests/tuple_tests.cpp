@@ -49,7 +49,7 @@ using lock_t  = std::unique_lock<mutex_t>;
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+    tim::auto_tuple<wall_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                     process_cpu_util, peak_rss, page_rss>;
 
 using full_measurement_t =
@@ -59,12 +59,12 @@ using full_measurement_t =
                          voluntary_context_switch, priority_context_switch, papi_tuple_t>;
 
 using measurement_t =
-    tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
+    tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock, cpu_util,
                          thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                          process_cpu_util, monotonic_clock, monotonic_raw_clock,
                          papi_tuple_t>;
 
-using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
+using printed_t = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
                                        thread_cpu_clock, process_cpu_clock>;
 
 //--------------------------------------------------------------------------------------//
@@ -517,8 +517,8 @@ TEST_F(tuple_tests, measure)
 
 TEST_F(tuple_tests, concat)
 {
-    using lhs_t = tim::component_tuple<real_clock, system_clock>;
-    using rhs_t = tim::component_tuple<real_clock, cpu_clock>;
+    using lhs_t = tim::component_tuple<wall_clock, system_clock>;
+    using rhs_t = tim::component_tuple<wall_clock, cpu_clock>;
 
     using comp_t0 =
         tim::remove_duplicates<typename tim::component_tuple<lhs_t, rhs_t>::type>;

@@ -211,7 +211,7 @@ public:
 //
 #if !defined(TIMEM_BUNDLER)
 #    define TIMEM_BUNDLER                                                                \
-        tim::custom_component_tuple<real_clock, user_clock, system_clock, cpu_clock,     \
+        tim::custom_component_tuple<wall_clock, user_clock, system_clock, cpu_clock,     \
                                     cpu_util, peak_rss, page_rss, virtual_memory,        \
                                     num_minor_page_faults, num_major_page_faults,        \
                                     num_signals, voluntary_context_switch,               \

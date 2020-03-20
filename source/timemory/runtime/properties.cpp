@@ -22,8 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
 #include "timemory/components/properties.hpp"
 #include "timemory/components/placeholder.hpp"
 #include "timemory/components/types.hpp"
@@ -36,7 +34,7 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/runtime/properties.hpp"
-
+/*
 namespace tim
 {
 //
@@ -92,3 +90,4 @@ enumerate(const char* key)
 //
 }  // namespace runtime
 }  // namespace tim
+*/

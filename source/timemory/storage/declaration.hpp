@@ -29,12 +29,13 @@
 
 #pragma once
 
-#include "timemory/backends/gperf.hpp"
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
 //
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/gperf.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/data/graph.hpp"
 #include "timemory/data/graph_data.hpp"
 #include "timemory/manager/declaration.hpp"
@@ -126,6 +127,7 @@ protected:
     int32_t                  m_node_rank    = dmp::rank();
     int32_t                  m_node_size    = dmp::size();
     int64_t                  m_instance_id  = -1;
+    int64_t                  m_thread_idx   = threading::get_id();
     string_t                 m_label        = "";
     graph_hash_map_ptr_t     m_hash_ids     = ::tim::get_hash_ids();
     graph_hash_alias_ptr_t   m_hash_aliases = ::tim::get_hash_aliases();
@@ -145,6 +147,7 @@ inline storage::storage(bool _is_master, int64_t _instance_id, const std::string
 , m_node_rank(dmp::rank())
 , m_node_size(dmp::size())
 , m_instance_id(_instance_id)
+, m_thread_idx(threading::get_id())
 , m_label(_label)
 , m_hash_ids(::tim::get_hash_ids())
 , m_hash_aliases(::tim::get_hash_aliases())
@@ -274,8 +277,8 @@ template <typename StorageType, typename Type,
           typename GraphData = typename StorageType::graph_data_t>
 typename StorageType::iterator
 insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head,
-                 bool _is_master);
+                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
+                 uint64_t);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -515,7 +518,7 @@ storage<Type, true>::append(const secondary_data_t<_Vp>& _secondary)
         auto&& _tmp = Type{};
         _tmp += std::get<2>(_secondary);
         _tmp.laps = 1;
-        graph_node_t _node(_hash, _tmp, _depth);
+        graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
         _node.stats() += _tmp.get();
         auto& _stats = _node.stats();
         operation::add_statistics<Type>(_tmp, _stats);
@@ -533,7 +536,7 @@ storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_dep
     bool _has_head = _data().has_head();
     return insert_heirarchy<this_type, Type>(hash_id, obj, hash_depth, m_node_ids,
                                              m_graph_data_instance, _has_head,
-                                             m_is_master);
+                                             m_is_master, m_thread_idx);
 }
 
 //----------------------------------------------------------------------------------//
@@ -544,7 +547,7 @@ typename storage<Type, true>::iterator
 storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
     auto         _current = _data().current();
-    graph_node_t _node(hash_id, obj, hash_depth);
+    graph_node_t _node(hash_id, obj, hash_depth, m_thread_idx);
     return _data().emplace_child(_current, _node);
 }
 
@@ -564,7 +567,7 @@ storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_dep
             _current = _current.begin();
         else
         {
-            graph_node_t node(hash_id, obj, hash_depth);
+            graph_node_t node(hash_id, obj, hash_depth, m_thread_idx);
             auto         itr                = _data().emplace_child(_current, node);
             m_node_ids[hash_depth][hash_id] = itr;
             _current                        = itr;
@@ -576,7 +579,7 @@ storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_dep
     if(_existing != m_node_ids[hash_depth].end())
         return m_node_ids[hash_depth].find(hash_id)->second;
 
-    graph_node_t node(hash_id, obj, hash_depth);
+    graph_node_t node(hash_id, obj, hash_depth, m_thread_idx);
     auto         itr                = _data().emplace_child(_current, node);
     m_node_ids[hash_depth][hash_id] = itr;
     return itr;
@@ -844,7 +847,8 @@ struct storage_deleter : public std::default_delete<StorageType>
 template <typename StorageType, typename Type, typename HashMap, typename GraphData>
 typename StorageType::iterator
 insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master)
+                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
+                 uint64_t tid)
 {
     using graph_t      = typename StorageType::graph_t;
     using graph_node_t = typename StorageType::graph_node_t;
@@ -853,7 +857,7 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
     // if first instance
     if(!_has_head || (_is_master && m_node_ids.size() == 0))
     {
-        graph_node_t node(hash_id, obj, hash_depth);
+        graph_node_t node(hash_id, obj, hash_depth, tid);
         auto         itr                = m_data->append_child(node);
         m_node_ids[hash_depth][hash_id] = itr;
         return itr;
@@ -872,7 +876,7 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
     }
 
     using sibling_itr = typename graph_t::sibling_iterator;
-    graph_node_t node(hash_id, obj, m_data->depth());
+    graph_node_t node(hash_id, obj, m_data->depth(), tid);
 
     // lambda for inserting child
     auto _insert_child = [&]() {

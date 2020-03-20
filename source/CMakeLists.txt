@@ -131,6 +131,7 @@ if(_BUILD_SHARED_CXX)
         timemory-headers
         timemory-vector
         timemory-external-shared
+        timemory-extern
         ${TIMEMORY_SHARED_GLOBAL_LIBRARIES}
         ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
         ${TIMEMORY_SHARED_EXTERN_LIBRARIES})

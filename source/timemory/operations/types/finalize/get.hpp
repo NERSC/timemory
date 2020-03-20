@@ -78,14 +78,37 @@ struct get<Type, false>
 template <typename Type>
 get<Type, true>::get(storage_type& data, result_type& ret)
 {
+    bool _thread_scope_only = trait::thread_scope_only<Type>::value;
+    bool _use_tid_prefix    = (!settings::collapse_threads() || _thread_scope_only);
+    auto _num_thr_count     = manager::get_thread_count();
+
+    //------------------------------------------------------------------------------//
+    //
+    //  Compute the thread prefix
+    //
+    //------------------------------------------------------------------------------//
+    auto _get_thread_prefix = [&](const graph_node& itr) {
+        if(!_use_tid_prefix || itr.tid() == std::numeric_limits<uint16_t>::max())
+            return std::string(">>> ");
+
+        // prefix spacing
+        static uint16_t width = 1;
+        if(_num_thr_count > 9)
+            width = std::max(width, (uint16_t)(log10(_num_thr_count) + 1));
+        std::stringstream ss;
+        ss.fill('0');
+        ss << "|" << std::setw(width) << itr.tid() << ">>> ";
+        return ss.str();
+    };
+
     //------------------------------------------------------------------------------//
     //
     //  Compute the node prefix
     //
     //------------------------------------------------------------------------------//
-    auto _get_node_prefix = [&]() {
+    auto _get_node_prefix = [&](const graph_node& itr) {
         if(!data.m_node_init)
-            return std::string(">>> ");
+            return _get_thread_prefix(itr);
 
         // prefix spacing
         static uint16_t width = 1;
@@ -93,7 +116,7 @@ get<Type, true>::get(storage_type& data, result_type& ret)
             width = std::max(width, (uint16_t)(log10(data.m_node_size) + 1));
         std::stringstream ss;
         ss.fill('0');
-        ss << "|" << std::setw(width) << data.m_node_rank << ">>> ";
+        ss << "|" << std::setw(width) << data.m_node_rank << _get_thread_prefix(itr);
         return ss.str();
     };
 
@@ -106,7 +129,7 @@ get<Type, true>::get(storage_type& data, result_type& ret)
     auto _compute_modified_prefix = [&](const graph_node& itr) {
         std::string _prefix      = data.get_prefix(itr);
         std::string _indent      = "";
-        std::string _node_prefix = _get_node_prefix();
+        std::string _node_prefix = _get_node_prefix(itr);
 
         int64_t _depth = itr.depth() - 1;
         if(_depth > 0)
@@ -138,6 +161,7 @@ get<Type, true>::get(storage_type& data, result_type& ret)
                     auto _stats     = itr->stats();
                     auto _parent    = graph_type::parent(itr);
                     auto _hierarchy = hierarchy_type{};
+                    auto _tid       = itr->tid();
                     if(_parent && _parent->depth() > _min)
                     {
                         while(_parent)
@@ -153,13 +177,12 @@ get<Type, true>::get(storage_type& data, result_type& ret)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());
                     _hierarchy.push_back(itr->id());
                     auto&& _entry = result_node(itr->id(), itr->obj(), _prefix, _depth,
-                                                _rolling, _hierarchy, _stats);
+                                                _rolling, _hierarchy, _stats, _tid);
                     _list.push_back(_entry);
                 }
             }
         }
 
-        bool _thread_scope_only = trait::thread_scope_only<Type>::value;
         if(!settings::collapse_threads() || _thread_scope_only)
             return _list;
 
@@ -187,12 +210,13 @@ get<Type, true>::get(storage_type& data, result_type& ret)
         //--------------------------------------------------------------------------//
         //  collapse duplicates
         //
-        for(const auto& itr : _list)
+        for(auto& itr : _list)
         {
             auto citr = _exists(itr);
             if(citr == _combined.end())
             {
-                _combined.push_back(itr);
+                itr.tid() = std::numeric_limits<uint16_t>::max();
+                _combined.emplace_back(itr);
             }
             else
             {

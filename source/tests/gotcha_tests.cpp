@@ -40,7 +40,7 @@ using namespace tim::component;
 using tim::component_tuple_t;
 
 // create a hybrid for inside the gotcha
-using gotcha_tuple_t = component_tuple_t<real_clock, cpu_clock, peak_rss>;
+using gotcha_tuple_t = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
 using gotcha_list_t =
     tim::component_list_t<papi_array_t, cpu_roofline_sp_flops, cpu_roofline_dp_flops>;
 using gotcha_hybrid_t = tim::auto_hybrid_t<gotcha_tuple_t, gotcha_list_t>;
@@ -58,7 +58,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, malloc_gotcha_t, priority_constan
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, mpi_gotcha_t, priority_constant<-256>)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, malloc_gotcha_t, priority_constant<-512>)
 
-using comp_t  = component_tuple_t<real_clock, cpu_clock, peak_rss>;
+using comp_t  = component_tuple_t<wall_clock, cpu_clock, peak_rss>;
 using tuple_t = component_tuple_t<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
 using list_t  = gotcha_list_t;
 using auto_hybrid_t = tim::auto_hybrid_t<tuple_t, list_t>;
@@ -453,7 +453,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
 TEST_F(gotcha_tests, member_functions)
 {
     using pair_type     = std::pair<float, double>;
-    auto real_storage   = tim::storage<real_clock>::instance();
+    auto real_storage   = tim::storage<wall_clock>::instance();
     auto real_init_size = real_storage->size();
     printf("[initial]> wall-clock storage size: %li\n", (long int) real_init_size);
 
@@ -601,9 +601,9 @@ TEST_F(gotcha_tests, member_functions)
 TEST_F(gotcha_tests, mpip)
 {
     using namespace tim::component;
-    using mpi_toolset_t = tim::auto_tuple_t<real_clock, cpu_clock>;
+    using mpi_toolset_t = tim::auto_tuple_t<wall_clock, cpu_clock>;
     using mpip_gotcha_t = tim::component::gotcha<337, mpi_toolset_t>;
-    using mpip_tuple_t  = tim::auto_tuple_t<real_clock, mpip_gotcha_t>;
+    using mpip_tuple_t  = tim::auto_tuple_t<wall_clock, mpip_gotcha_t>;
 
     auto init_mpip_tools = []() {
         mpip_gotcha_t::get_initializer() = []() {

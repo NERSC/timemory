@@ -37,8 +37,7 @@ using tim::type_list;
 //
 TIMEMORY_DECLARE_COMPONENT(derived_cpu_util)
 TIMEMORY_STATISTICS_TYPE(component::derived_cpu_util, double)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::derived_cpu_util,
-                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::derived_cpu_util, true_type)
 
 //--------------------------------------------------------------------------------------//
 

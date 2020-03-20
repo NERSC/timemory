@@ -45,7 +45,7 @@ using namespace tim::component;
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t =
-    tim::auto_tuple_t<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+    tim::auto_tuple_t<wall_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                       process_cpu_util, peak_rss, page_rss>;
 
 static int    _argc = 0;
@@ -144,7 +144,7 @@ TEST_F(mpi_tests, general)
 {
     tim::settings::collapse_threads() = true;
     auto manager                      = tim::manager::instance();
-    tim::manager::get_storage<auto_tuple_t>::clear(manager);
+    // tim::manager::get_storage<auto_tuple_t>::clear(manager);
     auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
     auto data_size             = auto_tuple_t::size();
     std::atomic<long> ret;
@@ -216,7 +216,131 @@ TEST_F(mpi_tests, general)
 
     EXPECT_EQ(expected, 15 * data_size);
 
-    const size_t store_size = 15;
+    const size_t store_size =
+        15 + (starting_storage_size / std::tuple_size<auto_tuple_t>::value);
+
+    if(tim::trait::is_available<wall_clock>::value)
+    {
+        EXPECT_EQ(tim::storage<wall_clock>::instance()->get().size(), store_size);
+    }
+
+    if(tim::trait::is_available<thread_cpu_clock>::value)
+    {
+        EXPECT_EQ(tim::storage<thread_cpu_clock>::instance()->get().size(), store_size);
+    }
+
+    if(tim::trait::is_available<thread_cpu_util>::value)
+    {
+        EXPECT_EQ(tim::storage<thread_cpu_util>::instance()->get().size(), store_size);
+    }
+
+    if(tim::trait::is_available<process_cpu_clock>::value)
+    {
+        EXPECT_EQ(tim::storage<process_cpu_clock>::instance()->get().size(), store_size);
+    }
+
+    if(tim::trait::is_available<process_cpu_util>::value)
+    {
+        EXPECT_EQ(tim::storage<process_cpu_util>::instance()->get().size(), store_size);
+    }
+
+    if(tim::trait::is_available<peak_rss>::value)
+    {
+        EXPECT_EQ(tim::storage<peak_rss>::instance()->get().size(), store_size);
+    }
+
+    if(tim::trait::is_available<page_rss>::value)
+    {
+        EXPECT_EQ(tim::storage<page_rss>::instance()->get().size(), store_size);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(mpi_tests, per_thread)
+{
+    tim::settings::collapse_threads() = false;
+    auto manager                      = tim::manager::instance();
+    // tim::manager::get_storage<auto_tuple_t>::clear(manager);
+    auto starting_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto data_size             = auto_tuple_t::size();
+    std::atomic<long> ret;
+
+    // accumulate metrics on full run
+    TIMEMORY_BLANK_CALIPER(tot, auto_tuple_t, details::get_test_name(), "/[total]");
+
+    // run a fibonacci calculation and accumulate metric
+    auto run_fibonacci = [&](long n) {
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, "run_fibonacci");
+        ret += details::time_fibonacci(n, n - 2);
+    };
+
+    // run longer fibonacci calculations on two threads
+    TIMEMORY_BLANK_CALIPER(master_thread_a, auto_tuple_t, details::get_test_name(),
+                           "/[master_thread]/0");
+    {
+        std::thread t_40(run_fibonacci, 40);
+        std::thread t_41(run_fibonacci, 41);
+        t_40.join();
+        t_41.join();
+    }
+    TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
+
+    {
+        // run longer fibonacci calculations on two threads
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name(),
+                              "/[master_thread]/1");
+        std::thread t_40(run_fibonacci, 40);
+        std::thread t_41(run_fibonacci, 41);
+        t_40.join();
+        t_41.join();
+    }
+
+    TIMEMORY_CALIPER_APPLY(tot, stop);
+
+    std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
+
+    auto rc_storage = tim::storage<wall_clock>::instance()->mpi_get();
+    auto mpi_rank   = tim::mpi::rank();
+    auto mpi_size   = tim::mpi::size();
+    if(mpi_rank == 0)
+    {
+        EXPECT_EQ(rc_storage.size(), mpi_size);
+        printf("\n");
+        size_t w = 0;
+        for(const auto& ritr : rc_storage)
+            for(const auto& itr : ritr)
+                w = std::max<size_t>(w, std::get<2>(itr).length());
+        for(const auto& ritr : rc_storage)
+            for(const auto& itr : ritr)
+            {
+                std::cout << std::setw(w) << std::left << std::get<2>(itr) << " : "
+                          << std::get<1>(itr);
+                auto _hierarchy = std::get<5>(itr);
+                for(size_t i = 0; i < _hierarchy.size(); ++i)
+                {
+                    if(i == 0)
+                        std::cout << " :: ";
+                    std::cout << _hierarchy[i];
+                    if(i + 1 < _hierarchy.size())
+                        std::cout << "/";
+                }
+                std::cout << std::endl;
+            }
+        printf("\n");
+    }
+    else
+    {
+        EXPECT_EQ(rc_storage.size(), 1);
+    }
+
+    auto final_storage_size = tim::manager::get_storage<auto_tuple_t>::size(manager);
+    auto expected           = (final_storage_size - starting_storage_size);
+
+    EXPECT_EQ(expected, 19 * data_size);
+
+    const size_t store_size =
+        19 + (starting_storage_size / std::tuple_size<auto_tuple_t>::value);
 
     if(tim::trait::is_available<wall_clock>::value)
     {
@@ -263,16 +387,6 @@ main(int argc, char** argv)
     _argc = argc;
     _argv = argv;
 
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
     tim::timemory_finalize();

@@ -29,7 +29,7 @@
 
 using namespace tim::component;
 
-using auto_tuple_t = tim::auto_tuple_t<real_clock, likwid_marker, likwid_nvmarker,
+using auto_tuple_t = tim::auto_tuple_t<wall_clock, likwid_marker, likwid_nvmarker,
                                        user_clock, system_clock, cpu_util>;
 
 intmax_t time_fibonacci(intmax_t);

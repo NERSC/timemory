@@ -26,6 +26,7 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/threading.hpp"
 #include "timemory/data/graph.hpp"
 #include "timemory/settings.hpp"
 
@@ -122,19 +123,13 @@ public:
             return;
 
         auto _current = m_master->current();
-        // auto _parent  = graph_t::parent(m_current);
-        // if(_parent)
-        //    _current = _parent;
+        auto _id      = _current->id();
+        auto _depth   = _current->depth();
 
-        auto _id    = _current->id();
-        auto _depth = _current->depth();
-
-        NodeT node(_id, NodeT::get_dummy(), _depth);
+        NodeT node(_id, NodeT::get_dummy(), _depth, threading::get_id());
         m_depth     = _depth;
         m_sea_level = _depth;
-
-        m_current = m_graph.insert_after(m_head, node);
-        // m_current = m_graph.append_child(m_head, node);
+        m_current   = m_graph.insert_after(m_head, node);
 
         m_dummies.insert({ m_depth, m_current });
     }

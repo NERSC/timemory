@@ -74,7 +74,7 @@ TIMEMORY_INSTANTIATE_INSERT(component::user_mode_time)
 TIMEMORY_INSTANTIATE_INSERT(component::kernel_mode_time)
 TIMEMORY_INSTANTIATE_INSERT(component::current_peak_rss)
 
-TIMEMORY_INSTANTIATE_INSERT(component::real_clock)
+TIMEMORY_INSTANTIATE_INSERT(component::wall_clock)
 TIMEMORY_INSTANTIATE_INSERT(component::system_clock)
 TIMEMORY_INSTANTIATE_INSERT(component::user_clock)
 TIMEMORY_INSTANTIATE_INSERT(component::cpu_clock)

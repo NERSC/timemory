@@ -35,6 +35,36 @@
 //
 #include "timemory/runtime/types.hpp"
 //
-#include "timemory/runtime/declaration.hpp"
+#include "timemory/runtime/properties.hpp"
 //
 //======================================================================================//
+
+#if defined(TIMEMORY_USE_RUNTIME_EXTERN) && defined(TIMEMORY_RUNTIME_SOURCE)
+
+#    include "timemory/components.hpp"
+#    include "timemory/containers/definition.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/storage/definition.hpp"
+#    include "timemory/types.hpp"
+
+#endif
+
+#include "timemory/types.hpp"
+#include "timemory/variadic/auto_timer.hpp"
+#include "timemory/variadic/auto_user_bundle.hpp"
+
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, bool)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, bool)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_list_bundle, bool)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ompt_bundle, bool)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_mpip_bundle, bool)
+
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(full_auto_timer)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(minimal_auto_timer)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(auto_user_bundle)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(auto_user_bundle_list_t)
+
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(complete_component_list_t)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(available_component_list_t)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(complete_auto_list_t)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(available_auto_list_t)

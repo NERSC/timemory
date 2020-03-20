@@ -44,8 +44,8 @@ using lock_t         = std::unique_lock<mutex_t>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
-using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
-using list_t  = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
+using tuple_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util, peak_rss>;
+using list_t  = tim::component_list<wall_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                                    papi_array_t, vtune_frame, vtune_event>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 using hybrid_t      = typename auto_hybrid_t::component_type;
@@ -165,7 +165,7 @@ protected:
         };
 #endif
         auto init = [](auto& l) {
-            l.template initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
+            l.template initialize<wall_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                                   papi_array_t>();
         };
         list_t::get_initializer() = init;
@@ -267,7 +267,7 @@ TEST_F(hybrid_tests, hybrid)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    auto* t_rc   = obj.get_tuple().get<real_clock>();
+    auto* t_rc   = obj.get_tuple().get<wall_clock>();
     auto* t_cpu  = obj.get_tuple().get<cpu_clock>();
     auto* t_util = obj.get_tuple().get<cpu_util>();
 
@@ -283,7 +283,7 @@ TEST_F(hybrid_tests, hybrid)
     ASSERT_NEAR(1.25, t_cpu->get(), timer_tolerance);
     ASSERT_NEAR(125.0, t_util->get(), util_tolerance);
 
-    auto* l_rc   = obj.get_list().get<real_clock>();
+    auto* l_rc   = obj.get_list().get<wall_clock>();
     auto* l_cpu  = obj.get_list().get<cpu_clock>();
     auto* l_util = obj.get_list().get<cpu_util>();
 
@@ -321,7 +321,7 @@ TEST_F(hybrid_tests, auto_timer)
     };
 
     auto  _cpu  = *obj.get_lhs().get<user_clock>() + *obj.get_lhs().get<system_clock>();
-    auto& _rc   = *obj.get_lhs().get<real_clock>();
+    auto& _rc   = *obj.get_lhs().get<wall_clock>();
     auto& _util = *obj.get_lhs().get<cpu_util>();
 
     details::print_info(_rc, 1.0, "sec", clock_convert);

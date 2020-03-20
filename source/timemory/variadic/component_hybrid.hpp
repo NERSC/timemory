@@ -549,6 +549,28 @@ public:
             m_list.get(ptr, _hash);
     }
 
+    //----------------------------------------------------------------------------------//
+    /// this is a simple alternative to get<T>() when used from SFINAE in operation
+    /// namespace which has a struct get also templated. Usage there can cause error
+    /// with older compilers
+    template <typename T>
+    auto get_component()
+    {
+        return get<T>();
+    }
+
+    template <typename Tp, typename... Args>
+    void init(Args&&... _args)
+    {
+        m_list.template init<Tp>(std::forward<Args>(_args)...);
+    }
+
+    template <typename... Tp, typename... Args>
+    void initialize(Args&&... _args)
+    {
+        m_list.template initialize<Tp...>(std::forward<Args>(_args)...);
+    }
+
 public:
     //----------------------------------------------------------------------------------//
     //  apply a member function to a type

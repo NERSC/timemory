@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/backends/threading.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -52,9 +53,9 @@ struct data
     using type         = typename trait::statistics<Tp>::type;
     using stats_policy = policy::record_statistics<Tp, type>;
     using stats_type   = typename stats_policy::statistics_type;
-    using node_type    = std::tuple<uint64_t, Tp, int64_t, stats_type>;
-    using result_type =
-        std::tuple<uint64_t, Tp, string_t, int64_t, uint64_t, uintvector_t, stats_type>;
+    using node_type    = std::tuple<uint64_t, Tp, int64_t, stats_type, uint16_t>;
+    using result_type  = std::tuple<uint64_t, Tp, string_t, int64_t, uint64_t,
+                                   uintvector_t, stats_type, uint16_t>;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -73,15 +74,17 @@ struct graph : public data<Tp>::node_type
     Tp&         obj() { return std::get<1>(*this); }
     int64_t&    depth() { return std::get<2>(*this); }
     stats_type& stats() { return std::get<3>(*this); }
+    uint16_t&   tid() { return std::get<4>(*this); }
 
     const uint64_t&   id() const { return std::get<0>(*this); }
     const Tp&         obj() const { return std::get<1>(*this); }
     const int64_t&    depth() const { return std::get<2>(*this); }
     const stats_type& stats() const { return std::get<3>(*this); }
+    const uint16_t&   tid() const { return std::get<4>(*this); }
 
     graph();
     explicit graph(base_type&& _base);
-    graph(const uint64_t& _id, const Tp& _obj, int64_t _depth);
+    graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid);
     ~graph() = default;
 
     bool      operator==(const graph& rhs) const;
@@ -111,7 +114,8 @@ struct result : public data<Tp>::result_type
     {}
 
     result(uint64_t _hash, const Tp& _data, const string_t& _prefix, int64_t _depth,
-           uint64_t _rolling, const uintvector_t& _hierarchy, const stats_type& _stats);
+           uint64_t _rolling, const uintvector_t& _hierarchy, const stats_type& _stats,
+           uint16_t _tid);
 
     uint64_t&     hash() { return std::get<0>(*this); }
     Tp&           data() { return std::get<1>(*this); }
@@ -120,6 +124,7 @@ struct result : public data<Tp>::result_type
     uint64_t&     rolling_hash() { return std::get<4>(*this); }
     uintvector_t& hierarchy() { return std::get<5>(*this); }
     stats_type&   stats() { return std::get<6>(*this); }
+    uint16_t&     tid() { return std::get<7>(*this); }
 
     const uint64_t&     hash() const { return std::get<0>(*this); }
     const Tp&           data() const { return std::get<1>(*this); }
@@ -128,6 +133,7 @@ struct result : public data<Tp>::result_type
     const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
     const uintvector_t& hierarchy() const { return std::get<5>(*this); }
     const stats_type&   stats() const { return std::get<6>(*this); }
+    const uint16_t&     tid() const { return std::get<7>(*this); }
 
     uint64_t&       id() { return std::get<0>(*this); }
     const uint64_t& id() const { return std::get<0>(*this); }
@@ -159,7 +165,7 @@ struct result : public data<Tp>::result_type
 //
 template <typename Tp>
 graph<Tp>::graph()
-: base_type(0, Tp{}, 0, stats_type{})
+: base_type(0, Tp{}, 0, stats_type{}, threading::get_id())
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -172,8 +178,8 @@ graph<Tp>::graph(base_type&& _base)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-graph<Tp>::graph(const uint64_t& _id, const Tp& _obj, int64_t _depth)
-: base_type(_id, _obj, _depth, stats_type{})
+graph<Tp>::graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint16_t _tid)
+: base_type(_id, _obj, _depth, stats_type{}, _tid)
 {}
 //
 //--------------------------------------------------------------------------------------//
@@ -209,8 +215,8 @@ graph<Tp>::get_dummy()
 template <typename Tp>
 result<Tp>::result(uint64_t _hash, const Tp& _data, const string_t& _prefix,
                    int64_t _depth, uint64_t _rolling, const uintvector_t& _hierarchy,
-                   const stats_type& _stats)
-: base_type(_hash, _data, _prefix, _depth, _rolling, _hierarchy, _stats)
+                   const stats_type& _stats, uint16_t _tid)
+: base_type(_hash, _data, _prefix, _depth, _rolling, _hierarchy, _stats, _tid)
 {}
 //
 //--------------------------------------------------------------------------------------//

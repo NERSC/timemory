@@ -442,6 +442,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    /// this is a simple alternative to get<T>() when used from SFINAE in operation
+    /// namespace which has a struct get also templated. Usage there can cause error
+    /// with older compilers
+    template <typename T>
+    auto get_component()
+    {
+        return get<T>();
+    }
+
+    //----------------------------------------------------------------------------------//
     ///  initialize a type that is in variadic list AND is available
     ///
     template <

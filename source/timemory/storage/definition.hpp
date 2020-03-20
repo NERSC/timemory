@@ -621,7 +621,7 @@ storage<Type, true>::_data()
                 auto         _current = m.current();
                 auto         _id      = _current->id();
                 auto         _depth   = _current->depth();
-                graph_node_t node(_id, object_base_t::dummy(), _depth);
+                graph_node_t node(_id, object_base_t::dummy(), _depth, m_thread_idx);
                 if(!m_graph_data_instance)
                     m_graph_data_instance = new graph_data_t(node, _depth, &m);
                 m_graph_data_instance->depth()     = _depth;
@@ -629,7 +629,7 @@ storage<Type, true>::_data()
             }
             else
             {
-                graph_node_t node(0, object_base_t::dummy(), 0);
+                graph_node_t node(0, object_base_t::dummy(), 0, m_thread_idx);
                 if(!m_graph_data_instance)
                     m_graph_data_instance = new graph_data_t(node, 0, nullptr);
                 m_graph_data_instance->depth()     = 0;
@@ -643,7 +643,7 @@ storage<Type, true>::_data()
 
             std::string _prefix = "> [tot] total";
             add_hash_id(_prefix);
-            graph_node_t node(0, object_base_t::dummy(), 0);
+            graph_node_t node(0, object_base_t::dummy(), 0, m_thread_idx);
             if(!m_graph_data_instance)
                 m_graph_data_instance = new graph_data_t(node, 0, nullptr);
             m_graph_data_instance->depth()     = 0;

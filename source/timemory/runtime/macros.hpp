@@ -55,3 +55,83 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if !defined(TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE)
+//
+#    if defined(TIMEMORY_RUNTIME_SOURCE)
+//
+#        define TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(TYPE, ...)                  \
+            namespace tim                                                                \
+            {                                                                            \
+            namespace runtime                                                            \
+            {                                                                            \
+            template void insert(TYPE&, int, __VA_ARGS__);                               \
+            template void configure<TYPE>(int, __VA_ARGS__);                             \
+            template void configure(TYPE&, int, __VA_ARGS__);                            \
+            }                                                                            \
+            }
+//
+#    else
+//
+#        if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_RUNTIME_EXTERN)
+//
+#            define TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(...)
+//
+#        else
+//
+#            define TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(TYPE, ...)              \
+                namespace tim                                                            \
+                {                                                                        \
+                namespace runtime                                                        \
+                {                                                                        \
+                extern template void insert(TYPE&, int, __VA_ARGS__);                    \
+                extern template void configure<TYPE>(int, __VA_ARGS__);                  \
+                extern template void configure(TYPE&, int, __VA_ARGS__);                 \
+                }                                                                        \
+                }
+//
+#        endif
+//
+#    endif
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE)
+//
+#    if defined(TIMEMORY_RUNTIME_SOURCE)
+//
+#        define TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(...)                         \
+            namespace tim                                                                \
+            {                                                                            \
+            namespace runtime                                                            \
+            {                                                                            \
+            template void initialize(__VA_ARGS__&, int);                                 \
+            }                                                                            \
+            }
+//
+#    else
+//
+#        if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_RUNTIME_EXTERN)
+//
+#            define TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(...)
+//
+#        else
+//
+#            define TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(...)                     \
+                namespace tim                                                            \
+                {                                                                        \
+                namespace runtime                                                        \
+                {                                                                        \
+                extern template void initialize(__VA_ARGS__&, int);                      \
+                }                                                                        \
+                }
+//
+#        endif
+//
+#    endif
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//

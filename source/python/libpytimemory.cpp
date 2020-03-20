@@ -535,7 +535,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("real_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = *(_timer.get<real_clock>());
+                  auto&        obj    = *(_timer.get<wall_clock>());
                   return obj.get();
               },
               "Elapsed wall clock");
