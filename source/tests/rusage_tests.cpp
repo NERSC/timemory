@@ -59,6 +59,9 @@ static const double byte_tolerance = tot_rw;  // macOS is not dependable
     if(!tim::trait::is_available<type>::value)                                           \
         return;
 
+static int    _argc = 0;
+static char** _argv = nullptr;
+
 //--------------------------------------------------------------------------------------//
 namespace details
 {
@@ -215,7 +218,31 @@ print_info(const _Tp& obj, int64_t expected)
 class rusage_tests : public ::testing::Test
 {
 protected:
-    void SetUp() override { tim::settings::file_output() = true; }
+    void SetUp() override
+    {
+        static bool configured = false;
+        if(!configured)
+        {
+            configured                    = true;
+            tim::settings::verbose()      = 0;
+            tim::settings::debug()        = false;
+            tim::settings::json_output()  = true;
+            tim::settings::mpi_thread()   = false;
+            tim::settings::precision()    = 9;
+            tim::settings::memory_units() = memory_unit.second;
+            tim::mpi::initialize(_argc, _argv);
+            tim::timemory_init(_argc, _argv);
+            tim::settings::file_output() = false;
+
+            // preform allocation only once here
+            details::allocate();
+
+            tim::settings::dart_output() = true;
+            tim::settings::dart_count()  = 1;
+            tim::settings::banner()      = false;
+            tim::settings::dart_type()   = "peak_rss";
+        }
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -270,21 +297,9 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+    _argc = argc;
+    _argv = argv;
 
-    // preform allocation only once here
-    tim::settings::precision()    = 9;
-    tim::settings::memory_units() = memory_unit.second;
-    tim::timemory_init(argc, argv);
-    tim::settings::file_output() = false;
-
-    details::allocate();
-
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
     tim::timemory_finalize();

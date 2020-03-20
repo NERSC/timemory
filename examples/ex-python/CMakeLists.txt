@@ -17,11 +17,15 @@ configure_file(${PROJECT_SOURCE_DIR}/ex_sample.py
 
 configure_file(${PROJECT_SOURCE_DIR}/ex_profiler.py
     ${CMAKE_BINARY_DIR}/ex_python_profiler @ONLY)
-  
+
+configure_file(${PROJECT_SOURCE_DIR}/ex_general.py
+    ${CMAKE_BINARY_DIR}/ex_python_general @ONLY)
+
 install(
     FILES
         ${CMAKE_BINARY_DIR}/ex_python_sample
         ${CMAKE_BINARY_DIR}/ex_python_profiler
+	${CMAKE_BINARY_DIR}/ex_python_general
     DESTINATION bin
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE

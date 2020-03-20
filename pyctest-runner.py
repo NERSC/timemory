@@ -169,10 +169,19 @@ def run_pyctest():
     #
     if os.environ.get("CXX") is None:
         os.environ["CXX"] = helpers.FindExePath("c++")
-    cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
+    cmd = pyct.command([os.environ["CXX"], "--version"])
     cmd.SetOutputStripTrailingWhitespace(True)
     cmd.Execute()
     compiler_version = cmd.Output()
+    try:
+        cn = compiler_version.split()[0]
+        cv = re.search(r'(\b)\d.\d.\d', compiler_version)
+        compiler_version = '{}-{}'.format(cn, cv)
+    except:
+        cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
+        cmd.SetOutputStripTrailingWhitespace(True)
+        cmd.Execute()
+        compiler_version = cmd.Output()
 
     #--------------------------------------------------------------------------#
     # Set the build name
@@ -521,8 +530,36 @@ def run_pyctest():
                        "ENVIRONMENT": test_env})
 
     if args.python:
+        pyct.test(construct_name("ex-python-bindings"),
+                  construct_command(["./ex_python_bindings"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
         pyct.test(construct_name("ex-python-caliper"),
                   construct_command(["./ex_python_caliper"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
+        pyct.test(construct_name("ex-python-general"),
+                  construct_command(["./ex_python_general"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
+        pyct.test(construct_name("ex-python-profiler"),
+                  construct_command(["./ex_python_profiler"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
+        pyct.test(construct_name("ex-python-sample"),
+                  construct_command(["./ex_python_sample"], args),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
