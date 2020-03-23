@@ -26,15 +26,23 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/components/rusage/components.hpp"
+//
+#include "timemory/mpl/types.hpp"
+//
+#include "timemory/manager/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
+#include "timemory/operations/declaration.hpp"
+#include "timemory/plotting/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
+//
 #include "timemory/operations/definition.hpp"
-#include "timemory/plotting/definition.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_EXTERN_OPERATIONS(component::peak_rss, true)
 TIMEMORY_EXTERN_OPERATIONS(component::page_rss, true)
-
-// #if defined(_UNIX)
 TIMEMORY_EXTERN_OPERATIONS(component::stack_rss, true)
 TIMEMORY_EXTERN_OPERATIONS(component::data_rss, true)
 TIMEMORY_EXTERN_OPERATIONS(component::num_io_in, true)
@@ -53,6 +61,5 @@ TIMEMORY_EXTERN_OPERATIONS(component::virtual_memory, true)
 TIMEMORY_EXTERN_OPERATIONS(component::user_mode_time, true)
 TIMEMORY_EXTERN_OPERATIONS(component::kernel_mode_time, true)
 TIMEMORY_EXTERN_OPERATIONS(component::current_peak_rss, true)
-// #endif
 //
 //======================================================================================//

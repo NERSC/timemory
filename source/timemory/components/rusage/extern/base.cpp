@@ -22,19 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/types.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/operations/definition.hpp"
-#include "timemory/plotting/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
-
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/components/rusage/types.hpp"
-#include "timemory/components/rusage/components.hpp"
 #include "timemory/components/rusage/extern/base.hpp"
-//
-// clang-format on
-//======================================================================================//

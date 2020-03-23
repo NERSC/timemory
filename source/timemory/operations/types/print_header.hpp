@@ -37,6 +37,8 @@
 //
 #include "timemory/operations/declaration.hpp"
 //
+#include "timemory/operations/types/print_statistics.hpp"
+//
 //======================================================================================//
 
 namespace tim

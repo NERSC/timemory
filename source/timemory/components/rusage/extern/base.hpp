@@ -25,7 +25,19 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/components/rusage/types.hpp"
+#include "timemory/components/rusage/components.hpp"
+//
+#include "timemory/mpl/types.hpp"
+//
+#include "timemory/manager/declaration.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
+#include "timemory/operations/declaration.hpp"
+#include "timemory/plotting/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
+//
+#include "timemory/operations/types/record.hpp"
 
 //======================================================================================//
 //

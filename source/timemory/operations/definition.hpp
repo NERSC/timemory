@@ -67,6 +67,7 @@
 #include "timemory/operations/types/set.hpp"
 #include "timemory/operations/types/start.hpp"
 #include "timemory/operations/types/stop.hpp"
+#include "timemory/operations/types/storage_initializer.hpp"
 #include "timemory/operations/types/store.hpp"
 //
 #include "timemory/components/base.hpp"
@@ -75,40 +76,6 @@
 #include "timemory/storage/declaration.hpp"
 #include "timemory/utility/serializer.hpp"
 //
-namespace tim
-{
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename T>
-storage_initializer
-storage_initializer::get()
-{
-    if(!trait::runtime_enabled<T>::get())
-        return storage_initializer{};
-
-    using storage_type = storage<T>;
-
-    static auto _master = []() {
-        auto _instance = storage_type::master_instance();
-        consume_parameters(_instance);
-        return storage_initializer{};
-    }();
-
-    static thread_local auto _worker = []() {
-        auto _instance = storage_type::instance();
-        consume_parameters(_instance);
-        return storage_initializer{};
-    }();
-
-    consume_parameters(_master);
-    return _worker;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-}  // namespace tim
-
 #include "timemory/components/timing/components.hpp"
 
 //
