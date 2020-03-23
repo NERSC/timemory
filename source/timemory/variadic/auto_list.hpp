@@ -247,8 +247,9 @@ public:
 
     template <typename T>
     auto get_component()
+        -> decltype(std::declval<component_type>().template get_component<T>())
     {
-        return get<T>();
+        return m_temporary_object.template get_component<T>();
     }
 
     template <typename Tp, typename... Args>

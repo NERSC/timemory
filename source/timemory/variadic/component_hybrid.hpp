@@ -130,7 +130,8 @@ public:
 
 public:
     explicit component_hybrid()
-    : m_tuple()
+    : m_store(false)
+    , m_tuple()
     , m_list()
     {}
 
@@ -138,8 +139,9 @@ public:
     explicit component_hybrid(const string_t& key, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
-    : m_tuple(key, store, flat)
-    , m_list(key, store, flat)
+    : m_store(store)
+    , m_tuple(key, false, flat)
+    , m_list(key, false, flat)
     {
         _func(*this);
     }
@@ -148,8 +150,9 @@ public:
     explicit component_hybrid(const captured_location_t& loc, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
-    : m_tuple(loc, store, flat)
-    , m_list(loc, store, flat)
+    : m_store(store)
+    , m_tuple(loc, false, flat)
+    , m_list(loc, false, flat)
     {
         _func(*this);
     }
@@ -158,8 +161,9 @@ public:
     explicit component_hybrid(size_t _hash, const bool& store = true,
                               const bool&  flat  = settings::flat_profile(),
                               const _Func& _func = this_type::get_initializer())
-    : m_tuple(_hash, store, flat)
-    , m_list(_hash, store, flat)
+    : m_store(store)
+    , m_tuple(_hash, false, flat)
+    , m_list(_hash, false, flat)
     {
         _func(*this);
     }
@@ -257,6 +261,9 @@ public:
     template <typename... Args>
     void start(Args&&... args)
     {
+        push();
+        assemble(*this);
+
         m_tuple.start(std::forward<Args>(args)...);
         m_list.start(std::forward<Args>(args)...);
     }
@@ -266,6 +273,9 @@ public:
     {
         m_tuple.stop(std::forward<Args>(args)...);
         m_list.stop(std::forward<Args>(args)...);
+
+        derive(*this);
+        pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -529,18 +539,18 @@ public:
     //----------------------------------------------------------------------------------//
     //  get access to a type
     //
-    template <typename _Tp,
-              enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<tuple_type>().template get<_Tp>())
+    template <typename Tp,
+              enable_if_t<(is_one_of<Tp, tuple_type_list>::value == true), int> = 0>
+    auto get() -> decltype(std::declval<tuple_type>().template get<Tp>())
     {
-        return m_tuple.template get<_Tp>();
+        return m_tuple.template get<Tp>();
     }
 
-    template <typename _Tp,
-              enable_if_t<(is_one_of<_Tp, list_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<list_type>().template get<_Tp>())
+    template <typename Tp,
+              enable_if_t<(is_one_of<Tp, list_type_list>::value == true), int> = 0>
+    auto get() -> decltype(std::declval<list_type>().template get<Tp>())
     {
-        return m_list.template get<_Tp>();
+        return m_list.template get<Tp>();
     }
 
     void get(void*& ptr, size_t _hash)
@@ -554,10 +564,16 @@ public:
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <typename T>
+    template <typename T, enable_if_t<(is_one_of<T, tuple_type_list>::value), int> = 0>
     auto get_component()
     {
-        return get<T>();
+        return m_tuple.template get_component<T>();
+    }
+
+    template <typename T, enable_if_t<(is_one_of<T, list_type_list>::value), long> = 0>
+    auto get_component()
+    {
+        return m_list.template get_component<T>();
     }
 
     template <typename Tp, typename... Args>
@@ -576,32 +592,33 @@ public:
     //----------------------------------------------------------------------------------//
     //  apply a member function to a type
     //
-    template <typename _Tp, typename _Func, typename... Args,
-              enable_if_t<(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int> = 0>
+    template <typename Tp, typename _Func, typename... Args,
+              enable_if_t<(is_one_of<Tp, tuple_type_list>::value), int> = 0,
+              enable_if_t<!(is_one_of<Tp, list_type_list>::value), int> = 0>
     void type_apply(_Func&& _func, Args&&... args)
     {
-        m_tuple.template type_apply<_Tp>(_func, std::forward<Args>(args)...);
+        m_tuple.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
-    template <typename _Tp, typename _Func, typename... Args,
-              enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<(is_one_of<_Tp, list_type_list>::value), int>   = 0>
+    template <typename Tp, typename _Func, typename... Args,
+              enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
+              enable_if_t<(is_one_of<Tp, list_type_list>::value), int>   = 0>
     void type_apply(_Func&& _func, Args&&... args)
     {
-        m_list.template type_apply<_Tp>(_func, std::forward<Args>(args)...);
+        m_list.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
-    template <typename _Tp, typename _Func, typename... Args,
-              enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int>  = 0>
+    template <typename Tp, typename _Func, typename... Args,
+              enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
+              enable_if_t<!(is_one_of<Tp, list_type_list>::value), int>  = 0>
     void type_apply(_Func&&, Args&&...)
     {}
 
 protected:
     // objects
-    tuple_type m_tuple = tuple_type();
-    list_type  m_list  = list_type();
+    bool m_store = false;
+    tuple_type m_tuple = tuple_type{};
+    list_type  m_list  = list_type{};
 };
 
 //--------------------------------------------------------------------------------------//

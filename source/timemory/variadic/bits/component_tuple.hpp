@@ -171,7 +171,8 @@ template <typename... Types>
 inline component_tuple<Types...>::~component_tuple()
 {
     IF_CONSTEXPR(get_config<variadic::auto_stop>()) { stop(); }
-    pop();
+    if(m_store)
+        pop();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -193,7 +194,7 @@ template <typename... Types>
 void
 component_tuple<Types...>::push()
 {
-    if(m_store && !m_is_pushed)
+    if(!m_is_pushed)
     {
         // reset the data
         apply_v::access<operation_t<operation::reset>>(m_data);
@@ -211,7 +212,7 @@ template <typename... Types>
 void
 component_tuple<Types...>::pop()
 {
-    if(m_store && m_is_pushed)
+    if(m_is_pushed)
     {
         // set the current node to the parent node
         apply_v::access<operation_t<operation::pop_node>>(m_data);
@@ -263,7 +264,8 @@ component_tuple<Types...>::start(Args&&... args)
     using delayed_start_t = operation_t<operation::delayed_start, delayed_tuple_t>;
 
     // push components into the call-stack
-    push();
+    if(m_store)
+        push();
 
     assemble(*this);
 
@@ -305,7 +307,8 @@ component_tuple<Types...>::stop(Args&&... args)
     derive(*this);
 
     // pop components off of the call-stack stack
-    pop();
+    if(m_store)
+        pop();
 }
 
 //--------------------------------------------------------------------------------------//

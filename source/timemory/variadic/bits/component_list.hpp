@@ -114,7 +114,8 @@ component_list<Types...>::component_list(size_t _hash, const bool& store,
 template <typename... Types>
 component_list<Types...>::~component_list()
 {
-    pop();
+    if(m_store)
+        pop();
     apply_v::access<operation_t<operation::generic_deleter>>(m_data);
 }
 
@@ -164,7 +165,7 @@ component_list<Types...>::push()
 {
     uint64_t count = 0;
     apply_v::access<operation_t<operation::generic_counter>>(m_data, std::ref(count));
-    if(m_store && !m_is_pushed && count > 0)
+    if(!m_is_pushed && count > 0)
     {
         // reset data
         apply_v::access<operation_t<operation::reset>>(m_data);
@@ -182,7 +183,7 @@ template <typename... Types>
 void
 component_list<Types...>::pop()
 {
-    if(m_store && m_is_pushed)
+    if(m_is_pushed)
     {
         // set the current node to the parent node
         apply_v::access<operation_t<operation::pop_node>>(m_data);
@@ -234,7 +235,8 @@ component_list<Types...>::start(Args&&... args)
     using delayed_start_t = operation_t<operation::delayed_start, delayed_tuple_t>;
 
     // push components into the call-stack
-    push();
+    if(m_store)
+        push();
 
     assemble(*this);
 
@@ -276,7 +278,8 @@ component_list<Types...>::stop(Args&&... args)
     derive(*this);
 
     // pop components off of the call-stack stack
-    pop();
+    if(m_store)
+        pop();
 }
 
 //--------------------------------------------------------------------------------------//

@@ -445,7 +445,10 @@ public:
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <typename T>
+    template <
+        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+        enable_if_t<(trait::is_available<T>::value && is_one_of<T*, data_type>::value),
+                    int> = 0>
     auto get_component()
     {
         return get<T>();

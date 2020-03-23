@@ -46,6 +46,7 @@ using namespace tim::component;
 using auto_timer_t      = tim::auto_timer;
 using library_toolset_t = TIMEMORY_LIBRARY_TYPE;
 using complete_list_t   = typename library_toolset_t::component_type;
+using free_cstr_set_t   = std::unordered_set<const char*>;
 
 //======================================================================================//
 //
@@ -57,10 +58,10 @@ using complete_list_t   = typename library_toolset_t::component_type;
 
 //======================================================================================//
 
-static bool&
+static free_cstr_set_t&
 free_cstr()
 {
-    static thread_local bool _instance = false;
+    static thread_local free_cstr_set_t _instance;
     return _instance;
 }
 
@@ -119,11 +120,12 @@ extern "C"
             return nullptr;
         using namespace tim::component;
         std::string key_tag(timer_tag);
-        if(free_cstr())
+        auto        itr = free_cstr().find(timer_tag);
+        if(itr != free_cstr().end())
         {
             char* _tag = (char*) timer_tag;
             free(_tag);
-            free_cstr() = false;
+            free_cstr().erase(itr);
         }
         auto obj = new complete_list_t(key_tag);
 #    if defined(DEBUG)
@@ -183,8 +185,6 @@ extern "C"
         if(_mode == 1 && (!_extra || strlen(_extra) == 0))
             return _func;
 
-        free_cstr() = true;
-
         std::stringstream ss;
 
         auto to_string = [](const char* cstr) {
@@ -226,6 +226,7 @@ extern "C"
                 sprintf(buff, "%s", ss.str().c_str());
             }
         }
+        free_cstr().insert((const char*) buff);
         return (const char*) buff;
     }
 
