@@ -31,6 +31,9 @@
 
 //--------------------------------------------------------------------------------------//
 //
+#include "timemory/operations/definition.hpp"
+#include "timemory/storage/definition.hpp"
+//
 #include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
@@ -43,7 +46,7 @@
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
 //
-#include "timemory/variadic/auto_timer.hpp"
-#include "timemory/variadic/auto_user_bundle.hpp"
+#include "timemory/containers/auto_timer.hpp"
+#include "timemory/containers/auto_user_bundle.hpp"
 //
 //--------------------------------------------------------------------------------------//

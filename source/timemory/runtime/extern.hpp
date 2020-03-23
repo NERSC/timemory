@@ -49,9 +49,9 @@
 
 #endif
 
+#include "timemory/containers/auto_timer.hpp"
+#include "timemory/containers/auto_user_bundle.hpp"
 #include "timemory/types.hpp"
-#include "timemory/variadic/auto_timer.hpp"
-#include "timemory/variadic/auto_user_bundle.hpp"
 
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, bool)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, bool)
@@ -59,9 +59,9 @@ TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_list_bundle, bool)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ompt_bundle, bool)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_mpip_bundle, bool)
 
-TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(full_auto_timer)
-TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(minimal_auto_timer)
-TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(auto_user_bundle)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(full_auto_timer_t)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(minimal_auto_timer_t)
+TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(auto_user_bundle_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(auto_user_bundle_list_t)
 
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(complete_component_list_t)

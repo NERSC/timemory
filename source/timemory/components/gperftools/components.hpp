@@ -47,13 +47,13 @@ namespace component
 //--------------------------------------------------------------------------------------//
 // start/stop gperftools cpu profiler
 //
-struct gperf_cpu_profiler : public base<gperf_cpu_profiler, void>
+struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
 {
     using value_type = void;
-    using this_type  = gperf_cpu_profiler;
+    using this_type  = gperftools_cpu_profiler;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "gperf_cpu_profiler"; }
+    static std::string label() { return "gperftools_cpu_profiler"; }
     static std::string description() { return "gperftools cpu profiler"; }
     static value_type  record() {}
 
@@ -81,7 +81,7 @@ struct gperf_cpu_profiler : public base<gperf_cpu_profiler, void>
                 label() + "_" + std::to_string(index), ".dat", _dmp_init, _dmp_rank);
             auto ret = gperf::cpu::profiler_start(fname);
             if(ret == 0)
-                fprintf(stderr, "[gperf_cpu_profiler]> Error starting %s...",
+                fprintf(stderr, "[gperftools_cpu_profiler]> Error starting %s...",
                         fname.c_str());
         }
     }
@@ -118,13 +118,13 @@ private:
 //--------------------------------------------------------------------------------------//
 // start/stop gperftools cpu profiler
 //
-struct gperf_heap_profiler : public base<gperf_heap_profiler, void>
+struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
 {
     using value_type = void;
-    using this_type  = gperf_heap_profiler;
+    using this_type  = gperftools_heap_profiler;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "gperf_heap_profiler"; }
+    static std::string label() { return "gperftools_heap_profiler"; }
     static std::string description() { return "gperftools heap profiler"; }
     static value_type  record() {}
 
@@ -146,7 +146,7 @@ struct gperf_heap_profiler : public base<gperf_heap_profiler, void>
             auto fname = settings::compose_output_filename(label(), ".dat");
             auto ret   = gperf::heap::profiler_start(fname);
             if(ret > 0)
-                fprintf(stderr, "[gperf_heap_profiler]> Error starting %s...",
+                fprintf(stderr, "[gperftools_heap_profiler]> Error starting %s...",
                         prefix.c_str());
         }
     }

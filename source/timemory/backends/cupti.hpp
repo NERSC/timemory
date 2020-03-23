@@ -34,7 +34,7 @@
 #include "timemory/backends/types/cupti.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/utility.hpp"
 
 #include <cassert>

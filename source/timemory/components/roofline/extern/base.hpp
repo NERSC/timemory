@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/roofline/components.hpp"
 #include "timemory/components/roofline/traits.hpp"
 #include "timemory/components/roofline/types.hpp"
 
@@ -57,7 +58,11 @@ TIMEMORY_EXTERN_TEMPLATE(
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<float, double>,
+TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t, float, double>,
+                                     std::tuple<typename cupti_activity::value_type,
+                                                typename cupti_counters::value_type>>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t>,
                                      std::tuple<typename cupti_activity::value_type,
                                                 typename cupti_counters::value_type>>)
 //
@@ -99,7 +104,9 @@ TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<double>)
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<float, double>)
+TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t, float, double>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t>)
 //
 TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<float>)
 //

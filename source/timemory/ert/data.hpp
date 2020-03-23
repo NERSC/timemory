@@ -38,7 +38,7 @@
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
 #include "timemory/ert/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>

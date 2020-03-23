@@ -34,10 +34,12 @@
 
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(gperf_cpu_profiler, GPERF_CPU_PROFILER,
-                                 "gperf_cpu_profiler", "gperf_cpu", "gperftools-cpu")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(gperf_heap_profiler, GPERF_HEAP_PROFILER,
-                                 "gperf_heap_profiler", "gperf_heap", "gperftools-heap")
+TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_cpu_profiler, GPERFTOOLS_CPU_PROFILER,
+                                 "gperftools_cpu_profiler", "gperf_cpu_profiler",
+                                 "gperf_cpu", "gperftools-cpu")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_heap_profiler, GPERFTOOLS_HEAP_PROFILER,
+                                 "gperftools_heap_profiler", "gperf_heap_profiler",
+                                 "gperf_heap", "gperftools-heap")
 //
 //======================================================================================//

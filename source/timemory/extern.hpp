@@ -35,5 +35,9 @@
 #include "timemory/operations/extern.hpp"
 #include "timemory/plotting/extern.hpp"
 #include "timemory/runtime/extern.hpp"
-#include "timemory/settings/extern.hpp"
 #include "timemory/storage/extern.hpp"
+//
+#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#    include "timemory/settings/settings.cpp"
+#endif
+//

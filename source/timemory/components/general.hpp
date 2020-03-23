@@ -36,7 +36,7 @@
 #include "timemory/data/handler.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <cassert>

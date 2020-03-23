@@ -38,7 +38,9 @@
 #include "timemory/containers/declaration.hpp"
 //
 //======================================================================================//
-
+//
+#include "timemory/operations/definition.hpp"
+//
 #include "timemory/containers/types/complete_list.hpp"
 #include "timemory/containers/types/full_auto_timer.hpp"
 #include "timemory/containers/types/generic_bundle.hpp"

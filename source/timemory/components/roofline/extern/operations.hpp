@@ -33,6 +33,7 @@
 #include "timemory/components/roofline/components.hpp"
 #include "timemory/operations/definition.hpp"
 #include "timemory/plotting/definition.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
@@ -46,6 +47,7 @@ TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_flops, true)
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
+TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)

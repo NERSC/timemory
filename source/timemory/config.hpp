@@ -32,7 +32,7 @@
 
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/utility.hpp"
 #include <string>

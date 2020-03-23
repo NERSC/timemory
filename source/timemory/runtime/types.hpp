@@ -61,6 +61,9 @@ template <typename... ExtraArgs>
 std::set<TIMEMORY_COMPONENT>
 enumerate_components(const std::set<std::string, ExtraArgs...>& component_names);
 
+std::set<TIMEMORY_COMPONENT>
+enumerate_components(const std::initializer_list<std::string>& component_names);
+
 //--------------------------------------------------------------------------------------//
 //
 ///  description:

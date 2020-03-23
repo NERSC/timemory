@@ -49,5 +49,9 @@ if(TIMEMORY_USE_VTUNE)
     add_subdirectory(vtune)
 endif()
 
+if(TIMEMORY_USE_OMPT)
+    add_subdirectory(ompt)
+endif()
+
 # should always be last
 add_subdirectory(user_bundle)

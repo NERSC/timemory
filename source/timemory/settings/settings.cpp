@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/environment/declaration.hpp"
-//
 #include "timemory/settings/macros.hpp"
 //
 #include "timemory/settings/types.hpp"
@@ -34,8 +29,21 @@
 #include "timemory/settings/declaration.hpp"
 //
 #include "timemory/settings/definition.hpp"
+
+TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
+
+namespace tim
+{
 //
-#include "timemory/settings/extern.hpp"
+//--------------------------------------------------------------------------------------//
 //
-// clang-format on
-//======================================================================================//
+TIMEMORY_SETTINGS_LINKAGE(setting_callback_vec_t&)
+get_parse_callbacks()
+{
+    static setting_callback_vec_t _instance;
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace tim

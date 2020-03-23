@@ -173,6 +173,7 @@ struct dummy
 //
 #    include "timemory/version.h"
 //
+#    include "timemory/api.hpp"
 #    include "timemory/enum.h"
 #    include "timemory/units.hpp"
 #    include "timemory/utility/macros.hpp"
@@ -182,17 +183,17 @@ struct dummy
 #    include "timemory/utility/mangler.hpp"
 #    include "timemory/utility/utility.hpp"
 //
-#    include "timemory/variadic/auto_hybrid.hpp"  // 9.7
-#    include "timemory/variadic/auto_list.hpp"    // 5.6
-#    include "timemory/variadic/auto_timer.hpp"   // 3.8
+#    include "timemory/containers/auto_timer.hpp"        // 3.8
+#    include "timemory/containers/auto_user_bundle.hpp"  // 5.5
+#    include "timemory/variadic/auto_hybrid.hpp"         // 9.7
+#    include "timemory/variadic/auto_list.hpp"           // 5.6
 #    include "timemory/variadic/auto_tuple.hpp"
-#    include "timemory/variadic/auto_user_bundle.hpp"  // 5.5
 //
-#    include "timemory/types.hpp"                      // 3.5
-#    include "timemory/variadic/macros.hpp"            // 3.2
+#    include "timemory/types.hpp"                  // 3.5
+#    include "timemory/variadic/macros.hpp"        // 3.2
 //
-#    include "timemory/ert/aligned_allocator.hpp"      // 3.5
-#    include "timemory/ert/configuration.hpp"          // 4
+#    include "timemory/ert/aligned_allocator.hpp"  // 3.5
+#    include "timemory/ert/configuration.hpp"      // 4
 //
 //======================================================================================//
 //
@@ -215,11 +216,11 @@ struct dummy
 //
 #        include "timemory/extern.hpp"
 //
-#    else
-//
-#        include "timemory/definition.hpp"
-//
 #    endif
+//
+#    include "timemory/definition.hpp"
+//
+//#    endif
 //
 //======================================================================================//
 //

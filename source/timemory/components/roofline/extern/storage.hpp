@@ -34,7 +34,7 @@
 //
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
@@ -48,6 +48,7 @@ TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_flops, cpu_roofline_flops)
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
+TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_hp_flops, gpu_roofline_hp_flops)
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_sp_flops, gpu_roofline_sp_flops)
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_dp_flops, gpu_roofline_dp_flops)
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_flops, gpu_roofline_flops)

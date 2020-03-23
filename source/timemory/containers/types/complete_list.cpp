@@ -43,6 +43,10 @@
 //
 #include "timemory/plotting/definition.hpp"
 //
+#include "timemory/storage/declaration.hpp"
+#include "timemory/storage/definition.hpp"
+#include "timemory/storage/types.hpp"
+//
 #include "timemory/containers/types/complete_list.hpp"
 //
 //======================================================================================//

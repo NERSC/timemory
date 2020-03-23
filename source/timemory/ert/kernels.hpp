@@ -36,7 +36,7 @@
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/mpl/apply.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

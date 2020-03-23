@@ -32,6 +32,7 @@
 
 #include "timemory/components/base/types.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/operations/types.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/utility/serializer.hpp"
 
@@ -44,12 +45,42 @@ namespace component
 //
 //======================================================================================//
 //
+//                      default base class for components
+//
+//======================================================================================//
+//
+struct empty_base
+{};
+//
+//======================================================================================//
+//
+//              dynamic polymorphism base class for all components
+//
+//======================================================================================//
+//
+struct dynamic_base
+{
+    TIMEMORY_DEFAULT_OBJECT(dynamic_base)
+
+    virtual void          start()                                         = 0;
+    virtual void          stop()                                          = 0;
+    virtual void          get_opaque_data(void*& ptr, size_t _hash) const = 0;
+    virtual dynamic_base* create() const                                  = 0;
+
+    // virtual void init() {}
+    // virtual void cleanup() {}
+    // virtual void start(const std::string&, bool, bool) { start(); }
+};
+//
+//======================================================================================//
+//
+//                          static polymorphism base
 //          base component class for all components with non-void types
 //
 //======================================================================================//
 //
 template <typename Tp, typename Value>
-struct base
+struct base : public trait::dynamic_base<Tp>::type
 {
     using EmptyT = std::tuple<>;
     template <typename U>
@@ -71,6 +102,7 @@ public:
     using last_type        = conditional_t<has_last_v, value_type, EmptyT>;
     using sample_type      = conditional_t<is_sampler_v, operation::sample<Tp>, EmptyT>;
     using sample_list_type = conditional_t<is_sampler_v, vector_t<sample_type>, EmptyT>;
+    using dynamic_type     = typename trait::dynamic_base<Tp>::type;
 
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
@@ -117,7 +149,7 @@ private:
 
 public:
     base();
-    ~base() = default;
+    virtual ~base() = default;
 
     explicit base(const base_type&) = default;
     explicit base(base_type&&)      = default;
@@ -167,6 +199,10 @@ public:
     void get(void*& ptr, size_t typeid_hash) const;    /// assign type to a pointer
     auto get() const { return this->load(); }          /// default get routine
     auto get_display() const { return this->load(); }  /// default display routine
+
+    void          get_opaque_data(void*& ptr,
+                                  size_t typeid_hash) const;  /// assign get() to a pointer
+    dynamic_type* create() const;
 
     template <typename Up = Tp, typename Vp = Value,
               enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
@@ -351,12 +387,13 @@ public:
 //
 //======================================================================================//
 //
+//                       static polymorphic base
 //          base component class for all components with void types
 //
 //======================================================================================//
 //
 template <typename Tp>
-struct base<Tp, void>
+struct base<Tp, void> : public trait::dynamic_base<Tp>::type
 {
     using EmptyT = std::tuple<>;
 
@@ -372,6 +409,7 @@ public:
     using value_type       = void;
     using sample_type      = EmptyT;
     using sample_list_type = EmptyT;
+    using dynamic_type     = typename trait::dynamic_base<Tp>::type;
 
     using this_type    = Tp;
     using base_type    = base<Tp, value_type>;
@@ -406,7 +444,7 @@ private:
 
 public:
     base();
-    ~base()                         = default;
+    virtual ~base()                 = default;
     explicit base(const base_type&) = default;
     explicit base(base_type&&)      = default;
     base& operator=(const base_type&) = default;
@@ -444,6 +482,9 @@ public:
 
     void get() {}
     void get(void*& ptr, size_t typeid_hash) const;
+
+    void          get_opaque_data(void*& ptr, size_t typeid_hash) const;
+    dynamic_type* create() const;
 
     int64_t nlaps() const { return 0; }
     int64_t get_laps() const { return 0; }

@@ -74,7 +74,7 @@ operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_
 /*
 #include "timemory/backends/device.hpp"
 #include "timemory/components/cuda/backends.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

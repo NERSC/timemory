@@ -357,8 +357,8 @@ struct settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, ert_skip_ops, "TIMEMORY_ERT_SKIP_OPS", "")
 
     //----------------------------------------------------------------------------------//
-    //      Signals (more specific signals checked in timemory/details/settings.hpp
-    //----------------------------------------------------------------------------------//
+    //      Signals
+    //--------------------------------------------/settings/declaration.hpp-------------------------//
 
     /// allow signal handling to be activated
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, allow_signal_handler,

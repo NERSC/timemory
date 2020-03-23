@@ -767,5 +767,3 @@ template <typename Tuple, typename T>
 using push_back_t = typename mpl::push_back<Tuple, T>::type;
 
 }  // namespace tim
-
-#include "timemory/operations/types.hpp"

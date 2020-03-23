@@ -46,7 +46,7 @@
 #include "timemory/operations/types/print.hpp"
 #include "timemory/operations/types/print_header.hpp"
 #include "timemory/plotting/definition.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/stream.hpp"
 
 #include <cstdint>

@@ -41,13 +41,13 @@
 //
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
 //
-#        define TIMEMORY_SETTINGS_LINKAGE(...) inline __VA_ARGS__
+#        define TIMEMORY_SETTINGS_LINKAGE(...) extern __VA_ARGS__
 //
 #    else
 //
-#        define TIMEMORY_SETTINGS_LINKAGE(...) extern __VA_ARGS__
+#        define TIMEMORY_SETTINGS_LINKAGE(...) inline __VA_ARGS__
 //
 #    endif
 //

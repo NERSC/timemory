@@ -31,7 +31,6 @@
 #pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
@@ -741,13 +740,6 @@ init_marker(const std::string& _msg, color::color_t _color = 0)
     attrib.color                                = (_color == 0)
                        ? (color::available().at((_counter++) % color::available().size()))
                        : _color;
-    if(settings::debug())
-    {
-        std::stringstream ss;
-        ss << "[nvtx]> initializing marker with label \"" << _msg << "\" and "
-           << "color " << std::hex << attrib.color << "...\n";
-        std::cout << ss.str() << std::flush;
-    }
     return attrib;
 }
 

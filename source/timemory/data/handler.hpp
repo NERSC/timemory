@@ -33,7 +33,7 @@
 #include "timemory/api.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #include <sstream>
 #include <string>

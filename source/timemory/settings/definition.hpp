@@ -66,8 +66,7 @@ settings::initialize_storage()
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)) ||          \
-    defined(TIMEMORY_SETTINGS_SOURCE)
+#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -259,4 +258,3 @@ settings::parse()
 }  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
-//

@@ -60,35 +60,6 @@
 #    include <cereal/archives/xml.hpp>
 #endif
 
-//--------------------------------------------------------------------------------------//
-
-using setting_callback_t     = std::function<void()>;
-using setting_callback_vec_t = std::vector<setting_callback_t>;
-
-//--------------------------------------------------------------------------------------//
-
-namespace tim
-{
-#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_SOURCE)
-
-extern setting_callback_vec_t&
-get_parse_callbacks();
-
-#else
-
-inline setting_callback_vec_t&
-get_parse_callbacks()
-{
-    static setting_callback_vec_t _instance;
-    return _instance;
-}
-
-#endif
-
-}  // namespace tim
-
-//--------------------------------------------------------------------------------------//
-
 #if defined(__GNUC__) && (__GNUC__ > 7)
 #    pragma GCC diagnostic pop
 #endif

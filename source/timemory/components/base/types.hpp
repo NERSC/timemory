@@ -33,6 +33,8 @@
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
 
+#include <type_traits>
+
 //======================================================================================//
 //
 namespace tim
@@ -64,6 +66,10 @@ operator-(Tp lhs, const Tp& rhs)
 }  // namespace
 //
 //--------------------------------------------------------------------------------------//
+//
+struct empty_base;
+//
+struct dynamic_base;
 //
 template <typename Tp, typename Value>
 struct base;
@@ -107,6 +113,22 @@ struct is_config<config<Types...>> : true_type
 //----------------------------------------------------------------------------------//
 //
 }  // namespace variadic
+//
+//----------------------------------------------------------------------------------//
+//
+namespace trait
+{
+//
+template <typename Tp>
+struct dynamic_base : std::false_type
+{
+    using type = component::empty_base;
+};
+//
+}  // namespace trait
+//
+//----------------------------------------------------------------------------------//
+//
 }  // namespace tim
 //
 //======================================================================================//

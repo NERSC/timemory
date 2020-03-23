@@ -72,8 +72,8 @@ enumerate_components(const Container<StringT, ExtraArgs...>& component_names)
 
 //--------------------------------------------------------------------------------------//
 
-std::set<TIMEMORY_COMPONENT> inline enumerate_components(
-    const std::initializer_list<std::string>& component_names)
+inline std::set<TIMEMORY_COMPONENT>
+enumerate_components(const std::initializer_list<std::string>& component_names)
 {
     return enumerate_components(std::set<std::string>(component_names));
 }

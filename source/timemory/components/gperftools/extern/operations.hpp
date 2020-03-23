@@ -38,7 +38,7 @@
 
 //======================================================================================//
 //
-TIMEMORY_EXTERN_OPERATIONS(component::gperf_heap_profiler, false)
-TIMEMORY_EXTERN_OPERATIONS(component::gperf_cpu_profiler, false)
+TIMEMORY_EXTERN_OPERATIONS(component::gperftools_heap_profiler, false)
+TIMEMORY_EXTERN_OPERATIONS(component::gperftools_cpu_profiler, false)
 //
 //======================================================================================//

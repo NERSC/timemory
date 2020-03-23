@@ -31,6 +31,8 @@
 
 //======================================================================================//
 //
+#include "timemory/api.hpp"
+//
 #include "timemory/containers/macros.hpp"
 //
 #include "timemory/containers/types.hpp"
@@ -58,24 +60,11 @@
 //
 // clang-format off
 //
-TIMEMORY_EXTERN_TUPLE(minimal_auto_timer_t,
-                      component::wall_clock,
-                      component::cpu_clock,
-                      component::cpu_util,
-                      component::peak_rss,
-                      component::user_tuple_bundle)
+TIMEMORY_EXTERN_TUPLE(minimal_auto_timer_t, TIMEMORY_MINIMAL_TUPLE_TYPES)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_EXTERN_LIST(minimal_auto_timer_t,
-                     component::user_list_bundle,
-                     component::caliper,
-                     component::tau_marker,
-                     component::papi_array_t,
-                     component::cuda_event,
-                     component::nvtx_marker,
-                     component::cupti_activity,
-                     component::cupti_counters)
+TIMEMORY_EXTERN_LIST(minimal_auto_timer_t, TIMEMORY_MINIMAL_LIST_TYPES)
 //
 //--------------------------------------------------------------------------------------//
 //

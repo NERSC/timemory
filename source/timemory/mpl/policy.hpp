@@ -324,47 +324,5 @@ protected:
 
 //======================================================================================//
 
-template <typename T, typename Toolset>
-struct omp_tools
-{
-    using type               = Toolset;
-    using api_type           = T;
-    using function_type      = std::function<void()>;
-    using user_ompt_bundle_t = component::user_ompt_bundle;
-
-    //----------------------------------------------------------------------------------//
-    //  the default initalizer for OpenMP tools when user_ompt_bundle is included
-    //
-    template <typename Bundle = user_ompt_bundle_t, typename Tuple = Toolset,
-              enable_if_t<(is_one_of<Bundle, Tuple>::value), int> = 0>
-    static function_type& get_initializer()
-    {
-        static function_type _instance = []() {
-            static std::string components = "wall_clock,thread_cpu_clock,thread_cpu_util";
-            static auto env_var = tim::get_env("TIMEMORY_OMPT_COMPONENTS", components);
-            ::tim::configure<Bundle>(enumerate_components(delimit(env_var)));
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  this functin calls the initializer for the
-    //
-    template <typename Bundle = user_ompt_bundle_t, typename Tuple = Toolset,
-              enable_if_t<!(is_one_of<Bundle, Tuple>::value), int> = 0>
-    static function_type& get_initializer()
-    {
-        static function_type _instance = []() {};
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  this functin calls the initializer for the
-    //
-    static void configure() { get_initializer()(); }
-};
-
-//======================================================================================//
-
 }  // namespace policy
 }  // namespace tim

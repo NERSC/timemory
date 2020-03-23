@@ -50,8 +50,11 @@ template <typename Tp>
 template <typename Up, enable_if_t<(trait::is_available<Up>::value), char>>
 init_storage<Tp>::init_storage()
 {
-    static thread_local auto _instance = storage_type::instance();
-    _instance->initialize();
+    if(trait::runtime_enabled<Tp>::get())
+    {
+        static thread_local auto _instance = storage_type::instance();
+        _instance->initialize();
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -69,6 +72,8 @@ typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
     static thread_local auto _instance = []() {
+        if(!trait::runtime_enabled<Tp>::get())
+            return get_type{ nullptr, nullptr, false, false, false };
         auto main_inst = storage_type::master_instance();
         auto this_inst = storage_type::instance();
         bool this_glob = true;
@@ -87,6 +92,8 @@ typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
     static thread_local auto _instance = []() {
+        if(!trait::runtime_enabled<Tp>::get())
+            return get_type{ nullptr, nullptr, false, false, false };
         auto main_inst = storage_type::master_instance();
         auto this_inst = storage_type::instance();
         return get_type{ main_inst, this_inst, false, false, false };
@@ -100,7 +107,7 @@ template <typename Tp>
 void
 init_storage<Tp>::init()
 {
-    if(!trait::runtime_enabled<type>::get())
+    if(!trait::runtime_enabled<Tp>::get())
         return;
 
     static thread_local auto _init = this_type::get();

@@ -41,8 +41,8 @@ namespace tim
 namespace component
 {
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<gperf_heap_profiler, void>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<gperf_cpu_profiler, void>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<gperftools_heap_profiler, void>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<gperftools_cpu_profiler, void>)
 //
 }  // namespace component
 }  // namespace tim

@@ -28,7 +28,7 @@
 
 #include "timemory/backends/threading.hpp"
 #include "timemory/data/graph.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #include <algorithm>
 #include <cstdint>

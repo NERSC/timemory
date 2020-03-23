@@ -30,7 +30,6 @@
 #pragma once
 
 #include "timemory/components/properties.hpp"
-#include "timemory/mpl/types.hpp"
 
 #include <string>
 #include <unordered_set>

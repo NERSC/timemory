@@ -35,7 +35,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/mangler.hpp"
 #include "timemory/variadic/types.hpp"

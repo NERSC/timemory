@@ -136,8 +136,10 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 
     // launches the command with the shell, this is the default because it enables aliases
     auto launch_using_shell = [&]() {
-        int         ret             = -1;
-        uint64_t    argc_shell      = 5;
+        auto        flags_str  = tim::get_env<std::string>("TIMEM_USE_SHELL_FLAGS", "-i");
+        auto        flags_vec  = tim::delimit(flags_str, " ");
+        int         ret        = -1;
+        uint64_t    argc_shell = 4 + flags_vec.size();
         char**      argv_shell_list = new char*[argc];
         std::string _shell          = tim::get_env<std::string>("SHELL", getusershell());
 
@@ -150,13 +152,14 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
             if(debug())
                 PRINT_HERE("%s", "");
 
-            std::string _interactive = "-i";
-            std::string _command     = "-c";
-            argv_shell_list[0]       = strdup(_shell.c_str());
-            argv_shell_list[1]       = strdup(_interactive.c_str());
-            argv_shell_list[2]       = strdup(_command.c_str());
-            argv_shell_list[3]       = strdup(shell_cmd.str().c_str());
-            argv_shell_list[4]       = nullptr;
+            std::string _command   = "-c";
+            size_t      idx        = 0;
+            argv_shell_list[idx++] = strdup(_shell.c_str());
+            for(const auto& itr : flags_vec)
+                argv_shell_list[idx++] = strdup(itr.c_str());
+            argv_shell_list[idx++] = strdup(_command.c_str());
+            argv_shell_list[idx++] = strdup(shell_cmd.str().c_str());
+            argv_shell_list[idx++] = nullptr;
 
             if(debug())
                 PRINT_HERE("%s", "");

@@ -39,17 +39,13 @@
 //
 #    define TIMEMORY_CONTAINERS_LINKAGE(...) __VA_ARGS__
 //
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+//
+#    define TIMEMORY_CONTAINERS_LINKAGE(...) extern __VA_ARGS__
+//
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_CONTAINERS_EXTERN)
-//
-#        define TIMEMORY_CONTAINERS_LINKAGE(...) inline __VA_ARGS__
-//
-#    else
-//
-#        define TIMEMORY_CONTAINERS_LINKAGE(...) extern __VA_ARGS__
-//
-#    endif
+#    define TIMEMORY_CONTAINERS_LINKAGE(...) inline __VA_ARGS__
 //
 #endif
 //
@@ -166,59 +162,50 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+#if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_CONTAINERS_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
-#    if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_CONTAINERS_SOURCE)
+#    if !defined(TIMEMORY_EXTERN_TUPLE)
+#        define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                       \
+            TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_TUPLE)
-#            define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                   \
-                TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
-#        endif
+#    if !defined(TIMEMORY_EXTERN_LIST)
+#        define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                        \
+            TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_LIST)
-#            define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                    \
-                TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
-#        endif
+#    if !defined(TIMEMORY_EXTERN_HYBRID)
+#        define TIMEMORY_EXTERN_HYBRID(_ALIAS) TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_HYBRID)
-#            define TIMEMORY_EXTERN_HYBRID(_ALIAS)                                       \
-                TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)
-#        endif
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONTAINERS_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
-#    else
+#    if !defined(TIMEMORY_EXTERN_TUPLE)
+#        define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                       \
+            TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_TUPLE)
-#            define TIMEMORY_EXTERN_TUPLE(_ALIAS, ...)                                   \
-                TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, __VA_ARGS__)
-#        endif
+#    if !defined(TIMEMORY_EXTERN_LIST)
+#        define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                        \
+            TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_LIST)
-#            define TIMEMORY_EXTERN_LIST(_ALIAS, ...)                                    \
-                TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, __VA_ARGS__)
-#        endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#        if !defined(TIMEMORY_EXTERN_HYBRID)
-#            define TIMEMORY_EXTERN_HYBRID(_ALIAS) TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)
-#        endif
-//
-//--------------------------------------------------------------------------------------//
-//
+#    if !defined(TIMEMORY_EXTERN_HYBRID)
+#        define TIMEMORY_EXTERN_HYBRID(_ALIAS) TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -249,3 +236,104 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+//                          AUTO_BUNDLE macros
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_BLANK_AUTO_BUNDLE)
+#    define TIMEMORY_BLANK_AUTO_BUNDLE(...)                                              \
+        TIMEMORY_BLANK_POINTER(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_BASIC_AUTO_BUNDLE)
+#    define TIMEMORY_BASIC_AUTO_BUNDLE(...)                                              \
+        TIMEMORY_BASIC_POINTER(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_AUTO_BUNDLE)
+#    define TIMEMORY_AUTO_BUNDLE(...) TIMEMORY_POINTER(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+// instance versions
+//
+#if !defined(TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE)
+#    define TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE(...)                                       \
+        TIMEMORY_BLANK_HANDLE(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE)
+#    define TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE(...)                                       \
+        TIMEMORY_BASIC_HANDLE(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_AUTO_BUNDLE_HANDLE)
+#    define TIMEMORY_AUTO_BUNDLE_HANDLE(...)                                             \
+        TIMEMORY_HANDLE(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+// debug versions
+//
+#if !defined(TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE(...)                                        \
+        TIMEMORY_DEBUG_BASIC_MARKER(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_DEBUG_AUTO_BUNDLE)
+#    define TIMEMORY_DEBUG_AUTO_BUNDLE(...)                                              \
+        TIMEMORY_DEBUG_MARKER(::tim::auto_bundle, __VA_ARGS__)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//                          AUTO_TIMER macros
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_BLANK_AUTO_TIMER)
+#    define TIMEMORY_BLANK_AUTO_TIMER(...)                                               \
+        TIMEMORY_BLANK_POINTER(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_BASIC_AUTO_TIMER)
+#    define TIMEMORY_BASIC_AUTO_TIMER(...)                                               \
+        TIMEMORY_BASIC_POINTER(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_AUTO_TIMER)
+#    define TIMEMORY_AUTO_TIMER(...) TIMEMORY_POINTER(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+// instance versions
+//
+#if !defined(TIMEMORY_BLANK_AUTO_TIMER_HANDLE)
+#    define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)                                        \
+        TIMEMORY_BLANK_HANDLE(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_BASIC_AUTO_TIMER_HANDLE)
+#    define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)                                        \
+        TIMEMORY_BASIC_HANDLE(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_AUTO_TIMER_HANDLE)
+#    define TIMEMORY_AUTO_TIMER_HANDLE(...)                                              \
+        TIMEMORY_HANDLE(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+// debug versions
+//
+#if !defined(TIMEMORY_DEBUG_BASIC_AUTO_TIMER)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)                                         \
+        TIMEMORY_DEBUG_BASIC_MARKER(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+#if !defined(TIMEMORY_DEBUG_AUTO_TIMER)
+#    define TIMEMORY_DEBUG_AUTO_TIMER(...)                                               \
+        TIMEMORY_DEBUG_MARKER(::tim::auto_timer, __VA_ARGS__)
+#endif
+//
+//--------------------------------------------------------------------------------------//

@@ -29,29 +29,41 @@
 
 #pragma once
 
-#include "timemory/backends/threading.hpp"
 #include "timemory/manager/macros.hpp"
-#include "timemory/mpl/policy.hpp"
-#include "timemory/mpl/type_traits.hpp"
 //
 #include "timemory/manager/types.hpp"
 //
 #include "timemory/manager/declaration.hpp"
 //
-#include "timemory/manager/definition.hpp"
+//--------------------------------------------------------------------------------------//
 //
-#include "timemory/config.hpp"
-#include "timemory/utility/macros.hpp"
+//          if not using extern and not compiling manager library, everything
+//          in this file gets excluded by the pre-processor
+//
+//--------------------------------------------------------------------------------------//
+//
+#if(!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MANAGER_EXTERN)) ||           \
+    defined(TIMEMORY_MANAGER_SOURCE)
+//
+//--------------------------------------------------------------------------------------//
+//
+#    include "timemory/api.hpp"
+#    include "timemory/backends/threading.hpp"
+#    include "timemory/config.hpp"
+#    include "timemory/mpl/policy.hpp"
+#    include "timemory/mpl/type_traits.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/utility/macros.hpp"
 //
 
-#include <algorithm>
-#include <atomic>
-#include <fstream>
-#include <iosfwd>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
+#    include <algorithm>
+#    include <atomic>
+#    include <fstream>
+#    include <iosfwd>
+#    include <memory>
+#    include <string>
+#    include <utility>
+#    include <vector>
 
 namespace tim
 {
@@ -62,8 +74,16 @@ namespace tim
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(manager::manager)
-()
+#    if !defined(TIMEMORY_MANAGER_LINKAGE_API)
+#        if defined(TIMEMORY_MANAGER_SOURCE)
+#            define TIMEMORY_MANAGER_LINKAGE_API
+#        else
+#            define TIMEMORY_MANAGER_LINKAGE_API inline
+#        endif
+#    endif
+
+TIMEMORY_MANAGER_LINKAGE_API
+manager::manager()
 : m_is_finalizing(false)
 , m_write_metadata(0)
 , m_instance_count(f_manager_instance_count()++)
@@ -86,12 +106,12 @@ TIMEMORY_MANAGER_LINKAGE(manager::manager)
         // std::atexit(manager::exit_hook);
     }
 
-#if !defined(TIMEMORY_DISABLE_BANNER)
+#    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_first && settings::banner())
         printf("#--------------------- tim::manager initialized [%i][%i] "
                "---------------------#\n\n",
                m_rank, m_instance_count);
-#endif
+#    endif
 
     auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
                                                    m_metadata_prefix);
@@ -103,23 +123,24 @@ TIMEMORY_MANAGER_LINKAGE(manager::manager)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(manager::~manager)()
+TIMEMORY_MANAGER_LINKAGE_API
+manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
-    bool _last   = (get_shared_ptr_pair<this_type>().second == nullptr || _remain == 0 ||
-                  m_instance_count == 0);
+    bool _last   = (get_shared_ptr_pair<this_type, TIMEMORY_API>().second == nullptr ||
+                  _remain == 0 || m_instance_count == 0);
 
     if(_last)
     {
         f_thread_counter().store(0, std::memory_order_relaxed);
     }
 
-#if !defined(TIMEMORY_DISABLE_BANNER)
+#    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_last && settings::banner())
         printf("\n\n#---------------------- tim::manager destroyed [%i][%i] "
                "----------------------#\n",
                m_rank, m_instance_count);
-#endif
+#    endif
 
     delete m_lock;
 }
@@ -230,7 +251,8 @@ manager::exit_hook()
         auto master_count = f_manager_instance_count().load();
         if(master_count > 0)
         {
-            auto master_manager = get_shared_ptr_pair_master_instance<manager>();
+            auto master_manager =
+                get_shared_ptr_pair_master_instance<manager, TIMEMORY_API>();
             if(master_manager)
             {
                 master_manager->write_metadata("manager::exit_hook");
@@ -417,7 +439,7 @@ manager::get_communicator_group()
     mpi::comm_t local_mpi_comm;
     mpi::comm_split(mpi::comm_world_v, mpi_split_size, mpi::rank(), &local_mpi_comm);
 
-#if defined(DEBUG)
+#    if defined(DEBUG)
     if(f_verbose() > 1 || f_debug())
     {
         int32_t local_mpi_rank = mpi::rank(local_mpi_comm);
@@ -433,7 +455,7 @@ manager::get_communicator_group()
         _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file << std::endl;
         std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
     }
-#endif
+#    endif
 
     auto local_rank = mpi::rank() / mpi::size(local_mpi_comm);
     // check
@@ -441,11 +463,6 @@ manager::get_communicator_group()
 
     return comm_group_t(local_mpi_comm, local_rank);
 }
-//
-//----------------------------------------------------------------------------------//
-//
-#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)) ||           \
-    defined(TIMEMORY_MANAGER_SOURCE)
 //
 //----------------------------------------------------------------------------------//
 //
@@ -465,7 +482,8 @@ manager::f_manager_persistent_data()
 TIMEMORY_MANAGER_LINKAGE(manager::pointer_t)
 manager::instance()
 {
-    static thread_local auto _inst = get_shared_ptr_pair_instance<manager>();
+    static thread_local auto _inst =
+        get_shared_ptr_pair_instance<manager, TIMEMORY_API>();
     return _inst;
 }
 //
@@ -476,15 +494,11 @@ manager::instance()
 TIMEMORY_MANAGER_LINKAGE(manager::pointer_t)
 manager::master_instance()
 {
-    static auto _pinst = get_shared_ptr_pair_master_instance<manager>();
+    static auto _pinst = get_shared_ptr_pair_master_instance<manager, TIMEMORY_API>();
     manager::f_manager_persistent_data().master_instance = _pinst;
     return _pinst;
     // return f_manager_persistent_data().master_instance;
 }
-//
-//----------------------------------------------------------------------------------//
-//
-#endif
 //
 //----------------------------------------------------------------------------------//
 //
@@ -494,7 +508,6 @@ manager::master_instance()
 //
 extern "C"
 {
-#if !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_MANAGER_SOURCE)
 //
 //----------------------------------------------------------------------------------//
 //
@@ -504,7 +517,7 @@ extern "C"
         ::tim::manager*
         timemory_manager_master_instance()
     {
-        static auto _pinst = tim::get_shared_ptr_pair<tim::manager>();
+        static auto _pinst = tim::get_shared_ptr_pair<tim::manager, TIMEMORY_API>();
         tim::manager::set_persistent_master(_pinst.first);
         return _pinst.first.get();
     }
@@ -559,8 +572,8 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-#endif
 }
 //
 //--------------------------------------------------------------------------------------//
 //
+#endif

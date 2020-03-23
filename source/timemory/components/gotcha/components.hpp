@@ -1387,7 +1387,9 @@ malloc_gotcha::configure()
 #    if defined(TIMEMORY_USE_CUDA)
         TIMEMORY_C_GOTCHA(local_gotcha_type, 0, malloc);
         TIMEMORY_C_GOTCHA(local_gotcha_type, 1, calloc);
-        TIMEMORY_C_GOTCHA(local_gotcha_type, 2, cudaMalloc);
+        // TIMEMORY_C_GOTCHA(local_gotcha_type, 2, cudaMalloc);
+        local_gotcha_type::template configure<2, cudaError_t, void**, size_t>(
+            "cudaMalloc");
         TIMEMORY_C_GOTCHA(local_gotcha_type, 3, free);
         TIMEMORY_C_GOTCHA(local_gotcha_type, 4, cudaFree);
 #    else

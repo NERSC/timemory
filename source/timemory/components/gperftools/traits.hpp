@@ -40,17 +40,19 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-//      GPERF and GPERF_HEAP_PROFILER
+//      GPERF and gperftools_heap_profiler
 //
 #if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_heap_profiler, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_heap_profiler,
+                               false_type)
 #endif
 
 //
-//      GPERF AND GPERF_CPU_PROFILER
+//      GPERF AND gperftools_cpu_profiler
 //
 #if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_cpu_profiler, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_cpu_profiler,
+                               false_type)
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -59,4 +61,5 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperf_cpu_profiler, fals
 //
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::gperf_heap_profiler, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::gperftools_heap_profiler,
+                               true_type)

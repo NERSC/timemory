@@ -31,6 +31,46 @@
  *
  */
 
+#include "timemory/version.h"
+
+#include <type_traits>
+
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+//
+using true_type  = std::true_type;
+using false_type = std::false_type;
+//
+namespace api
+{
+// this is a type for tagging native types
+struct native_tag
+{};
+//
+}  // namespace api
+}  // namespace tim
+
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace cereal
+{
+class JSONInputArchive;
+class XMLInputArchive;
+class XMLOutputArchive;
+}  // namespace cereal
+
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              Default pre-processor settings
+//
+//--------------------------------------------------------------------------------------//
+//
+
 #if !defined(TIMEMORY_DEFAULT_API)
 #    define TIMEMORY_DEFAULT_API ::tim::api::native_tag
 #endif
@@ -51,9 +91,9 @@
 
 #if !defined(TIMEMORY_DEFAULT_STATISTICS_TYPE)
 #    if defined(TIMEMORY_USE_STATISTICS)
-#        define TIMEMORY_DEFAULT_STATISTICS_TYPE std::true_type
+#        define TIMEMORY_DEFAULT_STATISTICS_TYPE true_type
 #    else
-#        define TIMEMORY_DEFAULT_STATISTICS_TYPE std::false_type
+#        define TIMEMORY_DEFAULT_STATISTICS_TYPE false_type
 #    endif
 #endif
 
@@ -102,13 +142,3 @@
 #if !defined(TIMEMORY_OUTPUT_ARCHIVE)
 #    define TIMEMORY_OUTPUT_ARCHIVE TIMEMORY_DEFAULT_OUTPUT_ARCHIVE
 #endif
-
-namespace tim
-{
-namespace api
-{
-// this is a type for tagging native types
-struct native_tag
-{};
-}  // namespace api
-}  // namespace tim

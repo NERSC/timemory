@@ -38,7 +38,7 @@
 
 //======================================================================================//
 //
-TIMEMORY_EXTERN_STORAGE(component::gperf_heap_profiler, gperf_heap_profiler)
-TIMEMORY_EXTERN_STORAGE(component::gperf_cpu_profiler, gperf_cpu_profiler)
+TIMEMORY_EXTERN_STORAGE(component::gperftools_heap_profiler, gperftools_heap_profiler)
+TIMEMORY_EXTERN_STORAGE(component::gperftools_cpu_profiler, gperftools_cpu_profiler)
 //
 //======================================================================================//

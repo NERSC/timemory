@@ -59,17 +59,13 @@
 //
 #    define TIMEMORY_MANAGER_LINKAGE(...) __VA_ARGS__
 //
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)
+//
+#    define TIMEMORY_MANAGER_LINKAGE(...) extern __VA_ARGS__
+//
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MANAGER_EXTERN)
-//
-#        define TIMEMORY_MANAGER_LINKAGE(...) inline __VA_ARGS__
-//
-#    else
-//
-#        define TIMEMORY_MANAGER_LINKAGE(...) extern __VA_ARGS__
-//
-#    endif
+#    define TIMEMORY_MANAGER_LINKAGE(...) inline __VA_ARGS__
 //
 #endif
 //

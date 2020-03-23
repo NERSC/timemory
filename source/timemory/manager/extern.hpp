@@ -39,4 +39,6 @@
 //
 #include "timemory/config.hpp"
 //
+#include "timemory/settings/definition.hpp"
+//
 //======================================================================================//

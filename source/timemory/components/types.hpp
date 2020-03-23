@@ -39,7 +39,6 @@
 #include <type_traits>
 
 #include "timemory/api.hpp"
-#include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/skeletons.hpp"
 

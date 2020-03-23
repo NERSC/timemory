@@ -43,8 +43,9 @@ static const int64_t niter     = 10;
 static const int64_t page_size = tim::units::get_page_size();
 
 using tuple_t =
-    tim::component_tuple_t<wall_clock, gperf_cpu_profiler, gperf_heap_profiler>;
-using list_t = tim::component_list_t<wall_clock, gperf_cpu_profiler, gperf_heap_profiler>;
+    tim::component_tuple_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
+using list_t =
+    tim::component_list_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
 using auto_tuple_t  = typename tuple_t::auto_type;
 using auto_list_t   = typename list_t::auto_type;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
@@ -107,8 +108,8 @@ protected:
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "500", 1);
         list_t::get_initializer() = [](auto& obj) {
-            obj.template initialize<wall_clock, gperf_cpu_profiler,
-                                    gperf_heap_profiler>();
+            obj.template initialize<wall_clock, gperftools_cpu_profiler,
+                                    gperftools_heap_profiler>();
         };
     }
 };

@@ -259,13 +259,13 @@ add_connector_config(context_switch
 
 if(USE_GPERFTOOLS_CPU)
     add_connector_config(gperftools_cpu
-        COMPONENTS gperf_cpu_profiler
+        COMPONENTS gperftools_cpu_profiler
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-gperftools-cpu)
 endif()
 
 if(USE_GPERFTOOLS_HEAP)
     add_connector_config(gperftools_heap
-        COMPONENTS gperf_heap_profiler
+        COMPONENTS gperftools_heap_profiler
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-gperftools-heap)
 endif()
 

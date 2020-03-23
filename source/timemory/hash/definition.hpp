@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/macros.hpp"
 #include "timemory/hash/types.hpp"
@@ -41,6 +42,9 @@
 #include <string>
 #include <unordered_map>
 
+#if(!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_HASH_EXTERN)) ||              \
+    defined(TIMEMORY_HASH_SOURCE)
+
 namespace tim
 {
 //
@@ -49,7 +53,8 @@ namespace tim
 TIMEMORY_HASH_LINKAGE(graph_hash_map_ptr_t)
 get_hash_ids()
 {
-    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_map_t>();
+    static thread_local auto _inst =
+        get_shared_ptr_pair_instance<graph_hash_map_t, TIMEMORY_API>();
     return _inst;
 }
 //
@@ -58,7 +63,8 @@ get_hash_ids()
 TIMEMORY_HASH_LINKAGE(graph_hash_alias_ptr_t)
 get_hash_aliases()
 {
-    static thread_local auto _inst = get_shared_ptr_pair_instance<graph_hash_alias_t>();
+    static thread_local auto _inst =
+        get_shared_ptr_pair_instance<graph_hash_alias_t, TIMEMORY_API>();
     return _inst;
 }
 //
@@ -70,11 +76,6 @@ add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
     hash_result_type _hash_id = std::hash<std::string>()(prefix.c_str());
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
-        // if(settings::debug())
-        //    printf("[%s@'%s':%i]> adding hash id: %s = %llu...\n", __FUNCTION__,
-        //    __FILE__,
-        //           __LINE__, prefix.c_str(), (long long unsigned) _hash_id);
-
         (*_hash_map)[_hash_id] = prefix;
         if(_hash_map->bucket_count() < _hash_map->size())
             _hash_map->rehash(_hash_map->size() + 10);
@@ -132,7 +133,7 @@ get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash
             return _map_itr->second;
     }
 
-#if defined(DEBUG)
+#    if defined(DEBUG)
     // if(settings::verbose() > 0 || settings::debug())
     {
         std::stringstream ss;
@@ -150,7 +151,7 @@ get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash
         }
         fprintf(stderr, "%s\n", ss.str().c_str());
     }
-#endif
+#    endif
 
     return std::string("unknown-hash=") + std::to_string(_hash_id);
 }
@@ -166,3 +167,5 @@ get_hash_identifier(hash_result_type _hash_id)
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
+
+#endif

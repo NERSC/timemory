@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file timemory/settings.hpp
- * \headerfile timemory/settings.hpp "timemory/settings.hpp"
+/**
+ * \headerfile "timemory/settings.hpp"
  * Handles TiMemory settings, parses environment
  *
  */
@@ -31,3 +31,8 @@
 #pragma once
 
 #include "timemory/settings/declaration.hpp"
+
+#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN) &&           \
+    !defined(TIMEMORY_SETTINGS_SOURCE)
+#    include "timemory/settings/settings.cpp"
+#endif

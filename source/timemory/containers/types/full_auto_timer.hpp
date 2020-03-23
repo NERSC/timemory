@@ -31,6 +31,8 @@
 
 //======================================================================================//
 //
+#include "timemory/api.hpp"
+//
 #include "timemory/containers/macros.hpp"
 //
 #include "timemory/containers/types.hpp"
@@ -58,33 +60,11 @@
 //
 // clang-format off
 //
-TIMEMORY_EXTERN_TUPLE(full_auto_timer_t,
-                      component::wall_clock,
-                      component::system_clock,
-                      component::user_clock,
-                      component::cpu_util,
-                      component::peak_rss,
-                      component::user_tuple_bundle)
+TIMEMORY_EXTERN_TUPLE(full_auto_timer_t, TIMEMORY_FULL_TUPLE_TYPES)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_EXTERN_LIST(full_auto_timer_t,
-                     component::user_list_bundle,
-                     component::gperf_cpu_profiler,
-                     component::gperf_heap_profiler,
-                     component::caliper,
-                     component::tau_marker,
-                     component::papi_array_t,
-                     component::cpu_roofline_sp_flops,
-                     component::cpu_roofline_dp_flops,
-                     component::cuda_event,
-                     component::nvtx_marker,
-                     component::cupti_activity,
-                     component::cupti_counters,
-                     component::gpu_roofline_flops,
-                     component::gpu_roofline_hp_flops,
-                     component::gpu_roofline_sp_flops,
-                     component::gpu_roofline_dp_flops)
+TIMEMORY_EXTERN_LIST(full_auto_timer_t, TIMEMORY_FULL_LIST_TYPES)
 //
 //--------------------------------------------------------------------------------------//
 //

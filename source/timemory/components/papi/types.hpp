@@ -31,6 +31,10 @@
 
 #include "timemory/components/macros.hpp"
 
+#if !defined(TIMEMORY_PAPI_ARRAY_SIZE)
+#    define TIMEMORY_PAPI_ARRAY_SIZE 8
+#endif
+
 //======================================================================================//
 //
 TIMEMORY_DECLARE_COMPONENT(papi_vector)

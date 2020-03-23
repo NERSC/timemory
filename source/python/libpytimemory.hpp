@@ -33,6 +33,28 @@
 
 //======================================================================================//
 
+#include "timemory/timemory.hpp"
+//
+#include "timemory/enum.h"
+#include "timemory/library.h"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/insert.hpp"
+#include "timemory/runtime/invoker.hpp"
+#include "timemory/runtime/properties.hpp"
+#include "timemory/utility/signals.hpp"
+
+#include "pybind11/cast.h"
+#include "pybind11/embed.h"
+#include "pybind11/eval.h"
+#include "pybind11/functional.h"
+#include "pybind11/iostream.h"
+#include "pybind11/numpy.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
+#include "pybind11/stl.h"
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -46,29 +68,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
-#include "pybind11/cast.h"
-#include "pybind11/chrono.h"
-#include "pybind11/embed.h"
-#include "pybind11/eval.h"
-#include "pybind11/functional.h"
-#include "pybind11/iostream.h"
-#include "pybind11/numpy.h"
-#include "pybind11/pybind11.h"
-#include "pybind11/pytypes.h"
-#include "pybind11/stl.h"
-
-#include "timemory/timemory.hpp"
-//
-#include "timemory/enum.h"
-#include "timemory/library.h"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/runtime/initialize.hpp"
-#include "timemory/runtime/insert.hpp"
-#include "timemory/runtime/invoker.hpp"
-#include "timemory/runtime/properties.hpp"
-#include "timemory/utility/signals.hpp"
 
 //======================================================================================//
 

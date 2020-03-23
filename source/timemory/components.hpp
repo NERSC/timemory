@@ -85,7 +85,7 @@
 
 // OpenMP components
 #if defined(TIMEMORY_USE_OMPT)
-#    include "timemory/components/openmp.hpp"
+#    include "timemory/components/ompt/components.hpp"
 #endif
 
 // Roofline components

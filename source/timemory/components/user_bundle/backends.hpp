@@ -33,7 +33,7 @@
 #include "timemory/components/gotcha/backends.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <cassert>
@@ -325,25 +325,25 @@ struct opaque_typeids
 {
     using result_type = std::set<size_t>;
 
-    template <typename U = T, enable_if_t<(trait::is_available<U>()), int> = 0>
+    template <typename U = T, enable_if_t<(trait::is_available<U>::value), int> = 0>
     static auto get()
     {
         return result_type({ get_opaque_hash(demangle<T>()) });
     }
 
-    template <typename U = T, enable_if_t<!(trait::is_available<U>()), int> = 0>
+    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
     static auto get()
     {
         return result_type({ 0 });
     }
 
-    template <typename U = T, enable_if_t<(trait::is_available<U>()), int> = 0>
+    template <typename U = T, enable_if_t<(trait::is_available<U>::value), int> = 0>
     static auto hash()
     {
         return get_opaque_hash(demangle<T>());
     }
 
-    template <typename U = T, enable_if_t<!(trait::is_available<U>()), int> = 0>
+    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
     static auto hash() -> size_t
     {
         return 0;
@@ -363,7 +363,8 @@ struct opaque_typeids<Tuple<T...>>
         ret.insert(get_opaque_hash(demangle<U>()));
     }
 
-    template <typename U = Tuple<T...>, enable_if_t<(trait::is_available<U>()), int> = 0>
+    template <typename U                                        = Tuple<T...>,
+              enable_if_t<(trait::is_available<U>::value), int> = 0>
     static auto get()
     {
         result_type ret;
@@ -372,7 +373,8 @@ struct opaque_typeids<Tuple<T...>>
         return ret;
     }
 
-    template <typename U = Tuple<T...>, enable_if_t<!(trait::is_available<U>()), int> = 0>
+    template <typename U                                         = Tuple<T...>,
+              enable_if_t<!(trait::is_available<U>::value), int> = 0>
     static auto get()
     {
         return result_type({ 0 });

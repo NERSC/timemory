@@ -136,6 +136,22 @@ base<Tp, Value>::get(void*& ptr, size_t typeid_hash) const
 //
 template <typename Tp, typename Value>
 void
+base<Tp, Value>::get_opaque_data(void*& ptr, size_t typeid_hash) const
+{
+    static size_t this_typeid_hash = std::hash<std::string>()(demangle<Type>());
+    if(!ptr && typeid_hash == this_typeid_hash)
+    {
+        auto _data      = static_cast<const Tp*>(this)->get();
+        using data_type = decay_t<decltype(_data)>;
+        auto _pdata     = new data_type(_data);
+        ptr             = reinterpret_cast<void*>(_pdata);
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+void
 base<Tp, Value>::set_started()
 {
     is_running = true;
@@ -303,6 +319,15 @@ base<Tp, Value>::get_description()
 {
     static std::string _instance = Type::description();
     return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+typename base<Tp, Value>::dynamic_type*
+base<Tp, Value>::create() const
+{
+    return static_cast<dynamic_type*>(new Type{});
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -571,6 +596,13 @@ base<Tp, void>::get(void*& ptr, size_t typeid_hash) const
         ptr = reinterpret_cast<void*>(const_cast<base_type*>(this));
 }
 //
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+void
+base<Tp, void>::get_opaque_data(void*&, size_t) const
+{}
+//
 //----------------------------------------------------------------------------------//
 //
 // pop the node off the graph
@@ -640,6 +672,15 @@ base<Tp, void>::get_description()
 {
     static std::string _instance = Type::description();
     return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+typename base<Tp, void>::dynamic_type*
+base<Tp, void>::create() const
+{
+    return static_cast<dynamic_type*>(new Type{});
 }
 //
 //--------------------------------------------------------------------------------------//

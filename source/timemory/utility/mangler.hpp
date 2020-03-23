@@ -31,7 +31,7 @@
 #pragma once
 
 #include "timemory/mpl/apply.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/utility.hpp"
 

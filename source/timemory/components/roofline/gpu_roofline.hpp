@@ -27,7 +27,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #include <array>
 #include <memory>

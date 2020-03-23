@@ -22,6 +22,13 @@ if(_MPIP AND NOT TARGET timemory-cxx-shared)
     set(_MPIP OFF)
 endif()
 
+set(_STATIC_LIB)
+foreach(_TARG timing-component rusage-component)
+    if(TARGET timemory-${_TARG}-static)
+        list(APPEND _STATIC_LIB timemory-${_TARG}-static)
+    endif()
+endforeach()
+
 add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF) # still dev
@@ -85,7 +92,8 @@ if(TIMEMORY_BUILD_TIMEM)
         timemory-vector
         timemory-headers
         # timemory-papi
-        timem-libexplain)
+        timem-libexplain
+        ${_STATIC_LIB})
 
     set_target_properties(timem PROPERTIES
         INSTALL_RPATH_USE_LINK_PATH ON)

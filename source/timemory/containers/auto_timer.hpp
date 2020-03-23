@@ -24,8 +24,8 @@
 //
 
 /**
- * \headerfile "timemory/variadic/auto_user_bundle.hpp"
- * \brief Automatic timers. Exist for backwards compatibility. In C++, use auto_tuple.
+ * \headerfile "timemory/containers/auto_timer.hpp"
+ * Automatic timers. Exist for backwards compatibility. In C++, use auto_tuple.
  * Usage with macros (recommended):
  *    \param TIMEMORY_AUTO_TIMER("")
  *    \param TIMEMORY_BASIC_AUTO_TIMER("")
@@ -35,50 +35,57 @@
 
 #pragma once
 
-#include "timemory/components/types.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
+//
+#include "timemory/components/types.hpp"
+//
+#include "timemory/types.hpp"
 
 namespace tim
 {
+//
 //--------------------------------------------------------------------------------------//
-
-using auto_user_bundle_tuple_t = auto_tuple<component::user_tuple_bundle>;
-using auto_user_bundle_list_t  = auto_list<component::user_list_bundle>;
-using auto_user_bundle = auto_hybrid<auto_user_bundle_tuple_t, auto_user_bundle_list_t>;
-
+//
+using minimal_auto_tuple_t = tim::auto_tuple<TIMEMORY_MINIMAL_TUPLE_TYPES>;
+using minimal_auto_list_t  = tim::auto_list<TIMEMORY_MINIMAL_LIST_TYPES>;
+using minimal_auto_timer_t = auto_hybrid<minimal_auto_tuple_t, minimal_auto_list_t>;
+//
 //--------------------------------------------------------------------------------------//
-
+//
+using full_auto_tuple_t = tim::auto_tuple<TIMEMORY_FULL_TUPLE_TYPES>;
+using full_auto_list_t  = tim::auto_list<TIMEMORY_FULL_LIST_TYPES>;
+using full_auto_timer_t = auto_hybrid<full_auto_tuple_t, full_auto_list_t>;
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_MINIMAL_AUTO_TIMER)
+//
+using auto_timer_tuple_t = minimal_auto_tuple_t;
+using auto_timer_list_t  = minimal_auto_list_t;
+using auto_timer         = minimal_auto_timer_t;
+//
+#else
+//
+using auto_timer_tuple_t = full_auto_tuple_t;
+using auto_timer_list_t  = full_auto_list_t;
+using auto_timer         = full_auto_timer_t;
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+using auto_timer_t = auto_timer;
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
 
-//======================================================================================//
-
-#define TIMEMORY_BLANK_AUTO_BUNDLE(...)                                                  \
-    TIMEMORY_BLANK_POINTER(::tim::auto_bundle, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_BUNDLE(...)                                                  \
-    TIMEMORY_BASIC_POINTER(::tim::auto_bundle, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_BUNDLE(...) TIMEMORY_POINTER(::tim::auto_bundle, __VA_ARGS__)
-
+//
 //--------------------------------------------------------------------------------------//
-// instance versions
+//
 
-#define TIMEMORY_BLANK_AUTO_BUNDLE_HANDLE(...)                                           \
-    TIMEMORY_BLANK_HANDLE(::tim::auto_bundle, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_BUNDLE_HANDLE(...)                                           \
-    TIMEMORY_BASIC_HANDLE(::tim::auto_bundle, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_BUNDLE_HANDLE(...) TIMEMORY_HANDLE(::tim::auto_bundle, __VA_ARGS__)
-
+//
 //--------------------------------------------------------------------------------------//
-// debug versions
-
-#define TIMEMORY_DEBUG_BASIC_AUTO_BUNDLE(...)                                            \
-    TIMEMORY_DEBUG_BASIC_MARKER(::tim::auto_bundle, __VA_ARGS__)
-
-#define TIMEMORY_DEBUG_AUTO_BUNDLE(...)                                                  \
-    TIMEMORY_DEBUG_MARKER(::tim::auto_bundle, __VA_ARGS__)
-
-//======================================================================================//
+//

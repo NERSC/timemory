@@ -39,7 +39,7 @@
 #include <vector>
 
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 

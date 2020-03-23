@@ -33,8 +33,13 @@
 
 //======================================================================================//
 //
-TIMEMORY_DECLARE_COMPONENT(gperf_cpu_profiler)
-TIMEMORY_DECLARE_COMPONENT(gperf_heap_profiler)
+TIMEMORY_DECLARE_COMPONENT(gperftools_cpu_profiler)
+TIMEMORY_DECLARE_COMPONENT(gperftools_heap_profiler)
+//
+// for backwards-compatibility -- name change due to confusion with "gperf" (GNU perf)
+//
+TIMEMORY_COMPONENT_ALIAS(gperf_cpu_profiler, gperftools_cpu_profiler)
+TIMEMORY_COMPONENT_ALIAS(gperf_heap_profiler, gperftools_heap_profiler)
 //
 //======================================================================================//
 

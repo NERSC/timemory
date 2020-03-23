@@ -25,6 +25,9 @@
 
 #include "libpytimemory.hpp"
 #include "timemory/timemory.hpp"
+
+#include "timemory/components/definition.hpp"
+
 #include <cstdio>
 #include <pybind11/pybind11.h>
 
@@ -67,8 +70,12 @@ struct pyenumeration
     static void generate(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
     {
         using property_t = tim::component::properties<T>;
-        _pyenum.value(property_t::enum_string(),
-                      static_cast<TIMEMORY_NATIVE_COMPONENT>(property_t::value));
+        std::string id   = property_t::enum_string();
+        for(auto& itr : id)
+            itr = tolower(itr);
+        _pyenum.value(id.c_str(),
+                      static_cast<TIMEMORY_NATIVE_COMPONENT>(property_t::value),
+                      T::description().c_str());
     }
 
     static void components(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)

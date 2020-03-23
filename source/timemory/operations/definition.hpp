@@ -69,13 +69,12 @@
 #include "timemory/operations/types/stop.hpp"
 #include "timemory/operations/types/store.hpp"
 //
-
 #include "timemory/components/base.hpp"
 #include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/utility/serializer.hpp"
-
+//
 namespace tim
 {
 //
@@ -85,19 +84,20 @@ template <typename T>
 storage_initializer
 storage_initializer::get()
 {
+    if(!trait::runtime_enabled<T>::get())
+        return storage_initializer{};
+
     using storage_type = storage<T>;
 
     static auto _master = []() {
         auto _instance = storage_type::master_instance();
-        if(_instance)
-            _instance->initialize();
+        consume_parameters(_instance);
         return storage_initializer{};
     }();
 
     static thread_local auto _worker = []() {
         auto _instance = storage_type::instance();
-        if(_instance)
-            _instance->initialize();
+        consume_parameters(_instance);
         return storage_initializer{};
     }();
 

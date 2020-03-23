@@ -34,7 +34,7 @@
 // cause problems
 
 #include "timemory/backends/types/papi.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

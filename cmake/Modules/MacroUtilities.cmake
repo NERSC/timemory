@@ -530,11 +530,27 @@ function(CHECK_REQUIRED VAR)
     endif()
 endfunction()
 
+
+#-----------------------------------------------------------------------
+# C/C++ development headers
+#
+macro(INSTALL_HEADER_FILES)
+    foreach(_header ${ARGN})
+        file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})
+        get_filename_component(_destpath ${_relative} DIRECTORY)
+        install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
+    endforeach()
+endmacro()
+
+
 #----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
 macro(BUILD_INTERMEDIATE_LIBRARY)
 
+    # options
+    set(_options    USE_INTERFACE
+                    INSTALL_SOURCE)
     # single-value
     set(_onevalue   NAME
                     TARGET
@@ -628,7 +644,12 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             TIMEMORY_${COMP_CATEGORY}_SOURCE
             TIMEMORY_${UPP_COMP}_SOURCE)
 
-        target_compile_definitions(${TARGET_NAME} PUBLIC
+        set(_USE_VIS PUBLIC)
+        if(COMP_USE_INTERFACE)
+            set(_USE_VIS INTERFACE)
+        endif()
+
+        target_compile_definitions(${TARGET_NAME} ${_USE_VIS}
             TIMEMORY_USE_${COMP_CATEGORY}_EXTERN
             TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
@@ -642,16 +663,10 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
 
     endforeach()
 
-endmacro()
+    if(COMP_INSTALL_SOURCE)
+        install_header_files(${COMP_SOURCES})
+    endif()
 
-
-# C/C++ development headers
-macro(INSTALL_HEADER_FILES)
-    foreach(_header ${ARGN})
-        file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})
-        get_filename_component(_destpath ${_relative} DIRECTORY)
-        install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
-    endforeach()
 endmacro()
 
 

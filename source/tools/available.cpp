@@ -24,27 +24,14 @@
 
 #include "available.hpp"
 //
-#include "timemory/components/types.hpp"
+#include "timemory/components.hpp"
 //
-#include "timemory/components/base.hpp"
+// #include "timemory/components/base.hpp"
 #include "timemory/components/placeholder.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/skeletons.hpp"
 //
-#include "timemory/components/caliper/components.hpp"
-#include "timemory/components/cuda/components.hpp"
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/general.hpp"
-#include "timemory/components/gotcha/components.hpp"
-#include "timemory/components/gperftools/components.hpp"
-#include "timemory/components/likwid/components.hpp"
-#include "timemory/components/papi/components.hpp"
-#include "timemory/components/roofline/components.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/tau_marker/components.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/vtune/components.hpp"
+#include "timemory/components/definition.hpp"
 //
 #include "timemory/timemory.hpp"
 //

@@ -31,12 +31,21 @@
 
 #include "timemory/settings/macros.hpp"
 
+#include <functional>
+#include <string>
+#include <vector>
+
 namespace tim
 {
 //
 //--------------------------------------------------------------------------------------//
 //
 //                              settings
+//
+//--------------------------------------------------------------------------------------//
+//
+using setting_callback_t     = std::function<void()>;
+using setting_callback_vec_t = std::vector<setting_callback_t>;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -49,5 +58,18 @@ struct settings;
 //
 //--------------------------------------------------------------------------------------//
 //
-
+#if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
+//
+extern setting_callback_vec_t&
+get_parse_callbacks();
+//
+#else
+//
+setting_callback_vec_t&
+get_parse_callbacks();
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
