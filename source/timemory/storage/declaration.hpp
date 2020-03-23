@@ -68,6 +68,19 @@ get_storage_singleton();
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Tp>
+storage_singleton<Tp>*
+get_storage_singleton()
+{
+    using singleton_type  = tim::storage_singleton<Tp>;
+    using component_type  = typename Tp::component_type;
+    static auto _instance = std::unique_ptr<singleton_type>(
+        (trait::runtime_enabled<component_type>::get()) ? new singleton_type{} : nullptr);
+    return _instance.get();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 //                              base::storage
 //
 //--------------------------------------------------------------------------------------//
@@ -325,6 +338,7 @@ public:
     friend struct operation::finalize::upc_get<Type, true>;
     friend struct operation::finalize::dmp_get<Type, true>;
     friend struct operation::finalize::print<Type, true>;
+    friend struct operation::finalize::merge<Type, true>;
     friend class tim::manager;
 
 public:
@@ -630,6 +644,24 @@ storage<Type, true>::do_serialize(Archive& ar)
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Type>
+typename storage<Type, true>::pointer
+storage<Type, true>::instance()
+{
+    return get_singleton() ? get_singleton()->instance() : nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, true>::pointer
+storage<Type, true>::master_instance()
+{
+    return get_singleton() ? get_singleton()->master_instance() : nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 //                      impl::storage<Type, false>
 //                          impl::storage_false
 //
@@ -654,6 +686,7 @@ public:
     friend class tim::manager;
     friend struct impl::storage_deleter<this_type>;
     friend struct operation::finalize::print<Type, false>;
+    friend struct operation::finalize::merge<Type, false>;
 
     using result_node    = std::tuple<>;
     using graph_t        = std::tuple<>;
@@ -726,6 +759,24 @@ private:
     std::unordered_set<Type*>  m_stack;
     std::shared_ptr<printer_t> m_printer;
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, false>::pointer
+storage<Type, false>::instance()
+{
+    return get_singleton() ? get_singleton()->instance() : nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, false>::pointer
+storage<Type, false>::master_instance()
+{
+    return get_singleton() ? get_singleton()->master_instance() : nullptr;
+}
 //
 //--------------------------------------------------------------------------------------//
 //

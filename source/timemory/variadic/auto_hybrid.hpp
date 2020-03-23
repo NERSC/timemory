@@ -205,6 +205,12 @@ public:
         if(m_enabled)
             m_temporary_object.audit(std::forward<Args>(args)...);
     }
+    template <template <typename> class OpT, typename... Args>
+    void invoke(Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.template invoke<OpT>(std::forward<Args>(_args)...);
+    }
     template <typename... Args>
     auto get(Args&&... args) const
     {

@@ -287,10 +287,12 @@ template <typename Up, typename Unit,
 int64_t
 base<Tp, Value>::unit()
 {
-    IF_CONSTEXPR(timing_units_v)
-    return units::sec;
-    else IF_CONSTEXPR(memory_units_v) return units::megabyte;
-    else IF_CONSTEXPR(percent_units_v) return 1;
+    if(timing_units_v)
+        return units::sec;
+    else if(memory_units_v)
+        return units::megabyte;
+    else if(percent_units_v)
+        return 1;
 
     return 1;
 }

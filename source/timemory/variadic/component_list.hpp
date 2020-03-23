@@ -271,6 +271,15 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+
+    template <template <typename> class OpT, typename... Args>
+    void invoke(Args&&... _args)
+    {
+        using invoke_t = operation_t<OpT>;
+        apply_v::access<invoke_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // this_type operators
     //
     this_type& operator-=(const this_type& rhs);

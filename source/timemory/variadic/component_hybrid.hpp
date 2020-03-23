@@ -351,6 +351,15 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+
+    template <template <typename> class OpT, typename... Args>
+    void invoke(Args&&... _args)
+    {
+        m_tuple.template invoke<OpT>(std::forward<Args>(_args)...);
+        m_list.template invoke<OpT>(std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // recording
     //
     template <typename... Args>
@@ -616,7 +625,7 @@ public:
 
 protected:
     // objects
-    bool m_store = false;
+    bool       m_store = false;
     tuple_type m_tuple = tuple_type{};
     list_type  m_list  = list_type{};
 };

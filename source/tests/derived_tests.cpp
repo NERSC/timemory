@@ -257,8 +257,7 @@ TEST_F(derived_tests, cpu_util_hybrid_wc_cc)
 {
     std::cout << '\n';
     using list_type = tim::component_list<cpu_clock, cpu_util>;
-    using toolset_t = tim::component_hybrid<tim::component_tuple<wall_clock>,
-                                            list_type>;
+    using toolset_t = tim::component_hybrid<tim::component_tuple<wall_clock>, list_type>;
 
     list_type::get_initializer() = [](list_type& cl) {
         cl.initialize<cpu_clock, cpu_util>();

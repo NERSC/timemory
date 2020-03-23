@@ -45,19 +45,6 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp>
-storage_singleton<Tp>*
-get_storage_singleton()
-{
-    using singleton_type  = tim::storage_singleton<Tp>;
-    using component_type  = typename Tp::component_type;
-    static auto _instance = std::unique_ptr<singleton_type>(
-        (trait::runtime_enabled<component_type>::get()) ? new singleton_type() : nullptr);
-    return _instance.get();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 //                              base::storage
 //
 //--------------------------------------------------------------------------------------//
@@ -73,24 +60,6 @@ namespace impl
 //======================================================================================//
 //
 //                                      TRUE
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::pointer
-storage<Type, true>::instance()
-{
-    return get_singleton() ? get_singleton()->instance() : nullptr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, true>::pointer
-storage<Type, true>::master_instance()
-{
-    return get_singleton() ? get_singleton()->master_instance() : nullptr;
-}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -152,24 +121,6 @@ storage<Type, true>::instance_count()
 //--------------------------------------------------------------------------------------//
 //
 //                                      FALSE
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, false>::pointer
-storage<Type, false>::instance()
-{
-    return get_singleton() ? get_singleton()->instance() : nullptr;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-typename storage<Type, false>::pointer
-storage<Type, false>::master_instance()
-{
-    return get_singleton() ? get_singleton()->master_instance() : nullptr;
-}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -503,17 +454,6 @@ storage<Type, true>::pop()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-typename storage<Type, true>::dmp_result_t
-storage<Type, true>::dmp_get()
-{
-    dmp_result_t _ret;
-    operation::finalize::dmp_get<Type, true>(*this, _ret);
-    return _ret;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
 void
 storage<Type, true>::stack_pop(Type* obj)
 {
@@ -692,123 +632,19 @@ template <typename Type>
 void
 storage<Type, true>::merge(this_type* itr)
 {
-    using pre_order_iterator = typename graph_t::pre_order_iterator;
-    using sibling_iterator   = typename graph_t::sibling_iterator;
-
-    // don't merge self
-    if(itr == this)
-        return;
-
-    // if merge was not initialized return
-    if(itr && !itr->is_initialized())
-        return;
-
-    itr->stack_clear();
-
-    // create lock
-    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-    if(!l.owns_lock())
-        l.lock();
-
-    auto _copy_hash_ids = [&]() {
-        for(const auto& _itr : (*itr->get_hash_ids()))
-            if(m_hash_ids->find(_itr.first) == m_hash_ids->end())
-                (*m_hash_ids)[_itr.first] = _itr.second;
-        for(const auto& _itr : (*itr->get_hash_aliases()))
-            if(m_hash_aliases->find(_itr.first) == m_hash_aliases->end())
-                (*m_hash_aliases)[_itr.first] = _itr.second;
-    };
-
-    // if self is not initialized but itr is, copy data
-    if(itr && itr->is_initialized() && !this->is_initialized())
-    {
-        PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
-                   Type::get_label().c_str());
-        graph().insert_subgraph_after(_data().head(), itr->data().head());
-        m_initialized = itr->m_initialized;
-        m_finalized   = itr->m_finalized;
-        _copy_hash_ids();
-        return;
-    }
-    else
-    {
-        _copy_hash_ids();
-    }
-
-    if(itr->size() == 0 || !itr->data().has_head())
-        return;
-
-    int64_t num_merged     = 0;
-    auto    inverse_insert = itr->data().get_inverse_insert();
-
-    for(auto entry : inverse_insert)
-    {
-        auto master_entry = data().find(entry.second);
-        if(master_entry != data().end())
-        {
-            pre_order_iterator pitr(entry.second);
-
-            if(itr->graph().is_valid(pitr) && pitr)
-            {
-                if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> worker is merging %i records into %i records",
-                               Type::get_label().c_str(), (int) itr->size(),
-                               (int) this->size());
-
-                pre_order_iterator pos = master_entry;
-
-                if(*pos == *pitr)
-                {
-                    ++num_merged;
-                    sibling_iterator other = pitr;
-                    for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
-                    {
-                        pre_order_iterator pchild = sitr;
-                        if(pchild->obj().nlaps() == 0)
-                            continue;
-                        graph().append_child(pos, pchild);
-                    }
-                }
-
-                if(settings::debug() || settings::verbose() > 2)
-                    PRINT_HERE("[%s]> master has %i records", Type::get_label().c_str(),
-                               (int) this->size());
-
-                // remove the entry from this graph since it has been added
-                itr->graph().erase_children(entry.second);
-                itr->graph().erase(entry.second);
-            }
-        }
-    }
-
-    int64_t merge_size = static_cast<int64_t>(inverse_insert.size());
-    if(num_merged != merge_size)
-    {
-        int64_t           diff = merge_size - num_merged;
-        std::stringstream ss;
-        ss << "Testing error! Missing " << diff << " merge points. The worker thread "
-           << "contained " << merge_size << " bookmarks but only merged " << num_merged
-           << " nodes!";
-
-        PRINT_HERE("%s", ss.str().c_str());
-
-#if defined(TIMEMORY_TESTING)
-        throw std::runtime_error(ss.str());
-#endif
-    }
-
-    if(num_merged == 0)
-    {
-        if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("[%s]> worker is not merged!", Type::get_label().c_str());
-        pre_order_iterator _nitr(itr->data().head());
-        ++_nitr;
-        if(!graph().is_valid(_nitr))
-            _nitr = pre_order_iterator(itr->data().head());
-        graph().append_child(_data().head(), _nitr);
-    }
-
-    itr->data().clear();
+    if(itr)
+        operation::finalize::merge<Type, true>(*this, *itr);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, true>::dmp_result_t
+storage<Type, true>::dmp_get()
+{
+    dmp_result_t _ret;
+    operation::finalize::dmp_get<Type, true>(*this, _ret);
+    return _ret;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1064,19 +900,8 @@ template <typename Type>
 void
 storage<Type, false>::merge(this_type* itr)
 {
-    itr->stack_clear();
-
-    // create lock
-    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-    if(!l.owns_lock())
-        l.lock();
-
-    for(const auto& _itr : (*itr->get_hash_ids()))
-        if(m_hash_ids->find(_itr.first) == m_hash_ids->end())
-            (*m_hash_ids)[_itr.first] = _itr.second;
-    for(const auto& _itr : (*itr->get_hash_aliases()))
-        if(m_hash_aliases->find(_itr.first) == m_hash_aliases->end())
-            (*m_hash_aliases)[_itr.first] = _itr.second;
+    if(itr)
+        operation::finalize::merge<Type, false>(*this, *itr);
 }
 //
 //--------------------------------------------------------------------------------------//

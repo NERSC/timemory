@@ -31,6 +31,7 @@
 #pragma once
 
 #include <functional>
+#include <initializer_list>
 #include <iomanip>
 #include <sstream>
 #include <string>

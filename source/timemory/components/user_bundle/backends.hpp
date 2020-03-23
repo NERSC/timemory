@@ -35,6 +35,7 @@
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/variadic/types.hpp"
+#include "timemory/storage/declaration.hpp"
 
 #include <cassert>
 #include <cstdint>

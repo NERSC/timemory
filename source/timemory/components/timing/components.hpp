@@ -30,7 +30,6 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/base/declaration.hpp"
-#include "timemory/components/base/definition.hpp"
 #include "timemory/components/base/templates.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/math.hpp"

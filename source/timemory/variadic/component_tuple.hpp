@@ -293,6 +293,15 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+
+    template <template <typename> class OpT, typename... Args>
+    void invoke(Args&&... _args)
+    {
+        using invoke_t = operation_t<OpT>;
+        apply_v::access<invoke_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // get member functions taking either a type
     //
     template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>

@@ -422,6 +422,7 @@
             extern template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;          \
             extern template struct finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;          \
             extern template struct finalize::print<COMPONENT_NAME, HAS_DATA>;            \
+            extern template struct finalize::merge<COMPONENT_NAME, HAS_DATA>;            \
             }                                                                            \
             }
 #    endif
@@ -480,6 +481,7 @@
             template struct finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                 \
             template struct finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;                 \
             template struct finalize::print<COMPONENT_NAME, HAS_DATA>;                   \
+            template struct finalize::merge<COMPONENT_NAME, HAS_DATA>;                   \
             }                                                                            \
             }
 #    endif

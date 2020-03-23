@@ -32,6 +32,8 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/ompt/traits.hpp"
 #include "timemory/components/ompt/types.hpp"
+//
+#include "timemory/storage/definition.hpp"
 
 #if defined(TIMEMORY_USE_OMPT)
 #    include "timemory/components/ompt/ompt.hpp"

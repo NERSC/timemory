@@ -246,6 +246,9 @@ TEST_F(variadic_tests, concat)
 
 TEST_F(variadic_tests, get)
 {
+    tim::trait::runtime_enabled<cpu_roofline<float>>::set(false);
+    tim::trait::runtime_enabled<cpu_roofline<double>>::set(false);
+
     using lhs_t = tim::component_tuple<wall_clock, system_clock, cpu_roofline<double>>;
     using rhs_t = tim::component_tuple<wall_clock, cpu_clock, cpu_roofline<float>>;
     using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;

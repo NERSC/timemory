@@ -154,7 +154,6 @@ public:
             if(sum == 0)
                 return;
 
-            internal_init();
             obj.init();
             get_data().emplace_back(std::forward<opaque>(obj));
         }
@@ -254,7 +253,6 @@ public:
             if(sum == 0)
                 return;
 
-            internal_init();
             obj.init();
             m_bundle.emplace_back(std::forward<opaque>(obj));
         }
@@ -310,19 +308,6 @@ private:
     //  Get lock
     //
     static mutex_t& get_lock() { return get_persistent_data().lock; }
-
-    //----------------------------------------------------------------------------------//
-    //  Initialize the storage
-    //
-    static void internal_init()
-    {
-        static bool _inited = []() {
-            auto ret = storage_type::instance();
-            ret->initialize();
-            return true;
-        }();
-        consume_parameters(_inited);
-    }
 };
 //
 //--------------------------------------------------------------------------------------//
