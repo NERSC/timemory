@@ -209,13 +209,13 @@ TEST_F(stl_overload_tests, statistics)
     int_type    int_v    = 4;
     real_type   real_v   = 4.0;
     vector_type vector_v = { real_v, 1.5 * real_v };
-    array_type  array_v  = { int_v, 3 * int_v };
+    array_type  array_v  = { { int_v, 3 * int_v } };
     pair_type   pair_v   = { vector_v, array_v };
 
     int_type    int_op    = 2;
     real_type   real_op   = 2.0;
     vector_type vector_op = { real_op, real_op };
-    array_type  array_op  = { int_op, int_op };
+    array_type  array_op  = { { int_op, int_op } };
     pair_type   pair_op   = { vector_op, array_op };
 
     auto apply = [](statistics<tuple_type>& stat_v, const tuple_type& init_v) {
