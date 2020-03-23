@@ -204,7 +204,7 @@ struct ompt_wrapper
 };
 
 //--------------------------------------------------------------------------------------//
-
+/*
 static const char* ompt_thread_type_labels[] = { NULL, "ompt_thread_initial",
                                                  "ompt_thread_worker",
                                                  "ompt_thread_other" };
@@ -217,7 +217,7 @@ static const char* ompt_cancel_flag_labels[] = {
     "ompt_cancel_taskgroup",     "ompt_cancel_activated", "ompt_cancel_detected",
     "ompt_cancel_discarded_task"
 };
-
+*/
 //--------------------------------------------------------------------------------------//
 
 template <typename Api = api::native_tag>
