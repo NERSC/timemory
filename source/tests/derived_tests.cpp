@@ -34,6 +34,8 @@
 
 #include "timemory/timemory.hpp"
 
+using namespace tim::component;
+
 static int    _argc = 0;
 static char** _argv = nullptr;
 
@@ -99,7 +101,7 @@ random_entry(const std::vector<_Tp>& v)
 
 //--------------------------------------------------------------------------------------//
 
-class empty_tests : public ::testing::Test
+class derived_tests : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -123,7 +125,46 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(empty_tests, dummy) {}
+TEST_F(derived_tests, cpu_util_tuple_wc_cc)
+{
+    std::cout << '\n';
+    using toolset_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util>;
+
+    toolset_t obj(details::get_test_name());
+    obj.start();
+    details::consume(1000);
+    obj.stop();
+
+    std::cout << obj << "\n";
+
+    ASSERT_TRUE(obj.get<cpu_util>()->is_derived());
+    auto manual_calc = 100. * obj.get<cpu_clock>()->get() / obj.get<wall_clock>()->get();
+    ASSERT_NEAR(obj.get<cpu_util>()->get(), manual_calc, 1.0e-6);
+    std::cout << '\n';
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(derived_tests, cpu_util_tuple_wc_uc_sc)
+{
+    std::cout << '\n';
+    using toolset_t =
+        tim::component_tuple<wall_clock, user_clock, system_clock, cpu_util>;
+
+    toolset_t obj(details::get_test_name());
+    obj.start();
+    details::consume(1000);
+    obj.stop();
+
+    std::cout << obj << "\n";
+
+    ASSERT_TRUE(obj.get<cpu_util>()->is_derived());
+    auto manual_calc = 100. *
+                       (obj.get<user_clock>()->get() + obj.get<system_clock>()->get()) /
+                       obj.get<wall_clock>()->get();
+    ASSERT_NEAR(obj.get<cpu_util>()->get(), manual_calc, 1.0e-6);
+    std::cout << '\n';
+}
 
 //--------------------------------------------------------------------------------------//
 

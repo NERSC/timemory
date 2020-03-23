@@ -31,8 +31,25 @@
 
 //======================================================================================//
 //
-#include "timemory/components/rusage/extern/base.hpp"
-#include "timemory/components/rusage/extern/operations.hpp"
-#include "timemory/components/rusage/extern/storage.hpp"
+#include "timemory/components/rusage/extern/current_peak_rss.hpp"
+#include "timemory/components/rusage/extern/data_rss.hpp"
+#include "timemory/components/rusage/extern/kernel_mode_time.hpp"
+#include "timemory/components/rusage/extern/num_io_in.hpp"
+#include "timemory/components/rusage/extern/num_io_out.hpp"
+#include "timemory/components/rusage/extern/num_major_page_faults.hpp"
+#include "timemory/components/rusage/extern/num_minor_page_faults.hpp"
+#include "timemory/components/rusage/extern/num_msg_recv.hpp"
+#include "timemory/components/rusage/extern/num_msg_sent.hpp"
+#include "timemory/components/rusage/extern/num_signals.hpp"
+#include "timemory/components/rusage/extern/num_swap.hpp"
+#include "timemory/components/rusage/extern/page_rss.hpp"
+#include "timemory/components/rusage/extern/peak_rss.hpp"
+#include "timemory/components/rusage/extern/priority_context_switch.hpp"
+#include "timemory/components/rusage/extern/read_bytes.hpp"
+#include "timemory/components/rusage/extern/stack_rss.hpp"
+#include "timemory/components/rusage/extern/user_mode_time.hpp"
+#include "timemory/components/rusage/extern/virtual_memory.hpp"
+#include "timemory/components/rusage/extern/voluntary_context_switch.hpp"
+#include "timemory/components/rusage/extern/written_bytes.hpp"
 //
 //======================================================================================//

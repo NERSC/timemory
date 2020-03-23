@@ -22,26 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-//
-#include "timemory/mpl/types.hpp"
-//
-#include "timemory/environment/declaration.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/operations/declaration.hpp"
-#include "timemory/plotting/declaration.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
-//
-#include "timemory/storage/definition.hpp"
-//
-#include "timemory/operations/types/storage_initializer.hpp"
-//
-#include "timemory/operations/types/finalize/dmp_get.hpp"
-#include "timemory/operations/types/finalize/get.hpp"
-#include "timemory/operations/types/finalize/mpi_get.hpp"
-#include "timemory/operations/types/finalize/print.hpp"
-#include "timemory/operations/types/finalize/upc_get.hpp"
+#include "timemory/components/rusage/extern/num_swap.hpp"

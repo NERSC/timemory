@@ -104,7 +104,7 @@ extern "C"
             return nullptr;
         using namespace tim::component;
         std::string key_tag(timer_tag);
-        auto*       obj = new auto_timer_t(key_tag, tim::settings::flat_profile());
+        auto*       obj = new auto_timer_t(key_tag);
         obj->start();
         return (void*) obj;
     }
@@ -125,7 +125,7 @@ extern "C"
             free(_tag);
             free_cstr() = false;
         }
-        auto obj = new complete_list_t(key_tag, true, tim::settings::flat_profile());
+        auto obj = new complete_list_t(key_tag);
 #    if defined(DEBUG)
         std::vector<int> _components;
         for(int i = 0; i < num_components; ++i)

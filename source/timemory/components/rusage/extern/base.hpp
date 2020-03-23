@@ -29,45 +29,15 @@
 //
 #include "timemory/mpl/types.hpp"
 //
-#include "timemory/manager/declaration.hpp"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/plotting/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 //
+#include "timemory/operations/types/add_secondary.hpp"
+#include "timemory/operations/types/add_statistics.hpp"
+#include "timemory/operations/types/base_printer.hpp"
 #include "timemory/operations/types/record.hpp"
-
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<peak_rss>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<page_rss>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<stack_rss>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<data_rss>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_swap>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_io_in>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_io_out>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_minor_page_faults>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_major_page_faults>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_msg_sent>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_msg_recv>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_signals>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<voluntary_context_switch>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<priority_context_switch>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<read_bytes, std::tuple<int64_t, int64_t>>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<written_bytes, std::array<int64_t, 2>>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<virtual_memory>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<user_mode_time>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<kernel_mode_time>)
-TIMEMORY_EXTERN_TEMPLATE(struct base<current_peak_rss, std::pair<int64_t, int64_t>>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
+#include "timemory/operations/types/serialization.hpp"

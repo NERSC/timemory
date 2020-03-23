@@ -29,37 +29,11 @@
 //
 #include "timemory/mpl/types.hpp"
 //
-#include "timemory/manager/declaration.hpp"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/plotting/declaration.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 //
 #include "timemory/operations/definition.hpp"
-
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::peak_rss, true)
-TIMEMORY_EXTERN_OPERATIONS(component::page_rss, true)
-TIMEMORY_EXTERN_OPERATIONS(component::stack_rss, true)
-TIMEMORY_EXTERN_OPERATIONS(component::data_rss, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_io_in, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_io_out, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_major_page_faults, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_minor_page_faults, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_msg_recv, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_msg_sent, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_signals, true)
-TIMEMORY_EXTERN_OPERATIONS(component::num_swap, true)
-TIMEMORY_EXTERN_OPERATIONS(component::voluntary_context_switch, true)
-TIMEMORY_EXTERN_OPERATIONS(component::priority_context_switch, true)
-TIMEMORY_EXTERN_OPERATIONS(component::read_bytes, true)
-TIMEMORY_EXTERN_OPERATIONS(component::written_bytes, true)
-TIMEMORY_EXTERN_OPERATIONS(component::virtual_memory, true)
-TIMEMORY_EXTERN_OPERATIONS(component::user_mode_time, true)
-TIMEMORY_EXTERN_OPERATIONS(component::kernel_mode_time, true)
-TIMEMORY_EXTERN_OPERATIONS(component::current_peak_rss, true)
-//
-//======================================================================================//

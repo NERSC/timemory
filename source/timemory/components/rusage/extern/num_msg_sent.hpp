@@ -22,4 +22,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
+#include "timemory/components/macros.hpp"
+#include "timemory/components/rusage/components.hpp"
+#include "timemory/components/rusage/extern/base.hpp"
+#include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
+
+//======================================================================================//
+//
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<num_msg_sent>)
+//
+}  // namespace component
+}  // namespace tim
+//
+TIMEMORY_EXTERN_OPERATIONS(component::num_msg_sent, true)
+//
+TIMEMORY_EXTERN_STORAGE(component::num_msg_sent, num_msg_sent)
+//
+//======================================================================================//

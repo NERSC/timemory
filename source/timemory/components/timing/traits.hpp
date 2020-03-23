@@ -103,3 +103,47 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::process_cpu_clock, 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::cpu_util, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::process_cpu_util, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::thread_cpu_util, true_type)
+
+//--------------------------------------------------------------------------------------//
+//
+//                                  DERIVATION
+//
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+namespace trait
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct derivation_types<component::cpu_util>
+{
+    using type = std::tuple<
+        type_list<component::wall_clock, component::cpu_clock>,
+        type_list<component::wall_clock, component::user_clock, component::system_clock>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct derivation_types<component::process_cpu_util>
+{
+    using type =
+        std::tuple<type_list<component::wall_clock, component::process_cpu_clock>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct derivation_types<component::thread_cpu_util>
+{
+    using type =
+        std::tuple<type_list<component::wall_clock, component::thread_cpu_clock>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace trait
+}  // namespace tim

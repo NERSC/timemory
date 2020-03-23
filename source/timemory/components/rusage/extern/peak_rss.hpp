@@ -26,22 +26,24 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/components/rusage/components.hpp"
+#include "timemory/components/rusage/extern/base.hpp"
+#include "timemory/components/rusage/extern/operations.hpp"
+#include "timemory/components/rusage/extern/storage.hpp"
+
+//======================================================================================//
 //
-#include "timemory/mpl/types.hpp"
+namespace tim
+{
+namespace component
+{
 //
-#include "timemory/environment/declaration.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/operations/declaration.hpp"
-#include "timemory/plotting/declaration.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
+TIMEMORY_EXTERN_TEMPLATE(struct base<peak_rss>)
 //
-#include "timemory/storage/definition.hpp"
+}  // namespace component
+}  // namespace tim
 //
-#include "timemory/operations/types/storage_initializer.hpp"
+TIMEMORY_EXTERN_OPERATIONS(component::peak_rss, true)
 //
-#include "timemory/operations/types/finalize/dmp_get.hpp"
-#include "timemory/operations/types/finalize/get.hpp"
-#include "timemory/operations/types/finalize/mpi_get.hpp"
-#include "timemory/operations/types/finalize/print.hpp"
-#include "timemory/operations/types/finalize/upc_get.hpp"
+TIMEMORY_EXTERN_STORAGE(component::peak_rss, peak_rss)
+//
+//======================================================================================//

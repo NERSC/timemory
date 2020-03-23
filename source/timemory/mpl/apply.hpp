@@ -210,29 +210,15 @@ struct apply<void>
     template <typename Access, typename U, size_t N>
     struct out_of_order;
 
-    template <typename Access, typename AccessU, size_t N, typename... AccessT>
-    struct out_of_order<std::tuple<Access, AccessT...>, AccessU, N>
+    template <typename AccessU, size_t N, typename... Access>
+    struct out_of_order<std::tuple<Access...>, AccessU, N>
     {
         template <typename Tuple, typename... Args>
         static void access(Tuple&& __t, Args&&... __args)
         {
-            out_of_order_T<Access, AccessU, N>::template access<Tuple, Args...>(
-                std::forward<Tuple>(__t), std::forward<Args>(__args)...);
-        }
-    };
-
-    template <typename AccessA, typename AccessB, typename AccessU, size_t N,
-              typename... AccessT>
-    struct out_of_order<std::tuple<AccessA, AccessB, AccessT...>, AccessU, N>
-    {
-        template <typename Tuple, typename... Args>
-        static void access(Tuple&& __t, Args&&... __args)
-        {
-            out_of_order_T<AccessA, AccessU, N>::template access<Tuple, Args...>(
-                std::forward<Tuple>(__t), std::forward<Args>(__args)...);
-
-            out_of_order<std::tuple<AccessB, AccessT...>, AccessU, N>::template access<
-                Tuple, Args...>(std::forward<Tuple>(__t), std::forward<Args>(__args)...);
+            TIMEMORY_FOLD_EXPRESSION(
+                out_of_order_T<Access, AccessU, N>::template access<Tuple, Args...>(
+                    std::forward<Tuple>(__t), std::forward<Args>(__args)...));
         }
     };
 
@@ -265,47 +251,13 @@ struct apply<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t N, size_t Nt, typename Tuple, typename Value,
-              enable_if_t<(N == Nt), char> = 0>
-    static void set_value(Tuple&& __t, Value&& __v)
+    template <template <typename> class Access, typename Tuple, typename... Args,
+              size_t... Idx>
+    static void unroll_access(Tuple&& __t, index_sequence<Idx...>, Args&&... __args)
     {
-        // assign argument
-        std::get<N>(__t) = __v;
-    }
-
-    template <size_t N, size_t Nt, typename Tuple, typename Value,
-              enable_if_t<(N < Nt), char> = 0>
-    static void set_value(Tuple&& __t, Value&& __v)
-    {
-        // call operator()
-        std::get<N>(__t) = __v;
-        // recursive call
-        set_value<N + 1, Nt, Tuple, Value>(std::forward<Tuple>(__t),
-                                           std::forward<Value>(__v));
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <template <typename> class Access, size_t N, typename Tuple,
-              typename... Args, enable_if_t<(N == 0), char> = 0>
-    static void unroll_access(Tuple&& __t, Args&&... __args)
-    {
-        using Tp = decltype(std::get<N>(__t));
-        using Rp = typename std::remove_reference<Tp>::type;
-        using Ap = typename std::remove_const<Rp>::type;
-        Access<Ap>(std::forward<Tp>(std::get<N>(__t)), std::forward<Args>(__args)...);
-    }
-
-    template <template <typename> class Access, size_t N, typename Tuple,
-              typename... Args, enable_if_t<(N > 0), char> = 0>
-    static void unroll_access(Tuple&& __t, Args&&... __args)
-    {
-        using Tp = decltype(std::get<N>(__t));
-        using Rp = typename std::remove_reference<Tp>::type;
-        using Ap = typename std::remove_const<Rp>::type;
-        Access<Ap>(std::forward<Tp>(std::get<N>(__t)), std::forward<Args>(__args)...);
-        unroll_access<Access, N - 1, Tuple, Args...>(std::forward<Tuple>(__t),
-                                                     std::forward<Args>(__args)...);
+        TIMEMORY_FOLD_EXPRESSION(Access<decay_t<decltype(std::get<Idx>(__t))>>(
+            std::forward<decltype(std::get<Idx>(__t))>(std::get<Idx>(__t)),
+            std::forward<Args>(__args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -332,107 +284,40 @@ struct apply<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <template <typename> class Access, size_t N, typename Tuple,
-              typename... Args, enable_if_t<(N == 0), char> = 0>
-    static void type_access(Args&&... __args)
+    template <template <typename> class Access, typename Tuple, typename... Args,
+              size_t... Idx>
+    static void type_access(index_sequence<Idx...>, Args&&... __args)
     {
-        using Tp = typename std::tuple_element<N, Tuple>::type;
-        using Rp = typename std::remove_reference<Tp>::type;
-        using Ap = typename std::remove_const<Rp>::type;
-        Access<Ap>(std::forward<Args>(__args)...);
-    }
-
-    template <template <typename> class Access, size_t N, typename Tuple,
-              typename... Args, enable_if_t<(N > 0), char> = 0>
-    static void type_access(Args&&... __args)
-    {
-        using Tp = typename std::tuple_element<N, Tuple>::type;
-        using Rp = typename std::remove_reference<Tp>::type;
-        using Ap = typename std::remove_const<Rp>::type;
-        Access<Ap>(std::forward<Args>(__args)...);
-        type_access<Access, N - 1, Tuple, Args...>(std::forward<Args>(__args)...);
+        TIMEMORY_FOLD_EXPRESSION(
+            Access<decay_t<typename std::tuple_element<Idx, Tuple>::type>>(
+                std::forward<Args>(__args)...));
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t N, size_t Nt, typename Access, typename Tuple, typename... Args,
-              enable_if_t<(N == Nt), char> = 0>
-    static void apply_access(Tuple&& __t, Args&&... __args)
+    template <typename Access, typename Tuple, typename... Args, size_t... Idx>
+    static void apply_access_with_indices(Tuple&& __t, index_sequence<Idx...>,
+                                          Args&&... __args)
     {
+        constexpr auto Nt = sizeof...(Idx);
         // call constructor
-        using Type       = decltype(std::get<N>(__t));
-        using AccessType = typename std::tuple_element<N, Access>::type;
-        AccessType(std::forward<Type>(std::get<N>(__t)), std::forward<Args>(__args)...);
-    }
-
-    template <size_t N, size_t Nt, typename Access, typename Tuple, typename... Args,
-              enable_if_t<(N < Nt), char> = 0>
-    static void apply_access(Tuple&& __t, Args&&... __args)
-    {
-        // call constructor
-        using Type       = decltype(std::get<N>(__t));
-        using AccessType = typename std::tuple_element<N, Access>::type;
-        AccessType(std::forward<Type>(std::get<N>(__t)), std::forward<Args>(__args)...);
-        // recursive call
-        apply_access<N + 1, Nt, Access, Tuple, Args...>(std::forward<Tuple>(__t),
-                                                        std::forward<Args>(__args)...);
+        TIMEMORY_FOLD_EXPRESSION(decay_t<typename std::tuple_element<Idx, Access>::type>(
+            Idx, Nt, std::forward<decltype(std::get<Idx>(__t))>(std::get<Idx>(__t)),
+            std::forward<Args>(__args)...));
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t N, size_t Nt, typename Access, typename Tuple, typename... Args,
-              enable_if_t<(N == Nt), char> = 0>
-    static void apply_access_with_indices(Tuple&& __t, Args&&... __args)
+    template <typename Access, typename TupleA, typename TupleB, typename... Args,
+              size_t... Idx>
+    static void apply_access2(TupleA&& __ta, TupleB&& __tb, index_sequence<Idx...>,
+                              Args&&... __args)
     {
         // call constructor
-        using Type       = decltype(std::get<N>(__t));
-        using AccessType = typename std::tuple_element<N, Access>::type;
-        AccessType(N, Nt + 1, std::forward<Type>(std::get<N>(__t)),
-                   std::forward<Args>(__args)...);
-    }
-
-    template <size_t N, size_t Nt, typename Access, typename Tuple, typename... Args,
-              enable_if_t<(N < Nt), char> = 0>
-    static void apply_access_with_indices(Tuple&& __t, Args&&... __args)
-    {
-        // call constructor
-        using Type       = decltype(std::get<N>(__t));
-        using AccessType = typename std::tuple_element<N, Access>::type;
-        AccessType(N, Nt + 1, std::forward<Type>(std::get<N>(__t)),
-                   std::forward<Args>(__args)...);
-        // recursive call
-        apply_access_with_indices<N + 1, Nt, Access, Tuple, Args...>(
-            std::forward<Tuple>(__t), std::forward<Args>(__args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t N, size_t Nt, typename Access, typename TupleA, typename TupleB,
-              typename... Args, enable_if_t<(N == Nt), char> = 0>
-    static void apply_access2(TupleA&& __ta, TupleB&& __tb, Args&&... __args)
-    {
-        // call constructor
-        using TypeA      = decltype(std::get<N>(__ta));
-        using TypeB      = decltype(std::get<N>(__tb));
-        using AccessType = typename std::tuple_element<N, Access>::type;
-        AccessType(std::forward<TypeA>(std::get<N>(__ta)),
-                   std::forward<TypeB>(std::get<N>(__tb)), std::forward<Args>(__args)...);
-    }
-
-    template <size_t N, size_t Nt, typename Access, typename TupleA, typename TupleB,
-              typename... Args, enable_if_t<(N < Nt), char> = 0>
-    static void apply_access2(TupleA&& __ta, TupleB&& __tb, Args&&... __args)
-    {
-        // call constructor
-        using TypeA      = decltype(std::get<N>(__ta));
-        using TypeB      = decltype(std::get<N>(__tb));
-        using AccessType = typename std::tuple_element<N, Access>::type;
-        AccessType(std::forward<TypeA>(std::get<N>(__ta)),
-                   std::forward<TypeB>(std::get<N>(__tb)), std::forward<Args>(__args)...);
-        // recursive call
-        apply_access2<N + 1, Nt, Access, TupleA, TupleB, Args...>(
-            std::forward<TupleA>(__ta), std::forward<TupleB>(__tb),
-            std::forward<Args>(__args)...);
+        TIMEMORY_FOLD_EXPRESSION(decay_t<typename std::tuple_element<Idx, Access>::type>(
+            std::forward<decltype(std::get<Idx>(__ta))>(std::get<Idx>(__ta)),
+            std::forward<decltype(std::get<Idx>(__tb))>(std::get<Idx>(__tb)),
+            std::forward<Args>(__args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -797,51 +682,48 @@ struct apply<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename Access, typename Tuple, typename... Args,
-              size_t N                  = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N > 0), int> = 0>
+    template <typename Access, typename Tuple, typename... Args>
     static void access_with_indices(Tuple&& __t, Args&&... __args) noexcept
     {
-        internal::apply<void>::template apply_access_with_indices<0, N - 1, Access, Tuple,
-                                                                  Args...>(
-            std::forward<Tuple>(__t), std::forward<Args>(__args)...);
+        constexpr auto N = std::tuple_size<decay_t<Tuple>>::value;
+        internal::apply<void>::template apply_access_with_indices<Access, Tuple, Args...>(
+            std::forward<Tuple>(__t), make_index_sequence<N>{},
+            std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename Access, typename TupleA, typename TupleB, typename... Args,
-              size_t N                  = std::tuple_size<decay_t<TupleA>>::value,
-              size_t Nt                 = std::tuple_size<decay_t<TupleB>>::value,
-              enable_if_t<(N > 0), int> = 0>
+    template <typename Access, typename TupleA, typename TupleB, typename... Args>
     static void access2(TupleA&& __ta, TupleB&& __tb, Args&&... __args) noexcept
     {
-        static_assert(N == Nt, "tuple_size 1 must match tuple_size 2");
-        internal::apply<void>::template apply_access2<0, N - 1, Access, TupleA, TupleB,
-                                                      Args...>(
+        constexpr size_t N  = std::tuple_size<decay_t<Access>>::value;
+        constexpr size_t Na = std::tuple_size<decay_t<TupleA>>::value;
+        constexpr size_t Nb = std::tuple_size<decay_t<TupleB>>::value;
+        static_assert(Na == Nb, "tuple A size must match tuple B size");
+        internal::apply<void>::template apply_access2<Access, TupleA, TupleB, Args...>(
             std::forward<TupleA>(__ta), std::forward<TupleB>(__tb),
-            std::forward<Args>(__args)...);
+            make_index_sequence<N>{}, std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <template <typename> class Access, typename Tuple, typename... Args,
-              size_t N                  = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N > 0), int> = 0>
+    template <template <typename> class Access, typename Tuple, typename... Args>
     static void unroll_access(Tuple&& __t, Args&&... __args) noexcept
     {
-        internal::apply<void>::template unroll_access<Access, N - 1, Tuple, Args...>(
-            std::forward<Tuple>(__t), std::forward<Args>(__args)...);
+        constexpr size_t N = std::tuple_size<decay_t<Tuple>>::value;
+        internal::apply<void>::template unroll_access<Access, Tuple, Args...>(
+            std::forward<Tuple>(__t), make_index_sequence<N>{},
+            std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <template <typename> class Access, typename Tuple, typename... Args,
-              size_t N                  = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N > 0), int> = 0>
+    template <template <typename> class Access, typename Tuple, typename... Args>
     static void type_access(Args&&... __args) noexcept
     {
-        internal::apply<void>::template type_access<Access, N - 1, Tuple, Args...>(
-            std::forward<Args>(__args)...);
+        constexpr size_t N = std::tuple_size<decay_t<Tuple>>::value;
+        internal::apply<void>::template type_access<Access, Tuple, Args...>(
+            make_index_sequence<N>{}, std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -849,61 +731,12 @@ struct apply<void>
     //      N == 0
     //
     //----------------------------------------------------------------------------------//
-    /*
-    template <typename Tuple, typename Value,
-              size_t N                   = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N == 0), int> = 0>
-    static void set_value(Tuple&&, Value&&) noexcept
-    {}
-    */
-    //----------------------------------------------------------------------------------//
-    /*
-    template <typename Access, typename Tuple, typename... Args,
-              size_t N                   = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N == 0), int> = 0>
-    static void access(Tuple&&, Args&&...) noexcept
-    {}
-    */
-    //----------------------------------------------------------------------------------//
 
     template <typename Access, typename Mapper, size_t R, typename Tuple,
               typename... Args, size_t N = std::tuple_size<decay_t<Access>>::value,
               size_t Nt = std::tuple_size<decay_t<Tuple>>::value,
               enable_if_t<(N == 0 || Nt == 0), int> = 0>
     static void out_of_order(Tuple&&, Args&&...) noexcept
-    {}
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Access, typename Tuple, typename... Args,
-              size_t N                   = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N == 0), int> = 0>
-    static void access_with_indices(Tuple&&, Args&&...) noexcept
-    {}
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Access, typename TupleA, typename TupleB, typename... Args,
-              size_t N                   = std::tuple_size<decay_t<TupleA>>::value,
-              size_t Nt                  = std::tuple_size<decay_t<TupleB>>::value,
-              enable_if_t<(N == 0), int> = 0>
-    static void access2(TupleA&&, TupleB&&, Args&&...) noexcept
-    {}
-
-    //----------------------------------------------------------------------------------//
-
-    template <template <typename> class Access, typename Tuple, typename... Args,
-              size_t N                   = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N == 0), int> = 0>
-    static void unroll_access(Tuple&&, Args&&...) noexcept
-    {}
-
-    //----------------------------------------------------------------------------------//
-
-    template <template <typename> class Access, typename Tuple, typename... Args,
-              size_t N                   = std::tuple_size<decay_t<Tuple>>::value,
-              enable_if_t<(N == 0), int> = 0>
-    static void type_access(Args&&...) noexcept
     {}
 
     //----------------------------------------------------------------------------------//

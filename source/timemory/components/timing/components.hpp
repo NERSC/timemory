@@ -82,9 +82,8 @@ struct system_clock : public base<system_clock>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
@@ -118,9 +117,8 @@ struct user_clock : public base<user_clock>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
@@ -154,9 +152,8 @@ struct cpu_clock : public base<cpu_clock>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
@@ -176,13 +173,13 @@ struct monotonic_clock : public base<monotonic_clock>
     {
         return tim::get_clock_monotonic_now<int64_t, ratio_t>();
     }
-    double get_display() const
+    double get() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    double get() const { return get_display(); }
+    double get_display() const { return get(); }
     void   start()
     {
         set_started();
@@ -190,9 +187,8 @@ struct monotonic_clock : public base<monotonic_clock>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
@@ -227,9 +223,8 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
@@ -262,9 +257,8 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
@@ -296,9 +290,8 @@ struct process_cpu_clock : public base<process_cpu_clock>
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
@@ -307,7 +300,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
 // this computes the CPU utilization percentage for the calling process and child
 // processes.
 // uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesnâ€™t work that way.
+// Do not use a single CPU time as an amount of time; it doesn't work that way.
 //
 // this component extracts only the CPU time spent in both user- and kernel- mode
 // and divides by wall clock time
@@ -326,26 +319,28 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     }
     double get_display() const
     {
-        const auto& _data =
-            (is_transient) ? static_cast<const value_type&>(accum) : value;
-        double denom = (_data.second > 0) ? _data.second : 1;
-        double numer = (_data.second > 0) ? _data.first : 0;
+        const auto& _data = (is_transient) ? accum : value;
+        double      denom = (_data.second > 0) ? _data.second : 1;
+        double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
     double serialization() { return get_display(); }
     double get() const { return get_display(); }
-    void   start()
+
+    void start()
     {
         set_started();
-        value = record();
+        if(!m_derive)
+            value = record();
     }
+
     void stop()
     {
-        auto tmp  = record();
-        auto diff = tmp;
-        math::minus(diff, value);
-        math::plus(accum, diff);
-        value = std::move(tmp);
+        if(!m_derive)
+        {
+            value = (record() - value);
+            accum += value;
+        }
         set_stopped();
     }
 
@@ -366,6 +361,49 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
             is_transient = rhs.is_transient;
         return *this;
     }
+
+    bool assemble(const wall_clock* wc, const cpu_clock* cc)
+    {
+        if(wc && cc)
+            m_derive = true;
+        return m_derive;
+    }
+
+    bool assemble(const wall_clock* wc, const user_clock* uc, const system_clock* sc)
+    {
+        if(wc && uc && sc)
+            m_derive = true;
+        return m_derive;
+    }
+
+    bool derive(const wall_clock* wc, const cpu_clock* cc)
+    {
+        if(m_derive && wc && cc)
+        {
+            value.first  = cc->get_value();
+            value.second = wc->get_value();
+            accum += value;
+            return true;
+        }
+        return false;
+    }
+
+    bool derive(const wall_clock* wc, const user_clock* uc, const system_clock* sc)
+    {
+        if(m_derive && wc && uc && sc)
+        {
+            value.first  = uc->get_value() + sc->get_value();
+            value.second = wc->get_value();
+            accum += value;
+            return true;
+        }
+        return false;
+    }
+
+    bool is_derived() const { return m_derive; }
+
+private:
+    bool m_derive = false;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -400,13 +438,16 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     void   start()
     {
         set_started();
-        value = record();
+        if(!m_derive)
+            value = record();
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        if(!m_derive)
+        {
+            value = (record() - value);
+            accum += value;
+        }
         set_stopped();
     }
 
@@ -427,6 +468,30 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
             is_transient = rhs.is_transient;
         return *this;
     }
+
+    bool assemble(const wall_clock* wc, const process_cpu_clock* cc)
+    {
+        if(wc && cc)
+            m_derive = true;
+        return m_derive;
+    }
+
+    bool derive(const wall_clock* wc, const process_cpu_clock* cc)
+    {
+        if(m_derive && wc && cc)
+        {
+            value.first  = cc->get_value();
+            value.second = wc->get_value();
+            accum += value;
+            return true;
+        }
+        return false;
+    }
+
+    bool is_derived() const { return m_derive; }
+
+private:
+    bool m_derive = false;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -461,13 +526,16 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     void   start()
     {
         set_started();
-        value = record();
+        if(!m_derive)
+            value = record();
     }
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        if(!m_derive)
+        {
+            value = (record() - value);
+            accum += value;
+        }
         set_stopped();
     }
 
@@ -488,6 +556,30 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
             is_transient = rhs.is_transient;
         return *this;
     }
+
+    bool assemble(const wall_clock* wc, const thread_cpu_clock* cc)
+    {
+        if(wc && cc)
+            m_derive = true;
+        return m_derive;
+    }
+
+    bool derive(const wall_clock* wc, const thread_cpu_clock* cc)
+    {
+        if(m_derive && wc && cc)
+        {
+            value.first  = cc->get_value();
+            value.second = wc->get_value();
+            accum += value;
+            return true;
+        }
+        return false;
+    }
+
+    bool is_derived() const { return m_derive; }
+
+private:
+    bool m_derive = false;
 };
 
 //--------------------------------------------------------------------------------------//

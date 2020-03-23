@@ -75,8 +75,7 @@ add_timemory_google_test(user_bundle_tests
     DISCOVER_TESTS
     SOURCES         user_bundle_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools
-                    ${_LIBRARY})
+                    timemory-plotting timemory-analysis-tools)
 
 add_timemory_google_test(mangle_tests
     DISCOVER_TESTS
@@ -229,8 +228,7 @@ if(TIMEMORY_USE_MPI)
         DISCOVER_TESTS
         SOURCES         mpi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                        timemory-plotting timemory-analysis-tools timemory-mpi
-                        ${_LIBRARY})
+                        timemory-plotting timemory-analysis-tools timemory-mpi)
 endif()
 
 if(TIMEMORY_USE_UPCXX)
@@ -248,3 +246,9 @@ add_timemory_google_test(variadic_tests
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-plotting timemory-analysis-tools timemory-mpi
                     ${_LIBRARY})
+
+add_timemory_google_test(derived_tests
+    DISCOVER_TESTS
+    SOURCES         derived_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-plotting timemory-analysis-tools timemory-mpi)

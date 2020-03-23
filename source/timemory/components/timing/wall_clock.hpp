@@ -76,9 +76,8 @@ struct wall_clock : public base<wall_clock, int64_t>
 
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 };
