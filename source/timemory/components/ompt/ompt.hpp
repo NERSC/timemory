@@ -41,18 +41,6 @@
 #include <omp.h>
 #include <ompt.h>
 
-static ompt_set_callback_t             ompt_set_callback;
-static ompt_get_task_info_t            ompt_get_task_info;
-static ompt_get_thread_data_t          ompt_get_thread_data;
-static ompt_get_parallel_info_t        ompt_get_parallel_info;
-static ompt_get_unique_id_t            ompt_get_unique_id;
-static ompt_get_num_places_t           ompt_get_num_places;
-static ompt_get_place_proc_ids_t       ompt_get_place_proc_ids;
-static ompt_get_place_num_t            ompt_get_place_num;
-static ompt_get_partition_place_nums_t ompt_get_partition_place_nums;
-static ompt_get_proc_id_t              ompt_get_proc_id;
-static ompt_enumerate_states_t         ompt_enumerate_states;
-static ompt_enumerate_mutex_impls_t    ompt_enumerate_mutex_impls;
 
 namespace tim
 {

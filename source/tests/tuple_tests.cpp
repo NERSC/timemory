@@ -584,7 +584,7 @@ TEST_F(tuple_tests, get)
     ASSERT_TRUE(std::get<0>(cc_l) == "cpu");
 
     ASSERT_NEAR(wc_v, 2.0, 1.0e-2);
-    ASSERT_NEAR(cc_v, 1.0, 1.0e-2);
+    ASSERT_NEAR(cc_v, 1.0, 1.25e-2);
 }
 
 //--------------------------------------------------------------------------------------//
