@@ -206,7 +206,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi --mpip --python --ompt --kokkos --stats --tools --cxx-standard=17'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14'"
     # Clang 7
     - os: linux
       dist: bionic
