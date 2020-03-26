@@ -1761,12 +1761,12 @@ tim::cupti::available_events_info(CUdevice device)
 
         auto as_string = [](char* cstr, size_t len) {
             std::stringstream ss;
-            for(size_t i = 0; i < len; ++i)
+            for(size_t ii = 0; ii < len; ++ii)
             {
-                if(cstr[i] == '\0')
+                if(cstr[ii] == '\0')
                     ss << ' ';
                 else
-                    ss << cstr[i];
+                    ss << cstr[ii];
             }
             return ss.str();
         };
@@ -1823,12 +1823,12 @@ tim::cupti::available_metrics_info(CUdevice device)
         auto as_string = [](char* cstr, size_t len) {
             std::stringstream ss;
             len = std::min<size_t>(len, strlen(cstr));
-            for(size_t i = 0; i < len; ++i)
+            for(size_t ii = 0; ii < len; ++ii)
             {
-                if(cstr[i] == '\0')
+                if(cstr[ii] == '\0')
                     ss << ' ';
                 else
-                    ss << cstr[i];
+                    ss << cstr[ii];
             }
             return ss.str();
         };

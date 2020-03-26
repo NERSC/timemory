@@ -49,7 +49,7 @@ static const auto num_data = 96;
 static auto       num_iter = 10;
 static const auto num_blck = 64;
 static const auto num_grid = 2;
-static const auto epsilon  = 10 * std::numeric_limits<float>::epsilon();
+// static const auto epsilon  = 10 * std::numeric_limits<float>::epsilon();
 
 //--------------------------------------------------------------------------------------//
 
@@ -177,13 +177,48 @@ class cupti_profiler_tests : public ::testing::Test
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(cupti_profiler_tests, available)
+{
+    tim::settings::cupti_metrics() = "smsp__warps_launched.avg+";
+    cupti_profiler::configure();
+
+    auto chips = cupti_profiler::ListSupportedChips();
+    for(const auto& itr : chips)
+    {
+        auto chip_metrics = cupti_profiler::ListMetrics(itr.c_str(), false);
+        if(chip_metrics.size() > 0)
+        {
+            std::cout << "CHIP: " << itr << "\n";
+            int n = 0;
+            int t = chip_metrics.size();
+            int w = 0;
+            for(const auto& citr : chip_metrics)
+                w = std::max<int>(citr.length(), w);
+            w += 4;
+            int ndiv = 120 / w;
+            for(const auto& citr : chip_metrics)
+            {
+                if(n % ndiv == 0)
+                    std::cout << "    ";
+                std::cout << std::setw(w) << citr;
+                if(n + 1 < t)
+                    std::cout << ", ";
+                if(n % ndiv == (ndiv - 1))
+                    std::cout << '\n';
+                ++n;
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(cupti_profiler_tests, general)
 {
-    using tuple_t            = tim::component_tuple_t<wall_clock, cupti_profiler>;
-    // tim::settings::verbose() = 4;
-    // tim::settings::debug()   = true;
+    using tuple_t = tim::component_tuple_t<wall_clock, cupti_profiler>;
 
     tim::settings::cupti_metrics() = "smsp__warps_launched.avg+";
+    cupti_profiler::configure();
 
     tuple_t timer(details::get_test_name(), true);
     timer.start();

@@ -201,7 +201,7 @@ add_option(TIMEMORY_BUILD_OMPT
     "Enable building OpenMP-Tools" ${_BUILD_OMPT})
 add_option(TIMEMORY_BUILD_DEVELOPER
     "Enable building with developer flags" OFF)
-add_option(TIMEMORY_FORCE_GPERF_PYTHON
+add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
     "Enable gperftools + Python (may cause termination errors)" OFF)
 add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)

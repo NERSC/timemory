@@ -184,9 +184,9 @@ public:
                                   std::vector<std::string> metricNames);
 
     // Function to print list of all supported chips
-    static bool ListSupportedChips();
+    static std::set<std::string> ListSupportedChips();
 
-    static bool ListMetrics(const char* chipName, bool listSubMetrics);
+    static std::set<std::string> ListMetrics(const char* chipName, bool listSubMetrics);
 
     static bool GetConfigImage(std::string chipName, std::vector<std::string> metricNames,
                                std::vector<uint8_t>& configImage);
@@ -316,12 +316,12 @@ protected:
 
     struct persistent_data
     {
-        bool                     enabled = false;
         CUdevice                 cuDevice;
         CUcontext                cuContext;
+        bool                     enabled                = false;
         int                      deviceCount            = 1;
         int                      deviceNum              = 0;
-        int                      numRanges              = 2;
+        int                      numRanges              = std::numeric_limits<int>::max();
         int                      computeCapabilityMajor = 0;
         int                      computeCapabilityMinor = 0;
         std::vector<uint8_t>     counterDataImagePrefix;
@@ -558,7 +558,7 @@ cupti_profiler::enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
                        CUpti_ProfilerReplayMode profilerReplayMode,
                        CUpti_ProfilerRange      profilerRange)
 {
-    auto& enabled = get_persistent_data().enabled;
+    auto& enabled   = get_persistent_data().enabled;
     auto& cuContext = get_persistent_data().cuContext;
 
     TIMEMORY_CUDA_DRIVER_API_CALL(cuCtxCreate(&cuContext, 0, cuDevice));
@@ -656,6 +656,7 @@ cupti_profiler::GetMetricGpuValue(std::string                   chipName,
     NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = {
         NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE
     };
+
     metricsContextCreateParams.pChipName = chipName.c_str();
     TIMEMORY_RETURN_IF_NVPW_ERROR(
         false, NVPW_CUDA_MetricsContext_Create(&metricsContextCreateParams));
@@ -663,8 +664,10 @@ cupti_profiler::GetMetricGpuValue(std::string                   chipName,
     NVPW_MetricsContext_Destroy_Params metricsContextDestroyParams = {
         NVPW_MetricsContext_Destroy_Params_STRUCT_SIZE
     };
+
     metricsContextDestroyParams.pMetricsContext =
         metricsContextCreateParams.pMetricsContext;
+
     SCOPE_EXIT([&]() {
         NVPW_MetricsContext_Destroy(
             (NVPW_MetricsContext_Destroy_Params*) &metricsContextDestroyParams);
@@ -673,6 +676,7 @@ cupti_profiler::GetMetricGpuValue(std::string                   chipName,
     NVPW_CounterData_GetNumRanges_Params getNumRangesParams = {
         NVPW_CounterData_GetNumRanges_Params_STRUCT_SIZE
     };
+
     getNumRangesParams.pCounterDataImage = &counterDataImage[0];
     TIMEMORY_RETURN_IF_NVPW_ERROR(false,
                                   NVPW_CounterData_GetNumRanges(&getNumRangesParams));
@@ -829,7 +833,6 @@ cupti_profiler::PrintMetricValues(std::string              chipName,
             rangeName += descriptionPtrs[descriptionIndex];
         }
 
-        const bool          isolated = true;
         std::vector<double> gpuValues;
         gpuValues.resize(metricNames.size());
 
@@ -899,6 +902,8 @@ cupti_profiler::GetRawMetricRequests(
         TIMEMORY_RETURN_IF_NVPW_ERROR(false, NVPW_MetricsContext_GetMetricProperties_End(
                                                  &getMetricPropertiesEndParams));
     }
+
+    consume_parameters(isolated);
 
     for(auto& rawMetricName : temp)
     {
@@ -1059,7 +1064,7 @@ cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
     TIMEMORY_RETURN_IF_NVPW_ERROR(false,
                                   NVPW_CounterDataBuilder_AddMetrics(&addMetricsParams));
 
-    size_t                                              counterDataPrefixSize      = 0;
+    // size_t                                              counterDataPrefixSize      = 0;
     NVPW_CounterDataBuilder_GetCounterDataPrefix_Params getCounterDataPrefixParams = {
         NVPW_CounterDataBuilder_GetCounterDataPrefix_Params_STRUCT_SIZE
     };
@@ -1080,34 +1085,45 @@ cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
     return true;
 }
 
-inline bool
+inline std::set<std::string>
 cupti_profiler::ListSupportedChips()
 {
+    std::set<std::string> _ret;
+
     NVPW_GetSupportedChipNames_Params getSupportedChipNames = {
         NVPW_GetSupportedChipNames_Params_STRUCT_SIZE
     };
-    TIMEMORY_RETURN_IF_NVPW_ERROR(false,
+    TIMEMORY_RETURN_IF_NVPW_ERROR(_ret,
                                   NVPW_GetSupportedChipNames(&getSupportedChipNames));
-    std::cout << "\n Number of supported chips : " << getSupportedChipNames.numChipNames;
-    std::cout << "\n List of supported chips : \n";
+
+    if(settings::verbose() > 2 || settings::debug())
+    {
+        std::cout << "\n Number of supported chips : "
+                  << getSupportedChipNames.numChipNames;
+        std::cout << "\n List of supported chips : \n";
+    }
 
     for(size_t i = 0; i < getSupportedChipNames.numChipNames; i++)
     {
-        std::cout << " " << getSupportedChipNames.ppChipNames[i] << "\n";
+        _ret.insert(getSupportedChipNames.ppChipNames[i]);
+        if(settings::verbose() > 2 || settings::debug())
+            std::cout << " " << getSupportedChipNames.ppChipNames[i] << "\n";
     }
 
-    return true;
+    return _ret;
 }
 
-inline bool
+inline std::set<std::string>
 cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
 {
+    std::set<std::string> _ret;
+
     NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = {
         NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE
     };
     metricsContextCreateParams.pChipName = chip;
     TIMEMORY_RETURN_IF_NVPW_ERROR(
-        false, NVPW_CUDA_MetricsContext_Create(&metricsContextCreateParams));
+        _ret, NVPW_CUDA_MetricsContext_Create(&metricsContextCreateParams));
 
     NVPW_MetricsContext_Destroy_Params metricsContextDestroyParams = {
         NVPW_MetricsContext_Destroy_Params_STRUCT_SIZE
@@ -1127,7 +1143,7 @@ cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
     getMetricNameBeginParams.hidePerCycleSubMetrics  = !listSubMetrics;
     getMetricNameBeginParams.hidePctOfPeakSubMetrics = !listSubMetrics;
     TIMEMORY_RETURN_IF_NVPW_ERROR(
-        false, NVPW_MetricsContext_GetMetricNames_Begin(&getMetricNameBeginParams));
+        _ret, NVPW_MetricsContext_GetMetricNames_Begin(&getMetricNameBeginParams));
 
     NVPW_MetricsContext_GetMetricNames_End_Params getMetricNameEndParams = {
         NVPW_MetricsContext_GetMetricNames_End_Params_STRUCT_SIZE
@@ -1138,14 +1154,17 @@ cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
             (NVPW_MetricsContext_GetMetricNames_End_Params*) &getMetricNameEndParams);
     });
 
-    std::cout << getMetricNameBeginParams.numMetrics
-              << " metrics in total on the chip\n Metrics List : \n";
+    if(settings::verbose() > 2 || settings::debug())
+        std::cout << getMetricNameBeginParams.numMetrics
+                  << " metrics in total on the chip\n Metrics List : \n";
     for(size_t i = 0; i < getMetricNameBeginParams.numMetrics; i++)
     {
-        std::cout << getMetricNameBeginParams.ppMetricNames[i] << "\n";
+        _ret.insert(getMetricNameBeginParams.ppMetricNames[i]);
+        if(settings::verbose() > 2 || settings::debug())
+            std::cout << getMetricNameBeginParams.ppMetricNames[i] << "\n";
     }
 
-    return true;
+    return _ret;
 }
 
 }  // namespace component

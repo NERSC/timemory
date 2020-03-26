@@ -135,7 +135,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
 
 set(_GPERF_IN_LIBRARY OFF)
 # if not python or force requested
-if((NOT (TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)) OR TIMEMORY_FORCE_GPERF_PYTHON)
+if(NOT TIMEMORY_USE_PYTHON OR TIMEMORY_FORCE_GPERFTOOLS_PYTHON)
     list(APPEND TIMEMORY_EXTERNAL_SHARED_INTERFACES timemory-gperftools)
     list(APPEND TIMEMORY_EXTERNAL_STATIC_INTERFACES timemory-gperftools-static)
     set(_GPERF_IN_LIBRARY ON)
@@ -156,7 +156,7 @@ if(TIMEMORY_USE_SANITIZER)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)
 endif()
 
-if(TIMEMORY_USE_GPERFTOOLS)
+if(TIMEMORY_USE_GPERFTOOLS AND NOT TIMEMORY_USE_COVERAGE)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools-cpu)
 endif()
 
@@ -813,7 +813,7 @@ if(_GPERF_COMPONENTS)
     list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
 endif()
 
-if(NOT TIMEMORY_FORCE_GPERF_PYTHON)
+if(NOT TIMEMORY_FORCE_GPERFTOOLS_PYTHON)
     if(TIMEMORY_USE_PYTHON)
         set(_GPERF_COMPONENTS )
         set(TIMEMORY_gperftools_COMPONENTS )
@@ -1179,9 +1179,11 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-add_target_flag_if_avail(timemory-roofline-options
-    "-finline-functions" "-funroll-loops" "-ftree-vectorize"
-    "-ftree-loop-optimize" "-ftree-loop-vectorize" "-O3")
+if(NOT TIMEMORY_USE_COVERAGE)
+    add_target_flag_if_avail(timemory-roofline-options
+        "-finline-functions" "-funroll-loops" "-ftree-vectorize"
+        "-ftree-loop-optimize" "-ftree-loop-vectorize" "-O3")
+endif()
 
 set(VECTOR_DEFINITION               TIMEMORY_VEC)
 set(VECTOR_INTERFACE_TARGET         timemory-roofline-options)

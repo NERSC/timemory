@@ -135,35 +135,35 @@ public:
     , m_list()
     {}
 
-    template <typename _Func = initializer_type>
-    explicit component_hybrid(const string_t& key, const bool& store = true,
-                              const bool&  flat  = settings::flat_profile(),
-                              const _Func& _func = this_type::get_initializer())
-    : m_store(store)
-    , m_tuple(key, false, flat)
-    , m_list(key, false, flat)
+    template <typename Func = initializer_type>
+    explicit component_hybrid(const string_t& _key, const bool& _store = true,
+                              const bool& _flat = settings::flat_profile(),
+                              const Func& _func = this_type::get_initializer())
+    : m_store(_store)
+    , m_tuple(_key, false, _flat)
+    , m_list(_key, false, _flat)
     {
         _func(*this);
     }
 
-    template <typename _Func = initializer_type>
-    explicit component_hybrid(const captured_location_t& loc, const bool& store = true,
-                              const bool&  flat  = settings::flat_profile(),
-                              const _Func& _func = this_type::get_initializer())
-    : m_store(store)
-    , m_tuple(loc, false, flat)
-    , m_list(loc, false, flat)
+    template <typename Func = initializer_type>
+    explicit component_hybrid(const captured_location_t& _loc, const bool& _store = true,
+                              const bool& _flat = settings::flat_profile(),
+                              const Func& _func = this_type::get_initializer())
+    : m_store(_store)
+    , m_tuple(_loc, false, _flat)
+    , m_list(_loc, false, _flat)
     {
         _func(*this);
     }
 
-    template <typename _Func = initializer_type>
-    explicit component_hybrid(size_t _hash, const bool& store = true,
-                              const bool&  flat  = settings::flat_profile(),
-                              const _Func& _func = this_type::get_initializer())
-    : m_store(store)
-    , m_tuple(_hash, false, flat)
-    , m_list(_hash, false, flat)
+    template <typename Func = initializer_type>
+    explicit component_hybrid(size_t _hash, const bool& _store = true,
+                              const bool& _flat = settings::flat_profile(),
+                              const Func& _func = this_type::get_initializer())
+    : m_store(_store)
+    , m_tuple(_hash, false, _flat)
+    , m_list(_hash, false, _flat)
     {
         _func(*this);
     }
@@ -184,9 +184,10 @@ public:
     component_hybrid& operator=(const component_hybrid& rhs) = default;
     component_hybrid& operator=(component_hybrid&&) = default;
 
-    component_hybrid clone(bool store, bool flat)
+    component_hybrid clone(bool _store, bool _flat)
     {
-        return component_hybrid(m_tuple.clone(store, flat), m_list.clone(store, flat));
+        return component_hybrid(m_tuple.clone(_store, _flat),
+                                m_list.clone(_store, _flat));
     }
 
 public:
@@ -601,26 +602,26 @@ public:
     //----------------------------------------------------------------------------------//
     //  apply a member function to a type
     //
-    template <typename Tp, typename _Func, typename... Args,
+    template <typename Tp, typename Func, typename... Args,
               enable_if_t<(is_one_of<Tp, tuple_type_list>::value), int> = 0,
               enable_if_t<!(is_one_of<Tp, list_type_list>::value), int> = 0>
-    void type_apply(_Func&& _func, Args&&... args)
+    void type_apply(Func&& _func, Args&&... args)
     {
         m_tuple.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
-    template <typename Tp, typename _Func, typename... Args,
+    template <typename Tp, typename Func, typename... Args,
               enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
               enable_if_t<(is_one_of<Tp, list_type_list>::value), int>   = 0>
-    void type_apply(_Func&& _func, Args&&... args)
+    void type_apply(Func&& _func, Args&&... args)
     {
         m_list.template type_apply<Tp>(_func, std::forward<Args>(args)...);
     }
 
-    template <typename Tp, typename _Func, typename... Args,
+    template <typename Tp, typename Func, typename... Args,
               enable_if_t<!(is_one_of<Tp, tuple_type_list>::value), int> = 0,
               enable_if_t<!(is_one_of<Tp, list_type_list>::value), int>  = 0>
-    void type_apply(_Func&&, Args&&...)
+    void type_apply(Func&&, Args&&...)
     {}
 
 protected:

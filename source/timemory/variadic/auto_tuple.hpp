@@ -300,20 +300,20 @@ public:
 
 protected:
     template <typename Func>
-    void init(Func&& init)
+    void init(Func&& _init)
     {
         if(m_enabled)
-            init(*this);
+            _init(*this);
     }
 
     template <typename Func, typename Arg, typename... Args>
-    void init(Func&& init, Arg&& arg, Args&&... args)
+    void init(Func&& _init, Arg&& _arg, Args&&... _args)
     {
         if(m_enabled)
         {
-            init(*this);
-            m_temporary_object.construct(std::forward<Arg>(arg),
-                                         std::forward<Args>(args)...);
+            _init(*this);
+            m_temporary_object.construct(std::forward<Arg>(_arg),
+                                         std::forward<Args>(_args)...);
         }
     }
 
