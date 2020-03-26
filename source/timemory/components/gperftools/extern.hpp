@@ -29,7 +29,7 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_GPERFTOOLSTOOLS)
+#if defined(TIMEMORY_USE_GPERFTOOLS)
 
 #    include "timemory/components/base.hpp"
 #    include "timemory/components/macros.hpp"
@@ -68,4 +68,4 @@ TIMEMORY_EXTERN_STORAGE(component::gperftools_cpu_profiler, gperftools_cpu_profi
 //
 //======================================================================================//
 
-#endif  // TIMEMORY_USE_GPERFTOOLSTOOLS
+#endif  // TIMEMORY_USE_GPERFTOOLS

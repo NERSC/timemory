@@ -24,7 +24,7 @@ endif()
 
 set(_STATIC_LIB)
 foreach(_TARG timing-component rusage-component)
-    if(TARGET timemory-${_TARG}-static)
+    if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
         list(APPEND _STATIC_LIB timemory-${_TARG}-static)
     endif()
 endforeach()

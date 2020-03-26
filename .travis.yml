@@ -162,7 +162,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs static --mpi --papi --caliper --mpip --python --ompt --kokkos --stats --tools --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && COVERAGE=1 && BUILD_ARGS='--build-libs shared --mpi --papi --caliper --mpip --python --ompt --kokkos --stats --tools --cxx-standard=14'"
     #
     # GCC 8
     - os: linux
@@ -206,7 +206,7 @@ matrix:
             - libgoogle-perftools-dev
             - google-perftools
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --mpi --papi --mpip --ompt --kokkos --stats --tools --cxx-standard=14' && CMAKE_ARGS='-DTIMEMORY_USE_PYTHON=OFF'"
     # Clang 7
     - os: linux
       dist: bionic
@@ -246,7 +246,7 @@ install:
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --python ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
-  - travis_wait 90 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure
+  - travis_wait 90 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS}
 
 script:
   - eval "${MATRIX_EVAL}"
