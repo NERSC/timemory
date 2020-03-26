@@ -46,16 +46,16 @@ namespace ert
 //
 // extern template class exec_data<component::wall_clock>;
 //
-extern template class counter<device::cpu, float, component::wall_clock>;
-extern template class counter<device::cpu, double, component::wall_clock>;
+// extern template class counter<device::cpu, float, component::wall_clock>;
+// extern template class counter<device::cpu, double, component::wall_clock>;
 //
 // extern template struct configuration<device::cpu, float, component::wall_clock>;
 // extern template struct configuration<device::cpu, double, component::wall_clock>;
 //
 #    if defined(TIMEMORY_USE_CUDA)
 //
-extern template class counter<device::gpu, float, component::wall_clock>;
-extern template class counter<device::gpu, double, component::wall_clock>;
+// extern template class counter<device::gpu, float, component::wall_clock>;
+// extern template class counter<device::gpu, double, component::wall_clock>;
 // extern template class counter<device::gpu, cuda::fp16_t, component::wall_clock>;
 //
 // extern template struct configuration<device::gpu, float, component::wall_clock>;

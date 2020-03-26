@@ -40,8 +40,8 @@ namespace ert
 //
 // template class exec_data<component::wall_clock>;
 //
-template class counter<device::cpu, float, component::wall_clock>;
-template class counter<device::cpu, double, component::wall_clock>;
+// template class counter<device::cpu, float, component::wall_clock>;
+// template class counter<device::cpu, double, component::wall_clock>;
 //
 // template struct configuration<device::cpu, float, component::wall_clock>;
 // template struct configuration<device::cpu, double, component::wall_clock>;
