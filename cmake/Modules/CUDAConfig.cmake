@@ -92,11 +92,11 @@ if("CUDA" IN_LIST LANGUAGES)
     find_library(CUDA_dl_LIBRARY
         NAMES dl)
 
-    target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
-        $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
+    #target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
+    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=shared>)
 
-    target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
-        $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
+    #target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
+    #    $<$<COMPILE_LANGUAGE:CUDA>:--cudart=static>)
 
     target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
         ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})

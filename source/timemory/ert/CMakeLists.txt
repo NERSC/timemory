@@ -20,5 +20,5 @@ build_intermediate_library(
                         timemory-timing-component
                         timemory-cuda
                         timemory-cuda-compiler
-                        timemory-cudart
+                        # timemory-cudart
     PROPERTY_DEPENDS    GLOBAL)
