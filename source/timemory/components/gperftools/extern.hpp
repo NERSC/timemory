@@ -29,9 +29,6 @@
 
 #pragma once
 
-//#if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||     \
-//    defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
-
 #include "timemory/components/base.hpp"
 #include "timemory/components/macros.hpp"
 //
@@ -68,5 +65,3 @@ TIMEMORY_EXTERN_STORAGE(component::gperftools_heap_profiler, gperftools_heap_pro
 TIMEMORY_EXTERN_STORAGE(component::gperftools_cpu_profiler, gperftools_cpu_profiler)
 //
 //======================================================================================//
-
-//#endif  // TIMEMORY_USE_GPERFTOOLS

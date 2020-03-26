@@ -22,9 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_BUILD_EXTERN
-#define TIMEMORY_BUILD_EXTERN
-
 #include "timemory/backends/device.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/timing/components.hpp"
@@ -41,13 +38,13 @@ namespace ert
 {
 //
 //
-template class exec_data<component::wall_clock>;
+// template class exec_data<component::wall_clock>;
 //
 template class counter<device::cpu, float, component::wall_clock>;
 template class counter<device::cpu, double, component::wall_clock>;
 //
-template struct configuration<device::cpu, float, component::wall_clock>;
-template struct configuration<device::cpu, double, component::wall_clock>;
+// template struct configuration<device::cpu, float, component::wall_clock>;
+// template struct configuration<device::cpu, double, component::wall_clock>;
 //
 //
 }  // namespace ert

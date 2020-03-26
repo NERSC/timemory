@@ -22,9 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_BUILD_EXTERN
-#define TIMEMORY_BUILD_EXTERN
-
 #include "timemory/backends/device.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/timing/components.hpp"
@@ -42,14 +39,14 @@ namespace ert
 //
 #if defined(TIMEMORY_USE_CUDA)
 //
-template class exec_data<component::wall_clock>;
+// template class exec_data<component::wall_clock>;
 //
 template class counter<device::gpu, float, component::wall_clock>;
 template class counter<device::gpu, double, component::wall_clock>;
 // template class counter<device::gpu, cuda::fp16_t, component::wall_clock>;
 //
-template struct configuration<device::gpu, float, component::wall_clock>;
-template struct configuration<device::gpu, double, component::wall_clock>;
+// template struct configuration<device::gpu, float, component::wall_clock>;
+// template struct configuration<device::gpu, double, component::wall_clock>;
 // template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
 //
 #endif
