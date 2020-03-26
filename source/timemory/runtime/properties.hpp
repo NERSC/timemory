@@ -29,13 +29,14 @@
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
 #include "timemory/runtime/macros.hpp"
+//
+#include "timemory/components/types.hpp"
+#include "timemory/components/opaque/definition.hpp"
 
 #include <set>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
-
-#include "timemory/components/types.hpp"
 
 namespace tim
 {
@@ -56,6 +57,7 @@ using int_sequence         = std::integer_sequence<int, Ints...>;
 using hash_type            = std::hash<std::string>;
 using component_key_set_t  = std::set<std::string>;
 using component_hash_map_t = std::unordered_map<std::string, int, hash_type>;
+using opaque_pair_t        = std::pair<component::opaque, std::set<size_t>>;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -67,11 +69,40 @@ get_hash(std::string&& key)
 //
 //--------------------------------------------------------------------------------------//
 //
+template <int I, typename... Args,
+          enable_if_t<(component::enumerator<I>::value), int> = 0>
+void
+do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array,
+                       int idx, Args&&... args)
+{
+    if(idx == I)
+    {
+        using type = enumerator_t<I>;
+        if(!std::is_same<type, component::placeholder<component::nothing>>::value)
+        {
+            opaque_array.push_back(
+                { component::factory::get_opaque<type>(std::forward<Args>(args)...),
+                  component::factory::get_typeids<type>() });
+        }
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <int I, typename... Args,
+          enable_if_t<!(component::enumerator<I>::value), int> = 0>
+void
+do_enumerator_generate(std::vector<opaque_pair_t>&, int, Args&&...)
+{}
+//
+//--------------------------------------------------------------------------------------//
+//
 //                  The actual implementation of the function calls
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename Tp, typename... Args>
+template <int I, typename Tp, typename... Args,
+          enable_if_t<(component::enumerator<I>::value), int> = 0>
 void
 do_enumerator_init(Tp& obj, int idx, Args&&... args)
 {
@@ -85,50 +116,11 @@ do_enumerator_init(Tp& obj, int idx, Args&&... args)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <int I, typename Tp, typename... Args>
+template <int I, typename Tp, typename... Args,
+          enable_if_t<!(component::enumerator<I>::value), int> = 0>
 void
-do_enumerator_insert(Tp& obj, int idx, Args&&... args)
-{
-    if(idx == I)
-    {
-        using type = enumerator_t<I>;
-        if(!std::is_same<type, component::placeholder<component::nothing>>::value)
-            obj.insert(component::factory::get_opaque<type>(std::forward<Args>(args)...),
-                       component::factory::get_typeids<type>());
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <int I, typename Tp, typename... Args>
-void
-do_enumerator_static_configure(int idx, Args&&... args)
-{
-    if(idx == I)
-    {
-        using type = enumerator_t<I>;
-        if(!std::is_same<type, component::placeholder<component::nothing>>::value)
-            Tp::configure(
-                component::factory::get_opaque<type>(std::forward<Args>(args)...),
-                component::factory::get_typeids<type>());
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <int I, typename Tp, typename... Args>
-void
-do_enumerator_object_configure(Tp& obj, int idx, Args&&... args)
-{
-    if(idx == I)
-    {
-        using type = enumerator_t<I>;
-        if(!std::is_same<type, component::placeholder<component::nothing>>::value)
-            obj.configure(
-                component::factory::get_opaque<type>(std::forward<Args>(args)...),
-                component::factory::get_typeids<type>());
-    }
-}
+do_enumerator_init(Tp&, int, Args&&...)
+{}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -178,8 +170,11 @@ template <typename Tp, int... Ints, typename... Args>
 void
 enumerator_insert(Tp& obj, int idx, int_sequence<Ints...>, Args&&... args)
 {
-    TIMEMORY_FOLD_EXPRESSION(
-        do_enumerator_insert<Ints>(obj, idx, std::forward<Args>(args)...));
+    std::vector<opaque_pair_t> opaque_array;
+    TIMEMORY_FOLD_EXPRESSION(do_enumerator_generate<Ints>(opaque_array, idx,
+                                                          std::forward<Args>(args)...));
+    for(auto&& itr : opaque_array)
+        obj.insert(std::move(itr.first), std::move(itr.second));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -188,8 +183,11 @@ template <typename Tp, int... Ints, typename... Args>
 void
 enumerator_configure(int idx, int_sequence<Ints...>, Args&&... args)
 {
-    TIMEMORY_FOLD_EXPRESSION(
-        do_enumerator_static_configure<Ints, Tp>(idx, std::forward<Args>(args)...));
+    std::vector<opaque_pair_t> opaque_array;
+    TIMEMORY_FOLD_EXPRESSION(do_enumerator_generate<Ints>(opaque_array, idx,
+                                                          std::forward<Args>(args)...));
+    for(auto&& itr : opaque_array)
+        Tp::configure(std::move(itr.first), std::move(itr.second));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -198,8 +196,11 @@ template <typename Tp, int... Ints, typename... Args>
 void
 enumerator_configure(Tp& obj, int idx, int_sequence<Ints...>, Args&&... args)
 {
-    TIMEMORY_FOLD_EXPRESSION(
-        do_enumerator_object_configure<Ints, Tp>(obj, idx, std::forward<Args>(args)...));
+    std::vector<opaque_pair_t> opaque_array;
+    TIMEMORY_FOLD_EXPRESSION(do_enumerator_generate<Ints>(opaque_array, idx,
+                                                          std::forward<Args>(args)...));
+    for(auto&& itr : opaque_array)
+        obj.configure(std::move(itr.first), std::move(itr.second));
 }
 //
 //--------------------------------------------------------------------------------------//

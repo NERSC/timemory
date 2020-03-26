@@ -31,19 +31,16 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
+//
+#include "timemory/components/opaque.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_DECLARE_COMPONENT(caliper)
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(caliper, CALIPER, "caliper", "cali")
-//
 //======================================================================================//
-
-#include "timemory/mpl/type_traits.hpp"
-#include "timemory/mpl/types.hpp"
-
-//--------------------------------------------------------------------------------------//
 //
 //                              REQUIRES PREFIX
 //
@@ -60,3 +57,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::caliper, true_type)
 #if !defined(TIMEMORY_USE_CALIPER)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper, false_type)
 #endif
+
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(caliper, CALIPER, "caliper", "cali")

@@ -46,16 +46,6 @@ TIMEMORY_COMPONENT_ALIAS(gperf_heap_profiler, gperftools_heap_profiler)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_cpu_profiler, GPERFTOOLS_CPU_PROFILER,
-                                 "gperftools_cpu_profiler", "gperf_cpu_profiler",
-                                 "gperf_cpu", "gperftools-cpu")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_heap_profiler, GPERFTOOLS_HEAP_PROFILER,
-                                 "gperftools_heap_profiler", "gperf_heap_profiler",
-                                 "gperf_heap", "gperftools-heap")
-//
-//======================================================================================//
-//
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
@@ -86,3 +76,13 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::gperftools_heap_profi
 //
 //--------------------------------------------------------------------------------------//
 //
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_cpu_profiler, GPERFTOOLS_CPU_PROFILER,
+                                 "gperftools_cpu_profiler", "gperf_cpu_profiler",
+                                 "gperf_cpu", "gperftools-cpu")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_heap_profiler, GPERFTOOLS_HEAP_PROFILER,
+                                 "gperftools_heap_profiler", "gperf_heap_profiler",
+                                 "gperf_heap", "gperftools-heap")

@@ -72,25 +72,6 @@ TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle, user_bundle<mpip_bundle_idx, api::nat
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, USER_GLOBAL_BUNDLE,
-                                 "user_global_bundle", "global_bundle")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle",
-                                 "list_bundle")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
-                                 "user_tuple_bundle", "tuple_bundle")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
-                                 "ompt", "omp_tools", "openmp", "openmp_tools")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE,
-                                 "user_mpip_bundle"
-                                 "mpip",
-                                 "mpi_tools", "mpi")
-//
-//======================================================================================//
-//
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
@@ -140,3 +121,22 @@ struct requires_prefix<component::user_bundle<_Idx, _Type>> : true_type
 //
 }  // namespace trait
 }  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, USER_GLOBAL_BUNDLE,
+                                 "user_global_bundle", "global_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle",
+                                 "list_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
+                                 "user_tuple_bundle", "tuple_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
+                                 "ompt", "omp_tools", "openmp", "openmp_tools")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE,
+                                 "user_mpip_bundle"
+                                 "mpip",
+                                 "mpi_tools", "mpi")

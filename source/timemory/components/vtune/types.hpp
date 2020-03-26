@@ -42,14 +42,6 @@ TIMEMORY_DECLARE_COMPONENT(vtune_profiler)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_event, VTUNE_EVENT, "vtune_event", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, VTUNE_FRAME, "vtune_frame", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(vtune_profiler, VTUNE_PROFILER, "vtune_profiler", "")
-//
-//======================================================================================//
-//
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
@@ -68,3 +60,12 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_profiler, false_ty
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_event, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_frame, true_type)
+
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_event, VTUNE_EVENT, "vtune_event", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, VTUNE_FRAME, "vtune_frame", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_profiler, VTUNE_PROFILER, "vtune_profiler", "")

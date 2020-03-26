@@ -5,11 +5,11 @@ include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
 #
-file(GLOB c_headers                     ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB cxx_headers                   ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
-file(GLOB cxx_headers_variadic          ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
-file(GLOB_RECURSE cxx_headers_backends  ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
-file(GLOB cxx_headers_components        ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB c_headers                      ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
+file(GLOB cxx_headers                    ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_variadic           ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
+file(GLOB_RECURSE cxx_headers_backends   ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
+file(GLOB_RECURSE cxx_headers_components ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
 file(GLOB cxx_headers_general       ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)

@@ -43,14 +43,6 @@ TIMEMORY_COMPONENT_ALIAS(cuda_nvtx, nvtx_marker)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(cuda_event, CUDA_EVENT, "cuda_event", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(cuda_profiler, CUDA_PROFILER, "cuda_profiler", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx")
-//
-//======================================================================================//
-//
 //                              TYPE-TRAITS
 //
 //======================================================================================//
@@ -190,3 +182,11 @@ struct collects_data<component::nvtx_marker>
 //
 //--------------------------------------------------------------------------------------//
 //
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_event, CUDA_EVENT, "cuda_event", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_profiler, CUDA_PROFILER, "cuda_profiler", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx")

@@ -41,12 +41,6 @@ TIMEMORY_DECLARE_COMPONENT(likwid_nvmarker)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, LIKWID_MARKER, "likwid_marker", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, LIKWID_NVMARKER, "likwid_nvmarker", "")
-//
-//======================================================================================//
-//
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
@@ -71,3 +65,9 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_nvmarker, true
 //
 //--------------------------------------------------------------------------------------//
 //
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, LIKWID_MARKER, "likwid_marker", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, LIKWID_NVMARKER, "likwid_nvmarker", "")

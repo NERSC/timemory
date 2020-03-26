@@ -41,12 +41,6 @@ TIMEMORY_DECLARE_COMPONENT(cupti_counters)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, CUPTI_ACTIVITY, "cupti_activity", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, CUPTI_COUNTERS, "cupti_counters", "")
-//
-//======================================================================================//
-//
 //                              STATISTICS
 //
 //--------------------------------------------------------------------------------------//
@@ -125,3 +119,9 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_serialization, component::cupti_counters, 
 //
 //--------------------------------------------------------------------------------------//
 //
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, CUPTI_ACTIVITY, "cupti_activity", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, CUPTI_COUNTERS, "cupti_counters", "")

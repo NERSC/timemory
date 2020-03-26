@@ -33,6 +33,7 @@
 #include "timemory/enum.h"
 
 #include <cstring>
+#include <set>
 #include <string>
 #include <typeindex>
 #include <typeinfo>
@@ -56,15 +57,15 @@ namespace factory
 {
 //
 template <typename Toolset, typename Arg, typename... Args>
-static auto
+static opaque
 get_opaque(Arg&& arg, Args&&... args);
 //
 template <typename Toolset>
-static auto
+static opaque
 get_opaque();
 //
 template <typename Toolset>
-static auto
+static std::set<size_t>
 get_typeids();
 //
 }  // namespace factory
@@ -172,7 +173,8 @@ struct properties : static_properties<Tp>
 template <int Idx>
 struct enumerator : properties<placeholder<nothing>>
 {
-    using type = placeholder<nothing>;
+    using type                  = placeholder<nothing>;
+    static constexpr bool value = false;
 
     bool operator==(int) const { return false; }
     bool operator==(const char*) const { return false; }

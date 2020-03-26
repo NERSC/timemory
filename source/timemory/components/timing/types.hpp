@@ -50,38 +50,6 @@ TIMEMORY_DECLARE_COMPONENT(thread_cpu_util)
 //
 //======================================================================================//
 //
-//                              PROPERTIES
-//
-//======================================================================================//
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
-                                 "virtual_clock")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(user_clock, USER_CLOCK, "user_clock", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_clock, CPU_CLOCK, "cpu_clock", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, MONOTONIC_CLOCK, "monotonic_clock", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_raw_clock, MONOTONIC_RAW_CLOCK,
-                                 "monotonic_raw_clock", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, THREAD_CPU_CLOCK, "thread_cpu_clock",
-                                 "")
-TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_clock, PROCESS_CPU_CLOCK,
-                                 "process_cpu_clock", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, CPU_UTIL, "cpu_util", "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, PROCESS_CPU_UTIL, "process_cpu_util",
-                                 "")
-
-TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, THREAD_CPU_UTIL, "thread_cpu_util", "")
-//
-//======================================================================================//
-//
 //                              TYPE-TRAITS
 //
 //======================================================================================//
@@ -197,3 +165,35 @@ struct derivation_types<component::thread_cpu_util>
 //
 }  // namespace trait
 }  // namespace tim
+//
+//======================================================================================//
+//
+//                              PROPERTIES
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
+                                 "virtual_clock")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(user_clock, USER_CLOCK, "user_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_clock, CPU_CLOCK, "cpu_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, MONOTONIC_CLOCK, "monotonic_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_raw_clock, MONOTONIC_RAW_CLOCK,
+                                 "monotonic_raw_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, THREAD_CPU_CLOCK, "thread_cpu_clock",
+                                 "")
+TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_clock, PROCESS_CPU_CLOCK,
+                                 "process_cpu_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, CPU_UTIL, "cpu_util", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, PROCESS_CPU_UTIL, "process_cpu_util",
+                                 "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, THREAD_CPU_UTIL, "thread_cpu_util", "")

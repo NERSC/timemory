@@ -52,11 +52,6 @@ TIMEMORY_COMPONENT_ALIAS(papi_array_t, papi_array<TIMEMORY_PAPI_ARRAY_SIZE>)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(papi_vector, PAPI_VECTOR, "papi_vector", "papi")
-TIMEMORY_PROPERTY_SPECIALIZATION(papi_array_t, PAPI_ARRAY, "papi_array_t", "papi_array")
-//
-//======================================================================================//
-//
 //                              STATISTICS
 //
 //--------------------------------------------------------------------------------------//
@@ -102,3 +97,8 @@ TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_serialization, component::papi_tuple, true
 //
 //--------------------------------------------------------------------------------------//
 //
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(papi_vector, PAPI_VECTOR, "papi_vector", "papi")
+TIMEMORY_PROPERTY_SPECIALIZATION(papi_array_t, PAPI_ARRAY, "papi_array_t", "papi_array")

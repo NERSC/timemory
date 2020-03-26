@@ -33,7 +33,7 @@
 
 using namespace tim::component;
 
-using auto_tuple_t  = tim::auto_tuple_t<wall_clock, user_tuple_bundle>;
+using auto_tuple_t  = tim::auto_tuple_t<wall_clock, user_global_bundle>;
 using timer_tuple_t = tim::component_tuple_t<wall_clock, cpu_clock, peak_rss>;
 
 using papi_tuple_t = papi_array<8>;
@@ -290,7 +290,7 @@ main(int argc, char** argv)
                                   [](int c) { return c == WALL_CLOCK; }),
                    env_enum.end());
     toolkit_size = env_enum.size() + 1;
-    tim::configure<user_tuple_bundle>(env_enum);
+    tim::configure<user_global_bundle>(env_enum);
 
     std::vector<timer_tuple_t> timer_list;
 

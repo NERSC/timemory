@@ -40,13 +40,12 @@ TIMEMORY_DECLARE_COMPONENT(trip_count)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(trip_count, TRIP_COUNT, "trip_count", "")
-//
-//======================================================================================//
-//
 //                              CUSTOM LAPS PRINTING
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_laps_printing, component::trip_count, true_type)
 //
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(trip_count, TRIP_COUNT, "trip_count", "")

@@ -46,10 +46,6 @@ TIMEMORY_DECLARE_TEMPLATE_COMPONENT(mpip_handle, typename Toolset, typename Tag)
 //
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, MALLOC_GOTCHA, "malloc_gotcha", "")
-//
-//======================================================================================//
-//
 //                              STATISTICS
 //
 //--------------------------------------------------------------------------------------//
@@ -153,3 +149,8 @@ struct is_gotcha<component::gotcha<Nt, Components, Differentiator>> : true_type
 }  // namespace tim
 //
 //======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, MALLOC_GOTCHA, "malloc_gotcha", "")
+//
+//======================================================================================//
+//

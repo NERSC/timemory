@@ -137,7 +137,8 @@
         template <>                                                                      \
         struct enumerator<ENUM> : properties<TYPE>                                       \
         {                                                                                \
-            using type = TYPE;                                                           \
+            using type                  = TYPE;                                          \
+            static constexpr bool value = ::tim::trait::is_available<TYPE>::value;       \
         };                                                                               \
         }                                                                                \
         }

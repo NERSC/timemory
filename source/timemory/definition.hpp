@@ -32,3 +32,5 @@
 #include "timemory/plotting/definition.hpp"
 #include "timemory/settings/definition.hpp"
 #include "timemory/storage/definition.hpp"
+//
+#include "timemory/components/opaque/definition.hpp"

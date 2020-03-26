@@ -220,8 +220,6 @@ struct dummy
 //
 #    include "timemory/definition.hpp"
 //
-//#    endif
-//
 //======================================================================================//
 //
 namespace tim
