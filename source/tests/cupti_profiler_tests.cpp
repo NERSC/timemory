@@ -47,8 +47,8 @@ using params_t       = tim::device::params<default_device>;
 
 static const auto num_data = 96;
 static auto       num_iter = 10;
-static const auto num_blck = 64;
-static const auto num_grid = 2;
+static const auto num_blck = 32;
+static const auto num_grid = 32;
 // static const auto epsilon  = 10 * std::numeric_limits<float>::epsilon();
 
 //--------------------------------------------------------------------------------------//
@@ -195,12 +195,12 @@ TEST_F(cupti_profiler_tests, available)
             for(const auto& citr : chip_metrics)
                 w = std::max<int>(citr.length(), w);
             w += 4;
-            int ndiv = 120 / w;
+            int ndiv = 240 / w;
             for(const auto& citr : chip_metrics)
             {
                 if(n % ndiv == 0)
                     std::cout << "    ";
-                std::cout << std::setw(w) << citr;
+                std::cout << std::setw(w) << std::left << citr;
                 if(n + 1 < t)
                     std::cout << ", ";
                 if(n % ndiv == (ndiv - 1))
@@ -209,6 +209,8 @@ TEST_F(cupti_profiler_tests, available)
             }
         }
     }
+
+    cupti_profiler::finalize();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -217,8 +219,10 @@ TEST_F(cupti_profiler_tests, general)
 {
     using tuple_t = tim::component_tuple_t<wall_clock, cupti_profiler>;
 
-    tim::settings::cupti_metrics() = "smsp__warps_launched.avg+";
-    cupti_profiler::configure();
+    tim::settings::cupti_metrics() =
+        "smsp__warps_launched.avg,smsp__warps_launched.max,smsp__warps_launched.sum,smsp_"
+        "_warps_launched_total.sum,smsp__warps_launched_total.max";
+    // cupti_profiler::configure();
 
     tuple_t timer(details::get_test_name(), true);
     timer.start();

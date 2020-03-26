@@ -321,7 +321,7 @@ protected:
         bool                     enabled                = false;
         int                      deviceCount            = 1;
         int                      deviceNum              = 0;
-        int                      numRanges              = std::numeric_limits<int>::max();
+        int                      numRanges              = 64;
         int                      computeCapabilityMajor = 0;
         int                      computeCapabilityMinor = 0;
         std::vector<uint8_t>     counterDataImagePrefix;
