@@ -46,6 +46,10 @@
 
 #if defined(TIMEMORY_USE_CUPTI)
 //
+#    include <cuda.h>
+#    include <cuda_runtime_api.h>
+#    include <driver_types.h>
+//
 #    include <cupti.h>
 //
 #else  // !defined(TIMEMORY_USE_CUPTI)

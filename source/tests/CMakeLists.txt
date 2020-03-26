@@ -171,6 +171,7 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
     add_library(cupti-compile-options INTERFACE)
     target_compile_options(cupti-compile-options INTERFACE
         $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
+
     add_timemory_google_test(cupti_tests
         DISCOVER_TESTS
         SOURCES         cupti_tests.cpp
@@ -178,6 +179,19 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
                         timemory-cuda    timemory-cupti  # timemory-cudart-device
                         cupti-compile-options timemory-plotting timemory-analysis-tools
                         timemory-arch)
+
+    # NVPERF library
+    if(CUPTI_nvperf_host_LIBRARY)
+        set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/cupti_profiler_tests.cpp
+            PROPERTIES LANGUAGE CUDA LINKER_LANGUAGE CUDA)
+        add_timemory_google_test(cupti_profiler_tests
+            DISCOVER_TESTS
+            SOURCES         cupti_profiler_tests.cpp
+            LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options timemory-develop-options
+                            timemory-cuda    timemory-cupti  timemory-cudart-device
+                            cupti-compile-options timemory-plotting timemory-analysis-tools
+                            timemory-arch)
+    endif()
 endif()
 
 if(_HAS_PROFILER)

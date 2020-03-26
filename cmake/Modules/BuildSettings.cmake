@@ -28,7 +28,7 @@ endif()
 #
 add_flag_if_avail(
     "-W" "${OS_FLAG}" "-Wno-unknown-pragmas" "-Wno-ignored-attributes" "-Wno-attributes"
-    "-Wno-mismatched-tags")
+    "-Wno-mismatched-tags" "-Wno-missing-field-initializers")
 
 if(CMAKE_CXX_COMPILER_IS_GNU)
     add_cxx_flag_if_avail("-Wno-class-memaccess")
