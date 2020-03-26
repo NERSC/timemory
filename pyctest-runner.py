@@ -321,6 +321,8 @@ def run_pyctest():
     for key, val in build_opts.items():
         cmake_args = "{} -D{}={}".format(cmake_args, key, val)
 
+    cmake_args = "{} {}".format(cmake_args, " ".join(pycm.ARGUMENTS))
+
     #--------------------------------------------------------------------------#
     # how to build the code
     #
@@ -338,8 +340,8 @@ def run_pyctest():
     # parallel build
     #
     if platform.system() != "Windows":
-        pyct.BUILD_COMMAND = "{} -- -j{} {}".format(
-            pyct.BUILD_COMMAND, args.cpu_count, " ".join(pycm.ARGUMENTS))
+        pyct.BUILD_COMMAND = "{} -- -j{}".format(
+            pyct.BUILD_COMMAND, args.cpu_count)
     else:
         pyct.BUILD_COMMAND = "{} -- /MP -A x64".format(
             pyct.BUILD_COMMAND)
