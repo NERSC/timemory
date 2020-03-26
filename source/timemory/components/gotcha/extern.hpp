@@ -33,9 +33,37 @@
 
 //======================================================================================//
 //
-#    include "timemory/components/gotcha/extern/base.hpp"
-#    include "timemory/components/gotcha/extern/operations.hpp"
-#    include "timemory/components/gotcha/extern/storage.hpp"
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/macros.hpp"
+//
+#    include "timemory/components/gotcha/components.hpp"
+#    include "timemory/components/gotcha/types.hpp"
+//
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+//
+//======================================================================================//
+//
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<malloc_gotcha, double>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::malloc_gotcha, true)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::malloc_gotcha, malloc_gotcha)
 //
 //======================================================================================//
 

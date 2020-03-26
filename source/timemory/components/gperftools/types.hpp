@@ -30,6 +30,9 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
@@ -42,6 +45,44 @@ TIMEMORY_COMPONENT_ALIAS(gperf_cpu_profiler, gperftools_cpu_profiler)
 TIMEMORY_COMPONENT_ALIAS(gperf_heap_profiler, gperftools_heap_profiler)
 //
 //======================================================================================//
-
-#include "timemory/components/gperftools/properties.hpp"
-#include "timemory/components/gperftools/traits.hpp"
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_cpu_profiler, GPERFTOOLS_CPU_PROFILER,
+                                 "gperftools_cpu_profiler", "gperf_cpu_profiler",
+                                 "gperf_cpu", "gperftools-cpu")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(gperftools_heap_profiler, GPERFTOOLS_HEAP_PROFILER,
+                                 "gperftools_heap_profiler", "gperf_heap_profiler",
+                                 "gperf_heap", "gperftools-heap")
+//
+//======================================================================================//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+//      GPERF and gperftools_heap_profiler
+//
+#if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_heap_profiler,
+                               false_type)
+#endif
+//
+//
+//      GPERF AND gperftools_cpu_profiler
+//
+#if !defined(TIMEMORY_USE_GPERFTOOLS) && !defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gperftools_cpu_profiler,
+                               false_type)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::gperftools_heap_profiler,
+                               true_type)
+//
+//--------------------------------------------------------------------------------------//
+//

@@ -31,6 +31,9 @@
 
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
@@ -52,6 +55,176 @@ TIMEMORY_COMPONENT_ALIAS(gpu_roofline_flops, gpu_roofline<float, double>)
 #endif
 //
 //======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_dp_flops, CPU_ROOFLINE_DP_FLOPS,
+                                 "cpu_roofline_dp_flops", "cpu_roofline_dp",
+                                 "cpu_roofline_double")
 
-#include "timemory/components/roofline/properties.hpp"
-#include "timemory/components/roofline/traits.hpp"
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_flops, CPU_ROOFLINE_FLOPS,
+                                 "cpu_roofline_flops", "cpu_roofline")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_roofline_sp_flops, CPU_ROOFLINE_SP_FLOPS,
+                                 "cpu_roofline_sp_flops", "cpu_roofline_sp",
+                                 "cpu_roofline_single")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_dp_flops, GPU_ROOFLINE_DP_FLOPS,
+                                 "gpu_roofline_dp_flops", "gpu_roofline_dp",
+                                 "gpu_roofline_double")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_flops, GPU_ROOFLINE_FLOPS,
+                                 "gpu_roofline_flops", "gpu_roofline")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_hp_flops, GPU_ROOFLINE_HP_FLOPS,
+                                 "gpu_roofline_hp_flops", "gpu_roofline_hp",
+                                 "gpu_roofline_half")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(gpu_roofline_sp_flops, GPU_ROOFLINE_SP_FLOPS,
+                                 "gpu_roofline_sp_flops", "gpu_roofline_sp",
+                                 "gpu_roofline_single")
+//
+//======================================================================================//
+//
+//                              STATISTICS
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_VARIADIC_STATISTICS_TYPE(component::cpu_roofline, std::vector<double>, typename)
+TIMEMORY_VARIADIC_STATISTICS_TYPE(component::gpu_roofline, std::vector<double>, typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+//      PAPI
+//
+#if !defined(TIMEMORY_USE_PAPI)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::cpu_roofline, false_type,
+                               typename)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_flops, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_sp_flops, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_dp_flops, false_type)
+#endif
+
+//
+//      CUDA and CUPTI
+//
+#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::gpu_roofline, false_type,
+                               typename)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_flops, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_hp_flops, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_sp_flops, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_dp_flops, false_type)
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              CUSTOM UNIT PRINTING
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::cpu_roofline, true_type,
+                               typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_unit_printing, component::gpu_roofline, true_type,
+                               typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              CUSTOM LABEL PRINTING
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_label_printing, component::cpu_roofline, true_type,
+                               typename)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_label_printing, component::gpu_roofline, true_type,
+                               typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              ARRAY SERIALIZATION
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::cpu_roofline, true_type,
+                               typename)
+//                                typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES JSON
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(requires_json, component::cpu_roofline, true_type,
+                               typename)
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(requires_json, component::gpu_roofline, true_type,
+                               typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              SUPPORTS CUSTOM RECORD
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(supports_custom_record, component::cpu_roofline, true_type,
+                               typename)
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(supports_custom_record, component::gpu_roofline, true_type,
+                               typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              ITERABLE MEASUREMENT
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(iterable_measurement, component::cpu_roofline, true_type,
+                               typename)
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(iterable_measurement, component::gpu_roofline, true_type,
+                               typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              CUSTOM SERIALIZATION
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_serialization, component::cpu_roofline, true_type,
+                               typename)
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_serialization, component::gpu_roofline, true_type,
+                               typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              SECONDARY DATA
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_VARIADIC_TRAIT(secondary_data, component::gpu_roofline, true_type,
+                               typename)
+
+//--------------------------------------------------------------------------------------//
+//
+//                              UNITS SPECIALIZATIONS
+//
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+namespace trait
+{
+//
+template <typename... _Types>
+struct units<component::cpu_roofline<_Types...>>
+{
+    using type         = double;
+    using display_type = std::vector<std::string>;
+};
+//
+}  // namespace trait
+}  // namespace tim

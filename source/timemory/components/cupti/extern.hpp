@@ -31,11 +31,41 @@
 
 #if defined(TIMEMORY_USE_CUPTI)
 
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/macros.hpp"
+//
+#    include "timemory/components/cupti/backends.hpp"
+#    include "timemory/components/cupti/components.hpp"
+#    include "timemory/components/cupti/types.hpp"
+//
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+
 //======================================================================================//
 //
-#    include "timemory/components/cupti/extern/base.hpp"
-#    include "timemory/components/cupti/extern/operations.hpp"
-#    include "timemory/components/cupti/extern/storage.hpp"
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<cupti_activity, uint64_t>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<cupti_counters, cupti::profiler::results_t>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::cupti_activity, true)
+TIMEMORY_EXTERN_OPERATIONS(component::cupti_counters, true)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::cupti_activity, cupti_activity)
+TIMEMORY_EXTERN_STORAGE(component::cupti_counters, cupti_counters)
 //
 //======================================================================================//
 

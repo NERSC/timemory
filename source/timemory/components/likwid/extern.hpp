@@ -29,14 +29,45 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_LIKWID)
+#if defined(TIMEMORY_USE_LIKWID)
 
 //======================================================================================//
 //
-#include "timemory/components/likwid/extern/base.hpp"
-#include "timemory/components/likwid/extern/operations.hpp"
-#include "timemory/components/likwid/extern/storage.hpp"
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/macros.hpp"
+//
+#    include "timemory/components/likwid/components.hpp"
+#    include "timemory/components/likwid/types.hpp"
+//
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+//
+//======================================================================================//
+//
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<likwid_marker, void>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<likwid_nvmarker, void>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::likwid_marker, false)
+TIMEMORY_EXTERN_OPERATIONS(component::likwid_nvmarker, false)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::likwid_marker, likwid_marker)
+TIMEMORY_EXTERN_STORAGE(component::likwid_nvmarker, likwid_nvmarker)
 //
 //======================================================================================//
 
-// #endif  // TIMEMORY_USE_LIKWID
+#endif  // TIMEMORY_USE_LIKWID

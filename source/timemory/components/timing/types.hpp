@@ -30,6 +30,9 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
@@ -46,6 +49,151 @@ TIMEMORY_DECLARE_COMPONENT(process_cpu_util)
 TIMEMORY_DECLARE_COMPONENT(thread_cpu_util)
 //
 //======================================================================================//
+//
+//                              PROPERTIES
+//
+//======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(wall_clock, WALL_CLOCK, "wall_clock", "real_clock",
+                                 "virtual_clock")
 
-#include "timemory/components/timing/properties.hpp"
-#include "timemory/components/timing/traits.hpp"
+TIMEMORY_PROPERTY_SPECIALIZATION(system_clock, SYS_CLOCK, "system_clock", "sys_clock")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(user_clock, USER_CLOCK, "user_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_clock, CPU_CLOCK, "cpu_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_clock, MONOTONIC_CLOCK, "monotonic_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(monotonic_raw_clock, MONOTONIC_RAW_CLOCK,
+                                 "monotonic_raw_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_clock, THREAD_CPU_CLOCK, "thread_cpu_clock",
+                                 "")
+TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_clock, PROCESS_CPU_CLOCK,
+                                 "process_cpu_clock", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(cpu_util, CPU_UTIL, "cpu_util", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(process_cpu_util, PROCESS_CPU_UTIL, "process_cpu_util",
+                                 "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(thread_cpu_util, THREAD_CPU_UTIL, "thread_cpu_util", "")
+//
+//======================================================================================//
+//
+//                              TYPE-TRAITS
+//
+//======================================================================================//
+//
+//                              STATISTICS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STATISTICS_TYPE(component::wall_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::system_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::user_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::cpu_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::monotonic_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::monotonic_raw_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::thread_cpu_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::process_cpu_clock, double)
+TIMEMORY_STATISTICS_TYPE(component::cpu_util, double)
+TIMEMORY_STATISTICS_TYPE(component::process_cpu_util, double)
+TIMEMORY_STATISTICS_TYPE(component::thread_cpu_util, double)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              THREAD SCOPE ONLY
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(thread_scope_only, component::thread_cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(thread_scope_only, component::thread_cpu_util, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS TIMING CATEGORY
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::system_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::user_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::monotonic_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::monotonic_raw_clock,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::thread_cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::process_cpu_clock,
+                               true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              USES TIMING UNITS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::system_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::user_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::monotonic_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::monotonic_raw_clock,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::thread_cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::process_cpu_clock, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              USES PERCENT UNITS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::cpu_util, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::process_cpu_util, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::thread_cpu_util, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                  DERIVATION
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+namespace trait
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct derivation_types<component::cpu_util>
+{
+    using type = std::tuple<
+        type_list<component::wall_clock, component::cpu_clock>,
+        type_list<component::wall_clock, component::user_clock, component::system_clock>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct derivation_types<component::process_cpu_util>
+{
+    using type =
+        std::tuple<type_list<component::wall_clock, component::process_cpu_clock>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct derivation_types<component::thread_cpu_util>
+{
+    using type =
+        std::tuple<type_list<component::wall_clock, component::thread_cpu_clock>>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace trait
+}  // namespace tim

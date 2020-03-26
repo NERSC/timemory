@@ -30,16 +30,15 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
 // TIMEMORY_DECLARE_COMPONENT(example)
 //
 //======================================================================================//
-
-#include "timemory/components/ompt/properties.hpp"
-#include "timemory/components/ompt/traits.hpp"
-
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -64,10 +63,7 @@
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_OMPT)
-
-#    include <omp.h>
-#    include <ompt.h>
-
+//
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_OMPT_LINKAGE(int)
@@ -80,5 +76,5 @@ TIMEMORY_OMPT_LINKAGE(void)
 ompt_finalize(ompt_data_t* tool_data);
 //
 //--------------------------------------------------------------------------------------//
-
+//
 #endif

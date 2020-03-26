@@ -29,7 +29,11 @@
 
 #pragma once
 
+#include "timemory/backends/types/papi.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 #if !defined(TIMEMORY_PAPI_ARRAY_SIZE)
 #    define TIMEMORY_PAPI_ARRAY_SIZE 8
@@ -47,7 +51,54 @@ TIMEMORY_COMPONENT_ALIAS(papi_array32_t, papi_array<32>)
 TIMEMORY_COMPONENT_ALIAS(papi_array_t, papi_array<TIMEMORY_PAPI_ARRAY_SIZE>)
 //
 //======================================================================================//
-
-#include "timemory/backends/types/papi.hpp"
-#include "timemory/components/papi/properties.hpp"
-#include "timemory/components/papi/traits.hpp"
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(papi_vector, PAPI_VECTOR, "papi_vector", "papi")
+TIMEMORY_PROPERTY_SPECIALIZATION(papi_array_t, PAPI_ARRAY, "papi_array_t", "papi_array")
+//
+//======================================================================================//
+//
+//                              STATISTICS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STATISTICS_TYPE(component::papi_vector, std::vector<double>)
+TIMEMORY_TEMPLATE_STATISTICS_TYPE(component::papi_array, std::vector<double>, size_t)
+TIMEMORY_VARIADIC_STATISTICS_TYPE(component::papi_tuple, std::vector<double>, int)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_PAPI)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::papi_vector, false_type)
+TIMEMORY_DEFINE_TEMPLATE_TRAIT(is_available, component::papi_array, false_type, size_t)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::papi_tuple, false_type, int)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              ARRAY SERIALIZATION
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::papi_vector, true_type)
+TIMEMORY_DEFINE_TEMPLATE_TRAIT(array_serialization, component::papi_array, true_type,
+                               size_t)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(array_serialization, component::papi_tuple, true_type, int)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              CUSTOM SERIALIZATION
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_serialization, component::papi_vector, true_type)
+TIMEMORY_DEFINE_TEMPLATE_TRAIT(custom_serialization, component::papi_array, true_type,
+                               size_t)
+TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_serialization, component::papi_tuple, true_type,
+                               int)
+//
+//--------------------------------------------------------------------------------------//
+//

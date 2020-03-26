@@ -29,14 +29,36 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_TRIP_COUNT)
+#include "timemory/components/base.hpp"
+#include "timemory/components/macros.hpp"
+//
+#include "timemory/components/trip_count/components.hpp"
+#include "timemory/components/trip_count/types.hpp"
+//
+#include "timemory/environment/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
-#include "timemory/components/trip_count/extern/base.hpp"
-#include "timemory/components/trip_count/extern/operations.hpp"
-#include "timemory/components/trip_count/extern/storage.hpp"
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<trip_count, int64_t>)
+//
+}  // namespace component
+}  // namespace tim
 //
 //======================================================================================//
-
-// #endif  // TIMEMORY_USE_TRIP_COUNT
+//
+TIMEMORY_EXTERN_OPERATIONS(component::trip_count, true)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::trip_count, trip_count)
+//
+//======================================================================================//

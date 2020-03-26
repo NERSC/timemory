@@ -30,12 +30,32 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_DECLARE_COMPONENT(tau_marker)
 //
 //======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(tau_marker, TAU_MARKER, "tau_marker", "tau")
+//
+//======================================================================================//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
 
-#include "timemory/components/tau_marker/properties.hpp"
-#include "timemory/components/tau_marker/traits.hpp"
+#if !defined(TIMEMORY_USE_TAU)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::tau_marker, false_type)
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::tau_marker, true_type)

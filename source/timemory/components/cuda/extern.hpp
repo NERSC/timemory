@@ -31,8 +31,42 @@
 
 //======================================================================================//
 //
-#include "timemory/components/cuda/extern/base.hpp"
-#include "timemory/components/cuda/extern/operations.hpp"
-#include "timemory/components/cuda/extern/storage.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/macros.hpp"
+//
+#include "timemory/components/cuda/components.hpp"
+#include "timemory/components/cuda/types.hpp"
+//
+#include "timemory/environment/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
+//
+//======================================================================================//
+//
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<cuda_event, float>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<cuda_profiler, void>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<nvtx_marker, void>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::cuda_event, true)
+TIMEMORY_EXTERN_OPERATIONS(component::cuda_profiler, false)
+TIMEMORY_EXTERN_OPERATIONS(component::nvtx_marker, false)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::cuda_event, cuda_event)
+TIMEMORY_EXTERN_STORAGE(component::cuda_profiler, cuda_profiler)
+TIMEMORY_EXTERN_STORAGE(component::nvtx_marker, nvtx_marker)
 //
 //======================================================================================//

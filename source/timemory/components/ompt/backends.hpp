@@ -30,16 +30,7 @@
 
 #pragma once
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace backend
-{
-//
-//
-//
-}  // namespace backend
-}  // namespace tim
-//
-//======================================================================================//
+#if defined(TIMEMORY_USE_OMPT) && defined(_OPENMP)
+#    include <omp.h>
+#    include <ompt.h>
+#endif

@@ -31,11 +31,37 @@
 
 #if defined(TIMEMORY_USE_TAU)
 
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/macros.hpp"
+//
+#    include "timemory/components/tau_marker/components.hpp"
+#    include "timemory/components/tau_marker/types.hpp"
+//
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+
 //======================================================================================//
 //
-#    include "timemory/components/tau_marker/extern/base.hpp"
-#    include "timemory/components/tau_marker/extern/operations.hpp"
-#    include "timemory/components/tau_marker/extern/storage.hpp"
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<tau_marker, void>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::tau_marker, false)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::tau_marker, tau_marker)
 //
 //======================================================================================//
 

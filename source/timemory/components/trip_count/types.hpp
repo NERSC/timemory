@@ -30,12 +30,23 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
 TIMEMORY_DECLARE_COMPONENT(trip_count)
 //
 //======================================================================================//
-
-#include "timemory/components/trip_count/properties.hpp"
-#include "timemory/components/trip_count/traits.hpp"
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(trip_count, TRIP_COUNT, "trip_count", "")
+//
+//======================================================================================//
+//
+//                              CUSTOM LAPS PRINTING
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_laps_printing, component::trip_count, true_type)
+//

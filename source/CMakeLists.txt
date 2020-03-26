@@ -9,13 +9,9 @@ file(GLOB c_headers                     ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
 file(GLOB cxx_headers                   ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
 file(GLOB cxx_headers_variadic          ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
 file(GLOB_RECURSE cxx_headers_backends  ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
-file(GLOB cxx_headers_ert               ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
-file(GLOB_RECURSE
-    cxx_headers_components          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_components        ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
-file(GLOB cxx_headers_extern        ${CMAKE_CURRENT_LIST_DIR}/timemory/extern/*.hpp)
 file(GLOB cxx_headers_general       ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
-file(GLOB cxx_headers_runtime       ${CMAKE_CURRENT_LIST_DIR}/timemory/runtime/*.hpp)
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
 file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
 file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
@@ -43,11 +39,9 @@ endforeach()
 # all the headers
 set(timemory_glob_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
-    ${cxx_headers_backends} ${cxx_headers_ert}
-    ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_extern}
+    ${cxx_headers_backends} ${cxx_headers_components} ${cxx_headers_mpl}
     ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
-    ${cxx_headers_category_bits}
-    ${cxx_headers_general} ${cxx_headers_runtime} ${compat_headers})
+    ${cxx_headers_category_bits} ${cxx_headers_general} ${compat_headers})
 
 if(TIMEMORY_SOURCE_GROUP)
     source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_glob_headers})

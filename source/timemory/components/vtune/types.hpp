@@ -30,6 +30,9 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
@@ -38,6 +41,30 @@ TIMEMORY_DECLARE_COMPONENT(vtune_frame)
 TIMEMORY_DECLARE_COMPONENT(vtune_profiler)
 //
 //======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_event, VTUNE_EVENT, "vtune_event", "")
 
-#include "timemory/components/vtune/properties.hpp"
-#include "timemory/components/vtune/traits.hpp"
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_frame, VTUNE_FRAME, "vtune_frame", "")
+
+TIMEMORY_PROPERTY_SPECIALIZATION(vtune_profiler, VTUNE_PROFILER, "vtune_profiler", "")
+//
+//======================================================================================//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_USE_VTUNE)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_event, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_frame, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::vtune_profiler, false_type)
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_event, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::vtune_frame, true_type)

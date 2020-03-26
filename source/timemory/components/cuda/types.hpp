@@ -30,6 +30,9 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
@@ -39,6 +42,151 @@ TIMEMORY_DECLARE_COMPONENT(nvtx_marker)
 TIMEMORY_COMPONENT_ALIAS(cuda_nvtx, nvtx_marker)
 //
 //======================================================================================//
-
-#include "timemory/components/cuda/properties.hpp"
-#include "timemory/components/cuda/traits.hpp"
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_event, CUDA_EVENT, "cuda_event", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(cuda_profiler, CUDA_PROFILER, "cuda_profiler", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(nvtx_marker, NVTX_MARKER, "nvtx_marker", "nvtx")
+//
+//======================================================================================//
+//
+//                              TYPE-TRAITS
+//
+//======================================================================================//
+//
+//                              STATISTICS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STATISTICS_TYPE(component::cuda_event, float)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS TIMING CATEGORY
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::cuda_event, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              USES TIMING UNITS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::cuda_event, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              START PRIORITY
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(start_priority, component::cuda_event,
+                               priority_constant<128>)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              STOP PRIORITY
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(stop_priority, component::cuda_event,
+                               priority_constant<-128>)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::nvtx_marker, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_CUDA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cuda_event, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cuda_profiler, false_type)
+#endif
+//
+#if !defined(TIMEMORY_USE_NVTX) || !defined(TIMEMORY_USE_CUDA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::nvtx_marker, false_type)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              MISCELLANEOUS
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+namespace trait
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct data<component::cuda_event>
+{
+    using value_type = float;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct data<component::cuda_profiler>
+{
+    using value_type = void;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct data<component::nvtx_marker>
+{
+    using value_type = void;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct collects_data<component::cuda_event>
+{
+    using type                  = component::cuda_event;
+    using value_type            = float;
+    static constexpr bool value = is_available<component::cuda_event>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct collects_data<component::cuda_profiler>
+{
+    using type                  = component::cuda_profiler;
+    using value_type            = void;
+    static constexpr bool value = false;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct collects_data<component::nvtx_marker>
+{
+    using type                  = component::nvtx_marker;
+    using value_type            = void;
+    static constexpr bool value = false;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace trait
+}  // namespace tim
+//
+//--------------------------------------------------------------------------------------//
+//

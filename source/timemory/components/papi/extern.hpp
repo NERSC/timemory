@@ -29,14 +29,51 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_PAPI)
+#if defined(TIMEMORY_USE_PAPI)
 
 //======================================================================================//
 //
-#include "timemory/components/papi/extern/base.hpp"
-#include "timemory/components/papi/extern/operations.hpp"
-#include "timemory/components/papi/extern/storage.hpp"
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/macros.hpp"
+//
+#    include "timemory/components/papi/components.hpp"
+#    include "timemory/components/papi/types.hpp"
+//
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+//
+//======================================================================================//
+//
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<papi_vector, std::vector<long long>>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<papi_array<8>, std::array<long long, 8>>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<papi_array<16>, std::array<long long, 16>>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<papi_array<32>, std::array<long long, 32>>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::papi_vector, true)
+TIMEMORY_EXTERN_OPERATIONS(component::papi_array8_t, true)
+TIMEMORY_EXTERN_OPERATIONS(component::papi_array16_t, true)
+TIMEMORY_EXTERN_OPERATIONS(component::papi_array32_t, true)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::papi_vector, papi_vector)
+TIMEMORY_EXTERN_STORAGE(component::papi_array8_t, papi_array8)
+TIMEMORY_EXTERN_STORAGE(component::papi_array16_t, papi_array16)
+TIMEMORY_EXTERN_STORAGE(component::papi_array32_t, papi_array32)
 //
 //======================================================================================//
 
-// #endif  // TIMEMORY_USE_PAPI
+#endif  // TIMEMORY_USE_PAPI

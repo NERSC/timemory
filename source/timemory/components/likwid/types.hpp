@@ -30,6 +30,9 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
@@ -37,6 +40,34 @@ TIMEMORY_DECLARE_COMPONENT(likwid_marker)
 TIMEMORY_DECLARE_COMPONENT(likwid_nvmarker)
 //
 //======================================================================================//
-
-#include "timemory/components/likwid/properties.hpp"
-#include "timemory/components/likwid/traits.hpp"
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_marker, LIKWID_MARKER, "likwid_marker", "")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(likwid_nvmarker, LIKWID_NVMARKER, "likwid_nvmarker", "")
+//
+//======================================================================================//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_LIKWID)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_marker, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
+#else
+#    if !defined(TIMEMORY_USE_CUDA)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::likwid_nvmarker, false_type)
+#    endif
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_marker, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::likwid_nvmarker, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//

@@ -29,14 +29,46 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_VTUNE)
+#if defined(TIMEMORY_USE_VTUNE)
+
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/macros.hpp"
+//
+#    include "timemory/components/vtune/components.hpp"
+#    include "timemory/components/vtune/types.hpp"
+//
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
-#include "timemory/components/vtune/extern/base.hpp"
-#include "timemory/components/vtune/extern/operations.hpp"
-#include "timemory/components/vtune/extern/storage.hpp"
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<vtune_event, void>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<vtune_frame, void>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<vtune_profiler, void>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::vtune_event, false)
+TIMEMORY_EXTERN_OPERATIONS(component::vtune_frame, false)
+TIMEMORY_EXTERN_OPERATIONS(component::vtune_profiler, false)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::vtune_event, vtune_event)
+TIMEMORY_EXTERN_STORAGE(component::vtune_frame, vtune_frame)
+TIMEMORY_EXTERN_STORAGE(component::vtune_profiler, vtune_profiler)
 //
 //======================================================================================//
 
-// #endif  // TIMEMORY_USE_VTUNE
+#endif  // TIMEMORY_USE_VTUNE

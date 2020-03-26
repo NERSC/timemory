@@ -31,6 +31,9 @@
 
 #include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 
@@ -68,6 +71,72 @@ TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::nat
 TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle, user_bundle<mpip_bundle_idx, api::native_tag>)
 //
 //======================================================================================//
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, USER_GLOBAL_BUNDLE,
+                                 "user_global_bundle", "global_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle",
+                                 "list_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
+                                 "user_tuple_bundle", "tuple_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
+                                 "ompt", "omp_tools", "openmp", "openmp_tools")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE,
+                                 "user_mpip_bundle"
+                                 "mpip",
+                                 "mpi_tools", "mpi")
+//
+//======================================================================================//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_OMPT)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ompt_bundle, false_type)
+#endif
 
-#include "timemory/components/user_bundle/properties.hpp"
-#include "timemory/components/user_bundle/traits.hpp"
+#if !defined(TIMEMORY_USE_MPIP)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mpip_bundle, false_type)
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//                              IS USER BUNDLE
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+namespace trait
+{
+//
+//--------------------------------------------------------------------------------------//
+/// trait for configuring OMPT components
+///
+template <typename T>
+struct omp_tools
+{
+    using type = component_tuple<component::user_ompt_bundle>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t _Idx, typename _Type>
+struct is_user_bundle<component::user_bundle<_Idx, _Type>> : true_type
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t _Idx, typename _Type>
+struct requires_prefix<component::user_bundle<_Idx, _Type>> : true_type
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace trait
+}  // namespace tim

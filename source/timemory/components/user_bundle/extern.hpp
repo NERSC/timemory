@@ -29,14 +29,81 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_USER_BUNDLE)
+#include "timemory/components/base.hpp"
+#include "timemory/components/macros.hpp"
+//
+#include "timemory/components/user_bundle/components.hpp"
+#include "timemory/components/user_bundle/overloads.hpp"
+#include "timemory/components/user_bundle/types.hpp"
+//
+#include "timemory/environment/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
-#include "timemory/components/user_bundle/extern/base.hpp"
-#include "timemory/components/user_bundle/extern/operations.hpp"
-#include "timemory/components/user_bundle/extern/storage.hpp"
+namespace tim
+{
+namespace component
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+//                          Base instantiation
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_EXTERN_TEMPLATE(
+    struct base<user_bundle<global_bundle_idx, api::native_tag>, void>)
+//
+TIMEMORY_EXTERN_TEMPLATE(
+    struct base<user_bundle<tuple_bundle_idx, api::native_tag>, void>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<list_bundle_idx, api::native_tag>, void>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<ompt_bundle_idx, api::native_tag>, void>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<mpip_bundle_idx, api::native_tag>, void>)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                          Derived instantiation
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_EXTERN_TEMPLATE(struct user_bundle<global_bundle_idx, api::native_tag>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct user_bundle<tuple_bundle_idx, api::native_tag>)
+//
+TIMEMORY_EXTERN_TEMPLATE(struct user_bundle<list_bundle_idx, api::native_tag>)
+//
+}  // namespace component
+}  // namespace tim
 //
 //======================================================================================//
-
-// #endif  // TIMEMORY_USE_USER_BUNDLE
+//
+TIMEMORY_EXTERN_OPERATIONS(component::user_global_bundle, false)
+//
+TIMEMORY_EXTERN_OPERATIONS(component::user_tuple_bundle, false)
+//
+TIMEMORY_EXTERN_OPERATIONS(component::user_list_bundle, false)
+//
+TIMEMORY_EXTERN_OPERATIONS(component::user_ompt_bundle, false)
+//
+TIMEMORY_EXTERN_OPERATIONS(component::user_mpip_bundle, false)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::user_global_bundle, user_global_bundle)
+//
+TIMEMORY_EXTERN_STORAGE(component::user_tuple_bundle, user_tuple_bundle)
+//
+TIMEMORY_EXTERN_STORAGE(component::user_list_bundle, user_list_bundle)
+//
+TIMEMORY_EXTERN_STORAGE(component::user_ompt_bundle, user_ompt_bundle)
+//
+TIMEMORY_EXTERN_STORAGE(component::user_mpip_bundle, user_mpip_bundle)
+//
+//======================================================================================//

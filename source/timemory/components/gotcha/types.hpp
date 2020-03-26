@@ -30,6 +30,10 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
@@ -41,6 +45,111 @@ TIMEMORY_DECLARE_COMPONENT(malloc_gotcha)
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(mpip_handle, typename Toolset, typename Tag)
 //
 //======================================================================================//
-
-#include "timemory/components/gotcha/properties.hpp"
-#include "timemory/components/gotcha/traits.hpp"
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(malloc_gotcha, MALLOC_GOTCHA, "malloc_gotcha", "")
+//
+//======================================================================================//
+//
+//                              STATISTICS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STATISTICS_TYPE(component::malloc_gotcha, double)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_GOTCHA)
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::malloc_gotcha, false_type)
+//
+namespace tim
+{
+namespace trait
+{
+//
+template <size_t N, typename Comp, typename Diff>
+struct is_available<component::gotcha<N, Comp, Diff>> : false_type
+{};
+//
+}  // namespace trait
+}  // namespace tim
+//
+#endif  // TIMEMORY_USE_GOTCHA
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              REQUIRES PREFIX
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::malloc_gotcha, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS MEMORY CATEGORY
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::malloc_gotcha, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              USES MEMORY UNITS
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::malloc_gotcha, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS GOTCHA
+//                              START PRIORITY
+//                              STOP PRIORITY
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace tim
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace trait
+{
+//
+template <size_t N, typename Comp, typename Diff>
+struct is_gotcha<component::gotcha<N, Comp, Diff>> : true_type
+{};
+//
+//
+template <size_t N, typename Comp, typename Diff>
+struct start_priority<component::gotcha<N, Comp, Diff>> : priority_constant<256>
+{};
+//
+//
+template <size_t N, typename Comp, typename Diff>
+struct stop_priority<component::gotcha<N, Comp, Diff>> : priority_constant<-256>
+{};
+//
+}  // namespace trait
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace concepts
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Nt, typename Components, typename Differentiator>
+struct is_gotcha<component::gotcha<Nt, Components, Differentiator>> : true_type
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace concepts
+}  // namespace tim
+//
+//======================================================================================//

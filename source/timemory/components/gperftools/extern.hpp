@@ -29,14 +29,43 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_GPERFTOOLSTOOLS)
+#if defined(TIMEMORY_USE_GPERFTOOLSTOOLS)
+
+#    include "timemory/components/base.hpp"
+#    include "timemory/components/macros.hpp"
+//
+#    include "timemory/components/gperftools/components.hpp"
+#    include "timemory/components/gperftools/types.hpp"
+//
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
-#include "timemory/components/gperftools/extern/base.hpp"
-#include "timemory/components/gperftools/extern/operations.hpp"
-#include "timemory/components/gperftools/extern/storage.hpp"
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<gperftools_heap_profiler, void>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<gperftools_cpu_profiler, void>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::gperftools_heap_profiler, false)
+TIMEMORY_EXTERN_OPERATIONS(component::gperftools_cpu_profiler, false)
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_STORAGE(component::gperftools_heap_profiler, gperftools_heap_profiler)
+TIMEMORY_EXTERN_STORAGE(component::gperftools_cpu_profiler, gperftools_cpu_profiler)
 //
 //======================================================================================//
 
-// #endif  // TIMEMORY_USE_GPERFTOOLSTOOLS
+#endif  // TIMEMORY_USE_GPERFTOOLSTOOLS

@@ -31,8 +31,34 @@
 
 //======================================================================================//
 //
-#include "timemory/components/caliper/extern/base.hpp"
-#include "timemory/components/caliper/extern/operations.hpp"
-#include "timemory/components/caliper/extern/storage.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/macros.hpp"
+//
+#include "timemory/components/caliper/components.hpp"
+#include "timemory/components/caliper/types.hpp"
+//
+#include "timemory/environment/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
+//
+//======================================================================================//
+//
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<caliper, void>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+TIMEMORY_EXTERN_OPERATIONS(component::caliper, false)
+//
+TIMEMORY_EXTERN_STORAGE(component::caliper, caliper)
 //
 //======================================================================================//

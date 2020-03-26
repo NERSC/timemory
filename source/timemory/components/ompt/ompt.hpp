@@ -41,7 +41,6 @@
 #include <omp.h>
 #include <ompt.h>
 
-
 namespace tim
 {
 namespace policy
