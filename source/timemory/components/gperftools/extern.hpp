@@ -29,19 +29,20 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_GPERFTOOLS)
+//#if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||     \
+//    defined(TIMEMORY_USE_GPERFTOOLS_PROFILER)
 
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/components/gperftools/components.hpp"
-#    include "timemory/components/gperftools/types.hpp"
+#include "timemory/components/gperftools/components.hpp"
+#include "timemory/components/gperftools/types.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/definition.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 
 //======================================================================================//
 //
@@ -68,4 +69,4 @@ TIMEMORY_EXTERN_STORAGE(component::gperftools_cpu_profiler, gperftools_cpu_profi
 //
 //======================================================================================//
 
-#endif  // TIMEMORY_USE_GPERFTOOLS
+//#endif  // TIMEMORY_USE_GPERFTOOLS

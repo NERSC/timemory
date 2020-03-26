@@ -127,19 +127,19 @@ get_opaque(bool flat, Args&&... args)
     };
 
     auto _start = [=, &args...](const string_t& _prefix, bool argflat) {
-        auto _hash = add_hash_id(_prefix);
-        Toolset* _result = new Toolset{};
-        operation::set_prefix<Toolset> _opprefix(*_result, _prefix);
-        operation::reset<Toolset> _opreset(*_result);
+        auto                            _hash   = add_hash_id(_prefix);
+        Toolset*                        _result = new Toolset{};
+        operation::set_prefix<Toolset>  _opprefix(*_result, _prefix);
+        operation::reset<Toolset>       _opreset(*_result);
         operation::insert_node<Toolset> _opinsert(*_result, _hash, flat || argflat);
-        operation::start<Toolset> _opstart(*_result);
+        operation::start<Toolset>       _opstart(*_result);
         consume_parameters(_opprefix, _opreset, _opinsert, _opstart);
         return (void*) _result;
     };
 
     auto _stop = [=](void* v_result) {
-        Toolset* _result = static_cast<Toolset*>(v_result);
-        operation::stop<Toolset> _opstop(*_result);
+        Toolset*                     _result = static_cast<Toolset*>(v_result);
+        operation::stop<Toolset>     _opstop(*_result);
         operation::pop_node<Toolset> _oppop(*_result);
         consume_parameters(_opstop, _oppop);
     };

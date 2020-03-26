@@ -30,8 +30,8 @@
 #include "timemory/enum.h"
 #include "timemory/runtime/macros.hpp"
 //
-#include "timemory/components/types.hpp"
 #include "timemory/components/opaque/definition.hpp"
+#include "timemory/components/types.hpp"
 
 #include <set>
 #include <string>
@@ -72,8 +72,7 @@ get_hash(std::string&& key)
 template <int I, typename... Args,
           enable_if_t<(component::enumerator<I>::value), int> = 0>
 void
-do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array,
-                       int idx, Args&&... args)
+do_enumerator_generate(std::vector<opaque_pair_t>& opaque_array, int idx, Args&&... args)
 {
     if(idx == I)
     {
@@ -171,8 +170,8 @@ void
 enumerator_insert(Tp& obj, int idx, int_sequence<Ints...>, Args&&... args)
 {
     std::vector<opaque_pair_t> opaque_array;
-    TIMEMORY_FOLD_EXPRESSION(do_enumerator_generate<Ints>(opaque_array, idx,
-                                                          std::forward<Args>(args)...));
+    TIMEMORY_FOLD_EXPRESSION(
+        do_enumerator_generate<Ints>(opaque_array, idx, std::forward<Args>(args)...));
     for(auto&& itr : opaque_array)
         obj.insert(std::move(itr.first), std::move(itr.second));
 }
@@ -184,8 +183,8 @@ void
 enumerator_configure(int idx, int_sequence<Ints...>, Args&&... args)
 {
     std::vector<opaque_pair_t> opaque_array;
-    TIMEMORY_FOLD_EXPRESSION(do_enumerator_generate<Ints>(opaque_array, idx,
-                                                          std::forward<Args>(args)...));
+    TIMEMORY_FOLD_EXPRESSION(
+        do_enumerator_generate<Ints>(opaque_array, idx, std::forward<Args>(args)...));
     for(auto&& itr : opaque_array)
         Tp::configure(std::move(itr.first), std::move(itr.second));
 }
@@ -197,8 +196,8 @@ void
 enumerator_configure(Tp& obj, int idx, int_sequence<Ints...>, Args&&... args)
 {
     std::vector<opaque_pair_t> opaque_array;
-    TIMEMORY_FOLD_EXPRESSION(do_enumerator_generate<Ints>(opaque_array, idx,
-                                                          std::forward<Args>(args)...));
+    TIMEMORY_FOLD_EXPRESSION(
+        do_enumerator_generate<Ints>(opaque_array, idx, std::forward<Args>(args)...));
     for(auto&& itr : opaque_array)
         obj.configure(std::move(itr.first), std::move(itr.second));
 }
