@@ -157,25 +157,28 @@ public:
 
     void start()
     {
-	// TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginPass(&beginPassParams));
-	TIMEMORY_CUPTI_API_CALL(cuptiProfilerPushRange(&pushRangeParams));
+        enable();
+        TIMEMORY_CUPTI_API_CALL(cuptiProfilerPushRange(&pushRangeParams));
     }
 
     void stop()
     {
         TIMEMORY_CUPTI_API_CALL(cuptiProfilerPopRange(&popRangeParams));
-	// TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndPass(&endPassParams));
-        TIMEMORY_CUPTI_API_CALL(cuptiProfilerFlushCounterData(&flushCounterDataParams));
+        disable();
 
-        auto& chipName                 = get_persistent_data().chipName;
-        auto& counterDataImage         = get_persistent_data().counterDataImage;
-        auto& metricNames              = get_persistent_data().metricNames;
+        auto& chipName         = get_persistent_data().chipName;
+        auto& counterDataImage = get_persistent_data().counterDataImage;
+        auto& metricNames      = get_persistent_data().metricNames;
 
+        PrintMetricValues(chipName, counterDataImage, metricNames);
         std::vector<MetricNameValue> _data;
         GetMetricGpuValue(chipName, counterDataImage, metricNames, _data);
+        PRINT_HERE("METRIC_GPU_VALUE size: %li", (long int) _data.size());
         for(const auto& itr : _data)
         {
             auto _prefix = itr.metricName + ".";
+            PRINT_HERE("    METRIC[%s] size: %li", itr.metricName.c_str(),
+                       (long int) itr.rangeNameMetricValueMap.size());
             for(const auto& vitr : itr.rangeNameMetricValueMap)
             {
                 value[_prefix + vitr.first] = vitr.second;
@@ -301,13 +304,8 @@ protected:
                                           std::vector<uint8_t>& counterDataScratchBuffer,
                                           std::vector<uint8_t>& counterDataImagePrefix);
 
-    static bool enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
-                       std::vector<uint8_t>&    counterDataScratchBuffer,
-                       std::vector<uint8_t>&    counterDataImage,
-                       CUpti_ProfilerReplayMode profilerReplayMode,
-                       CUpti_ProfilerRange      profilerRange);
-
-    static bool disable(CUcontext);
+    static bool enable();
+    static bool disable();
 
     static bool GetConfigImage(std::string chipName, std::vector<std::string> metricNames,
                                std::vector<uint8_t>& configImage);
@@ -342,7 +340,6 @@ protected:
         CUpti_Profiler_EndPass_Params_STRUCT_SIZE
     };
 
-
 protected:
     struct MetricNameValue
     {
@@ -361,7 +358,7 @@ protected:
         int                      numRanges              = 64;
         int                      computeCapabilityMajor = 0;
         int                      computeCapabilityMinor = 0;
-        CUpti_ProfilerReplayMode profilerReplayMode     = CUPTI_KernelReplay;
+        CUpti_ProfilerReplayMode profilerReplayMode     = CUPTI_UserReplay;
         CUpti_ProfilerRange      profilerRange          = CUPTI_UserRange;
         std::string              chipName               = "";
         std::string              CounterDataFileName    = "SimpleCupti.counterdata";
@@ -379,6 +376,79 @@ protected:
         return _instance;
     }
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+inline bool
+cupti_profiler::create_counter_data_image(std::vector<uint8_t>& counterDataImage,
+                                          std::vector<uint8_t>& counterDataScratchBuffer,
+                                          std::vector<uint8_t>& counterDataImagePrefix)
+{
+    auto& numRanges = get_persistent_data().numRanges;
+
+    CUpti_Profiler_CounterDataImageOptions counterDataImageOptions;
+    counterDataImageOptions.pCounterDataPrefix    = &counterDataImagePrefix[0];
+    counterDataImageOptions.counterDataPrefixSize = counterDataImagePrefix.size();
+    counterDataImageOptions.maxNumRanges          = numRanges;
+    counterDataImageOptions.maxNumRangeTreeNodes  = numRanges;
+    counterDataImageOptions.maxRangeNameLength    = 64;
+
+    CUpti_Profiler_CounterDataImage_CalculateSize_Params calculateSizeParams = {
+        CUpti_Profiler_CounterDataImage_CalculateSize_Params_STRUCT_SIZE
+    };
+
+    calculateSizeParams.pOptions = &counterDataImageOptions;
+    calculateSizeParams.sizeofCounterDataImageOptions =
+        CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
+
+    TIMEMORY_CUPTI_API_CALL(
+        cuptiProfilerCounterDataImageCalculateSize(&calculateSizeParams));
+
+    CUpti_Profiler_CounterDataImage_Initialize_Params initializeParams = {
+        CUpti_Profiler_CounterDataImage_Initialize_Params_STRUCT_SIZE
+    };
+
+    initializeParams.sizeofCounterDataImageOptions =
+        CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
+    initializeParams.pOptions             = &counterDataImageOptions;
+    initializeParams.counterDataImageSize = calculateSizeParams.counterDataImageSize;
+
+    counterDataImage.resize(calculateSizeParams.counterDataImageSize);
+    initializeParams.pCounterDataImage = &counterDataImage[0];
+
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerCounterDataImageInitialize(&initializeParams));
+
+    CUpti_Profiler_CounterDataImage_CalculateScratchBufferSize_Params
+        scratchBufferSizeParams = {
+            CUpti_Profiler_CounterDataImage_CalculateScratchBufferSize_Params_STRUCT_SIZE
+        };
+
+    scratchBufferSizeParams.counterDataImageSize =
+        calculateSizeParams.counterDataImageSize;
+    scratchBufferSizeParams.pCounterDataImage = initializeParams.pCounterDataImage;
+
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerCounterDataImageCalculateScratchBufferSize(
+        &scratchBufferSizeParams));
+
+    counterDataScratchBuffer.resize(scratchBufferSizeParams.counterDataScratchBufferSize);
+
+    CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params
+        initScratchBufferParams = {
+            CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params_STRUCT_SIZE
+        };
+
+    initScratchBufferParams.counterDataImageSize =
+        calculateSizeParams.counterDataImageSize;
+    initScratchBufferParams.pCounterDataImage = initializeParams.pCounterDataImage;
+    initScratchBufferParams.counterDataScratchBufferSize =
+        scratchBufferSizeParams.counterDataScratchBufferSize;
+    initScratchBufferParams.pCounterDataScratchBuffer = &counterDataScratchBuffer[0];
+
+    TIMEMORY_CUPTI_API_CALL(
+        cuptiProfilerCounterDataImageInitializeScratchBuffer(&initScratchBufferParams));
+
+    return true;
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -480,8 +550,79 @@ cupti_profiler::configure(int device)
         return;
     }
 
-    enable(cuDevice, configImage, counterDataScratchBuffer, counterDataImage,
-           profilerReplayMode, profilerRange);
+    auto& enabled   = get_persistent_data().enabled;
+    auto& cuContext = get_persistent_data().cuContext;
+    auto& numRanges = get_persistent_data().numRanges;
+
+    CUpti_Profiler_BeginSession_Params beginSessionParams = {
+        CUpti_Profiler_BeginSession_Params_STRUCT_SIZE
+    };
+
+    CUpti_Profiler_SetConfig_Params setConfigParams = {
+        CUpti_Profiler_SetConfig_Params_STRUCT_SIZE
+    };
+
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuCtxCreate(&cuContext, 0, cuDevice));
+
+    beginSessionParams.ctx                          = cuContext;
+    beginSessionParams.counterDataImageSize         = counterDataImage.size();
+    beginSessionParams.pCounterDataImage            = &counterDataImage[0];
+    beginSessionParams.counterDataScratchBufferSize = counterDataScratchBuffer.size();
+    beginSessionParams.pCounterDataScratchBuffer    = &counterDataScratchBuffer[0];
+    beginSessionParams.range                        = profilerRange;
+    beginSessionParams.replayMode                   = profilerReplayMode;
+    beginSessionParams.maxRangesPerPass             = numRanges;
+    beginSessionParams.maxLaunchesPerPass           = numRanges;
+
+    setConfigParams.pConfig          = &configImage[0];
+    setConfigParams.configSize       = configImage.size();
+    setConfigParams.passIndex        = 0;
+    setConfigParams.minNestingLevel  = 1;
+    setConfigParams.numNestingLevels = 1;
+
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginSession(&beginSessionParams));
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerSetConfig(&setConfigParams));
+
+    enabled = true;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline bool
+cupti_profiler::enable()
+{
+    auto& enabled = get_persistent_data().enabled;
+    if(!enabled)
+        configure();
+
+    auto& cuContext                = get_persistent_data().cuContext;
+    auto& numRanges                = get_persistent_data().numRanges;
+    auto& cuDevice                 = get_persistent_data().cuDevice;
+    auto& metricNames              = get_persistent_data().metricNames;
+    auto& counterDataImagePrefix   = get_persistent_data().counterDataImagePrefix;
+    auto& configImage              = get_persistent_data().configImage;
+    auto& counterDataImage         = get_persistent_data().counterDataImage;
+    auto& counterDataScratchBuffer = get_persistent_data().counterDataScratchBuffer;
+    auto& profilerReplayMode       = get_persistent_data().profilerReplayMode;
+    auto& profilerRange            = get_persistent_data().profilerRange;
+    auto& deviceCount              = get_persistent_data().deviceCount;
+    auto& deviceNum                = get_persistent_data().deviceNum;
+    auto& computeCapabilityMajor   = get_persistent_data().computeCapabilityMajor;
+    auto& computeCapabilityMinor   = get_persistent_data().computeCapabilityMinor;
+    auto& chipName                 = get_persistent_data().chipName;
+
+    CUpti_Profiler_EnableProfiling_Params enableProfilingParams = {
+        CUpti_Profiler_EnableProfiling_Params_STRUCT_SIZE
+    };
+
+    CUpti_Profiler_BeginPass_Params beginPassParams = {
+        CUpti_Profiler_BeginPass_Params_STRUCT_SIZE
+    };
+
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginPass(&beginPassParams));
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerEnableProfiling(&enableProfilingParams));
+
+    return true;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -489,19 +630,29 @@ cupti_profiler::configure(int device)
 inline void
 cupti_profiler::finalize()
 {
-    disable(get_persistent_data().cuContext);
-
     auto& chipName                 = get_persistent_data().chipName;
     auto& counterDataImage         = get_persistent_data().counterDataImage;
     auto& counterDataScratchBuffer = get_persistent_data().counterDataScratchBuffer;
     auto& CounterDataFileName      = get_persistent_data().CounterDataFileName;
     auto& CounterDataSBFileName    = get_persistent_data().CounterDataSBFileName;
     auto& metricNames              = get_persistent_data().metricNames;
+    auto& cuContext                = get_persistent_data().cuContext;
+
+    CUpti_Profiler_UnsetConfig_Params unsetConfigParams = {
+        CUpti_Profiler_UnsetConfig_Params_STRUCT_SIZE
+    };
+
+    CUpti_Profiler_EndSession_Params endSessionParams = {
+        CUpti_Profiler_EndSession_Params_STRUCT_SIZE
+    };
 
     CUpti_Profiler_DeInitialize_Params profilerDeInitializeParams = {
         CUpti_Profiler_DeInitialize_Params_STRUCT_SIZE
     };
 
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerUnsetConfig(&unsetConfigParams));
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndSession(&endSessionParams));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuCtxDestroy(cuContext));
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerDeInitialize(&profilerDeInitializeParams));
 
     /* Dump counterDataImage in file */
@@ -516,163 +667,29 @@ cupti_profiler::finalize()
 //--------------------------------------------------------------------------------------//
 //
 inline bool
-cupti_profiler::create_counter_data_image(std::vector<uint8_t>& counterDataImage,
-                                          std::vector<uint8_t>& counterDataScratchBuffer,
-                                          std::vector<uint8_t>& counterDataImagePrefix)
-{
-    auto& numRanges = get_persistent_data().numRanges;
-
-    CUpti_Profiler_CounterDataImageOptions counterDataImageOptions;
-    counterDataImageOptions.pCounterDataPrefix    = &counterDataImagePrefix[0];
-    counterDataImageOptions.counterDataPrefixSize = counterDataImagePrefix.size();
-    counterDataImageOptions.maxNumRanges          = numRanges;
-    counterDataImageOptions.maxNumRangeTreeNodes  = numRanges;
-    counterDataImageOptions.maxRangeNameLength    = 64;
-
-    CUpti_Profiler_CounterDataImage_CalculateSize_Params calculateSizeParams = {
-        CUpti_Profiler_CounterDataImage_CalculateSize_Params_STRUCT_SIZE
-    };
-
-    calculateSizeParams.pOptions = &counterDataImageOptions;
-    calculateSizeParams.sizeofCounterDataImageOptions =
-        CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
-
-    TIMEMORY_CUPTI_API_CALL(
-        cuptiProfilerCounterDataImageCalculateSize(&calculateSizeParams));
-
-    CUpti_Profiler_CounterDataImage_Initialize_Params initializeParams = {
-        CUpti_Profiler_CounterDataImage_Initialize_Params_STRUCT_SIZE
-    };
-
-    initializeParams.sizeofCounterDataImageOptions =
-        CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
-    initializeParams.pOptions             = &counterDataImageOptions;
-    initializeParams.counterDataImageSize = calculateSizeParams.counterDataImageSize;
-
-    counterDataImage.resize(calculateSizeParams.counterDataImageSize);
-    initializeParams.pCounterDataImage = &counterDataImage[0];
-
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerCounterDataImageInitialize(&initializeParams));
-
-    CUpti_Profiler_CounterDataImage_CalculateScratchBufferSize_Params
-        scratchBufferSizeParams = {
-            CUpti_Profiler_CounterDataImage_CalculateScratchBufferSize_Params_STRUCT_SIZE
-        };
-
-    scratchBufferSizeParams.counterDataImageSize =
-        calculateSizeParams.counterDataImageSize;
-    scratchBufferSizeParams.pCounterDataImage = initializeParams.pCounterDataImage;
-
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerCounterDataImageCalculateScratchBufferSize(
-        &scratchBufferSizeParams));
-
-    counterDataScratchBuffer.resize(scratchBufferSizeParams.counterDataScratchBufferSize);
-
-    CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params
-        initScratchBufferParams = {
-            CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params_STRUCT_SIZE
-        };
-
-    initScratchBufferParams.counterDataImageSize =
-        calculateSizeParams.counterDataImageSize;
-    initScratchBufferParams.pCounterDataImage = initializeParams.pCounterDataImage;
-    initScratchBufferParams.counterDataScratchBufferSize =
-        scratchBufferSizeParams.counterDataScratchBufferSize;
-    initScratchBufferParams.pCounterDataScratchBuffer = &counterDataScratchBuffer[0];
-
-    TIMEMORY_CUPTI_API_CALL(
-        cuptiProfilerCounterDataImageInitializeScratchBuffer(&initScratchBufferParams));
-
-    return true;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-inline bool
-cupti_profiler::enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
-                       std::vector<uint8_t>&    counterDataScratchBuffer,
-                       std::vector<uint8_t>&    counterDataImage,
-                       CUpti_ProfilerReplayMode profilerReplayMode,
-                       CUpti_ProfilerRange      profilerRange)
+cupti_profiler::disable()
 {
     auto& enabled   = get_persistent_data().enabled;
     auto& cuContext = get_persistent_data().cuContext;
 
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuCtxCreate(&cuContext, 0, cuDevice));
-
-    CUpti_Profiler_BeginSession_Params beginSessionParams = {
-        CUpti_Profiler_BeginSession_Params_STRUCT_SIZE
-    };
-
-    CUpti_Profiler_SetConfig_Params setConfigParams = {
-        CUpti_Profiler_SetConfig_Params_STRUCT_SIZE
-    };
-
-    CUpti_Profiler_EnableProfiling_Params enableProfilingParams = {
-        CUpti_Profiler_EnableProfiling_Params_STRUCT_SIZE
-    };
-
-    CUpti_Profiler_BeginPass_Params beginPassParams = {
-        CUpti_Profiler_BeginPass_Params_STRUCT_SIZE
-    };
-
-    beginSessionParams.ctx                          = NULL;
-    beginSessionParams.counterDataImageSize         = counterDataImage.size();
-    beginSessionParams.pCounterDataImage            = &counterDataImage[0];
-    beginSessionParams.counterDataScratchBufferSize = counterDataScratchBuffer.size();
-    beginSessionParams.pCounterDataScratchBuffer    = &counterDataScratchBuffer[0];
-    beginSessionParams.range                        = CUPTI_UserRange;
-    beginSessionParams.replayMode                   = CUPTI_UserReplay;
-    beginSessionParams.maxRangesPerPass             = 1;
-    beginSessionParams.maxLaunchesPerPass           = 1;
-
-    setConfigParams.pConfig    = &configImage[0];
-    setConfigParams.configSize = configImage.size();
-    setConfigParams.passIndex  = 0;
-    setConfigParams.minNestingLevel  = 1;
-    setConfigParams.numNestingLevels = 1;
-
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginSession(&beginSessionParams));
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerSetConfig(&setConfigParams));
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginPass(&beginPassParams));
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerEnableProfiling(&enableProfilingParams));
-
-    enabled = true;
-
-    return true;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-inline bool
-cupti_profiler::disable(CUcontext cuContext)
-{
-    auto& enabled = get_persistent_data().enabled;
-
     if(!enabled)
         return false;
-
-    CUpti_Profiler_EndPass_Params endPassParams = {
-        CUpti_Profiler_EndPass_Params_STRUCT_SIZE
-    };
 
     CUpti_Profiler_DisableProfiling_Params disableProfilingParams = {
         CUpti_Profiler_DisableProfiling_Params_STRUCT_SIZE
     };
 
-    CUpti_Profiler_UnsetConfig_Params unsetConfigParams = {
-        CUpti_Profiler_UnsetConfig_Params_STRUCT_SIZE
+    CUpti_Profiler_EndPass_Params endPassParams = {
+        CUpti_Profiler_EndPass_Params_STRUCT_SIZE
     };
 
-    CUpti_Profiler_EndSession_Params endSessionParams = {
-        CUpti_Profiler_EndSession_Params_STRUCT_SIZE
+    CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {
+        CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE
     };
 
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerDisableProfiling(&disableProfilingParams));
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndPass(&endPassParams));
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerUnsetConfig(&unsetConfigParams));
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndSession(&endSessionParams));
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuCtxDestroy(cuContext));
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerFlushCounterData(&flushCounterDataParams));
 
     return true;
 }
@@ -944,8 +961,10 @@ cupti_profiler::GetRawMetricRequests(
         {
             temp.push_back(*ppMetricDependencies);
         }
-        NVPW_MetricsContext_GetMetricProperties_End_Params getMetricPropertiesEndParams =
-            { NVPW_MetricsContext_GetMetricProperties_End_Params_STRUCT_SIZE };
+        NVPW_MetricsContext_GetMetricProperties_End_Params
+            getMetricPropertiesEndParams = {
+                NVPW_MetricsContext_GetMetricProperties_End_Params_STRUCT_SIZE
+            };
         getMetricPropertiesEndParams.pMetricsContext = pMetricsContext;
         TIMEMORY_RETURN_IF_NVPW_ERROR(false, NVPW_MetricsContext_GetMetricProperties_End(
                                                  &getMetricPropertiesEndParams));

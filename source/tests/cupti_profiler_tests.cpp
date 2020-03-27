@@ -51,7 +51,8 @@ static const auto num_blck = 32;
 static const auto num_grid = 32;
 // static const auto epsilon  = 10 * std::numeric_limits<float>::epsilon();
 
-void record_kernel(const char* kernel_name, int nreplays, void*)
+void
+record_kernel(const char* kernel_name, int nreplays, void*)
 {
     printf("replaying kernel: %s. # replays = %i\n", kernel_name, nreplays);
 }
@@ -182,7 +183,7 @@ class cupti_profiler_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-	// cuptiKernelReplaySubscribeUpdate(&record_kernel, nullptr);
+        // cuptiKernelReplaySubscribeUpdate(&record_kernel, nullptr);
     }
 };
 
@@ -261,8 +262,8 @@ TEST_F(cupti_profiler_tests, general)
     for(auto& itr : streams)
         tim::cuda::stream_sync(itr);
 
-    tuple_t async_timer(details::get_test_name() + "_no_subtimers", true);
-    async_timer.start();
+    // tuple_t async_timer(details::get_test_name() + "_no_subtimers", true);
+    // async_timer.start();
     for(int i = 0; i < num_iter; ++i)
     {
         printf("[%s]> iteration %i...\n", details::get_test_name().c_str(), i);
@@ -270,9 +271,9 @@ TEST_F(cupti_profiler_tests, general)
         details::KERNEL_A(data, num_data, _stream);
         details::KERNEL_B(data, num_data, _stream);
     }
-    async_timer.stop();
+    // async_timer.stop();
     timer.stop();
-    
+
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
     num_iter /= 2;
