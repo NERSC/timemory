@@ -130,14 +130,14 @@ namespace component
 /// \class cupti_profiler
 /// \brief CUPTI profiler component
 ///
-struct cupti_profiler : public base<cupti_profiler, std::vector<double>>
+struct cupti_profiler : public base<cupti_profiler, std::map<std::string, double>>
 {
 protected:
     struct MetricNameValue;
 
 public:
     // required aliases
-    using value_type = std::vector<double>;
+    using value_type = std::map<std::string, double>;
     using this_type  = cupti_profiler;
     using base_type  = base<this_type, value_type>;
 
@@ -148,19 +148,6 @@ public:
     static std::string label() { return "cupti_profiler"; }
     static std::string description() { return "CUpti Profiler API"; }
 
-    static bool create_counter_data_image(std::vector<uint8_t>& counterDataImage,
-                                          std::vector<uint8_t>& counterDataScratchBuffer,
-                                          std::vector<uint8_t>& counterDataImagePrefix,
-                                          int                   numRanges);
-
-    static bool enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
-                       std::vector<uint8_t>&    counterDataScratchBuffer,
-                       std::vector<uint8_t>&    counterDataImage,
-                       CUpti_ProfilerReplayMode profilerReplayMode,
-                       CUpti_ProfilerRange      profilerRange);
-
-    static bool disable(CUcontext);
-
     static void configure(int device = 0);
     static void finalize();
 
@@ -168,11 +155,132 @@ public:
 
     static void global_finalize(storage_type*) { finalize(); }
 
-    void start() {}
+    void start() { TIMEMORY_CUPTI_API_CALL(cuptiProfilerPushRange(&pushRangeParams)); }
 
-    void stop() {}
+    void stop()
+    {
+        TIMEMORY_CUPTI_API_CALL(cuptiProfilerPopRange(&popRangeParams));
+        TIMEMORY_CUPTI_API_CALL(cuptiProfilerFlushCounterData(&flushCounterDataParams));
 
-    static std::string GetHwUnit(const std::string& metricName);
+        auto& chipName                 = get_persistent_data().chipName;
+        auto& counterDataImage         = get_persistent_data().counterDataImage;
+        auto& metricNames              = get_persistent_data().metricNames;
+
+        std::vector<MetricNameValue> _data;
+        GetMetricGpuValue(chipName, counterDataImage, metricNames, _data);
+        for(const auto& itr : _data)
+        {
+            auto _prefix = itr.metricName + ".";
+            for(const auto& vitr : itr.rangeNameMetricValueMap)
+            {
+                value[_prefix + vitr.first] = vitr.second;
+                accum[_prefix + vitr.first] += vitr.second;
+            }
+        }
+    }
+
+    void set_prefix(const std::string& _prefix)
+    {
+        pushRangeParams.pRangeName = _prefix.c_str();
+    }
+
+    std::vector<double> get() const
+    {
+        std::vector<double> data;
+        for(const auto& itr : accum)
+            data.emplace_back(itr.second);
+        return data;
+    }
+
+    string_t get_display() const
+    {
+        auto _get_display = [&](std::ostream& os, const auto& obj) {
+            auto _label = obj.first;
+            auto _prec  = base_type::get_precision();
+            auto _width = base_type::get_width();
+            auto _flags = base_type::get_format_flags();
+
+            std::stringstream ss, ssv, ssi;
+            ssv.setf(_flags);
+            ssv << std::setw(_width) << std::setprecision(_prec) << obj.second;
+            if(!_label.empty())
+                ssi << " " << _label;
+            ss << ssv.str() << ssi.str();
+            os << ss.str();
+        };
+
+        const auto&       _data = (is_transient) ? accum : value;
+        std::stringstream ss;
+        for(size_type i = 0; i < _data.size(); ++i)
+        {
+            auto itr = _data.begin();
+            std::advance(itr, i);
+            _get_display(ss, *itr);
+            if(i + 1 < _data.size())
+                ss << ", ";
+        }
+        return ss.str();
+    }
+
+    static std::vector<string_t> label_array()
+    {
+        auto ret = get_persistent_data().metricNames;
+        std::sort(ret.begin(), ret.end());
+        return ret;
+    }
+
+    static std::vector<string_t> description_array() { return label_array(); }
+
+    static std::vector<string_t> display_unit_array()
+    {
+        return std::vector<string_t>(get_persistent_data().metricNames.size(), "");
+    }
+
+    static std::vector<int64_t> unit_array()
+    {
+        return std::vector<int64_t>(get_persistent_data().metricNames.size(), 1);
+    }
+
+public:
+    this_type& operator+=(const this_type& rhs)
+    {
+        for(const auto& itr : rhs.value)
+        {
+            value[itr.first] += itr.second;
+        }
+
+        for(const auto& itr : rhs.accum)
+        {
+            accum[itr.first] += itr.second;
+        }
+
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        for(const auto& itr : rhs.value)
+        {
+            if(value.find(itr.first) != value.end())
+                value[itr.first] -= itr.second;
+        }
+
+        for(const auto& itr : rhs.accum)
+        {
+            if(accum.find(itr.first) != accum.end())
+                accum[itr.first] -= itr.second;
+        }
+
+        return *this;
+    }
+
+public:
+    static bool WriteBinaryFile(const char* pFileName, const std::vector<uint8_t>& data);
+    static bool ReadBinaryFile(const char* pFileName, std::vector<uint8_t>& image);
+
+    static std::set<std::string> ListSupportedChips();
+    static std::set<std::string> ListMetrics(const char* chipName, bool listSubMetrics);
+    static std::string           GetHwUnit(const std::string& metricName);
 
     static bool GetMetricGpuValue(std::string                   chipName,
                                   std::vector<uint8_t>          counterDataImage,
@@ -183,10 +291,18 @@ public:
                                   std::vector<uint8_t>     counterDataImage,
                                   std::vector<std::string> metricNames);
 
-    // Function to print list of all supported chips
-    static std::set<std::string> ListSupportedChips();
+protected:
+    static bool create_counter_data_image(std::vector<uint8_t>& counterDataImage,
+                                          std::vector<uint8_t>& counterDataScratchBuffer,
+                                          std::vector<uint8_t>& counterDataImagePrefix);
 
-    static std::set<std::string> ListMetrics(const char* chipName, bool listSubMetrics);
+    static bool enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
+                       std::vector<uint8_t>&    counterDataScratchBuffer,
+                       std::vector<uint8_t>&    counterDataImage,
+                       CUpti_ProfilerReplayMode profilerReplayMode,
+                       CUpti_ProfilerRange      profilerRange);
+
+    static bool disable(CUcontext);
 
     static bool GetConfigImage(std::string chipName, std::vector<std::string> metricNames,
                                std::vector<uint8_t>& configImage);
@@ -201,110 +317,20 @@ public:
         std::vector<std::string>&           temp);
 
     static bool ParseMetricNameString(const std::string& metricName, std::string* reqName,
-                                      bool* isolated, bool* keepInstances)
-    {
-        std::string& name = *reqName;
-        name              = metricName;
-        if(name.empty())
-        {
-            return false;
-        }
+                                      bool* isolated, bool* keepInstances);
 
-        // boost program_options sometimes inserts a \n between the metric name and a '&'
-        // at the end
-        size_t pos = name.find('\n');
-        if(pos != std::string::npos)
-        {
-            name.erase(pos, 1);
-        }
+protected:
+    std::string*                    m_prefix        = nullptr;
+    CUpti_Profiler_PushRange_Params pushRangeParams = {
+        CUpti_Profiler_PushRange_Params_STRUCT_SIZE
+    };
+    CUpti_Profiler_PopRange_Params popRangeParams = {
+        CUpti_Profiler_PopRange_Params_STRUCT_SIZE
+    };
+    CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {
+        CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE
+    };
 
-        // trim whitespace
-        while(name.back() == ' ')
-        {
-            name.pop_back();
-            if(name.empty())
-            {
-                return false;
-            }
-        }
-
-        *keepInstances = false;
-        if(name.back() == '+')
-        {
-            *keepInstances = true;
-            name.pop_back();
-            if(name.empty())
-            {
-                return false;
-            }
-        }
-
-        *isolated = true;
-        if(name.back() == '$')
-        {
-            name.pop_back();
-            if(name.empty())
-            {
-                return false;
-            }
-        }
-        else if(name.back() == '&')
-        {
-            *isolated = false;
-            name.pop_back();
-            if(name.empty())
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    static bool WriteBinaryFile(const char* pFileName, const std::vector<uint8_t>& data)
-    {
-        FILE* fp = fopen(pFileName, "wb");
-        if(fp)
-        {
-            if(data.size())
-            {
-                fwrite(&data[0], 1, data.size(), fp);
-            }
-            fclose(fp);
-        }
-        else
-        {
-            std::cout << "Failed to open " << pFileName << "\n";
-            fclose(fp);
-            return false;
-        }
-        return true;
-    }
-
-    static bool ReadBinaryFile(const char* pFileName, std::vector<uint8_t>& image)
-    {
-        FILE* fp = fopen(pFileName, "rb");
-        if(!fp)
-        {
-            std::cout << "Failed to open " << pFileName << "\n";
-            return false;
-        }
-
-        fseek(fp, 0, SEEK_END);
-        const long fileLength = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-        if(!fileLength)
-        {
-            std::cout << pFileName << " has zero length\n";
-            fclose(fp);
-            return false;
-        }
-
-        image.resize((size_t) fileLength);
-        fread(&image[0], 1, image.size(), fp);
-        fclose(fp);
-        return true;
-    }
 
 protected:
     struct MetricNameValue
@@ -324,16 +350,16 @@ protected:
         int                      numRanges              = 64;
         int                      computeCapabilityMajor = 0;
         int                      computeCapabilityMinor = 0;
+        CUpti_ProfilerReplayMode profilerReplayMode     = CUPTI_KernelReplay;
+        CUpti_ProfilerRange      profilerRange          = CUPTI_UserRange;
+        std::string              chipName               = "";
+        std::string              CounterDataFileName    = "SimpleCupti.counterdata";
+        std::string              CounterDataSBFileName  = "SimpleCupti.counterdataSB";
         std::vector<uint8_t>     counterDataImagePrefix;
         std::vector<uint8_t>     configImage;
         std::vector<uint8_t>     counterDataImage;
         std::vector<uint8_t>     counterDataScratchBuffer;
-        std::string              chipName              = "";
-        std::string              CounterDataFileName   = "SimpleCupti.counterdata";
-        std::string              CounterDataSBFileName = "SimpleCupti.counterdataSB";
         std::vector<std::string> metricNames;
-        CUpti_ProfilerReplayMode profilerReplayMode = CUPTI_KernelReplay;
-        CUpti_ProfilerRange      profilerRange      = CUPTI_AutoRange;
     };
 
     static persistent_data& get_persistent_data()
@@ -360,7 +386,6 @@ cupti_profiler::configure(int device)
     auto& deviceNum                = get_persistent_data().deviceNum;
     auto& computeCapabilityMajor   = get_persistent_data().computeCapabilityMajor;
     auto& computeCapabilityMinor   = get_persistent_data().computeCapabilityMinor;
-    auto& numRanges                = get_persistent_data().numRanges;
     auto& chipName                 = get_persistent_data().chipName;
 
     // printf("Usage: %s [device_num] [metric_names comma separated]\n", argv[0]);
@@ -438,7 +463,7 @@ cupti_profiler::configure(int device)
     }
 
     if(!create_counter_data_image(counterDataImage, counterDataScratchBuffer,
-                                  counterDataImagePrefix, numRanges))
+                                  counterDataImagePrefix))
     {
         std::cerr << "Failed to create counterDataImage" << std::endl;
         return;
@@ -482,9 +507,10 @@ cupti_profiler::finalize()
 inline bool
 cupti_profiler::create_counter_data_image(std::vector<uint8_t>& counterDataImage,
                                           std::vector<uint8_t>& counterDataScratchBuffer,
-                                          std::vector<uint8_t>& counterDataImagePrefix,
-                                          int                   numRanges)
+                                          std::vector<uint8_t>& counterDataImagePrefix)
 {
+    auto& numRanges = get_persistent_data().numRanges;
+
     CUpti_Profiler_CounterDataImageOptions counterDataImageOptions;
     counterDataImageOptions.pCounterDataPrefix    = &counterDataImagePrefix[0];
     counterDataImageOptions.counterDataPrefixSize = counterDataImagePrefix.size();
@@ -590,6 +616,8 @@ cupti_profiler::enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
     setConfigParams.pConfig    = &configImage[0];
     setConfigParams.configSize = configImage.size();
     setConfigParams.passIndex  = 0;
+    setConfigParams.minNestingLevel  = 1;
+    setConfigParams.numNestingLevels = 1;
 
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerSetConfig(&setConfigParams));
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerEnableProfiling(&enableProfilingParams));
@@ -863,7 +891,9 @@ cupti_profiler::PrintMetricValues(std::string              chipName,
     }
     return true;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 inline bool
 cupti_profiler::GetRawMetricRequests(
     NVPA_MetricsContext* pMetricsContext, std::vector<std::string> metricNames,
@@ -916,7 +946,9 @@ cupti_profiler::GetRawMetricRequests(
 
     return true;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 inline bool
 cupti_profiler::GetConfigImage(std::string chipName, std::vector<std::string> metricNames,
                                std::vector<uint8_t>& configImage)
@@ -1009,7 +1041,9 @@ cupti_profiler::GetConfigImage(std::string chipName, std::vector<std::string> me
 
     return true;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 inline bool
 cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
                                           std::vector<std::string> metricNames,
@@ -1018,15 +1052,19 @@ cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
     NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = {
         NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE
     };
+
     metricsContextCreateParams.pChipName = chipName.c_str();
+
     TIMEMORY_RETURN_IF_NVPW_ERROR(
         false, NVPW_CUDA_MetricsContext_Create(&metricsContextCreateParams));
 
     NVPW_MetricsContext_Destroy_Params metricsContextDestroyParams = {
         NVPW_MetricsContext_Destroy_Params_STRUCT_SIZE
     };
+
     metricsContextDestroyParams.pMetricsContext =
         metricsContextCreateParams.pMetricsContext;
+
     SCOPE_EXIT([&]() {
         NVPW_MetricsContext_Destroy(
             (NVPW_MetricsContext_Destroy_Params*) &metricsContextDestroyParams);
@@ -1040,15 +1078,19 @@ cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
     NVPW_CounterDataBuilder_Create_Params counterDataBuilderCreateParams = {
         NVPW_CounterDataBuilder_Create_Params_STRUCT_SIZE
     };
+
     counterDataBuilderCreateParams.pChipName = chipName.c_str();
+
     TIMEMORY_RETURN_IF_NVPW_ERROR(
         false, NVPW_CounterDataBuilder_Create(&counterDataBuilderCreateParams));
 
     NVPW_CounterDataBuilder_Destroy_Params counterDataBuilderDestroyParams = {
         NVPW_CounterDataBuilder_Destroy_Params_STRUCT_SIZE
     };
+
     counterDataBuilderDestroyParams.pCounterDataBuilder =
         counterDataBuilderCreateParams.pCounterDataBuilder;
+
     SCOPE_EXIT([&]() {
         NVPW_CounterDataBuilder_Destroy(
             (NVPW_CounterDataBuilder_Destroy_Params*) &counterDataBuilderDestroyParams);
@@ -1057,6 +1099,7 @@ cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
     NVPW_CounterDataBuilder_AddMetrics_Params addMetricsParams = {
         NVPW_CounterDataBuilder_AddMetrics_Params_STRUCT_SIZE
     };
+
     addMetricsParams.pCounterDataBuilder =
         counterDataBuilderCreateParams.pCounterDataBuilder;
     addMetricsParams.pRawMetricRequests = &rawMetricRequests[0];
@@ -1068,8 +1111,10 @@ cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
     NVPW_CounterDataBuilder_GetCounterDataPrefix_Params getCounterDataPrefixParams = {
         NVPW_CounterDataBuilder_GetCounterDataPrefix_Params_STRUCT_SIZE
     };
+
     getCounterDataPrefixParams.pCounterDataBuilder =
         counterDataBuilderCreateParams.pCounterDataBuilder;
+
     getCounterDataPrefixParams.bytesAllocated = 0;
     getCounterDataPrefixParams.pBuffer        = NULL;
     TIMEMORY_RETURN_IF_NVPW_ERROR(
@@ -1084,7 +1129,9 @@ cupti_profiler::GetCounterDataPrefixImage(std::string              chipName,
 
     return true;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 inline std::set<std::string>
 cupti_profiler::ListSupportedChips()
 {
@@ -1112,7 +1159,9 @@ cupti_profiler::ListSupportedChips()
 
     return _ret;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 inline std::set<std::string>
 cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
 {
@@ -1121,15 +1170,19 @@ cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
     NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = {
         NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE
     };
+
     metricsContextCreateParams.pChipName = chip;
+
     TIMEMORY_RETURN_IF_NVPW_ERROR(
         _ret, NVPW_CUDA_MetricsContext_Create(&metricsContextCreateParams));
 
     NVPW_MetricsContext_Destroy_Params metricsContextDestroyParams = {
         NVPW_MetricsContext_Destroy_Params_STRUCT_SIZE
     };
+
     metricsContextDestroyParams.pMetricsContext =
         metricsContextCreateParams.pMetricsContext;
+
     SCOPE_EXIT([&]() {
         NVPW_MetricsContext_Destroy(
             (NVPW_MetricsContext_Destroy_Params*) &metricsContextDestroyParams);
@@ -1138,17 +1191,21 @@ cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
     NVPW_MetricsContext_GetMetricNames_Begin_Params getMetricNameBeginParams = {
         NVPW_MetricsContext_GetMetricNames_Begin_Params_STRUCT_SIZE
     };
+
     getMetricNameBeginParams.pMetricsContext = metricsContextCreateParams.pMetricsContext;
     getMetricNameBeginParams.hidePeakSubMetrics      = !listSubMetrics;
     getMetricNameBeginParams.hidePerCycleSubMetrics  = !listSubMetrics;
     getMetricNameBeginParams.hidePctOfPeakSubMetrics = !listSubMetrics;
+
     TIMEMORY_RETURN_IF_NVPW_ERROR(
         _ret, NVPW_MetricsContext_GetMetricNames_Begin(&getMetricNameBeginParams));
 
     NVPW_MetricsContext_GetMetricNames_End_Params getMetricNameEndParams = {
         NVPW_MetricsContext_GetMetricNames_End_Params_STRUCT_SIZE
     };
+
     getMetricNameEndParams.pMetricsContext = metricsContextCreateParams.pMetricsContext;
+
     SCOPE_EXIT([&]() {
         NVPW_MetricsContext_GetMetricNames_End(
             (NVPW_MetricsContext_GetMetricNames_End_Params*) &getMetricNameEndParams);
@@ -1157,6 +1214,7 @@ cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
     if(settings::verbose() > 2 || settings::debug())
         std::cout << getMetricNameBeginParams.numMetrics
                   << " metrics in total on the chip\n Metrics List : \n";
+
     for(size_t i = 0; i < getMetricNameBeginParams.numMetrics; i++)
     {
         _ret.insert(getMetricNameBeginParams.ppMetricNames[i]);
@@ -1166,6 +1224,123 @@ cupti_profiler::ListMetrics(const char* chip, bool listSubMetrics)
 
     return _ret;
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+inline bool
+cupti_profiler::ParseMetricNameString(const std::string& metricName, std::string* reqName,
+                                      bool* isolated, bool* keepInstances)
+{
+    std::string& name = *reqName;
+    name              = metricName;
+    if(name.empty())
+    {
+        return false;
+    }
 
+    // boost program_options sometimes inserts a \n between the metric name and a '&'
+    // at the end
+    size_t pos = name.find('\n');
+    if(pos != std::string::npos)
+    {
+        name.erase(pos, 1);
+    }
+
+    // trim whitespace
+    while(name.back() == ' ')
+    {
+        name.pop_back();
+        if(name.empty())
+        {
+            return false;
+        }
+    }
+
+    *keepInstances = false;
+    if(name.back() == '+')
+    {
+        *keepInstances = true;
+        name.pop_back();
+        if(name.empty())
+        {
+            return false;
+        }
+    }
+
+    *isolated = true;
+    if(name.back() == '$')
+    {
+        name.pop_back();
+        if(name.empty())
+        {
+            return false;
+        }
+    }
+    else if(name.back() == '&')
+    {
+        *isolated = false;
+        name.pop_back();
+        if(name.empty())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline bool
+cupti_profiler::WriteBinaryFile(const char* pFileName, const std::vector<uint8_t>& data)
+{
+    FILE* fp = fopen(pFileName, "wb");
+    if(fp)
+    {
+        if(data.size())
+        {
+            fwrite(&data[0], 1, data.size(), fp);
+        }
+        fclose(fp);
+    }
+    else
+    {
+        std::cout << "Failed to open " << pFileName << "\n";
+        fclose(fp);
+        return false;
+    }
+    return true;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline bool
+cupti_profiler::ReadBinaryFile(const char* pFileName, std::vector<uint8_t>& image)
+{
+    FILE* fp = fopen(pFileName, "rb");
+    if(!fp)
+    {
+        std::cout << "Failed to open " << pFileName << "\n";
+        return false;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    const long fileLength = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    if(!fileLength)
+    {
+        std::cout << pFileName << " has zero length\n";
+        fclose(fp);
+        return false;
+    }
+
+    image.resize((size_t) fileLength);
+    auto ret = fread(&image[0], 1, image.size(), fp);
+    fclose(fp);
+    return (ret != image.size()) ? false : true;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace component
 }  // namespace tim

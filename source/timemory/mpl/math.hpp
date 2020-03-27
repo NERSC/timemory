@@ -477,7 +477,7 @@ plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs)
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
-        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        auto ritr = _rhs.find(litr->first);
         if(ritr == std::end(_rhs))
             continue;
         plus(litr->second, ritr->second,
@@ -486,7 +486,7 @@ plus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs)
 
     for(auto ritr = std::begin(_rhs); ritr != std::end(_rhs); ++ritr)
     {
-        auto litr = std::find(std::begin(_lhs), std::end(_lhs), ritr->first);
+        auto litr = _lhs.find(ritr->first);
         if(litr == std::end(_lhs))
             continue;
         _lhs[ritr->first] = ritr->second;
@@ -549,7 +549,7 @@ minus(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
-        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        auto ritr = _rhs.find(litr->first);
         if(ritr == std::end(_rhs))
             continue;
         minus(litr->second, ritr->second,
@@ -630,7 +630,7 @@ multiply(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int)
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
-        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        auto ritr = _rhs.find(litr->first);
         if(ritr == std::end(_rhs))
             continue;
         multiply(litr->second, ritr->second,
@@ -740,7 +740,7 @@ divide(_Tp& _lhs, const _Up& _rhs, std::tuple<>, int)
 
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
-        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        auto ritr = _rhs.find(litr->first);
         if(ritr == std::end(_rhs))
             continue;
         divide(litr->second, ritr->second,
@@ -799,7 +799,7 @@ divide(_Tp& _lhs, const _Up& _rhs)
 
 template <typename _Tp, enable_if_t<(std::is_arithmetic<_Tp>::value), int> = 0>
 _Tp
-percent_diff(_Tp _lhs, _Tp _rhs, std::tuple<>)
+percent_diff(_Tp _lhs, _Tp _rhs, std::tuple<>, ...)
 {
     constexpr _Tp _zero    = _Tp(0.0);
     constexpr _Tp _one     = _Tp(1.0);
@@ -810,7 +810,7 @@ percent_diff(_Tp _lhs, _Tp _rhs, std::tuple<>)
 
 template <typename _Tp, typename _Vp = typename _Tp::value_type>
 auto
-percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, ...)
+percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, long)
     -> decltype(std::begin(_lhs), _Tp())
 {
     auto _nl    = mpl::get_size(_lhs);
@@ -840,21 +840,21 @@ percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, ...)
 template <typename _Tp, typename _Kp = typename _Tp::key_type,
           typename _Mp = typename _Tp::mapped_type>
 auto
-percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>)
+percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>, int)
     -> decltype(std::begin(_lhs), _Tp())
 {
     assert(_lhs.size() == _rhs.size());
     _Tp _ret{};
     for(auto litr = std::begin(_lhs); litr != std::end(_lhs); ++litr)
     {
-        auto ritr = std::find(std::begin(_rhs), std::end(_rhs), litr->first);
+        auto ritr = _rhs.find(litr->first);
         if(ritr == std::end(_rhs))
         {
-            _ret[litr->second] = _Mp{};
+            _ret[litr->first] = _Mp{};
         }
         else
         {
-            _ret[litr->second] =
+            _ret[litr->first] =
                 percent_diff(litr->second, ritr->second,
                              get_index_sequence<decay_t<decltype(litr->second)>>::value);
         }
@@ -864,7 +864,7 @@ percent_diff(const _Tp& _lhs, const _Tp& _rhs, std::tuple<>)
 
 template <typename _Tp, size_t... _Idx>
 auto
-percent_diff(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>)
+percent_diff(const _Tp& _lhs, const _Tp& _rhs, index_sequence<_Idx...>, ...)
     -> decltype(std::get<0>(_lhs), _Tp())
 {
     _Tp _ret{};
@@ -879,7 +879,7 @@ template <typename _Tp>
 _Tp
 percent_diff(const _Tp& _lhs, const _Tp& _rhs)
 {
-    return percent_diff(_lhs, _rhs, get_index_sequence<_Tp>::value);
+    return percent_diff(_lhs, _rhs, get_index_sequence<_Tp>::value, 0);
 }
 
 //--------------------------------------------------------------------------------------//
