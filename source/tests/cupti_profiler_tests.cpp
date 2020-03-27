@@ -51,6 +51,11 @@ static const auto num_blck = 32;
 static const auto num_grid = 32;
 // static const auto epsilon  = 10 * std::numeric_limits<float>::epsilon();
 
+void record_kernel(const char* kernel_name, int nreplays, void*)
+{
+    printf("replaying kernel: %s. # replays = %i\n", kernel_name, nreplays);
+}
+
 //--------------------------------------------------------------------------------------//
 
 namespace details
@@ -173,7 +178,13 @@ KERNEL_B(T* arr, int size, tim::cuda::stream_t stream = 0)
 //--------------------------------------------------------------------------------------//
 
 class cupti_profiler_tests : public ::testing::Test
-{};
+{
+protected:
+    void SetUp() override
+    {
+	// cuptiKernelReplaySubscribeUpdate(&record_kernel, nullptr);
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -260,7 +271,8 @@ TEST_F(cupti_profiler_tests, general)
         details::KERNEL_B(data, num_data, _stream);
     }
     async_timer.stop();
-
+    timer.stop();
+    
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
     num_iter /= 2;

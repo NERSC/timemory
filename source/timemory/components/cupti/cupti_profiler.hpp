@@ -155,11 +155,16 @@ public:
 
     static void global_finalize(storage_type*) { finalize(); }
 
-    void start() { TIMEMORY_CUPTI_API_CALL(cuptiProfilerPushRange(&pushRangeParams)); }
+    void start()
+    {
+	// TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginPass(&beginPassParams));
+	TIMEMORY_CUPTI_API_CALL(cuptiProfilerPushRange(&pushRangeParams));
+    }
 
     void stop()
     {
         TIMEMORY_CUPTI_API_CALL(cuptiProfilerPopRange(&popRangeParams));
+	// TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndPass(&endPassParams));
         TIMEMORY_CUPTI_API_CALL(cuptiProfilerFlushCounterData(&flushCounterDataParams));
 
         auto& chipName                 = get_persistent_data().chipName;
@@ -329,6 +334,12 @@ protected:
     };
     CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {
         CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE
+    };
+    CUpti_Profiler_BeginPass_Params beginPassParams = {
+        CUpti_Profiler_BeginPass_Params_STRUCT_SIZE
+    };
+    CUpti_Profiler_EndPass_Params endPassParams = {
+        CUpti_Profiler_EndPass_Params_STRUCT_SIZE
     };
 
 
@@ -601,17 +612,19 @@ cupti_profiler::enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
         CUpti_Profiler_EnableProfiling_Params_STRUCT_SIZE
     };
 
+    CUpti_Profiler_BeginPass_Params beginPassParams = {
+        CUpti_Profiler_BeginPass_Params_STRUCT_SIZE
+    };
+
     beginSessionParams.ctx                          = NULL;
     beginSessionParams.counterDataImageSize         = counterDataImage.size();
     beginSessionParams.pCounterDataImage            = &counterDataImage[0];
     beginSessionParams.counterDataScratchBufferSize = counterDataScratchBuffer.size();
     beginSessionParams.pCounterDataScratchBuffer    = &counterDataScratchBuffer[0];
-    beginSessionParams.range                        = profilerRange;
-    beginSessionParams.replayMode                   = profilerReplayMode;
-    beginSessionParams.maxRangesPerPass             = 2;
-    beginSessionParams.maxLaunchesPerPass           = 2;
-
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginSession(&beginSessionParams));
+    beginSessionParams.range                        = CUPTI_UserRange;
+    beginSessionParams.replayMode                   = CUPTI_UserReplay;
+    beginSessionParams.maxRangesPerPass             = 1;
+    beginSessionParams.maxLaunchesPerPass           = 1;
 
     setConfigParams.pConfig    = &configImage[0];
     setConfigParams.configSize = configImage.size();
@@ -619,7 +632,9 @@ cupti_profiler::enable(CUdevice cuDevice, std::vector<uint8_t>& configImage,
     setConfigParams.minNestingLevel  = 1;
     setConfigParams.numNestingLevels = 1;
 
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginSession(&beginSessionParams));
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerSetConfig(&setConfigParams));
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginPass(&beginPassParams));
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerEnableProfiling(&enableProfilingParams));
 
     enabled = true;
@@ -637,22 +652,25 @@ cupti_profiler::disable(CUcontext cuContext)
     if(!enabled)
         return false;
 
+    CUpti_Profiler_EndPass_Params endPassParams = {
+        CUpti_Profiler_EndPass_Params_STRUCT_SIZE
+    };
+
     CUpti_Profiler_DisableProfiling_Params disableProfilingParams = {
         CUpti_Profiler_DisableProfiling_Params_STRUCT_SIZE
     };
-
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerDisableProfiling(&disableProfilingParams));
 
     CUpti_Profiler_UnsetConfig_Params unsetConfigParams = {
         CUpti_Profiler_UnsetConfig_Params_STRUCT_SIZE
     };
 
-    TIMEMORY_CUPTI_API_CALL(cuptiProfilerUnsetConfig(&unsetConfigParams));
-
     CUpti_Profiler_EndSession_Params endSessionParams = {
         CUpti_Profiler_EndSession_Params_STRUCT_SIZE
     };
 
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerDisableProfiling(&disableProfilingParams));
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndPass(&endPassParams));
+    TIMEMORY_CUPTI_API_CALL(cuptiProfilerUnsetConfig(&unsetConfigParams));
     TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndSession(&endSessionParams));
     TIMEMORY_CUDA_DRIVER_API_CALL(cuCtxDestroy(cuContext));
 
