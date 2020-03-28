@@ -108,7 +108,8 @@ public:
     using base_type         = base<Tp, Value>;
     using unit_type         = typename trait::units<Tp>::type;
     using display_unit_type = typename trait::units<Tp>::display_type;
-    using storage_type      = impl::storage<Tp, implements_storage_v>;
+    using storage_type      = storage<Tp, Value>;
+    using base_storage_type = tim::base::storage;
     using graph_iterator    = typename storage_type::iterator;
     using state_t           = state<this_type>;
     using statistics_policy = policy::record_statistics<Tp, Value>;
@@ -116,7 +117,7 @@ public:
 
 private:
     friend class impl::storage<Tp, implements_storage_v>;
-    friend class storage<Tp>;
+    friend class storage<Tp, Value>;
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;
@@ -260,8 +261,8 @@ public:
     sample_list_type  get_samples() const { return samples; }
 
 protected:
-    static storage_type*& get_storage();
-    static void           cleanup() {}
+    static base_storage_type* get_storage();
+    static void               cleanup() {}
 
     template <typename Up = Tp, enable_if_t<(Up::has_accum_v), int> = 0>
     const value_type& load() const;
@@ -322,15 +323,6 @@ protected:
 
     template <typename Up = base_type, enable_if_t<!(Up::implements_storage_v), int> = 0>
     void pop_node();
-
-    // initialize the storage
-    template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
-    static bool init_storage(storage_type*& _instance);
-
-    template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<!(implements_storage<Up, Vp>::value), int> = 0>
-    static bool init_storage(storage_type*&);
 
     static Type dummy();  // create an instance
 
@@ -413,11 +405,11 @@ public:
 
     using this_type    = Tp;
     using base_type    = base<Tp, value_type>;
-    using storage_type = impl::storage<Tp, implements_storage_v>;
+    using storage_type = storage<Tp, void>;
 
 private:
     friend class impl::storage<Tp, implements_storage_v>;
-    friend class storage<Tp>;
+    friend class storage<Tp, void>;
     friend struct node::graph<Tp>;
 
     friend struct operation::init_storage<Tp>;

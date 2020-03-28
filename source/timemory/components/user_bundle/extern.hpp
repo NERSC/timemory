@@ -41,6 +41,68 @@
 #include "timemory/plotting/definition.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/definition.hpp"
+//
+#include "timemory/components/extern.hpp"
+#include "timemory/environment/extern.hpp"
+#include "timemory/hash/extern.hpp"
+#include "timemory/manager/extern.hpp"
+#include "timemory/plotting/extern.hpp"
+#include "timemory/settings/extern.hpp"
+
+//======================================================================================//
+//
+#if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_USER_BUNDLE_SOURCE)
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(...)                              \
+            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(__VA_ARGS__)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_STORAGE)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(...)                                 \
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...) template __VA_ARGS__;
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#else
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(...)                              \
+            TIMEMORY_DECLARE_EXTERN_OPERATIONS(__VA_ARGS__)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_STORAGE)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(...)                                 \
+            TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...) extern template __VA_ARGS__;
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 
 //======================================================================================//
 //
@@ -55,17 +117,20 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_EXTERN_TEMPLATE(
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct base<user_bundle<global_bundle_idx, api::native_tag>, void>)
 //
-TIMEMORY_EXTERN_TEMPLATE(
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct base<user_bundle<tuple_bundle_idx, api::native_tag>, void>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<list_bundle_idx, api::native_tag>, void>)
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
+    struct base<user_bundle<list_bundle_idx, api::native_tag>, void>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<ompt_bundle_idx, api::native_tag>, void>)
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
+    struct base<user_bundle<ompt_bundle_idx, api::native_tag>, void>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<mpip_bundle_idx, api::native_tag>, void>)
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
+    struct base<user_bundle<mpip_bundle_idx, api::native_tag>, void>)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -73,37 +138,43 @@ TIMEMORY_EXTERN_TEMPLATE(struct base<user_bundle<mpip_bundle_idx, api::native_ta
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_EXTERN_TEMPLATE(struct user_bundle<global_bundle_idx, api::native_tag>)
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
+    struct user_bundle<global_bundle_idx, api::native_tag>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct user_bundle<tuple_bundle_idx, api::native_tag>)
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
+    struct user_bundle<tuple_bundle_idx, api::native_tag>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct user_bundle<list_bundle_idx, api::native_tag>)
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(struct user_bundle<list_bundle_idx, api::native_tag>)
+//
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(struct user_bundle<ompt_bundle_idx, api::native_tag>)
+//
+TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(struct user_bundle<mpip_bundle_idx, api::native_tag>)
 //
 }  // namespace component
 }  // namespace tim
 //
 //======================================================================================//
 //
-TIMEMORY_EXTERN_OPERATIONS(component::user_global_bundle, false)
+TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_global_bundle, false)
 //
-TIMEMORY_EXTERN_OPERATIONS(component::user_tuple_bundle, false)
+TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_tuple_bundle, false)
 //
-TIMEMORY_EXTERN_OPERATIONS(component::user_list_bundle, false)
+TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_list_bundle, false)
 //
-TIMEMORY_EXTERN_OPERATIONS(component::user_ompt_bundle, false)
+TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_ompt_bundle, false)
 //
-TIMEMORY_EXTERN_OPERATIONS(component::user_mpip_bundle, false)
+TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_mpip_bundle, false)
 //
 //======================================================================================//
 //
-TIMEMORY_EXTERN_STORAGE(component::user_global_bundle, user_global_bundle)
+TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_global_bundle, user_global_bundle)
 //
-TIMEMORY_EXTERN_STORAGE(component::user_tuple_bundle, user_tuple_bundle)
+TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_tuple_bundle, user_tuple_bundle)
 //
-TIMEMORY_EXTERN_STORAGE(component::user_list_bundle, user_list_bundle)
+TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_list_bundle, user_list_bundle)
 //
-TIMEMORY_EXTERN_STORAGE(component::user_ompt_bundle, user_ompt_bundle)
+TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_ompt_bundle, user_ompt_bundle)
 //
-TIMEMORY_EXTERN_STORAGE(component::user_mpip_bundle, user_mpip_bundle)
+TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_mpip_bundle, user_mpip_bundle)
 //
 //======================================================================================//

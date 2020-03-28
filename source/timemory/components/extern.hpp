@@ -89,6 +89,7 @@
 #include "timemory/components/rusage/extern.hpp"
 #include "timemory/components/timing/extern.hpp"
 #include "timemory/components/trip_count/extern.hpp"
+//
 #include "timemory/components/user_bundle/extern.hpp"
 //
 //--------------------------------------------------------------------------------------//

@@ -299,45 +299,45 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#        define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                               \
-            namespace tim                                                                \
-            {                                                                            \
-            extern template class impl::storage<TYPE, implements_storage<TYPE>::value>;  \
-            extern template class storage<TYPE>;                                         \
-            extern template class singleton<                                             \
-                impl::storage<TYPE, implements_storage<TYPE>::value>,                    \
-                std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,    \
-                                impl::storage_deleter<impl::storage<                     \
-                                    TYPE, implements_storage<TYPE>::value>>>>;           \
-            extern template storage_singleton<storage<TYPE>>*                            \
-                                                get_storage_singleton<storage<TYPE>>();  \
-            extern template storage_initializer storage_initializer::get<TYPE>();        \
+#        define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                                         \
+            namespace tim                                                                                          \
+            {                                                                                                      \
+            extern template class impl::storage<TYPE, implements_storage<TYPE>::value>;                            \
+            extern template class storage<TYPE, typename TYPE::value_type>;                                        \
+            extern template class singleton<                                                                       \
+                impl::storage<TYPE, implements_storage<TYPE>::value>,                                              \
+                std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                              \
+                                impl::storage_deleter<impl::storage<                                               \
+                                    TYPE, implements_storage<TYPE>::value>>>>;                                     \
+            extern template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
+                                                get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
+            extern template storage_initializer storage_initializer::get<TYPE>();                                  \
             }
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
-#        define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                           \
-            namespace tim                                                                \
-            {                                                                            \
-            template class impl::storage<TYPE, implements_storage<TYPE>::value>;         \
-            template class storage<TYPE>;                                                \
-            template class singleton<                                                    \
-                impl::storage<TYPE, implements_storage<TYPE>::value>,                    \
-                std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,    \
-                                impl::storage_deleter<impl::storage<                     \
-                                    TYPE, implements_storage<TYPE>::value>>>>;           \
-            template storage_singleton<storage<TYPE>>*                                   \
-                                         get_storage_singleton<storage<TYPE>>();         \
-            template storage_initializer storage_initializer::get<TYPE>();               \
-            }                                                                            \
-            namespace                                                                    \
-            {                                                                            \
-            using namespace tim::component;                                              \
-            namespace component = tim::component;                                        \
-            tim::storage_initializer storage_initializer__##VAR =                        \
-                tim::storage_initializer::get<TYPE>();                                   \
+#        define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                                              \
+            namespace tim                                                                                   \
+            {                                                                                               \
+            template class impl::storage<TYPE, implements_storage<TYPE>::value>;                            \
+            template class storage<TYPE, typename TYPE::value_type>;                                        \
+            template class singleton<                                                                       \
+                impl::storage<TYPE, implements_storage<TYPE>::value>,                                       \
+                std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                       \
+                                impl::storage_deleter<impl::storage<                                        \
+                                    TYPE, implements_storage<TYPE>::value>>>>;                              \
+            template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
+                                         get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
+            template storage_initializer storage_initializer::get<TYPE>();                                  \
+            }                                                                                               \
+            namespace                                                                                       \
+            {                                                                                               \
+            using namespace tim::component;                                                                 \
+            namespace component = tim::component;                                                           \
+            tim::storage_initializer storage_initializer__##VAR =                                           \
+                tim::storage_initializer::get<TYPE>();                                                      \
             }
 #    endif
 //

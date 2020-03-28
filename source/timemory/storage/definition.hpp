@@ -266,11 +266,13 @@ storage<Type, true>::finalize()
     if(m_is_master)
         master_is_finalizing() = true;
 
+    auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+
     if(m_thread_init)
-        Type::thread_finalize(this);
+        Type::thread_finalize(upcast);
 
     if(m_is_master && m_global_init)
-        Type::global_finalize(this);
+        Type::global_finalize(upcast);
 
     if(settings::debug())
         PRINT_HERE("[%s]> finalizing...", m_label.c_str());
@@ -304,8 +306,10 @@ storage<Type, true>::global_init()
             m_global_init = true;
             if(!m_is_master && master_instance())
                 master_instance()->global_init();
+            auto upcast =
+                static_cast<tim::storage<Type, typename Type::value_type>*>(this);
             if(m_is_master)
-                Type::global_init(this);
+                Type::global_init(upcast);
             return m_global_init;
         }();
     return m_global_init;
@@ -324,7 +328,9 @@ storage<Type, true>::thread_init()
                 master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
-            Type::thread_init(this);
+            auto upcast =
+                static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+            Type::thread_init(upcast);
             return m_thread_init;
         }();
     return m_thread_init;
@@ -823,14 +829,16 @@ storage<Type, false>::initialize()
 
     m_initialized = true;
 
+    auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+
     if(!m_is_master)
     {
-        Type::thread_init(this);
+        Type::thread_init(upcast);
     }
     else
     {
-        Type::global_init(this);
-        Type::thread_init(this);
+        Type::global_init(upcast);
+        Type::thread_init(upcast);
     }
 }
 //
@@ -849,18 +857,20 @@ storage<Type, false>::finalize()
     if(settings::debug())
         printf("[%s]> finalizing...\n", m_label.c_str());
 
+    auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+
     m_finalized = true;
     if(!m_is_master)
     {
         worker_is_finalizing() = true;
-        Type::thread_finalize(this);
+        Type::thread_finalize(upcast);
     }
     else
     {
         master_is_finalizing() = true;
         worker_is_finalizing() = true;
-        Type::thread_finalize(this);
-        Type::global_finalize(this);
+        Type::thread_finalize(upcast);
+        Type::global_finalize(upcast);
     }
 }
 //

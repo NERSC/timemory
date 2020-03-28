@@ -469,15 +469,14 @@ public:
 template <typename Tp>
 struct init_storage
 {
-    using type             = Tp;
-    using value_type       = typename type::value_type;
-    using base_type        = typename type::base_type;
-    using string_t         = std::string;
-    using storage_type     = storage<type>;
-    using this_type        = init_storage<Tp>;
-    using master_pointer_t = decltype(storage_type::master_instance());
-    using pointer_t        = decltype(storage_type::instance());
-    using get_type         = std::tuple<master_pointer_t, pointer_t, bool, bool, bool>;
+    using type         = Tp;
+    using value_type   = typename type::value_type;
+    using base_type    = typename type::base_type;
+    using string_t     = std::string;
+    using storage_type = storage<type, value_type>;
+    using this_type    = init_storage<Tp>;
+    using pointer_t    = tim::base::storage*;
+    using get_type     = std::tuple<pointer_t, bool, bool, bool>;
 
     template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
     init_storage();

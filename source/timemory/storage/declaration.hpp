@@ -62,8 +62,8 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
-storage_singleton<_Tp>*
+template <typename Tp>
+storage_singleton<Tp>*
 get_storage_singleton();
 //
 //--------------------------------------------------------------------------------------//
@@ -105,12 +105,18 @@ public:
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = delete;
 
-    virtual void print()       = 0;
-    virtual void cleanup()     = 0;
-    virtual void stack_clear() = 0;
-    virtual void disable()     = 0;
-    virtual void initialize()  = 0;
-    virtual void finalize()    = 0;
+    virtual void print() {}
+    virtual void cleanup() {}
+    virtual void stack_clear() {}
+    virtual void disable() {}
+    virtual void initialize() {}
+    virtual void finalize() {}
+    virtual bool global_init() { return false; }
+    virtual bool thread_init() { return false; }
+    virtual bool data_init() { return false; }
+
+    template <typename Tp, typename Vp>
+    static this_type* base_instance();
 
 public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
@@ -379,16 +385,14 @@ public:
     this_type& operator=(this_type&& rhs) = delete;
 
 public:
+    void get_shared_manager();
+
     virtual void print() final { internal_print(); }
     virtual void cleanup() final { Type::cleanup(); }
-    void         get_shared_manager();
     virtual void disable() final { trait::runtime_enabled<component_type>::set(false); }
-
-    virtual void initialize();
-
+    virtual void initialize() final;
     virtual void finalize() final;
     virtual void stack_clear() final;
-
     virtual bool global_init() final;
     virtual bool thread_init() final;
     virtual bool data_init() final;
@@ -784,12 +788,13 @@ storage<Type, false>::master_instance()
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
-class storage : public impl::storage<_Tp, implements_storage<_Tp>::value>
+template <typename Tp, typename Vp>
+class storage : public impl::storage<Tp, implements_storage<Tp, Vp>::value>
 {
-    static constexpr bool implements_storage_v = implements_storage<_Tp>::value;
-    using this_type                            = storage<_Tp>;
-    using base_type                            = impl::storage<_Tp, implements_storage_v>;
+public:
+    static constexpr bool implements_storage_v = implements_storage<Tp, Vp>::value;
+    using this_type                            = storage<Tp, Vp>;
+    using base_type                            = impl::storage<Tp, implements_storage_v>;
     using deleter_t                            = impl::storage_deleter<base_type>;
     using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
     using singleton_t                          = singleton<base_type, smart_pointer>;
@@ -977,4 +982,26 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace impl
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Vp>
+inline base::storage*
+base::storage::base_instance()
+{
+    using storage_type = tim::storage<Tp, Vp>;
+    if(trait::runtime_enabled<Tp>::get())
+    {
+        static thread_local auto _instance = []() {
+            auto _tmp = storage_type::instance();
+            // _tmp->initialize();
+            return _tmp;
+        }();
+        return static_cast<base::storage*>(_instance);
+    }
+    return nullptr;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim

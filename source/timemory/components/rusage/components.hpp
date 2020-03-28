@@ -37,10 +37,7 @@
 
 #include "timemory/components/rusage/backends.hpp"
 #include "timemory/components/rusage/types.hpp"
-
-//======================================================================================//
-
-#include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/components/timing/backends.hpp"
 
 //======================================================================================//
 //
@@ -599,7 +596,6 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
     using this_type   = read_bytes;
     using value_type  = std::tuple<int64_t, int64_t>;
     using base_type   = base<this_type, value_type>;
-    using timer_type  = wall_clock;
     using result_type = std::tuple<double, double>;
 
     static std::string label() { return "read_bytes"; }
@@ -637,7 +633,16 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 
     static value_type record()
     {
-        return value_type(get_bytes_read(), timer_type::record());
+        return value_type(get_bytes_read(),
+                          tim::get_clock_real_now<int64_t, std::nano>());
+    }
+
+    static auto get_timing_unit()
+    {
+        static auto _value = units::sec;
+        if(settings::timing_units().length() > 0)
+            _value = std::get<1>(units::get_timing_unit(settings::timing_units()));
+        return _value;
     }
 
     std::string get_display() const
@@ -673,10 +678,10 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         double delta = std::get<1>(val);
 
         if(!is_transient)
-            delta = timer_type::record() - delta;
+            delta = tim::get_clock_real_now<int64_t, std::nano>() - delta;
 
-        delta /= static_cast<double>(timer_type::ratio_t::den);
-        delta *= timer_type::get_unit();
+        delta /= static_cast<double>(std::nano::den);
+        delta *= get_timing_unit();
 
         double rate = 0.0;
         if(delta != 0.0)
@@ -726,7 +731,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
             _rate = _mem / (_timing_val);
         }
 
-        static const auto factor = static_cast<double>(timer_type::ratio_t::den);
+        static const auto factor = static_cast<double>(std::nano::den);
         unit_type         _tmp   = _instance;
         std::get<1>(_tmp) *= factor;
 
@@ -771,7 +776,6 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
     using this_type   = written_bytes;
     using value_type  = std::array<int64_t, 2>;
     using base_type   = base<this_type, value_type>;
-    using timer_type  = wall_clock;
     using result_type = std::array<double, 2>;
 
     static std::string label() { return "written_bytes"; }
@@ -809,7 +813,16 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 
     static value_type record()
     {
-        return value_type{ { get_bytes_written(), timer_type::record() } };
+        return value_type{ { get_bytes_written(),
+                             tim::get_clock_real_now<int64_t, std::nano>() } };
+    }
+
+    static auto get_timing_unit()
+    {
+        static auto _value = units::sec;
+        if(settings::timing_units().length() > 0)
+            _value = std::get<1>(units::get_timing_unit(settings::timing_units()));
+        return _value;
     }
 
     std::string get_display() const
@@ -845,10 +858,10 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
         double delta = std::get<1>(val);
 
         if(!is_transient)
-            delta = timer_type::record() - delta;
+            delta = tim::get_clock_real_now<int64_t, std::nano>() - delta;
 
-        delta /= static_cast<double>(timer_type::ratio_t::den);
-        delta *= timer_type::get_unit();
+        delta /= static_cast<double>(std::nano::den);
+        delta *= get_timing_unit();
 
         double rate = 0.0;
         if(delta != 0.0)
@@ -901,7 +914,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
             _rate = _mem / (_timing_val);
         }
 
-        static const auto factor = static_cast<double>(timer_type::ratio_t::den);
+        static const auto factor = static_cast<double>(std::nano::den);
         unit_type         _tmp   = _instance;
         std::get<1>(_tmp) *= factor;
 

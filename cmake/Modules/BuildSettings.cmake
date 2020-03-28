@@ -88,7 +88,7 @@ if(TIMEMORY_USE_COMPILE_TIMING)
     target_link_libraries(timemory-compile-options INTERFACE timemory-compile-timing)
 endif()
 
-if(NOT cxx_timemory_compile_timing_ftime_report)
+if(NOT cxx_timemory_compile_timing_ftime_report AND NOT cxx_timemory_compile_timing_ftime_trace)
     add_disabled_interface(timemory-compile-timing)
 endif()
 

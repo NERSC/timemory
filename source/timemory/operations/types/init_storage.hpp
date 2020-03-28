@@ -50,11 +50,7 @@ template <typename Tp>
 template <typename Up, enable_if_t<(trait::is_available<Up>::value), char>>
 init_storage<Tp>::init_storage()
 {
-    if(trait::runtime_enabled<Tp>::get())
-    {
-        static thread_local auto _instance = storage_type::instance();
-        _instance->initialize();
-    }
+    base::storage::template base_instance<type, value_type>();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -73,13 +69,13 @@ init_storage<Tp>::get()
 {
     static thread_local auto _instance = []() {
         if(!trait::runtime_enabled<Tp>::get())
-            return get_type{ nullptr, nullptr, false, false, false };
-        auto main_inst = storage_type::master_instance();
-        auto this_inst = storage_type::instance();
+            return get_type{ nullptr, false, false, false };
+        auto this_inst = tim::base::storage::template base_instance<Tp, value_type>();
+        this_inst->initialize();
         bool this_glob = true;
         bool this_work = true;
         bool this_data = this_inst->data_init();
-        return get_type{ main_inst, this_inst, this_glob, this_work, this_data };
+        return get_type{ this_inst, this_glob, this_work, this_data };
     }();
     return _instance;
 }
@@ -93,10 +89,10 @@ init_storage<Tp>::get()
 {
     static thread_local auto _instance = []() {
         if(!trait::runtime_enabled<Tp>::get())
-            return get_type{ nullptr, nullptr, false, false, false };
-        auto main_inst = storage_type::master_instance();
-        auto this_inst = storage_type::instance();
-        return get_type{ main_inst, this_inst, false, false, false };
+            return get_type{ nullptr, false, false, false };
+        auto this_inst = tim::base::storage::template base_instance<Tp, value_type>();
+        this_inst->initialize();
+        return get_type{ this_inst, false, false, false };
     }();
     return _instance;
 }

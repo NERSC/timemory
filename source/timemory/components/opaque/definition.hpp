@@ -118,13 +118,7 @@ get_opaque(bool flat, Args&&... args)
 {
     auto _typeid_hash = get_opaque_hash(demangle<Toolset>());
 
-    auto _init = []() {
-        static bool _inited = []() {
-            operation::init_storage<Toolset>{};
-            return true;
-        }();
-        consume_parameters(_inited);
-    };
+    auto _init = []() {};
 
     auto _start = [=, &args...](const string_t& _prefix, bool argflat) {
         auto                            _hash   = add_hash_id(_prefix);

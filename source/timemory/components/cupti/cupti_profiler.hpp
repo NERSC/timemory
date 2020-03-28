@@ -961,10 +961,8 @@ cupti_profiler::GetRawMetricRequests(
         {
             temp.push_back(*ppMetricDependencies);
         }
-        NVPW_MetricsContext_GetMetricProperties_End_Params
-            getMetricPropertiesEndParams = {
-                NVPW_MetricsContext_GetMetricProperties_End_Params_STRUCT_SIZE
-            };
+        NVPW_MetricsContext_GetMetricProperties_End_Params getMetricPropertiesEndParams =
+            { NVPW_MetricsContext_GetMetricProperties_End_Params_STRUCT_SIZE };
         getMetricPropertiesEndParams.pMetricsContext = pMetricsContext;
         TIMEMORY_RETURN_IF_NVPW_ERROR(false, NVPW_MetricsContext_GetMetricProperties_End(
                                                  &getMetricPropertiesEndParams));

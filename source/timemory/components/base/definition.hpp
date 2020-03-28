@@ -60,7 +60,8 @@ base<Tp, Value>::base()
 {
     if(!storage_type::is_finalizing())
     {
-        static thread_local auto _storage = get_storage();
+        static thread_local auto _storage =
+            tim::base::storage::template base_instance<Tp, Value>();
         consume_parameters(_storage);
     }
 }
@@ -181,13 +182,10 @@ base<Tp, Value>::dummy()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-typename base<Tp, Value>::storage_type*&
+typename base<Tp, Value>::base_storage_type*
 base<Tp, Value>::get_storage()
 {
-    static thread_local storage_type* _instance = nullptr;
-    static thread_local bool          _inited   = init_storage(_instance);
-    consume_parameters(_inited);
-    return _instance;
+    return tim::base::storage::template base_instance<Tp, Value>();
 }
 //
 //--------------------------------------------------------------------------------------//

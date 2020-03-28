@@ -71,24 +71,9 @@
 #include "timemory/operations/types/storage_initializer.hpp"
 #include "timemory/operations/types/store.hpp"
 //
-#include "timemory/components/base.hpp"
-#include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/utility/serializer.hpp"
-//
-#include "timemory/components/timing/components.hpp"
-
-//
-//--------------------------------------------------------------------------------------//
-//
-inline tim::component::cpu_clock
-operator+(const tim::component::user_clock&   cuser,
-          const tim::component::system_clock& csys)
-{
-    return tim::operation::compose<tim::component::cpu_clock, tim::component::user_clock,
-                                   tim::component::system_clock>::generate(cuser, csys);
-}
 //
 //--------------------------------------------------------------------------------------//
 //

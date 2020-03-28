@@ -32,6 +32,9 @@
 
 TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
 
+#if defined(TIMEMORY_SETTINGS_SOURCE) ||                                                 \
+    !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN))
+
 namespace tim
 {
 //
@@ -47,3 +50,5 @@ get_parse_callbacks()
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
+
+#endif

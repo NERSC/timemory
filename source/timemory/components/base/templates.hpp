@@ -126,7 +126,7 @@ base<Tp, Value>::insert_node(Scope&&, const int64_t& _hash)
     if(!is_on_stack)
     {
         is_flat          = false;
-        auto  _storage   = get_storage();
+        auto  _storage   = static_cast<storage_type*>(get_storage());
         auto  _beg_depth = _storage->depth();
         Type* obj        = static_cast<Type*>(this);
         graph_itr        = _storage->template insert<Scope>(*obj, _hash);
@@ -148,7 +148,7 @@ base<Tp, Value>::insert_node(Scope&&, const int64_t& _hash)
     if(!is_on_stack)
     {
         is_flat        = std::is_same<Scope, scope::flat>::value;
-        auto  _storage = get_storage();
+        auto  _storage = static_cast<storage_type*>(get_storage());
         Type* obj      = static_cast<Type*>(this);
         graph_itr      = _storage->template insert<Scope>(*obj, _hash);
         is_on_stack    = true;
@@ -167,7 +167,7 @@ base<Tp, Value>::insert_node(Scope&&, const int64_t&)
     if(!is_on_stack)
     {
         is_flat        = true;
-        auto  _storage = get_storage();
+        auto  _storage = static_cast<storage_type*>(get_storage());
         Type* obj      = static_cast<Type*>(this);
         is_on_stack    = true;
         _storage->stack_push(obj);
@@ -189,7 +189,7 @@ base<Tp, Value>::pop_node()
         auto& stats   = graph_itr->stats();
         Type& rhs     = static_cast<Type&>(*this);
         depth_change  = false;
-        auto _storage = get_storage();
+        auto _storage = static_cast<storage_type*>(get_storage());
 
         if(storage_type::is_finalizing())
         {
@@ -235,44 +235,12 @@ base<Tp, Value>::pop_node()
 {
     if(is_on_stack)
     {
-        auto  _storage = get_storage();
+        auto  _storage = static_cast<storage_type*>(get_storage());
         Type* rhs      = static_cast<Type*>(this);
         if(_storage)
             _storage->stack_pop(rhs);
         is_on_stack = false;
     }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-// initialize the storage
-//
-template <typename Tp, typename Value>
-template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
-bool
-base<Tp, Value>::init_storage(storage_type*& _instance)
-{
-    if(!_instance)
-    {
-        static thread_local int32_t _count = 0;
-        if(_count++ == 0)
-            _instance = storage_type::instance();
-    }
-
-    if(!state_t::has_storage() && _instance)
-        _instance->initialize();
-    return state_t::has_storage();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Up, typename Vp,
-          enable_if_t<!(implements_storage<Up, Vp>::value), int>>
-bool
-base<Tp, Value>::init_storage(storage_type*&)
-{
-    return true;
 }
 //
 //--------------------------------------------------------------------------------------//

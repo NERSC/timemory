@@ -58,17 +58,15 @@ storage_initializer::get()
     if(!trait::runtime_enabled<T>::get())
         return storage_initializer{};
 
-    using storage_type = storage<T>;
+    using storage_type = storage<T, typename T::value_type>;
 
     static auto _master = []() {
-        auto _instance = storage_type::master_instance();
-        consume_parameters(_instance);
+        consume_parameters(storage_type::master_instance());
         return storage_initializer{};
     }();
 
     static thread_local auto _worker = []() {
-        auto _instance = storage_type::instance();
-        consume_parameters(_instance);
+        consume_parameters(storage_type::instance());
         return storage_initializer{};
     }();
 

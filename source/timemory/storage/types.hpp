@@ -99,7 +99,7 @@ class storage
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Type>
+template <typename Type, typename Value = typename Type::value_type>
 class storage;
 //
 //--------------------------------------------------------------------------------------//

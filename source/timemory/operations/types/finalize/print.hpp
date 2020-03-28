@@ -38,16 +38,13 @@
 #include "timemory/operations/declaration.hpp"
 //
 //======================================================================================//
-
-#include "timemory/components.hpp"
+//
 #include "timemory/manager/declaration.hpp"
-#include "timemory/mpl/math.hpp"
-#include "timemory/operations/types/echo_measurement.hpp"
-#include "timemory/operations/types/print.hpp"
-#include "timemory/operations/types/print_header.hpp"
 #include "timemory/plotting/definition.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/stream.hpp"
+//
+#include "timemory/mpl/math.hpp"
 
 #include <cstdint>
 #include <fstream>

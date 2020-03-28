@@ -68,7 +68,7 @@ struct print_storage
         if(!trait::runtime_enabled<Tp>::get())
             return;
 
-        auto _storage = tim::storage<Tp>::noninit_instance();
+        auto _storage = storage<Tp, value_type>::noninit_instance();
         if(_storage)
         {
             _storage->stack_clear();
