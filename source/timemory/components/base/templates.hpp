@@ -125,12 +125,12 @@ base<Tp, Value>::insert_node(Scope&&, const int64_t& _hash)
 {
     if(!is_on_stack)
     {
+        is_on_stack      = true;
         is_flat          = false;
         auto  _storage   = static_cast<storage_type*>(get_storage());
         auto  _beg_depth = _storage->depth();
         Type* obj        = static_cast<Type*>(this);
         graph_itr        = _storage->template insert<Scope>(*obj, _hash);
-        is_on_stack      = true;
         auto _end_depth  = _storage->depth();
         depth_change     = (_beg_depth < _end_depth);
         _storage->stack_push(obj);
@@ -147,11 +147,11 @@ base<Tp, Value>::insert_node(Scope&&, const int64_t& _hash)
 {
     if(!is_on_stack)
     {
+        is_on_stack    = true;
         is_flat        = std::is_same<Scope, scope::flat>::value;
         auto  _storage = static_cast<storage_type*>(get_storage());
         Type* obj      = static_cast<Type*>(this);
         graph_itr      = _storage->template insert<Scope>(*obj, _hash);
-        is_on_stack    = true;
         depth_change   = std::is_same<Scope, scope::timeline>::value;
         _storage->stack_push(obj);
     }
@@ -166,10 +166,10 @@ base<Tp, Value>::insert_node(Scope&&, const int64_t&)
 {
     if(!is_on_stack)
     {
+        is_on_stack    = true;
         is_flat        = true;
         auto  _storage = static_cast<storage_type*>(get_storage());
         Type* obj      = static_cast<Type*>(this);
-        is_on_stack    = true;
         _storage->stack_push(obj);
     }
 }
@@ -185,6 +185,7 @@ base<Tp, Value>::pop_node()
 {
     if(is_on_stack)
     {
+        is_on_stack   = false;
         Type& obj     = graph_itr->obj();
         auto& stats   = graph_itr->stats();
         Type& rhs     = static_cast<Type&>(*this);
@@ -222,7 +223,6 @@ base<Tp, Value>::pop_node()
             }
         }
         obj.is_running = false;
-        is_on_stack    = false;
     }
 }
 //
@@ -235,11 +235,11 @@ base<Tp, Value>::pop_node()
 {
     if(is_on_stack)
     {
+        is_on_stack = false;
         auto  _storage = static_cast<storage_type*>(get_storage());
         Type* rhs      = static_cast<Type*>(this);
         if(_storage)
             _storage->stack_pop(rhs);
-        is_on_stack = false;
     }
 }
 //

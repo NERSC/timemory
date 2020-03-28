@@ -56,18 +56,14 @@ struct omp_tools
     using function_type      = std::function<void()>;
     using user_ompt_bundle_t = component::user_ompt_bundle;
 
-    //----------------------------------------------------------------------------------//
     //  the default initalizer for OpenMP tools when user_ompt_bundle is included
-    //
     static function_type& get_initializer()
     {
         static function_type _instance = []() {};
         return _instance;
     }
 
-    //----------------------------------------------------------------------------------//
     //  this functin calls the initializer for the
-    //
     static void configure() { get_initializer()(); }
 };
 //
