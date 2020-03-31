@@ -73,16 +73,16 @@ extern "C"
 {
 #endif  // if defined(__cplusplus)
 
-    extern tim_api void        c_timemory_init(int argc, char** argv, timemory_settings);
-    extern tim_api void        c_timemory_finalize(void);
-    extern tim_api int         c_timemory_enabled(void);
-    extern tim_api void*       c_timemory_create_auto_timer(const char*);
-    extern tim_api void        c_timemory_delete_auto_timer(void*);
-    extern tim_api void*       c_timemory_create_auto_tuple(const char*, ...);
-    extern tim_api void        c_timemory_delete_auto_tuple(void*);
-    extern tim_api const char* c_timemory_blank_label(const char*);
-    extern tim_api const char* c_timemory_basic_label(const char*, const char*);
-    extern tim_api const char* c_timemory_label(const char*, const char*, int,
+    extern tim_dll void        c_timemory_init(int argc, char** argv, timemory_settings);
+    extern tim_dll void        c_timemory_finalize(void);
+    extern tim_dll int         c_timemory_enabled(void);
+    extern tim_dll void*       c_timemory_create_auto_timer(const char*);
+    extern tim_dll void        c_timemory_delete_auto_timer(void*);
+    extern tim_dll void*       c_timemory_create_auto_tuple(const char*, ...);
+    extern tim_dll void        c_timemory_delete_auto_tuple(void*);
+    extern tim_dll const char* c_timemory_blank_label(const char*);
+    extern tim_dll const char* c_timemory_basic_label(const char*, const char*);
+    extern tim_dll const char* c_timemory_label(const char*, const char*, int,
                                                 const char*);
 
     extern uint64_t timemory_get_unique_id(void);
@@ -115,8 +115,8 @@ extern "C"
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 
-    extern tim_api timemory_create_func_t timemory_create_function;
-    extern tim_api timemory_delete_func_t timemory_delete_function;
+    extern tim_dll timemory_create_func_t timemory_create_function;
+    extern tim_dll timemory_delete_func_t timemory_delete_function;
 
 #if defined(__cplusplus)
 }

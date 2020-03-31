@@ -61,7 +61,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-struct settings
+struct tim_dll settings
 {
     using string_t    = std::string;
     using strvector_t = std::vector<std::string>;

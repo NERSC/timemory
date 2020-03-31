@@ -61,7 +61,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class manager
+class tim_dll manager
 {
 public:
     using this_type        = manager;

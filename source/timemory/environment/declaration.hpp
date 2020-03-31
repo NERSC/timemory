@@ -50,7 +50,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class env_settings
+class tim_dll env_settings
 {
 public:
     using mutex_t        = std::recursive_mutex;

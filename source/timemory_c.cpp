@@ -69,7 +69,7 @@ free_cstr()
 
 extern "C"
 {
-    tim_api void cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
+    tim_dll void cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
     {
 #    define PROCESS_SETTING(variable, type)                                              \
         if(_settings.variable >= 0)                                                      \
@@ -95,11 +95,11 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api int cxx_timemory_enabled(void) { return (tim::settings::enabled()) ? 1 : 0; }
+    tim_dll int cxx_timemory_enabled(void) { return (tim::settings::enabled()) ? 1 : 0; }
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_create_auto_timer(const char* timer_tag)
+    tim_dll void* cxx_timemory_create_auto_timer(const char* timer_tag)
     {
         if(!tim::settings::enabled())
             return nullptr;
@@ -112,7 +112,7 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_create_auto_tuple(const char* timer_tag,
+    tim_dll void* cxx_timemory_create_auto_tuple(const char* timer_tag,
                                                  int         num_components,
                                                  const int*  components)
     {
@@ -147,7 +147,7 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_delete_auto_timer(void* ctimer)
+    tim_dll void* cxx_timemory_delete_auto_timer(void* ctimer)
     {
         if(ctimer)
         {
@@ -160,7 +160,7 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_delete_auto_tuple(void* ctuple)
+    tim_dll void* cxx_timemory_delete_auto_tuple(void* ctuple)
     {
         if(ctuple)
         {
@@ -173,7 +173,7 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api const char* cxx_timemory_label(int _mode, int _line, const char* _func,
+    tim_dll const char* cxx_timemory_label(int _mode, int _line, const char* _func,
                                            const char* _file, const char* _extra)
     {
         if(!tim::settings::enabled())

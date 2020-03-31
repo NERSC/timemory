@@ -36,9 +36,9 @@
 using namespace tim::component;
 
 #if defined(__GNUC__)
-#    define API tim_api __attribute__((weak))
+#    define API tim_dll __attribute__((weak))
 #else
-#    define API tim_api
+#    define API tim_dll
 #endif
 
 //======================================================================================//

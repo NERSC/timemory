@@ -90,7 +90,7 @@ namespace base
 //
 //--------------------------------------------------------------------------------------//
 //
-class storage
+class tim_dll storage
 {
 public:
     using string_t  = std::string;

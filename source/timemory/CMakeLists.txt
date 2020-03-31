@@ -1,9 +1,4 @@
 
-if(WIN32)
-    set_directory_properties(PROPERTIES
-        COMPILE_DEFINITIONS _TIMEMORY_DLL)
-endif()
-
 set_property(GLOBAL APPEND PROPERTY
     BUILDTREE_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR})
 

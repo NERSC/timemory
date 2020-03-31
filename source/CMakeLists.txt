@@ -196,10 +196,8 @@ if(WIN32)
         add_dependencies(timemory-cxx-shared timemory-cxx-static)
     endif()
     if(_BUILD_SHARED_CXX)
-        target_compile_definitions(timemory-cxx-shared PRIVATE _TIMEMORY_DLL PUBLIC _TIMEMORY_LINK_LIBRARY)
-    endif()
-    if(_BUILD_STATIC_CXX)
-        target_compile_definitions(timemory-cxx-static PUBLIC  _TIMEMORY_ARCHIVE)
+        target_compile_definitions(timemory-cxx-shared
+            PRIVATE TIMEMORY_DLL_EXPORT INTERFACE TIMEMORY_DLL_IMPORT)
     endif()
 endif()
 
@@ -232,7 +230,8 @@ if(TIMEMORY_BUILD_C)
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
         if(WIN32)
-            target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
+            target_compile_definitions(timemory-c-shared
+                PRIVATE TIMEMORY_CDLL_EXPORT INTERFACE TIMEMORY_CDLL_IMPORT)
         endif()
     endif()
 
@@ -255,9 +254,6 @@ if(TIMEMORY_BUILD_C)
                                     timemory-external-static
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
-        if(WIN32)
-            target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)
-        endif()
     endif()
 
     if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)

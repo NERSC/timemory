@@ -88,7 +88,7 @@ namespace tim
 ///     tim::storage_initializer storage = tim::storage_initalizer::get<T>();
 /// }
 ///
-struct storage_initializer
+struct tim_dll storage_initializer
 {
     TIMEMORY_DEFAULT_OBJECT(storage_initializer)
 
@@ -118,7 +118,7 @@ struct non_vexing
 //
 //--------------------------------------------------------------------------------------//
 //
-struct common_utils
+struct tim_dll common_utils
 {
     using attributes_t   = std::map<string_t, string_t>;
     using strset_t       = std::set<string_t>;

@@ -30,11 +30,17 @@
 #include "timemory/library.h"
 #include "timemory/timemory.h"
 
-#if !defined(TIMEMORY_EXTERN_C)
-#    if defined(__cplusplus)
-#        define TIMEMORY_EXTERN_C "C"
+#if !defined(tim_cdll)
+#    if defined(_WINDOWS)
+#        if defined(TIMEMORY_CDLL_EXPORT)
+#            define tim_cdll __declspec(dllexport)
+#        elif defined(TIMEMORY_CDLL_IMPORT)
+#            define tim_cdll __declspec(dllimport)
+#        else
+#            define tim_cdll
+#        endif
 #    else
-#        define TIMEMORY_EXTERN_C
+#        define tim_cdll
 #    endif
 #endif
 
@@ -44,7 +50,7 @@ extern "C"
 #endif
 
     //==================================================================================//
-    // declaration of C++ defined functions (timemory/auto_timer.hpp)
+    // declaration of C++ defined functions
 
     extern void        cxx_timemory_init(int, char**, timemory_settings);
     extern int         cxx_timemory_enabled(void);
@@ -57,29 +63,29 @@ extern "C"
 
     //==================================================================================//
 
-    tim_api void c_timemory_init(int argc, char** argv, timemory_settings _settings)
+    tim_cdll void c_timemory_init(int argc, char** argv, timemory_settings _settings)
     {
         cxx_timemory_init(argc, argv, _settings);
     }
 
     //==================================================================================//
 
-    tim_api void c_timemory_finalize(void) { timemory_finalize_library(); }
+    tim_cdll void c_timemory_finalize(void) { timemory_finalize_library(); }
 
     //==================================================================================//
 
-    tim_api int c_timemory_enabled(void) { return cxx_timemory_enabled(); }
+    tim_cdll int c_timemory_enabled(void) { return cxx_timemory_enabled(); }
 
     //==================================================================================//
 
-    tim_api void* c_timemory_create_auto_timer(const char* tag)
+    tim_cdll void* c_timemory_create_auto_timer(const char* tag)
     {
         return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag) : NULL;
     }
 
     //==================================================================================//
 
-    tim_api void* c_timemory_create_auto_tuple(const char* tag, ...)
+    tim_cdll void* c_timemory_create_auto_tuple(const char* tag, ...)
     {
         if(!cxx_timemory_enabled())
             return NULL;
@@ -111,7 +117,7 @@ extern "C"
 
     //==================================================================================//
 
-    tim_api void c_timemory_delete_auto_timer(void* ctimer)
+    tim_cdll void c_timemory_delete_auto_timer(void* ctimer)
     {
         ctimer = cxx_timemory_delete_auto_timer(ctimer);
         assert(ctimer == NULL);
@@ -119,7 +125,7 @@ extern "C"
 
     //==================================================================================//
 
-    tim_api void c_timemory_delete_auto_tuple(void* ctuple)
+    tim_cdll void c_timemory_delete_auto_tuple(void* ctuple)
     {
         ctuple = cxx_timemory_delete_auto_tuple(ctuple);
         assert(ctuple == NULL);
@@ -127,22 +133,22 @@ extern "C"
 
     //==================================================================================//
 
-    tim_api const char* c_timemory_blank_label(const char* _extra)
+    tim_cdll const char* c_timemory_blank_label(const char* _extra)
     {
         return cxx_timemory_label(0, 0, "", "", _extra);
     }
 
     //==================================================================================//
 
-    tim_api const char* c_timemory_basic_label(const char* _func, const char* _extra)
+    tim_cdll const char* c_timemory_basic_label(const char* _func, const char* _extra)
     {
         return cxx_timemory_label(1, 0, _func, "", _extra);
     }
 
     //==================================================================================//
 
-    tim_api const char* c_timemory_label(const char* _func, const char* _file, int _line,
-                                         const char* _extra)
+    tim_cdll const char* c_timemory_label(const char* _func, const char* _file, int _line,
+                                          const char* _extra)
     {
         return cxx_timemory_label(2, _line, _func, _file, _extra);
     }
