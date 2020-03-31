@@ -265,6 +265,7 @@ storage<Type, true>::finalize()
     worker_is_finalizing() = true;
     if(m_is_master)
         master_is_finalizing() = true;
+    manager::instance()->is_finalizing(true);
 
     auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
 
@@ -860,6 +861,7 @@ storage<Type, false>::finalize()
     auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
 
     m_finalized = true;
+    manager::instance()->is_finalizing(true);
     if(!m_is_master)
     {
         worker_is_finalizing() = true;

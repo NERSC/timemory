@@ -33,15 +33,12 @@
 //
 #include "timemory/api.hpp"
 //
+#include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
-//
 #include "timemory/containers/types.hpp"
 //
-#include "timemory/containers/declaration.hpp"
-//
-#include "timemory/components/types.hpp"
-//
 #include "timemory/components.hpp"
+#include "timemory/components/types.hpp"
 //
 #include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/component_list.hpp"

@@ -61,13 +61,10 @@ struct trip_count : public base<trip_count>
     {
         set_started();
         value = record();
+        accum += value;
     }
 
-    void stop()
-    {
-        accum += value;
-        set_stopped();
-    }
+    void stop() { set_stopped(); }
 };
 //
 }  // namespace component

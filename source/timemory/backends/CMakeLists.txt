@@ -12,6 +12,6 @@ if(TIMEMORY_USE_MPI)
         HEADERS             ${mpi_header_files}
         SOURCES             ${mpi_source_files}
         DEPENDS             timemory-mpi timemory-mpi-init timemory-manager
-        PROPERTY_DEPENDS    GLOBAL COMPONENT)
+        PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE)
 
 endif()

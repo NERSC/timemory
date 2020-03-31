@@ -100,7 +100,7 @@ namespace trait
 /// trait for configuring OMPT components
 ///
 template <typename T>
-struct omp_tools
+struct ompt_handle
 {
     using type = component_tuple<component::user_ompt_bundle>;
 };
@@ -134,7 +134,7 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
                                  "user_tuple_bundle", "tuple_bundle")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
-                                 "ompt", "omp_tools", "openmp", "openmp_tools")
+                                 "ompt", "ompt_handle", "openmp", "openmp_tools")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE,
                                  "user_mpip_bundle"

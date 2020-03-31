@@ -107,6 +107,8 @@ public:
     void    set_write_metadata(short v) { m_write_metadata = v; }
     void    write_metadata(const char* = "");
     int32_t get_rank() const { return m_rank; }
+    bool    is_finalizing() const { return m_is_finalizing; }
+    void    is_finalizing(bool v) { m_is_finalizing = v; }
 
 public:
     // Public static functions

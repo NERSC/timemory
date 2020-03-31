@@ -235,7 +235,7 @@ base<Tp, Value>::pop_node()
 {
     if(is_on_stack)
     {
-        is_on_stack = false;
+        is_on_stack    = false;
         auto  _storage = static_cast<storage_type*>(get_storage());
         Type* rhs      = static_cast<Type*>(this);
         if(_storage)

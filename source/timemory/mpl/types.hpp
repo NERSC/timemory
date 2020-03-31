@@ -220,7 +220,7 @@ template <typename T>
 struct report_values;
 
 template <typename T>
-struct omp_tools;
+struct ompt_handle;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -262,7 +262,7 @@ template <typename Archive, typename Api = api::native_tag>
 struct output_archive;
 
 template <typename T, typename Toolset>
-struct omp_tools;
+struct ompt_handle;
 
 //--------------------------------------------------------------------------------------//
 //

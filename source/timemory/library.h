@@ -30,6 +30,12 @@
 
 #pragma once
 
+#if !defined(TIMEMORY_SOURCE)
+#    if !defined(TIMEMORY_USE_EXTERN)
+#        define TIMEMORY_USE_EXTERN)
+#    endif
+#endif
+
 #include "timemory/compat/library.h"
 
 //--------------------------------------------------------------------------------------//

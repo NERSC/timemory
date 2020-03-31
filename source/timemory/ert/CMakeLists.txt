@@ -21,4 +21,4 @@ build_intermediate_library(
                         timemory-cuda
                         timemory-cuda-compiler
                         # timemory-cudart
-    PROPERTY_DEPENDS    GLOBAL)
+    PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE)

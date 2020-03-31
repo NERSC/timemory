@@ -285,8 +285,8 @@ struct cuda_profiler
 
     void stop()
     {
-        tracker_type::stop();
 #if defined(TIMEMORY_USE_CUDA)
+        tracker_type::stop();
         if(m_tot == 0)
             cudaProfilerStop();
 #endif

@@ -33,11 +33,16 @@
 #include "timemory/timemory.hpp"
 
 #if defined(_OPENMP)
+#    include "timemory/components/ompt.hpp"
 #    include <omp.h>
 #endif
 
 using namespace tim::component;
-using tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, thread_cpu_clock>;
+using tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>;
+
+static const double pi_epsilon = std::numeric_limits<float>::epsilon();
+static const long   nfib       = 39;
+static const long   noff       = 4;
 
 //--------------------------------------------------------------------------------------//
 
@@ -66,6 +71,36 @@ fibonacci(long n)
     return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
 }
 
+#if defined(_OPENMP)
+double
+compute_pi(uint64_t nstart, uint64_t nstop, double step, uint64_t nblock)
+{
+    double sum  = 0.0;
+    double sum1 = 0.0;
+    double sum2 = 0.0;
+
+    if(nstop - nstart < nblock)
+    {
+        for(uint64_t i = nstart; i < nstop; ++i)
+        {
+            double x = (i + 0.5) * step;
+            sum      = sum + 4.0 / (1.0 + x * x);
+        }
+    }
+    else
+    {
+        uint64_t iblk = nstop - nstart;
+#    pragma omp task shared(sum1)
+        sum1 = compute_pi(nstart, nstop - iblk / 2, step, nblock);
+#    pragma omp task shared(sum2)
+        sum2 = compute_pi(nstop - iblk / 2, nstop, step, nblock);
+#    pragma omp taskwait
+        sum = sum1 + sum2;
+    }
+    return sum;
+}
+#endif
+
 }  // namespace details
 
 //--------------------------------------------------------------------------------------//
@@ -86,7 +121,8 @@ get_tid()
 
 TEST_F(threading_tests, openmp)
 {
-    // tim::trait::runtime_enabled<omp_tools<tim::api::native_tag>>::set(false);
+    tim::trait::runtime_enabled<ompt_handle<tim::api::native_tag>>::set(false);
+    user_ompt_bundle::configure<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>();
 
     TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());
 
@@ -101,7 +137,7 @@ TEST_F(threading_tests, openmp)
         {
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/", region,
                                   "/", omp_get_thread_num());
-            sum += details::fibonacci(40);
+            sum += details::fibonacci(nfib);
             details::do_sleep(500);
         }
     }
@@ -114,7 +150,7 @@ TEST_F(threading_tests, openmp)
         {
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/", region,
                                   "/", omp_get_thread_num());
-            sum += details::fibonacci(45);
+            sum += details::fibonacci(nfib + noff);
             details::do_sleep(500);
         }
     }
@@ -135,6 +171,80 @@ TEST_F(threading_tests, openmp)
     ASSERT_EQ(wc_nlaps, tc_nlaps);
 }
 
+//--------------------------------------------------------------------------------------//
+
+TEST_F(threading_tests, openmp_ompt)
+{
+    tim::trait::runtime_enabled<ompt_handle<tim::api::native_tag>>::set(true);
+    user_ompt_bundle::configure<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>();
+
+    omp_set_num_threads(2);
+
+    std::atomic<uint64_t> sum(0);
+    {
+#    pragma omp parallel for
+        for(int i = 0; i < 4; i++)
+        {
+            sum += details::fibonacci(nfib);
+        }
+    }
+
+    {
+#    pragma omp parallel for
+        for(int i = 0; i < 4; i++)
+        {
+            sum += details::fibonacci(nfib + noff);
+        }
+    }
+
+    printf("[%s]> sum: %lu\n", details::get_test_name().c_str(),
+           static_cast<unsigned long>(sum));
+
+    auto wc = tim::storage<wall_clock>::instance()->get();
+    auto tc = tim::storage<thread_cpu_clock>::instance()->get();
+
+    int64_t wc_nlaps = 0;
+    int64_t tc_nlaps = 0;
+    for(auto& itr : wc)
+        wc_nlaps += itr.data().nlaps();
+    for(auto& itr : tc)
+        tc_nlaps += itr.data().nlaps();
+
+    ASSERT_EQ(wc_nlaps, tc_nlaps);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(threading_tests, openmp_task)
+{
+    tim::trait::runtime_enabled<ompt_handle<tim::api::native_tag>>::set(true);
+    user_ompt_bundle::configure<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>();
+
+    TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());
+
+    uint64_t num_threads = tim::get_env<uint64_t>("NUM_THREADS", 4);
+    uint64_t num_steps   = tim::get_env<uint64_t>("NUM_STEPS", 500000000);
+
+    omp_set_num_threads(num_threads);
+
+    double sum    = 0.0;
+    double step   = 1.0 / static_cast<double>(num_steps);
+    auto   nblock = num_steps / num_threads;
+
+#    pragma omp parallel
+    {
+#    pragma omp single
+        {
+            sum = details::compute_pi(0, num_steps, step, nblock);
+        }
+    }
+
+    double pi = step * sum;
+    printf("[%s]> pi: %f\n", details::get_test_name().c_str(), pi);
+
+    ASSERT_NEAR(pi, M_PI, pi_epsilon);
+}
+
 #endif
 //--------------------------------------------------------------------------------------//
 
@@ -151,7 +261,7 @@ TEST_F(threading_tests, stl)
         {
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/AAAAA/",
                                   get_tid());
-            sum += run_fib(40);
+            sum += run_fib(nfib);
             details::do_sleep(500);
         }
         if(get_tid() > 0)
@@ -164,7 +274,7 @@ TEST_F(threading_tests, stl)
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/BBBBB/",
                                   get_tid());
             sum += run_fib(45);
-            details::do_sleep(500);
+            details::do_sleep(nfib + noff);
         }
         if(get_tid() > 0)
             thread_count--;

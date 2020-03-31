@@ -27,13 +27,16 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/storage/declaration.hpp"
 #include "timemory/variadic/types.hpp"
 //
+#include "timemory/components/ompt/components.hpp"
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/variadic/component_tuple.hpp"
@@ -43,44 +46,6 @@
 
 namespace tim
 {
-namespace policy
-{
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename T, typename Toolset>
-struct omp_tools
-{
-    using type               = Toolset;
-    using api_type           = T;
-    using function_type      = std::function<void()>;
-    using user_ompt_bundle_t = component::user_ompt_bundle;
-
-    //  the default initalizer for OpenMP tools when user_ompt_bundle is included
-    static function_type& get_initializer()
-    {
-        static function_type _instance = []() {};
-        return _instance;
-    }
-
-    //  this functin calls the initializer for the
-    static void configure() { get_initializer()(); }
-};
-//
-//--------------------------------------------------------------------------------------//
-//
-}  // namespace policy
-//
-//--------------------------------------------------------------------------------------//
-//
-namespace component
-{
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Api = api::native_tag>
-struct omp_tools
-{};
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -161,16 +126,20 @@ struct identifier<ompt_callbacks_t>
 namespace mode
 {
 /// \class openmp::mode::begin_callback
-/// \brief This is the beginning of a dual callback
+/// \brief This is the beginning of a paired callback
 struct begin_callback
 {};
 /// \class openmp::mode::end_callback
-/// \brief This is the beginning of a dual callback
+/// \brief This is the end of a paired callback
 struct end_callback
 {};
-/// \class openmp::mode::standalone_callback
-/// \brief This is the beginning of a dual callback
+/// \class openmp::mode::measure_callback
+/// \brief This is a sampling callback
 struct measure_callback
+{};
+/// \class openmp::mode::endpoint_callback
+/// \brief This is a callback whose first argument designates an endpoint
+struct endpoint_callback
 {};
 }  // namespace mode
 
@@ -187,12 +156,12 @@ struct ompt_wrapper
 };
 
 //--------------------------------------------------------------------------------------//
-/*
-static const char* ompt_thread_type_labels[] = { NULL, "ompt_thread_initial",
+
+static const char* ompt_thread_type_labels[] = { nullptr, "ompt_thread_initial",
                                                  "ompt_thread_worker",
                                                  "ompt_thread_other" };
-
-static const char* ompt_task_status_labels[] = { NULL, "ompt_task_complete",
+/*
+static const char* ompt_task_status_labels[] = { nullptr, "ompt_task_complete",
                                                  "ompt_task_yield", "ompt_task_cancel",
                                                  "ompt_task_others" };
 static const char* ompt_cancel_flag_labels[] = {
@@ -201,6 +170,20 @@ static const char* ompt_cancel_flag_labels[] = {
     "ompt_cancel_discarded_task"
 };
 */
+
+static const char* ompt_work_labels[] = { nullptr,
+                                          "ompt_work_loop",
+                                          "ompt_work_sections",
+                                          "ompt_work_single_executor",
+                                          "ompt_work_single_other",
+                                          "ompt_work_workshare",
+                                          "ompt_work_distribute",
+                                          "ompt_work_taskloop" };
+
+static const char* ompt_sync_region_labels[] = { nullptr, "ompt_sync_region_barrier",
+                                                 "ompt_sync_region_taskwait",
+                                                 "ompt_sync_region_taskgroup" };
+
 //--------------------------------------------------------------------------------------//
 
 template <typename Api = api::native_tag>
@@ -215,19 +198,21 @@ public:
                     const void* codeptr)
     {
         consume_parameters(parent_task_frame, requested_team_size, codeptr);
-        m_key += "ompt_parallel";
-        m_id = std::hash<void*>()(parent_task_data) + std::hash<void*>()(parallel_data);
+        m_key = "ompt_parallel";
+        m_id  = std::hash<void*>()(parent_task_data) + std::hash<void*>()(parallel_data);
     }
+
     //----------------------------------------------------------------------------------//
     // parallel end
     //----------------------------------------------------------------------------------//
     context_handler(ompt_data_t* parallel_data, ompt_data_t* parent_task_data,
                     const void* codeptr)
     {
-        consume_parameters(parallel_data, codeptr);
         m_key = "ompt_parallel";
         m_id  = std::hash<void*>()(parent_task_data) + std::hash<void*>()(parallel_data);
+        consume_parameters(codeptr);
     }
+
     //----------------------------------------------------------------------------------//
     // task create
     //----------------------------------------------------------------------------------//
@@ -254,7 +239,10 @@ public:
     context_handler(ompt_scope_endpoint_t endpoint, ompt_data_t* parallel_data,
                     ompt_data_t* task_data, const void* codeptr)
     {
-        consume_parameters(endpoint, parallel_data, task_data, codeptr);
+        m_key = "ompt_master";
+        m_id  = std::hash<std::string>()(m_key) + std::hash<void*>()(parallel_data) +
+               std::hash<void*>()(task_data);
+        consume_parameters(endpoint, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -264,7 +252,10 @@ public:
                     ompt_data_t* parallel_data, ompt_data_t* task_data, uint64_t count,
                     const void* codeptr)
     {
-        consume_parameters(wstype, endpoint, parallel_data, task_data, count, codeptr);
+        m_key = ompt_work_labels[wstype];
+        m_id  = std::hash<std::string>()(m_key) + std::hash<void*>()(parallel_data) +
+               std::hash<void*>()(task_data);
+        consume_parameters(endpoint, count, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -272,13 +263,17 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_thread_type_t thread_type, ompt_data_t* thread_data)
     {
-        consume_parameters(thread_type, thread_data);
+        m_key = ompt_thread_type_labels[thread_type];
+        m_id  = std::hash<void*>()(static_cast<void*>(thread_data));
     }
 
     //----------------------------------------------------------------------------------//
     // callback thread end
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_data_t* thread_data) { consume_parameters(thread_data); }
+    context_handler(ompt_data_t* thread_data)
+    {
+        m_id = std::hash<void*>()(static_cast<void*>(thread_data));
+    }
 
     //----------------------------------------------------------------------------------//
     // callback implicit task
@@ -287,7 +282,11 @@ public:
                     ompt_data_t* task_data, unsigned int team_size,
                     unsigned int thread_num)
     {
-        consume_parameters(endpoint, parallel_data, task_data, team_size, thread_num);
+        m_key = apply<std::string>::join("_", "ompt_implicit_task", thread_num, "of",
+                                         team_size);
+        m_id  = std::hash<void*>()(static_cast<void*>(parallel_data)) +
+               std::hash<std::string>()(m_key);
+        consume_parameters(endpoint, task_data);
     }
 
     //----------------------------------------------------------------------------------//
@@ -297,13 +296,22 @@ public:
                     ompt_data_t* parallel_data, ompt_data_t* task_data,
                     const void* codeptr)
     {
-        consume_parameters(kind, endpoint, parallel_data, task_data, codeptr);
+        m_key = ompt_sync_region_labels[kind];
+        m_id  = std::hash<size_t>()(static_cast<int>(kind)) +
+               std::hash<void*>()(static_cast<void*>(parallel_data)) +
+               std::hash<std::string>()(m_key);
+        consume_parameters(endpoint, task_data, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
     // callback idle
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_scope_endpoint_t endpoint) { consume_parameters(endpoint); }
+    context_handler(ompt_scope_endpoint_t endpoint)
+    {
+        m_key = "ompt_idle";
+        m_id  = std::hash<std::string>()(m_key);
+        consume_parameters(endpoint);
+    }
 
     //----------------------------------------------------------------------------------//
     // callback mutex acquire
@@ -405,17 +413,28 @@ protected:
 template <typename Components, typename Api = api::native_tag>
 struct callback_connector
 {
-    using api_type    = Api;
-    using type        = Components;
-    using result_type = std::shared_ptr<type>;
-    using array_type  = std::deque<result_type>;
-    using map_type    = std::unordered_map<size_t, array_type>;
+    using api_type            = Api;
+    using type                = Components;
+    using result_type         = std::shared_ptr<type>;
+    using array_type          = std::deque<result_type>;
+    using map_type            = std::unordered_map<size_t, array_type>;
+    using handle_type         = component::ompt_handle<api_type>;
+    using handle_storage_type = typename handle_type::storage_type;
+    using bundle_storage_type = typename component::user_ompt_bundle::storage_type;
+
+    static bool is_enabled()
+    {
+        if(handle_storage_type::is_finalizing() || !manager::instance() ||
+           (manager::instance() && manager::instance()->is_finalizing()))
+            trait::runtime_enabled<handle_type>::set(false);
+        return trait::runtime_enabled<handle_type>::get();
+    }
 
     template <typename T, typename... Args,
               enable_if_t<(std::is_same<T, mode::begin_callback>::value), int> = 0>
     callback_connector(T, Args... args)
     {
-        if(!trait::runtime_enabled<omp_tools<api_type>>::get())
+        if(!is_enabled())
             return;
 
         context_handler<api_type> ctx(args...);
@@ -438,7 +457,7 @@ struct callback_connector
               enable_if_t<(std::is_same<T, mode::end_callback>::value), int> = 0>
     callback_connector(T, Args... args)
     {
-        if(!trait::runtime_enabled<omp_tools<api_type>>::get())
+        if(!is_enabled())
             return;
 
         context_handler<api_type> ctx(args...);
@@ -464,7 +483,7 @@ struct callback_connector
               enable_if_t<(std::is_same<T, mode::measure_callback>::value), int> = 0>
     callback_connector(T, Args... args)
     {
-        if(!trait::runtime_enabled<omp_tools<api_type>>::get())
+        if(!is_enabled())
             return;
 
         context_handler<api_type> ctx(args...);
@@ -480,6 +499,114 @@ struct callback_connector
         c->measure();
     }
 
+    template <typename T, typename... Args,
+              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+    callback_connector(T, ompt_scope_endpoint_t endp, Args... args)
+    {
+        if(!is_enabled())
+            return;
+
+        context_handler<api_type> ctx(endp, args...);
+
+        // don't provide empty entries
+        if(ctx.key().empty())
+            return;
+
+        if(endp == ompt_scope_begin)
+        {
+            auto c = std::make_shared<type>(ctx.key());
+
+            // persistence handling
+            get_key_map()[ctx.id()].emplace_back(c);
+
+            c->construct(endp, args...);
+            c->start();
+            c->audit(ctx.key(), endp, args...);
+        }
+        else if(endp == ompt_scope_end)
+        {
+            // persistence handling
+            auto itr = get_key_map().find(ctx.id());
+            if(itr == get_key_map().end())
+                return;
+            if(itr->second.empty())
+                return;
+            auto c = itr->second.back();
+            itr->second.pop_back();
+
+            c->audit(ctx.key(), endp, args...);
+            c->stop();
+        }
+    }
+
+    template <typename T, typename... Args,
+              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+    callback_connector(T, ompt_work_type_t workv, ompt_scope_endpoint_t endp,
+                       Args... args)
+    {
+        if(!is_enabled())
+            return;
+        generic_endpoint_connector(T{}, workv, endp, args...);
+    }
+
+    template <typename T, typename... Args,
+              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+    callback_connector(T, ompt_sync_region_kind_t syncv, ompt_scope_endpoint_t endp,
+                       Args... args)
+    {
+        if(!is_enabled())
+            return;
+        generic_endpoint_connector(T{}, syncv, endp, args...);
+    }
+
+    template <typename T, typename... Args,
+              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+    callback_connector(T, ompt_target_type_t targv, ompt_scope_endpoint_t endp,
+                       Args... args)
+    {
+        if(!is_enabled())
+            return;
+        generic_endpoint_connector(T{}, targv, endp, args...);
+    }
+
+protected:
+    template <typename T, typename Arg, typename... Args,
+              enable_if_t<(std::is_same<T, mode::endpoint_callback>::value), int> = 0>
+    void generic_endpoint_connector(T, Arg arg, ompt_scope_endpoint_t endp, Args... args)
+    {
+        context_handler<api_type> ctx(arg, endp, args...);
+
+        // don't provide empty entries
+        if(ctx.key().empty())
+            return;
+
+        if(endp == ompt_scope_begin)
+        {
+            auto c = std::make_shared<type>(ctx.key());
+
+            // persistence handling
+            get_key_map()[ctx.id()].emplace_back(c);
+
+            c->construct(arg, endp, args...);
+            c->start();
+            c->audit(ctx.key(), arg, endp, args...);
+        }
+        else if(endp == ompt_scope_end)
+        {
+            // persistence handling
+            auto itr = get_key_map().find(ctx.id());
+            if(itr == get_key_map().end())
+                return;
+            if(itr->second.empty())
+                return;
+            auto c = itr->second.back();
+            itr->second.pop_back();
+
+            c->audit(ctx.key(), arg, endp, args...);
+            c->stop();
+        }
+    }
+
 private:
     static map_type& get_key_map()
     {
@@ -491,5 +618,4 @@ private:
 //--------------------------------------------------------------------------------------//
 
 }  // namespace openmp
-}  // namespace component
 }  // namespace tim

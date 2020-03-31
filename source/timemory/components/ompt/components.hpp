@@ -37,28 +37,99 @@
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/types.hpp"
 
-#include "timemory/components/ompt/ompt.hpp"
+#if defined(TIMEMORY_USE_OMPT)
+//
+//--------------------------------------------------------------------------------------//
+//
+static ompt_set_callback_t             ompt_set_callback;
+static ompt_get_task_info_t            ompt_get_task_info;
+static ompt_get_thread_data_t          ompt_get_thread_data;
+static ompt_get_parallel_info_t        ompt_get_parallel_info;
+static ompt_get_unique_id_t            ompt_get_unique_id;
+static ompt_get_num_places_t           ompt_get_num_places;
+static ompt_get_place_proc_ids_t       ompt_get_place_proc_ids;
+static ompt_get_place_num_t            ompt_get_place_num;
+static ompt_get_partition_place_nums_t ompt_get_partition_place_nums;
+static ompt_get_proc_id_t              ompt_get_proc_id;
+static ompt_enumerate_states_t         ompt_enumerate_states;
+static ompt_enumerate_mutex_impls_t    ompt_enumerate_mutex_impls;
+//
+//--------------------------------------------------------------------------------------//
+//
+#endif
 
 //======================================================================================//
 //
 namespace tim
 {
+namespace policy
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Api, typename Toolset>
+struct ompt_handle
+{
+    using type               = Toolset;
+    using api_type           = Api;
+    using function_type      = std::function<void()>;
+    using user_ompt_bundle_t = component::user_ompt_bundle;
+
+    //  the default initalizer for OpenMP tools when user_ompt_bundle is included
+    static function_type& get_initializer()
+    {
+        static function_type _instance = []() {};
+        return _instance;
+    }
+
+    //  this functin calls the initializer for the
+    static void configure() { get_initializer()(); }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace policy
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace component
 {
 //
-//  struct example : base<example, int64_t>
-//  {
-//        static std::string    label()        { return "example"; }
-//        static std::string    description()  { return "Example component"; }
+//--------------------------------------------------------------------------------------//
 //
-//        static int64_t record() { }
+template <typename Api>
+struct ompt_handle
+: public base<ompt_handle<Api>, void>
+, private policy::instance_tracker<ompt_handle<Api>>
+{
+    using toolset_type = typename trait::ompt_handle<Api>::type;
+    using policy_type  = policy::ompt_handle<Api, toolset_type>;
+    using tracker_type = policy::instance_tracker<ompt_handle<Api>>;
+
+    using tracker_type::m_tot;
+
+    static std::string label() { return "ompt_handle"; }
+    static std::string description()
+    {
+        return std::string("OpenMP toolset ") + demangle<Api>();
+    }
+
+    void start()
+    {
+        tracker_type::start();
+        if(m_tot == 0)
+            trait::runtime_enabled<ompt_handle<Api>>::set(true);
+    }
+
+    void stop()
+    {
+        tracker_type::stop();
+        if(m_tot == 0)
+            trait::runtime_enabled<ompt_handle<Api>>::set(false);
+    }
+};
 //
-//        double    get() const { }
-//        double    get_display() const { return get(); }
-//
-//        void start() { }
-//        void stop() { }
-//  };
+//--------------------------------------------------------------------------------------//
 //
 }  // namespace component
 }  // namespace tim

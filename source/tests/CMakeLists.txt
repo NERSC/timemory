@@ -61,8 +61,7 @@ add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools timemory-ompt
-                    ${_LIBRARY})
+                    timemory-plotting timemory-analysis-tools timemory-ompt)
 
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS
@@ -144,7 +143,7 @@ if(TIMEMORY_USE_ARCH)
                         ${_LIBRARY})
 endif()
 
-set_source_files_properties(cuda_tests.cpp cupti_tests.cpp
+set_source_files_properties(cuda_tests.cpp cupti_tests.cpp cupti_profiler_tests.cpp
     PROPERTIES
     LANGUAGE        ${DEVICE_LANGUAGE}
     LINKER_LANGUAGE ${DEVICE_LANGUAGE})
@@ -182,8 +181,6 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
 
     # NVPERF library
     if(CUPTI_nvperf_host_LIBRARY)
-        set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/cupti_profiler_tests.cpp
-            PROPERTIES LANGUAGE CUDA LINKER_LANGUAGE CUDA)
         add_timemory_google_test(cupti_profiler_tests
             DISCOVER_TESTS
             SOURCES         cupti_profiler_tests.cpp
