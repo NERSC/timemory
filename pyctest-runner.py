@@ -437,8 +437,12 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
+    overhead_cmd = ["./ex_cxx_overhead"]
+    if args.coverage:
+        overhead_cmd += ["40", "30"]
+
     pyct.test(construct_name("ex-cxx-overhead"),
-              construct_command(["./ex_cxx_overhead"], args),
+              construct_command(overhead_cmd, args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "600",
@@ -494,8 +498,12 @@ def run_pyctest():
                "TIMEOUT": "300",
                "ENVIRONMENT": test_env})
 
+    ert_cmd = ["./ex_ert"]
+    if args.coverage:
+        ert_cmd += ["256", "4325376", "2"]
+
     pyct.test(construct_name("ex-ert"),
-              construct_command(["./ex_ert"], args),
+              construct_command(ert_cmd, args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                "LABELS": pyct.PROJECT_NAME,
                "TIMEOUT": "600",
