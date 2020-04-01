@@ -95,6 +95,7 @@ struct no_store;
 #include "timemory/components/gotcha/types.hpp"
 #include "timemory/components/gperftools/types.hpp"
 #include "timemory/components/likwid/types.hpp"
+#include "timemory/components/ompt/types.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/components/roofline/types.hpp"
 #include "timemory/components/rusage/types.hpp"

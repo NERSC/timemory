@@ -134,7 +134,7 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
                                  "user_tuple_bundle", "tuple_bundle")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
-                                 "ompt", "ompt_handle", "openmp", "openmp_tools")
+                                 "ompt_bundle")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE,
                                  "user_mpip_bundle"

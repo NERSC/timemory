@@ -47,56 +47,78 @@
 #if defined(TIMEMORY_USE_CALIPER)
 #    include "timemory/components/caliper/components.hpp"
 #endif
-
-// gotcha components
-#if defined(TIMEMORY_USE_GOTCHA)
-#    include "timemory/components/gotcha/components.hpp"
-#endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 // cuda
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/components/cuda/components.hpp"
 #endif
-
-// likwid
-#if defined(TIMEMORY_USE_LIKWID)
-#    include "timemory/components/likwid/components.hpp"
-#endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 // GPU hardware counter components
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/components/cupti/components.hpp"
 #endif
-
-// CPU/GPU hardware counter components
-#if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/papi/components.hpp"
+//
+//--------------------------------------------------------------------------------------//
+//
+// gotcha components
+#if defined(TIMEMORY_USE_GOTCHA)
+#    include "timemory/components/gotcha/components.hpp"
 #endif
-
-// TAU component
-#if defined(TIMEMORY_USE_TAU)
-#    include "timemory/components/tau_marker/components.hpp"
-#endif
-
-// VTune components
-#if defined(TIMEMORY_USE_VTUNE)
-#    include "timemory/components/vtune/components.hpp"
-#endif
-
-// OpenMP components
-#if defined(TIMEMORY_USE_OMPT)
-#    include "timemory/components/ompt/components.hpp"
-#endif
-
-// Roofline components
-#if defined(TIMEMORY_USE_CUPTI) || defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/roofline/components.hpp"
-#endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 // gperftools components
 #if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||                                         \
     defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) || defined(TIMEMORY_USE_GPERFTOOLS)
 #    include "timemory/components/gperftools/components.hpp"
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
+// likwid
+#if defined(TIMEMORY_USE_LIKWID)
+#    include "timemory/components/likwid/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// OpenMP components
+#if defined(TIMEMORY_USE_OMPT)
+#    include "timemory/components/ompt/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// CPU/GPU hardware counter components
+#if defined(TIMEMORY_USE_PAPI)
+#    include "timemory/components/papi/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// Roofline components
+#if defined(TIMEMORY_USE_CUPTI) || defined(TIMEMORY_USE_PAPI)
+#    include "timemory/components/roofline/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// TAU component
+#if defined(TIMEMORY_USE_TAU)
+#    include "timemory/components/tau_marker/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// VTune components
+#if defined(TIMEMORY_USE_VTUNE)
+#    include "timemory/components/vtune/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #include "timemory/backends.hpp"

@@ -35,23 +35,23 @@
 //
 #include "timemory/runtime/types.hpp"
 //
-#include "timemory/runtime/properties.hpp"
-//
 //======================================================================================//
 
-#if defined(TIMEMORY_USE_RUNTIME_EXTERN) && defined(TIMEMORY_RUNTIME_SOURCE)
+#if defined(TIMEMORY_RUNTIME_SOURCE)
 
 #    include "timemory/components.hpp"
+#    include "timemory/components/definition.hpp"
 #    include "timemory/containers/definition.hpp"
 #    include "timemory/operations/definition.hpp"
 #    include "timemory/storage/definition.hpp"
-#    include "timemory/types.hpp"
 
 #endif
 
 #include "timemory/containers/auto_timer.hpp"
 #include "timemory/containers/auto_user_bundle.hpp"
 #include "timemory/types.hpp"
+//
+#include "timemory/runtime/properties.hpp"
 
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, bool)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, bool)

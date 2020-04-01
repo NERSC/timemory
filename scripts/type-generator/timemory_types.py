@@ -48,8 +48,8 @@ components = [
     "gpu_roofline_sp_flops",
     "gpu_roofline_dp_flops",
     "gpu_roofline_flops",
-    "gperf_cpu_profiler",
-    "gperf_heap_profiler",
+    "gperftools_cpu_profiler",
+    "gperftools_heap_profiler",
     "virtual_memory",
     "likwid_marker",
     "likwid_nvmarker",
@@ -66,6 +66,7 @@ components = [
     "malloc_gotcha",
     "user_mpip_bundle",
     "user_ompt_bundle",
+    "ompt_handle",
 ]
 
 #
@@ -76,7 +77,6 @@ components = [
 mangled_enums = {
     "system_clock": "sys_clock",
     "papi_array_t": "papi_array",
-    "ompt_handle": "ompt",
 }
 
 #

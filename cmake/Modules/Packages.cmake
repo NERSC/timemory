@@ -1093,7 +1093,7 @@ if(TIMEMORY_USE_OMPT)
             REPO_URL https://github.com/NERSC/LLVM-openmp.git
             REPO_BRANCH timemory)
         add_subdirectory(external/llvm-ompt)
-        target_include_directories(timemory-ompt INTERFACE
+        target_include_directories(timemory-ompt SYSTEM INTERFACE
             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
     elseif(OpenMP_FOUND)
         find_library(OMPT_LIBRARY

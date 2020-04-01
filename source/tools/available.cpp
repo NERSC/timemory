@@ -26,7 +26,6 @@
 //
 #include "timemory/components.hpp"
 //
-// #include "timemory/components/base.hpp"
 #include "timemory/components/placeholder.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/skeletons.hpp"
@@ -49,8 +48,8 @@ using stringstream_t = std::stringstream;
 using str_vec_t      = std::vector<string_t>;
 using info_type      = std::tuple<string_t, bool, str_vec_t>;
 
-template <typename _Tp, size_t _N>
-using array_t = std::array<_Tp, _N>;
+template <typename Tp, size_t N>
+using array_t = std::array<Tp, N>;
 
 char global_delim = '|';
 bool markdown     = false;
@@ -99,16 +98,16 @@ struct get_availability
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-struct get_availability<component_list<_Types...>>
+template <typename... Types>
+struct get_availability<component_list<Types...>>
 {
-    using this_type = get_availability<component_list<_Types...>>;
+    using this_type = get_availability<component_list<Types...>>;
 
-    static constexpr size_t size() { return sizeof...(_Types); }
-    static constexpr size_t nelem = sizeof...(_Types);
+    static constexpr size_t size() { return sizeof...(Types); }
+    static constexpr size_t nelem = sizeof...(Types);
 
     using info_vec_t  = array_t<info_type, nelem>;
-    using avail_types = std::tuple<get_availability<_Types>...>;
+    using avail_types = std::tuple<get_availability<Types>...>;
 
     static info_vec_t get_info()
     {
@@ -137,9 +136,9 @@ remove(string_t inp, const std::set<string_t>& entries)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
-write_entry(std::ostream& os, const _Tp& _entry, int64_t _w, bool center, bool mark)
+write_entry(std::ostream& os, const Tp& _entry, int64_t _w, bool center, bool mark)
 {
     stringstream_t ssentry, ssbeg, ss;
     ssentry << std::boolalpha << _entry;
@@ -159,9 +158,9 @@ write_entry(std::ostream& os, const _Tp& _entry, int64_t _w, bool center, bool m
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _IntArray, size_t _N>
+template <typename _IntArray, size_t N>
 string_t
-banner(_IntArray _breaks, std::array<bool, _N> _use, char filler = '-', char delim = '|')
+banner(_IntArray _breaks, std::array<bool, N> _use, char filler = '-', char delim = '|')
 {
     stringstream_t ss;
     ss.fill(filler);
@@ -195,22 +194,22 @@ static constexpr size_t num_component_options  = 6;
 static constexpr size_t num_settings_options   = 0;
 static constexpr size_t num_hw_counter_options = 4;
 
-template <size_t _N = num_component_options>
+template <size_t N = num_component_options>
 void
-write_component_info(std::ostream&, const array_t<bool, _N>&, const array_t<bool, _N>&,
-                     const array_t<string_t, _N>&);
+write_component_info(std::ostream&, const array_t<bool, N>&, const array_t<bool, N>&,
+                     const array_t<string_t, N>&);
 
-template <size_t _N = num_settings_options>
+template <size_t N = num_settings_options>
 void
-write_settings_info(std::ostream&, const array_t<bool, _N>& = array_t<bool, _N>{},
-                    const array_t<bool, _N>&     = array_t<bool, _N>{},
-                    const array_t<string_t, _N>& = array_t<string_t, _N>{});
+write_settings_info(std::ostream&, const array_t<bool, N>& = array_t<bool, N>{},
+                    const array_t<bool, N>&     = array_t<bool, N>{},
+                    const array_t<string_t, N>& = array_t<string_t, N>{});
 
-template <size_t _N = num_hw_counter_options>
+template <size_t N = num_hw_counter_options>
 void
-write_hw_counter_info(std::ostream&, const array_t<bool, _N>& = array_t<bool, _N>{},
-                      const array_t<bool, _N>&     = array_t<bool, _N>{},
-                      const array_t<string_t, _N>& = array_t<string_t, _N>{});
+write_hw_counter_info(std::ostream&, const array_t<bool, N>& = array_t<bool, N>{},
+                      const array_t<bool, N>&     = array_t<bool, N>{},
+                      const array_t<string_t, N>& = array_t<string_t, N>{});
 
 //--------------------------------------------------------------------------------------//
 
@@ -374,19 +373,19 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _N>
+template <size_t N>
 void
-write_component_info(std::ostream& os, const array_t<bool, _N>& options,
-                     const array_t<bool, _N>& _mark, const array_t<string_t, _N>& fields)
+write_component_info(std::ostream& os, const array_t<bool, N>& options,
+                     const array_t<bool, N>& _mark, const array_t<string_t, N>& fields)
 {
-    static_assert(_N >= num_component_options,
+    static_assert(N >= num_component_options,
                   "Error! Too few component options + fields");
 
     auto _info = get_availability<complete_list_t>::get_info();
 
     using int_vec_t  = std::vector<int64_t>;
     using width_type = int_vec_t;
-    using width_bool = std::array<bool, _N + 2>;
+    using width_bool = std::array<bool, N + 2>;
 
     width_type _widths = width_type{ 40, 12, 20, 40, 20, 20, 20, 40 };
     width_bool _wusing = width_bool{ true, true };
@@ -487,12 +486,12 @@ write_component_info(std::ostream& os, const array_t<bool, _N>& options,
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _N>
+template <size_t N>
 void
-write_settings_info(std::ostream& os, const array_t<bool, _N>&, const array_t<bool, _N>&,
-                    const array_t<string_t, _N>&)
+write_settings_info(std::ostream& os, const array_t<bool, N>&, const array_t<bool, N>&,
+                    const array_t<string_t, N>&)
 {
-    static_assert(_N >= num_settings_options, "Error! Too few settings options + fields");
+    static_assert(N >= num_settings_options, "Error! Too few settings options + fields");
 
     using archive_type = cereal::SettingsTextArchive;
     using array_type   = typename archive_type::array_type;
@@ -554,12 +553,12 @@ write_settings_info(std::ostream& os, const array_t<bool, _N>&, const array_t<bo
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _N>
+template <size_t N>
 void
-write_hw_counter_info(std::ostream& os, const array_t<bool, _N>& options,
-                      const array_t<bool, _N>&, const array_t<string_t, _N>&)
+write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
+                      const array_t<bool, N>&, const array_t<string_t, N>&)
 {
-    static_assert(_N >= num_hw_counter_options,
+    static_assert(N >= num_hw_counter_options,
                   "Error! Too few hw counter options + fields");
 
     using width_type = array_t<int64_t, 4>;

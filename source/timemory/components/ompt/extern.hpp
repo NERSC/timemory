@@ -29,36 +29,36 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_OMPT)
-
 //======================================================================================//
 //
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/macros.hpp"
 //
-#    include "timemory/components/ompt/components.hpp"
-#    include "timemory/components/ompt/ompt.hpp"
-#    include "timemory/components/ompt/types.hpp"
+#include "timemory/components/ompt/components.hpp"
+#include "timemory/components/ompt/types.hpp"
 //
-#    include "timemory/environment/declaration.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/plotting/definition.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/storage/definition.hpp"
+#include "timemory/environment/declaration.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 //
 //======================================================================================//
 //
-#    if(!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_OMPT_EXTERN)) ||          \
-        defined(TIMEMORY_OMPT_SOURCE)
+namespace tim
+{
+namespace component
+{
+//
+TIMEMORY_EXTERN_TEMPLATE(struct base<ompt_native_handle, void>)
+//
+}  // namespace component
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-#        include "timemory/components/ompt.hpp"
+TIMEMORY_EXTERN_OPERATIONS(component::ompt_native_handle, false)
+//
+TIMEMORY_EXTERN_STORAGE(component::ompt_native_handle, ompt_native_handle)
 //
 //--------------------------------------------------------------------------------------//
-//
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-
-#endif  // TIMEMORY_USE_OMPT

@@ -90,6 +90,7 @@
     component::num_signals,                     \
     component::num_swap,                        \
     component::nvtx_marker,                     \
+    component::ompt_native_handle,              \
     component::page_rss,                        \
     component::papi_array_t,                    \
     component::papi_vector,                     \

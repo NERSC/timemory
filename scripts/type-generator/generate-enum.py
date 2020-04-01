@@ -24,11 +24,14 @@ if __name__ == "__main__":
         print("timemory components: [{}]\n".format(", ".join(components)))
 
     components.sort()
-    outdata = "enum TIMEMORY_COMPONENT\n{\n"
+    outdata = "enum TIMEMORY_NATIVE_COMPONENT\n{\n"
     for i in range(0, len(components)):
         outdata += "{}\n".format(generate_enum(components[i], i, args.indent))
 
-    outdata += "{}{:30} = {}\n".format(" " * args.indent, "TIMEMORY_COMPONENTS_END",
-                                       len(components))
+    outdata += "{}{} {} = \n{}    ({} + {})\n".format(" " * args.indent,
+                                       "TIMEMORY_USER_COMPONENT_ENUM",
+                                       "TIMEMORY_COMPONENTS_END", " " * args.indent,
+                                       "TIMEMORY_COMPONENT_ENUM_SIZE",
+                                       "TIMEMORY_USER_COMPONENT_ENUM_SIZE")
     outdata += "};"
     print("{}".format(outdata))

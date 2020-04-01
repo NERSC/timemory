@@ -30,8 +30,16 @@
 #include "timemory/enum.h"
 #include "timemory/runtime/macros.hpp"
 //
+#include "timemory/components.hpp"
 #include "timemory/components/opaque/definition.hpp"
-#include "timemory/components/types.hpp"
+//
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/auto_tuple.hpp"
+//
+#include "timemory/variadic/component_hybrid.hpp"
+#include "timemory/variadic/component_list.hpp"
+#include "timemory/variadic/component_tuple.hpp"
 
 #include <set>
 #include <string>

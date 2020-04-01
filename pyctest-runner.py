@@ -500,7 +500,7 @@ def run_pyctest():
 
     ert_cmd = ["./ex_ert"]
     if args.coverage:
-        ert_cmd += ["256", "4325376", "2"]
+        ert_cmd += ["512", "1081344", "2"]
 
     pyct.test(construct_name("ex-ert"),
               construct_command(ert_cmd, args),

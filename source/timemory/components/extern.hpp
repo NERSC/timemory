@@ -62,6 +62,12 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_OMPT_EXTERN)
+#    include "timemory/components/ompt/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_PAPI_EXTERN)
 #    include "timemory/components/papi/extern.hpp"
 #endif
@@ -89,6 +95,13 @@
 #include "timemory/components/rusage/extern.hpp"
 #include "timemory/components/timing/extern.hpp"
 #include "timemory/components/trip_count/extern.hpp"
+//
+//--------------------------------------------------------------------------------------//
+//
+//          any extern declarations for components that can be used by user-bundle
+//          should be included by this point
+//
+//--------------------------------------------------------------------------------------//
 //
 #include "timemory/components/user_bundle/extern.hpp"
 //

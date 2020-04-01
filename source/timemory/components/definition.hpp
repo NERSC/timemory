@@ -31,6 +31,7 @@
 #include "timemory/components/gotcha/components.hpp"
 #include "timemory/components/gperftools/components.hpp"
 #include "timemory/components/likwid/components.hpp"
+#include "timemory/components/ompt/components.hpp"
 #include "timemory/components/papi/components.hpp"
 #include "timemory/components/roofline/components.hpp"
 #include "timemory/components/rusage/components.hpp"

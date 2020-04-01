@@ -129,7 +129,7 @@ _default_min_percent = 0.05  # 5% of max
 _default_img_dpi = 75
 """ Default image dots-per-square inch """
 
-_default_img_size = {'w': 1600, 'h': 800}
+_default_img_size = {'w': 1200, 'h': 800}
 """ Default image size """
 
 _default_img_type = 'jpeg'
@@ -208,7 +208,8 @@ def add_plotted_files(name, filepath, echo_dart):
     """
     global plotted_files
     if echo_dart:
-        echo_dart_tag(name, filepath)
+        filerealpath = os.path.realpath(filepath)
+        echo_dart_tag(name, filerealpath)
     found = False
     for p in plotted_files:
         if p[0] == name and p[1] == filepath:
