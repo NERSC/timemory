@@ -312,12 +312,12 @@ protected:
                 return string_t(">>> ");
 
             // prefix spacing
-            static uint16_t width = 1;
+            static uint16_t _width = 1;
             if(dmp::size() > 9)
-                width = std::max(width, (uint16_t)(log10(dmp::size()) + 1));
+                _width = std::max(_width, (uint16_t)(log10(dmp::size()) + 1));
             std::stringstream ss;
             ss.fill('0');
-            ss << "|" << std::setw(width) << dmp::rank() << ">>> ";
+            ss << "|" << std::setw(_width) << dmp::rank() << ">>> ";
             return ss.str();
         }();
     };
