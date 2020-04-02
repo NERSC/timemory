@@ -236,15 +236,31 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Class declarations
     //
     //==================================================================================//
-    py::class_<manager_wrapper>          man(tim, "manager");
-    py::class_<tim_timer_t>              timer(tim, "timer");
-    py::class_<auto_timer_t>             auto_timer(tim, "auto_timer");
-    py::class_<component_list_t>         comp_list(tim, "component_tuple");
-    py::class_<auto_timer_decorator>     timer_decorator(tim, "timer_decorator");
-    py::class_<component_list_decorator> comp_decorator(tim, "component_decorator");
-    py::class_<pycomponent_bundle>       comp_bundle(tim, "component_bundle");
-    py::class_<rss_usage_t>              rss_usage(tim, "rss_usage");
-    py::class_<pytim::settings>          settings(tim, "settings");
+    py::class_<manager_wrapper> man(
+        tim, "manager", "object which controls static data lifetime and finalization");
+
+    py::class_<tim_timer_t> timer(tim, "timer",
+                                  "Auto-timer that does not start/stop based on scope");
+
+    py::class_<auto_timer_t> auto_timer(tim, "auto_timer", "Pre-configured bundle");
+
+    py::class_<component_list_t> comp_list(tim, "component_tuple",
+                                           "Generic component_tuple");
+
+    py::class_<auto_timer_decorator> timer_decorator(
+        tim, "timer_decorator", "Auto-timer type used in decorators");
+
+    py::class_<component_list_decorator> comp_decorator(
+        tim, "component_decorator", "Component list used in decorators");
+
+    py::class_<pycomponent_bundle> comp_bundle(
+        tim, "component_bundle", "Component bundle specific to Python interface");
+
+    py::class_<rss_usage_t> rss_usage(tim, "rss_usage",
+                                      "Pre-configured memory usage bundle");
+
+    py::class_<pytim::settings> settings(tim, "settings",
+                                         "Global configuration settings for timemory");
 
     //==================================================================================//
     //

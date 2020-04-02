@@ -274,11 +274,23 @@ manager::write_metadata(const char* context)
     if(m_rank != 0)
         return;
 
+    if(tim::get_env<bool>("TIMEMORY_CXX_PLOT_MODE", false))
+        return;
+
+    auto _settings = f_settings();
+    if(!_settings)
+        return;
+
+    bool _banner      = _settings->m__banner;
+    bool _auto_output = _settings->m__auto_output;
+    bool _file_output = _settings->m__file_output;
+    auto _outp_prefix = _settings->get_output_prefix();
+
     static bool written = false;
     if(written || m_write_metadata < 1)
         return;
 
-    if(!settings::auto_output() || !settings::file_output())
+    if(!_auto_output || !_file_output)
         return;
 
     written          = true;
@@ -289,7 +301,7 @@ manager::write_metadata(const char* context)
 
     // get the output prefix if not already set
     if(m_metadata_prefix.empty())
-        m_metadata_prefix = settings::get_output_prefix();
+        m_metadata_prefix = _outp_prefix;
 
     if(f_debug())
         PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
@@ -321,7 +333,7 @@ manager::write_metadata(const char* context)
                                                    m_metadata_prefix);
     consume_parameters(fname);
 
-    if(f_verbose() > 0 || settings::banner() || f_debug())
+    if(f_verbose() > 0 || _banner || f_debug())
         printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
 
     std::ofstream ofs(fname.c_str());
@@ -337,7 +349,7 @@ manager::write_metadata(const char* context)
             oa->startNode();
             // settings
             {
-                settings::serialize_settings(*oa);
+                settings::serialize_settings(*oa, *(_settings.get()));
             }
             // output
             {

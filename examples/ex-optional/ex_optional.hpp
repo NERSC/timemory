@@ -52,6 +52,12 @@ void                              print_env() {}
 template <typename... _Args> void timemory_init(_Args...) {}
 void                              timemory_finalize() {}
 
+namespace mpi
+{
+template <typename... Args> static inline void initialize(Args&&...) {}
+static inline void                             finalize() {}
+}
+
 /// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
 struct dummy

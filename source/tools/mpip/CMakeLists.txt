@@ -49,10 +49,6 @@ if(TIMEMORY_GENERATE_MPIP)
         RESULT_VARIABLE RET
     )
 
-    # ensure we have a fresh file
-    #execute_process(COMMAND
-    #    ${CMAKE_COMMAND} -E remove -f ${PROJECT_SOURCE_DIR}/timemory-mpip.cpp)
-
     # will only copy if different
     configure_file(${PROJECT_BINARY_DIR}/_timemory-mpip.cpp
         ${PROJECT_BINARY_DIR}/timemory-mpip.cpp COPYONLY)
@@ -64,18 +60,6 @@ if(TIMEMORY_GENERATE_MPIP)
 
     if(NOT RET GREATER 0)
         add_library(timemory-mpip SHARED ${PROJECT_BINARY_DIR}/timemory-mpip.cpp)
-        target_link_libraries(timemory-mpip
-            PRIVATE
-                timemory-headers
-                timemory-cxx-shared
-                timemory-compile-options
-                timemory-mpi
-                timemory-arch
-                timemory-vector
-                timemory-gotcha)
-        set_target_properties(timemory-mpip PROPERTIES
-            INSTALL_RPATH_USE_LINK_PATH ON)
-        install(TARGETS timemory-mpip DESTINATION ${CMAKE_INSTALL_LIBDIR})
     else()
         message(WARNING "Executing '${PROJECT_BINARY_DIR}/create_mpi_gotcha.sh' returned ${RET}")
     endif()
@@ -83,17 +67,25 @@ if(TIMEMORY_GENERATE_MPIP)
 else()
 
     add_library(timemory-mpip SHARED ${PROJECT_SOURCE_DIR}/timemory-mpip.cpp)
+
+endif()
+
+if(TARGET timemory-mpip)
+    # public link targets
     target_link_libraries(timemory-mpip
-        PRIVATE
+        PUBLIC
             timemory-headers
             timemory-cxx-shared
-            timemory-compile-options
             timemory-mpi
-            timemory-arch
-            timemory-vector
             timemory-gotcha)
-    set_target_properties(timemory-mpip PROPERTIES
-        INSTALL_RPATH_USE_LINK_PATH ON)
+    # private link targets
+    target_link_libraries(timemory-mpip
+        PRIVATE
+            timemory-compile-options
+            timemory-arch
+            timemory-vector)
+    # use rpath
+    set_target_properties(timemory-mpip PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
+    # installation
     install(TARGETS timemory-mpip DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
 endif()

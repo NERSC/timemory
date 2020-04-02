@@ -54,6 +54,7 @@ extern "C"
 
 namespace tim
 {
+class manager;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -63,14 +64,22 @@ namespace tim
 //
 struct tim_dll settings
 {
+    friend class manager;
     using string_t    = std::string;
     using strvector_t = std::vector<std::string>;
 
     template <typename Tag = api::native_tag>
-    static settings& instance()
+    static std::shared_ptr<settings> shared_instance()
     {
-        static settings* _instance = new settings{};
-        return *_instance;
+        static std::shared_ptr<settings> _instance = std::make_shared<settings>();
+        return _instance;
+    }
+
+    template <typename Tag = api::native_tag>
+    static settings* instance()
+    {
+        static auto _instance = shared_instance<Tag>();
+        return _instance.get();
     }
 
     settings()  = default;
@@ -453,7 +462,14 @@ public:
     template <typename Archive>
     static void serialize_settings(Archive& ar)
     {
-        ar(cereal::make_nvp("settings", settings::instance()));
+        if(settings::instance())
+            ar(cereal::make_nvp("settings", *settings::instance()));
+    }
+
+    template <typename Archive>
+    static void serialize_settings(Archive& ar, settings& _obj)
+    {
+        ar(cereal::make_nvp("settings", _obj));
     }
 
     template <size_t Idx = 0>

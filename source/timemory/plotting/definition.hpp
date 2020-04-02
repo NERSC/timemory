@@ -74,9 +74,6 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
     if(settings::debug() || settings::verbose() > 2)
         PRINT_HERE("%s", "");
 
-    set_env<std::string>("TIMEMORY_BANNER", "OFF");
-    set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
-
     if(std::system(nullptr))
     {
         auto _file = _json_file;
@@ -103,7 +100,11 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
         if(settings::verbose() > 2 || settings::debug())
             PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
 
+        set_env<std::string>("TIMEMORY_BANNER", "OFF");
+        set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
         int sysret = std::system(cmd.c_str());
+        set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "0", 1);
+
         if(sysret != 0)
         {
             auto msg = TIMEMORY_JOIN("", "Error generating plots with command: '", cmd,

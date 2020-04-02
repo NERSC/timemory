@@ -41,6 +41,18 @@ using namespace tim::component;
 #    define API tim_dll
 #endif
 
+CEREAL_CLASS_VERSION(tim::settings, 1)
+CEREAL_CLASS_VERSION(tim::env_settings, 0)
+
+//======================================================================================//
+
+namespace
+{
+static auto library_manager_handle  = tim::manager::master_instance();
+static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
+static thread_local bool library_dyninst_init = false;
+}  // namespace
+
 //======================================================================================//
 
 extern "C"
@@ -55,8 +67,9 @@ extern "C"
 //======================================================================================//
 
 struct timemory_trace;
-using trace_bundle_t     = user_bundle<0, timemory_trace>;
-using traceset_t         = tim::component_tuple<trace_bundle_t>;
+using string_t           = std::string;
+using user_trace_bundle  = user_bundle<0, timemory_trace>;
+using traceset_t         = tim::component_tuple<user_trace_bundle>;
 using library_toolset_t  = TIMEMORY_LIBRARY_TYPE;
 using toolset_t          = typename library_toolset_t::component_type;
 using region_map_t       = std::unordered_map<std::string, std::stack<uint64_t>>;
@@ -477,11 +490,27 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_init_trace(uint64_t id)
+    API void timemory_push_region(const char* name)
     {
-        PRINT_HERE("[id = %llu]", (long long unsigned) id);
-        auto& comp = get_current_components();
-        tim::configure<trace_bundle_t>(comp);
+        auto& region_map = get_region_map();
+        auto  idx        = timemory_get_begin_record(name);
+        region_map[name].push(idx);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_pop_region(const char* name)
+    {
+        auto& region_map = get_region_map();
+        auto  itr        = region_map.find(name);
+        if(itr == region_map.end() || (itr != region_map.end() && itr->second.empty()))
+            fprintf(stderr, "Warning! region '%s' does not exist!\n", name);
+        else
+        {
+            uint64_t idx = itr->second.top();
+            timemory_end_record(idx);
+            itr->second.pop();
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -538,45 +567,75 @@ extern "C"
     API void timemory_dyninst_init(void)
     {
         PRINT_HERE("%s", "");
-        auto& comp = get_current_components();
-        tim::configure<trace_bundle_t>(comp);
+        library_dyninst_init = true;
+        user_trace_bundle::reset();
+        auto env_result = tim::get_env<string_t>("TIMEMORY_TRACE_COMPONENTS", "");
+        std::set<int> comp_config;
+        for(auto& itr : get_current_components())
+            comp_config.insert(itr);
+        for(auto itr : tim::enumerate_components(tim::delimit(env_result)))
+            comp_config.insert(itr);
+        tim::configure<user_trace_bundle>(comp_config);
         tim::manager::use_exit_hook(false);
         tim::settings::destructor_report() = false;
         tim::set_env<std::string>("TIMEMORY_DESTRUCTOR_REPORT", "OFF");
+
+#if defined(_LINUX)
+        auto _cmdline = tim::read_command_line(tim::get_rusage_pid());
+        if(tim::settings::verbose() > 1 || tim::settings::debug())
+        {
+            for(size_t i = 0; i < _cmdline.size(); ++i)
+                std::cout << _cmdline.at(i) << " ";
+            std::cout << std::endl;
+        }
+
+        int    _argc = _cmdline.size();
+        char** _argv = new char*[_argc];
+        for(int i = 0; i < _argc; ++i)
+            _argv[i] = (char*) _cmdline.at(i).c_str();
+        timemory_init_library(_argc, _argv);
+        delete[] _argv;
+#endif
     }
 
     //----------------------------------------------------------------------------------//
 
     API void timemory_dyninst_finalize(void)
     {
+        if(!library_dyninst_init)
+            return;
         PRINT_HERE("%s", "");
+        library_dyninst_init = false;
+        user_trace_bundle::reset();
+        tim::settings::plot_output() = false;
+        tim::settings::enabled()     = false;
         timemory_finalize_library();
     }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_push_region(const char* name)
+    API void timemory_init_trace(uint64_t id)
     {
-        auto& region_map = get_region_map();
-        auto  idx        = timemory_get_begin_record(name);
-        region_map[name].push(idx);
+        PRINT_HERE("[id = %llu]", (long long unsigned) id);
+        if(!library_dyninst_init)
+            timemory_dyninst_init();
     }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_pop_region(const char* name)
+    API void timemory_fini_trace(void) { PRINT_HERE("%s", ""); }
+
+    //----------------------------------------------------------------------------------//
+
+    API void timemory_mpi_init_stub(int _rank)
     {
-        auto& region_map = get_region_map();
-        auto  itr        = region_map.find(name);
-        if(itr == region_map.end() || (itr != region_map.end() && itr->second.empty()))
-            fprintf(stderr, "Warning! region '%s' does not exist!\n", name);
-        else
-        {
-            uint64_t idx = itr->second.top();
-            timemory_end_record(idx);
-            itr->second.pop();
-        }
+        PRINT_HERE("[rank = %i]", _rank);
+        tim::consume_parameters(_rank);
     }
+
+    //----------------------------------------------------------------------------------//
+
+    API int timemory_get_rank(void) { return tim::dmp::rank(); }
 
     //==================================================================================//
     //

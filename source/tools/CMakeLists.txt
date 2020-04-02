@@ -125,13 +125,48 @@ endif()
 #
 if(TIMEMORY_USE_DYNINST)
 
+    file(GLOB_RECURSE EXCLUDE_SOURCE_FILES
+        ${PROJECT_SOURCE_DIR}/source/*.c
+        ${PROJECT_SOURCE_DIR}/source/*.cu
+        ${PROJECT_SOURCE_DIR}/source/*.cpp
+        ${PROJECT_SOURCE_DIR}/external/*.c
+        ${PROJECT_SOURCE_DIR}/external/*.C
+        ${PROJECT_SOURCE_DIR}/external/*.cu
+        ${PROJECT_SOURCE_DIR}/external/*.cc
+        ${PROJECT_SOURCE_DIR}/external/*.cxx
+        ${PROJECT_SOURCE_DIR}/external/*.cpp
+    )
+
+    foreach(_FILE ${EXCLUDE_SOURCE_FILES})
+        if(NOT "${_FILE}" MATCHES "/tests/" AND
+            NOT "${_FILE}" MATCHES "/test/" AND
+            NOT "${_FILE}" MATCHES "/unittests/" AND
+            NOT "${_FILE}" MATCHES "google-test" AND
+            NOT "${_FILE}" MATCHES "/example/" AND
+            NOT "${_FILE}" MATCHES "/examples/" AND
+            NOT "${_FILE}" MATCHES "/doc/" AND
+            NOT "${_FILE}" MATCHES "/docs/")
+            get_filename_component(_FILE "${_FILE}" NAME)
+            list(APPEND _EXCLUDE ${_FILE})
+        endif()
+    endforeach()
+    list(REMOVE_DUPLICATES _EXCLUDE)
+    set(EXCLUDE_SOURCE_FILES ${_EXCLUDE})
+    unset(_EXCLUDE)
+    string(REPLACE ";" "|" EXCLUDE_SOURCE_FILES "${EXCLUDE_SOURCE_FILES}")
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp.in
+        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp @ONLY)
+
     find_library(DYNINST_API_RT dyninstAPI_RT
         HINTS ${Dyninst_DIR}
         PATHS ${Dyninst_DIR}
         PATH_SUFFIXES lib)
 
-    add_executable(timemory-run timemory-run.cpp)
+    add_executable(timemory-run timemory-run.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp)
 
+    target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+    
     if(DYNINST_API_RT)
         target_compile_definitions(timemory-run PRIVATE
             DYNINST_API_RT="${DYNINST_API_RT}")
@@ -139,11 +174,13 @@ if(TIMEMORY_USE_DYNINST)
 
     target_link_libraries(timemory-run PRIVATE
         timemory-compile-options
-        timemory-arch
+        # timemory-arch
         timemory-vector
         timemory-headers
         timemory-dyninst
-        timemory-cxx-shared)
+        # timemory-roofline-options
+        # timemory-cxx-shared
+    )
 
     set_target_properties(timemory-run PROPERTIES
         INSTALL_RPATH_USE_LINK_PATH ON

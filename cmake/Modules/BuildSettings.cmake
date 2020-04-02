@@ -113,6 +113,12 @@ if(TIMEMORY_BUILD_DEVELOPER)
     add_target_flag_if_avail(timemory-develop-options "-Wshadow" "-Wextra")
 endif()
 
+add_interface_library(timemory-hidden-visibility)
+add_target_flag_if_avail(timemory-hidden-visibility "-fvisibility=hidden")
+if(NOT cxx_timemory_hidden_visibility_fvisibility_hidden)
+    add_disabled_interface(timemory-hidden-visibility)
+endif()
+
 #----------------------------------------------------------------------------------------#
 # developer build flags
 #

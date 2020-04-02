@@ -41,6 +41,7 @@
 #include <cstdlib>
 #include <cstring>
 // I/O
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -378,6 +379,45 @@ delimit(std::string _str, const std::string& _delims,
         }
     }
     return _list;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+inline std::vector<std::string>
+read_command_line(pid_t _pid)
+{
+    std::vector<std::string> _cmdline;
+#if defined(_LINUX)
+    std::stringstream fcmdline;
+    fcmdline << "/proc/" << _pid << "/cmdline";
+    std::ifstream ifs(fcmdline.str().c_str());
+    if(ifs)
+    {
+        char        cstr;
+        std::string sarg;
+        while(!ifs.eof())
+        {
+            ifs >> cstr;
+            if(!ifs.eof())
+            {
+                if(cstr != '\0')
+                {
+                    sarg += cstr;
+                }
+                else
+                {
+                    _cmdline.push_back(sarg);
+                    sarg = "";
+                }
+            }
+        }
+        ifs.close();
+    }
+
+#else
+    consume_parameters(_pid);
+#endif
+    return _cmdline;
 }
 
 //======================================================================================//

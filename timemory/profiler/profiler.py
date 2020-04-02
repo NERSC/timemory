@@ -139,6 +139,7 @@ class profile():
     """
     Provides decorators and context-manager for the timemory profilers
     """
+    global _default_functor
 
     # static variable
     _conditional_functor = _default_functor
@@ -147,7 +148,21 @@ class profile():
     #
     @staticmethod
     def condition(functor):
-        _conditional_functor = functor
+        profile._conditional_functor = functor
+
+    #------------------------------------------------------------------------------------#
+    #
+    @staticmethod
+    def is_enabled():
+        ret = profile._conditional_functor()
+        try:
+            if ret is True:
+                return True
+            elif ret is False:
+                return False
+        except:
+            pass
+        return False
 
     #------------------------------------------------------------------------------------#
     #
@@ -164,7 +179,7 @@ class profile():
         global _components
 
         self._original_profiler_function = sys.getprofile()
-        self._use = (not _is_running and _conditional_functor())
+        self._use = (not _is_running and profile.is_enabled() is True)
         self._flat_profile = settings.flat_profile
         self.components = components + _components.split(",")
         if len(self.components) == 0:

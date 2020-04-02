@@ -60,11 +60,11 @@ int main(int argc, char** argv)
 
     // setenv when available
 #if(_POSIX_C_SOURCE >= 200112L) || defined(_BSD_SOURCE) || defined(_UNIX)
-    setenv("TIMEMORY_TIMING_UNITS", "us", 0);
+    setenv("TIMEMORY_TIMING_UNITS", "ms", 0);
     setenv("TIMEMORY_MEMORY_UNITS", "kb", 0);
-    setenv("TIMEMORY_TIMING_WIDTH", "12", 0);
+    setenv("TIMEMORY_TIMING_WIDTH", "14", 0);
     setenv("TIMEMORY_MEMORY_WIDTH", "12", 0);
-    setenv("TIMEMORY_TIMING_PRECISION", "3", 0);
+    setenv("TIMEMORY_TIMING_PRECISION", "6", 0);
     setenv("TIMEMORY_MEMORY_PRECISION", "3", 0);
     setenv("TIMEMORY_TIMING_SCIENTIFIC", "OFF", 0);
     setenv("TIMEMORY_MEMORY_SCIENTIFIC", "OFF", 0);
@@ -73,8 +73,8 @@ int main(int argc, char** argv)
     //
     //  Dummy functions when USE_TIMEMORY not defined
     //
+    tim::mpi::initialize(argc, argv);
     tim::timemory_init(argc, argv);
-
     //
     //  Provide some work
     //
@@ -124,6 +124,7 @@ int main(int argc, char** argv)
     main.stop();
 
     tim::timemory_finalize();
+    tim::mpi::finalize();
     status();
 
     return EXIT_SUCCESS;

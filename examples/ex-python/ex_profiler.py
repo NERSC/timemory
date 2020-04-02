@@ -16,7 +16,7 @@ def run_profile(nfib):
 
 
 if __name__ == "__main__":
-    nfib = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+    nfib = int(sys.argv[1]) if len(sys.argv) > 1 else 23
     ans = run_profile(nfib)
     print("Answer = {}".format(ans))
     timemory.finalize()

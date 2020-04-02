@@ -58,7 +58,7 @@
 #if !defined(TIMEMORY_STATIC_ACCESSOR)
 #    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
     public:                                                                              \
-        static TYPE& FUNC() { return instance().m__##FUNC; }                             \
+        static TYPE& FUNC() { return instance()->m__##FUNC; }                            \
                                                                                          \
     private:                                                                             \
         TYPE m__##FUNC = INIT;
@@ -96,7 +96,7 @@
 #if !defined(TIMEMORY_MEMBER_STATIC_ACCESSOR)
 #    define TIMEMORY_MEMBER_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                   \
     public:                                                                              \
-        static TYPE& FUNC() { return instance().m__##FUNC; }                             \
+        static TYPE& FUNC() { return instance()->m__##FUNC; }                            \
                                                                                          \
     private:                                                                             \
         TYPE generate__##FUNC()                                                          \
@@ -139,7 +139,8 @@
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \
             {                                                                            \
-            template settings& settings::instance<API>();                                \
+            template std::shared_ptr<settings> settings::shared_instance<API>();         \
+            template settings*                 settings::instance<API>();                \
             }
 //
 #    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
@@ -147,7 +148,8 @@
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \
             {                                                                            \
-            extern template settings& settings::instance<API>();                         \
+            extern template std::shared_ptr<settings> settings::shared_instance<API>();  \
+            extern template settings*                 settings::instance<API>();         \
             }
 //
 #    else
