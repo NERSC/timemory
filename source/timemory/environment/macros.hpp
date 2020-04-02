@@ -29,8 +29,8 @@
 
 #pragma once
 
-#include "timemory/utility/macros.hpp"
 #include "timemory/dll.hpp"
+#include "timemory/utility/macros.hpp"
 
 //======================================================================================//
 //

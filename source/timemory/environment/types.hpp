@@ -56,7 +56,7 @@ get_env(const std::string& env_id, Tp _default = Tp());
 //
 template <>
 TIMEMORY_ENVIRONMENT_DLL std::string
-get_env(const std::string& env_id, std::string _default);
+                         get_env(const std::string& env_id, std::string _default);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -74,7 +74,7 @@ load_env(const std::string& env_id, Tp _default = Tp());
 //
 template <>
 TIMEMORY_ENVIRONMENT_DLL std::string
-load_env(const std::string& env_id, std::string _default);
+                         load_env(const std::string& env_id, std::string _default);
 //
 //--------------------------------------------------------------------------------------//
 //

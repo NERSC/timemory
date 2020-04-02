@@ -257,8 +257,9 @@ struct component_value_type<T, false>
 template <typename T>
 struct collects_data
 {
-    using type       = T;
-    using value_type = typename component_value_type<T, is_available<T>::value>::value_type;
+    using type = T;
+    using value_type =
+        typename component_value_type<T, is_available<T>::value>::value_type;
     static constexpr bool value =
         (!std::is_same<value_type, void>::value &&
          !std::is_same<value_type, void*>::value &&

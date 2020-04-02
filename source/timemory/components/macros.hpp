@@ -313,9 +313,11 @@
 #        define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                                         \
             namespace tim                                                                                          \
             {                                                                                                      \
-            extern template class TIMEMORY_COMPONENT_DLL impl::storage<TYPE, implements_storage<TYPE>::value>;                            \
-            extern template class TIMEMORY_COMPONENT_DLL storage<TYPE, typename TYPE::value_type>;                                        \
-            extern template class TIMEMORY_COMPONENT_DLL singleton<                                                                       \
+            extern template class TIMEMORY_COMPONENT_DLL                                                           \
+                impl::storage<TYPE, implements_storage<TYPE>::value>;                                              \
+            extern template class TIMEMORY_COMPONENT_DLL                                                           \
+                                                         storage<TYPE, typename TYPE::value_type>;                 \
+            extern template class TIMEMORY_COMPONENT_DLL singleton<                                                \
                 impl::storage<TYPE, implements_storage<TYPE>::value>,                                              \
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                              \
                                 impl::storage_deleter<impl::storage<                                               \
@@ -332,9 +334,11 @@
 #        define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                                              \
             namespace tim                                                                                   \
             {                                                                                               \
-            template class TIMEMORY_COMPONENT_DLL impl::storage<TYPE, implements_storage<TYPE>::value>;                            \
-            template class TIMEMORY_COMPONENT_DLL storage<TYPE, typename TYPE::value_type>;                                        \
-            template class TIMEMORY_COMPONENT_DLL singleton<                                                                       \
+            template class TIMEMORY_COMPONENT_DLL                                                           \
+                impl::storage<TYPE, implements_storage<TYPE>::value>;                                       \
+            template class TIMEMORY_COMPONENT_DLL                                                           \
+                                                  storage<TYPE, typename TYPE::value_type>;                 \
+            template class TIMEMORY_COMPONENT_DLL singleton<                                                \
                 impl::storage<TYPE, implements_storage<TYPE>::value>,                                       \
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                       \
                                 impl::storage_deleter<impl::storage<                                        \
@@ -383,59 +387,71 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_DECLARE_EXTERN_OPERATIONS)
-#        define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)             \
-            namespace tim                                                                \
-            {                                                                            \
-            namespace operation                                                          \
-            {                                                                            \
-            extern template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;                         \
-            extern template struct TIMEMORY_COMPONENT_DLL construct<COMPONENT_NAME>;                            \
-            extern template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;                           \
-            extern template struct TIMEMORY_COMPONENT_DLL set_flat_profile<COMPONENT_NAME>;                     \
-            extern template struct TIMEMORY_COMPONENT_DLL set_timeline_profile<COMPONENT_NAME>;                 \
-            extern template struct TIMEMORY_COMPONENT_DLL insert_node<COMPONENT_NAME>;                          \
-            extern template struct TIMEMORY_COMPONENT_DLL pop_node<COMPONENT_NAME>;                             \
-            extern template struct TIMEMORY_COMPONENT_DLL record<COMPONENT_NAME>;                               \
-            extern template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;                                \
-            extern template struct TIMEMORY_COMPONENT_DLL measure<COMPONENT_NAME>;                              \
-            extern template struct TIMEMORY_COMPONENT_DLL sample<COMPONENT_NAME>;                               \
-            extern template struct TIMEMORY_COMPONENT_DLL start<COMPONENT_NAME>;                                \
-            extern template struct TIMEMORY_COMPONENT_DLL priority_start<COMPONENT_NAME>;                       \
-            extern template struct TIMEMORY_COMPONENT_DLL standard_start<COMPONENT_NAME>;                       \
-            extern template struct TIMEMORY_COMPONENT_DLL delayed_start<COMPONENT_NAME>;                        \
-            extern template struct TIMEMORY_COMPONENT_DLL stop<COMPONENT_NAME>;                                 \
-            extern template struct TIMEMORY_COMPONENT_DLL priority_stop<COMPONENT_NAME>;                        \
-            extern template struct TIMEMORY_COMPONENT_DLL standard_stop<COMPONENT_NAME>;                        \
-            extern template struct TIMEMORY_COMPONENT_DLL delayed_stop<COMPONENT_NAME>;                         \
-            extern template struct TIMEMORY_COMPONENT_DLL mark_begin<COMPONENT_NAME>;                           \
-            extern template struct TIMEMORY_COMPONENT_DLL mark_end<COMPONENT_NAME>;                             \
-            extern template struct TIMEMORY_COMPONENT_DLL store<COMPONENT_NAME>;                                \
-            extern template struct TIMEMORY_COMPONENT_DLL audit<COMPONENT_NAME>;                                \
-            extern template struct TIMEMORY_COMPONENT_DLL plus<COMPONENT_NAME>;                                 \
-            extern template struct TIMEMORY_COMPONENT_DLL minus<COMPONENT_NAME>;                                \
-            extern template struct TIMEMORY_COMPONENT_DLL multiply<COMPONENT_NAME>;                             \
-            extern template struct TIMEMORY_COMPONENT_DLL divide<COMPONENT_NAME>;                               \
-            extern template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;                                  \
-            extern template struct TIMEMORY_COMPONENT_DLL base_printer<COMPONENT_NAME>;                         \
-            extern template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;                                \
-            extern template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;                         \
-            extern template struct TIMEMORY_COMPONENT_DLL print_statistics<COMPONENT_NAME>;                     \
-            extern template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;                        \
-            extern template struct TIMEMORY_COMPONENT_DLL add_secondary<COMPONENT_NAME>;                        \
-            extern template struct TIMEMORY_COMPONENT_DLL add_statistics<COMPONENT_NAME>;                       \
-            extern template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;                        \
-            extern template struct TIMEMORY_COMPONENT_DLL echo_measurement<                                     \
-                COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;             \
-            extern template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;                                 \
-            extern template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;                             \
-            extern template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;                               \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::get<COMPONENT_NAME, HAS_DATA>;              \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;          \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::upc_get<COMPONENT_NAME, HAS_DATA>;          \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;          \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::print<COMPONENT_NAME, HAS_DATA>;            \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::merge<COMPONENT_NAME, HAS_DATA>;            \
-            }                                                                            \
+#        define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                    \
+            namespace tim                                                                       \
+            {                                                                                   \
+            namespace operation                                                                 \
+            {                                                                                   \
+            extern template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;         \
+            extern template struct TIMEMORY_COMPONENT_DLL construct<COMPONENT_NAME>;            \
+            extern template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;           \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                set_flat_profile<COMPONENT_NAME>;                                               \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                                                          set_timeline_profile<COMPONENT_NAME>; \
+            extern template struct TIMEMORY_COMPONENT_DLL insert_node<COMPONENT_NAME>;          \
+            extern template struct TIMEMORY_COMPONENT_DLL pop_node<COMPONENT_NAME>;             \
+            extern template struct TIMEMORY_COMPONENT_DLL record<COMPONENT_NAME>;               \
+            extern template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;                \
+            extern template struct TIMEMORY_COMPONENT_DLL measure<COMPONENT_NAME>;              \
+            extern template struct TIMEMORY_COMPONENT_DLL sample<COMPONENT_NAME>;               \
+            extern template struct TIMEMORY_COMPONENT_DLL start<COMPONENT_NAME>;                \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                priority_start<COMPONENT_NAME>;                                                 \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                                                          standard_start<COMPONENT_NAME>;       \
+            extern template struct TIMEMORY_COMPONENT_DLL delayed_start<COMPONENT_NAME>;        \
+            extern template struct TIMEMORY_COMPONENT_DLL stop<COMPONENT_NAME>;                 \
+            extern template struct TIMEMORY_COMPONENT_DLL priority_stop<COMPONENT_NAME>;        \
+            extern template struct TIMEMORY_COMPONENT_DLL standard_stop<COMPONENT_NAME>;        \
+            extern template struct TIMEMORY_COMPONENT_DLL delayed_stop<COMPONENT_NAME>;         \
+            extern template struct TIMEMORY_COMPONENT_DLL mark_begin<COMPONENT_NAME>;           \
+            extern template struct TIMEMORY_COMPONENT_DLL mark_end<COMPONENT_NAME>;             \
+            extern template struct TIMEMORY_COMPONENT_DLL store<COMPONENT_NAME>;                \
+            extern template struct TIMEMORY_COMPONENT_DLL audit<COMPONENT_NAME>;                \
+            extern template struct TIMEMORY_COMPONENT_DLL plus<COMPONENT_NAME>;                 \
+            extern template struct TIMEMORY_COMPONENT_DLL minus<COMPONENT_NAME>;                \
+            extern template struct TIMEMORY_COMPONENT_DLL multiply<COMPONENT_NAME>;             \
+            extern template struct TIMEMORY_COMPONENT_DLL divide<COMPONENT_NAME>;               \
+            extern template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;                  \
+            extern template struct TIMEMORY_COMPONENT_DLL base_printer<COMPONENT_NAME>;         \
+            extern template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;                \
+            extern template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;         \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                                                          print_statistics<COMPONENT_NAME>;     \
+            extern template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;        \
+            extern template struct TIMEMORY_COMPONENT_DLL add_secondary<COMPONENT_NAME>;        \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                                                          add_statistics<COMPONENT_NAME>;       \
+            extern template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;        \
+            extern template struct TIMEMORY_COMPONENT_DLL echo_measurement<                     \
+                COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                    \
+            extern template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;                 \
+            extern template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;             \
+            extern template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;               \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::get<COMPONENT_NAME, HAS_DATA>;                                        \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;                                    \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                                    \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;                                    \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::print<COMPONENT_NAME, HAS_DATA>;                                      \
+            extern template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::merge<COMPONENT_NAME, HAS_DATA>;                                      \
+            }                                                                                   \
             }
 #    endif
 //
@@ -447,53 +463,59 @@
             {                                                                            \
             namespace operation                                                          \
             {                                                                            \
-            template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;                                \
-            template struct TIMEMORY_COMPONENT_DLL construct<COMPONENT_NAME>;                                   \
-            template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;                                  \
-            template struct TIMEMORY_COMPONENT_DLL set_flat_profile<COMPONENT_NAME>;                            \
-            template struct TIMEMORY_COMPONENT_DLL set_timeline_profile<COMPONENT_NAME>;                        \
-            template struct TIMEMORY_COMPONENT_DLL insert_node<COMPONENT_NAME>;                                 \
-            template struct TIMEMORY_COMPONENT_DLL pop_node<COMPONENT_NAME>;                                    \
-            template struct TIMEMORY_COMPONENT_DLL record<COMPONENT_NAME>;                                      \
-            template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;                                       \
-            template struct TIMEMORY_COMPONENT_DLL measure<COMPONENT_NAME>;                                     \
-            template struct TIMEMORY_COMPONENT_DLL sample<COMPONENT_NAME>;                                      \
-            template struct TIMEMORY_COMPONENT_DLL start<COMPONENT_NAME>;                                       \
-            template struct TIMEMORY_COMPONENT_DLL priority_start<COMPONENT_NAME>;                              \
-            template struct TIMEMORY_COMPONENT_DLL standard_start<COMPONENT_NAME>;                              \
-            template struct TIMEMORY_COMPONENT_DLL delayed_start<COMPONENT_NAME>;                               \
-            template struct TIMEMORY_COMPONENT_DLL stop<COMPONENT_NAME>;                                        \
-            template struct TIMEMORY_COMPONENT_DLL priority_stop<COMPONENT_NAME>;                               \
-            template struct TIMEMORY_COMPONENT_DLL standard_stop<COMPONENT_NAME>;                               \
-            template struct TIMEMORY_COMPONENT_DLL delayed_stop<COMPONENT_NAME>;                                \
-            template struct TIMEMORY_COMPONENT_DLL mark_begin<COMPONENT_NAME>;                                  \
-            template struct TIMEMORY_COMPONENT_DLL mark_end<COMPONENT_NAME>;                                    \
-            template struct TIMEMORY_COMPONENT_DLL store<COMPONENT_NAME>;                                       \
-            template struct TIMEMORY_COMPONENT_DLL audit<COMPONENT_NAME>;                                       \
-            template struct TIMEMORY_COMPONENT_DLL plus<COMPONENT_NAME>;                                        \
-            template struct TIMEMORY_COMPONENT_DLL minus<COMPONENT_NAME>;                                       \
-            template struct TIMEMORY_COMPONENT_DLL multiply<COMPONENT_NAME>;                                    \
-            template struct TIMEMORY_COMPONENT_DLL divide<COMPONENT_NAME>;                                      \
-            template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;                                         \
-            template struct TIMEMORY_COMPONENT_DLL base_printer<COMPONENT_NAME>;                                \
-            template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;                                       \
-            template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;                                \
-            template struct TIMEMORY_COMPONENT_DLL print_statistics<COMPONENT_NAME>;                            \
-            template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;                               \
-            template struct TIMEMORY_COMPONENT_DLL add_secondary<COMPONENT_NAME>;                               \
-            template struct TIMEMORY_COMPONENT_DLL add_statistics<COMPONENT_NAME>;                              \
-            template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;                               \
-            template struct TIMEMORY_COMPONENT_DLL echo_measurement<                                            \
+            template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;         \
+            template struct TIMEMORY_COMPONENT_DLL construct<COMPONENT_NAME>;            \
+            template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;           \
+            template struct TIMEMORY_COMPONENT_DLL set_flat_profile<COMPONENT_NAME>;     \
+            template struct TIMEMORY_COMPONENT_DLL set_timeline_profile<COMPONENT_NAME>; \
+            template struct TIMEMORY_COMPONENT_DLL insert_node<COMPONENT_NAME>;          \
+            template struct TIMEMORY_COMPONENT_DLL pop_node<COMPONENT_NAME>;             \
+            template struct TIMEMORY_COMPONENT_DLL record<COMPONENT_NAME>;               \
+            template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;                \
+            template struct TIMEMORY_COMPONENT_DLL measure<COMPONENT_NAME>;              \
+            template struct TIMEMORY_COMPONENT_DLL sample<COMPONENT_NAME>;               \
+            template struct TIMEMORY_COMPONENT_DLL start<COMPONENT_NAME>;                \
+            template struct TIMEMORY_COMPONENT_DLL priority_start<COMPONENT_NAME>;       \
+            template struct TIMEMORY_COMPONENT_DLL standard_start<COMPONENT_NAME>;       \
+            template struct TIMEMORY_COMPONENT_DLL delayed_start<COMPONENT_NAME>;        \
+            template struct TIMEMORY_COMPONENT_DLL stop<COMPONENT_NAME>;                 \
+            template struct TIMEMORY_COMPONENT_DLL priority_stop<COMPONENT_NAME>;        \
+            template struct TIMEMORY_COMPONENT_DLL standard_stop<COMPONENT_NAME>;        \
+            template struct TIMEMORY_COMPONENT_DLL delayed_stop<COMPONENT_NAME>;         \
+            template struct TIMEMORY_COMPONENT_DLL mark_begin<COMPONENT_NAME>;           \
+            template struct TIMEMORY_COMPONENT_DLL mark_end<COMPONENT_NAME>;             \
+            template struct TIMEMORY_COMPONENT_DLL store<COMPONENT_NAME>;                \
+            template struct TIMEMORY_COMPONENT_DLL audit<COMPONENT_NAME>;                \
+            template struct TIMEMORY_COMPONENT_DLL plus<COMPONENT_NAME>;                 \
+            template struct TIMEMORY_COMPONENT_DLL minus<COMPONENT_NAME>;                \
+            template struct TIMEMORY_COMPONENT_DLL multiply<COMPONENT_NAME>;             \
+            template struct TIMEMORY_COMPONENT_DLL divide<COMPONENT_NAME>;               \
+            template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;                  \
+            template struct TIMEMORY_COMPONENT_DLL base_printer<COMPONENT_NAME>;         \
+            template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;                \
+            template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;         \
+            template struct TIMEMORY_COMPONENT_DLL print_statistics<COMPONENT_NAME>;     \
+            template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;        \
+            template struct TIMEMORY_COMPONENT_DLL add_secondary<COMPONENT_NAME>;        \
+            template struct TIMEMORY_COMPONENT_DLL add_statistics<COMPONENT_NAME>;       \
+            template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;        \
+            template struct TIMEMORY_COMPONENT_DLL echo_measurement<                     \
                 COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;             \
-            template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;                                        \
-            template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;                                    \
-            template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;                                      \
-            template struct TIMEMORY_COMPONENT_DLL finalize::get<COMPONENT_NAME, HAS_DATA>;                     \
-            template struct TIMEMORY_COMPONENT_DLL finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;                 \
-            template struct TIMEMORY_COMPONENT_DLL finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                 \
-            template struct TIMEMORY_COMPONENT_DLL finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;                 \
-            template struct TIMEMORY_COMPONENT_DLL finalize::print<COMPONENT_NAME, HAS_DATA>;                   \
-            template struct TIMEMORY_COMPONENT_DLL finalize::merge<COMPONENT_NAME, HAS_DATA>;                   \
+            template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;                 \
+            template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;             \
+            template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;               \
+            template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::get<COMPONENT_NAME, HAS_DATA>;                                 \
+            template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::mpi_get<COMPONENT_NAME, HAS_DATA>;                             \
+            template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::upc_get<COMPONENT_NAME, HAS_DATA>;                             \
+            template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::dmp_get<COMPONENT_NAME, HAS_DATA>;                             \
+            template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::print<COMPONENT_NAME, HAS_DATA>;                               \
+            template struct TIMEMORY_COMPONENT_DLL                                       \
+                finalize::merge<COMPONENT_NAME, HAS_DATA>;                               \
             }                                                                            \
             }
 #    endif
@@ -543,7 +565,8 @@
 //--------------------------------------------------------------------------------------//
 //
 #        if !defined(TIMEMORY_EXTERN_TEMPLATE)
-#            define TIMEMORY_EXTERN_TEMPLATE(...) template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
+#            define TIMEMORY_EXTERN_TEMPLATE(...)                                        \
+                template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
 #        endif
 //
 //--------------------------------------------------------------------------------------//
@@ -567,7 +590,8 @@
 //--------------------------------------------------------------------------------------//
 //
 #        if !defined(TIMEMORY_EXTERN_TEMPLATE)
-#            define TIMEMORY_EXTERN_TEMPLATE(...) extern template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
+#            define TIMEMORY_EXTERN_TEMPLATE(...)                                        \
+                extern template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
 #        endif
 //
 //--------------------------------------------------------------------------------------//

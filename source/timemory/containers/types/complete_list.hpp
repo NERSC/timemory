@@ -33,9 +33,9 @@
 //
 #include "timemory/api.hpp"
 //
+#include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
-#include "timemory/containers/declaration.hpp"
 //
 #include "timemory/components/types.hpp"
 //

@@ -31,9 +31,9 @@
 
 //======================================================================================//
 //
+#include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
-#include "timemory/containers/declaration.hpp"
 //
 #include "timemory/manager/extern.hpp"
 #include "timemory/storage/extern.hpp"

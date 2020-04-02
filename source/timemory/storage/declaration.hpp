@@ -810,11 +810,13 @@ public:
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-class storage<Tp, type_list<>> 
-: public storage<Tp, conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>>
+class storage<Tp, type_list<>>
+: public storage<
+      Tp, conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>>
 {
 public:
-    using Vp = conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>;
+    using Vp =
+        conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>;
     static constexpr bool implements_storage_v = implements_storage<Tp, Vp>::value;
     using this_type                            = storage<Tp, Vp>;
     using base_type                            = impl::storage<Tp, implements_storage_v>;

@@ -30,7 +30,6 @@
 //
 //======================================================================================//
 
-
 #if defined(_WIN32) || defined(_WIN64)
 #    if !defined(_WINDOWS)
 #        define _WINDOWS
@@ -59,19 +58,19 @@
 #endif
 
 #if defined(_WINDOWS) && (defined(TIMEMORY_DLL_EXPORT) || defined(TIMEMORY_DLL_IMPORT))
-#   if !defined(tim_dll_export)
-#       define tim_dll_export __declspec(dllexport)
-#   endif
-#   if !defined(tim_dll_import)
-#       define tim_dll_import __declspec(dllimport)
-#   endif
+#    if !defined(tim_dll_export)
+#        define tim_dll_export __declspec(dllexport)
+#    endif
+#    if !defined(tim_dll_import)
+#        define tim_dll_import __declspec(dllimport)
+#    endif
 #else
-#   if !defined(tim_dll_export)
-#       define tim_dll_export
-#   endif
-#   if !defined(tim_dll_import)
-#       define tim_dll_import
-#   endif
+#    if !defined(tim_dll_export)
+#        define tim_dll_export
+#    endif
+#    if !defined(tim_dll_import)
+#        define tim_dll_import
+#    endif
 #endif
 
 //======================================================================================//

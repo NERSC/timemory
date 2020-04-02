@@ -31,10 +31,10 @@
 
 #include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/dll.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/dll.hpp"
 
 //======================================================================================//
 

@@ -532,18 +532,18 @@ manager::filtered_get_storage<Types...>::size(pointer_t _manager)
 extern "C"
 {
 #if !defined(_WINDOWS)
-#if(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)) &&             \
-    !defined(TIMEMORY_MANAGER_SOURCE)
+#    if(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)) &&         \
+        !defined(TIMEMORY_MANAGER_SOURCE)
 
-    extern ::tim::manager*       timemory_manager_master_instance();
+    extern ::tim::manager* timemory_manager_master_instance();
     extern void            timemory_library_constructor() __library_ctor__;
 
-#else
+#    else
 
-    ::tim::manager*       timemory_manager_master_instance();
+    ::tim::manager* timemory_manager_master_instance();
     void            timemory_library_constructor() __library_ctor__;
 
-#endif
+#    endif
 #endif
 }
 //

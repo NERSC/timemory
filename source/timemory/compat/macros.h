@@ -56,7 +56,6 @@
 
 #endif
 
-
 #if !defined(tim_cdll)
 #    if defined(_WINDOWS)
 #        if defined(TIMEMORY_CDLL_EXPORT)

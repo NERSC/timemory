@@ -617,9 +617,9 @@ hash_bytes(const void* ptr, size_t len, size_t seed)
 
     // Remove the bytes not divisible by the sizeof(size_t).  This
     // allows the main loop to process the data as 64-bit integers.
-    const size_t len_aligned = len & ~(size_t) 0x7;
-    const char* const end = buf + len_aligned;
-    size_t hash = seed ^ (len * mul);
+    const size_t      len_aligned = len & ~(size_t) 0x7;
+    const char* const end         = buf + len_aligned;
+    size_t            hash        = seed ^ (len * mul);
     for(const char* p = buf; p != end; p += 8)
     {
         const size_t data = shift_mix(unaligned_load(p) * mul) * mul;

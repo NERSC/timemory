@@ -42,7 +42,6 @@
 
 #include "timemory/api.hpp"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/storage/types.hpp"
 #include "timemory/utility/types.hpp"
 
 //======================================================================================//

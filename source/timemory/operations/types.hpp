@@ -33,6 +33,7 @@
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/macros.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <functional>
