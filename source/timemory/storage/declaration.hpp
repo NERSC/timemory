@@ -809,6 +809,29 @@ public:
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Tp>
+class storage<Tp, type_list<>> 
+: public storage<Tp, conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>>
+{
+public:
+    using Vp = conditional_t<(trait::is_available<Tp>::value), typename Tp::value_type, void>;
+    static constexpr bool implements_storage_v = implements_storage<Tp, Vp>::value;
+    using this_type                            = storage<Tp, Vp>;
+    using base_type                            = impl::storage<Tp, implements_storage_v>;
+    using deleter_t                            = impl::storage_deleter<base_type>;
+    using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
+    using singleton_t                          = singleton<base_type, smart_pointer>;
+    using pointer                              = typename singleton_t::pointer;
+    using auto_lock_t                          = typename singleton_t::auto_lock_t;
+    using iterator                             = typename base_type::iterator;
+    using const_iterator                       = typename base_type::const_iterator;
+
+    friend struct impl::storage_deleter<this_type>;
+    friend class manager;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace impl
 {
 //

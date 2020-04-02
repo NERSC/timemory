@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 //======================================================================================//
 //
 // Define macros for hash
@@ -37,11 +39,11 @@
 //
 #if defined(TIMEMORY_HASH_SOURCE)
 //
-#    define TIMEMORY_HASH_LINKAGE(...) __VA_ARGS__
+#    define TIMEMORY_HASH_LINKAGE(...) tim_dll_export __VA_ARGS__
 //
 #elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_HASH_EXTERN)
 //
-#    define TIMEMORY_HASH_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_HASH_LINKAGE(...) extern tim_dll_import __VA_ARGS__
 //
 #else
 //
@@ -51,3 +53,12 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_HASH_SOURCE)
+#    define TIMEMORY_HASH_DLL tim_dll_export
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_HASH_EXTERN)
+#    define TIMEMORY_HASH_DLL tim_dll_import
+#else
+#    define TIMEMORY_HASH_DLL
+#endif
+//
+//--------------------------------------------------------------------------------------//

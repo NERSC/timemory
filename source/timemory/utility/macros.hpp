@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
@@ -64,6 +66,7 @@
 #    if !defined(_WINDOWS)
 #        define _WINDOWS
 #    endif
+
 //--------------------------------------------------------------------------------------//
 
 #elif defined(__APPLE__) || defined(__MACH__)
@@ -73,6 +76,7 @@
 #    if !defined(_UNIX)
 #        define _UNIX
 #    endif
+
 //--------------------------------------------------------------------------------------//
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
@@ -82,6 +86,7 @@
 #    if !defined(_UNIX)
 #        define _UNIX
 #    endif
+
 //--------------------------------------------------------------------------------------//
 
 #elif defined(__unix__) || defined(__unix) || defined(unix)
@@ -185,50 +190,14 @@
 
 //======================================================================================//
 //
-//      GLOBAL LINKING
-//
-//======================================================================================//
-
-// Define macros for WIN32 for importing/exporting external symbols to DLLs
-#if !defined(tim_dll)
-#    if defined(_WINDOWS)
-#        if defined(TIMEMORY_DLL_EXPORT)
-#            define tim_dll __declspec(dllexport)
-#        elif defined(TIMEMORY_DLL_IMPORT)
-#            define tim_dll __declspec(dllimport)
-#        else
-#            define tim_dll
-#        endif
-#    else
-#        define tim_dll
-#    endif
-#endif
-
-//======================================================================================//
-//
 //      WINDOWS WARNINGS
 //
 //======================================================================================//
 
 #if defined(_WINDOWS)
-#    pragma warning(disable : 4786)   // ID truncated to '255' char in debug info
-#    pragma warning(disable : 4068)   // unknown pragma
-#    pragma warning(disable : 4003)   // not enough actual params
-#    pragma warning(disable : 4244)   // possible loss of data
-#    pragma warning(disable : 4146)   // unsigned
-#    pragma warning(disable : 4129)   // unrecognized char escape
-#    pragma warning(disable : 4996)   // function may be unsafe
-#    pragma warning(disable : 4267)   // possible loss of data
-#    pragma warning(disable : 4700)   // uninitialized local variable used
-#    pragma warning(disable : 4217)   // locally defined symbol
-#    pragma warning(disable : 4251)   // needs to have dll-interface to be used
-#    pragma warning(disable : 4522)   // multiple assignment operators specified
-#    pragma warning(disable : 26495)  // Always initialize member variable (cereal issue)
-
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
-
 #    include <Windows.h>
 #endif
 

@@ -67,7 +67,7 @@ namespace finalize
 //
 //--------------------------------------------------------------------------------------//
 //
-void
+TIMEMORY_OPERATIONS_LINKAGE(void)
 base::print::print_plot(const std::string& outfname, const std::string suffix)
 {
     if(node_rank == 0)
@@ -83,7 +83,7 @@ base::print::print_plot(const std::string& outfname, const std::string suffix)
 //
 //--------------------------------------------------------------------------------------//
 //
-void
+TIMEMORY_OPERATIONS_LINKAGE(void)
 base::print::write(std::ostream& os, stream_type stream)
 {
     if(stream)
@@ -92,7 +92,7 @@ base::print::write(std::ostream& os, stream_type stream)
 //
 //--------------------------------------------------------------------------------------//
 //
-void
+TIMEMORY_OPERATIONS_LINKAGE(void)
 base::print::print_cout(stream_type stream)
 {
     printf("\n");
@@ -102,7 +102,7 @@ base::print::print_cout(stream_type stream)
 //
 //--------------------------------------------------------------------------------------//
 //
-void
+TIMEMORY_OPERATIONS_LINKAGE(void)
 base::print::print_text(const std::string& outfname, stream_type stream)
 {
     if(outfname.length() > 0 && stream)

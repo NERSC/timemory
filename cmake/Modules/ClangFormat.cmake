@@ -7,6 +7,19 @@ include_guard(DIRECTORY)
 #
 ##########################################################################################
 
+set(_FMT ON)
+# Visual Studio GUI reports "errors" occasionally
+if(WIN32)
+    set(_FMT OFF)
+endif()
+
+option(TIMEMORY_FORMAT_TARGET "Enable a clang-format target" ${_FMT})
+mark_as_advanced(TIMEMORY_FORMAT_TARGET)
+
+if(NOT TIMEMORY_FORMAT_TARGET)
+    return()
+endif()
+
 # prefer clang-format 6.0
 find_program(CLANG_FORMATTER
     NAMES

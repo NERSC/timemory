@@ -245,7 +245,6 @@ struct component_value_type<T, true>
         !(std::is_same<type_list<>, typename data<T>::value_type>::value);
     using value_type = std::conditional_t<(decl_value_v), typename data<T>::value_type,
                                           typename T::value_type>;
-    // using value_type = typename T::value_type;
 };
 
 template <typename T>
@@ -259,7 +258,7 @@ template <typename T>
 struct collects_data
 {
     using type       = T;
-    using value_type = typename component_value_type<T, is_available<T>::value>::type;
+    using value_type = typename component_value_type<T, is_available<T>::value>::value_type;
     static constexpr bool value =
         (!std::is_same<value_type, void>::value &&
          !std::is_same<value_type, void*>::value &&

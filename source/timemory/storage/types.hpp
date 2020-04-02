@@ -31,6 +31,7 @@
 
 #include "timemory/storage/macros.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/mpl/types.hpp"
 
 namespace tim
 {
@@ -99,7 +100,7 @@ class storage
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Type, typename Value = typename Type::value_type>
+template <typename Tp,  typename Vp = typename trait::data<Tp>::value_type>
 class storage;
 //
 //--------------------------------------------------------------------------------------//

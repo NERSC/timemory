@@ -58,43 +58,51 @@ using graph_hash_alias_ptr_t    = std::shared_ptr<graph_hash_alias_t>;
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 graph_hash_map_ptr_t
 get_hash_ids();
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 graph_hash_alias_ptr_t
 get_hash_aliases();
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 hash_result_type
 add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix);
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 hash_result_type
 add_hash_id(const std::string& prefix);
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 void
 add_hash_id(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
             hash_result_type _hash_id, hash_result_type _alias_hash_id);
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 void
 add_hash_id(hash_result_type _hash_id, hash_result_type _alias_hash_id);
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 std::string
 get_hash_identifier(graph_hash_map_ptr_t _hash_map, graph_hash_alias_ptr_t _hash_alias,
                     hash_result_type _hash_id);
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_DLL
 std::string
 get_hash_identifier(hash_result_type _hash_id);
 //

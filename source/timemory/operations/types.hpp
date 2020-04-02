@@ -449,7 +449,7 @@ namespace base
 //
 //--------------------------------------------------------------------------------------//
 //
-struct print
+struct TIMEMORY_OPERATIONS_DLL print
 {
     using this_type   = print;
     using stream_type = std::shared_ptr<utility::stream>;

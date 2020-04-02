@@ -53,6 +53,7 @@ namespace plotting
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_PLOTTING_DLL
 void
 plot(std::string _label, std::string _prefix, const std::string& _dir, bool _echo_dart,
      std::string _json_file);

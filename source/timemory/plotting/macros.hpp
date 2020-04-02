@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 //======================================================================================//
 //
 // Define macros for plotting
@@ -51,6 +53,16 @@
 //
 #    endif
 //
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_PLOTTING_SOURCE)
+#    define TIMEMORY_PLOTTING_DLL tim_dll_export
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_PLOTTING_EXTERN)
+#    define TIMEMORY_PLOTTING_DLL tim_dll_import
+#else
+#    define TIMEMORY_PLOTTING_DLL
 #endif
 //
 //--------------------------------------------------------------------------------------//

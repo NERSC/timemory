@@ -55,3 +55,32 @@
 #    endif
 
 #endif
+
+
+#if !defined(tim_cdll)
+#    if defined(_WINDOWS)
+#        if defined(TIMEMORY_CDLL_EXPORT)
+#            define tim_cdll __declspec(dllexport)
+#        elif defined(TIMEMORY_CDLL_IMPORT)
+#            define tim_cdll __declspec(dllimport)
+#        else
+#            define tim_cdll
+#        endif
+#    else
+#        define tim_cdll
+#    endif
+#endif
+
+#if !defined(tim_dll)
+#    if defined(_WINDOWS)
+#        if defined(TIMEMORY_DLL_EXPORT)
+#            define tim_dll __declspec(dllexport)
+#        elif defined(TIMEMORY_DLL_IMPORT)
+#            define tim_dll __declspec(dllimport)
+#        else
+#            define tim_dll
+#        endif
+#    else
+#        define tim_dll
+#    endif
+#endif

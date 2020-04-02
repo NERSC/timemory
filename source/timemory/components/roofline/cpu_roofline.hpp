@@ -32,6 +32,8 @@
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
 
+#include "timemory/ert/configuration.hpp"
+
 #include <array>
 #include <memory>
 #include <numeric>

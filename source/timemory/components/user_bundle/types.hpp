@@ -34,6 +34,7 @@
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/dll.hpp"
 
 //======================================================================================//
 
@@ -41,6 +42,16 @@
 #    if !defined(TIMEMORY_USE_MPIP)
 #        define TIMEMORY_USE_MPIP
 #    endif
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#    define TIMEMORY_USER_BUNDLE_DLL tim_dll_export
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    define TIMEMORY_USER_BUNDLE_DLL tim_dll_import
+#else
+#    define TIMEMORY_USER_BUNDLE_DLL
 #endif
 
 //======================================================================================//

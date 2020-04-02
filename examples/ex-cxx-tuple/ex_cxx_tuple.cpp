@@ -291,7 +291,7 @@ test_3_measure()
 void
 print_mpi_storage()
 {
-    auto ret = tim::storage<wall_clock>::instance()->mpi_get();
+    auto ret = tim::storage<tim::component::wall_clock>::instance()->mpi_get();
     if(tim::dmp::rank() != 0)
         return;
 

@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 //======================================================================================//
 //
 // Define macros for manager
@@ -39,7 +41,7 @@
 #    if !defined(_WINDOWS)
 #        define __library_ctor__ __attribute__((constructor))
 #    else
-#        define __library_ctor__ static
+#        define __library_ctor__
 #    endif
 #endif
 //
@@ -67,6 +69,16 @@
 //
 #    define TIMEMORY_MANAGER_LINKAGE(...) inline __VA_ARGS__
 //
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_MANAGER_SOURCE)
+#    define TIMEMORY_MANAGER_DLL tim_dll_export
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MANAGER_EXTERN)
+#    define TIMEMORY_MANAGER_DLL tim_dll_import
+#else
+#    define TIMEMORY_MANAGER_DLL
 #endif
 //
 //--------------------------------------------------------------------------------------//

@@ -568,9 +568,9 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         COMP "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
 
     if(WIN32)
-        set_property(GLOBAL APPEND PROPERTY TIMEMORY_CXX_LIBRARY_SOURCES
-            ${COMP_HEADERS} ${COMP_SOURCES})
-        return()
+        # set_property(GLOBAL APPEND PROPERTY TIMEMORY_CXX_LIBRARY_SOURCES
+        #    ${COMP_HEADERS} ${COMP_SOURCES})
+        # return()
     endif()
 
     check_required(COMP_NAME)
@@ -653,6 +653,13 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             TIMEMORY_USE_${COMP_CATEGORY}_EXTERN
             TIMEMORY_USE_${UPP_COMP}_EXTERN)
 
+        if(WIN32 AND "${LINK}" STREQUAL "shared")
+            target_compile_definitions(${TARGET_NAME}
+                PRIVATE TIMEMORY_DLL_EXPORT 
+                # INTERFACE TIMEMORY_DLL_IMPORT
+            )
+        endif()
+
         string(TOLOWER "${COMP_CATEGORY}" LC_CATEGORY)
 
         install(TARGETS ${TARGET_NAME}
@@ -665,6 +672,10 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
 
     if(COMP_INSTALL_SOURCE)
         install_header_files(${COMP_SOURCES})
+    endif()
+    
+    if(WIN32 AND TARGET timemory-${COMP_TARGET}-shared AND TARGET timemory-${COMP_TARGET}-static)
+        add_dependencies(timemory-${COMP_TARGET}-shared timemory-${COMP_TARGET}-static)
     endif()
 
 endmacro()

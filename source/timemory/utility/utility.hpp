@@ -67,6 +67,7 @@
 #    include <sys/types.h>
 #elif defined(_WINDOWS)
 #    include <direct.h>
+using pid_t = int;
 #endif
 
 #if !defined(DEFAULT_UMASK)

@@ -44,7 +44,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class env_settings;
+class TIMEMORY_ENVIRONMENT_DLL env_settings;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -55,13 +55,13 @@ get_env(const std::string& env_id, Tp _default = Tp());
 //--------------------------------------------------------------------------------------//
 //
 template <>
-std::string
+TIMEMORY_ENVIRONMENT_DLL std::string
 get_env(const std::string& env_id, std::string _default);
 //
 //--------------------------------------------------------------------------------------//
 //
 template <>
-bool
+TIMEMORY_ENVIRONMENT_DLL bool
 get_env(const std::string& env_id, bool _default);
 //
 //--------------------------------------------------------------------------------------//
@@ -73,18 +73,18 @@ load_env(const std::string& env_id, Tp _default = Tp());
 //--------------------------------------------------------------------------------------//
 //
 template <>
-std::string
+TIMEMORY_ENVIRONMENT_DLL std::string
 load_env(const std::string& env_id, std::string _default);
 //
 //--------------------------------------------------------------------------------------//
 //
 template <>
-bool
+TIMEMORY_ENVIRONMENT_DLL bool
 load_env(const std::string& env_id, bool _default);
 //
 //--------------------------------------------------------------------------------------//
 //
-void
+TIMEMORY_ENVIRONMENT_DLL void
 print_env(std::ostream& os = std::cout);
 //
 //--------------------------------------------------------------------------------------//

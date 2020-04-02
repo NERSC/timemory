@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 //======================================================================================//
 //
 //                              Define macros for operations
@@ -51,6 +53,16 @@
 //
 #    endif
 //
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_OPERATIONS_SOURCE)
+#    define TIMEMORY_OPERATIONS_DLL tim_dll_export
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_OPERATIONS_EXTERN)
+#    define TIMEMORY_OPERATIONS_DLL tim_dll_import
+#else
+#    define TIMEMORY_OPERATIONS_DLL
 #endif
 //
 //--------------------------------------------------------------------------------------//

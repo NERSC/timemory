@@ -42,12 +42,22 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/definition.hpp"
 //
-#include "timemory/components/extern.hpp"
 #include "timemory/environment/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"
 #include "timemory/plotting/extern.hpp"
 #include "timemory/settings/extern.hpp"
+//
+#if defined(_WINDOWS)
+//
+#    include "timemory/components.hpp"
+//
+#else
+//
+#    include "timemory/components/extern.hpp"
+//
+#endif
+//
 
 //======================================================================================//
 //
@@ -70,7 +80,8 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...) template __VA_ARGS__;
+#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...)                                \
+            template TIMEMORY_USER_BUNDLE_DLL __VA_ARGS__;
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -94,7 +105,8 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...) extern template __VA_ARGS__;
+#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...)                                \
+            extern template TIMEMORY_USER_BUNDLE_DLL __VA_ARGS__;
 #    endif
 //
 //--------------------------------------------------------------------------------------//

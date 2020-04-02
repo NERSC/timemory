@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 //======================================================================================//
 //
 //                              Define macros for containers
@@ -47,6 +49,16 @@
 //
 #    define TIMEMORY_CONTAINERS_LINKAGE(...) inline __VA_ARGS__
 //
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_CONTAINERS_SOURCE)
+#    define TIMEMORY_CONTAINERS_DLL tim_dll_export
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+#    define TIMEMORY_CONTAINERS_DLL tim_dll_import
+#else
+#    define TIMEMORY_CONTAINERS_DLL
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -82,8 +94,8 @@
 #    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
         namespace tim                                                                    \
         {                                                                                \
-        extern template class component_tuple<__VA_ARGS__>;                              \
-        extern template class auto_tuple<__VA_ARGS__>;                                   \
+        extern template class TIMEMORY_CONTAINERS_DLL component_tuple<__VA_ARGS__>;                              \
+        extern template class TIMEMORY_CONTAINERS_DLL auto_tuple<__VA_ARGS__>;                                   \
         using TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS) = auto_tuple<__VA_ARGS__>;             \
         }
 #endif
@@ -94,8 +106,8 @@
 #    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
         namespace tim                                                                    \
         {                                                                                \
-        extern template class component_list<__VA_ARGS__>;                               \
-        extern template class auto_list<__VA_ARGS__>;                                    \
+        extern template class TIMEMORY_CONTAINERS_DLL component_list<__VA_ARGS__>;                               \
+        extern template class TIMEMORY_CONTAINERS_DLL auto_list<__VA_ARGS__>;                                    \
         using TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS) = auto_list<__VA_ARGS__>;               \
         }
 #endif
@@ -106,9 +118,11 @@
 #    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
         namespace tim                                                                    \
         {                                                                                \
-        extern template class component_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),      \
+        extern template class TIMEMORY_CONTAINERS_DLL component_hybrid<                  \
+            TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),      \
                                                TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;      \
-        extern template class auto_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),           \
+        extern template class TIMEMORY_CONTAINERS_DLL auto_hybrid<                       \
+            TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),           \
                                           TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;           \
         using TIMEMORY_EXTERN_HYBRID_ALIAS(_ALIAS) = auto_hybrid<                        \
             TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS), TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;    \
@@ -123,8 +137,8 @@
 #    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
         namespace tim                                                                    \
         {                                                                                \
-        template class component_tuple<__VA_ARGS__>;                                     \
-        template class auto_tuple<__VA_ARGS__>;                                          \
+        template class TIMEMORY_CONTAINERS_DLL component_tuple<__VA_ARGS__>;                                     \
+        template class TIMEMORY_CONTAINERS_DLL auto_tuple<__VA_ARGS__>;                                          \
         using TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS) = auto_tuple<__VA_ARGS__>;             \
         }
 #endif
@@ -135,8 +149,8 @@
 #    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
         namespace tim                                                                    \
         {                                                                                \
-        template class component_list<__VA_ARGS__>;                                      \
-        template class auto_list<__VA_ARGS__>;                                           \
+        template class TIMEMORY_CONTAINERS_DLL component_list<__VA_ARGS__>;                                      \
+        template class TIMEMORY_CONTAINERS_DLL auto_list<__VA_ARGS__>;                                           \
         using TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS) = auto_list<__VA_ARGS__>;               \
         }
 #endif
@@ -147,9 +161,11 @@
 #    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
         namespace tim                                                                    \
         {                                                                                \
-        template class component_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),             \
+        template class TIMEMORY_CONTAINERS_DLL component_hybrid<                         \
+            TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),             \
                                         TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;             \
-        template class auto_hybrid<TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),                  \
+        template class TIMEMORY_CONTAINERS_DLL auto_hybrid<                              \
+            TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS),                  \
                                    TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;                  \
         using TIMEMORY_EXTERN_HYBRID_ALIAS(_ALIAS) = auto_hybrid<                        \
             TIMEMORY_EXTERN_TUPLE_ALIAS(_ALIAS), TIMEMORY_EXTERN_LIST_ALIAS(_ALIAS)>;    \

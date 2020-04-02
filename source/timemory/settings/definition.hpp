@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include "timemory/components.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/macros.hpp"

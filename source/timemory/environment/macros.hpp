@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/utility/macros.hpp"
+#include "timemory/dll.hpp"
 
 //======================================================================================//
 //
@@ -43,6 +44,16 @@
 #    else
 #        define TIMEMORY_ENVIRONMENT_LINKAGE(...) extern __VA_ARGS__
 #    endif
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_ENVIRONMENT_SOURCE)
+#    define TIMEMORY_ENVIRONMENT_DLL tim_dll_export
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#    define TIMEMORY_ENVIRONMENT_DLL tim_dll_import
+#else
+#    define TIMEMORY_ENVIRONMENT_DLL
 #endif
 //
 //--------------------------------------------------------------------------------------//

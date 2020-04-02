@@ -572,7 +572,7 @@ struct get_index_sequence<std::tuple<Types...>>
 template <template <typename...> class Tuple, typename... Types>
 struct get_index_sequence<Tuple<Types...>>
 {
-    using base_type = conditional_t<(concepts ::is_variadic<Tuple<Types...>>::value),
+    using base_type = conditional_t<(concepts::is_variadic<Tuple<Types...>>::value),
                                     impl::wrapper_index_sequence<Tuple<Types...>>,
                                     impl::nonwrapper_index_sequence<Tuple<Types...>>>;
     static constexpr auto size  = base_type::size;

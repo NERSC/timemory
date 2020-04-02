@@ -62,7 +62,7 @@ class manager;
 //
 //--------------------------------------------------------------------------------------//
 //
-struct tim_dll settings
+struct TIMEMORY_SETTINGS_DLL settings
 {
     friend class manager;
     using string_t    = std::string;
