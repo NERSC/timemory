@@ -257,9 +257,9 @@ private:
         std::atomic<int32_t>      thread_count{ 0 };
         bool                      use_exit_hook = true;
         pointer_t                 master_instance;
-        bool&                     debug    = settings::debug();
-        int&                      verbose  = settings::verbose();
-        std::shared_ptr<settings> settings = settings::shared_instance<TIMEMORY_API>();
+        bool&                     debug   = settings::debug();
+        int&                      verbose = settings::verbose();
+        std::shared_ptr<settings> config  = settings::shared_instance<TIMEMORY_API>();
     };
 
     /// single instance of all the global static data
@@ -278,7 +278,7 @@ private:
     static bool& f_use_exit_hook() { return f_manager_persistent_data().use_exit_hook; }
     static auto& f_debug() { return f_manager_persistent_data().debug; }
     static auto& f_verbose() { return f_manager_persistent_data().verbose; }
-    static auto  f_settings() { return f_manager_persistent_data().settings; }
+    static auto  f_settings() { return f_manager_persistent_data().config; }
 
 public:
     static void set_persistent_master(pointer_t _pinst)

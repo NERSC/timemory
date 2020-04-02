@@ -40,9 +40,12 @@
 using namespace tim::component;
 using tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>;
 
+#if defined(_OPENMP)
 static const double pi_epsilon = std::numeric_limits<float>::epsilon();
-static const long   nfib       = 39;
-static const long   noff       = 4;
+#endif
+
+static const long nfib = 39;
+static const long noff = 4;
 
 //--------------------------------------------------------------------------------------//
 
