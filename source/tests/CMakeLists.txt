@@ -180,7 +180,8 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
                         timemory-arch)
 
     # NVPERF library
-    if(CUPTI_nvperf_host_LIBRARY)
+    set(nvperf_valid_archs volta turing)
+    if(CUPTI_nvperf_host_LIBRARY AND "${TIMEMORY_CUDA_ARCH}" IN_LIST nvperf_valid_archs)
         add_timemory_google_test(cupti_profiler_tests
             DISCOVER_TESTS
             SOURCES         cupti_profiler_tests.cpp
