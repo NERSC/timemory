@@ -263,7 +263,7 @@ add_option(TIMEMORY_USE_COMPILE_TIMING
 add_option(TIMEMORY_USE_DYNINST
     "Enable dynamic instrumentation" ON)
 add_option(TIMEMORY_USE_OMPT
-    "Enable OpenMP tooling" ON)
+    "Enable OpenMP tooling" OFF)
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_option(TIMEMORY_USE_XRAY
         "Enable XRay instrumentation" OFF)

@@ -38,6 +38,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "timemory/utility/utility.hpp"
+#include "timemory/utility/macros.hpp"
+
 namespace tim
 {
 namespace argparse
@@ -343,7 +346,7 @@ struct argument_parser
         std::cout << "Usage: " << m_bin;
         if(m_positional_arguments.empty())
         {
-            std::cout << " [options...]" << std::endl;
+            std::cout << " [options...]" << " " << _extra << std::endl;
         }
         else
         {
@@ -380,7 +383,7 @@ struct argument_parser
             }
             std::cout << " " << _extra << std::endl;
         }
-        std::cout << "Options:" << std::endl;
+        std::cout << "\nOptions:" << std::endl;
         for(auto& a : m_arguments)
         {
             std::string name = a.m_names[0];
@@ -396,6 +399,7 @@ struct argument_parser
             }
             std::cout << std::endl;
         }
+        std::cout << '\n';
     }
     //
     //----------------------------------------------------------------------------------//
@@ -434,10 +438,7 @@ struct argument_parser
                     m_positional_arguments[a.m_position] = a.m_index;
                 }
             }
-            if(err)
-            {
-                return err;
-            }
+
             m_bin = _args.at(0);
 
             // parse
@@ -460,16 +461,20 @@ struct argument_parser
                     err          = add_value(current_arg, argument::Position::LAST);
                     if(b)
                     {
+                        // PRINT_HERE("%s", "");
                         return b;
                     }
                     if(err)
                     {
+                        // PRINT_HERE("%s", "");
                         return err;
                     }
+                    // PRINT_HERE("%s", "");
                     continue;
                 }
                 if(arg_len >= 2 && !helpers::is_numeric(current_arg))
                 {
+                    // PRINT_HERE("%s", "");
                     // ignores the case if the arg is just a -
                     // look for -a (short) or --arg (long) args
                     if(current_arg[0] == '-')
@@ -477,6 +482,7 @@ struct argument_parser
                         err = end_argument();
                         if(err)
                         {
+                            // PRINT_HERE("%s", "");
                             return err;
                         }
                         // look for --arg (long) args
@@ -485,6 +491,7 @@ struct argument_parser
                             err = begin_argument(current_arg.substr(2), true, argv_index);
                             if(err)
                             {
+                                // PRINT_HERE("%s", "");
                                 return err;
                             }
                         }
@@ -494,24 +501,31 @@ struct argument_parser
                                 begin_argument(current_arg.substr(1), false, argv_index);
                             if(err)
                             {
+                                // PRINT_HERE("%s", "");
                                 return err;
                             }
                         }
                     }
                     else
-                    {  // argument value
+                    {
+                        // PRINT_HERE("%s", "");
+                        // argument value
                         err = add_value(current_arg, argv_index);
                         if(err)
                         {
+                            // PRINT_HERE("%s", "");
                             return err;
                         }
                     }
                 }
                 else
-                {  // argument value
+                {
+                    // PRINT_HERE("%s", "");
+                    // argument value
                     err = add_value(current_arg, argv_index);
                     if(err)
                     {
+                        // PRINT_HERE("%s", "");
                         return err;
                     }
                 }
@@ -519,11 +533,12 @@ struct argument_parser
         }
         if(m_help_enabled && exists("help"))
         {
-            return arg_result();
+            return arg_result("");
         }
         err = end_argument();
         if(err)
         {
+            // PRINT_HERE("%s", "");
             return err;
         }
         for(auto& a : m_arguments)
@@ -538,6 +553,7 @@ struct argument_parser
                                   std::to_string(a.m_position));
             }
         }
+        // PRINT_HERE("%s", "");
         return arg_result();
     }
     //
@@ -545,7 +561,8 @@ struct argument_parser
     //
     void enable_help()
     {
-        add_argument("-h", "--help", "Shows this page", false);
+        add_argument().names({ "-h", "--help"})
+            .description("Shows this page");
         m_help_enabled = true;
     }
     //

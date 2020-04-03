@@ -30,6 +30,7 @@ using std::string;
 int expectError   = NO_ERROR;
 int debugPrint    = 0;
 int binaryRewrite = 0; /* by default, it is turned off */
+std::string main_fname = "main";
 
 template class BPatch_Vector<BPatch_variableExpr*>;
 
@@ -499,10 +500,11 @@ initialize(BPatch_process* appThread, BPatch_image* appImage,
         BPatch_Vector<BPatch_snippet*> finiArgs = {};
         // check_cost(init_Expr);
         // locate the entry point for main
-        BPatch_function* main_entry = find_function(appImage, "main");
+        BPatch_function* main_entry = find_function(appImage, main_fname.c_str());
         if(main_entry == nullptr)
         {
-            fprintf(stderr, "timemory-run: Unable to find function main\n");
+            fprintf(stderr, "timemory-run: Unable to find function '%s'\n",
+                    main_fname.c_str());
             exit(1);
         }
         const BPatch_Vector<BPatch_point*>* points = main_entry->findPoint(BPatch_entry);
@@ -523,8 +525,8 @@ initialize(BPatch_process* appThread, BPatch_image* appImage,
         }
         else
         {
-            fprintf(stderr, "timemory-run: entry points for main or init_snippet for "
-                            "Init are null\n");
+            fprintf(stderr, "timemory-run: entry points for '%s' or init_snippet for "
+                            "Init are null\n", main_fname.c_str());
             exit(1);
         }
     }
@@ -963,7 +965,7 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     BPatch_function* setupFunc = find_function(mutateeImage, "timemory_dyninst_init");
     BPatch_function* cleanupFunc =
         find_function(mutateeImage, "timemory_dyninst_finalize");
-    BPatch_function* mainFunc = find_function(mutateeImage, "main");
+    BPatch_function* mainFunc = find_function(mutateeImage, main_fname.c_str());
     name_reg                  = find_function(mutateeImage, "timemory_register_trace");
 
     // This heuristic guesses that debugging info. is available if main
@@ -980,7 +982,7 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
 
     if(!mainFunc)
     {
-        fprintf(stderr, "Couldn't find main(), aborting\n");
+        fprintf(stderr, "Couldn't find %s(), aborting\n", main_fname.c_str());
         return -1;
     }
 
@@ -1206,7 +1208,9 @@ main(int argc, char** argv)
         std::cout << "[original]: " << cmd_string(argc, argv) << std::endl;
         std::cout << "[cfg-args]: " << cmd_string(_argc, _argv) << std::endl;
     }
-    std::cout << " [command]: " << cmd_string(_cmdc, _cmdv) << std::endl;
+
+    if(_cmdc > 0)
+        std::cout << " [command]: " << cmd_string(_cmdc, _cmdv) << std::endl;
 
     // now can loop through the options.  If the first character is '-', then we know we
     // have an option.  Check to see if it is one of our options and process it.  If it is
@@ -1214,6 +1218,7 @@ main(int argc, char** argv)
     // charcter, then we must be at the application name.
     tim::argparse::argument_parser parser("timemory-run");
 
+    parser.enable_help();
     parser.add_argument()
         .names({ "-v", "--verbose" })
         .description("Verbose output")
@@ -1228,27 +1233,29 @@ main(int argc, char** argv)
     parser.add_argument()
         .names({ "-E", "--regex-exclude" })
         .description("Regex for excluding functions");
+    parser.add_argument()
+        .names({ "-m", "--main-function" })
+        .description("The primary function to instrument around, e.g. 'main'")
+        .count(1);
 
     if(_cmdc == 0)
     {
         parser.add_argument()
             .names({ "-c", "--command" })
-            .description("Input executable and arguments")
-            .required(true)
-            .position(0);
+            .description("Input executable and arguments (if '-- <CMD>' not provided)")
+            .required(true);
     }
-
-    parser.enable_help();
 
     std::string extra_help = "-- <CMD> <ARGS>";
     auto        err        = parser.parse(_argc, _argv);
     if(err)
     {
-        std::cout << err << std::endl;
+        std::cerr << err << std::endl;
+        parser.print_help(extra_help);
         return -1;
     }
 
-    if(parser.exists("help"))
+    if(parser.exists("h") || parser.exists("help"))
     {
         parser.print_help(extra_help);
         return 0;
@@ -1258,6 +1265,11 @@ main(int argc, char** argv)
     {
         /* Verbose option set */
         debugPrint = 1;
+    }
+
+    if(parser.exists("m"))
+    {
+        main_fname = parser.get<std::string>("m");
     }
 
     if(_cmdc == 0 && parser.exists("c"))
