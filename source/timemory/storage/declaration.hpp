@@ -130,8 +130,16 @@ public:
     void    free_shared_manager();
 
 protected:
-    void add_text_output(const string_t& _label, const string_t& _file);
-    void add_json_output(const string_t& _label, const string_t& _file);
+    void add_file_output(const string_t& _category, const string_t& _label,
+                         const string_t& _file);
+    void add_text_output(const string_t& _label, const string_t& _file)
+    {
+        add_file_output("text", _label, _file);
+    }
+    void add_json_output(const string_t& _label, const string_t& _file)
+    {
+        add_file_output("json", _label, _file);
+    }
 
     static std::atomic<int>& storage_once_flag();
     static void              stop_profiler();
@@ -255,21 +263,12 @@ storage::add_hash_id(const std::string& _prefix)
 //--------------------------------------------------------------------------------------//
 //
 inline void
-storage::add_text_output(const std::string& _label, const std::string& _file)
+storage::add_file_output(const std::string& _category, const std::string& _label,
+                         const std::string& _file)
 {
     m_manager = manager::instance();
     if(m_manager)
-        m_manager->add_text_output(_label, _file);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-inline void
-storage::add_json_output(const std::string& _label, const std::string& _file)
-{
-    m_manager = manager::instance();
-    if(m_manager)
-        m_manager->add_json_output(_label, _file);
+        m_manager->add_file_output(_category, _label, _file);
 }
 //
 //--------------------------------------------------------------------------------------//

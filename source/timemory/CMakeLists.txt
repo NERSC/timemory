@@ -20,7 +20,6 @@ add_subdirectory(ert)
 
 # add_subdirectory(compat)
 # add_subdirectory(data)
-# add_subdirectory(extern)
 # add_subdirectory(general)
 # add_subdirectory(mpl)
 # add_subdirectory(utility)

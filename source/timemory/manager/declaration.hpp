@@ -75,7 +75,7 @@ public:
     using finalizer_func_t = std::function<void()>;
     using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t = std::deque<finalizer_pair_t>;
-    using strmap_t         = std::map<string_t, std::set<string_t>>;
+    using filemap_t        = std::map<string_t, std::map<string_t, std::set<string_t>>>;
 
 public:
     // Constructor and Destructors
@@ -99,8 +99,16 @@ public:
     void cleanup();
     void finalize();
 
-    void add_text_output(const string_t& _label, const string_t& _file);
-    void add_json_output(const string_t& _label, const string_t& _file);
+    void add_file_output(const string_t& _category, const string_t& _label,
+                         const string_t& _file);
+    void add_text_output(const string_t& _label, const string_t& _file)
+    {
+        add_file_output("text", _label, _file);
+    }
+    void add_json_output(const string_t& _label, const string_t& _file)
+    {
+        add_file_output("json", _label, _file);
+    }
 
     /// \fn set_write_metadata
     /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
@@ -239,8 +247,7 @@ private:
     finalizer_list_t       m_worker_finalizers;
     mutex_t                m_mutex;
     auto_lock_t*           m_lock = nullptr;
-    strmap_t               m_text_files;
-    strmap_t               m_json_files;
+    filemap_t              m_output_files;
 
 private:
     struct persistent_data

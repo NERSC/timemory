@@ -122,6 +122,24 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if !defined(TIMEMORY_MEMBER_STATIC_REFERENCE)
+#    define TIMEMORY_MEMBER_STATIC_REFERENCE(TYPE, FUNC, ENV_VAR, ...)                   \
+    public:                                                                              \
+        static TYPE& FUNC() { return __VA_ARGS__; }                                      \
+                                                                                         \
+    private:                                                                             \
+        TYPE& generate__##FUNC()                                                         \
+        {                                                                                \
+            auto _parse = []() { FUNC() = tim::get_env(ENV_VAR, FUNC()); };              \
+            get_parse_callbacks().push_back(_parse);                                     \
+            __VA_ARGS__ = get_env<TYPE>(ENV_VAR, __VA_ARGS__);                           \
+            return __VA_ARGS__;                                                          \
+        }                                                                                \
+        TYPE* m__##FUNC = &generate__##FUNC();
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if !defined(TIMEMORY_ERROR_FUNCTION_MACRO)
 #    if defined(__PRETTY_FUNCTION__)
 #        define TIMEMORY_ERROR_FUNCTION_MACRO __PRETTY_FUNCTION__

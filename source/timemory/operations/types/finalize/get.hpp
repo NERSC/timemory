@@ -162,6 +162,7 @@ get<Type, true>::get(storage_type& data, result_type& ret)
                     auto _parent    = graph_type::parent(itr);
                     auto _hierarchy = hierarchy_type{};
                     auto _tid       = itr->tid();
+                    auto _pid       = itr->pid();
                     if(_parent && _parent->depth() > _min)
                     {
                         while(_parent)
@@ -177,7 +178,7 @@ get<Type, true>::get(storage_type& data, result_type& ret)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());
                     _hierarchy.push_back(itr->id());
                     auto&& _entry = result_node(itr->id(), itr->obj(), _prefix, _depth,
-                                                _rolling, _hierarchy, _stats, _tid);
+                                                _rolling, _hierarchy, _stats, _tid, _pid);
                     _list.push_back(_entry);
                 }
             }

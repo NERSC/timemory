@@ -30,6 +30,8 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
@@ -112,6 +114,8 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, plot_output, "TIMEMORY_PLOT_OUTPUT",
                                     TIMEMORY_DEFAULT_PLOTTING)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, diff_output, "TIMEMORY_DIFF_OUTPUT", false)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, flamegraph_output, "TIMEMORY_FLAMEGRAPH_OUTPUT",
+                                    true)
 
     // general settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
@@ -174,6 +178,9 @@ struct TIMEMORY_SETTINGS_DLL settings
 
     /// enable thread affinity
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY", false)
+    /// target pid
+    TIMEMORY_MEMBER_STATIC_REFERENCE(process::id_t, target_pid, "TIMEMORY_TARGET_PID",
+                                     process::get_target_id())
     /// configure component storage stack clearing
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, stack_clearing, "TIMEMORY_STACK_CLEARING", true)
 
@@ -220,6 +227,10 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, upcxx_finalize, "TIMEMORY_UPCXX_FINALIZE", true)
 
     //----------------------------------------------------------------------------------//
+    //      PROCESS
+    //----------------------------------------------------------------------------------//
+
+    //----------------------------------------------------------------------------------//
     //      PAPI
     //----------------------------------------------------------------------------------//
 
@@ -236,6 +247,9 @@ struct TIMEMORY_SETTINGS_DLL settings
 
     /// PAPI hardware counters
     TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, papi_events, "TIMEMORY_PAPI_EVENTS", "")
+
+    /// PAPI attach to pid
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, papi_attach, "TIMEMORY_PAPI_ATTACH", false)
 
     //----------------------------------------------------------------------------------//
     //      CUDA / CUPTI
@@ -536,6 +550,7 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TIME_OUTPUT", time_output)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PLOT_OUTPUT", plot_output)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DIFF_OUTPUT", diff_output)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_FLAMEGRAPH_OUTPUT", flamegraph_output)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_VERBOSE", verbose)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DEBUG", debug)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_BANNER", banner)
@@ -575,6 +590,7 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_FAIL_ON_ERROR", papi_fail_on_error)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_QUIET", papi_quiet)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_EVENTS", papi_events)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_ATTACH", papi_attach)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_CUDA_EVENT_BATCH_SIZE",
                                     cuda_event_batch_size)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_NVTX_MARKER_DEVICE_SYNC",

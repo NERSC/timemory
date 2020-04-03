@@ -37,7 +37,7 @@ if(WIN32)
     set(_BUILD_CALIPER OFF)
 endif()
 
-set(_BUILD_OMPT OFF)
+set(_BUILD_OMPT ON)
 if(DEFINED TIMEMORY_USE_OMPT)
     set(_BUILD_OMPT ${TIMEMORY_USE_OMPT})
 endif()
@@ -261,9 +261,9 @@ add_option(TIMEMORY_USE_PYTHON
 add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
-    "Enable dynamic instrumentation" OFF)
+    "Enable dynamic instrumentation" ON)
 add_option(TIMEMORY_USE_OMPT
-    "Enable OpenMP tooling" ${_BUILD_OMPT})
+    "Enable OpenMP tooling" ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_option(TIMEMORY_USE_XRAY
         "Enable XRay instrumentation" OFF)

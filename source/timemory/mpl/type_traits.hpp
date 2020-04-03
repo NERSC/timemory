@@ -489,12 +489,19 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates a type supports flamegraph output
+///
+template <typename T>
+struct supports_flamegraph : false_type
+{};
 
-template <typename _Trait>
+//--------------------------------------------------------------------------------------//
+
+template <typename TraitT>
 inline std::string
 as_string()
 {
-    constexpr bool _val = _Trait::value;
+    constexpr bool _val = TraitT::value;
     return (_val) ? "true" : "false";
 }
 

@@ -158,18 +158,26 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_init(storage_type*)
+    static void configure()
     {
-        if(!initialize_papi())
-            return;
-        auto events = get_events();
-        if(events.size() > 0)
+        if(!is_configured() && initialize_papi())
         {
-            papi::create_event_set(&_event_set(), settings::papi_multiplexing());
-            papi::add_events(_event_set(), events.data(), events.size());
-            papi::start(_event_set());
+            auto events = get_events();
+            if(events.size() > 0)
+            {
+                papi::create_event_set(&_event_set(), settings::papi_multiplexing());
+                papi::add_events(_event_set(), events.data(), events.size());
+                if(settings::papi_attach())
+                    papi::attach(_event_set(), process::get_target_id());
+                papi::start(_event_set());
+                is_configured() = true;
+            }
         }
     }
+
+    //----------------------------------------------------------------------------------//
+
+    static void thread_init(storage_type*) { configure(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -205,9 +213,6 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
     papi_vector(papi_vector&& rhs)      = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) = default;
-
-    // data types
-    event_list events;
 
     //----------------------------------------------------------------------------------//
 
@@ -297,9 +302,11 @@ protected:
     using base_type::value;
 
     friend struct base<this_type, value_type>;
-
     using base_type::implements_storage_v;
     friend class impl::storage<this_type, implements_storage_v>;
+
+    // data types
+    event_list events;
 
 public:
     //==================================================================================//
@@ -457,6 +464,12 @@ private:
         static thread_local int _instance = PAPI_NULL;
         return _instance;
     }
+
+    static bool& is_configured()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -571,18 +584,26 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_init(storage_type*)
+    static void configure()
     {
-        if(!initialize_papi())
-            return;
-        auto events = get_events();
-        if(events.size() > 0)
+        if(!is_configured() && initialize_papi())
         {
-            papi::create_event_set(&_event_set(), settings::papi_multiplexing());
-            papi::add_events(_event_set(), events.data(), events.size());
-            papi::start(_event_set());
+            auto events = get_events();
+            if(events.size() > 0)
+            {
+                papi::create_event_set(&_event_set(), settings::papi_multiplexing());
+                papi::add_events(_event_set(), events.data(), events.size());
+                if(settings::papi_attach())
+                    papi::attach(_event_set(), process::get_target_id());
+                papi::start(_event_set());
+                is_configured() = true;
+            }
         }
     }
+
+    //----------------------------------------------------------------------------------//
+
+    static void thread_init(storage_type*) { configure(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -865,6 +886,12 @@ private:
         static thread_local int _instance = PAPI_NULL;
         return _instance;
     }
+
+    static bool& is_configured()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -945,6 +972,8 @@ public:
             apply<void>::set_value(get_overhead_values(), 0);
             tim::papi::create_event_set(&event_set(), enable_multiplex());
             tim::papi::add_events(event_set(), get_events().data(), num_events);
+            if(settings::papi_attach())
+                papi::attach(event_set(), process::get_target_id());
             tim::papi::start(event_set());
             is_configured() = true;
         }

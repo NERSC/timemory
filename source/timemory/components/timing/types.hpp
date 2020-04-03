@@ -124,6 +124,24 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_percent_units, component::thread_cpu_util, t
 //
 //--------------------------------------------------------------------------------------//
 //
+//                              SUPPORTS FLAMEGRAPH
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::system_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::user_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::cpu_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::monotonic_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::monotonic_raw_clock,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::thread_cpu_clock,
+                               true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::process_cpu_clock,
+                               true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
 //                                  DERIVATION
 //
 //--------------------------------------------------------------------------------------//

@@ -1109,7 +1109,7 @@ endif()
 
 if(TIMEMORY_USE_OMPT AND TIMEMORY_BUILD_OMPT)
     set(OMPT_EXPORT_TARGETS)
-    foreach(_TARG omp ompimp omptarget.rtl.cuda omptarget)
+    foreach(_TARG omp ompimp omptarget)
         if(TARGET ${_TARG})
             target_link_libraries(timemory-ompt INTERFACE ${_TARG})
             list(APPEND OMPT_EXPORT_TARGETS ${_TARG})

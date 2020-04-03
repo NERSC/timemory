@@ -221,6 +221,9 @@ struct report_values;
 template <typename T>
 struct ompt_handle;
 
+template <typename T>
+struct supports_flamegraph;
+
 //--------------------------------------------------------------------------------------//
 //
 //                              ALIASES

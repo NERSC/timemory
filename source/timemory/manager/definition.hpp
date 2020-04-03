@@ -355,8 +355,8 @@ manager::write_metadata(const char* context)
             {
                 oa->setNextName("output");
                 oa->startNode();
-                (*oa)(cereal::make_nvp("text", m_text_files),
-                      cereal::make_nvp("json", m_json_files));
+                for(const auto& itr : m_output_files)
+                    (*oa)(cereal::make_nvp(itr.first.c_str(), itr.second));
                 oa->finishNode();
             }
             // environment
@@ -379,17 +379,10 @@ manager::write_metadata(const char* context)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_MANAGER_LINKAGE(void)
-manager::add_text_output(const string_t& _label, const string_t& _file)
+manager::add_file_output(const string_t& _category, const string_t& _label,
+                         const string_t& _file)
 {
-    m_text_files[_label].insert(_file);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_MANAGER_LINKAGE(void)
-manager::add_json_output(const string_t& _label, const string_t& _file)
-{
-    m_json_files[_label].insert(_file);
+    m_output_files[_category][_label].insert(_file);
 }
 //
 //----------------------------------------------------------------------------------//

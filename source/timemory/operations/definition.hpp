@@ -44,6 +44,7 @@
 #include "timemory/operations/types/derive.hpp"
 #include "timemory/operations/types/echo_measurement.hpp"
 #include "timemory/operations/types/finalize/dmp_get.hpp"
+#include "timemory/operations/types/finalize/flamegraph.hpp"
 #include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/operations/types/finalize/merge.hpp"
 #include "timemory/operations/types/finalize/mpi_get.hpp"

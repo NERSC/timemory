@@ -445,7 +445,10 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
         std::ofstream ofs(outfname.c_str());
         if(ofs)
         {
-            manager::instance()->add_json_output(label, outfname);
+            auto fext = outfname.substr(outfname.find_last_of(".") + 1);
+            if(fext.empty())
+                fext = "unknown";
+            manager::instance()->add_file_output(fext, label, outfname);
             printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
                    outfname.c_str());
 
@@ -484,6 +487,9 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
             ofs << std::endl;
         ofs.close();
     }
+
+    if(settings::flamegraph_output())
+        operation::finalize::flamegraph<Tp>(data, label);
 }
 //
 //--------------------------------------------------------------------------------------//

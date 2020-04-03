@@ -95,8 +95,8 @@ bool
 instrument_entity(const string& function_name)
 {
     std::regex exclude("(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize)");
-    std::regex leading(
-        "^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(\\(|_GLOBAL|targ|PMPI_)");
+    std::regex leading("^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(\\(|\\(__|_"
+                       "GLOBAL|targ|PMPI_)");
 
     // don't instrument the functions when key is found anywhere in function name
     if(std::regex_search(function_name, exclude))
@@ -1329,7 +1329,8 @@ main(int argc, char** argv)
         timemory_rewrite_binary(bpatch, mutname, outfile, (char*) libname,
                                 (char*) staticlibname, bindings);
         char cwd[FUNCNAMELEN];
-        getcwd(cwd, FUNCNAMELEN);
+        auto ret = getcwd(cwd, FUNCNAMELEN);
+        consume_parameters(ret);
         // exit from the application
         printf("The instrumented executable image is stored in '%s/%s'\n", cwd, outfile);
         delete bpatch;

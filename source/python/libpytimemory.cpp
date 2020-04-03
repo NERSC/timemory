@@ -461,6 +461,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, dart_output);
     SETTING_PROPERTY(bool, time_output);
     SETTING_PROPERTY(bool, plot_output);
+    SETTING_PROPERTY(bool, diff_output);
+    SETTING_PROPERTY(bool, flamegraph_output);
     SETTING_PROPERTY(int, verbose);
     SETTING_PROPERTY(bool, debug);
     SETTING_PROPERTY(bool, banner);
@@ -508,6 +510,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, papi_fail_on_error);
     SETTING_PROPERTY(bool, papi_quiet);
     SETTING_PROPERTY(string_t, papi_events);
+    SETTING_PROPERTY(bool, papi_attach);
     // cuda/nvtx/cupti
     SETTING_PROPERTY(uint64_t, cuda_event_batch_size);
     SETTING_PROPERTY(bool, nvtx_marker_device_sync);

@@ -34,7 +34,10 @@
 //
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/process.hpp"
 #include "timemory/backends/signals.hpp"
+#include "timemory/backends/threading.hpp"
+//
 #include "timemory/components/rusage/backends.hpp"
 #include "timemory/components/timing/backends.hpp"
 

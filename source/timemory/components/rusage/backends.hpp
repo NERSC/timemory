@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <string>
 
+#include "timemory/backends/process.hpp"
 #include "timemory/utility/macros.hpp"
 
 #if defined(_UNIX)
@@ -81,8 +82,7 @@ get_rusage_type()
 inline pid_t&
 get_rusage_pid()
 {
-    static auto instance = getpid();
-    return instance;
+    return process::get_target_id();
 }
 
 #endif
