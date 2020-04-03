@@ -31,20 +31,18 @@
 
 //======================================================================================//
 //
+#include "timemory/api.hpp"
+//
 #include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
 //
-#include "timemory/manager/extern.hpp"
-#include "timemory/storage/extern.hpp"
+#include "timemory/manager/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 //
-#include "timemory/variadic/component_hybrid.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
-//
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
+#include "timemory/components.hpp"
+#include "timemory/components/extern.hpp"
+#include "timemory/variadic/definition.hpp"
 //
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"

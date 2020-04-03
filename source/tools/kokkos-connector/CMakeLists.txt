@@ -210,6 +210,10 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         set_source_files_properties(${SOURCE_FILE} PROPERTIES
             LANGUAGE CUDA
             LINKER_LANGUAGE CUDA)
+    else()
+        set_source_files_properties(${SOURCE_FILE} PROPERTIES
+	    LANGUAGE CXX
+	    LINKER_LANGUAGE ${LINKER_LANGUAGE})
     endif()
 
     string(REPLACE ";" "," _COMPONENTS "${CONNECTOR_COMPONENTS}")

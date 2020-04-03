@@ -22,40 +22,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/containers/types/complete_list.hpp
- * \brief Include the extern declarations for complete_list in containers
- */
-
 #pragma once
 
-//======================================================================================//
+#include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/types.hpp"
 //
-#include "timemory/api.hpp"
-//
-#include "timemory/containers/declaration.hpp"
-#include "timemory/containers/macros.hpp"
-#include "timemory/containers/types.hpp"
-//
-#include "timemory/manager/declaration.hpp"
-#include "timemory/storage/definition.hpp"
-//
-#include "timemory/components.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/variadic/definition.hpp"
-//
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/runtime/initialize.hpp"
-#include "timemory/runtime/properties.hpp"
-//
-//======================================================================================//
-//
-// clang-format off
-//
-TIMEMORY_EXTERN_LIST(complete_list_t, TIMEMORY_COMPONENT_TYPES)
-//
-//--------------------------------------------------------------------------------------//
-//
-// clang-format off
-//
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/auto_tuple.hpp"
+#include "timemory/variadic/bits/component_hybrid.hpp"
+#include "timemory/variadic/bits/component_list.hpp"
+#include "timemory/variadic/bits/component_tuple.hpp"
+#include "timemory/variadic/component_hybrid.hpp"
+#include "timemory/variadic/component_list.hpp"
+#include "timemory/variadic/component_tuple.hpp"
+#include "timemory/variadic/functional.hpp"
+#include "timemory/variadic/generic_bundle.hpp"

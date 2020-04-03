@@ -50,8 +50,8 @@
 #endif
 
 #if defined(TIMEMORY_USE_PAPI)
-#    include <papi.h>
 #    include <papiStdEventDefs.h>
+#    include <papi.h>
 #    if defined(_UNIX)
 #        include <pthread.h>
 #    endif

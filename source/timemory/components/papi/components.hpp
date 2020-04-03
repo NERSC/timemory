@@ -255,9 +255,12 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
     void stop()
     {
         auto tmp = record();
+	accum.resize(events.size(), 0);
         for(size_type i = 0; i < events.size(); ++i)
-            accum[i] += (tmp[i] - value[i]);
-        value = std::move(tmp);
+	{
+	    value[i] = (tmp[i] - value[i]);
+	    accum[i] += value[i];
+	}
         set_stopped();
     }
 

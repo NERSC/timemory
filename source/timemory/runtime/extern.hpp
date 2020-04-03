@@ -37,21 +37,16 @@
 //
 //======================================================================================//
 
-#if defined(TIMEMORY_RUNTIME_SOURCE)
-
-#    include "timemory/components.hpp"
-#    include "timemory/components/definition.hpp"
-#    include "timemory/containers/definition.hpp"
-#    include "timemory/operations/definition.hpp"
-#    include "timemory/storage/definition.hpp"
-
-#endif
-
-#include "timemory/containers/auto_timer.hpp"
-#include "timemory/containers/auto_user_bundle.hpp"
 #include "timemory/types.hpp"
 //
+#include "timemory/components.hpp"
+#include "timemory/components/definition.hpp"
+#include "timemory/containers/definition.hpp"
+#include "timemory/containers/extern.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/runtime/properties.hpp"
+#include "timemory/storage/definition.hpp"
+#include "timemory/variadic/definition.hpp"
 
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, bool)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, bool)

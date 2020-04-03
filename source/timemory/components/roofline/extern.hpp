@@ -67,13 +67,13 @@ TIMEMORY_EXTERN_TEMPLATE(
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t, float, double>,
-                                     std::tuple<typename cupti_activity::value_type,
-                                                typename cupti_counters::value_type>>)
+// TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t, float, double>,
+//                                     std::tuple<typename cupti_activity::value_type,
+//                                                typename cupti_counters::value_type>>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t>,
-                                     std::tuple<typename cupti_activity::value_type,
-                                                typename cupti_counters::value_type>>)
+// TIMEMORY_EXTERN_TEMPLATE(struct base<gpu_roofline<cuda::fp16_t>,
+//                                     std::tuple<typename cupti_activity::value_type,
+//                                                typename cupti_counters::value_type>>)
 //
 TIMEMORY_EXTERN_TEMPLATE(
     struct base<gpu_roofline<float>, std::tuple<typename cupti_activity::value_type,
@@ -109,9 +109,9 @@ TIMEMORY_EXTERN_TEMPLATE(struct cpu_roofline<double>)
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t, float, double>)
+// TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t, float, double>)
 //
-TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t>)
+// TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<cuda::fp16_t>)
 //
 TIMEMORY_EXTERN_TEMPLATE(struct gpu_roofline<float>)
 //
@@ -134,10 +134,10 @@ TIMEMORY_EXTERN_OPERATIONS(component::cpu_roofline_flops, true)
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
-TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
+// TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_hp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_sp_flops, true)
 TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_dp_flops, true)
-TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
+// TIMEMORY_EXTERN_OPERATIONS(component::gpu_roofline_flops, true)
 //
 #endif
 //
@@ -153,10 +153,10 @@ TIMEMORY_EXTERN_STORAGE(component::cpu_roofline_flops, cpu_roofline_flops)
 //
 #if defined(TIMEMORY_USE_CUPTI_EXTERN)
 //
-TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_hp_flops, gpu_roofline_hp_flops)
+// TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_hp_flops, gpu_roofline_hp_flops)
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_sp_flops, gpu_roofline_sp_flops)
 TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_dp_flops, gpu_roofline_dp_flops)
-TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_flops, gpu_roofline_flops)
+// TIMEMORY_EXTERN_STORAGE(component::gpu_roofline_flops, gpu_roofline_flops)
 //
 #endif
 //

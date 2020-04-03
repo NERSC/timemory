@@ -592,7 +592,7 @@ get_labeled(const component_tuple<_Types...>& _obj)
 //
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/variadic/bits/component_tuple.hpp"
+// #include "timemory/variadic/bits/component_tuple.hpp"
 
 //======================================================================================//
 //

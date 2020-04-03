@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/components.hpp"
 #include "timemory/containers/definition.hpp"
 #include "timemory/environment/definition.hpp"
 #include "timemory/hash/definition.hpp"
@@ -32,5 +33,6 @@
 #include "timemory/plotting/definition.hpp"
 #include "timemory/settings/definition.hpp"
 #include "timemory/storage/definition.hpp"
+#include "timemory/variadic/definition.hpp"
 //
 #include "timemory/components/opaque/definition.hpp"

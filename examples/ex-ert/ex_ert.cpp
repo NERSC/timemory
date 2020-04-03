@@ -23,12 +23,6 @@
 // SOFTWARE.
 //
 
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/types.hpp"
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_util, std::false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::false_type)
-
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/timemory.hpp"

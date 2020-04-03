@@ -153,11 +153,9 @@
         component::user_list_bundle, component::gperftools_cpu_profiler,                 \
             component::gperftools_heap_profiler, component::caliper,                     \
             component::tau_marker, component::papi_array_t,                              \
-            component::cpu_roofline_sp_flops, component::cpu_roofline_dp_flops,          \
-            component::cuda_event, component::nvtx_marker, component::cupti_activity,    \
-            component::cupti_counters, component::gpu_roofline_flops,                    \
-            component::gpu_roofline_hp_flops, component::gpu_roofline_sp_flops,          \
-            component::gpu_roofline_dp_flops
+            component::cpu_roofline_flops, component::cuda_event, component::nvtx_marker,\
+	    component::cupti_activity, component::cupti_counters,                        \
+	    component::gpu_roofline_sp_flops, component::gpu_roofline_dp_flops
 #endif
 
 namespace tim
