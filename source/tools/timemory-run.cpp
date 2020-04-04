@@ -27,10 +27,10 @@
 
 using std::string;
 
-int expectError   = NO_ERROR;
-int debugPrint    = 0;
-int binaryRewrite = 0; /* by default, it is turned off */
-std::string main_fname = "main";
+int         expectError   = NO_ERROR;
+int         debugPrint    = 0;
+int         binaryRewrite = 0; /* by default, it is turned off */
+std::string main_fname    = "main";
 
 template class BPatch_Vector<BPatch_variableExpr*>;
 
@@ -525,8 +525,10 @@ initialize(BPatch_process* appThread, BPatch_image* appImage,
         }
         else
         {
-            fprintf(stderr, "timemory-run: entry points for '%s' or init_snippet for "
-                            "Init are null\n", main_fname.c_str());
+            fprintf(stderr,
+                    "timemory-run: entry points for '%s' or init_snippet for "
+                    "Init are null\n",
+                    main_fname.c_str());
             exit(1);
         }
     }

@@ -6,8 +6,8 @@ build_intermediate_library(
     USE_INTERFACE
     NAME                runtime
     TARGET              runtime
-    CATEGORY            GLOBAL
-    FOLDER              global
+    CATEGORY            EXTERN
+    FOLDER              extern
     HEADERS             ${header_files}
     SOURCES             ${source_files}
-    PROPERTY_DEPENDS    GLOBAL)
+    PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE)

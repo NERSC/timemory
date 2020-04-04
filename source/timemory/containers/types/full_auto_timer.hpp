@@ -39,7 +39,7 @@
 //
 #include "timemory/manager/declaration.hpp"
 #include "timemory/storage/definition.hpp"
-//  
+//
 #include "timemory/components.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/variadic/definition.hpp"

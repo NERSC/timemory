@@ -51,6 +51,7 @@
 
 #if defined(TIMEMORY_USE_PAPI)
 #    include <papiStdEventDefs.h>
+//
 #    include <papi.h>
 #    if defined(_UNIX)
 #        include <pthread.h>

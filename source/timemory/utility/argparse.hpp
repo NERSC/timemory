@@ -38,8 +38,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "timemory/utility/utility.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 namespace tim
 {
@@ -346,7 +346,8 @@ struct argument_parser
         std::cout << "Usage: " << m_bin;
         if(m_positional_arguments.empty())
         {
-            std::cout << " [options...]" << " " << _extra << std::endl;
+            std::cout << " [options...]"
+                      << " " << _extra << std::endl;
         }
         else
         {
@@ -561,8 +562,7 @@ struct argument_parser
     //
     void enable_help()
     {
-        add_argument().names({ "-h", "--help"})
-            .description("Shows this page");
+        add_argument().names({ "-h", "--help" }).description("Shows this page");
         m_help_enabled = true;
     }
     //
