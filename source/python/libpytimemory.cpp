@@ -24,10 +24,6 @@
 //
 
 #include "libpytimemory.hpp"
-#include "timemory/timemory.hpp"
-
-#include "timemory/components/definition.hpp"
-#include "timemory/components/ompt.hpp"
 
 #include <cstdio>
 #include <pybind11/pybind11.h>

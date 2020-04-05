@@ -51,8 +51,6 @@
 //
 #if defined(_WINDOWS)
 #    include "timemory/components.hpp"
-#else
-#    include "timemory/components/extern.hpp"
 #endif
 //
 //======================================================================================//

@@ -36,7 +36,6 @@
 #include "timemory/timemory.hpp"
 //
 #include "timemory/enum.h"
-#include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"
 #include "timemory/runtime/initialize.hpp"
@@ -57,6 +56,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <cstdint>
 #include <functional>
 #include <future>
@@ -76,8 +76,7 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-struct pytim_project;
-using pybundle_t = tim::component::user_bundle<0, pytim_project>;
+using pybundle_t = tim::component::user_global_bundle;
 
 using auto_timer_t = typename tim::auto_timer::type;
 

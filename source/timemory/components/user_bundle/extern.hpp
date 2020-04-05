@@ -48,20 +48,12 @@
 #include "timemory/plotting/extern.hpp"
 #include "timemory/settings/extern.hpp"
 //
-#if defined(_WINDOWS)
-//
-#    include "timemory/components.hpp"
-//
-#else
-//
-#    include "timemory/components/extern.hpp"
-//
-#endif
+#include "timemory/components.hpp"
 //
 
 //======================================================================================//
 //
-#if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#if defined(TIMEMORY_SOURCE) || defined(TIMEMORY_USER_BUNDLE_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -86,7 +78,7 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#else
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -107,6 +99,28 @@
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
 #        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...)                                \
             extern template TIMEMORY_USER_BUNDLE_DLL __VA_ARGS__;
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#else
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_STORAGE)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(...)
+#    endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(...)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
