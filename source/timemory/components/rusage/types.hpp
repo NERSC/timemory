@@ -138,9 +138,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::read_bytes, false_type)
 #if defined(_LINUX) || (defined(_UNIX) && !defined(_MACOS))
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::data_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::read_bytes, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(file_sampler, component::virtual_memory, true_type)
 
 #endif

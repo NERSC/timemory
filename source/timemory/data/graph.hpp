@@ -371,9 +371,21 @@ public:
         iterator_base();
         iterator_base(graph_node*);
 
+        iterator_base(const iterator_base&) = default;
+        iterator_base(iterator_base&&)      = default;
+
+    public:
+        // public operators
+        iterator_base& operator=(const iterator_base&) = default;
+        iterator_base& operator=(iterator_base&&) = default;
+
+        operator bool() const { return node != nullptr; }
+
         T& operator*() const;
         T* operator->() const;
 
+    public:
+        // public member functions
         /// When called, the next increment/decrement skips children of this
         /// node.
         void skip_children();
@@ -384,11 +396,12 @@ public:
         sibling_iterator begin() const;
         sibling_iterator end() const;
 
-        operator bool() const { return node != nullptr; }
-
+    public:
+        // public data member
         graph_node* node = nullptr;
 
     protected:
+        // protected data member
         bool m_skip_current_children = false;
     };
 
@@ -401,6 +414,14 @@ public:
         pre_order_iterator(const iterator_base&);
         pre_order_iterator(const sibling_iterator&);
 
+        pre_order_iterator(const pre_order_iterator&) = default;
+        pre_order_iterator(pre_order_iterator&&)      = default;
+
+    public:
+        // public operators
+        pre_order_iterator& operator=(const pre_order_iterator&) = default;
+        pre_order_iterator& operator=(pre_order_iterator&&) = default;
+
         bool                operator==(const pre_order_iterator&) const;
         bool                operator!=(const pre_order_iterator&) const;
         pre_order_iterator& operator++();
@@ -411,6 +432,8 @@ public:
         pre_order_iterator& operator-=(unsigned int);
         pre_order_iterator  operator+(unsigned int);
 
+    public:
+        // public member functions
         pre_order_iterator& next_skip_children();
     };
 
@@ -431,6 +454,8 @@ public:
         sibling_iterator(const sibling_iterator&) = default;
         sibling_iterator(sibling_iterator&&)      = default;
 
+    public:
+        // public operators
         sibling_iterator& operator=(const sibling_iterator&) = default;
         sibling_iterator& operator=(sibling_iterator&&) = default;
 
@@ -444,8 +469,13 @@ public:
         sibling_iterator& operator-=(unsigned int);
         sibling_iterator  operator+(unsigned int);
 
+    public:
+        // public member functions
         graph_node* range_first() const;
         graph_node* range_last() const;
+
+    public:
+        // public data member
         graph_node* m_parent;
 
     private:
@@ -2520,10 +2550,6 @@ graph<T, AllocatorT>::number_of_children(const iterator_base& it)
         return 0;
 
     unsigned int ret = 1;
-    //	  while(pos!=it.node->last_child) {
-    //		  ++ret;
-    //		  pos=pos->next_sibling;
-    //		  }
     while((pos = pos->next_sibling))
         ++ret;
     return ret;
@@ -3153,7 +3179,7 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::graph_node*
 graph<T, AllocatorT>::sibling_iterator::range_last() const
 {
-    return m_parent->last_child;
+    return (m_parent) ? m_parent->last_child : nullptr;
 }
 
 //--------------------------------------------------------------------------------------//

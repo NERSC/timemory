@@ -97,8 +97,18 @@ TIMEMORY_DEFINE_VARIADIC_TRAIT(custom_serialization, component::papi_tuple, true
 //
 //--------------------------------------------------------------------------------------//
 //
+//                              SAMPLER
 //
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(sampler, component::papi_vector, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(sampler, component::papi_array_t, true_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              PROPERTIES
+//
+//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(papi_vector, PAPI_VECTOR, "papi_vector", "papi")
 TIMEMORY_PROPERTY_SPECIALIZATION(papi_array_t, PAPI_ARRAY, "papi_array_t", "papi_array")

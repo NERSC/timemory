@@ -67,56 +67,138 @@ typedef struct
 } timemory_settings;
 
 //======================================================================================//
+/*
+// c library
+#pragma weak c_timemory_init
+#pragma weak c_timemory_finalize
+#pragma weak c_timemory_enabled
+#pragma weak c_timemory_create_auto_timer
+#pragma weak c_timemory_delete_auto_timer
+#pragma weak c_timemory_create_auto_tuple
+#pragma weak c_timemory_delete_auto_tuple
+#pragma weak c_timemory_blank_label
+#pragma weak c_timemory_basic_label
+#pragma weak c_timemory_label
+// cxx library
+#pragma weak cxx_timemory_init
+#pragma weak cxx_timemory_enabled
+#pragma weak cxx_timemory_create_auto_timer
+#pragma weak cxx_timemory_create_auto_tuple
+#pragma weak cxx_timemory_delete_auto_timer
+#pragma weak cxx_timemory_delete_auto_tuple
+#pragma weak cxx_timemory_label
+*/
+// function pointers
+#pragma weak timemory_create_function
+#pragma weak timemory_create_function
+// generic library
+#pragma weak timemory_get_unique_id
+#pragma weak timemory_create_record
+#pragma weak timemory_delete_record
+#pragma weak timemory_init_library
+#pragma weak timemory_finalize_library
+#pragma weak timemory_pause
+#pragma weak timemory_resume
+#pragma weak timemory_set_default
+#pragma weak timemory_push_components
+#pragma weak timemory_push_components_enum
+#pragma weak timemory_pop_components
+#pragma weak timemory_begin_record
+#pragma weak timemory_begin_record_types
+#pragma weak timemory_begin_record_enum
+#pragma weak timemory_get_begin_record
+#pragma weak timemory_get_begin_record_types
+#pragma weak timemory_get_begin_record_enum
+#pragma weak timemory_end_record
+#pragma weak timemory_push_region
+#pragma weak timemory_pop_region
+#pragma weak timemory_register_trace
+#pragma weak timemory_deregister_trace
+#pragma weak timemory_dyninst_init
+#pragma weak timemory_dyninst_finalize
+#pragma weak timemory_init_trace
+#pragma weak timemory_fini_trace
+#pragma weak timemory_mpi_init_stub
+#pragma weak timemory_get_rank
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_DECL)
+#    define TIMEMORY_DECL extern tim_dll
+#endif
+
+//======================================================================================//
 
 #if defined(__cplusplus)
 extern "C"
 {
 #endif  // if defined(__cplusplus)
 
-    extern tim_dll void        c_timemory_init(int argc, char** argv, timemory_settings);
-    extern tim_dll void        c_timemory_finalize(void);
-    extern tim_dll int         c_timemory_enabled(void);
-    extern tim_dll void*       c_timemory_create_auto_timer(const char*);
-    extern tim_dll void        c_timemory_delete_auto_timer(void*);
-    extern tim_dll void*       c_timemory_create_auto_tuple(const char*, ...);
-    extern tim_dll void        c_timemory_delete_auto_tuple(void*);
-    extern tim_dll const char* c_timemory_blank_label(const char*);
-    extern tim_dll const char* c_timemory_basic_label(const char*, const char*);
-    extern tim_dll const char* c_timemory_label(const char*, const char*, int,
-                                                const char*);
-
-    extern uint64_t timemory_get_unique_id(void);
-    extern void timemory_create_record(const char* name, uint64_t* id, int n, int* ct);
-    extern void timemory_delete_record(uint64_t nid);
-    extern void timemory_init_library(int argc, char** argv);
-    extern void timemory_finalize_library(void);
-
-    extern void timemory_pause(void);
-    extern void timemory_resume(void);
-
-    extern void timemory_set_default(const char* components);
-    extern void timemory_push_components(const char* components);
-    extern void timemory_push_components_enum(int args, ...);
-    extern void timemory_pop_components(void);
-
-    extern void timemory_begin_record(const char* name, uint64_t* id);
-    extern void timemory_begin_record_enum(const char* name, uint64_t*, ...);
-    extern void timemory_begin_record_types(const char* name, uint64_t*, const char*);
-
-    extern uint64_t timemory_get_begin_record(const char* name);
-    extern uint64_t timemory_get_begin_record_enum(const char* name, ...);
-    extern uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes);
-
-    extern void timemory_end_record(uint64_t id);
-
-    extern void timemory_push_region(const char* name);
-    extern void timemory_pop_region(const char* name);
-
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 
-    extern tim_dll timemory_create_func_t timemory_create_function;
-    extern tim_dll timemory_delete_func_t timemory_delete_function;
+    TIMEMORY_DECL timemory_create_func_t timemory_create_function;
+    TIMEMORY_DECL timemory_delete_func_t timemory_delete_function;
+
+    TIMEMORY_DECL void        c_timemory_init(int argc, char** argv, timemory_settings);
+    TIMEMORY_DECL void        c_timemory_finalize(void);
+    TIMEMORY_DECL int         c_timemory_enabled(void);
+    TIMEMORY_DECL void*       c_timemory_create_auto_timer(const char*);
+    TIMEMORY_DECL void        c_timemory_delete_auto_timer(void*);
+    TIMEMORY_DECL void*       c_timemory_create_auto_tuple(const char*, ...);
+    TIMEMORY_DECL void        c_timemory_delete_auto_tuple(void*);
+    TIMEMORY_DECL const char* c_timemory_blank_label(const char*);
+    TIMEMORY_DECL const char* c_timemory_basic_label(const char*, const char*);
+    TIMEMORY_DECL const char* c_timemory_label(const char*, const char*, int,
+                                               const char*);
+
+    TIMEMORY_DECL void  cxx_timemory_init(int, char**, timemory_settings);
+    TIMEMORY_DECL int   cxx_timemory_enabled(void);
+    TIMEMORY_DECL void* cxx_timemory_create_auto_timer(const char*);
+    TIMEMORY_DECL void* cxx_timemory_create_auto_tuple(const char*, int, const int*);
+    TIMEMORY_DECL void* cxx_timemory_delete_auto_timer(void*);
+    TIMEMORY_DECL void* cxx_timemory_delete_auto_tuple(void*);
+    TIMEMORY_DECL const char* cxx_timemory_label(int, int, const char*, const char*,
+                                                 const char*);
+
+    TIMEMORY_DECL uint64_t timemory_get_unique_id(void);
+    TIMEMORY_DECL void     timemory_create_record(const char* name, uint64_t* id, int n,
+                                                  int* ct);
+    TIMEMORY_DECL void     timemory_delete_record(uint64_t nid);
+    TIMEMORY_DECL void     timemory_init_library(int argc, char** argv);
+    TIMEMORY_DECL void     timemory_finalize_library(void);
+
+    TIMEMORY_DECL void timemory_pause(void);
+    TIMEMORY_DECL void timemory_resume(void);
+
+    TIMEMORY_DECL void timemory_set_default(const char* components);
+    TIMEMORY_DECL void timemory_push_components(const char* components);
+    TIMEMORY_DECL void timemory_push_components_enum(int args, ...);
+    TIMEMORY_DECL void timemory_pop_components(void);
+
+    TIMEMORY_DECL void timemory_begin_record(const char* name, uint64_t* id);
+    TIMEMORY_DECL void timemory_begin_record_enum(const char* name, uint64_t*, ...);
+    TIMEMORY_DECL void timemory_begin_record_types(const char* name, uint64_t*,
+                                                   const char*);
+
+    TIMEMORY_DECL uint64_t timemory_get_begin_record(const char* name);
+    TIMEMORY_DECL uint64_t timemory_get_begin_record_enum(const char* name, ...);
+    TIMEMORY_DECL uint64_t timemory_get_begin_record_types(const char* name,
+                                                           const char* ctypes);
+
+    TIMEMORY_DECL void timemory_end_record(uint64_t id);
+
+    TIMEMORY_DECL void timemory_push_region(const char* name);
+    TIMEMORY_DECL void timemory_pop_region(const char* name);
+
+    TIMEMORY_DECL int64_t timemory_register_trace(const char* name);
+    TIMEMORY_DECL void    timemory_deregister_trace(const char* name);
+    TIMEMORY_DECL void    timemory_dyninst_init(void);
+    TIMEMORY_DECL void    timemory_dyninst_finalize(void);
+    TIMEMORY_DECL void    timemory_init_trace(uint64_t id);
+    TIMEMORY_DECL void    timemory_fini_trace(void);
+    TIMEMORY_DECL void    timemory_mpi_init_stub(int rank);
+    TIMEMORY_DECL int     timemory_get_rank(void);
 
 #if defined(__cplusplus)
 }

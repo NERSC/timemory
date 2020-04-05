@@ -155,7 +155,7 @@ struct TIMEMORY_SETTINGS_DLL settings
 
     // output control
     TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, output_path, "TIMEMORY_OUTPUT_PATH",
-                                    "timemory-output/")  // folder
+                                    "timemory-output")  // folder
     TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, output_prefix, "TIMEMORY_OUTPUT_PREFIX",
                                     "")  // file prefix
 
@@ -250,6 +250,9 @@ struct TIMEMORY_SETTINGS_DLL settings
 
     /// PAPI attach to pid
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, papi_attach, "TIMEMORY_PAPI_ATTACH", false)
+
+    /// PAPI overflow threshold
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(int, papi_overflow, "TIMEMORY_PAPI_OVERFLOW", 0)
 
     //----------------------------------------------------------------------------------//
     //      CUDA / CUPTI
@@ -591,6 +594,7 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_QUIET", papi_quiet)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_EVENTS", papi_events)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_ATTACH", papi_attach)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_OVERFLOW", papi_overflow)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_CUDA_EVENT_BATCH_SIZE",
                                     cuda_event_batch_size)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_NVTX_MARKER_DEVICE_SYNC",

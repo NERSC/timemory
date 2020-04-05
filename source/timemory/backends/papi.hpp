@@ -790,6 +790,21 @@ query_event(int event)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename Func>
+static inline bool
+overflow(int evt_set, int evt_code, int threshold, int flags, Func&& handler)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    return (PAPI_overflow(evt_set, evt_code, threshold, flags,
+                          std::forward<Func>(handler)) == PAPI_OK);
+#else
+    consume_parameters(evt_set, evt_code, threshold, flags, handler);
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 static inline hwcounter_info_t
 available_events_info()
 {

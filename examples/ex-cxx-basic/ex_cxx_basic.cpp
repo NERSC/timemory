@@ -29,9 +29,9 @@
 
 using namespace tim::component;
 
-using real_tuple_t = tim::auto_tuple_t<wall_clock, papi_array_t, caliper, tau_marker>;
+using real_tuple_t = tim::auto_tuple_t<wall_clock, papi_vector, caliper, tau_marker>;
 using auto_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, peak_rss,
-                                       papi_array_t, caliper, tau_marker>;
+                                       papi_vector, caliper, tau_marker>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using auto_list_t =
     tim::auto_list_t<wall_clock, cpu_clock, cpu_util, peak_rss, caliper, tau_marker>;
@@ -49,11 +49,8 @@ fibonacci(intmax_t n);
 int
 main(int argc, char** argv)
 {
-#if defined(TIMEMORY_USE_PAPI)
-    papi_array_t::get_initializer() = []() {
-        return std::vector<int>({ PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS });
-    };
-#endif
+    if(tim::settings::papi_events().empty())
+        tim::settings::papi_events() = "PAPI_TOT_CYC,PAPI_TOT_INS,PAPI_LST_INS";
 
     const std::string default_env = "wall_clock,cpu_clock,cpu_util,caliper";
     auto              env         = tim::get_env("TIMEMORY_COMPONENTS", default_env);

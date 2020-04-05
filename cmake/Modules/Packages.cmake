@@ -1223,6 +1223,27 @@ if(TIMEMORY_USE_DYNINST)
 endif()
 
 if(Dyninst_FOUND AND Boost_FOUND)
+    # some installs of dyninst don't set this properly
+    find_path(DYNINST_HEADER_DIR
+        NAMES BPatch.h dyninstAPI_RT.h
+        HINTS ${Dyninst_DIR}
+        PATHS ${Dyninst_DIR}
+        PATH_SUFFIXES include)
+
+    # useful for defining the location of the runtime API
+    find_library(DYNINST_API_RT dyninstAPI_RT
+        HINTS ${Dyninst_DIR}
+        PATHS ${Dyninst_DIR}
+        PATH_SUFFIXES lib)
+
+    if(DYNINST_HEADER_DIR)
+        target_include_directories(timemory-dyninst SYSTEM INTERFACE ${DYNINST_HEADER_DIR})
+    endif()
+
+    if(DYNINST_API_RT)
+        target_compile_definitions(timemory-dyninst INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
+    endif()
+
     target_link_libraries(timemory-dyninst INTERFACE
         ${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
     foreach(_TARG Dyninst::dyninst Boost::headers Boost::atomic Boost::system Boost::thread Boost::date_time)

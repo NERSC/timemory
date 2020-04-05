@@ -23,7 +23,7 @@ if(_MPIP AND NOT TARGET timemory-cxx-shared)
 endif()
 
 set(_STATIC_LIB)
-foreach(_TARG timing-component rusage-component)
+foreach(_TARG timing-component manager settings hash)
     if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
         list(APPEND _STATIC_LIB timemory-${_TARG}-static)
     endif()
@@ -91,7 +91,7 @@ if(TIMEMORY_BUILD_TIMEM)
         timemory-arch
         timemory-vector
         timemory-headers
-        # timemory-papi
+        timemory-papi
         timem-libexplain
         ${_STATIC_LIB})
 
@@ -150,6 +150,7 @@ if(TIMEMORY_USE_DYNINST)
             list(APPEND _EXCLUDE ${_FILE})
         endif()
     endforeach()
+
     list(REMOVE_DUPLICATES _EXCLUDE)
     set(EXCLUDE_SOURCE_FILES ${_EXCLUDE})
     unset(_EXCLUDE)
@@ -157,34 +158,21 @@ if(TIMEMORY_USE_DYNINST)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp.in
         ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp @ONLY)
 
-    find_library(DYNINST_API_RT dyninstAPI_RT
-        HINTS ${Dyninst_DIR}
-        PATHS ${Dyninst_DIR}
-        PATH_SUFFIXES lib)
-
     add_executable(timemory-run timemory-run.cpp
         ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp)
 
     target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-    
-    if(DYNINST_API_RT)
-        target_compile_definitions(timemory-run PRIVATE
-            DYNINST_API_RT="${DYNINST_API_RT}")
-    endif()
 
     target_link_libraries(timemory-run PRIVATE
-        timemory-compile-options
-        # timemory-arch
-        timemory-vector
         timemory-headers
         timemory-dyninst
-        # timemory-roofline-options
-        # timemory-cxx-shared
+        # timemory-compile-options
+        # timemory-arch
+        # timemory-stubs-shared
     )
 
     set_target_properties(timemory-run PROPERTIES
         INSTALL_RPATH_USE_LINK_PATH ON
-        # EXCLUDE_FROM_ALL ON
     )
 
     install(TARGETS timemory-run DESTINATION bin)

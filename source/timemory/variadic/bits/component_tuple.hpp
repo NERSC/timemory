@@ -241,7 +241,7 @@ template <typename... Args>
 void
 component_tuple<Types...>::sample(Args&&... args)
 {
-    sample_type _samples{};
+    sample_type _samples;
     apply_v::access2<operation_t<operation::sample>>(m_data, _samples,
                                                      std::forward<Args>(args)...);
 }

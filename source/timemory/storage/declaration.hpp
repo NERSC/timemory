@@ -367,11 +367,12 @@ public:
     using graph_t        = typename graph_data_t::graph_t;
     using iterator       = typename graph_t::iterator;
     using const_iterator = typename graph_t::const_iterator;
-    template <typename _Vp>
-    using secondary_data_t = std::tuple<iterator, const std::string&, _Vp>;
-    template <typename _Key_t, typename _Mapped_t>
-    using uomap_t             = std::unordered_map<_Key_t, _Mapped_t>;
-    using iterator_hash_map_t = uomap_t<int64_t, uomap_t<int64_t, iterator>>;
+    template <typename Vp>
+    using secondary_data_t = std::tuple<iterator, const std::string&, Vp>;
+    template <typename KeyT, typename MappedT>
+    using uomap_t                = std::unordered_map<KeyT, MappedT>;
+    using iterator_hash_submap_t = uomap_t<int64_t, iterator>;
+    using iterator_hash_map_t    = uomap_t<int64_t, iterator_hash_submap_t>;
 
 public:
     storage();
@@ -423,8 +424,8 @@ public:
     template <typename Scope>
     iterator insert(const Type& obj, uint64_t hash_id);
 
-    template <typename _Vp>
-    void append(const secondary_data_t<_Vp>& _secondary);
+    template <typename Vp>
+    void append(const secondary_data_t<Vp>& _secondary);
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version);
@@ -499,9 +500,9 @@ storage<Type, true>::insert(const Type& obj, uint64_t hash_id)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename _Vp>
+template <typename Vp>
 void
-storage<Type, true>::append(const secondary_data_t<_Vp>& _secondary)
+storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
     insert_init();
 
@@ -931,9 +932,10 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
                  HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
                  uint64_t tid)
 {
-    using graph_t      = typename StorageType::graph_t;
-    using graph_node_t = typename StorageType::graph_node_t;
-    using iterator     = typename StorageType::iterator;
+    using graph_t       = typename StorageType::graph_t;
+    using graph_node_t  = typename StorageType::graph_node_t;
+    using iterator      = typename StorageType::iterator;
+    using id_hash_map_t = typename HashMap::mapped_type;
 
     // if first instance
     if(!_has_head || (_is_master && m_node_ids.size() == 0))
@@ -961,9 +963,15 @@ insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
 
     // lambda for inserting child
     auto _insert_child = [&]() {
-        node.depth()                    = hash_depth;
-        auto itr                        = m_data->append_child(node);
-        m_node_ids[hash_depth][hash_id] = itr;
+        node.depth() = hash_depth;
+        auto itr     = m_data->append_child(node);
+        auto ditr    = m_node_ids.find(hash_depth);
+        if(ditr == m_node_ids.end())
+            m_node_ids.insert({ hash_depth, id_hash_map_t{} });
+        auto hitr = m_node_ids.at(hash_depth).find(hash_id);
+        if(hitr == m_node_ids.at(hash_depth).end())
+            m_node_ids.at(hash_depth).insert({ hash_id, iterator{} });
+        m_node_ids.at(hash_depth).at(hash_id) = itr;
         return itr;
     };
 

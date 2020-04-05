@@ -27,13 +27,10 @@
 #include "timemory/timemory.hpp"
 
 #include "timemory/components/definition.hpp"
+#include "timemory/components/ompt.hpp"
 
 #include <cstdio>
 #include <pybind11/pybind11.h>
-
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/backends/cupti.hpp"
-#endif
 
 #if defined(TIMEMORY_USE_MPI_P)
 extern "C"
@@ -511,6 +508,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, papi_quiet);
     SETTING_PROPERTY(string_t, papi_events);
     SETTING_PROPERTY(bool, papi_attach);
+    SETTING_PROPERTY(int, papi_overflow);
     // cuda/nvtx/cupti
     SETTING_PROPERTY(uint64_t, cuda_event_batch_size);
     SETTING_PROPERTY(bool, nvtx_marker_device_sync);

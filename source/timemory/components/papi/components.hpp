@@ -31,6 +31,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
@@ -50,22 +51,37 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
-struct papi_vector : public base<papi_vector, std::vector<long long>>
+struct papi_vector
+: public base<papi_vector, std::vector<long long>>
+, private policy::instance_tracker<papi_vector>
 {
-    template <typename _Tp>
-    using array_t = std::vector<_Tp>;
+    template <typename Tp>
+    using vector_t = std::vector<Tp>;
 
     using size_type         = size_t;
-    using event_list        = array_t<int>;
-    using value_type        = array_t<long long>;
+    using event_list        = vector_t<int>;
+    using value_type        = vector_t<long long>;
     using entry_type        = typename value_type::value_type;
     using this_type         = papi_vector;
     using base_type         = base<this_type, value_type>;
     using storage_type      = typename base_type::storage_type;
     using get_initializer_t = std::function<event_list()>;
+    using tracker_type      = policy::instance_tracker<this_type>;
+
+    using tracker_type::m_thr;
 
     static const short precision = 3;
     static const short width     = 8;
+
+    //----------------------------------------------------------------------------------//
+
+    static void overflow_handler(int evt_set, void* address, long long overflow_vector,
+                                 void* context)
+    {
+        fprintf(stderr, "[papi_vector%i]> Overflow at %p! bit=0x%llx \n", evt_set,
+                address, overflow_vector);
+        consume_parameters(context);
+    }
 
     //----------------------------------------------------------------------------------//
 
@@ -113,8 +129,8 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
                 }
             }
 
-            array_t<string_t> events_str_list = delimit(events_str);
-            array_t<int>      events_list;
+            vector_t<string_t> events_str_list = delimit(events_str);
+            vector_t<int>      events_list;
             for(const auto& itr : events_str_list)
             {
                 if(itr.length() == 0)
@@ -167,6 +183,12 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
             {
                 papi::create_event_set(&_event_set(), settings::papi_multiplexing());
                 papi::add_events(_event_set(), events.data(), events.size());
+                if(settings::papi_overflow() > 0)
+                {
+                    for(auto itr : events)
+                        papi::overflow(_event_set(), itr, settings::papi_overflow(), 0,
+                                       &overflow_handler);
+                }
                 if(settings::papi_attach())
                     papi::attach(_event_set(), process::get_target_id());
                 papi::start(_event_set());
@@ -230,11 +252,11 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tp = double>
-    array_t<_Tp> get() const
+    template <typename Tp = double>
+    vector_t<Tp> get() const
     {
         auto&        _data = (is_transient) ? accum : value;
-        array_t<_Tp> values(_data.size(), 0.0);
+        vector_t<Tp> values(_data.size(), 0.0);
         assert(_data.size() == events.size());
         for(size_t i = 0; i < _data.size(); ++i)
             values[i] = _data[i];
@@ -246,6 +268,10 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
     //
     void start()
     {
+        if(tracker_type::get_thread_started() == 0)
+            papi::reset(_event_set());
+
+        tracker_type::start();
         set_started();
         value = record();
     }
@@ -255,6 +281,8 @@ struct papi_vector : public base<papi_vector, std::vector<long long>>
     void stop()
     {
         auto tmp = record();
+        tracker_type::stop();
+
         accum.resize(events.size(), 0);
         for(size_type i = 0; i < events.size(); ++i)
         {
@@ -337,10 +365,10 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        auto            sz = events.size();
-        array_t<double> _disp(sz, 0.0);
-        array_t<double> _value(sz, 0.0);
-        array_t<double> _accum(sz, 0.0);
+        auto             sz = events.size();
+        vector_t<double> _disp(sz, 0.0);
+        vector_t<double> _value(sz, 0.0);
+        vector_t<double> _accum(sz, 0.0);
         for(size_type i = 0; i < sz; ++i)
         {
             _disp[i]  = get_display(i);
@@ -355,9 +383,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    array_t<std::string> label_array() const
+    vector_t<std::string> label_array() const
     {
-        array_t<std::string> arr(events.size(), "");
+        vector_t<std::string> arr(events.size(), "");
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).short_descr;
         return arr;
@@ -366,9 +394,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    array_t<std::string> description_array() const
+    vector_t<std::string> description_array() const
     {
-        array_t<std::string> arr(events.size(), "");
+        vector_t<std::string> arr(events.size(), "");
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).long_descr;
         return arr;
@@ -377,9 +405,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    array_t<std::string> display_unit_array() const
+    vector_t<std::string> display_unit_array() const
     {
-        array_t<std::string> arr(events.size(), "");
+        vector_t<std::string> arr(events.size(), "");
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).units;
         return arr;
@@ -388,9 +416,9 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    array_t<int64_t> unit_array() const
+    vector_t<int64_t> unit_array() const
     {
-        array_t<int64_t> arr(events.size(), 0);
+        vector_t<int64_t> arr(events.size(), 0);
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = 1;
         return arr;
@@ -493,8 +521,8 @@ struct papi_array
     static const short precision = 3;
     static const short width     = 8;
 
-    template <typename _Tp>
-    using array_t = std::array<_Tp, MaxNumEvents>;
+    template <typename Tp>
+    using array_t = std::array<Tp, MaxNumEvents>;
 
     //----------------------------------------------------------------------------------//
 
@@ -663,11 +691,11 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tp = double>
-    std::vector<_Tp> get() const
+    template <typename Tp = double>
+    std::vector<Tp> get() const
     {
-        std::vector<_Tp> values;
-        auto&            _data = (is_transient) ? accum : value;
+        std::vector<Tp> values;
+        auto&           _data = (is_transient) ? accum : value;
         for(auto& itr : _data)
             values.push_back(itr);
         values.resize(events.size());
@@ -915,8 +943,8 @@ struct papi_tuple
     using storage_type = typename base_type::storage_type;
 
     static const size_type num_events = sizeof...(EventTypes);
-    template <typename _Tp>
-    using array_t = std::array<_Tp, num_events>;
+    template <typename Tp>
+    using array_t = std::array<Tp, num_events>;
 
 public:
     //==================================================================================//
@@ -1196,11 +1224,11 @@ public:
         return ss.str();
     }
 
-    template <typename _Tp = double>
-    std::vector<_Tp> get() const
+    template <typename Tp = double>
+    std::vector<Tp> get() const
     {
-        std::vector<_Tp> values;
-        auto&            _data = (is_transient) ? accum : value;
+        std::vector<Tp> values;
+        auto&           _data = (is_transient) ? accum : value;
         for(auto& itr : _data)
             values.push_back(itr);
         return values;

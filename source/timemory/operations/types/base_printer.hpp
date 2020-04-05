@@ -75,6 +75,10 @@ struct base_printer : public common_utils
         ss_value.setf(_flags);
         ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
 
+        // get display returned an empty string
+        if(ss_value.str().find_first_not_of(" ") == std::string::npos)
+            return;
+
         // check traits to see if we should print
         constexpr bool units_print = !trait::custom_unit_printing<type>::value;
         constexpr bool label_print = !trait::custom_label_printing<type>::value;

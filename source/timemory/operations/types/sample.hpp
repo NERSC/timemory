@@ -64,7 +64,7 @@ struct sample
     using this_type              = sample<Tp>;
     using data_type = conditional_t<enable, decltype(std::declval<Tp>().get()), EmptyT>;
 
-    TIMEMORY_DELETED_OBJECT(sample)
+    TIMEMORY_DEFAULT_OBJECT(sample)
 
     template <typename Up, typename... Args,
               enable_if_t<(std::is_same<Up, this_type>::value), int> = 0>
@@ -75,6 +75,12 @@ struct sample
     explicit sample(type&, Up, Args&&...);
 
     data_type value;
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar(cereal::make_nvp("sample", value));
+    }
 
 private:
     //  satisfies mpl condition and accepts arguments

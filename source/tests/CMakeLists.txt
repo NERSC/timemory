@@ -123,7 +123,7 @@ if(TIMEMORY_USE_PAPI)
         SOURCES         papi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options
                         timemory-develop-options timemory-plotting timemory-analysis-tools
-                        timemory-arch
+                        timemory-arch timemory-roofline-options
                         ${_LIBRARY})
 endif()
 

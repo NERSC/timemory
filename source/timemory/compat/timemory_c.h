@@ -82,7 +82,8 @@
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_C_BLANK_AUTO_TIMER(c_str) c_timemory_create_auto_timer(c_str)
+#    define TIMEMORY_C_BLANK_AUTO_TIMER(c_str)                                           \
+        c_timemory_create_auto_timer(TIMEMORY_C_BLANK_LABEL(c_str))
 
 #    define TIMEMORY_C_BASIC_AUTO_TIMER(c_str)                                           \
         c_timemory_create_auto_timer(TIMEMORY_C_BASIC_LABEL(c_str))

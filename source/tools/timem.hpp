@@ -88,6 +88,22 @@ using namespace tim::component;
 //
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace trait
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct custom_label_printing<papi_array_t> : true_type
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace trait
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
@@ -106,28 +122,224 @@ struct custom_print
         os << ss.str();
     }
 };
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 namespace operation
 {
-template <typename Tp, bool _Sample = ::tim::trait::file_sampler<Tp>::value>
-struct file_sample;
-
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, bool _Sample = ::tim::trait::sampler<Tp>::value>
+struct timem_sample;
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename Tp>
-struct file_sample<Tp, true>
+struct timem_sample<Tp, true>
 {
-    explicit file_sample(Tp& obj) { obj.measure(); }
+    explicit timem_sample(Tp& obj) { obj.measure(); }
 };
-
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename Tp>
-struct file_sample<Tp, false>
+struct timem_sample<Tp, false>
 {
-    explicit file_sample(Tp&) {}
+    explicit timem_sample(Tp&) {}
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct sample<component::papi_array_t>
+{
+    using EmptyT                 = std::tuple<>;
+    using type                   = papi_array_t;
+    using value_type             = typename type::value_type;
+    using base_type              = typename type::base_type;
+    using this_type              = sample<type>;
+    static constexpr bool enable = trait::sampler<type>::value;
+    using data_type = conditional_t<enable, decltype(std::declval<type>().get()), EmptyT>;
 
+    TIMEMORY_DEFAULT_OBJECT(sample)
+
+    template <typename Up, typename... Args,
+              enable_if_t<(std::is_same<Up, this_type>::value), int> = 0>
+    explicit sample(base_type& obj, Up, Args&&...)
+    {
+        obj.value        = type::record();
+        obj.is_transient = false;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct start<component::papi_array_t>
+{
+    using type       = papi_array_t;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    template <typename... Args>
+    explicit start(base_type&, Args&&...)
+    {
+        type::configure();
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct stop<component::papi_array_t>
+{
+    using type       = papi_array_t;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+
+    template <typename... Args>
+    explicit stop(base_type&, Args&&...)
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct base_printer<component::read_bytes>
+{
+    using type       = component::read_bytes;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+    using widths_t   = std::vector<int64_t>;
+
+    template <typename Up                                        = value_type,
+              enable_if_t<!(std::is_same<Up, void>::value), int> = 0>
+    explicit base_printer(std::ostream& _os, const type& _obj)
+    {
+        std::stringstream ss, ssv, ssr;
+        auto              _prec  = base_type::get_precision();
+        auto              _width = base_type::get_width();
+        auto              _flags = base_type::get_format_flags();
+        auto              _disp  = _obj.get_display_unit();
+        auto              _val   = _obj.get();
+
+        ssv.setf(_flags);
+        ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
+        if(!std::get<0>(_disp).empty())
+            ssv << " " << std::get<0>(_disp);
+
+        ssr.setf(_flags);
+        ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
+        if(!std::get<1>(_disp).empty())
+            ssr << " " << std::get<1>(_disp);
+
+        ss << ssv.str() << " read\n    " << ssr.str() << " read";
+        _os << ss.str();
+    }
+
+    template <typename Up                                       = value_type,
+              enable_if_t<(std::is_same<Up, void>::value), int> = 0>
+    explicit base_printer(std::ostream&, const type&)
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct base_printer<component::written_bytes>
+{
+    using type       = component::written_bytes;
+    using value_type = typename type::value_type;
+    using base_type  = typename type::base_type;
+    using widths_t   = std::vector<int64_t>;
+
+    template <typename Up                                        = value_type,
+              enable_if_t<!(std::is_same<Up, void>::value), int> = 0>
+    explicit base_printer(std::ostream& _os, const type& _obj)
+    {
+        std::stringstream ss, ssv, ssr;
+        auto              _prec  = base_type::get_precision();
+        auto              _width = base_type::get_width();
+        auto              _flags = base_type::get_format_flags();
+        auto              _disp  = _obj.get_display_unit();
+        auto              _val   = _obj.get();
+
+        ssv.setf(_flags);
+        ssv << std::setw(_width) << std::setprecision(_prec) << std::get<0>(_val);
+        if(!std::get<0>(_disp).empty())
+            ssv << " " << std::get<0>(_disp);
+
+        ssr.setf(_flags);
+        ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
+        if(!std::get<1>(_disp).empty())
+            ssr << " " << std::get<1>(_disp);
+
+        ss << ssv.str() << " written\n    " << ssr.str() << " written";
+        _os << ss.str();
+    }
+
+    template <typename Up                                       = value_type,
+              enable_if_t<(std::is_same<Up, void>::value), int> = 0>
+    explicit base_printer(std::ostream&, const type&)
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace operation
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace component
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <>
+std::string
+papi_array_t::get_display() const
+{
+    if(events.size() == 0)
+        return "";
+    auto val          = (is_transient) ? accum : value;
+    auto _get_display = [&](std::ostream& os, size_type idx) {
+        auto     _obj_value = val[idx];
+        auto     _evt_type  = events[idx];
+        string_t _label     = papi::get_event_info(_evt_type).short_descr;
+        string_t _disp      = papi::get_event_info(_evt_type).units;
+        auto     _prec      = base_type::get_precision();
+        auto     _width     = base_type::get_width();
+        auto     _flags     = base_type::get_format_flags();
 
+        std::stringstream ss, ssv, ssi;
+        ssv.setf(_flags);
+        ssv << std::setw(_width) << std::setprecision(_prec) << _obj_value;
+        if(!_disp.empty())
+            ssv << " " << _disp;
+        if(!_label.empty())
+            ssi << " " << _label;
+        ss << ssv.str() << ssi.str();
+        if(idx > 0)
+            os << "    ";
+        os << ss.str();
+    };
+
+    std::stringstream ss;
+    for(size_type i = 0; i < events.size(); ++i)
+    {
+        _get_display(ss, i);
+        if(i + 1 < events.size())
+            ss << '\n';
+    }
+
+    return ss.str();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace component
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
@@ -171,15 +383,17 @@ public:
     template <template <typename...> class Tuple, typename... T>
     struct opsample<Tuple<T...>>
     {
-        using type = Tuple<operation::file_sample<T, trait::file_sampler<T>::value>...>;
+        using type = Tuple<operation::timem_sample<T, trait::sampler<T>::value>...>;
     };
 
     void sample()
     {
+        base_type::sample();
         using apply_sample_t = typename opsample<impl_type>::type;
         apply<void>::access<apply_sample_t>(this->m_data);
     }
 
+    //
     //----------------------------------------------------------------------------------//
     //
     friend std::ostream& operator<<(std::ostream&                           os,
@@ -203,19 +417,20 @@ public:
 
     mutable bool printed = false;
 };
-
-}  // namespace tim
-
+//
 //--------------------------------------------------------------------------------------//
 //
+}  // namespace tim
+//
+//--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEM_BUNDLER)
 #    define TIMEM_BUNDLER                                                                \
         tim::custom_component_tuple<wall_clock, user_clock, system_clock, cpu_clock,     \
                                     cpu_util, peak_rss, page_rss, virtual_memory,        \
                                     num_minor_page_faults, num_major_page_faults,        \
-                                    num_signals, voluntary_context_switch,               \
-                                    priority_context_switch, read_bytes, written_bytes>
+                                    voluntary_context_switch, priority_context_switch,   \
+                                    read_bytes, written_bytes, papi_array_t>
 #endif
 
 using comp_tuple_t = TIMEM_BUNDLER;
@@ -234,7 +449,7 @@ get_measure()
 inline bool
 use_shell()
 {
-    static bool _instance = tim::get_env("TIMEM_USE_SHELL", true);
+    static bool _instance = tim::get_env("TIMEM_USE_SHELL", false);
     return _instance;
 }
 

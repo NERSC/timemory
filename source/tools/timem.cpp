@@ -289,14 +289,18 @@ main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
 
+    if(tim::settings::papi_events().empty())
+        tim::settings::papi_events() = "PAPI_TOT_CYC,PAPI_TOT_INS";
+
     tim::get_rusage_type() = RUSAGE_CHILDREN;
     pid_t pid              = fork();
 
     if(pid != 0)
     {
-        worker_pid()          = pid;
-        tim::get_rusage_pid() = pid;
-        get_measure()         = new comp_tuple_t(compose_prefix());
+        worker_pid()                  = pid;
+        tim::process::get_target_id() = pid;
+        tim::settings::papi_attach()  = true;
+        get_measure()                 = new comp_tuple_t(compose_prefix());
     }
 
     uint64_t nargs = static_cast<uint64_t>(argc);

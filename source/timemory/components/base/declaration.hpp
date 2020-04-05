@@ -336,7 +336,7 @@ protected:
     value_type       value        = value_type{};
     accum_type       accum        = accum_type{};
     last_type        last         = last_type{};
-    sample_list_type samples      = sample_type{};
+    sample_list_type samples      = sample_list_type{};
     graph_iterator   graph_itr    = graph_iterator{ nullptr };
 
 public:

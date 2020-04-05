@@ -25,12 +25,12 @@
 
 #include "timemory-run.hpp"
 
-using std::string;
-
-int         expectError   = NO_ERROR;
-int         debugPrint    = 0;
-int         binaryRewrite = 0; /* by default, it is turned off */
-std::string main_fname    = "main";
+int         expectError            = NO_ERROR;
+int         debugPrint             = 0;
+int         binaryRewrite          = 0;  /* by default, it is turned off */
+int         errorPrint             = 0;  // external "dyninst" tracing
+bool        instRoutineAtLoopLevel = false;
+std::string main_fname             = "main";
 
 template class BPatch_Vector<BPatch_variableExpr*>;
 
@@ -52,7 +52,7 @@ are_file_include_exclude_lists_empty(void)
 //======================================================================================//
 
 bool
-process_file_for_instrumentation(const string& file_name)
+process_file_for_instrumentation(const std::string& file_name)
 {
     std::regex ext_regex("\\.(c|C|S)$");
     std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
@@ -93,7 +93,7 @@ process_file_for_instrumentation(const string& file_name)
 //======================================================================================//
 
 bool
-instrument_entity(const string& function_name)
+instrument_entity(const std::string& function_name)
 {
     std::regex exclude("(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize)");
     std::regex leading("^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(\\(|\\(__|_"
@@ -157,19 +157,20 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
                         BPatch_basicBlockLoop* loopToInstrument, BPatch_function* f,
                         char* newname)
 {
-    const char*  filename;
+    if(!cfGraph || !loopToInstrument || !f)
+        return;
+
     char         fname[1024];
-    const char*  typeName;
-    bool         info1, info2;
-    int          row1, col1, row2, col2;
+    const char*  typeName = nullptr;
     BPatch_type* returnType;
 
     BPatch_Vector<BPatch_point*>* loopStartInst =
         cfGraph->findLoopInstPoints(BPatch_locLoopStartIter, loopToInstrument);
     BPatch_Vector<BPatch_point*>* loopExitInst =
         cfGraph->findLoopInstPoints(BPatch_locLoopEndIter, loopToInstrument);
-    // BPatch_Vector<BPatch_point*>* loopExitInst =
-    // cfGraph->findLoopInstPoints(BPatch_locLoopExit, loopToInstrument);
+
+    if(!loopStartInst || !loopExitInst)
+        return;
 
     unsigned long baseAddr = (unsigned long) (*loopStartInst)[0]->getAddress();
     unsigned long lastAddr =
@@ -192,18 +193,15 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
     BPatch_Vector<BPatch_statement> lines;
     BPatch_Vector<BPatch_statement> linesEnd;
 
-    info1 = mutateeImage->getSourceLines(baseAddr, lines);
+    bool info1 = mutateeImage->getSourceLines(baseAddr, lines);
 
     if(info1)
     {
-        filename = lines[0].fileName();
-        row1     = lines[0].lineNumber();
-        col1     = lines[0].lineOffset();
+        auto filename = lines[0].fileName();
+        auto row1     = lines[0].lineNumber();
+        auto col1     = lines[0].lineOffset();
         if(col1 < 0)
             col1 = 0;
-
-        //      info2 = mutateeImage->getSourceLines((unsigned long) (lastAddr -1),
-        //      lines);
 
         // This following section is attempting to remedy the limitations of
         // getSourceLines for loops. As the program goes through the loop, the resulting
@@ -214,13 +212,13 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
         // next instruction outside of the loop. We then bump back a line. This is not a
         // perfect solution, but we will work with the Dyninst team to find something
         // better.
-        info2 = mutateeImage->getSourceLines((unsigned long) lastAddr, linesEnd);
+        bool info2 = mutateeImage->getSourceLines((unsigned long) lastAddr, linesEnd);
         dprintf("size of linesEnd = %lu\n", (unsigned long) linesEnd.size());
 
         if(info2)
         {
-            row2 = linesEnd[0].lineNumber();
-            col2 = linesEnd[0].lineOffset();
+            auto row2 = linesEnd[0].lineNumber();
+            auto col2 = linesEnd[0].lineOffset();
             if(col2 < 0)
                 col2 = 0;
             if(row2 < row1)
@@ -249,91 +247,33 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
 // beginning of the outer loop are counted.
 //
 void
-insert_trace(BPatch_function* functionToInstrument, BPatch_addressSpace* mutatee,
+insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
              BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc,
              BPatch_flowGraph* cfGraph, BPatch_basicBlockLoop* loopToInstrument)
 {
     char name[1024];
     char modname[1024];
 
-    functionToInstrument->getModuleName(modname, 1024);
-
-    get_loop_file_line_info(mutatee->getImage(), cfGraph, loopToInstrument,
-                            functionToInstrument, name);
-
-    BPatch_module* module = functionToInstrument->getModule();
-    consume_parameters(module);
-
+    funcToInstr->getModuleName(modname, 1024);
     if(strstr(modname, "libdyninstAPI_RT"))
         return;
 
-    //  functionToInstrument->getName(name, 1024);
+    get_loop_file_line_info(mutatee->getImage(), cfGraph, loopToInstrument, funcToInstr,
+                            name);
 
-    int                            id = add_name(name);
-    BPatch_Vector<BPatch_snippet*> traceArgs;
-    traceArgs.push_back(new BPatch_constExpr(id));
+    BPatch_module* module = funcToInstr->getModule();
+    if(!module)
+        return;
 
     BPatch_Vector<BPatch_point*>* loopEntr =
         cfGraph->findLoopInstPoints(BPatch_locLoopEntry, loopToInstrument);
     BPatch_Vector<BPatch_point*>* loopExit =
         cfGraph->findLoopInstPoints(BPatch_locLoopExit, loopToInstrument);
 
-    BPatch_Vector<BPatch_snippet*> entryTraceArgs;
-    entryTraceArgs.push_back(new BPatch_constExpr(name));
-    entryTraceArgs.push_back(new BPatch_constExpr(id));
-
-    BPatch_funcCallExpr entryTrace(*traceEntryFunc, entryTraceArgs);
-    BPatch_funcCallExpr exitTrace(*traceExitFunc, traceArgs);
-
-    if(loopEntr->size() == 0)
-    {
-        printf("Failed to instrument loop entry in %s\n", name);
-    }
-    else
-    {
-        for(size_t i = 0; i < loopEntr->size(); i++)
-        {
-            mutatee->insertSnippet(entryTrace, loopEntr[i], BPatch_callBefore,
-                                   BPatch_lastSnippet);
-        }
-    }
-
-    if(loopExit->size() == 0)
-    {
-        printf("Failed to instrument loop exit in %s\n", name);
-    }
-    else
-    {
-        for(size_t i = 0; i < loopExit->size(); i++)
-        {
-            mutatee->insertSnippet(exitTrace, loopExit[i], BPatch_callBefore,
-                                   BPatch_lastSnippet);
-        }
-    }
-}
-
-//======================================================================================//
-
-void
-insert_trace(BPatch_function* functionToInstrument, BPatch_addressSpace* mutatee,
-             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc)
-{
-    char name[1024];
-    char modname[1024];
-
-    functionToInstrument->getModuleName(modname, 1024);
-    if(strstr(modname, "libdyninstAPI_RT"))
+    if(loopEntr == nullptr || loopExit == nullptr)
         return;
-
-    // functionToInstrument->getName(name, 1024);
-    get_func_file_line_info(mutatee->getImage(), functionToInstrument, name);
-
-    // int                            id = add_name(name);
-    // consume_parameters(id);
-
-    BPatch_Vector<BPatch_point*>* funcEntry =
-        functionToInstrument->findPoint(BPatch_entry);
-    BPatch_Vector<BPatch_point*>* funcExit = functionToInstrument->findPoint(BPatch_exit);
+    if(loopEntr->empty() || loopExit->empty())
+        return;
 
     BPatch_Vector<BPatch_snippet*> entryTraceArgs;
     BPatch_Vector<BPatch_snippet*> exitTraceArgs;
@@ -342,12 +282,56 @@ insert_trace(BPatch_function* functionToInstrument, BPatch_addressSpace* mutatee
     entryTraceArgs.push_back(new BPatch_constExpr(name));
     entryTraceArgs.push_back(ret);
     exitTraceArgs.push_back(new BPatch_constExpr(name));
-    // exitTraceArgs.push_back(ret);
 
     BPatch_funcCallExpr entryTrace(*traceEntryFunc, entryTraceArgs);
     BPatch_funcCallExpr exitTrace(*traceExitFunc, exitTraceArgs);
 
-    mutatee->insertSnippet(entryTrace, *funcEntry, BPatch_callBefore, BPatch_lastSnippet);
+    for(size_t i = 0; i < loopEntr->size(); ++i)
+    {
+        if(loopEntr->at(i))
+            mutatee->insertSnippet(entryTrace, *loopEntr->at(i), BPatch_callBefore,
+                                   BPatch_firstSnippet);
+    }
+
+    for(size_t i = 0; i < loopExit->size(); ++i)
+    {
+        if(loopExit->at(i))
+            mutatee->insertSnippet(exitTrace, *loopExit->at(i), BPatch_callAfter,
+                                   BPatch_lastSnippet);
+    }
+}
+
+//======================================================================================//
+
+void
+insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
+             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc)
+{
+    char name[1024];
+    char modname[1024];
+
+    funcToInstr->getModuleName(modname, 1024);
+    if(strstr(modname, "libdyninstAPI_RT"))
+        return;
+
+    get_func_file_line_info(mutatee->getImage(), funcToInstr, name);
+
+    BPatch_Vector<BPatch_point*>* funcEntry = funcToInstr->findPoint(BPatch_entry);
+    BPatch_Vector<BPatch_point*>* funcExit  = funcToInstr->findPoint(BPatch_exit);
+
+    BPatch_Vector<BPatch_snippet*> entryTraceArgs;
+    BPatch_Vector<BPatch_snippet*> exitTraceArgs;
+
+    auto ret = new BPatch_retExpr();
+    entryTraceArgs.push_back(new BPatch_constExpr(name));
+    entryTraceArgs.push_back(ret);
+    exitTraceArgs.push_back(new BPatch_constExpr(name));
+
+    BPatch_funcCallExpr entryTrace(*traceEntryFunc, entryTraceArgs);
+    BPatch_funcCallExpr exitTrace(*traceExitFunc, exitTraceArgs);
+
+    mutatee->insertSnippet(entryTrace, *funcEntry, BPatch_callBefore,
+                           BPatch_firstSnippet);
     mutatee->insertSnippet(exitTrace, *funcExit, BPatch_callAfter, BPatch_lastSnippet);
 }
 
@@ -369,7 +353,7 @@ errorFunc(BPatchErrorLevel level, int num, const char** params)
         // We consider some errors fatal.
         if(num == 101)
             exit(-1);
-    }  // if
+    }
 }
 
 //======================================================================================//
@@ -405,11 +389,6 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
     consume_parameters(appImage);
     // First create the snippet using the callee and the args
     const BPatch_snippet* snippet = new BPatch_funcCallExpr(*callee, *callee_args);
-    if(callee)
-    {
-        // auto name = callee->getDemangledName();
-        // PRINT_HERE("name: %s", name.c_str());
-    }
 
     if(snippet == nullptr)
     {
@@ -448,11 +427,6 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
                        BPatch_Vector<BPatch_snippet*>* callee_args)
 {
     consume_parameters(appImage);
-    if(callee)
-    {
-        // auto name = callee->getDemangledName();
-        // PRINT_HERE("name: %s", name.c_str());
-    }
     // First create the snippet using the callee and the args
     const BPatch_snippet* snippet = new BPatch_funcCallExpr(*callee, *callee_args);
     if(snippet == NULL)
@@ -560,8 +534,6 @@ check_cost(BPatch_snippet snippet)
         printf("*Error*: snippet cost of %f, exceeds max expected of 0.1", cost);
 }
 
-int errorPrint = 0;  // external "dyninst" tracing
-
 //======================================================================================//
 void
 error_func_real(BPatchErrorLevel level, int num, const char* const* params)
@@ -644,11 +616,11 @@ module_constraint(char* fname)
         }
         else
             return true;
-    }  // the selective instrumentation file lists are not empty!
+    }
     else
     {
         // See if the file should be instrumented
-        if(process_file_for_instrumentation(string(fname)))
+        if(process_file_for_instrumentation(std::string(fname)))
         {
             // Yes, it should be instrumented. moduleconstraint should return false!
             return false;
@@ -688,7 +660,7 @@ routine_constraint(char* fname)
     else
     {
         // Should the routine fname be instrumented?
-        if(instrument_entity(string(fname)))
+        if(instrument_entity(std::string(fname)))
         {
             // Yes it should be instrumented. Return false
             return false;
@@ -708,7 +680,7 @@ find_func_or_calls(std::vector<const char*> names, BPatch_Vector<BPatch_point*>&
                    BPatch_image* appImage, BPatch_procedureLocation loc = BPatch_locEntry)
 {
     BPatch_function* func = nullptr;
-    for(std::vector<const char*>::iterator i = names.begin(); i != names.end(); i++)
+    for(std::vector<const char*>::iterator i = names.begin(); i != names.end(); ++i)
     {
         BPatch_function* f = find_function(appImage, *i);
         if(f && f->getModule()->isSharedLib())
@@ -735,7 +707,7 @@ find_func_or_calls(std::vector<const char*> names, BPatch_Vector<BPatch_point*>&
     // and just do lookups through that.
     BPatch_Vector<BPatch_function*>* all_funcs           = appImage->getProcedures();
     auto                             initial_points_size = points.size();
-    for(std::vector<const char*>::iterator i = names.begin(); i != names.end(); i++)
+    for(std::vector<const char*>::iterator i = names.begin(); i != names.end(); ++i)
     {
         BPatch_Vector<BPatch_function*>::iterator j;
         for(j = all_funcs->begin(); j != all_funcs->end(); j++)
@@ -796,11 +768,11 @@ check_if_mpi(BPatch_image* appImage, BPatch_Vector<BPatch_point*>& mpiinit,
     if(!ismpi)
     {
         dprintf("*** This is not an MPI Application! \n");
-        return 0;  // It is not an MPI application
+        return 0;
     }
     else
-        return 1;  // Yes, it is an MPI application.
-}  // check_if_mpi()
+        return 1;
+}
 
 //======================================================================================//
 // We create a new name that embeds the file and line information in the name
@@ -818,8 +790,6 @@ get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f,
     const char*   typeName;
 
     baseAddr = (unsigned long) (f->getBaseAddr());
-    // < dyninst 8+
-    // lastAddr = baseAddr + f->getSize();
     f->getAddressRange(baseAddr, lastAddr);
     BPatch_Vector<BPatch_statement> lines;
     f->getName(fname, 1024);
@@ -861,8 +831,6 @@ get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f,
         else
         {
             sprintf(newname, "%s %s()/%s:%i", typeName, fname, file.c_str(), row1);
-            // sprintf(newname, "%s %s() [{%s} {%d,%d}]", typeName, fname, filename, row1,
-            //        col1);
         }
     }
     else
@@ -889,8 +857,7 @@ load_dependent_libraries(BPatch_binaryEdit* bedit, char* bindings)
     if(fp == nullptr)
     {
         perror("timemory-run: Error launching timemory_show_libs to get list of "
-               "dependent static "
-               "libraries for static binary");
+               "dependent static libraries for static binary");
         return 1;
     }
 
@@ -1026,31 +993,9 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     {
         char fname[FUNCNAMELEN];
         (*it)->getName(fname, FUNCNAMELEN);
-        // dprintf("Processing %s...\n", fname);
 
-        bool okayToInstr            = true;
-        bool instRoutineAtLoopLevel = false;
+        bool okayToInstr = true;
 
-        // Goes through the vector of timemoryInstrument to check that the
-        // current routine is one that has been passed in the selective instrumentation
-        // file
-        /*
-        for(std::vector<timemoryInstrument*>::iterator instIt = instrumentList.begin();
-            instIt != instrumentList.end(); instIt++)
-        {
-            if((*instIt)->getRoutineSpecified())
-            {
-                const char* instRName = (*instIt)->getRoutineName().c_str();
-                dprintf("Examining %s... \n", instRName);
-
-                if(match_name((*instIt)->getRoutineName(), string(fname)))
-                {
-                    instRoutineAtLoopLevel = true;
-                    dprintf("True: instrumenting %s at the loop level\n", instRName);
-                }
-            }
-        }
-        */
         // STATIC EXECUTABLE FUNCTION EXCLUDE
         // Temporarily avoid some functions -- this isn't a solution
         // -- it appears that something like module_constraint would work
@@ -1072,18 +1017,11 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
         }
 
         if(okayToInstr && !routine_constraint(fname))
-        {  // ok to instrument
-
+        {
             insert_trace(*it, mutateeAddressSpace, entryTrace, exitTrace);
         }
-        else
-        {
-            // dprintf("Not instrumenting %s\n", fname);
-        }
 
-        if(okayToInstr && !routine_constraint(fname) &&
-           instRoutineAtLoopLevel)  // Only occurs when we've defined that the selective
-                                    // file is for loop instrumentation
+        if(okayToInstr && !routine_constraint(fname) && instRoutineAtLoopLevel)
         {
             dprintf("Generating CFG at loop level: %s\n", fname);
             BPatch_flowGraph*                     flow = (*it)->getCFG();
@@ -1155,7 +1093,7 @@ main(int argc, char** argv)
     BPatch_Vector<BPatch_point*> mpiinit;
     BPatch_function*             mpiinitstub = nullptr;
     bpatch                                   = new BPatch;  // create a new version.
-    string functions;  // string variable to hold function names
+    std::string functions;  // string variable to hold function names
 
     // bpatch->setTrampRecursive(true); /* enable C++ support */
     // bpatch->setBaseTrampDeletion(true);
@@ -1239,6 +1177,10 @@ main(int argc, char** argv)
         .names({ "-m", "--main-function" })
         .description("The primary function to instrument around, e.g. 'main'")
         .count(1);
+    parser.add_argument()
+        .names({ "-l", "--instrument-loops" })
+        .description("Instrument at the loop level")
+        .count(0);
 
     if(_cmdc == 0)
     {
@@ -1274,6 +1216,9 @@ main(int argc, char** argv)
         main_fname = parser.get<std::string>("m");
     }
 
+    if(parser.exists("l"))
+        instRoutineAtLoopLevel = true;
+
     if(_cmdc == 0 && parser.exists("c"))
     {
         using argtype = std::vector<std::string>;
@@ -1299,27 +1244,41 @@ main(int argc, char** argv)
         strcpy(outfile, key.c_str());
     }
 
+    //----------------------------------------------------------------------------------//
+    //
+    //                              REGEX OPTIONS
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    //  Helper function for adding regex expressions
+    //
+    auto add_regex = [](auto& regex_array, const std::string& regex_expr) {
+        auto regex_constants =
+            std::regex_constants::ECMAScript | std::regex_constants::icase;
+        if(!regex_expr.empty())
+            regex_array.push_back(std::regex(regex_expr, regex_constants));
+    };
+
+    add_regex(regex_include, tim::get_env<std::string>("TIMEMORY_REGEX_INCLUDE", ""));
+    add_regex(regex_exclude, tim::get_env<std::string>("TIMEMORY_REGEX_EXCLUDE", ""));
+
+    using regex_arg_t = std::vector<std::string>;
+
     if(parser.exists("R"))
     {
-        using argtype = std::vector<std::string>;
-        auto keys     = parser.get<argtype>("R");
+        auto keys = parser.get<regex_arg_t>("R");
         for(const auto& itr : keys)
-        {
-            regex_include.push_back(std::regex(itr, std::regex_constants::ECMAScript |
-                                                        std::regex_constants::icase));
-        }
+            add_regex(regex_include, itr);
     }
 
     if(parser.exists("E"))
     {
-        using argtype = std::vector<std::string>;
-        auto keys     = parser.get<argtype>("E");
+        auto keys = parser.get<regex_arg_t>("E");
         for(const auto& itr : keys)
-        {
-            regex_exclude.push_back(std::regex(itr, std::regex_constants::ECMAScript |
-                                                        std::regex_constants::icase));
-        }
+            add_regex(regex_exclude, itr);
     }
+    //
+    //----------------------------------------------------------------------------------//
 
     char* bindings = (char*) malloc(1024);
     dprintf("mutatee name = %s\n", mutname);
@@ -1384,7 +1343,7 @@ main(int argc, char** argv)
             // application image
             char name[FUNCNAMELEN];
             bool found = false;
-            for(size_t i = 0; i < m->size(); i++)
+            for(size_t i = 0; i < m->size(); ++i)
             {
                 (*m)[i]->getName(name, sizeof(name));
                 auto _name = std::string(name);
@@ -1436,17 +1395,11 @@ main(int argc, char** argv)
 
         if(!module_constraint(fname))
         {  // constraint
-            for(size_t i = 0; i < p->size(); i++)
+            for(size_t i = 0; i < p->size(); ++i)
             {
                 // For all procedures within the module, iterate
                 (*p)[i]->getName(fname, FUNCNAMELEN);
-                // dprintf("Name %s\n", fname);
-                if(routine_constraint(fname))
-                {
-                    // The above procedures shouldn't be instrumented
-                    // dprintf("don't instrument %s\n", fname);
-                }
-                else
+                if(!routine_constraint(fname))
                 {
                     // routines that are ok to instrument
                     // get full source information
@@ -1460,14 +1413,11 @@ main(int argc, char** argv)
     }
 
     std::cout << "functions: " << functions << std::endl;
-    // form the args to InitCode
-    // BPatch_constExpr funcName(functions.c_str());
 
     // When we look for MPI calls, we shouldn't display an error message for
     // not find MPI_Comm_rank in the case of a sequential app. So, we turn the
     // Error callback to be Null and turn back the error settings later. This
     // way, it works for both MPI and sequential tasks.
-
     bpatch->registerErrorCallback(error_func_fake);  // turn off error reporting
     BPatch_constExpr isMPI(check_if_mpi(appImage, mpiinit, mpiinitstub, binaryRewrite));
     bpatch->registerErrorCallback(error_func_real);  // turn it back on
@@ -1497,19 +1447,14 @@ main(int argc, char** argv)
         if(!module_constraint(fname))
         {
             // constraint
-            for(size_t i = 0; i < p->size(); i++)
+            for(size_t i = 0; i < p->size(); ++i)
             {
                 // For all procedures within the module, iterate
                 (*p)[i]->getName(fname, FUNCNAMELEN);
                 dprintf("Name %s\n", fname);
-                if(routine_constraint(fname))
+                if(!routine_constraint(fname))
                 {
-                    // The above procedures shouldn't be instrumented
-                    // dprintf("don't instrument %s\n", fname);
-                }
-                else
-                {  // routines that are ok to instrument
-                    // dprintf("Assigning id %d to %s\n", instrumented, fname);
+                    // routines that are ok to instrument
                     inFunc = (*p)[i];
 
                     auto callee_entry_args = new BPatch_Vector<BPatch_snippet*>();
@@ -1541,7 +1486,7 @@ main(int argc, char** argv)
 
     if(exitpoint == nullptr)
     {
-        fprintf(stderr, "UNABLE TO FIND exit() \n");
+        fprintf(stderr, "UNABLE TO FIND exit()\n");
         // exit(1);
     }
     else
@@ -1554,7 +1499,7 @@ main(int argc, char** argv)
                                terminatestub, exitargs);
         delete exitargs;
         delete name;
-    }  // else
+    }
 
     if(!mpiinit.size())
     {

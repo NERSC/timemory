@@ -81,7 +81,7 @@ base<Tp, Value>::reset()
     value        = value_type{};
     accum        = accum_type{};
     last         = last_type{};
-    samples      = sample_type{};
+    samples      = sample_list_type{};
 }
 //
 //--------------------------------------------------------------------------------------//

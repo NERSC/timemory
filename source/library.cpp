@@ -35,12 +35,6 @@
 
 using namespace tim::component;
 
-#if defined(__GNUC__)
-#    define API tim_dll __attribute__((weak))
-#else
-#    define API tim_dll
-#endif
-
 CEREAL_CLASS_VERSION(tim::settings, 1)
 CEREAL_CLASS_VERSION(tim::env_settings, 0)
 
@@ -60,8 +54,8 @@ extern "C"
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 
-    API timemory_create_func_t timemory_create_function = nullptr;
-    API timemory_delete_func_t timemory_delete_function = nullptr;
+    timemory_create_func_t timemory_create_function = nullptr;
+    timemory_delete_func_t timemory_delete_function = nullptr;
 }
 
 //======================================================================================//
@@ -153,7 +147,7 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  get a unique id
     //
-    API uint64_t timemory_get_unique_id(void)
+    uint64_t timemory_get_unique_id(void)
     {
         // the maps are thread-local so no concerns for data-race here since
         // two threads updating at once and subsequently losing once of the updates
@@ -165,7 +159,7 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  create a toolset of measurements
     //
-    API void timemory_create_record(const char* name, uint64_t* id, int n, int* ctypes)
+    void timemory_create_record(const char* name, uint64_t* id, int n, int* ctypes)
     {
         if(timemory_create_function)
         {
@@ -186,7 +180,7 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  destroy a toolset of measurements
     //
-    API void timemory_delete_record(uint64_t id)
+    void timemory_delete_record(uint64_t id)
     {
         if(timemory_delete_function)
         {
@@ -204,7 +198,7 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  initialize the library
     //
-    API void timemory_init_library(int argc, char** argv)
+    void timemory_init_library(int argc, char** argv)
     {
         if(tim::settings::verbose() > 0)
         {
@@ -223,7 +217,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
     //  finalize the library
-    API void timemory_finalize_library(void)
+    void timemory_finalize_library(void)
     {
         if(tim::settings::enabled() == false && get_record_map().empty())
             return;
@@ -276,16 +270,16 @@ extern "C"
     //----------------------------------------------------------------------------------//
     //  pause the collection
     //
-    API void timemory_pause(void) { tim::settings::enabled() = false; }
+    void timemory_pause(void) { tim::settings::enabled() = false; }
 
     //----------------------------------------------------------------------------------//
     //  resume the collection
     //
-    API void timemory_resume(void) { tim::settings::enabled() = true; }
+    void timemory_resume(void) { tim::settings::enabled() = true; }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_set_default(const char* _component_string)
+    void timemory_set_default(const char* _component_string)
     {
         get_default_components()         = std::string(_component_string);
         static thread_local auto& _stack = get_components_stack();
@@ -294,7 +288,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_push_components(const char* _component_string)
+    void timemory_push_components(const char* _component_string)
     {
         static thread_local auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
@@ -302,7 +296,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_push_components_enum(int types, ...)
+    void timemory_push_components_enum(int types, ...)
     {
         static thread_local auto& _stack = get_components_stack();
 
@@ -323,7 +317,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_pop_components(void)
+    void timemory_pop_components(void)
     {
         static thread_local auto& _stack = get_components_stack();
         if(_stack.size() > 1)
@@ -332,7 +326,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_begin_record(const char* name, uint64_t* id)
+    void timemory_begin_record(const char* name, uint64_t* id)
     {
         if(tim::settings::enabled() == false)
         {
@@ -351,8 +345,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_begin_record_types(const char* name, uint64_t* id,
-                                         const char* ctypes)
+    void timemory_begin_record_types(const char* name, uint64_t* id, const char* ctypes)
     {
         if(tim::settings::enabled() == false)
         {
@@ -372,7 +365,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_begin_record_enum(const char* name, uint64_t* id, ...)
+    void timemory_begin_record_enum(const char* name, uint64_t* id, ...)
     {
         if(tim::settings::enabled() == false)
         {
@@ -403,7 +396,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API uint64_t timemory_get_begin_record(const char* name)
+    uint64_t timemory_get_begin_record(const char* name)
     {
         if(tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
@@ -423,7 +416,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes)
+    uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes)
     {
         if(tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
@@ -443,7 +436,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API uint64_t timemory_get_begin_record_enum(const char* name, ...)
+    uint64_t timemory_get_begin_record_enum(const char* name, ...)
     {
         if(tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
@@ -475,7 +468,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_end_record(uint64_t id)
+    void timemory_end_record(uint64_t id)
     {
         if(id == std::numeric_limits<uint64_t>::max())
             return;
@@ -490,7 +483,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_push_region(const char* name)
+    void timemory_push_region(const char* name)
     {
         auto& region_map = get_region_map();
         auto  idx        = timemory_get_begin_record(name);
@@ -499,7 +492,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_pop_region(const char* name)
+    void timemory_pop_region(const char* name)
     {
         auto& region_map = get_region_map();
         auto  itr        = region_map.find(name);
@@ -515,8 +508,11 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API int64_t timemory_register_trace(const char* name)
+    int64_t timemory_register_trace(const char* name)
     {
+        if(tim::settings::verbose() > 3)
+            PRINT_HERE("%s", name);
+
         using hasher_t                       = std::hash<std::string>;
         static thread_local auto& _trace_map = get_trace_map();
         size_t                    id         = hasher_t()(std::string(name));
@@ -535,36 +531,46 @@ extern "C"
             new traceset_t(name, true, tim::settings::flat_profile()));
         _trace_map[id].back()->start();
 
+        if(tim::settings::verbose() > 3)
+            PRINT_HERE("%s", name);
+
         return n;
     }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_deregister_trace(const char* name)
+    void timemory_deregister_trace(const char* name)
     {
+        if(tim::settings::verbose() > 3)
+            PRINT_HERE("%s", name);
+
         using hasher_t                       = std::hash<std::string>;
         static thread_local auto& _trace_map = get_trace_map();
         size_t                    id         = hasher_t()(std::string(name));
         int64_t                   ntotal     = _trace_map[id].size();
         int64_t                   offset     = ntotal - 1;
 
-#if defined(DEBUG)
         if(tim::settings::verbose() > 2)
             printf("ending trace for %llu [offset = %lli]...\n", (long long unsigned) id,
                    (long long int) offset);
-#endif
 
         if(offset >= 0 && ntotal > 0)
         {
-            _trace_map[id].back()->stop();
-            delete _trace_map[id].back();
+            if(_trace_map[id].back())
+            {
+                _trace_map[id].back()->stop();
+                delete _trace_map[id].back();
+            }
             _trace_map[id].pop_back();
         }
+
+        if(tim::settings::verbose() > 3)
+            PRINT_HERE("%s", name);
     }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_dyninst_init(void)
+    void timemory_dyninst_init(void)
     {
         PRINT_HERE("%s", "");
         library_dyninst_init = true;
@@ -600,7 +606,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_dyninst_finalize(void)
+    void timemory_dyninst_finalize(void)
     {
         if(!library_dyninst_init)
             return;
@@ -614,7 +620,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_init_trace(uint64_t id)
+    void timemory_init_trace(uint64_t id)
     {
         PRINT_HERE("[id = %llu]", (long long unsigned) id);
         if(!library_dyninst_init)
@@ -623,11 +629,11 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_fini_trace(void) { PRINT_HERE("%s", ""); }
+    void timemory_fini_trace(void) { PRINT_HERE("%s", ""); }
 
     //----------------------------------------------------------------------------------//
 
-    API void timemory_mpi_init_stub(int _rank)
+    void timemory_mpi_init_stub(int _rank)
     {
         PRINT_HERE("[rank = %i]", _rank);
         tim::consume_parameters(_rank);
@@ -635,7 +641,7 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    API int timemory_get_rank(void) { return tim::dmp::rank(); }
+    int timemory_get_rank(void) { return tim::dmp::rank(); }
 
     //==================================================================================//
     //
