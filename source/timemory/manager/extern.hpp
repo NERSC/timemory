@@ -39,6 +39,16 @@
 //
 #include "timemory/config.hpp"
 //
-#include "timemory/settings/definition.hpp"
-//
 //======================================================================================//
+//
+#if defined(TIMEMORY_MANAGER_SOURCE)
+// source requirements
+#    include "timemory/settings/definition.hpp"
+#elif !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MANAGER_EXTERN)
+// header-only requirements
+#    include "timemory/manager/definition.hpp"
+#    include "timemory/settings/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/settings/declaration.hpp"
+#endif

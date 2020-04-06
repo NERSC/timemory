@@ -56,8 +56,8 @@
 
 #include <atomic>
 #include <chrono>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -268,7 +268,7 @@ components_enum_to_vec(py::list enum_list)
 component_list_t*
 create_component_list(std::string obj_tag, const component_enum_vec& components)
 {
-    auto obj = new component_list_t(obj_tag, true, tim::settings::flat_profile());
+    auto obj = new component_list_t(obj_tag, true);
     tim::initialize(*obj, components);
     return obj;
 }
@@ -333,7 +333,7 @@ manager()
 tim_timer_t*
 timer(std::string key)
 {
-    return new tim_timer_t(key, true, tim::settings::flat_profile());
+    return new tim_timer_t(key, true);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -341,7 +341,7 @@ timer(std::string key)
 auto_timer_t*
 auto_timer(std::string key, bool report_at_exit)
 {
-    return new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit);
+    return new auto_timer_t(key, tim::scope::get_default(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -349,7 +349,7 @@ auto_timer(std::string key, bool report_at_exit)
 rss_usage_t*
 rss_usage(std::string key, bool record)
 {
-    rss_usage_t* _rss = new rss_usage_t(key, true, tim::settings::flat_profile());
+    rss_usage_t* _rss = new rss_usage_t(key, true);
     if(record)
         _rss->measure();
     return _rss;
@@ -405,11 +405,11 @@ component_bundle(const std::string& func, const std::string& file, const int lin
     }
     using mode = tim::source_location::mode;
 
-    auto&& _flat = tim::settings::flat_profile();
+    auto&& _scope = tim::scope::get_default();
     auto&& _loc =
         tim::source_location(mode::complete, func.c_str(), line, file.c_str(), sargs);
     auto&& _obj = (tim::settings::enabled())
-                      ? new component_bundle_t(_loc.get_captured(sargs), true, _flat)
+                      ? new component_bundle_t(_loc.get_captured(sargs), true, _scope)
                       : nullptr;
     return new pycomponent_bundle(_obj);
 }

@@ -97,12 +97,3 @@
 #include "timemory/components/trip_count/extern.hpp"
 //
 //--------------------------------------------------------------------------------------//
-//
-//          any extern declarations for components that can be used by user-bundle
-//          should be included by this point
-//
-//--------------------------------------------------------------------------------------//
-//
-#include "timemory/components/user_bundle/extern.hpp"
-//
-//--------------------------------------------------------------------------------------//

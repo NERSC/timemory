@@ -67,8 +67,7 @@ component_tuple<Types...>::component_tuple(const string_t&        key,
         IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
         IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
         set_prefix(key);
-        set_flat_profile(get_config<variadic::flat_scope>(config));
-        set_timeline_profile(get_config<variadic::timeline_scope>(config));
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -88,8 +87,7 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
         IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
         IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
         set_prefix(key);
-        set_flat_profile(get_config<variadic::flat_scope>(config));
-        set_timeline_profile(get_config<variadic::timeline_scope>(config));
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -99,9 +97,11 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
 template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
-                                           const bool& flat, const Func& init_func)
+                                           scope::data _scope, const Func& init_func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
-              flat || get_config<variadic::flat_scope>())
+              _scope + scope::data(get_config<variadic::flat_scope>(),
+                                   get_config<variadic::timeline_scope>(),
+                                   get_config<variadic::tree_scope>()))
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -112,8 +112,7 @@ component_tuple<Types...>::component_tuple(const string_t& key, const bool& stor
         }
         IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
         set_prefix(key);
-        set_flat_profile(flat || get_config<variadic::flat_scope>());
-        set_timeline_profile(get_config<variadic::timeline_scope>());
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -123,9 +122,12 @@ component_tuple<Types...>::component_tuple(const string_t& key, const bool& stor
 template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           const bool& store, const bool& flat,
+                                           const bool& store, scope::data _scope,
                                            const Func& init_func)
-: bundle_type(loc.get_hash(), store, flat || get_config<variadic::flat_scope>())
+: bundle_type(loc.get_hash(), store,
+              _scope + scope::data(get_config<variadic::flat_scope>(),
+                                   get_config<variadic::timeline_scope>(),
+                                   get_config<variadic::tree_scope>()))
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -136,8 +138,7 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
         }
         IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
         set_prefix(loc.get_id());
-        set_flat_profile(flat || get_config<variadic::flat_scope>());
-        set_timeline_profile(get_config<variadic::timeline_scope>());
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -147,8 +148,11 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
 template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
-                                           const bool& flat, const Func& init_func)
-: bundle_type(hash, store, flat || get_config<variadic::flat_scope>())
+                                           scope::data _scope, const Func& init_func)
+: bundle_type(hash, store,
+              _scope + scope::data(get_config<variadic::flat_scope>(),
+                                   get_config<variadic::timeline_scope>(),
+                                   get_config<variadic::tree_scope>()))
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -159,8 +163,7 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
         }
         IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
         set_prefix(hash);
-        set_flat_profile(flat || get_config<variadic::flat_scope>());
-        set_timeline_profile(get_config<variadic::timeline_scope>());
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
         IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
@@ -180,11 +183,11 @@ inline component_tuple<Types...>::~component_tuple()
 //
 template <typename... Types>
 component_tuple<Types...>
-component_tuple<Types...>::clone(bool store, bool flat)
+component_tuple<Types...>::clone(bool _store, scope::data _scope)
 {
     component_tuple tmp(*this);
-    tmp.m_store = store;
-    tmp.m_flat  = flat;
+    tmp.m_store = _store;
+    tmp.m_scope = _scope;
     return tmp;
 }
 
@@ -202,7 +205,7 @@ component_tuple<Types...>::push()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
-        apply_v::access<operation_t<operation::insert_node>>(m_data, m_hash, m_flat);
+        apply_v::access<operation_t<operation::insert_node>>(m_data, m_scope, m_hash);
     }
 }
 
@@ -469,20 +472,10 @@ component_tuple<Types...>::set_prefix(size_t _hash) const
 //
 template <typename... Types>
 void
-component_tuple<Types...>::set_flat_profile(bool val)
+component_tuple<Types...>::set_scope(scope::data val)
 {
-    m_flat = val;
-    apply_v::access<operation_t<operation::set_flat_profile>>(m_data, val);
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-void
-component_tuple<Types...>::set_timeline_profile(bool val)
-{
-    m_timeline = val;
-    apply_v::access<operation_t<operation::set_timeline_profile>>(m_data, val);
+    m_scope = val;
+    apply_v::access<operation_t<operation::set_scope>>(m_data, val);
 }
 
 //--------------------------------------------------------------------------------------//

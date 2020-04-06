@@ -57,30 +57,19 @@ template <typename Tp>
 struct sample
 {
     static constexpr bool enable = trait::sampler<Tp>::value;
-    using EmptyT                 = std::tuple<>;
     using type                   = Tp;
     using value_type             = typename type::value_type;
     using base_type              = typename type::base_type;
-    using this_type              = sample<Tp>;
-    using data_type = conditional_t<enable, decltype(std::declval<Tp>().get()), EmptyT>;
 
-    TIMEMORY_DEFAULT_OBJECT(sample)
+    TIMEMORY_DELETED_OBJECT(sample)
 
-    template <typename Up, typename... Args,
-              enable_if_t<(std::is_same<Up, this_type>::value), int> = 0>
-    explicit sample(type& obj, Up data, Args&&... args);
+    template <typename Up                                   = Tp, typename... Args,
+              enable_if_t<(trait::sampler<Up>::value), int> = 0>
+    explicit sample(Up& obj, Args&&... args);
 
-    template <typename Up, typename... Args,
-              enable_if_t<!(std::is_same<Up, this_type>::value), int> = 0>
-    explicit sample(type&, Up, Args&&...);
-
-    data_type value;
-
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
-    {
-        ar(cereal::make_nvp("sample", value));
-    }
+    template <typename Up                                    = Tp, typename... Args,
+              enable_if_t<!(trait::sampler<Up>::value), int> = 0>
+    explicit sample(Up&, Args&&...);
 
 private:
     //  satisfies mpl condition and accepts arguments
@@ -114,26 +103,23 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, typename... Args,
-          enable_if_t<(std::is_same<Up, sample<Tp>>::value), int>>
-sample<Tp>::sample(Tp& obj, Up data, Args&&... args)
+template <typename Up, typename... Args, enable_if_t<(trait::sampler<Up>::value), int>>
+sample<Tp>::sample(Up& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
 
     if(sfinae(obj, 0, 0, std::forward<Args>(args)...))
     {
-        data.value = obj.get();
-        obj.add_sample(std::move(data));
+        Tp::add_sample(std::move(obj));
     }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, typename... Args,
-          enable_if_t<!(std::is_same<Up, sample<Tp>>::value), int>>
-sample<Tp>::sample(Tp&, Up, Args&&...)
+template <typename Up, typename... Args, enable_if_t<!(trait::sampler<Up>::value), int>>
+sample<Tp>::sample(Up&, Args&&...)
 {}
 //
 //--------------------------------------------------------------------------------------//

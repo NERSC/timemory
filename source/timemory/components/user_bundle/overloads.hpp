@@ -108,10 +108,6 @@ user_bundle<list_bundle_idx, api::native_tag>::global_init(storage_type*);
 //
 template <>
 TIMEMORY_USER_BUNDLE_LINKAGE(void)
-user_bundle<ompt_bundle_idx, api::native_tag>::global_init(storage_type*);
-//
-template <>
-TIMEMORY_USER_BUNDLE_LINKAGE(void)
 user_bundle<mpip_bundle_idx, api::native_tag>::global_init(storage_type*);
 //
 #endif
@@ -165,21 +161,7 @@ user_bundle<list_bundle_idx, api::native_tag>::global_init(storage_type*)
 //
 //--------------------------------------------------------------------------------------//
 //
-// user_ompt_bundle
-//
-//--------------------------------------------------------------------------------------//
-//
-template <>
-TIMEMORY_USER_BUNDLE_LINKAGE(void)
-user_bundle<ompt_bundle_idx, api::native_tag>::global_init(storage_type*)
-{
-    auto env_enum = env::get_bundle_components("OMPT_COMPONENTS", "GLOBAL_COMPONENTS");
-    tim::configure<this_type>(env_enum);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-// user_ompt_bundle
+// user_mpip_bundle
 //
 //--------------------------------------------------------------------------------------//
 //

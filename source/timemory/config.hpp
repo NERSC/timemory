@@ -220,14 +220,14 @@ tim::timemory_finalize()
 ///
 namespace tim
 {
-template <typename... _Types, typename... _Args,
-          enable_if_t<(sizeof...(_Types) > 0 && sizeof...(_Args) >= 2), int> = 0>
+template <typename... Types, typename... Args,
+          enable_if_t<(sizeof...(Types) > 0 && sizeof...(Args) >= 2), int> = 0>
 inline void
-timemory_init(_Args&&... _args)
+timemory_init(Args&&... _args)
 {
-    using tuple_type = tuple_concat_t<_Types...>;
-    settings::initialize_storage<tuple_type>();
-    timemory_init(std::forward<_Args>(_args)...);
+    using tuple_type = tuple_concat_t<Types...>;
+    manager::get_storage<tuple_type>::initialize();
+    timemory_init(std::forward<Args>(_args)...);
 }
 }  // namespace tim
 

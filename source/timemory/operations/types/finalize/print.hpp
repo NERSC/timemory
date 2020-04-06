@@ -158,7 +158,7 @@ print<Tp, true>::setup()
 
             // find global max
             settings::indent_width<Tp, 0>(itr_prefix.length());
-            settings::indent_width<Tp, 1>(std::log10(itr_obj.nlaps()) + 1);
+            settings::indent_width<Tp, 1>(std::log10(itr_obj.get_laps()) + 1);
             settings::indent_width<Tp, 2>(std::log10(itr_depth) + 1);
         }
     }
@@ -250,7 +250,7 @@ print<Tp, true>::write_stream(stream_type& stream, result_type& result_array)
         auto& itr_obj    = (*itr)->data();
         auto& itr_prefix = (*itr)->prefix();
         auto& itr_depth  = (*itr)->depth();
-        auto  itr_laps   = itr_obj.nlaps();
+        auto  itr_laps   = itr_obj.get_laps();
 
         if(itr_depth < 0 || itr_depth > get_max_depth())
             continue;

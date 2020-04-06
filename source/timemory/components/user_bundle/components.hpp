@@ -63,7 +63,7 @@ public:
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
-    using start_func_t  = std::function<void*(const string_t&, bool)>;
+    using start_func_t  = std::function<void*(const string_t&, scope::data)>;
     using stop_func_t   = std::function<void(void*)>;
     using get_func_t    = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
@@ -86,14 +86,15 @@ public:
     //
     user_bundle() = default;
 
-    explicit user_bundle(const string_t& _prefix, bool _flat = false)
-    : m_flat(_flat)
+    explicit user_bundle(const string_t& _prefix,
+                         scope::data     _scope = scope::get_default())
+    : m_scope(_scope)
     , m_prefix(_prefix)
     {}
 
     user_bundle(const user_bundle& rhs)
     : base_type(rhs)
-    , m_flat(rhs.m_flat)
+    , m_scope(rhs.m_scope)
     , m_prefix(rhs.m_prefix)
     , m_typeids(rhs.m_typeids)
     , m_bundle(rhs.m_bundle)
@@ -103,8 +104,8 @@ public:
     }
 
     user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
-                bool _flat = false)
-    : m_flat(_flat)
+                scope::data _scope = scope::get_default())
+    : m_scope(_scope)
     , m_prefix(_prefix)
     , m_bundle(_bundle_vec)
     {}
@@ -122,7 +123,7 @@ public:
             return *this;
 
         base_type::operator=(rhs);
-        m_flat             = rhs.m_flat;
+        m_scope            = rhs.m_scope;
         m_prefix           = rhs.m_prefix;
         m_typeids          = rhs.m_typeids;
         m_bundle           = rhs.m_bundle;
@@ -188,7 +189,7 @@ public:
     {
         base_type::set_started();
         for(auto& itr : m_bundle)
-            itr.start(m_prefix, m_flat);
+            itr.start(m_prefix, m_scope);
     }
 
     void stop()
@@ -269,10 +270,10 @@ public:
                          factory::get_typeids<Types>()));
     }
 
-    void set_flat_profile(bool val) { m_flat = val; }
+    void set_scope(scope::data val) { m_scope = val; }
 
 protected:
-    bool           m_flat    = false;
+    scope::data    m_scope   = scope::get_default();
     string_t       m_prefix  = "";
     typeid_set_t   m_typeids = get_typeids();
     opaque_array_t m_bundle  = get_data();

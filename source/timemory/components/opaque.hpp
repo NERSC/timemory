@@ -53,7 +53,7 @@ struct opaque
     using string_t = std::string;
 
     using init_func_t   = std::function<void()>;
-    using start_func_t  = std::function<void*(const string_t&, bool)>;
+    using start_func_t  = std::function<void*(const string_t&, scope::data)>;
     using stop_func_t   = std::function<void(void*)>;
     using get_func_t    = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
@@ -90,14 +90,14 @@ struct opaque
 
     void init() { m_init(); }
 
-    void start(const string_t& _prefix, bool flat)
+    void start(const string_t& _prefix, scope::data _scope)
     {
         if(m_data)
         {
             stop();
             cleanup();
         }
-        m_data  = m_start(_prefix, flat);
+        m_data  = m_start(_prefix, _scope);
         m_valid = (m_data != nullptr);
     }
 
@@ -129,7 +129,7 @@ struct opaque
     size_t        m_typeid = 0;
     void*         m_data   = nullptr;
     init_func_t   m_init   = []() {};
-    start_func_t  m_start  = [](const string_t&, bool) { return nullptr; };
+    start_func_t  m_start  = [](const string_t&, scope::data) { return nullptr; };
     stop_func_t   m_stop   = [](void*) {};
     get_func_t    m_get    = [](void*, void*&, size_t) {};
     delete_func_t m_del    = [](void*) {};

@@ -38,7 +38,7 @@
 #    define _TIM_FUNC __FUNCTION__
 #endif
 
-#if defined(DISABLE_TIMEMORY)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
 
 #    define TIMEMORY_SPRINTF(...)
 

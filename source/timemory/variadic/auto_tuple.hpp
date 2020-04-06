@@ -131,32 +131,33 @@ public:
                         const Init& = this_type::get_initializer());
 
     template <typename Init = initializer_type>
-    explicit auto_tuple(const string_t&, bool flat = settings::flat_profile(),
+    explicit auto_tuple(const string_t&, scope::data = scope::get_default(),
                         bool report_at_exit = settings::destructor_report(),
                         const Init&         = this_type::get_initializer());
 
     template <typename Init = initializer_type>
-    explicit auto_tuple(const captured_location_t&, bool flat = settings::flat_profile(),
+    explicit auto_tuple(const captured_location_t&, scope::data = scope::get_default(),
                         bool report_at_exit = settings::destructor_report(),
                         const Init&         = this_type::get_initializer());
 
     template <typename Init = initializer_type>
-    explicit auto_tuple(size_t, bool flat = settings::flat_profile(),
+    explicit auto_tuple(size_t, scope::data = scope::get_default(),
                         bool report_at_exit = settings::destructor_report(),
                         const Init&         = this_type::get_initializer());
 
-    explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                        bool report_at_exit = settings::destructor_report());
+    explicit auto_tuple(component_type& tmp, scope::data = scope::get_default(),
+                        bool            report_at_exit = settings::destructor_report());
 
     template <typename Init, typename Arg, typename... Args>
-    auto_tuple(const string_t&, bool store, bool flat, const Init&, Arg&&, Args&&...);
-
-    template <typename Init, typename Arg, typename... Args>
-    auto_tuple(const captured_location_t&, bool store, bool flat, const Init&, Arg&&,
+    auto_tuple(const string_t&, bool store, scope::data _scope, const Init&, Arg&&,
                Args&&...);
 
     template <typename Init, typename Arg, typename... Args>
-    auto_tuple(size_t, bool store, bool flat, const Init&, Arg&&, Args&&...);
+    auto_tuple(const captured_location_t&, bool store, scope::data _scope, const Init&,
+               Arg&&, Args&&...);
+
+    template <typename Init, typename Arg, typename... Args>
+    auto_tuple(size_t, bool store, scope::data _scope, const Init&, Arg&&, Args&&...);
 
     ~auto_tuple();
 
@@ -383,33 +384,12 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc,
 
 template <typename... Types>
 template <typename Init>
-auto_tuple<Types...>::auto_tuple(const string_t& key, bool flat, bool report_at_exit,
-                                 const Init& init_func)
-: m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
-, m_reference_object(nullptr)
-
-{
-    if(m_enabled)
-    {
-        init(init_func);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-template <typename Init>
-auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
+auto_tuple<Types...>::auto_tuple(const string_t& key, scope::data _scope,
                                  bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, _scope)
+                               : component_type{})
 , m_reference_object(nullptr)
 
 {
@@ -427,11 +407,12 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool flat,
 
 template <typename... Types>
 template <typename Init>
-auto_tuple<Types...>::auto_tuple(size_t hash, bool flat, bool report_at_exit,
-                                 const Init& init_func)
+auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, scope::data _scope,
+                                 bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(hash, m_enabled, flat) : component_type{})
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, _scope)
+                               : component_type{})
 , m_reference_object(nullptr)
 
 {
@@ -448,10 +429,34 @@ auto_tuple<Types...>::auto_tuple(size_t hash, bool flat, bool report_at_exit,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_exit)
+template <typename Init>
+auto_tuple<Types...>::auto_tuple(size_t hash, scope::data _scope, bool report_at_exit,
+                                 const Init& init_func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
+, m_temporary_object(m_enabled ? component_type(hash, m_enabled, _scope)
+                               : component_type{})
+, m_reference_object(nullptr)
+
+{
+    if(m_enabled)
+    {
+        init(init_func);
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
+        {
+            m_temporary_object.start();
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::data _scope,
+                                 bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(component_type(tmp.clone(true, flat)))
+, m_temporary_object(component_type(tmp.clone(true, _scope)))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
@@ -467,11 +472,12 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_
 
 template <typename... Types>
 template <typename Init, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, bool flat,
+auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, scope::data _scope,
                                  const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, _scope)
+                               : component_type{})
 , m_reference_object(nullptr)
 
 {
@@ -489,11 +495,13 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, bool flat,
 
 template <typename... Types>
 template <typename Init, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store, bool flat,
-                                 const Init& init_func, Arg&& arg, Args&&... args)
+auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store,
+                                 scope::data _scope, const Init& init_func, Arg&& arg,
+                                 Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, _scope)
+                               : component_type{})
 , m_reference_object(nullptr)
 
 {
@@ -511,11 +519,12 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store, boo
 
 template <typename... Types>
 template <typename Init, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(size_t hash, bool store, bool flat,
+auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::data _scope,
                                  const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(hash, m_enabled, flat) : component_type{})
+, m_temporary_object(m_enabled ? component_type(hash, m_enabled, _scope)
+                               : component_type{})
 , m_reference_object(nullptr)
 
 {

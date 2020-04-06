@@ -223,6 +223,8 @@ storage<Type, true>::storage()
 template <typename Type>
 storage<Type, true>::~storage()
 {
+    component::state<Type>::has_storage() = false;
+
     if(settings::debug())
         printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
 
@@ -796,6 +798,7 @@ storage<Type, false>::storage()
 template <typename Type>
 storage<Type, false>::~storage()
 {
+    component::state<Type>::has_storage() = false;
     if(settings::debug())
         printf("[%s]> destructing @ %i...\n", m_label.c_str(), __LINE__);
 }
@@ -811,7 +814,6 @@ storage<Type, false>::stack_clear()
     for(auto& itr : _stack)
     {
         static_cast<Base*>(itr)->stop();
-        static_cast<Base*>(itr)->pop_node();
     }
     m_stack.clear();
 }

@@ -41,6 +41,7 @@
 #include "timemory/api.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/skeletons.hpp"
+#include "timemory/utility/types.hpp"
 
 //======================================================================================//
 //
@@ -75,9 +76,12 @@ struct auto_stop;
 struct explicit_start;
 struct explicit_stop;
 
-struct tree_scope;
-struct flat_scope;
-struct timeline_scope;
+struct tree_scope : scope::tree
+{};
+struct flat_scope : scope::flat
+{};
+struct timeline_scope : scope::timeline
+{};
 
 struct exit_report;
 struct no_init;

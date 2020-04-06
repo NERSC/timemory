@@ -92,61 +92,28 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-struct set_flat_profile
+struct set_scope
 {
     using type       = Tp;
     using value_type = typename type::value_type;
     using base_type  = typename type::base_type;
     using string_t   = std::string;
 
-    TIMEMORY_DELETED_OBJECT(set_flat_profile)
+    TIMEMORY_DELETED_OBJECT(set_scope)
 
-    set_flat_profile(type& obj, bool flat);
-
-private:
-    //  If the component has a set_flat_profile(bool) member function
-    template <typename T = type>
-    auto sfinae(T& obj, int, bool flat) -> decltype(obj.set_flat_profile(flat), void())
-    {
-        obj.set_flat_profile(flat);
-    }
-
-    //  If the component does not have a set_flat_profile(bool) member function
-    template <typename T = type>
-    auto sfinae(T&, long, bool) -> decltype(void(), void())
-    {}
-};
-//
-//--------------------------------------------------------------------------------------//
-//
-//
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-struct set_timeline_profile
-{
-    using type       = Tp;
-    using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
-    using string_t   = std::string;
-
-    TIMEMORY_DELETED_OBJECT(set_timeline_profile)
-
-    set_timeline_profile(type& obj, bool flat);
+    set_scope(type& obj, scope::data _data);
 
 private:
-    //  If the component has a set_timeline_profile(bool) member function
+    //  If the component has a set_scope(...) member function
     template <typename T = type>
-    auto sfinae(T& obj, int, bool flat)
-        -> decltype(obj.set_timeline_profile(flat), void())
+    auto sfinae(T& obj, int, scope::data _data) -> decltype(obj.set_scope(_data), void())
     {
-        obj.set_timeline_profile(flat);
+        obj.set_scope(_data);
     }
 
-    //  If the component does not have a set_timeline_profile(bool) member function
+    //  If the component does not have a set_scope(...) member function
     template <typename T = type>
-    auto sfinae(T&, long, bool) -> decltype(void(), void())
+    auto sfinae(T&, long, scope::data) -> decltype(void(), void())
     {}
 };
 //
@@ -174,23 +141,12 @@ set_prefix<Tp>::set_prefix(type& obj, const string_t& prefix)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-set_flat_profile<Tp>::set_flat_profile(type& obj, bool flat)
+set_scope<Tp>::set_scope(type& obj, scope::data _data)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    sfinae(obj, 0, flat);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-set_timeline_profile<Tp>::set_timeline_profile(type& obj, bool flat)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
-    sfinae(obj, 0, flat);
+    sfinae(obj, 0, _data);
 }
 //
 //--------------------------------------------------------------------------------------//

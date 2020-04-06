@@ -23,7 +23,7 @@ if(_MPIP AND NOT TARGET timemory-cxx-shared)
 endif()
 
 set(_STATIC_LIB)
-foreach(_TARG timing-component manager settings hash)
+foreach(_TARG hash settings manager timing-component rusage-component)
     if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
         list(APPEND _STATIC_LIB timemory-${_TARG}-static)
     endif()
@@ -172,8 +172,16 @@ if(TIMEMORY_USE_DYNINST)
     )
 
     set_target_properties(timemory-run PROPERTIES
-        INSTALL_RPATH_USE_LINK_PATH ON
-    )
+        INSTALL_RPATH_USE_LINK_PATH ON)
+
+    if(UNIX AND NOT APPLE)
+        file(RELATIVE_PATH _RELATIVE_RPATH
+            ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
+            ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+        message(STATUS "RELATIVE RPATH from [${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}] to [${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}] = ${_RELATIVE_RPATH}")
+        set_target_properties(timemory-run PROPERTIES INSTALL_RPATH
+            "\$ORIGIN/${_RELATIVE_PATH}")
+    endif()
 
     install(TARGETS timemory-run DESTINATION bin)
 endif()

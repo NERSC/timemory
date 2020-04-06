@@ -81,7 +81,6 @@ base<Tp, Value>::reset()
     value        = value_type{};
     accum        = accum_type{};
     last         = last_type{};
-    samples      = sample_list_type{};
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -600,23 +599,6 @@ template <typename Tp>
 void
 base<Tp, void>::get_opaque_data(void*&, size_t) const
 {}
-//
-//----------------------------------------------------------------------------------//
-//
-// pop the node off the graph
-//
-template <typename Tp>
-void
-base<Tp, void>::pop_node()
-{
-    if(is_on_stack)
-    {
-        // auto  _storage = get_storage();
-        // Type& rhs      = static_cast<Type&>(*this);
-        is_on_stack = false;
-        // _storage->stack_pop(&rhs);
-    }
-}
 //
 //--------------------------------------------------------------------------------------//
 //

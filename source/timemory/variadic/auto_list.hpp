@@ -102,22 +102,22 @@ public:
 
 public:
     template <typename Func = initializer_type>
-    explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
+    explicit auto_list(const string_t&, scope::data = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
                        const Func&         = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit auto_list(const captured_location_t&, bool flat = settings::flat_profile(),
+    explicit auto_list(const captured_location_t&, scope::data = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
                        const Func&         = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit auto_list(size_t, bool flat = settings::flat_profile(),
+    explicit auto_list(size_t, scope::data = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
                        const Func&         = get_initializer());
 
-    explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
-                       bool report_at_exit = settings::destructor_report());
+    explicit auto_list(component_type& tmp, scope::data = scope::get_default(),
+                       bool            report_at_exit = settings::destructor_report());
     ~auto_list();
 
     // copy and move
@@ -288,47 +288,11 @@ private:
 
 template <typename... Types>
 template <typename Func>
-auto_list<Types...>::auto_list(const string_t& key, bool flat, bool report_at_exit,
-                               const Func& _func)
-: m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
-, m_reference_object(nullptr)
-{
-    if(m_enabled)
-    {
-        _func(*this);
-        m_temporary_object.start();
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-template <typename Func>
-auto_list<Types...>::auto_list(const captured_location_t& loc, bool flat,
+auto_list<Types...>::auto_list(const string_t& key, scope::data _scope,
                                bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
-, m_reference_object(nullptr)
-{
-    if(m_enabled)
-    {
-        _func(*this);
-        m_temporary_object.start();
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-template <typename Func>
-auto_list<Types...>::auto_list(size_t _hash, bool flat, bool report_at_exit,
-                               const Func& _func)
-: m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, _scope)
                                : component_type{})
 , m_reference_object(nullptr)
 {
@@ -342,10 +306,49 @@ auto_list<Types...>::auto_list(size_t _hash, bool flat, bool report_at_exit,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit)
+template <typename Func>
+auto_list<Types...>::auto_list(const captured_location_t& loc, scope::data _scope,
+                               bool report_at_exit, const Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, _scope)
+                               : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        _func(*this);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+template <typename Func>
+auto_list<Types...>::auto_list(size_t _hash, scope::data _scope, bool report_at_exit,
+                               const Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, _scope)
+                               : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        _func(*this);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+auto_list<Types...>::auto_list(component_type& tmp, scope::data _scope,
+                               bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, flat))
+, m_temporary_object(tmp.clone(true, _scope))
 , m_reference_object(&tmp)
 {
     if(m_enabled)

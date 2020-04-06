@@ -137,18 +137,18 @@ public:
 
     template <typename Func = initializer_type>
     explicit component_list(const string_t& key, const bool& store = true,
-                            const bool& flat = settings::flat_profile(),
-                            const Func&      = get_initializer());
+                            scope::data _scope = scope::get_default(),
+                            const Func&        = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_list(const captured_location_t& loc, const bool& store = true,
-                            const bool& flat = settings::flat_profile(),
-                            const Func&      = get_initializer());
+                            scope::data _scope = scope::get_default(),
+                            const Func&        = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_list(size_t _hash, const bool& store = true,
-                            const bool& flat = settings::flat_profile(),
-                            const Func&      = get_initializer());
+                            scope::data _scope = scope::get_default(),
+                            const Func&        = get_initializer());
 
     ~component_list();
 
@@ -161,7 +161,7 @@ public:
     component_list(const component_list& rhs);
     component_list& operator=(const component_list& rhs);
 
-    component_list clone(bool store, bool flat = settings::flat_profile());
+    component_list clone(bool store, scope::data _scope = scope::get_default());
 
 public:
     //----------------------------------------------------------------------------------//
@@ -509,7 +509,7 @@ public:
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
         this->get<bundle_t>()->insert(
-            component::factory::get_opaque<T>(m_flat, std::forward<Args>(args)...),
+            component::factory::get_opaque<T>(m_scope, std::forward<Args>(args)...),
             component::factory::get_typeids<T>());
     }
 
@@ -598,10 +598,10 @@ protected:
 
 protected:
     // objects
-    using bundle_type::m_flat;
     using bundle_type::m_hash;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
+    using bundle_type::m_scope;
     using bundle_type::m_store;
     mutable data_type m_data = data_type();
 };

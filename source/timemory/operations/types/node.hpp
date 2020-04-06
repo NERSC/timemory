@@ -59,21 +59,29 @@ struct insert_node
 
     TIMEMORY_DELETED_OBJECT(insert_node)
 
-    //  has run-time optional flat storage implementation
-    template <typename Up = base_type, typename T = type,
-              enable_if_t<!(trait::flat_storage<T>::value), char> = 0,
-              enable_if_t<(Up::implements_storage_v), int>        = 0>
-    explicit insert_node(base_type& obj, const uint64_t& nhash, bool flat);
+    insert_node(base_type& obj, scope::data _scope, int64_t _hash)
+    {
+        if(!trait::runtime_enabled<type>::get())
+            return;
 
-    //  has compile-time fixed flat storage implementation
-    template <typename Up = base_type, typename T = type,
-              enable_if_t<(trait::flat_storage<T>::value), char> = 0,
-              enable_if_t<(Up::implements_storage_v), int>       = 0>
-    explicit insert_node(base_type& obj, const uint64_t& nhash, bool);
+        sfinae(obj, 0, _scope, _hash);
+    }
 
-    //  no storage implementation
-    template <typename Up = base_type, enable_if_t<!(Up::implements_storage_v), int> = 0>
-    explicit insert_node(base_type&, const uint64_t&, bool);
+private:
+    //  satisfies mpl condition and accepts arguments
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, Args&&... args)
+        -> decltype(obj.insert_node(std::forward<Args>(args)...), void())
+    {
+        obj.insert_node(std::forward<Args>(args)...);
+    }
+
+    //  no member function or does not satisfy mpl condition
+    template <typename Up, typename... Args>
+    void sfinae(Up&, long, Args&&...)
+    {
+        SFINAE_WARNING(type);
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -91,80 +99,35 @@ struct pop_node
 
     TIMEMORY_DELETED_OBJECT(pop_node)
 
-    //  has storage implementation
-    template <typename Up = base_type, enable_if_t<(Up::implements_storage_v), int> = 0>
-    explicit pop_node(base_type& obj);
+    template <typename... Args>
+    explicit pop_node(base_type& obj, Args&&... args)
+    {
+        sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
 
-    //  no storage implementation
-    template <typename Up = base_type, enable_if_t<!(Up::implements_storage_v), int> = 0>
-    explicit pop_node(base_type&);
+private:
+    //  satisfies mpl condition and accepts arguments
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, int, Args&&... args)
+        -> decltype(obj.pop_node(std::forward<Args>(args)...), void())
+    {
+        obj.pop_node(std::forward<Args>(args)...);
+    }
+
+    //  satisfies mpl condition but does not accept arguments
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.pop_node(), void())
+    {
+        obj.pop_node();
+    }
+
+    //  no member function or does not satisfy mpl condition
+    template <typename Up, typename... Args>
+    void sfinae(Up&, long, long, Args&&...)
+    {
+        SFINAE_WARNING(type);
+    }
 };
-//
-//--------------------------------------------------------------------------------------//
-//
-//                                  INSERT NODE
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename Up, typename T, enable_if_t<!(trait::flat_storage<T>::value), char>,
-          enable_if_t<(Up::implements_storage_v), int>>
-insert_node<Tp>::insert_node(base_type& obj, const uint64_t& nhash, bool flat)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
-    init_storage<Tp>::init();
-    if(flat)
-        obj.insert_node(scope::flat{}, nhash);
-    else
-        obj.insert_node(scope::tree{}, nhash);
-}
-
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename Up, typename T, enable_if_t<(trait::flat_storage<T>::value), char>,
-          enable_if_t<(Up::implements_storage_v), int>>
-insert_node<Tp>::insert_node(base_type& obj, const uint64_t& nhash, bool)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
-    init_storage<Tp>::init();
-    obj.insert_node(scope::flat{}, nhash);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename Up, enable_if_t<!(Up::implements_storage_v), int>>
-insert_node<Tp>::insert_node(base_type&, const uint64_t&, bool)
-{}
-//
-//--------------------------------------------------------------------------------------//
-//
-//                                  POP NODE
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename Up, enable_if_t<(Up::implements_storage_v), int>>
-pop_node<Tp>::pop_node(base_type& obj)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
-    obj.pop_node();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename Up, enable_if_t<!(Up::implements_storage_v), int>>
-pop_node<Tp>::pop_node(base_type&)
-{}
 //
 //--------------------------------------------------------------------------------------//
 //

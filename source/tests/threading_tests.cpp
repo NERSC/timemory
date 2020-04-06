@@ -167,9 +167,9 @@ TEST_F(threading_tests, openmp)
     int64_t wc_nlaps = 0;
     int64_t tc_nlaps = 0;
     for(auto& itr : wc)
-        wc_nlaps += itr.data().nlaps();
+        wc_nlaps += itr.data().get_laps();
     for(auto& itr : tc)
-        tc_nlaps += itr.data().nlaps();
+        tc_nlaps += itr.data().get_laps();
 
     ASSERT_EQ(wc_nlaps, tc_nlaps);
 }
@@ -209,9 +209,9 @@ TEST_F(threading_tests, openmp_ompt)
     int64_t wc_nlaps = 0;
     int64_t tc_nlaps = 0;
     for(auto& itr : wc)
-        wc_nlaps += itr.data().nlaps();
+        wc_nlaps += itr.data().get_laps();
     for(auto& itr : tc)
-        tc_nlaps += itr.data().nlaps();
+        tc_nlaps += itr.data().get_laps();
 
     ASSERT_EQ(wc_nlaps, tc_nlaps);
 }
@@ -306,9 +306,9 @@ TEST_F(threading_tests, stl)
     int64_t wc_nlaps = 0;
     int64_t tc_nlaps = 0;
     for(auto& itr : wc)
-        wc_nlaps += itr.data().nlaps();
+        wc_nlaps += itr.data().get_laps();
     for(auto& itr : tc)
-        tc_nlaps += itr.data().nlaps();
+        tc_nlaps += itr.data().get_laps();
 
     ASSERT_EQ(wc_nlaps, tc_nlaps);
 }

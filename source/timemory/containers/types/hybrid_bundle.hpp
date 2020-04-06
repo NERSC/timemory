@@ -55,15 +55,15 @@
 //
 //======================================================================================//
 //
-TIMEMORY_EXTERN_TUPLE(hybrid_bundle_t, component::user_tuple_bundle)
+// TIMEMORY_EXTERN_TUPLE(hybrid_bundle_t, component::user_tuple_bundle)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_EXTERN_LIST(hybrid_bundle_t, component::user_list_bundle)
+// TIMEMORY_EXTERN_LIST(hybrid_bundle_t, component::user_list_bundle)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_EXTERN_HYBRID(hybrid_bundle_t)
+// TIMEMORY_EXTERN_HYBRID(hybrid_bundle_t)
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -55,16 +55,6 @@ namespace component
 //======================================================================================//
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<(Up::is_sampler_v), int>>
-void
-base<Tp, Value>::add_sample(sample_type&& _sample)
-{
-    samples.emplace_back(std::forward<sample_type>(_sample));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
 template <typename Archive, typename Up,
           enable_if_t<!(trait::custom_serialization<Up>::value), int>>
 void
@@ -75,8 +65,7 @@ base<Tp, Value>::CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
            cereal::make_nvp("laps", laps),
            cereal::make_nvp("value", value),
            cereal::make_nvp("accum", accum),
-           cereal::make_nvp("last", last),
-           cereal::make_nvp("samples", samples));
+           cereal::make_nvp("last", last));
     // clang-format on
 }
 //
@@ -94,7 +83,19 @@ base<Tp, Value>::CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int versi
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<(Up::has_accum_v), int>>
+template <typename Vp, typename Up, enable_if_t<(trait::sampler<Up>::value), int>>
+void
+base<Tp, Value>::add_sample(Vp&& _obj)
+{
+    auto _storage = static_cast<storage_type*>(get_storage());
+    if(_storage)
+        _storage->add_sample(std::forward<Vp>(_obj));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Value>
+template <typename Up, enable_if_t<(trait::base_has_accum<Up>::value), int>>
 const Value&
 base<Tp, Value>::load() const
 {
@@ -104,7 +105,7 @@ base<Tp, Value>::load() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<!(Up::has_accum_v), int>>
+template <typename Up, enable_if_t<!(trait::base_has_accum<Up>::value), int>>
 const Value&
 base<Tp, Value>::load() const
 {
@@ -118,58 +119,20 @@ base<Tp, Value>::load() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Value>
-template <typename Scope, typename Up, enable_if_t<(Up::implements_storage_v), int>,
-          enable_if_t<(std::is_same<Scope, scope::tree>::value), int>>
+template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
 void
-base<Tp, Value>::insert_node(Scope&&, const int64_t& _hash)
+base<Tp, Value>::insert_node(scope::data _scope, int64_t _hash)
 {
     if(!is_on_stack)
     {
         is_on_stack      = true;
-        is_flat          = false;
+        is_flat          = _scope.is_flat();
         auto  _storage   = static_cast<storage_type*>(get_storage());
         auto  _beg_depth = _storage->depth();
         Type* obj        = static_cast<Type*>(this);
-        graph_itr        = _storage->template insert<Scope>(*obj, _hash);
+        graph_itr        = _storage->insert(_scope, *obj, _hash);
         auto _end_depth  = _storage->depth();
-        depth_change     = (_beg_depth < _end_depth);
-        _storage->stack_push(obj);
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Scope, typename Up, enable_if_t<(Up::implements_storage_v), int>,
-          enable_if_t<!(std::is_same<Scope, scope::tree>::value), int>>
-void
-base<Tp, Value>::insert_node(Scope&&, const int64_t& _hash)
-{
-    if(!is_on_stack)
-    {
-        is_on_stack    = true;
-        is_flat        = std::is_same<Scope, scope::flat>::value;
-        auto  _storage = static_cast<storage_type*>(get_storage());
-        Type* obj      = static_cast<Type*>(this);
-        graph_itr      = _storage->template insert<Scope>(*obj, _hash);
-        depth_change   = std::is_same<Scope, scope::timeline>::value;
-        _storage->stack_push(obj);
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Scope, typename Up, enable_if_t<!(Up::implements_storage_v), int>>
-void
-base<Tp, Value>::insert_node(Scope&&, const int64_t&)
-{
-    if(!is_on_stack)
-    {
-        is_on_stack    = true;
-        is_flat        = true;
-        auto  _storage = static_cast<storage_type*>(get_storage());
-        Type* obj      = static_cast<Type*>(this);
+        depth_change     = (_beg_depth < _end_depth) || _scope.is_timeline();
         _storage->stack_push(obj);
     }
 }
@@ -179,7 +142,7 @@ base<Tp, Value>::insert_node(Scope&&, const int64_t&)
 // pop the node off the graph
 //
 template <typename Tp, typename Value>
-template <typename Up, enable_if_t<(Up::implements_storage_v), int>>
+template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
 void
 base<Tp, Value>::pop_node()
 {
@@ -223,23 +186,6 @@ base<Tp, Value>::pop_node()
             }
         }
         obj.is_running = false;
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Up, enable_if_t<!(Up::implements_storage_v), int>>
-void
-base<Tp, Value>::pop_node()
-{
-    if(is_on_stack)
-    {
-        is_on_stack    = false;
-        auto  _storage = static_cast<storage_type*>(get_storage());
-        Type* rhs      = static_cast<Type*>(this);
-        if(_storage)
-            _storage->stack_pop(rhs);
     }
 }
 //
@@ -350,28 +296,6 @@ template <typename Up, typename Vp,
 void
 base<Tp, Value>::print(std::ostream&) const
 {}
-//
-//======================================================================================//
-//
-//                                  VOID BASE
-//
-//======================================================================================//
-//
-// insert the node into the graph
-//
-template <typename Tp>
-template <typename Scope, typename... Args>
-void
-base<Tp, void>::insert_node(Scope&&, Args&&...)
-{
-    if(!is_on_stack)
-    {
-        // auto  _storage = get_storage();
-        // Type& obj      = static_cast<Type&>(*this);
-        is_on_stack = true;
-        // _storage->stack_push(&obj);
-    }
-}
 //
 //--------------------------------------------------------------------------------------//
 //

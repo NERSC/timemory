@@ -265,7 +265,7 @@ main(int argc, char** argv)
     tim::settings::auto_output()      = false;
     tim::settings::output_prefix()    = "";
 
-    tim::manager::get_storage<comp_tuple_t>::initialize();
+    // tim::manager::get_storage<comp_tuple_t>::initialize();
     tim::manager::instance()->set_write_metadata(-1);
 
     auto compose_prefix = [&]() {

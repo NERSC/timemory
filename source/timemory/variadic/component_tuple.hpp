@@ -156,18 +156,18 @@ public:
 
     template <typename Func = initializer_type>
     explicit component_tuple(const string_t& key, const bool& store = true,
-                             const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer());
+                             scope::data _scope = scope::get_default(),
+                             const Func&        = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(const captured_location_t& loc, const bool& store = true,
-                             const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer());
+                             scope::data _scope = scope::get_default(),
+                             const Func&        = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(size_t _hash, const bool& store = true,
-                             const bool& flat = settings::flat_profile(),
-                             const Func&      = get_initializer());
+                             scope::data _scope = scope::get_default(),
+                             const Func&        = get_initializer());
 
     ~component_tuple();
 
@@ -180,7 +180,7 @@ public:
     component_tuple& operator=(const component_tuple& rhs) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple clone(bool store, bool flat = settings::flat_profile());
+    component_tuple clone(bool store, scope::data _scope = scope::get_default());
 
 public:
     //----------------------------------------------------------------------------------//
@@ -354,7 +354,7 @@ public:
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
         this->init<bundle_t>();
-        this->get<bundle_t>()->insert(component::factory::get_opaque<T>(m_flat),
+        this->get<bundle_t>()->insert(component::factory::get_opaque<T>(m_scope),
                                       component::factory::get_typeids<T>());
     }
 
@@ -548,17 +548,15 @@ protected:
     const data_type& get_data() const;
     void             set_prefix(const string_t&) const;
     void             set_prefix(size_t) const;
-    void             set_flat_profile(bool);
-    void             set_timeline_profile(bool);
+    void             set_scope(scope::data);
 
 protected:
     // objects
-    using bundle_type::m_flat;
     using bundle_type::m_hash;
     using bundle_type::m_is_pushed;
     using bundle_type::m_laps;
+    using bundle_type::m_scope;
     using bundle_type::m_store;
-    using bundle_type::m_timeline;
     mutable data_type m_data = data_type{};
 };
 

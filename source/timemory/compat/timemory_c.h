@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(DISABLE_TIMEMORY)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
 
 // clang-format off
 #    define TIMEMORY_C_SETTINGS_INIT {}

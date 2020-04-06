@@ -29,10 +29,32 @@
 #include "timemory/mpl/types.hpp"
 //
 #include "timemory/components/ompt/backends.hpp"
-#include "timemory/components/ompt/types.hpp"
-
+#include "timemory/components/ompt/components.hpp"
+#include "timemory/components/user_bundle/components.hpp"
+//
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace component
+{
+//
+template <>
+inline void
+user_bundle<ompt_bundle_idx, api::native_tag>::global_init(storage_type*)
+{
+    auto parse_env = [](string_t _env, string_t _default) {
+        if(_env.length() > 0)
+            return get_env<string_t>(_env, _default);
+        return _default;
+    };
+    auto env_tool = parse_env("OMPT_COMPONENTS", parse_env("GLOBAL_COMPONENTS", ""));
+    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
+    tim::configure<this_type>(env_enum);
+}
+//
+}  // namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -61,6 +83,13 @@ static const char* ompt_thread_type_labels[] = { nullptr, "ompt_thread_initial",
 //
 //--------------------------------------------------------------------------------------//
 //
+static const char* ompt_target_type_labels[] = { nullptr, "ompt_target",
+                                                 "ompt_target_enter_data",
+                                                 "ompt_target_exit_data",
+                                                 "ompt_target_update" };
+//
+//--------------------------------------------------------------------------------------//
+//
 static const char* ompt_work_labels[] = { nullptr,
                                           "ompt_work_loop",
                                           "ompt_work_sections",
@@ -69,6 +98,24 @@ static const char* ompt_work_labels[] = { nullptr,
                                           "ompt_work_workshare",
                                           "ompt_work_distribute",
                                           "ompt_work_taskloop" };
+//
+//--------------------------------------------------------------------------------------//
+//
+static const char* ompt_target_data_op_labels[] = { nullptr, "ompt_target_data_alloc",
+                                                    "ompt_target_data_transfer_to_dev",
+                                                    "ompt_target_data_transfer_from_dev",
+                                                    "ompt_target_data_delete" };
+//
+//--------------------------------------------------------------------------------------//
+//
+static std::map<ompt_mutex_kind_t, const char*> ompt_mutex_labels = {
+    { ompt_mutex, "ompt_mutex" },
+    { ompt_mutex_lock, "ompt_mutex_lock" },
+    { ompt_mutex_nest_lock, "ompt_mutex_nest_lock" },
+    { ompt_mutex_critical, "ompt_mutex_critical" },
+    { ompt_mutex_atomic, "ompt_mutex_atomic" },
+    { ompt_mutex_ordered, "ompt_mutex_ordered" }
+};
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -82,6 +129,57 @@ template <typename Api>
 struct context_handler
 {
 public:
+    template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
+    static auto get_hash(T val)
+    {
+        return std::hash<size_t>()(val);
+    }
+
+    template <typename T, enable_if_t<(std::is_pointer<T>::value), long> = 0>
+    static auto get_hash(const T ptr)
+    {
+        return std::hash<const void*>()(static_cast<const void*>(ptr));
+    }
+
+    template <
+        typename T,
+        enable_if_t<!(std::is_pointer<T>::value || std::is_integral<T>::value), int> = 0>
+    static auto get_hash(T val)
+    {
+        return std::hash<T>()(val);
+    }
+
+    static auto get_hash(const std::string& key) { return std::hash<std::string>()(key); }
+
+    static auto get_hash(const char* key) { return std::hash<std::string>()(key); }
+
+    static auto get_hash(char* key) { return std::hash<std::string>()(key); }
+
+#if defined(OMPT_DEBUG)
+    static void insert(const void* codeptr, const std::string& key)
+    {
+        if(!tim::settings::debug() && settings::verbose() < 1)
+            return;
+
+        using codeptr_map_t = std::map<const void*, std::vector<std::string>>;
+        static codeptr_map_t codeptr_map;
+
+        auto_lock_t lk(type_mutex<context_handler<Api>>());
+        codeptr_map[codeptr].push_back(key);
+        std::stringstream ss;
+        ss << "\n\n";
+        for(const auto& itr : codeptr_map)
+        {
+            ss << std::setw(16) << itr.first << "  ::   ";
+            for(const auto& eitr : itr.second)
+                ss << std::setw(20) << eitr << "  ";
+            ss << '\n';
+        }
+        std::cout << ss.str();
+    }
+#endif
+
+public:
     //----------------------------------------------------------------------------------//
     // parallel begin
     //----------------------------------------------------------------------------------//
@@ -89,9 +187,11 @@ public:
                     ompt_data_t* parallel_data, uint32_t requested_team_size,
                     const void* codeptr)
     {
-        consume_parameters(parent_task_frame, requested_team_size, codeptr);
         m_key = "ompt_parallel";
-        m_id  = std::hash<void*>()(parent_task_data) + std::hash<void*>()(parallel_data);
+        m_id  = get_hash(m_key) + get_hash(parent_task_data);
+
+        consume_parameters(parent_task_data, parent_task_frame, parallel_data,
+                           requested_team_size, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -101,8 +201,9 @@ public:
                     const void* codeptr)
     {
         m_key = "ompt_parallel";
-        m_id  = std::hash<void*>()(parent_task_data) + std::hash<void*>()(parallel_data);
-        consume_parameters(codeptr);
+        m_id  = get_hash(m_key) + get_hash(parent_task_data);
+
+        consume_parameters(parallel_data, parent_task_data, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -112,6 +213,11 @@ public:
                     ompt_data_t* new_task_data, int type, int has_dependences,
                     const void* codeptr)
     {
+        // insert(codeptr, "task_create" + std::to_string(type));
+        // insert(parent_task_data, "task_create_task_data" + std::to_string(type));
+        // insert(parent_frame, "task_create_parent_frame" + std::to_string(type));
+        // insert(new_task_data, "task_create_new_data" + std::to_string(type));
+
         consume_parameters(parent_task_data, parent_frame, new_task_data, type,
                            has_dependences, codeptr);
     }
@@ -132,9 +238,9 @@ public:
                     ompt_data_t* task_data, const void* codeptr)
     {
         m_key = "ompt_master";
-        m_id  = std::hash<std::string>()(m_key) + std::hash<void*>()(parallel_data) +
-               std::hash<void*>()(task_data);
-        consume_parameters(endpoint, codeptr);
+        m_id  = get_hash(m_key) + get_hash(task_data);
+
+        consume_parameters(endpoint, parallel_data, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -145,9 +251,9 @@ public:
                     const void* codeptr)
     {
         m_key = ompt_work_labels[wstype];
-        m_id  = std::hash<std::string>()(m_key) + std::hash<void*>()(parallel_data) +
-               std::hash<void*>()(task_data);
-        consume_parameters(endpoint, count, codeptr);
+        m_id  = get_hash(m_key) + get_hash(task_data);
+
+        consume_parameters(endpoint, parallel_data, count, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -156,16 +262,13 @@ public:
     context_handler(ompt_thread_type_t thread_type, ompt_data_t* thread_data)
     {
         m_key = ompt_thread_type_labels[thread_type];
-        m_id  = std::hash<void*>()(static_cast<void*>(thread_data));
+        m_id  = get_hash(thread_data);
     }
 
     //----------------------------------------------------------------------------------//
     // callback thread end
     //----------------------------------------------------------------------------------//
-    context_handler(ompt_data_t* thread_data)
-    {
-        m_id = std::hash<void*>()(static_cast<void*>(thread_data));
-    }
+    context_handler(ompt_data_t* thread_data) { m_id = get_hash(thread_data); }
 
     //----------------------------------------------------------------------------------//
     // callback implicit task
@@ -174,11 +277,12 @@ public:
                     ompt_data_t* task_data, unsigned int team_size,
                     unsigned int thread_num)
     {
-        m_key = apply<std::string>::join("_", "ompt_implicit_task", thread_num, "of",
-                                         team_size);
-        m_id  = std::hash<void*>()(static_cast<void*>(parallel_data)) +
-               std::hash<std::string>()(m_key);
-        consume_parameters(endpoint, task_data);
+        // m_key = apply<std::string>::join("_", "ompt_implicit_task", thread_num, "of",
+        //                                 team_size);
+        m_key = "ompt_implicit_task";
+        m_id  = get_hash(m_key);
+
+        consume_parameters(endpoint, parallel_data, task_data, team_size, thread_num);
     }
 
     //----------------------------------------------------------------------------------//
@@ -189,10 +293,9 @@ public:
                     const void* codeptr)
     {
         m_key = ompt_sync_region_labels[kind];
-        m_id  = std::hash<size_t>()(static_cast<int>(kind)) +
-               std::hash<void*>()(static_cast<void*>(parallel_data)) +
-               std::hash<std::string>()(m_key);
-        consume_parameters(endpoint, task_data, codeptr);
+        m_id  = get_hash(m_key);
+
+        consume_parameters(endpoint, parallel_data, task_data, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -201,7 +304,8 @@ public:
     context_handler(ompt_scope_endpoint_t endpoint)
     {
         m_key = "ompt_idle";
-        m_id  = std::hash<std::string>()(m_key);
+        m_id  = get_hash(m_key);
+
         consume_parameters(endpoint);
     }
 
@@ -211,19 +315,9 @@ public:
     context_handler(ompt_mutex_kind_t kind, unsigned int hint, unsigned int impl,
                     omp_wait_id_t wait_id, const void* codeptr)
     {
-        m_key = "ompt_mutex";
-        switch(kind)
-        {
-            case ompt_mutex: break;
-            case ompt_mutex_lock: m_key += "_lock"; break;
-            case ompt_mutex_nest_lock: m_key += "_nest_lock"; break;
-            case ompt_mutex_critical: m_key += "_critical"; break;
-            case ompt_mutex_atomic: m_key += "_atomic"; break;
-            case ompt_mutex_ordered: m_key += "_ordered"; break;
-            default: m_key += "_unknown"; break;
-        }
-        m_id = std::hash<size_t>()(static_cast<int>(kind) + static_cast<int>(wait_id)) +
-               std::hash<std::string>()(m_key);
+        m_key = ompt_mutex_labels[kind];
+        m_id  = get_hash(m_key) ^ get_hash(wait_id);
+
         consume_parameters(hint, impl, codeptr);
     }
 
@@ -233,20 +327,10 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_mutex_kind_t kind, omp_wait_id_t wait_id, const void* codeptr)
     {
+        m_key = ompt_mutex_labels[kind];
+        m_id  = get_hash(m_key) ^ get_hash(wait_id);
+
         consume_parameters(codeptr);
-        m_key = "ompt_mutex";
-        switch(kind)
-        {
-            case ompt_mutex: break;
-            case ompt_mutex_lock: m_key += "_lock"; break;
-            case ompt_mutex_nest_lock: m_key += "_nest_lock"; break;
-            case ompt_mutex_critical: m_key += "_critical"; break;
-            case ompt_mutex_atomic: m_key += "_atomic"; break;
-            case ompt_mutex_ordered: m_key += "_ordered"; break;
-            default: m_key += "_unknown"; break;
-        }
-        m_id = std::hash<size_t>()(static_cast<int>(kind) + static_cast<int>(wait_id)) +
-               std::hash<std::string>()(m_key);
     }
 
     //----------------------------------------------------------------------------------//
@@ -256,11 +340,11 @@ public:
                     int device_num, ompt_data_t* task_data, ompt_id_t target_id,
                     const void* codeptr)
     {
-        m_key = apply<std::string>::join("_", "ompt_target_device", device_num);
-        m_id =
-            std::hash<size_t>()(static_cast<int>(kind) + static_cast<int>(device_num)) +
-            std::hash<std::string>()(m_key);
-        consume_parameters(kind, endpoint, device_num, task_data, target_id, codeptr);
+        m_key = apply<std::string>::join("_", ompt_target_type_labels[kind], "dev",
+                                         device_num);
+        m_id  = get_hash(m_key) + get_hash(task_data);
+
+        consume_parameters(kind, endpoint, task_data, target_id, codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -271,13 +355,12 @@ public:
                     void* dest_addr, int dest_device_num, size_t bytes,
                     const void* codeptr)
     {
-        m_key = apply<std::string>::join("", "ompt_target_data_op_src:", src_device_num,
-                                         "_dest:", dest_device_num);
-        m_id  = std::hash<size_t>()(static_cast<int>(src_device_num) +
-                                   static_cast<int>(dest_device_num)) +
-               std::hash<std::string>()(m_key) + std::hash<void*>()(src_addr) +
-               std::hash<void*>()(dest_addr);
-        consume_parameters(target_id, host_op_id, optype, bytes, codeptr);
+        m_key = apply<std::string>::join("_", ompt_target_data_op_labels[optype], "src",
+                                         src_device_num, "dest", dest_device_num);
+        m_id  = get_hash(m_key);
+
+        consume_parameters(target_id, host_op_id, optype, src_addr, dest_addr, bytes,
+                           codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -287,7 +370,52 @@ public:
                     unsigned int requested_num_teams)
     {
         m_key = "ompt_target_submit";
+        m_id  = get_hash(target_id) + get_hash(host_op_id);
+
         consume_parameters(target_id, host_op_id, requested_num_teams);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // callback target mapping
+    //----------------------------------------------------------------------------------//
+    context_handler(ompt_id_t target_id, unsigned int nitems, void** host_addr,
+                    void** device_addr, size_t* bytes, unsigned int* mapping_flags)
+    {
+        consume_parameters(target_id, nitems, host_addr, device_addr, bytes,
+                           mapping_flags);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // callback target device initialize
+    //----------------------------------------------------------------------------------//
+    context_handler(uint64_t device_num, const char* type, ompt_device_t* device,
+                    ompt_function_lookup_t lookup, const char* documentation)
+    {
+        consume_parameters(device_num, type, device, lookup, documentation);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // callback target device finalize
+    //----------------------------------------------------------------------------------//
+    context_handler(uint64_t device_num) { consume_parameters(device_num); }
+
+    //----------------------------------------------------------------------------------//
+    // callback target device load
+    //----------------------------------------------------------------------------------//
+    context_handler(uint64_t device_num, const char* filename, int64_t offset_in_file,
+                    void* vma_in_file, size_t bytes, void* host_addr, void* device_addr,
+                    uint64_t module_id)
+    {
+        consume_parameters(device_num, filename, offset_in_file, vma_in_file, bytes,
+                           host_addr, device_addr, module_id);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // callback target device unload
+    //----------------------------------------------------------------------------------//
+    context_handler(uint64_t device_num, uint64_t module_id)
+    {
+        consume_parameters(device_num, module_id);
     }
 
 public:
@@ -298,6 +426,9 @@ protected:
     // the first hash is the string hash, the second is the data hash
     size_t      m_id;
     std::string m_key;
+
+    template <typename Ct, typename At>
+    friend struct callback_connector;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -316,8 +447,10 @@ struct callback_connector
     {
         if(!manager::instance() ||
            (manager::instance() && manager::instance()->is_finalizing()))
-            trait::runtime_enabled<handle_type>::set(false);
-        return trait::runtime_enabled<handle_type>::get();
+            trait::runtime_enabled<type>::set(false);
+
+        return (trait::runtime_enabled<type>::get() &&
+                trait::runtime_enabled<handle_type>::get());
     }
 
     template <typename T, typename... Args,
@@ -390,6 +523,7 @@ callback_connector<Components, Api>::callback_connector(T, Args... args)
         return;
 
     context_handler<api_type> ctx(args...);
+    user_context_callback(ctx, ctx.m_id, ctx.m_key, args...);
 
     // don't provide empty entries
     if(ctx.key().empty())
@@ -416,6 +550,7 @@ callback_connector<Components, Api>::callback_connector(T, Args... args)
         return;
 
     context_handler<api_type> ctx(args...);
+    user_context_callback(ctx, ctx.m_id, ctx.m_key, args...);
 
     // don't provide empty entries
     if(ctx.key().empty())
@@ -445,6 +580,7 @@ callback_connector<Components, Api>::callback_connector(T, Args... args)
         return;
 
     context_handler<api_type> ctx(args...);
+    user_context_callback(ctx, ctx.m_id, ctx.m_key, args...);
 
     // don't provide empty entries
     if(ctx.key().empty())
@@ -469,6 +605,7 @@ callback_connector<Components, Api>::callback_connector(T, ompt_scope_endpoint_t
         return;
 
     context_handler<api_type> ctx(endp, args...);
+    user_context_callback(ctx, ctx.m_id, ctx.m_key, endp, args...);
 
     // don't provide empty entries
     if(ctx.key().empty())
@@ -511,6 +648,7 @@ callback_connector<Components, Api>::generic_endpoint_connector(
     T, Arg arg, ompt_scope_endpoint_t endp, Args... args)
 {
     context_handler<api_type> ctx(arg, endp, args...);
+    user_context_callback(ctx, ctx.m_id, ctx.m_key, arg, endp, args...);
 
     // don't provide empty entries
     if(ctx.key().empty())
@@ -546,4 +684,222 @@ callback_connector<Components, Api>::generic_endpoint_connector(
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace openmp
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace ompt
+{
+template <typename ApiT>
+static void
+configure(ompt_function_lookup_t lookup, ompt_data_t*)
+{
+#if defined(TIMEMORY_USE_OMPT)
+    using api_type       = ApiT;
+    using handle_type    = component::ompt_handle<ApiT>;
+    using toolset_type   = typename trait::ompt_handle<api_type>::type;
+    using connector_type = openmp::callback_connector<toolset_type, api_type>;
+    //
+    //------------------------------------------------------------------------------//
+    //
+    static ompt_set_callback_t             ompt_set_callback;
+    static ompt_get_task_info_t            ompt_get_task_info;
+    static ompt_get_thread_data_t          ompt_get_thread_data;
+    static ompt_get_parallel_info_t        ompt_get_parallel_info;
+    static ompt_get_unique_id_t            ompt_get_unique_id;
+    static ompt_get_num_places_t           ompt_get_num_places;
+    static ompt_get_place_proc_ids_t       ompt_get_place_proc_ids;
+    static ompt_get_place_num_t            ompt_get_place_num;
+    static ompt_get_partition_place_nums_t ompt_get_partition_place_nums;
+    static ompt_get_proc_id_t              ompt_get_proc_id;
+    static ompt_enumerate_states_t         ompt_enumerate_states;
+    static ompt_enumerate_mutex_impls_t    ompt_enumerate_mutex_impls;
+    //
+    //------------------------------------------------------------------------------//
+    //
+    if(!trait::is_available<handle_type>::value)
+        return;
+
+    handle_type::configure();
+    auto manager = tim::manager::instance();
+    if(manager)
+    {
+        auto cleanup_label = demangle<handle_type>();
+        auto cleanup_func  = []() { trait::runtime_enabled<toolset_type>::set(false); };
+        manager->add_cleanup(cleanup_label, cleanup_func);
+    }
+
+    auto register_callback = [](ompt_callbacks_t name, ompt_callback_t cb) {
+        int ret = ompt_set_callback(name, cb);
+        if(settings::verbose() < 1 && !settings::debug())
+            return ret;
+        switch(ret)
+        {
+            case ompt_set_never:
+                printf("[timemory]> WARNING: OMPT Callback for event %d could not be "
+                       "registered\n",
+                       name);
+                break;
+            case ompt_set_sometimes:
+                printf("[timemory]> OMPT Callback for event %d registered with return "
+                       "value %s\n",
+                       name, "ompt_set_sometimes");
+                break;
+            case ompt_set_sometimes_paired:
+                printf("[timemory]> OMPT Callback for event %d registered with return "
+                       "value %s\n",
+                       name, "ompt_set_sometimes_paired");
+                break;
+            case ompt_set_always:
+                printf("[timemory]> OMPT Callback for event %d registered with return "
+                       "value %s\n",
+                       name, "ompt_set_always");
+                break;
+        }
+        return ret;
+    };
+
+    auto timemory_ompt_register_callback = [&](ompt_callbacks_t name,
+                                               ompt_callback_t  cb) {
+        int ret = register_callback(name, cb);
+        consume_parameters(ret);
+    };
+
+    ompt_set_callback      = (ompt_set_callback_t) lookup("ompt_set_callback");
+    ompt_get_task_info     = (ompt_get_task_info_t) lookup("ompt_get_task_info");
+    ompt_get_unique_id     = (ompt_get_unique_id_t) lookup("ompt_get_unique_id");
+    ompt_get_thread_data   = (ompt_get_thread_data_t) lookup("ompt_get_thread_data");
+    ompt_get_parallel_info = (ompt_get_parallel_info_t) lookup("ompt_get_parallel_info");
+
+    ompt_get_num_places = (ompt_get_num_places_t) lookup("ompt_get_num_places");
+    ompt_get_place_proc_ids =
+        (ompt_get_place_proc_ids_t) lookup("ompt_get_place_proc_ids");
+    ompt_get_place_num = (ompt_get_place_num_t) lookup("ompt_get_place_num");
+    ompt_get_partition_place_nums =
+        (ompt_get_partition_place_nums_t) lookup("ompt_get_partition_place_nums");
+    ompt_get_proc_id      = (ompt_get_proc_id_t) lookup("ompt_get_proc_id");
+    ompt_enumerate_states = (ompt_enumerate_states_t) lookup("ompt_enumerate_states");
+    ompt_enumerate_mutex_impls =
+        (ompt_enumerate_mutex_impls_t) lookup("ompt_enumerate_mutex_impls");
+
+    using parallel_begin_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
+                             ompt_data_t*, const omp_frame_t*, ompt_data_t*, uint32_t,
+                             const void*>;
+
+    using parallel_end_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::end_callback,
+                             ompt_data_t*, ompt_data_t*, const void*>;
+
+    using task_create_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
+                             ompt_data_t*, const omp_frame_t*, ompt_data_t*, int, int,
+                             const void*>;
+
+    using task_schedule_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
+                             ompt_data_t*, ompt_task_status_t, ompt_data_t*>;
+
+    using master_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type,
+                             openmp::mode::endpoint_callback, ompt_scope_endpoint_t,
+                             ompt_data_t*, ompt_data_t*, const void*>;
+
+    using work_cb_t = openmp::ompt_wrapper<
+        toolset_type, connector_type, openmp::mode::endpoint_callback, ompt_work_type_t,
+        ompt_scope_endpoint_t, ompt_data_t*, ompt_data_t*, uint64_t, const void*>;
+
+    using thread_begin_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
+                             ompt_thread_type_t, ompt_data_t*>;
+
+    using thread_end_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::end_callback,
+                             ompt_data_t*>;
+
+    using implicit_task_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type,
+                             openmp::mode::endpoint_callback, ompt_scope_endpoint_t,
+                             ompt_data_t*, ompt_data_t*, unsigned int, unsigned int>;
+
+    using sync_region_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type,
+                             openmp::mode::endpoint_callback, ompt_sync_region_kind_t,
+                             ompt_scope_endpoint_t, ompt_data_t*, ompt_data_t*,
+                             const void*>;
+
+    using mutex_acquire_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
+                             ompt_mutex_kind_t, unsigned int, unsigned int, omp_wait_id_t,
+                             const void*>;
+
+    using mutex_acquired_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::end_callback,
+                             ompt_mutex_kind_t, omp_wait_id_t, const void*>;
+
+    using mutex_released_cb_t = mutex_acquired_cb_t;
+
+    using target_cb_t = openmp::ompt_wrapper<
+        toolset_type, connector_type, openmp::mode::endpoint_callback, ompt_target_type_t,
+        ompt_scope_endpoint_t, int, ompt_data_t*, ompt_id_t, const void*>;
+
+    using target_data_op_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
+                             ompt_id_t, ompt_id_t, ompt_target_data_op_t, void*, int,
+                             void*, int, size_t, const void*>;
+
+    using target_submit_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
+                             ompt_id_t, ompt_id_t, unsigned int>;
+
+    using target_idle_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type,
+                             openmp::mode::endpoint_callback, ompt_scope_endpoint_t>;
+
+    timemory_ompt_register_callback(ompt_callback_parallel_begin,
+                                    TIMEMORY_OMPT_CBDECL(parallel_begin_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_parallel_end,
+                                    TIMEMORY_OMPT_CBDECL(parallel_end_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_task_create,
+                                    TIMEMORY_OMPT_CBDECL(task_create_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_task_schedule,
+                                    TIMEMORY_OMPT_CBDECL(task_schedule_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_implicit_task,
+                                    TIMEMORY_OMPT_CBDECL(implicit_task_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_thread_begin,
+                                    TIMEMORY_OMPT_CBDECL(thread_begin_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_thread_end,
+                                    TIMEMORY_OMPT_CBDECL(thread_end_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_target,
+                                    TIMEMORY_OMPT_CBDECL(target_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_target_data_op,
+                                    TIMEMORY_OMPT_CBDECL(target_data_op_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_target_submit,
+                                    TIMEMORY_OMPT_CBDECL(target_submit_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_idle,
+                                    TIMEMORY_OMPT_CBDECL(target_idle_cb_t::callback));
+
+    timemory_ompt_register_callback(ompt_callback_master,
+                                    TIMEMORY_OMPT_CBDECL(master_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_work,
+                                    TIMEMORY_OMPT_CBDECL(work_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_sync_region,
+                                    TIMEMORY_OMPT_CBDECL(sync_region_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_mutex_acquire,
+                                    TIMEMORY_OMPT_CBDECL(mutex_acquire_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_mutex_acquired,
+                                    TIMEMORY_OMPT_CBDECL(mutex_acquired_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_mutex_released,
+                                    TIMEMORY_OMPT_CBDECL(mutex_released_cb_t::callback));
+
+    if(settings::verbose() > 0 || settings::debug())
+        printf("\n");
+#else
+    consume_parameters(lookup);
+#endif
+    PRINT_HERE("%s", "");
+}
+}  // namespace ompt
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim

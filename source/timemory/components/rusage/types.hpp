@@ -65,10 +65,9 @@ namespace resource_usage
 {
 namespace alias
 {
-using tuple_dd_t = std::tuple<double, double>;
-using pair_dd_t  = std::pair<double, double>;
 template <size_t N>
-using farray_t = std::array<double, N>;
+using farray_t  = std::array<double, N>;
+using pair_dd_t = std::pair<double, double>;
 }  // namespace alias
 }  // namespace resource_usage
 }  // namespace tim
@@ -93,7 +92,7 @@ TIMEMORY_STATISTICS_TYPE(component::num_msg_recv, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::num_signals, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::voluntary_context_switch, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::priority_context_switch, int64_t)
-TIMEMORY_STATISTICS_TYPE(component::read_bytes, resource_usage::alias::tuple_dd_t)
+TIMEMORY_STATISTICS_TYPE(component::read_bytes, resource_usage::alias::pair_dd_t)
 TIMEMORY_STATISTICS_TYPE(component::written_bytes, resource_usage::alias::farray_t<2>)
 TIMEMORY_STATISTICS_TYPE(component::virtual_memory, double)
 TIMEMORY_STATISTICS_TYPE(component::user_mode_time, double)
@@ -318,8 +317,8 @@ struct units<component::current_peak_rss>
 template <>
 struct units<component::read_bytes>
 {
-    using type         = std::tuple<double, double>;
-    using display_type = std::tuple<std::string, std::string>;
+    using type         = std::pair<double, double>;
+    using display_type = std::pair<std::string, std::string>;
 };
 
 //--------------------------------------------------------------------------------------//

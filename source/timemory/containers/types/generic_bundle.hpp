@@ -53,7 +53,7 @@
 //
 // clang-format off
 //
-TIMEMORY_EXTERN_TUPLE(generic_bundle_t,
+/*TIMEMORY_EXTERN_TUPLE(generic_bundle_t,
                       component::user_global_bundle,
                       component::user_ompt_bundle,
                       component::user_mpip_bundle)
@@ -63,7 +63,7 @@ TIMEMORY_EXTERN_TUPLE(generic_bundle_t,
 TIMEMORY_EXTERN_LIST(generic_bundle_t,
                      component::user_global_bundle,
                      component::user_ompt_bundle,
-                     component::user_mpip_bundle)
+                     component::user_mpip_bundle)*/
 //
 // clang-format on
 //

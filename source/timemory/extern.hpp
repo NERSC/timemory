@@ -24,20 +24,52 @@
 
 #pragma once
 
-#include "timemory/backends/extern.hpp"
-#include "timemory/backends/types/mpi/extern.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/containers/extern.hpp"
-#include "timemory/environment/extern.hpp"
-#include "timemory/ert/extern.hpp"
-#include "timemory/hash/extern.hpp"
-#include "timemory/manager/extern.hpp"
-#include "timemory/operations/extern.hpp"
-#include "timemory/plotting/extern.hpp"
-#include "timemory/runtime/extern.hpp"
-#include "timemory/storage/extern.hpp"
+#if defined(TIMEMORY_USE_BACKEND_EXTERN)
+#    include "timemory/backends/extern.hpp"
+#    include "timemory/backends/types/mpi/extern.hpp"
+#endif
 //
-#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN)
-#    include "timemory/settings/settings.cpp"
+#if defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#    include "timemory/components/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    include "timemory/components/user_bundle/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+#    include "timemory/containers/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#    include "timemory/environment/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_ERT_EXTERN)
+#    include "timemory/ert/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_HASH_EXTERN)
+#    include "timemory/hash/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_MANAGER_EXTERN)
+#    include "timemory/manager/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_OPERATIONS_EXTERN)
+#    include "timemory/operations/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_PLOTTING_EXTERN)
+#    include "timemory/plotting/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_RUNTIME_EXTERN)
+#    include "timemory/runtime/extern.hpp"
+#endif
+//
+#if defined(TIMEMORY_USE_STORAGE_EXTERN)
+#    include "timemory/storage/extern.hpp"
 #endif
 //

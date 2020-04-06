@@ -99,22 +99,22 @@ public:
 
 public:
     template <typename _Func = initializer_type>
-    explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
+    explicit auto_hybrid(const string_t&, scope::data = scope::get_default(),
                          bool         report_at_exit = settings::destructor_report(),
                          const _Func& _func          = this_type::get_initializer());
 
     template <typename _Func = initializer_type>
-    explicit auto_hybrid(const captured_location_t&, bool flat = settings::flat_profile(),
+    explicit auto_hybrid(const captured_location_t&, scope::data = scope::get_default(),
                          bool         report_at_exit = settings::destructor_report(),
                          const _Func& _func          = this_type::get_initializer());
 
     template <typename _Func = initializer_type>
-    explicit auto_hybrid(size_t, bool flat = settings::flat_profile(),
+    explicit auto_hybrid(size_t, scope::data = scope::get_default(),
                          bool         report_at_exit = settings::destructor_report(),
                          const _Func& _func          = this_type::get_initializer());
 
-    explicit auto_hybrid(component_type& tmp, bool flat = settings::flat_profile(),
-                         bool report_at_exit = settings::destructor_report());
+    explicit auto_hybrid(component_type& tmp, scope::data = scope::get_default(),
+                         bool            report_at_exit = settings::destructor_report());
 
     ~auto_hybrid();
 
@@ -300,11 +300,12 @@ private:
 
 template <typename CompTuple, typename CompList>
 template <typename _Func>
-auto_hybrid<CompTuple, CompList>::auto_hybrid(const string_t& object_tag, bool flat,
-                                              bool report_at_exit, const _Func& _func)
+auto_hybrid<CompTuple, CompList>::auto_hybrid(const string_t& object_tag,
+                                              scope::data _scope, bool report_at_exit,
+                                              const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, _scope)
                                : component_type{})
 , m_reference_object(nullptr)
 {
@@ -320,11 +321,11 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(const string_t& object_tag, bool f
 template <typename CompTuple, typename CompList>
 template <typename _Func>
 auto_hybrid<CompTuple, CompList>::auto_hybrid(const captured_location_t& object_loc,
-                                              bool flat, bool report_at_exit,
+                                              scope::data _scope, bool report_at_exit,
                                               const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, _scope)
                                : component_type{})
 , m_reference_object(nullptr)
 {
@@ -339,11 +340,11 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(const captured_location_t& object_
 
 template <typename CompTuple, typename CompList>
 template <typename _Func>
-auto_hybrid<CompTuple, CompList>::auto_hybrid(size_t _hash, bool flat,
+auto_hybrid<CompTuple, CompList>::auto_hybrid(size_t _hash, scope::data _scope,
                                               bool report_at_exit, const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, _scope)
                                : component_type{})
 , m_reference_object(nullptr)
 {
@@ -357,11 +358,11 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(size_t _hash, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename CompTuple, typename CompList>
-auto_hybrid<CompTuple, CompList>::auto_hybrid(component_type& tmp, bool flat,
+auto_hybrid<CompTuple, CompList>::auto_hybrid(component_type& tmp, scope::data _scope,
                                               bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, flat))
+, m_temporary_object(tmp.clone(true, _scope))
 , m_reference_object(&tmp)
 {
     if(m_enabled)

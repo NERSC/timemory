@@ -591,19 +591,19 @@ using prio_cxt_switch = priority_context_switch;
 /// really did cause to be fetched from the storage layer. Done at the submit_bio() level,
 /// so it is accurate for block-backed filesystems.
 //
-struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
+struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 {
     using this_type   = read_bytes;
-    using value_type  = std::tuple<int64_t, int64_t>;
+    using value_type  = std::pair<int64_t, int64_t>;
     using base_type   = base<this_type, value_type>;
-    using result_type = std::tuple<double, double>;
+    using result_type = std::pair<double, double>;
 
     static std::string label() { return "read_bytes"; }
     static std::string description() { return "physical I/O reads"; }
 
-    static std::tuple<double, double> unit()
+    static std::pair<double, double> unit()
     {
-        return std::tuple<double, double>{
+        return std::pair<double, double>{
             units::kilobyte, static_cast<double>(units::kilobyte) / units::sec
         };
     }
@@ -624,7 +624,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         return display_unit_type{ "KB", "KB/sec" };
     }
 
-    static std::tuple<double, double> unit_array() { return unit(); }
+    static std::pair<double, double> unit_array() { return unit(); }
 
     static std::vector<std::string> description_array()
     {

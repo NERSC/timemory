@@ -36,24 +36,34 @@
 #include "timemory/components/user_bundle/overloads.hpp"
 #include "timemory/components/user_bundle/types.hpp"
 //
-#include "timemory/environment/declaration.hpp"
-#include "timemory/operations/definition.hpp"
-#include "timemory/plotting/definition.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/definition.hpp"
-//
 #include "timemory/environment/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"
 #include "timemory/plotting/extern.hpp"
 #include "timemory/settings/extern.hpp"
 //
-#include "timemory/components.hpp"
+#if defined(TIMEMORY_USER_BUNDLE_SOURCE) ||                                              \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN))
+// source/header-only requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
+#endif
 //
-
+#include "timemory/components/extern.hpp"
+//
 //======================================================================================//
 //
-#if defined(TIMEMORY_SOURCE) || defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#if defined(TIMEMORY_USER_BUNDLE_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -129,9 +139,6 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-
-//======================================================================================//
-//
 namespace tim
 {
 namespace component
@@ -204,3 +211,4 @@ TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_ompt_bundle, user_ompt_bundl
 TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_mpip_bundle, user_mpip_bundle)
 //
 //======================================================================================//
+//

@@ -219,9 +219,9 @@ TEST_F(priority_tests, simple_check)
     printf("\n");
 
     // each start()/stop() on tuple_t resets internal lap count to zero
-    ASSERT_EQ(native_wc.nlaps(), 1);
-    ASSERT_EQ(pstart_wc.nlaps(), 1);
-    ASSERT_EQ(pstop_wc.nlaps(), 1);
+    ASSERT_EQ(native_wc.get_laps(), 1);
+    ASSERT_EQ(pstart_wc.get_laps(), 1);
+    ASSERT_EQ(pstop_wc.get_laps(), 1);
     // tuple_t will have total number of start()/stop()
     ASSERT_EQ(t.laps(), 2);
 }

@@ -96,13 +96,11 @@ public:
     static constexpr bool is_auto_type         = false;
     static constexpr bool is_component         = true;
 
-    using Type             = Tp;
-    using value_type       = Value;
-    using accum_type       = conditional_t<has_accum_v, value_type, EmptyT>;
-    using last_type        = conditional_t<has_last_v, value_type, EmptyT>;
-    using sample_type      = conditional_t<is_sampler_v, operation::sample<Tp>, EmptyT>;
-    using sample_list_type = conditional_t<is_sampler_v, vector_t<sample_type>, EmptyT>;
-    using dynamic_type     = typename trait::dynamic_base<Tp>::type;
+    using Type         = Tp;
+    using value_type   = Value;
+    using accum_type   = conditional_t<has_accum_v, value_type, EmptyT>;
+    using last_type    = conditional_t<has_last_v, value_type, EmptyT>;
+    using dynamic_type = typename trait::dynamic_base<Tp>::type;
 
     using this_type         = Tp;
     using base_type         = base<Tp, Value>;
@@ -184,11 +182,10 @@ public:
     static void append(graph_iterator itr, const T& rhs);
 
 public:
-    void reset();     /// reset the values
-    void measure();   /// just record a measurment
-    void sample() {}  /// sample a measurement
-    void start();     /// start measurement
-    void stop();      /// stop measurement
+    void reset();    /// reset the values
+    void measure();  /// just record a measurment
+    void start();    /// start measurement
+    void stop();     /// stop measurement
 
     // void mark_begin() {}  // mark a begining point in the execution
     // void mark_end() {}    // mark a ending point in the execution
@@ -239,9 +236,6 @@ public:
         return os;
     }
 
-    template <typename Up = Tp, enable_if_t<(Up::is_sampler_v), int> = 0>
-    void add_sample(sample_type&&);  /// add a sample
-
     // serialization load (input)
     template <typename Archive, typename Up = Type,
               enable_if_t<!(trait::custom_serialization<Up>::value), int> = 0>
@@ -252,22 +246,24 @@ public:
               enable_if_t<!(trait::custom_serialization<Up>::value), int> = 0>
     void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int version) const;
 
-    int64_t           nlaps() const { return laps; }
     int64_t           get_laps() const { return laps; }
     const value_type& get_value() const { return value; }
     const accum_type& get_accum() const { return accum; }
     const last_type&  get_last() const { return last; }
     const bool&       get_is_transient() const { return is_transient; }
-    sample_list_type  get_samples() const { return samples; }
+
+    template <typename Vp, typename Up = Tp,
+              enable_if_t<(trait::sampler<Up>::value), int> = 0>
+    static void add_sample(Vp&&);  /// add a sample
 
 protected:
     static base_storage_type* get_storage();
     static void               cleanup() {}
 
-    template <typename Up = Tp, enable_if_t<(Up::has_accum_v), int> = 0>
+    template <typename Up = Tp, enable_if_t<(trait::base_has_accum<Up>::value), int> = 0>
     const value_type& load() const;
 
-    template <typename Up = Tp, enable_if_t<!(Up::has_accum_v), int> = 0>
+    template <typename Up = Tp, enable_if_t<!(trait::base_has_accum<Up>::value), int> = 0>
     const value_type& load() const;
 
     Type& plus_oper(const base_type& rhs);
@@ -303,41 +299,28 @@ protected:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename Scope, typename Up = base_type,
-              enable_if_t<(Up::implements_storage_v), int>                = 0,
-              enable_if_t<(std::is_same<Scope, scope::tree>::value), int> = 0>
-    void insert_node(Scope&&, const int64_t& _hash);
-
-    template <typename Scope, typename Up = base_type,
-              enable_if_t<(Up::implements_storage_v), int>                 = 0,
-              enable_if_t<!(std::is_same<Scope, scope::tree>::value), int> = 0>
-    void insert_node(Scope&&, const int64_t& _hash);
-
-    template <typename Scope, typename Up = base_type,
-              enable_if_t<!(Up::implements_storage_v), int> = 0>
-    void insert_node(Scope&&, const int64_t&);
+    template <typename Up = Tp, typename Vp = Value,
+              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+    void insert_node(scope::data, int64_t);
 
     // pop the node off the graph
-    template <typename Up = base_type, enable_if_t<(Up::implements_storage_v), int> = 0>
-    void pop_node();
-
-    template <typename Up = base_type, enable_if_t<!(Up::implements_storage_v), int> = 0>
+    template <typename Up = Tp, typename Vp = Value,
+              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
     void pop_node();
 
     static Type dummy();  // create an instance
 
 protected:
-    bool             is_running   = false;
-    bool             is_on_stack  = false;
-    bool             is_transient = false;
-    bool             is_flat      = false;
-    bool             depth_change = false;
-    int64_t          laps         = 0;
-    value_type       value        = value_type{};
-    accum_type       accum        = accum_type{};
-    last_type        last         = last_type{};
-    sample_list_type samples      = sample_list_type{};
-    graph_iterator   graph_itr    = graph_iterator{ nullptr };
+    bool           is_running   = false;
+    bool           is_on_stack  = false;
+    bool           is_transient = false;
+    bool           is_flat      = false;
+    bool           depth_change = false;
+    int64_t        laps         = 0;
+    value_type     value        = value_type{};
+    accum_type     accum        = accum_type{};
+    last_type      last         = last_type{};
+    graph_iterator graph_itr    = graph_iterator{ nullptr };
 
 public:
     static constexpr bool timing_category_v = trait::is_timing_category<Type>::value;
@@ -461,9 +444,8 @@ public:
     {}
 
 public:
-    void reset();     // reset the values
-    void measure();   // just record a measurment
-    void sample() {}  // perform a sample
+    void reset();    // reset the values
+    void measure();  // just record a measurment
     void start();
     void stop();
 
@@ -478,18 +460,11 @@ public:
     void          get_opaque_data(void*& ptr, size_t typeid_hash) const;
     dynamic_type* create() const;
 
-    int64_t nlaps() const { return 0; }
     int64_t get_laps() const { return 0; }
 
     // used by operation::finalize::print<Type>
     void operator-=(const base_type&) {}
     void operator-=(const Type&) {}
-
-private:
-    template <typename Scope = scope::tree, typename... Args>
-    void insert_node(Scope&&, Args&&...);
-
-    void pop_node();
 
 protected:
     static void cleanup() {}

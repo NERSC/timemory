@@ -582,6 +582,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     check_required(COMP_SOURCES)
 
     string(TOUPPER "${COMP_NAME}" UPP_COMP)
+    string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
 
     set(_LIB_TYPES)
     if(_BUILD_SHARED_CXX)

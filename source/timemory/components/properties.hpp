@@ -44,12 +44,12 @@ namespace tim
 namespace component
 {
 //
+template <typename... Types>
+struct placeholder;
+//
 using idset_t = std::initializer_list<std::string>;
 //
 struct nothing;
-//
-template <typename... Types>
-struct placeholder;
 //
 struct opaque;
 //
@@ -57,15 +57,19 @@ namespace factory
 {
 //
 template <typename Toolset, typename Arg, typename... Args>
-static opaque
+opaque
 get_opaque(Arg&& arg, Args&&... args);
 //
 template <typename Toolset>
-static opaque
+opaque
 get_opaque();
 //
 template <typename Toolset>
-static std::set<size_t>
+opaque
+get_opaque(bool);
+//
+template <typename Toolset>
+std::set<size_t>
 get_typeids();
 //
 }  // namespace factory

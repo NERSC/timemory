@@ -36,12 +36,24 @@
 //
 #include "timemory/components/ompt/components.hpp"
 #include "timemory/components/ompt/types.hpp"
+#include "timemory/components/user_bundle/components.hpp"
 //
-#include "timemory/environment/declaration.hpp"
-#include "timemory/operations/definition.hpp"
-#include "timemory/plotting/definition.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/definition.hpp"
+#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+// source/header-only requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
+#endif
 //
 //======================================================================================//
 //
@@ -61,4 +73,3 @@ TIMEMORY_EXTERN_OPERATIONS(component::ompt_native_handle, false)
 //
 TIMEMORY_EXTERN_STORAGE(component::ompt_native_handle, ompt_native_handle)
 //
-//--------------------------------------------------------------------------------------//

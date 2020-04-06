@@ -137,33 +137,33 @@ public:
 
     template <typename Func = initializer_type>
     explicit component_hybrid(const string_t& _key, const bool& _store = true,
-                              const bool& _flat = settings::flat_profile(),
-                              const Func& _func = this_type::get_initializer())
+                              scope::data _scope = scope::get_default(),
+                              const Func& _func  = this_type::get_initializer())
     : m_store(_store)
-    , m_tuple(_key, false, _flat)
-    , m_list(_key, false, _flat)
+    , m_tuple(_key, false, _scope)
+    , m_list(_key, false, _scope)
     {
         _func(*this);
     }
 
     template <typename Func = initializer_type>
     explicit component_hybrid(const captured_location_t& _loc, const bool& _store = true,
-                              const bool& _flat = settings::flat_profile(),
-                              const Func& _func = this_type::get_initializer())
+                              scope::data _scope = scope::get_default(),
+                              const Func& _func  = this_type::get_initializer())
     : m_store(_store)
-    , m_tuple(_loc, false, _flat)
-    , m_list(_loc, false, _flat)
+    , m_tuple(_loc, false, _scope)
+    , m_list(_loc, false, _scope)
     {
         _func(*this);
     }
 
     template <typename Func = initializer_type>
     explicit component_hybrid(size_t _hash, const bool& _store = true,
-                              const bool& _flat = settings::flat_profile(),
-                              const Func& _func = this_type::get_initializer())
+                              scope::data _scope = scope::get_default(),
+                              const Func& _func  = this_type::get_initializer())
     : m_store(_store)
-    , m_tuple(_hash, false, _flat)
-    , m_list(_hash, false, _flat)
+    , m_tuple(_hash, false, _scope)
+    , m_list(_hash, false, _scope)
     {
         _func(*this);
     }
@@ -184,10 +184,10 @@ public:
     component_hybrid& operator=(const component_hybrid& rhs) = default;
     component_hybrid& operator=(component_hybrid&&) = default;
 
-    component_hybrid clone(bool _store, bool _flat)
+    component_hybrid clone(bool _store, scope::data _scope)
     {
-        return component_hybrid(m_tuple.clone(_store, _flat),
-                                m_list.clone(_store, _flat));
+        return component_hybrid(m_tuple.clone(_store, _scope),
+                                m_list.clone(_store, _scope));
     }
 
 public:

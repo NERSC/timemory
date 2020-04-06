@@ -93,86 +93,6 @@ namespace openmp
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Api = api::native_tag>
-struct context_handler;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Components, typename Api = api::native_tag>
-struct callback_connector;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Enumeration>
-static std::string
-get_unknown_identifier(Enumeration eid)
-{
-    using type = Enumeration;
-    auto&& ret =
-        apply<std::string>::join("-", "unspecialized-enumeration",
-                                 demangle<type>().c_str(), static_cast<int>(eid));
-    return std::move(ret);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Enumeration>
-struct identifier
-{
-    using type = Enumeration;
-    static std::string get(type eid) { return get_unknown_identifier(eid); }
-};
-//
-//--------------------------------------------------------------------------------------//
-//
-template <>
-struct identifier<ompt_callbacks_t>
-{
-    using type      = ompt_callbacks_t;
-    using key_map_t = std::unordered_map<int, std::string>;
-
-    static std::string get(type eid)
-    {
-        static key_map_t _instance = {
-            { ompt_callback_thread_begin, "thread_begin" },
-            { ompt_callback_thread_end, "thread_end" },
-            { ompt_callback_parallel_begin, "parallel_begin" },
-            { ompt_callback_parallel_end, "parallel_end" },
-            { ompt_callback_task_create, "task_create" },
-            { ompt_callback_task_schedule, "task_schedule" },
-            { ompt_callback_implicit_task, "implicit_task" },
-            { ompt_callback_target, "target" },
-            { ompt_callback_target_data_op, "target_data_op" },
-            { ompt_callback_target_submit, "target_submit" },
-            { ompt_callback_control_tool, "control_tool" },
-            { ompt_callback_device_initialize, "device_initialize" },
-            { ompt_callback_device_finalize, "device_finalize" },
-            { ompt_callback_device_load, "device_load" },
-            { ompt_callback_device_unload, "device_unload" },
-            { ompt_callback_sync_region_wait, "sync_region_wait" },
-            { ompt_callback_mutex_released, "mutex_released" },
-            { ompt_callback_task_dependences, "task_dependences" },
-            { ompt_callback_task_dependence, "task_dependence" },
-            { ompt_callback_work, "work" },
-            { ompt_callback_master, "master" },
-            { ompt_callback_target_map, "target_map" },
-            { ompt_callback_sync_region, "sync_region" },
-            { ompt_callback_lock_init, "lock_init" },
-            { ompt_callback_lock_destroy, "lock_destroy" },
-            { ompt_callback_mutex_acquire, "mutex_acquire" },
-            { ompt_callback_mutex_acquired, "mutex_acquired" },
-            { ompt_callback_nest_lock, "nest_lock" },
-            { ompt_callback_flush, "flush" },
-            { ompt_callback_cancel, "cancel" },
-        };
-
-        auto itr = _instance.find(eid);
-        return (itr == _instance.end()) ? get_unknown_identifier(eid) : itr->second;
-    }
-};
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace mode
 {
 /// \class openmp::mode::begin_callback
@@ -195,6 +115,46 @@ struct endpoint_callback
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \class openmp::context_handler
+/// \brief this struct provides the methods through which a unique identifier and
+/// a label are generated for each OMPT callback.
+///
+template <typename Api = api::native_tag>
+struct context_handler;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class openmp::callback_connector
+/// \brief this struct provides the routines through which timemory components
+/// are applied to the callbacks
+///
+template <typename Components, typename Api = api::native_tag>
+struct callback_connector;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \fn openmp::user_context_callback
+/// \brief this is a dummy implementation which the user can use to customize the labeling
+/// or identifier. The \param id argument is the unique hash associated with
+/// callback, the \param key argument is the label passed to timemory. All remaining
+/// arguments should be specialized to the particular callback.
+///
+template <typename Handler, typename... Args>
+void
+user_context_callback(Handler& handle, size_t& id, std::string& key, Args... args)
+{
+    consume_parameters(handle, id, key, args...);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class openmp::ompt_wrapper
+/// \brief this struct provides the static callback function for OMPT which creates
+/// a temporary instance of the connector, e.g. \ref openmp::callback_connector,
+/// whose constructor creates a temporary instance of the context handler
+/// in order to create a unique identifier and a label and then instruments the callback
+/// based on the \param Mode template parameter.
+///
 template <typename Components, typename Connector, typename Mode, typename... Args>
 struct ompt_wrapper
 {
@@ -210,41 +170,21 @@ struct ompt_wrapper
 }  // namespace openmp
 }  // namespace tim
 //
-//======================================================================================//
-//
-#if !defined(TIMEMORY_OMPT_LINKAGE)
-//
-#    if defined(TIMEMORY_OMPT_SOURCE)
-//
-#        define TIMEMORY_OMPT_LINKAGE(...) extern "C" __VA_ARGS__
-//
-#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_OMPT_EXTERN)
-//
-#        define TIMEMORY_OMPT_LINKAGE(...) extern "C" __VA_ARGS__
-//
-#    else
-//
-#        define TIMEMORY_OMPT_LINKAGE(...) extern "C" __VA_ARGS__
-//
-#    endif
-//
-#endif
-//
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_OMPT)
 //
 //--------------------------------------------------------------------------------------//
-//
-TIMEMORY_OMPT_LINKAGE(int)
+
+extern "C" int
 ompt_initialize(ompt_function_lookup_t lookup, ompt_data_t* tool_data);
-//
-TIMEMORY_OMPT_LINKAGE(ompt_start_tool_result_t*)
+
+extern "C" ompt_start_tool_result_t*
 ompt_start_tool(unsigned int omp_version, const char* runtime_version);
-//
-TIMEMORY_OMPT_LINKAGE(void)
+
+extern "C" void
 ompt_finalize(ompt_data_t* tool_data);
-//
+
 //--------------------------------------------------------------------------------------//
 //
 #endif

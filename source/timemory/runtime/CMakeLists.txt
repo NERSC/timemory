@@ -10,4 +10,4 @@ build_intermediate_library(
     FOLDER              extern
     HEADERS             ${header_files}
     SOURCES             ${source_files}
-    PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE)
+    PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE FACTORY)

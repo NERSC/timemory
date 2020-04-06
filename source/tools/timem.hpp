@@ -151,6 +151,8 @@ struct timem_sample<Tp, false>
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_PAPI)
+//
 template <>
 struct sample<component::papi_array_t>
 {
@@ -202,6 +204,8 @@ struct stop<component::papi_array_t>
     explicit stop(base_type&, Args&&...)
     {}
 };
+//
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -296,6 +300,8 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_PAPI)
+//
 template <>
 std::string
 papi_array_t::get_display() const
@@ -335,6 +341,8 @@ papi_array_t::get_display() const
 
     return ss.str();
 }
+//
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -428,8 +436,8 @@ public:
 #    define TIMEM_BUNDLER                                                                \
         tim::custom_component_tuple<wall_clock, user_clock, system_clock, cpu_clock,     \
                                     cpu_util, peak_rss, page_rss, virtual_memory,        \
-                                    num_minor_page_faults, num_major_page_faults,        \
-                                    voluntary_context_switch, priority_context_switch,   \
+                                    num_major_page_faults, num_minor_page_faults,        \
+                                    priority_context_switch, voluntary_context_switch,   \
                                     read_bytes, written_bytes, papi_array_t>
 #endif
 

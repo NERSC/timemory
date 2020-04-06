@@ -79,7 +79,7 @@ class XMLOutputArchive;
 #    define TIMEMORY_API TIMEMORY_DEFAULT_API
 #endif
 
-#if defined(DISABLE_TIMEMORY)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
 #    if !defined(TIMEMORY_DEFAULT_AVAILABLE)
 #        define TIMEMORY_DEFAULT_AVAILABLE false_type
 #    endif

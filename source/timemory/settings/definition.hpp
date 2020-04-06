@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include "timemory/manager/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
@@ -51,17 +50,6 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 //                              settings
-//
-//----------------------------------------------------------------------------------//
-//
-//  initialize the storage
-//
-template <typename... Types>
-void
-settings::initialize_storage()
-{
-    manager::get_storage<Types...>::initialize();
-}
 //
 //--------------------------------------------------------------------------------------//
 //

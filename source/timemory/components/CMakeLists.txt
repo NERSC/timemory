@@ -53,5 +53,16 @@ if(TIMEMORY_USE_OMPT)
     add_subdirectory(ompt)
 endif()
 
-# should always be last
+# factory generation
+build_intermediate_library(
+    USE_INTERFACE
+    NAME                component-factory
+    TARGET              component-factory
+    CATEGORY            FACTORY
+    FOLDER              components
+    HEADERS             ${CMAKE_CURRENT_SOURCE_DIR}/factory.hpp
+    SOURCES             ${CMAKE_CURRENT_SOURCE_DIR}/factory.cpp
+    PROPERTY_DEPENDS    GLOBAL COMPONENT)
+
+# should always be last component
 add_subdirectory(user_bundle)

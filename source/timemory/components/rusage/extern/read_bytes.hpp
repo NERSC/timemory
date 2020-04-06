@@ -37,7 +37,7 @@ namespace tim
 namespace component
 {
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<read_bytes, std::tuple<int64_t, int64_t>>)
+TIMEMORY_EXTERN_TEMPLATE(struct base<read_bytes, std::pair<int64_t, int64_t>>)
 //
 }  // namespace component
 }  // namespace tim

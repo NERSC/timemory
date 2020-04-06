@@ -168,7 +168,7 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label)
                 oa->setNextName("args");
                 oa->startNode();
                 (*oa)(cereal::make_nvp("detail", _prefix));
-                // (*oa)(cereal::make_nvp("count", itr.data().nlaps()));
+                // (*oa)(cereal::make_nvp("count", itr.data().get_laps()));
                 // (*oa)(cereal::make_nvp("depth", itr.depth()));
                 // (*oa)(cereal::make_nvp("units", itr.data().get_display_unit()));
                 oa->finishNode();

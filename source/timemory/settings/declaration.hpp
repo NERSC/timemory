@@ -121,9 +121,10 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(int, verbose, "TIMEMORY_VERBOSE", 0)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, debug, "TIMEMORY_DEBUG", false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER", true)
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, flat_profile, "TIMEMORY_FLAT_PROFILE", false)
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, timeline_profile, "TIMEMORY_TIMELINE_PROFILE",
-                                    false)
+    TIMEMORY_MEMBER_STATIC_REFERENCE(bool, flat_profile, "TIMEMORY_FLAT_PROFILE",
+                                     scope::get_fields()[scope::flat::value])
+    TIMEMORY_MEMBER_STATIC_REFERENCE(bool, timeline_profile, "TIMEMORY_TIMELINE_PROFILE",
+                                     scope::get_fields()[scope::timeline::value])
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS",
                                     true)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
@@ -466,10 +467,6 @@ public:
                                            bool          _mpi_init = false,
                                            const int32_t _mpi_rank = -1,
                                            std::string   _explicit = "");
-
-    /// initialize the storage of the specified types
-    template <typename... Types>
-    static void initialize_storage();
 
     static void parse();
 

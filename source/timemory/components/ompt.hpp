@@ -40,31 +40,25 @@
 #    include "timemory/components/ompt/ompt.hpp"
 #    include "timemory/components/ompt/types.hpp"
 //
-//--------------------------------------------------------------------------------------//
+#    include "timemory/extern.hpp"
 //
-TIMEMORY_OMPT_LINKAGE(int)
+//--------------------------------------------------------------------------------------//
+
+extern "C" int
 ompt_initialize(ompt_function_lookup_t lookup, ompt_data_t* tool_data)
 {
-    using api_type       = TIMEMORY_OMPT_API_TAG;
-    using component_type = tim::component::ompt_handle<api_type>;
-
-    component_type::configure(lookup, tool_data);
-
+    tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, tool_data);
     return 1;  // success
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_OMPT_LINKAGE(void)
+
+extern "C" void
 ompt_finalize(ompt_data_t* tool_data)
 {
     printf("\n");
     tim::consume_parameters(tool_data);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_OMPT_LINKAGE(ompt_start_tool_result_t*)
+
+extern "C" ompt_start_tool_result_t*
 ompt_start_tool(unsigned int omp_version, const char* runtime_version)
 {
     printf("\n[timemory]> OpenMP version: %u, runtime version: %s\n\n", omp_version,
@@ -73,7 +67,7 @@ ompt_start_tool(unsigned int omp_version, const char* runtime_version)
         ompt_start_tool_result_t{ &ompt_initialize, &ompt_finalize, { 0 } };
     return (ompt_start_tool_result_t*) &data;
 }
-//
+
 //--------------------------------------------------------------------------------------//
 //
 #endif  // TIMEMORY_USE_OMPT

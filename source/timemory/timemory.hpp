@@ -30,7 +30,7 @@
 
 #pragma once
 
-#if defined(DISABLE_TIMEMORY)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
 
 #    include <ostream>
 #    include <string>
@@ -161,13 +161,17 @@ struct dummy
 #    define TIMEMORY_DEFINE_VARIADIC_TRAIT(...)
 
 #else
-//
-#    if defined(TIMEMORY_USE_EXTERN)
-//
-#        include "timemory/extern.hpp"
-//
+
+#    if !defined(TIMEMORY_MASTER_HEADER)
+#        define TIMEMORY_MASTER_HEADER
 #    endif
 
+#    if !defined(TIMEMORY_ENABLED)
+#        define TIMEMORY_ENABLED
+#    endif
+
+//
+#    include "timemory/extern.hpp"
 //
 //   versioning header
 //
@@ -211,12 +215,6 @@ struct dummy
 #    include "timemory/runtime/properties.hpp"   // 3.2
 //
 //======================================================================================//
-//
-#    if !defined(_WINDOWS) && defined(TIMEMORY_USE_EXTERN)
-//
-#        include "timemory/extern.hpp"
-//
-#    endif
 //
 #    include "timemory/definition.hpp"
 //

@@ -532,8 +532,6 @@ extern "C"
     __library_ctor__ void timemory_library_constructor()
     {
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
-        auto storage_ctor = tim::get_env<bool>("TIMEMORY_STORAGE_CTOR", true);
-
         if(!library_ctor)
             return;
 
@@ -563,16 +561,6 @@ extern "C"
                    (void*) _master.get(), (void*) _worker.get());
 
         std::atexit(tim::timemory_finalize);
-
-        // initialize storage
-        if(storage_ctor)
-        {
-#    if defined(TIMEMORY_MANAGER_SOURCE)
-            if(_debug || _verbose > 3)
-                printf("[%s]> initializing storage...\n", __FUNCTION__);
-                // tim::settings::initialize_storage();
-#    endif
-        }
     }
     //
     //----------------------------------------------------------------------------------//

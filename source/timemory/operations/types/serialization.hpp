@@ -72,7 +72,6 @@ struct serialization
            cereal::make_nvp("value", obj.get_value()),
            cereal::make_nvp("accum", obj.get_accum()),
            cereal::make_nvp("last", obj.get_last()),
-           cereal::make_nvp("samples", obj.get_samples()),
            cereal::make_nvp("repr_data", obj.get()),
            cereal::make_nvp("repr_display", obj.get_display()),
            cereal::make_nvp("units", type::get_unit()),

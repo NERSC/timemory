@@ -30,8 +30,46 @@
 
 #pragma once
 
+#include <array>
+#include <bitset>
+#include <initializer_list>
 #include <memory>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <type_traits>
 
+//======================================================================================//
+//
+#if !defined(TIMEMORY_FOLD_EXPRESSION)
+#    define TIMEMORY_FOLD_EXPRESSION(...)                                                \
+        ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DELETED_OBJECT)
+#    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
+        NAME()            = delete;                                                      \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DEFAULT_OBJECT)
+#    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
+        NAME()            = default;                                                     \
+        NAME(const NAME&) = default;                                                     \
+        NAME(NAME&&)      = default;                                                     \
+        NAME& operator=(const NAME&) = default;                                          \
+        NAME& operator=(NAME&&) = default;
+#endif
+
+//======================================================================================//
+//
 namespace tim
 {
 //
@@ -61,22 +99,224 @@ namespace scope
 //
 /// \class flat
 /// \brief Dummy struct to designates flat (no hierarchy) storage
-struct flat
-{};
-//
-//--------------------------------------------------------------------------------------//
-//
-/// \class tree
-/// \brief Dummy struct to designates tree (hierarchical) storage
-struct tree
+struct flat : std::integral_constant<int, 0>
 {};
 //
 //--------------------------------------------------------------------------------------//
 //
 /// \class timeline
 /// \brief Dummy struct to designates timeline (hierarchical, non-duplicated) storage
-struct timeline
+struct timeline : std::integral_constant<int, 1>
 {};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class tree
+/// \brief Dummy struct to designates tree (hierarchical) storage
+struct tree : std::integral_constant<int, 2>
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+static constexpr size_t scope_count = 3;
+using data_type                     = std::bitset<scope_count>;
+using input_type                    = std::array<bool, scope_count>;
+//
+//--------------------------------------------------------------------------------------//
+//
+static inline input_type&
+get_fields()
+{
+    static input_type _instance{ false, false, false };
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Arg, size_t... Idx>
+static inline auto
+generate(Arg&& arg, std::index_sequence<Idx...>)
+{
+    static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
+    data_type ret;
+    TIMEMORY_FOLD_EXPRESSION(ret.set(Idx, std::get<Idx>(arg)));
+    return ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t... Idx>
+static inline auto
+either(data_type ret, data_type arg, std::index_sequence<Idx...>)
+{
+    static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
+    TIMEMORY_FOLD_EXPRESSION(ret.set(Idx, ret.test(Idx) || arg.test(Idx)));
+    return ret;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+static inline data_type
+get_default()
+{
+    return generate(get_fields(), std::make_index_sequence<scope_count>{});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+struct data : public data_type
+{
+    data()
+    : data_type(get_default())
+    {}
+
+    data(const data_type& obj)
+    : data_type(obj)
+    {}
+
+    data(data_type&& obj)
+    : data_type(std::forward<data_type>(obj))
+    {}
+
+    data(bool _flat)
+    : data_type(generate(input_type{ { _flat, false, false } },
+                         std::make_index_sequence<scope_count>{}))
+    {}
+
+    data(bool _flat, bool _timeline)
+    : data_type(generate(input_type{ { _flat, _timeline, false } },
+                         std::make_index_sequence<scope_count>{}))
+    {}
+
+    data(bool _flat, bool _timeline, bool _tree)
+    : data_type(generate(input_type{ { _flat, _timeline, _tree } },
+                         std::make_index_sequence<scope_count>{}))
+    {}
+
+    template <typename Arg, typename... Args,
+              std::enable_if_t<(std::is_same<Arg, tree>::value ||
+                                std::is_same<Arg, flat>::value ||
+                                std::is_same<Arg, timeline>::value),
+                               int> = 0>
+    data(Arg&&, Args&&... args)
+    {
+        *this += std::forward<Arg>();
+        TIMEMORY_FOLD_EXPRESSION(*this += std::forward<Args>(args));
+    }
+
+    ~data()           = default;
+    data(const data&) = default;
+    data(data&&)      = default;
+    data& operator=(const data&) = default;
+    data& operator=(data&&) = default;
+
+    template <typename T, std::enable_if_t<(std::is_same<T, tree>::value ||
+                                            std::is_same<T, flat>::value ||
+                                            std::is_same<T, timeline>::value),
+                                           int> = 0>
+    data& operator+=(T)
+    {
+        this->data_type::set(T::value, true);
+        return *this;
+    }
+
+    template <typename T, std::enable_if_t<(std::is_same<T, tree>::value ||
+                                            std::is_same<T, flat>::value ||
+                                            std::is_same<T, timeline>::value),
+                                           int> = 0>
+    data& set(bool val = true)
+    {
+        this->data_type::set(T::value, val);
+        return *this;
+    }
+
+    bool is_flat() const { return this->test(flat::value); }
+    bool is_timeline() const { return this->test(timeline::value); }
+    // "tree" is default behavior so it returns true if nothing is set but gives
+    // priority to the flat setting
+    bool is_tree() const
+    {
+        return this->none() || (this->test(tree::value) && !this->test(flat::value));
+    }
+    bool is_flat_timeline() const { return (is_flat() && is_timeline()); }
+    bool is_tree_timeline() const { return (is_tree() && is_timeline()); }
+
+    friend std::ostream& operator<<(std::ostream& os, const data& obj)
+    {
+        std::stringstream ss;
+        ss << std::boolalpha << "tree: " << obj.is_tree() << ", flat: " << obj.is_flat()
+           << ", timeline: " << obj.is_timeline();
+        os << ss.str();
+        return os;
+    }
+    uint64_t compute_depth(uint64_t _current)
+    {
+        // flat:     always at depth of 1
+        // tree:     features nesting
+        // timeline: retains current depth
+        if(is_flat())
+        {
+            // flat + timeline will be differentiated via compute_hash
+            // flat + tree is invalid and flat takes precedence
+            return 1;
+        }
+        else if(is_timeline())
+        {
+            // tree + timeline is essentially a flat profile at the given depth
+            // bc returning a nested depth for tree + timeline would look like recursion
+            return _current;
+        }
+        // if neither flat nor timeline are enabled, return the nested depth
+        return ((_current >= 0) ? (_current + 1) : 1);
+    }
+
+    uint64_t compute_hash(uint64_t _id, uint64_t _depth, uint64_t& _counter)
+    {
+        // flat/tree:  always compute the same hash for a given depth and key
+        // timeline:   uses a counter to differentiate idential hashes occurring at diff
+        //             time points.
+        // below is a fall-through (i.e. not if-else). Thus, either tree or flat can be
+        // combined with timeline but in the case of tree + flat, flat will take
+        // precedence.
+        if(is_tree() || is_flat())
+            _id ^= _depth;
+        if(is_timeline())
+            _id ^= (_counter++);
+        return _id;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+inline const data
+operator+(data _lhs, tree _rhs)
+{
+    return (_lhs += _rhs);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline const data
+operator+(data _lhs, flat _rhs)
+{
+    return (_lhs += _rhs);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline const data
+operator+(data _lhs, timeline _rhs)
+{
+    return (_lhs += _rhs);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline const data
+operator+(data _lhs, data _rhs)
+{
+    return either(_lhs, _rhs, std::make_index_sequence<scope_count>{});
+}
 //
 //--------------------------------------------------------------------------------------//
 //

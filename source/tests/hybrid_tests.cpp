@@ -67,6 +67,18 @@ static const double compose_tolerance = 1.0e-9;
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/operations/types/compose.hpp"
+
+inline tim::component::cpu_clock
+operator+(const tim::component::user_clock&   cuser,
+          const tim::component::system_clock& csys)
+{
+    return tim::operation::compose<tim::component::cpu_clock, tim::component::user_clock,
+                                   tim::component::system_clock>::generate(cuser, csys);
+}
+
+//--------------------------------------------------------------------------------------//
+
 namespace details
 {
 //--------------------------------------------------------------------------------------//

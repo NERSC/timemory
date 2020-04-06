@@ -29,19 +29,20 @@
 //
 #include "timemory/mpl/types.hpp"
 //
-#include "timemory/environment/declaration.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/operations/declaration.hpp"
-#include "timemory/plotting/declaration.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
+#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+// source/header-only requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
+#endif
 //
-#include "timemory/storage/definition.hpp"
-//
-#include "timemory/operations/types/storage_initializer.hpp"
-//
-#include "timemory/operations/types/finalize/dmp_get.hpp"
-#include "timemory/operations/types/finalize/get.hpp"
-#include "timemory/operations/types/finalize/mpi_get.hpp"
-#include "timemory/operations/types/finalize/print.hpp"
-#include "timemory/operations/types/finalize/upc_get.hpp"

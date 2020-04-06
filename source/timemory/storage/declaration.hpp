@@ -336,6 +336,7 @@ public:
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
     using printer_t      = operation::finalize::print<Type, true>;
+    using sample_array_t = std::vector<Type>;
 
     friend struct impl::storage_deleter<this_type>;
     friend struct operation::finalize::get<Type, true>;
@@ -421,8 +422,7 @@ public:
 
     void insert_init();
 
-    template <typename Scope>
-    iterator insert(const Type& obj, uint64_t hash_id);
+    iterator insert(scope::data scope_data, const Type& obj, uint64_t hash_id);
 
     template <typename Vp>
     void append(const secondary_data_t<Vp>& _secondary);
@@ -430,18 +430,15 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version);
 
+    void add_sample(Type&& _obj) { m_samples.emplace_back(std::forward<Type>(_obj)); }
+
+    auto&       get_samples() { return m_samples; }
+    const auto& get_samples() const { return m_samples; }
+
 protected:
-    template <typename Scope,
-              enable_if_t<(std::is_same<Scope, scope::tree>::value), int> = 0>
-    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
-
-    template <typename Scope,
-              enable_if_t<(std::is_same<Scope, scope::timeline>::value), int> = 0>
-    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
-
-    template <typename Scope,
-              enable_if_t<(std::is_same<Scope, scope::flat>::value), int> = 0>
-    iterator insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
+    iterator insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
+    iterator insert_timeline(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
+    iterator insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
 
     void     merge();
     void     merge(this_type* itr);
@@ -466,35 +463,34 @@ private:
     iterator_hash_map_t        m_node_ids;
     std::unordered_set<Type*>  m_stack;
     std::shared_ptr<printer_t> m_printer;
+    sample_array_t             m_samples;
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Scope>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert(const Type& obj, uint64_t hash_id)
+storage<Type, true>::insert(scope::data scope_data, const Type& obj, uint64_t hash_id)
 {
     insert_init();
-    uint64_t hash_depth = 0;
-    uint64_t hash_value = 0;
-    IF_CONSTEXPR(std::is_same<Scope, scope::tree>::value)
-    {
-        hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
-        hash_value = hash_id ^ hash_depth;
-    }
-    else IF_CONSTEXPR(std::is_same<Scope, scope::timeline>::value)
-    {
-        hash_depth = _data().depth();
-        hash_value = hash_id ^ (m_timeline_counter++);
-    }
-    else IF_CONSTEXPR(std::is_same<Scope, scope::flat>::value)
-    {
-        hash_depth = 1;
-        hash_value = hash_id ^ hash_depth;
-    }
+    auto hash_depth = scope_data.compute_depth(_data().depth());
+    auto hash_value = scope_data.compute_hash(hash_id, hash_depth, m_timeline_counter);
     add_hash_id(hash_id, hash_value);
-    return insert<Scope>(hash_value, obj, hash_depth);
+
+    // even when flat is combined with timeline, it still inserts at depth of 1
+    // so this is easiest check
+    if(scope_data.is_flat())
+        return insert_flat(hash_value, obj, hash_depth);
+
+    // in the case of tree + timeline, timeline will have appropriately modified the
+    // depth and hash so it doesn't really matter which check happens first here
+    // however, the query for is_timeline() is cheaper so we will check that
+    // and fallback to inserting into tree without a check
+    if(scope_data.is_timeline())
+        return insert_timeline(hash_value, obj, hash_depth);
+
+    // default fall-through if neither flat nor timeline
+    return insert_tree(hash_value, obj, hash_depth);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -548,9 +544,8 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 //----------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Scope, enable_if_t<(std::is_same<Scope, scope::tree>::value), int>>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
     bool _has_head = _data().has_head();
     return insert_heirarchy<this_type, Type>(hash_id, obj, hash_depth, m_node_ids,
@@ -561,9 +556,9 @@ storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_dep
 //----------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Scope, enable_if_t<(std::is_same<Scope, scope::timeline>::value), int>>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+storage<Type, true>::insert_timeline(uint64_t hash_id, const Type& obj,
+                                     uint64_t hash_depth)
 {
     auto         _current = _data().current();
     graph_node_t _node(hash_id, obj, hash_depth, m_thread_idx);
@@ -573,9 +568,8 @@ storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_dep
 //----------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Scope, enable_if_t<(std::is_same<Scope, scope::flat>::value), int>>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
     static thread_local auto _current = _data().head();
     static thread_local bool _first   = true;

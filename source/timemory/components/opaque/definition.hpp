@@ -61,9 +61,9 @@ namespace factory
 template <typename Tp, typename Label, typename... Args,
           enable_if_t<(concepts::is_comp_wrapper<Tp>::value), int> = 0>
 static auto
-create_heap_variadic(Label&& _label, bool flat, Args&&... args)
+create_heap_variadic(Label&& _label, scope::data _scope, Args&&... args)
 {
-    return new Tp(std::forward<Label>(_label), true, flat, std::forward<Args>(args)...);
+    return new Tp(std::forward<Label>(_label), true, _scope, std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -71,9 +71,9 @@ create_heap_variadic(Label&& _label, bool flat, Args&&... args)
 template <typename Tp, typename Label, typename... Args,
           enable_if_t<(concepts::is_auto_wrapper<Tp>::value), int> = 0>
 static auto
-create_heap_variadic(Label&& _label, bool flat, Args&&... args)
+create_heap_variadic(Label&& _label, scope::data _scope, Args&&... args)
 {
-    return new Tp(std::forward<Label>(_label), flat, std::forward<Args>(args)...);
+    return new Tp(std::forward<Label>(_label), _scope, std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -110,23 +110,22 @@ get_opaque_hash(const std::string& key)
 //
 //  Configure the tool for a specific component
 //
-template <typename Toolset, typename... Args,
-          enable_if_t<(trait::is_available<Toolset>::value &&
-                       !concepts::is_wrapper<Toolset>::value),
-                      int> = 0>
-static auto
-get_opaque(bool flat, Args&&... args)
+template <typename Toolset, enable_if_t<(trait::is_available<Toolset>::value &&
+                                         !concepts::is_wrapper<Toolset>::value),
+                                        int> = 0>
+auto
+get_opaque(scope::data _scope)
 {
     auto _typeid_hash = get_opaque_hash(demangle<Toolset>());
 
     auto _init = []() {};
 
-    auto _start = [=, &args...](const string_t& _prefix, bool argflat) {
+    auto _start = [=](const string_t& _prefix, scope::data arg_scope) {
         auto                            _hash   = add_hash_id(_prefix);
         Toolset*                        _result = new Toolset{};
         operation::set_prefix<Toolset>  _opprefix(*_result, _prefix);
         operation::reset<Toolset>       _opreset(*_result);
-        operation::insert_node<Toolset> _opinsert(*_result, _hash, flat || argflat);
+        operation::insert_node<Toolset> _opinsert(*_result, _scope + arg_scope, _hash);
         operation::start<Toolset>       _opstart(*_result);
         consume_parameters(_opprefix, _opreset, _opinsert, _opstart);
         return (void*) _result;
@@ -164,8 +163,8 @@ get_opaque(bool flat, Args&&... args)
 //
 template <typename Toolset, typename... Args,
           enable_if_t<(concepts::is_wrapper<Toolset>::value), int> = 0>
-static auto
-get_opaque(bool flat, Args&&... args)
+auto
+get_opaque(scope::data _scope, Args&&... args)
 {
     using Toolset_t = Toolset;
 
@@ -179,8 +178,8 @@ get_opaque(bool flat, Args&&... args)
 
     auto _init = []() {};
 
-    auto _start = [=, &args...](const string_t& _prefix, bool argflat) {
-        Toolset_t* _result = create_heap_variadic<Toolset_t>(_prefix, flat || argflat,
+    auto _start = [=, &args...](const string_t& _prefix, scope::data arg_scope) {
+        Toolset_t* _result = create_heap_variadic<Toolset_t>(_prefix, _scope + arg_scope,
                                                              std::forward<Args>(args)...);
         _result->start();
         return (void*) _result;
@@ -216,8 +215,8 @@ get_opaque(bool flat, Args&&... args)
 //
 template <typename Toolset, typename... Args,
           enable_if_t<(!trait::is_available<Toolset>::value), int> = 0>
-static auto
-get_opaque(bool, Args&&...)
+auto
+get_opaque(scope::data, Args&&...)
 {
     return opaque{};
 }
@@ -235,16 +234,16 @@ struct opaque_typeids
         return result_type({ get_opaque_hash(demangle<T>()) });
     }
 
-    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
-    static auto get()
-    {
-        return result_type({ 0 });
-    }
-
     template <typename U = T, enable_if_t<(trait::is_available<U>::value), int> = 0>
     static auto hash()
     {
         return get_opaque_hash(demangle<T>());
+    }
+
+    template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    static auto get()
+    {
+        return result_type({ 0 });
     }
 
     template <typename U = T, enable_if_t<!(trait::is_available<U>::value), int> = 0>
@@ -267,13 +266,26 @@ struct opaque_typeids<Tuple<T...>>
         ret.insert(get_opaque_hash(demangle<U>()));
     }
 
-    template <typename U                                        = Tuple<T...>,
-              enable_if_t<(trait::is_available<U>::value), int> = 0>
+    template <typename U       = Tuple<T...>,
+              enable_if_t<(trait::is_available<U>::value &&
+                           concepts::is_wrapper<Tuple<T...>>::value),
+                          int> = 0>
     static auto get()
     {
         result_type ret;
         get<Tuple<T...>>(ret);
         TIMEMORY_FOLD_EXPRESSION(get<T>(ret));
+        return ret;
+    }
+
+    template <typename U       = Tuple<T...>,
+              enable_if_t<(trait::is_available<U>::value &&
+                           !concepts::is_wrapper<Tuple<T...>>::value),
+                          int> = 0>
+    static auto get()
+    {
+        result_type ret;
+        get<Tuple<T...>>(ret);
         return ret;
     }
 
@@ -294,7 +306,7 @@ struct opaque_typeids<Tuple<T...>>
 //  Generic handler
 //
 template <typename Toolset, typename Arg, typename... Args>
-static opaque
+opaque
 get_opaque(Arg&& arg, Args&&... args)
 {
     return hidden::get_opaque<Toolset>(std::forward<Arg>(arg),
@@ -306,10 +318,21 @@ get_opaque(Arg&& arg, Args&&... args)
 //  Default with no args
 //
 template <typename Toolset>
-static opaque
+opaque
 get_opaque()
 {
-    return hidden::get_opaque<Toolset>(settings::flat_profile());
+    return hidden::get_opaque<Toolset>(tim::scope::get_default());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+//  With scope arguments
+//
+template <typename Toolset>
+opaque
+get_opaque(scope::data _scope)
+{
+    return hidden::get_opaque<Toolset>(_scope);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -317,7 +340,7 @@ get_opaque()
 //  Default with no args
 //
 template <typename Toolset>
-static std::set<size_t>
+std::set<size_t>
 get_typeids()
 {
     return hidden::opaque_typeids<Toolset>::get();

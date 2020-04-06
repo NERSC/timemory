@@ -56,8 +56,8 @@ component_list<Types...>::component_list()
 template <typename... Types>
 template <typename _Func>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
-                                         const bool& flat, const _Func& _func)
-: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, flat)
+                                         scope::data _scope, const _Func& _func)
+: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
@@ -66,7 +66,7 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
         init_storage();
         _func(*this);
         set_prefix(key);
-        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
     }
 }
 
@@ -75,9 +75,9 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
 template <typename... Types>
 template <typename _Func>
 component_list<Types...>::component_list(const captured_location_t& loc,
-                                         const bool& store, const bool& flat,
+                                         const bool& store, scope::data _scope,
                                          const _Func& _func)
-: bundle_type(loc.get_hash(), store, flat)
+: bundle_type(loc.get_hash(), store, _scope)
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
@@ -86,7 +86,7 @@ component_list<Types...>::component_list(const captured_location_t& loc,
         init_storage();
         _func(*this);
         set_prefix(loc.get_id());
-        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
     }
 }
 
@@ -95,8 +95,8 @@ component_list<Types...>::component_list(const captured_location_t& loc,
 template <typename... Types>
 template <typename _Func>
 component_list<Types...>::component_list(size_t _hash, const bool& store,
-                                         const bool& flat, const _Func& _func)
-: bundle_type(_hash, store, flat)
+                                         scope::data _scope, const _Func& _func)
+: bundle_type(_hash, store, _scope)
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
@@ -105,7 +105,7 @@ component_list<Types...>::component_list(size_t _hash, const bool& store,
         init_storage();
         _func(*this);
         set_prefix(_hash);
-        apply_v::access<operation_t<operation::set_flat_profile>>(m_data, flat);
+        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
     }
 }
 
@@ -148,11 +148,11 @@ component_list<Types...>::operator=(const this_type& rhs)
 //
 template <typename... Types>
 component_list<Types...>
-component_list<Types...>::clone(bool store, bool flat)
+component_list<Types...>::clone(bool store, scope::data _scope)
 {
     component_list tmp(*this);
     tmp.m_store = store;
-    tmp.m_flat  = flat;
+    tmp.m_scope = _scope;
     return tmp;
 }
 
@@ -172,7 +172,7 @@ component_list<Types...>::push()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
-        apply_v::access<operation_t<operation::insert_node>>(m_data, m_hash, m_flat);
+        apply_v::access<operation_t<operation::insert_node>>(m_data, m_scope, m_hash);
     }
 }
 

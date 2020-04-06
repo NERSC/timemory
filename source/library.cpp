@@ -170,7 +170,7 @@ extern "C"
 
         static thread_local auto& _record_map = get_record_map();
         *id                                   = timemory_get_unique_id();
-        _record_map.insert({ *id, toolset_t(name, true, tim::settings::flat_profile()) });
+        _record_map.insert({ *id, toolset_t(name, true) });
         tim::initialize(_record_map[*id], n, ctypes);
         _record_map[*id].start();
         if(_record_map.bucket_count() > _record_map.size())
@@ -524,11 +524,7 @@ extern "C"
                    (long long unsigned) id, (long long int) n);
 #endif
 
-        // _trace_map[id].push_back(
-        //    new toolset_t(name, true, tim::settings::flat_profile()));
-        // tim::initialize(*_trace_map[id].back(), get_current_components());
-        _trace_map[id].push_back(
-            new traceset_t(name, true, tim::settings::flat_profile()));
+        _trace_map[id].push_back(new traceset_t(name, true));
         _trace_map[id].back()->start();
 
         if(tim::settings::verbose() > 3)

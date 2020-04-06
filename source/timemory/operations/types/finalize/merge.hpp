@@ -131,7 +131,7 @@ struct merge<Type, true>
                         for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
                         {
                             pre_order_iterator pchild = sitr;
-                            if(pchild->obj().nlaps() == 0)
+                            if(pchild->obj().get_laps() == 0)
                                 continue;
                             lhs.graph().append_child(pos, pchild);
                         }

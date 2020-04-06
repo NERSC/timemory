@@ -46,35 +46,6 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_FOLD_EXPRESSION)
-#    define TIMEMORY_FOLD_EXPRESSION(...)                                                \
-        ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DELETED_OBJECT)
-#    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
-        NAME()            = delete;                                                      \
-        NAME(const NAME&) = delete;                                                      \
-        NAME(NAME&&)      = delete;                                                      \
-        NAME& operator=(const NAME&) = delete;                                           \
-        NAME& operator=(NAME&&) = delete;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DEFAULT_OBJECT)
-#    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
-        NAME()            = default;                                                     \
-        NAME(const NAME&) = default;                                                     \
-        NAME(NAME&&)      = default;                                                     \
-        NAME& operator=(const NAME&) = default;                                          \
-        NAME& operator=(NAME&&) = default;
-#endif
-
-//======================================================================================//
-//
 namespace tim
 {
 template <int N>
@@ -262,9 +233,6 @@ struct input_archive;
 
 template <typename Archive, typename Api = api::native_tag>
 struct output_archive;
-
-template <typename T, typename Toolset>
-struct ompt_handle;
 
 //--------------------------------------------------------------------------------------//
 //

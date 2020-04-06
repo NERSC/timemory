@@ -30,16 +30,9 @@
 #include "timemory/enum.h"
 #include "timemory/runtime/macros.hpp"
 //
-#include "timemory/components.hpp"
-#include "timemory/components/opaque/definition.hpp"
+#include "timemory/components/factory.hpp"
+#include "timemory/variadic/definition.hpp"
 //
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-//
-#include "timemory/variadic/component_hybrid.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
 
 #include <set>
 #include <string>
@@ -324,27 +317,27 @@ initialize(Tp& obj, int idx)
 //
 template <typename Tp>
 void
-insert(Tp& obj, int idx, bool flat)
+insert(Tp& obj, int idx, scope::data _scope)
 {
-    enumerator_insert(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, flat);
+    enumerator_insert(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, _scope);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 void
-configure(int idx, bool flat)
+configure(int idx, scope::data _scope)
 {
-    enumerator_configure<Tp>(idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, flat);
+    enumerator_configure<Tp>(idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, _scope);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 void
-configure(Tp& obj, int idx, bool flat)
+configure(Tp& obj, int idx, scope::data _scope)
 {
-    enumerator_configure(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, flat);
+    enumerator_configure(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, _scope);
 }
 //
 //--------------------------------------------------------------------------------------//

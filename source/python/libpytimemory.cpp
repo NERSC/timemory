@@ -23,10 +23,13 @@
 // SOFTWARE.
 //
 
+#include "timemory/components/ompt.hpp"
+//
 #include "libpytimemory.hpp"
+//
+#include "timemory/components/definition.hpp"
 
-#include <cstdio>
-#include <pybind11/pybind11.h>
+//======================================================================================//
 
 #if defined(TIMEMORY_USE_MPI_P)
 extern "C"
