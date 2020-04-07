@@ -53,13 +53,13 @@ demangle(const std::string& _inst)
               << std::endl;
 }
 
-template <typename _Tp>
+template <typename Tp>
 inline void
 demangle()
 {
     std::cout << "\n"
-              << "original:\n\t " << typeid(_Tp).name() << "\n"
-              << "demangle:\n\t " << tim::demangle<_Tp>() << "\n"
+              << "original:\n\t " << typeid(Tp).name() << "\n"
+              << "demangle:\n\t " << tim::demangle<Tp>() << "\n"
               << std::endl;
 }
 

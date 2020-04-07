@@ -22,30 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/backends/device.hpp"
-#include "timemory/components/cuda/backends.hpp"
-#include "timemory/components/timing/components.hpp"
-#include "timemory/ert/configuration.hpp"
-#include "timemory/ert/counter.hpp"
-#include "timemory/ert/data.hpp"
-#include "timemory/manager/declaration.hpp"
-#include "timemory/operations/definition.hpp"
-#include "timemory/plotting.hpp"
-
-namespace tim
-{
-namespace ert
-{
-//
-//
-// template class exec_data<component::wall_clock>;
-//
-// template class counter<device::cpu, float, component::wall_clock>;
-// template class counter<device::cpu, double, component::wall_clock>;
-//
-// template struct configuration<device::cpu, float, component::wall_clock>;
-// template struct configuration<device::cpu, double, component::wall_clock>;
-//
-//
-}  // namespace ert
-}  // namespace tim
+#include "timemory/ert/extern.hpp"

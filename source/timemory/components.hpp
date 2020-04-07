@@ -50,6 +50,13 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+// craypat
+#if defined(TIMEMORY_USE_CRAYPAT)
+#    include "timemory/components/craypat/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // cuda
 #if defined(TIMEMORY_USE_CUDA)
 #    include "timemory/components/cuda/components.hpp"

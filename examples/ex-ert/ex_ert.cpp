@@ -68,7 +68,7 @@ using init_list_t    = std::set<uint64_t>;
 //--------------------------------------------------------------------------------------//
 //  this will invoke ERT with the specified settings
 //
-template <typename _Tp, typename _Device>
+template <typename Tp, typename DeviceT>
 void
 run_ert(ert_data_ptr_t, int64_t num_threads, int64_t min_size, int64_t max_data,
         int64_t num_streams = 0, int64_t block_size = 0, int64_t num_gpus = 0);
@@ -194,18 +194,18 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Device>
+template <typename Tp, typename DeviceT>
 void
 run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_data,
         int64_t num_streams, int64_t block_size, int64_t num_gpus)
 {
     // create a label for this test
-    auto dtype = tim::demangle(typeid(_Tp).name());
-    auto htype = _Device::name();
+    auto dtype = tim::demangle(typeid(Tp).name());
+    auto htype = DeviceT::name();
     auto label = TIMEMORY_JOIN("_", __FUNCTION__, dtype, htype, num_threads, "threads",
                                min_size, "min-ws", max_data, "max-size");
 
-    if(std::is_same<_Device, device::gpu>::value)
+    if(std::is_same<DeviceT, device::gpu>::value)
     {
         label = TIMEMORY_JOIN("_", label, num_gpus, "gpus", num_streams, "streams",
                               block_size, "thr-per-blk");
@@ -213,9 +213,9 @@ run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_
 
     printf("\n[ert-example]> Executing %s...\n", label.c_str());
 
-    using ert_executor_type = ert::executor<_Device, _Tp, counter_type>;
+    using ert_executor_type = ert::executor<DeviceT, Tp, counter_type>;
     using ert_config_type   = typename ert_executor_type::configuration_type;
-    using ert_counter_type  = ert::counter<_Device, _Tp, counter_type>;
+    using ert_counter_type  = ert::counter<DeviceT, Tp, counter_type>;
 
     //
     // simple modifications to override method number of threads, number of streams,

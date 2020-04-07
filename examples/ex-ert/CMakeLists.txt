@@ -45,7 +45,7 @@ add_executable(ex_ert ex_ert.cpp)
 target_link_libraries(ex_ert timemory-ert-example)
 install(TARGETS ex_ert DESTINATION bin)
 
-if(USE_CUDA)
+if(USE_CUDA OR TIMEMORY_USE_CUDA)
     set_source_files_properties(ex_ert.cpp PROPERTIES
         LANGUAGE CUDA
         LINKER_LANGUAGE CUDA)
@@ -58,7 +58,7 @@ if(Kokkos_FOUND AND USE_KOKKOS)
     target_link_libraries(ex_ert_kokkos timemory-ert-example Kokkos::kokkos)
     install(TARGETS ex_ert_kokkos DESTINATION bin)
 
-    if(USE_CUDA)
+    if(USE_CUDA OR TIMEMORY_USE_CUDA)
         set_source_files_properties(ex_ert_kokkos.cpp PROPERTIES
             LANGUAGE CUDA
             LINKER_LANGUAGE CUDA)

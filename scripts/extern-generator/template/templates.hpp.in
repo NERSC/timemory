@@ -23,30 +23,23 @@
 // SOFTWARE.
 
 /**
- * \file timemory/components/@COMPONENT_FOLDER@/extern/base.hpp
- * \brief Declare the extern base instances for @COMPONENT_FOLDER@ components
+ * \file timemory/@FOLDER@/templates.hpp
+ * \brief The template definitions for the types in @FOLDER@
  */
 
 #pragma once
 
-#include "timemory/components/@COMPONENT_FOLDER@/traits.hpp"
-#include "timemory/components/@COMPONENT_FOLDER@/types.hpp"
-#include "timemory/components/base.hpp"
+#include "timemory/@FOLDER@/declaration.hpp"
+#include "timemory/@FOLDER@/macros.hpp"
+#include "timemory/@FOLDER@/types.hpp"
 
-// #if defined(TIMEMORY_USE_@COMPONENT_CHECK@)
-
-//======================================================================================//
-//
 namespace tim
 {
-namespace component
-{
 //
-// TIMEMORY_EXTERN_TEMPLATE(struct base<@CXX_STRUCT@, @CXX_STRUCT_DATA_TYPE@>)
+//--------------------------------------------------------------------------------------//
 //
-}  // namespace component
+//                              @FOLDER@
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
-//
-//======================================================================================//
-
-// #endif  // TIMEMORY_USE_@COMPONENT_CHECK@

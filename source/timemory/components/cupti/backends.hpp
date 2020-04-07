@@ -47,8 +47,8 @@ inline cupti::profiler::results_t&
 operator+=(cupti::profiler::results_t& lhs, const cupti::profiler::results_t& rhs)
 {
     assert(lhs.size() == rhs.size());
-    const auto _N = ::std::min(lhs.size(), rhs.size());
-    for(size_t i = 0; i < _N; ++i)
+    const auto N = ::std::min(lhs.size(), rhs.size());
+    for(size_t i = 0; i < N; ++i)
         lhs[i] += rhs[i];
     return lhs;
 }
@@ -60,8 +60,8 @@ operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_
 {
     assert(lhs.size() == rhs.size());
     cupti::profiler::results_t tmp = lhs;
-    const auto                 _N  = ::std::min(lhs.size(), rhs.size());
-    for(size_t i = 0; i < _N; ++i)
+    const auto                 N   = ::std::min(lhs.size(), rhs.size());
+    for(size_t i = 0; i < N; ++i)
         tmp[i] -= rhs[i];
     return tmp;
 }
@@ -1255,16 +1255,16 @@ finalize_trace(const std::vector<activity_kind_t>&)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-start_trace(_Tp*, bool = false)
+start_trace(Tp*, bool = false)
 {}
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-stop_trace(_Tp*)
+stop_trace(Tp*)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -1877,9 +1877,9 @@ finalize_trace(const std::vector<activity_kind_t>& _kind_types)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-start_trace(_Tp* obj, bool flush)
+start_trace(Tp* obj, bool flush)
 {
     auto& _receiver = get_receiver();
     // clang-format off
@@ -1890,9 +1890,9 @@ start_trace(_Tp* obj, bool flush)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-stop_trace(_Tp* obj)
+stop_trace(Tp* obj)
 {
     auto& _receiver = get_receiver();
     cuda::device_sync();

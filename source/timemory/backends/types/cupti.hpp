@@ -415,127 +415,127 @@ using data_metric_t = data::metric;
 //--------------------------------------------------------------------------------------//
 // Generic tuple operations
 //
-template <typename _Ret, typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+template <typename Ret, typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
 void
-_get(_Ret& val, const data_metric_t& lhs)
+_get(Ret& val, const data_metric_t& lhs)
 {
-    if(lhs.index == _Tp::index)
+    if(lhs.index == Tp::index)
     {
-        val = static_cast<_Ret>(_Tp::get_data(lhs));
+        val = static_cast<Ret>(Tp::get_data(lhs));
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Ret, typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+template <typename Ret, typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
 void
-_get(_Ret& val, const data_metric_t& lhs)
+_get(Ret& val, const data_metric_t& lhs)
 {
-    _get<_Ret, _Tp>(val, lhs);
-    _get<_Ret, _Types...>(val, lhs);
+    _get<Ret, Tp>(val, lhs);
+    _get<Ret, Types...>(val, lhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
 void
 _set(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(rhs.index == _Tp::index)
+    if(rhs.index == Tp::index)
     {
         lhs.index = rhs.index;
-        _Tp::set(lhs, rhs);
+        Tp::set(lhs, rhs);
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
 void
 _set(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    _set<_Tp>(lhs, rhs);
-    _set<_Types...>(lhs, rhs);
+    _set<Tp>(lhs, rhs);
+    _set<Types...>(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
 void
 _print(std::ostream& os, const data_metric_t& lhs)
 {
-    if(lhs.index == _Tp::index)
-        _Tp::print(os, lhs);
+    if(lhs.index == Tp::index)
+        Tp::print(os, lhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
 void
 _print(std::ostream& os, const data_metric_t& lhs)
 {
-    _print<_Tp>(os, lhs);
-    _print<_Types...>(os, lhs);
+    _print<Tp>(os, lhs);
+    _print<Types...>(os, lhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
 void
 _plus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(rhs.index == _Tp::index)
+    if(rhs.index == Tp::index)
     {
         if(lhs.index == 0 && rhs.index != 0)
             lhs.index = rhs.index;
         if(lhs.index == rhs.index)
-            _Tp::get(lhs) += _Tp::cget(rhs);
+            Tp::get(lhs) += Tp::cget(rhs);
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
 void
 _plus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    _plus<_Tp>(lhs, rhs);
-    _plus<_Types...>(lhs, rhs);
+    _plus<Tp>(lhs, rhs);
+    _plus<Types...>(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
 void
 _minus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(rhs.index == _Tp::index)
+    if(rhs.index == Tp::index)
     {
         if(lhs.index == 0 && rhs.index != 0)
             lhs.index = rhs.index;
         if(lhs.index == rhs.index)
-            _Tp::get(lhs) -= _Tp::cget(rhs);
+            Tp::get(lhs) -= Tp::cget(rhs);
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+template <typename Tp, typename... Types,
+          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
 void
 _minus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    _minus<_Tp>(lhs, rhs);
-    _minus<_Types...>(lhs, rhs);
+    _minus<Tp>(lhs, rhs);
+    _minus<Types...>(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -568,43 +568,43 @@ namespace data
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 struct _operation
 {};
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-struct _operation<std::tuple<_Types...>>
+template <typename... Types>
+struct _operation<std::tuple<Types...>>
 {
-    template <typename... _Args>
-    static void print(_Args&&... _args)
+    template <typename... ArgsT>
+    static void print(ArgsT&&... _args)
     {
-        impl::_print<_Types...>(std::forward<_Args>(_args)...);
+        impl::_print<Types...>(std::forward<ArgsT>(_args)...);
     }
 
-    template <typename _Tp, typename... _Args>
-    static void get(_Args&&... _args)
+    template <typename Tp, typename... ArgsT>
+    static void get(ArgsT&&... _args)
     {
-        impl::_get<_Tp, _Types...>(std::forward<_Args>(_args)...);
+        impl::_get<Tp, Types...>(std::forward<ArgsT>(_args)...);
     }
 
-    template <typename... _Args>
-    static void set(_Args&&... _args)
+    template <typename... ArgsT>
+    static void set(ArgsT&&... _args)
     {
-        impl::_set<_Types...>(std::forward<_Args>(_args)...);
+        impl::_set<Types...>(std::forward<ArgsT>(_args)...);
     }
 
-    template <typename... _Args>
-    static void plus(_Args&&... _args)
+    template <typename... ArgsT>
+    static void plus(ArgsT&&... _args)
     {
-        impl::_plus<_Types...>(std::forward<_Args>(_args)...);
+        impl::_plus<Types...>(std::forward<ArgsT>(_args)...);
     }
 
-    template <typename... _Args>
-    static void minus(_Args&&... _args)
+    template <typename... ArgsT>
+    static void minus(ArgsT&&... _args)
     {
-        impl::_minus<_Types...>(std::forward<_Args>(_args)...);
+        impl::_minus<Types...>(std::forward<ArgsT>(_args)...);
     }
 };
 
@@ -626,12 +626,12 @@ print(std::ostream& os, const impl::data_metric_t& lhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline _Tp
+template <typename Tp>
+inline Tp
 get(const impl::data_metric_t& lhs)
 {
-    _Tp value = _Tp(0.0);
-    data::operation::get<_Tp>(value, lhs);
+    Tp value = Tp(0.0);
+    data::operation::get<Tp>(value, lhs);
     return value;
 }
 
@@ -869,8 +869,8 @@ namespace activity
 class receiver
 {
 public:
-    template <typename _Lhs, typename _Rhs>
-    using uomap_t = std::unordered_map<_Lhs, _Rhs>;
+    template <typename Lhs, typename Rhs>
+    using uomap_t = std::unordered_map<Lhs, Rhs>;
 
     using mutex_type          = std::recursive_mutex;
     using lock_type           = std::unique_lock<mutex_type>;
@@ -885,17 +885,17 @@ public:
     // similar later for a "thread_value" to distinguish traditional additions
     // vs. addition from other threads when they merge
     /*
-    template <typename _Up>
+    template <typename Up>
     class value_type
     {
     public:
         value_type() = delete;
 
-        explicit value_type(const _Up& _val)
+        explicit value_type(const Up& _val)
         : m_value(_val)
         {
         }
-        explicit value_type(_Up&& val)
+        explicit value_type(Up&& val)
         : m_value(std::move(val))
         {
         }
@@ -906,11 +906,11 @@ public:
         value_type& operator=(const value_type&) = default;
         value_type& operator=(value_type&&) = default;
 
-        _Up&       get() { return m_value; }
-        const _Up& get() const { return m_value; }
+        Up&       get() { return m_value; }
+        const Up& get() const { return m_value; }
 
     private:
-        _Up m_value;
+        Up m_value;
     };
     */
 
@@ -971,8 +971,8 @@ public:
         return *this;
     }
 
-    template <typename _Tp>
-    inline void insert(_Tp* _obj)
+    template <typename Tp>
+    inline void insert(Tp* _obj)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
@@ -982,8 +982,8 @@ public:
             m_data.insert(m_data.end(), obj);
     }
 
-    template <typename _Tp>
-    inline void remove(_Tp* _obj)
+    template <typename Tp>
+    inline void remove(Tp* _obj)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
@@ -1059,8 +1059,8 @@ public:
     // this operator is invoked from the CUPTI callback which implements an external
     // hold to make sure all the buffers get added before allowing other operations
     // such as insert/remove to proceed
-    template <typename _Up>
-    inline receiver& operator+=(const _Up& rhs)
+    template <typename Up>
+    inline receiver& operator+=(const Up& rhs)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock() && !m_external_hold)
@@ -1069,8 +1069,8 @@ public:
         return *this;
     }
 
-    template <typename _Up>
-    inline receiver& operator-=(const _Up& rhs)
+    template <typename Up>
+    inline receiver& operator-=(const Up& rhs)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
@@ -1079,8 +1079,8 @@ public:
         return *this;
     }
 
-    template <typename _Up>
-    inline receiver& operator+=(const std::tuple<std::string, _Up>& rhs)
+    template <typename Up>
+    inline receiver& operator+=(const std::tuple<std::string, Up>& rhs)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock() && !m_external_hold)
@@ -1092,8 +1092,8 @@ public:
         return *this;
     }
 
-    template <typename _Up>
-    inline receiver& operator-=(const std::tuple<std::string, _Up>& rhs)
+    template <typename Up>
+    inline receiver& operator-=(const std::tuple<std::string, Up>& rhs)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
@@ -1133,8 +1133,8 @@ protected:
     const_iterator begin() const { return m_data.begin(); }
     const_iterator end() const { return m_data.end(); }
 
-    template <typename _Tp>
-    iterator find(const _Tp* _obj)
+    template <typename Tp>
+    iterator find(const Tp* _obj)
     {
         const void* obj = static_cast<const void*>(_obj);
         for(auto itr = begin(); itr != end(); ++itr)
@@ -1145,8 +1145,8 @@ protected:
         return end();
     }
 
-    template <typename _Tp>
-    const_iterator find(const _Tp* _obj) const
+    template <typename Tp>
+    const_iterator find(const Tp* _obj) const
     {
         const void* obj = static_cast<const void*>(_obj);
         for(auto itr = begin(); itr != end(); ++itr)
@@ -1252,16 +1252,16 @@ finalize_trace(const std::vector<activity_kind_t>&)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-start_trace(_Tp*, bool = false)
+start_trace(Tp*, bool = false)
 {}
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-stop_trace(_Tp*)
+stop_trace(Tp*)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -1294,15 +1294,15 @@ finalize_trace(const std::vector<activity_kind_t>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-start_trace(_Tp*, bool flush = false);
+start_trace(Tp*, bool flush = false);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-stop_trace(_Tp*);
+stop_trace(Tp*);
 
 //--------------------------------------------------------------------------------------//
 

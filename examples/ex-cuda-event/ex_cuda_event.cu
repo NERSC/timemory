@@ -73,9 +73,9 @@ using ert_data_t   = tim::ert::exec_data<counter_t>;
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 std::string
-array_to_string(const _Tp& arr, const std::string& delimiter = ", ",
+array_to_string(const Tp& arr, const std::string& delimiter = ", ",
                 const int& _width = 16, const int& _break = 8,
                 const std::string& _break_delim = "\t")
 {
@@ -1271,14 +1271,12 @@ test_9_cupti_counters()
                                           "gld_efficiency", "gst_efficiency" });
     };
 
-    using _Tp       = double;
-    using counter_t = tim::ert::counter<tim::device::gpu, _Tp>;
+    using Tp        = double;
+    using counter_t = tim::ert::counter<tim::device::gpu, Tp>;
 
-    auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-    auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-        a = b + c;
-    };
-    auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+    auto store_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b) { a = b; };
+    auto add_func   = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) { a = b + c; };
+    auto fma_func   = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
         a = a * b + c;
     };
 

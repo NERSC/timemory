@@ -46,34 +46,34 @@ namespace tim
 {
 namespace func
 {
-template <bool _Condition, typename _Tp = int>
-using enable_if_t = typename std::enable_if<(_Condition), _Tp>::type;
+template <bool _Condition, typename Tp = int>
+using enable_if_t = typename std::enable_if<(_Condition), Tp>::type;
 
 using std::max;
 using std::min;
 
-template <typename _Lhs, typename _Rhs>
+template <typename Lhs, typename Rhs>
 struct add
 {
-    add(_Lhs& lhs, const _Rhs& rhs) { lhs += rhs; }
+    add(Lhs& lhs, const Rhs& rhs) { lhs += rhs; }
 };
 
-template <typename _Lhs, typename _Rhs>
+template <typename Lhs, typename Rhs>
 struct subtract
 {
-    subtract(_Lhs& lhs, const _Rhs& rhs) { lhs -= rhs; }
+    subtract(Lhs& lhs, const Rhs& rhs) { lhs -= rhs; }
 };
 
-template <typename _Lhs, typename _Rhs>
+template <typename Lhs, typename Rhs>
 struct multiply
 {
-    multiply(_Lhs& lhs, const _Rhs& rhs) { lhs *= rhs; }
+    multiply(Lhs& lhs, const Rhs& rhs) { lhs *= rhs; }
 };
 
-template <typename _Lhs, typename _Rhs>
+template <typename Lhs, typename Rhs>
 struct divide
 {
-    divide(_Lhs& lhs, const _Rhs& rhs) { lhs /= rhs; }
+    divide(Lhs& lhs, const Rhs& rhs) { lhs /= rhs; }
 };
 
 }  // namespace func

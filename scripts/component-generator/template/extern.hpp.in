@@ -29,14 +29,47 @@
 
 #pragma once
 
-// #if defined(TIMEMORY_USE_@COMPONENT_CHECK@)
-
 //======================================================================================//
 //
-#include "timemory/components/@COMPONENT_FOLDER@/extern/base.hpp"
-#include "timemory/components/@COMPONENT_FOLDER@/extern/operations.hpp"
-#include "timemory/components/@COMPONENT_FOLDER@/extern/storage.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/macros.hpp"
+//
+#include "timemory/components/@COMPONENT_FOLDER@/components.hpp"
+#include "timemory/components/@COMPONENT_FOLDER@/types.hpp"
+//
+#if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+// source/header-only requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/definition.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/definition.hpp"
+#else
+// extern requirements
+#    include "timemory/environment/declaration.hpp"
+#    include "timemory/operations/definition.hpp"
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/declaration.hpp"
+#    include "timemory/storage/declaration.hpp"
+#endif
 //
 //======================================================================================//
-
-// #endif  // TIMEMORY_USE_@COMPONENT_CHECK@
+//
+namespace tim
+{
+namespace component
+{
+//
+// TIMEMORY_EXTERN_TEMPLATE(struct base<@CXX_STRUCT@, @CXX_STRUCT_DATA_TYPE@>)
+//
+}  // namespace component
+}  // namespace tim
+//
+//======================================================================================//
+//
+// TIMEMORY_EXTERN_OPERATIONS(component::@CXX_STRUCT@, true)
+//
+// TIMEMORY_EXTERN_STORAGE(component::@CXX_STRUCT@, @CXX_STRUCT@)
+//
+//======================================================================================//

@@ -25,20 +25,28 @@
 
 #include "timemory-run.hpp"
 
-int         expectError            = NO_ERROR;
-int         debugPrint             = 0;
-int         binaryRewrite          = 0;  /* by default, it is turned off */
-int         errorPrint             = 0;  // external "dyninst" tracing
-bool        instRoutineAtLoopLevel = false;
-std::string main_fname             = "main";
+int         expectError      = NO_ERROR;
+int         debugPrint       = 0;
+int         binaryRewrite    = 0;  /* by default, it is turned off */
+int         errorPrint       = 0;  // external "dyninst" tracing
+bool        loop_level_instr = false;
+bool        werror           = false;
+bool        stl_func_instr   = false;
+std::string main_fname       = "main";
+std::string argv0            = "";
 
 template class BPatch_Vector<BPatch_variableExpr*>;
 
 BPatch_function*               name_reg;
-BPatch_Vector<BPatch_snippet*> funcNames;
+BPatch_Vector<BPatch_snippet*> init_names;
+BPatch_Vector<BPatch_snippet*> fini_names;
 BPatch*                        bpatch;
 std::vector<std::regex>        regex_include;
 std::vector<std::regex>        regex_exclude;
+std::set<std::string>          collection_includes;
+std::set<std::string>          collection_excludes;
+std::vector<std::string>       collection_paths = { "collections", "tools/collections",
+                                              "../share/tools/collections" };
 
 //======================================================================================//
 // For selective instrumentation
@@ -47,6 +55,55 @@ bool
 are_file_include_exclude_lists_empty(void)
 {
     return false;
+}
+//
+//======================================================================================//
+//
+void
+read_collection(const std::string& fname, std::set<std::string>& collection_set)
+{
+    std::string           searched_paths;
+    std::set<std::string> prefixes = { ".", get_absolute_path(argv0.c_str()) };
+    for(const auto& pitr : prefixes)
+    {
+        for(auto itr : collection_paths)
+        {
+            itr = TIMEMORY_JOIN("/", pitr, itr);
+            searched_paths += itr;
+            searched_paths += ", ";
+            auto fpath = TIMEMORY_JOIN("/", itr, fname);
+
+            dprintf("trying to read collection file @ %s...", fpath.c_str());
+            std::ifstream ifs(fpath.c_str());
+
+            if(!ifs)
+            {
+                dprintf("trying to read collection file @ %s...", fpath.c_str());
+                fpath = TIMEMORY_JOIN("/", itr, to_lower(fname));
+                ifs.open(fpath.c_str());
+            }
+
+            if(ifs)
+            {
+                dprintf(">    reading collection file @ %s...", fpath.c_str());
+                std::string tmp;
+                while(!ifs.eof())
+                {
+                    ifs >> tmp;
+                    if(ifs.good())
+                        collection_set.insert(tmp);
+                }
+                return;
+            }
+        }
+    }
+    searched_paths = searched_paths.substr(0, searched_paths.length() - 2);
+    std::stringstream ss;
+    ss << "Unable to find \"" << fname << "\". Searched paths: " << searched_paths;
+    if(werror)
+        throw std::runtime_error(ss.str());
+    else
+        std::cerr << ss.str() << "\n";
 }
 
 //======================================================================================//
@@ -85,8 +142,15 @@ process_file_for_instrumentation(const std::string& file_name)
     };
 
     bool use = is_include() && !is_exclude();
-    if(use && debugPrint)
-        PRINT_HERE("%s", file_name.c_str());
+    if(use)
+    {
+        static std::set<std::string> already_reported;
+        if(already_reported.count(file_name) == 0)
+        {
+            dprintf("%s |> [ %s ]\n", __FUNCTION__, file_name.c_str());
+            already_reported.insert(file_name);
+        }
+    }
     return use;
 }
 
@@ -95,9 +159,16 @@ process_file_for_instrumentation(const std::string& file_name)
 bool
 instrument_entity(const std::string& function_name)
 {
-    std::regex exclude("(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize)");
-    std::regex leading("^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(\\(|\\(__|_"
-                       "GLOBAL|targ|PMPI_)");
+    std::regex exclude(
+        "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|\\{lambda|::_["
+        "A-Z]|::__[A-Za-z]|std::max|std::min|std::fill|std::forward|std::get)");
+    std::regex leading(
+        "^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(|\\(__|_"
+        "GLOBAL|targ|PMPI_|new|delete|std::allocator|std::_|std::move|nvtx|gcov)");
+    std::regex stlfunc("^std::");
+
+    if(!stl_func_instr && std::regex_search(function_name, stlfunc))
+        return false;
 
     // don't instrument the functions when key is found anywhere in function name
     if(std::regex_search(function_name, exclude))
@@ -128,37 +199,19 @@ instrument_entity(const std::string& function_name)
     };
 
     bool use = is_include() && !is_exclude();
-    if(use && debugPrint)
-        PRINT_HERE("%s", function_name.c_str());
     return use;
-}
-
-//======================================================================================//
-
-int
-add_name(const char* name)
-{
-    static int funcID = 0;
-    // PRINT_HERE("func: %s, id: %i\n", name, funcID);
-    BPatch_constExpr*              name_param = new BPatch_constExpr(name);
-    BPatch_Vector<BPatch_snippet*> params;
-    params.push_back(name_param);
-    BPatch_funcCallExpr* call = new BPatch_funcCallExpr(*name_reg, params);
-    funcNames.push_back(call);
-    return funcID++;
 }
 
 //======================================================================================//
 // gets information (line number, filename, and column number) about
 // the instrumented loop and formats it properly.
 //
-void
+function_signature
 get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
-                        BPatch_basicBlockLoop* loopToInstrument, BPatch_function* f,
-                        char* newname)
+                        BPatch_basicBlockLoop* loopToInstrument, BPatch_function* f)
 {
     if(!cfGraph || !loopToInstrument || !f)
-        return;
+        return function_signature("", "", "");
 
     char         fname[1024];
     const char*  typeName = nullptr;
@@ -170,7 +223,7 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
         cfGraph->findLoopInstPoints(BPatch_locLoopEndIter, loopToInstrument);
 
     if(!loopStartInst || !loopExitInst)
-        return;
+        return function_signature("", "", "");
 
     unsigned long baseAddr = (unsigned long) (*loopStartInst)[0]->getAddress();
     unsigned long lastAddr =
@@ -223,18 +276,19 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
                 col2 = 0;
             if(row2 < row1)
                 row1 = row2; /* Fix for wrong line numbers*/
-            sprintf(newname, "Loop: %s %s() [{%s} {%d,%d}-{%d,%d}]", typeName, fname,
-                    filename, row1, col1, row2, col2);
+
+            return function_signature(typeName, fname, filename, { row1, row2 },
+                                      { col1, col2 }, true, info1, info2);
         }
         else
         {
-            sprintf(newname, "Loop: %s %s() [{%s} {%d,%d}]", typeName, fname, filename,
-                    row1, col1);
+            return function_signature(typeName, fname, filename, { row1, 0 }, { col1, 0 },
+                                      true, info1, info2);
         }
     }
     else
     {
-        strcpy(newname, fname);
+        return function_signature(typeName, fname, "");
     }
 }
 
@@ -249,18 +303,9 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
 void
 insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
              BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc,
-             BPatch_flowGraph* cfGraph, BPatch_basicBlockLoop* loopToInstrument)
+             BPatch_flowGraph* cfGraph, BPatch_basicBlockLoop* loopToInstrument,
+             function_signature& name)
 {
-    char name[1024];
-    char modname[1024];
-
-    funcToInstr->getModuleName(modname, 1024);
-    if(strstr(modname, "libdyninstAPI_RT"))
-        return;
-
-    get_loop_file_line_info(mutatee->getImage(), cfGraph, loopToInstrument, funcToInstr,
-                            name);
-
     BPatch_module* module = funcToInstr->getModule();
     if(!module)
         return;
@@ -275,13 +320,15 @@ insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
     if(loopEntr->empty() || loopExit->empty())
         return;
 
+    dprintf("Instrumenting |> [ %s ]\n", name.m_name.c_str());
+
     BPatch_Vector<BPatch_snippet*> entryTraceArgs;
     BPatch_Vector<BPatch_snippet*> exitTraceArgs;
 
     auto ret = new BPatch_retExpr();
-    entryTraceArgs.push_back(new BPatch_constExpr(name));
+    entryTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
     entryTraceArgs.push_back(ret);
-    exitTraceArgs.push_back(new BPatch_constExpr(name));
+    exitTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
 
     BPatch_funcCallExpr entryTrace(*traceEntryFunc, entryTraceArgs);
     BPatch_funcCallExpr exitTrace(*traceExitFunc, exitTraceArgs);
@@ -305,16 +352,10 @@ insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
 
 void
 insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
-             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc)
+             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc,
+             function_signature& name)
 {
-    char name[1024];
-    char modname[1024];
-
-    funcToInstr->getModuleName(modname, 1024);
-    if(strstr(modname, "libdyninstAPI_RT"))
-        return;
-
-    get_func_file_line_info(mutatee->getImage(), funcToInstr, name);
+    dprintf("Instrumenting |> [ %s ]\n", name.m_name.c_str());
 
     BPatch_Vector<BPatch_point*>* funcEntry = funcToInstr->findPoint(BPatch_entry);
     BPatch_Vector<BPatch_point*>* funcExit  = funcToInstr->findPoint(BPatch_exit);
@@ -323,9 +364,9 @@ insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
     BPatch_Vector<BPatch_snippet*> exitTraceArgs;
 
     auto ret = new BPatch_retExpr();
-    entryTraceArgs.push_back(new BPatch_constExpr(name));
+    entryTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
     entryTraceArgs.push_back(ret);
-    exitTraceArgs.push_back(new BPatch_constExpr(name));
+    exitTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
 
     BPatch_funcCallExpr entryTrace(*traceEntryFunc, entryTraceArgs);
     BPatch_funcCallExpr exitTrace(*traceExitFunc, exitTraceArgs);
@@ -438,7 +479,7 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
     if(points.size())
     {
         // Insert the given snippet at the given point
-        appThread->insertSnippet(*snippet, points, BPatch_callAfter);
+        appThread->insertSnippet(*snippet, points);
     }
     delete snippet;
     return nullptr;
@@ -481,23 +522,8 @@ initialize(BPatch_process* appThread, BPatch_image* appImage,
                     main_fname.c_str());
             exit(1);
         }
-        const BPatch_Vector<BPatch_point*>* points = main_entry->findPoint(BPatch_entry);
-        const BPatch_snippet*               init_snippet =
-            new BPatch_funcCallExpr(*init_func, initArgs);
-        const BPatch_snippet* fini_snippet =
-            new BPatch_funcCallExpr(*fini_func, finiArgs);
-        // We invoke the init_snippet before any other call in main and fini_snippet after
-        // any other call in main
-        if((points != nullptr) && (init_snippet != nullptr) && (fini_snippet != nullptr))
-        {
-            // Insert the init_snippet to be called before first snippet
-            appThread->insertSnippet(*init_snippet, *points, BPatch_callBefore,
-                                     BPatch_firstSnippet);
-            // Insert the fini_snippet to be called before last snippet
-            appThread->insertSnippet(*fini_snippet, *points, BPatch_callBefore,
-                                     BPatch_lastSnippet);
-        }
-        else
+
+        if(!main_entry->findPoint(BPatch_entry))
         {
             fprintf(stderr,
                     "timemory-run: entry points for '%s' or init_snippet for "
@@ -505,6 +531,19 @@ initialize(BPatch_process* appThread, BPatch_image* appImage,
                     main_fname.c_str());
             exit(1);
         }
+
+        auto init_points  = main_entry->findPoint(BPatch_entry);
+        auto init_snippet = BPatch_funcCallExpr(*init_func, initArgs);
+        auto fini_points  = main_entry->findPoint(BPatch_exit);
+        auto fini_snippet = BPatch_funcCallExpr(*fini_func, finiArgs);
+        // We invoke the init_snippet before any other call in main and fini_snippet after
+        // any other call in main
+        // Insert the init_snippet to be called before first snippet
+        appThread->insertSnippet(init_snippet, *init_points, BPatch_callBefore,
+                                 BPatch_firstSnippet);
+        // Insert the fini_snippet to be called before last snippet
+        appThread->insertSnippet(fini_snippet, *fini_points, BPatch_callAfter,
+                                 BPatch_firstSnippet);
     }
     else
     {
@@ -637,7 +676,7 @@ module_constraint(char* fname)
 // Constraint for routines. The constraint returns true for those routines that
 // should not be instrumented.
 int
-routine_constraint(char* fname)
+routine_constraint(const char* fname)
 {
     std::string _fname = fname;
     if(_fname.find("timemory") != std::string::npos ||
@@ -756,10 +795,10 @@ check_if_mpi(BPatch_image* appImage, BPatch_Vector<BPatch_point*>& mpiinit,
 {
     consume_parameters(binaryRewrite);
 
-    std::vector<const char*> init_names;
-    init_names.push_back("MPI_Init");
-    init_names.push_back("PMPI_Init");
-    bool ismpi = find_func_or_calls(init_names, mpiinit, appImage, BPatch_locExit);
+    std::vector<const char*> _init_names;
+    _init_names.push_back("MPI_Init");
+    _init_names.push_back("PMPI_Init");
+    bool ismpi = find_func_or_calls(_init_names, mpiinit, appImage, BPatch_locExit);
 
     mpiinitstub = find_function(appImage, "timemory_mpi_init_stub");
     if(mpiinitstub == (BPatch_function*) nullptr)
@@ -777,9 +816,8 @@ check_if_mpi(BPatch_image* appImage, BPatch_Vector<BPatch_point*>& mpiinit,
 //======================================================================================//
 // We create a new name that embeds the file and line information in the name
 //
-void
-get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f,
-                        char* newname)
+function_signature
+get_func_file_line_info(BPatch_image* mutatee_addr_space, BPatch_function* f)
 {
     bool          info1, info2;
     unsigned long baseAddr, lastAddr;
@@ -803,7 +841,7 @@ get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f,
     else
         typeName = "void";
 
-    info1 = mutateeAddressSpace->getSourceLines((unsigned long) baseAddr, lines);
+    info1 = mutatee_addr_space->getSourceLines((unsigned long) baseAddr, lines);
 
     if(info1)
     {
@@ -816,8 +854,7 @@ get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f,
 
         if(col1 < 0)
             col1 = 0;
-        info2 =
-            mutateeAddressSpace->getSourceLines((unsigned long) (lastAddr - 1), lines);
+        info2 = mutatee_addr_space->getSourceLines((unsigned long) (lastAddr - 1), lines);
         if(info2)
         {
             row2 = lines[1].lineNumber();
@@ -826,15 +863,20 @@ get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f,
                 col2 = 0;
             if(row2 < row1)
                 row1 = row2;
-            sprintf(newname, "%s %s()/%s:%i", typeName, fname, file.c_str(), row1);
+            return function_signature(typeName, fname, filename, { row1, 0 }, { 0, 0 },
+                                      false, info1, info2);
         }
         else
         {
-            sprintf(newname, "%s %s()/%s:%i", typeName, fname, file.c_str(), row1);
+            return function_signature(typeName, fname, filename, { row1, 0 }, { 0, 0 },
+                                      false, info1, info2);
         }
     }
     else
-        strcpy(newname, fname);
+    {
+        return function_signature(typeName, fname, "", { 0, 0 }, { 0, 0 }, false, false,
+                                  false);
+    }
 }
 
 //======================================================================================//
@@ -889,42 +931,42 @@ load_dependent_libraries(BPatch_binaryEdit* bedit, char* bindings)
 //
 int
 timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
-                        char* libname, char* staticlibname, char* bindings)
+                        char* sharedlibname, char* staticlibname, char* bindings)
 {
     using namespace std;
     BPatch_Vector<BPatch_point*> mpiinit;
     BPatch_function*             mpiinitstub = nullptr;
 
     dprintf("Inside timemory_rewrite_binary, name=%s, out=%s\n", mutateeName, outfile);
-    BPatch_binaryEdit* mutateeAddressSpace = bpatch->openBinary(mutateeName, false);
+    BPatch_binaryEdit* mutatee_addr_space = bpatch->openBinary(mutateeName, false);
 
-    if(mutateeAddressSpace == nullptr)
+    if(mutatee_addr_space == nullptr)
     {
         fprintf(stderr, "Failed to open binary %s\n", mutateeName);
         return -1;
     }
 
-    BPatch_image*                    mutateeImage = mutateeAddressSpace->getImage();
+    BPatch_image*                    mutateeImage = mutatee_addr_space->getImage();
     BPatch_Vector<BPatch_function*>& allFuncs     = *mutateeImage->getProcedures();
     bool                             isStaticExecutable;
 
-    isStaticExecutable = mutateeAddressSpace->isStaticExecutable();
+    isStaticExecutable = mutatee_addr_space->isStaticExecutable();
 
     if(isStaticExecutable)
     {
-        bool result = mutateeAddressSpace->loadLibrary(staticlibname);
+        bool result = mutatee_addr_space->loadLibrary(staticlibname);
         dprintf("staticlibname loaded result = %d\n", result);
         assert(result);
     }
     else
     {
-        bool result = mutateeAddressSpace->loadLibrary(libname);
+        bool result = mutatee_addr_space->loadLibrary(sharedlibname);
         if(!result)
         {
             printf("Error: loadLibrary(%s) failed. Please ensure that timemory's lib "
                    "directory is in your LD_LIBRARY_PATH environment variable and retry."
                    "\n",
-                   libname);
+                   sharedlibname);
         }
         assert(result);
     }
@@ -961,19 +1003,31 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
         return -1;
     }
 
-    BPatch_Vector<BPatch_point*>* mainEntry = mainFunc->findPoint(BPatch_entry);
-    assert(mainEntry);
-    assert(mainEntry->size());
-    assert((*mainEntry)[0]);
+    BPatch_Vector<BPatch_point*>* main_init_entry = mainFunc->findPoint(BPatch_entry);
+    BPatch_Vector<BPatch_point*>* main_fini_entry = mainFunc->findPoint(BPatch_exit);
 
-    mutateeAddressSpace->beginInsertionSet();
+    assert(main_init_entry);
+    assert(main_init_entry->size());
+    assert((*main_init_entry)[0]);
+
+    assert(main_fini_entry);
+    assert(main_fini_entry->size());
+    assert((*main_fini_entry)[0]);
+
+    mutatee_addr_space->beginInsertionSet();
 
     int              ismpi = check_if_mpi(mutateeImage, mpiinit, mpiinitstub, true);
     BPatch_constExpr isMPI(ismpi);
+
     BPatch_Vector<BPatch_snippet*> init_params;
+    BPatch_Vector<BPatch_snippet*> fini_params;
     init_params.push_back(&isMPI);
+
     BPatch_funcCallExpr setup_call(*setupFunc, init_params);
-    funcNames.push_back(&setup_call);
+    BPatch_funcCallExpr cleanup_call(*cleanupFunc, fini_params);
+
+    init_names.push_back(&setup_call);
+    fini_names.push_back(&cleanup_call);
 
     if(ismpi && mpiinitstub)
     {
@@ -985,16 +1039,14 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
         BPatch_Vector<BPatch_snippet*> mpiinitargs;
         mpiinitargs.push_back(&getrank);
         BPatch_funcCallExpr initmpi(*mpiinitstub, mpiinitargs);
-        mutateeAddressSpace->insertSnippet(initmpi, mpiinit, BPatch_callAfter,
-                                           BPatch_firstSnippet);
+        mutatee_addr_space->insertSnippet(initmpi, mpiinit, BPatch_callAfter,
+                                          BPatch_firstSnippet);
     }
 
     for(auto it = allFuncs.begin(); it != allFuncs.end(); ++it)
     {
         char fname[FUNCNAMELEN];
         (*it)->getName(fname, FUNCNAMELEN);
-
-        bool okayToInstr = true;
 
         // STATIC EXECUTABLE FUNCTION EXCLUDE
         // Temporarily avoid some functions -- this isn't a solution
@@ -1011,17 +1063,28 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
                     char moduleName[MUTNAMELEN];
                     funcModule->getName(moduleName, MUTNAMELEN);
                     if(strcmp(moduleName, "DEFAULT_MODULE") == 0)
-                        okayToInstr = false;
+                        continue;
                 }
             }
         }
 
-        if(okayToInstr && !routine_constraint(fname))
-        {
-            insert_trace(*it, mutateeAddressSpace, entryTrace, exitTrace);
-        }
+        char modname[1024];
+        (*it)->getModuleName(modname, 1024);
+        if(strstr(modname, "libdyninstAPI_RT"))
+            continue;
 
-        if(okayToInstr && !routine_constraint(fname) && instRoutineAtLoopLevel)
+        if(module_constraint(modname))
+            continue;
+
+        auto name = get_func_file_line_info(mutatee_addr_space->getImage(), *it);
+        if(name.get().empty() || routine_constraint(fname) ||
+           routine_constraint(name.m_name.c_str()) || !instrument_entity(name.m_name) ||
+           !instrument_entity(name.get()))
+            continue;
+
+        insert_trace(*it, mutatee_addr_space, entryTrace, exitTrace, name);
+
+        if(loop_level_instr)
         {
             dprintf("Generating CFG at loop level: %s\n", fname);
             BPatch_flowGraph*                     flow = (*it)->getCFG();
@@ -1035,20 +1098,23 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
                 loopIt != basicLoop.end(); loopIt++)
             {
                 dprintf("Instrumenting at the loop level: %s\n", fname);
-                insert_trace(*it, mutateeAddressSpace, entryTrace, exitTrace, flow,
-                             *loopIt);
+                insert_trace(*it, mutatee_addr_space, entryTrace, exitTrace, flow,
+                             *loopIt, name);
             }
         }
     }
 
-    BPatch_sequence sequence(funcNames);
-    mutateeAddressSpace->insertSnippet(sequence, *mainEntry, BPatch_callBefore,
-                                       BPatch_firstSnippet);
-    mutateeAddressSpace->finalizeInsertionSet(false, nullptr);
+    BPatch_sequence init_sequence(init_names);
+    mutatee_addr_space->insertSnippet(init_sequence, *main_init_entry, BPatch_callBefore,
+                                      BPatch_firstSnippet);
+    BPatch_sequence fini_sequence(fini_names);
+    mutatee_addr_space->insertSnippet(fini_sequence, *main_fini_entry, BPatch_callAfter,
+                                      BPatch_firstSnippet);
+    mutatee_addr_space->finalizeInsertionSet(false, nullptr);
 
     if(isStaticExecutable)
     {
-        bool loadResult = load_dependent_libraries(mutateeAddressSpace, bindings);
+        bool loadResult = load_dependent_libraries(mutatee_addr_space, bindings);
         if(!loadResult)
         {
             fprintf(stderr,
@@ -1062,10 +1128,10 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     if(ret == 0)
         fprintf(stderr, "Error chdir('result') = %i\n", ret);
 
-    mutateeAddressSpace->writeFile(modifiedFileName.c_str());
+    mutatee_addr_space->writeFile(modifiedFileName.c_str());
     if(!isStaticExecutable)
     {
-        // unlink(libname);
+        // unlink(sharedlibname);
     }
     return 0;
 }
@@ -1082,18 +1148,23 @@ main(int argc, char** argv)
     tim::set_env<std::string>("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
 #endif
 
+    argv0                  = argv[0];
+    auto env_collect_paths = tim::get_env<std::string>("TIMEMORY_COLLECTION_PATH", "");
+    prefix_collection_path(env_collect_paths, collection_paths);
+
     bool loadlib = false;      // do we have a library loaded? default false
     char mutname[MUTNAMELEN];  // variable to hold mutator name (ie timemory-run)
     char outfile[MUTNAMELEN];  // variable to hold output file
     char fname[FUNCNAMELEN];
-    char libname[FUNCNAMELEN];  // function name and library name variables
+    char libname[FUNCNAMELEN];
+    char sharedlibname[FUNCNAMELEN];  // function name and library name variables
     char staticlibname[FUNCNAMELEN];
-    char baselibname[FUNCNAMELEN];
     BPatch_process*              appThread = nullptr;  // application thread
     BPatch_Vector<BPatch_point*> mpiinit;
     BPatch_function*             mpiinitstub = nullptr;
     bpatch                                   = new BPatch;  // create a new version.
     std::string functions;  // string variable to hold function names
+    std::string inputlib = "";
 
     // bpatch->setTrampRecursive(true); /* enable C++ support */
     // bpatch->setBaseTrampDeletion(true);
@@ -1164,6 +1235,10 @@ main(int argc, char** argv)
         .description("Verbose output")
         .count(0);
     parser.add_argument()
+        .names({ "-e", "--error" })
+        .description("All warnings produce runtime errors")
+        .count(0);
+    parser.add_argument()
         .names({ "-o", "--output" })
         .description("Enable binary-rewrite to new executable")
         .count(1);
@@ -1180,6 +1255,28 @@ main(int argc, char** argv)
     parser.add_argument()
         .names({ "-l", "--instrument-loops" })
         .description("Instrument at the loop level")
+        .count(0);
+    parser.add_argument()
+        .names({ "-C", "--collection" })
+        .description("Include text file(s) listing function to include or exclude "
+                     "(prefix with '!' to exclude)");
+    parser.add_argument()
+        .names({ "-p", "--collection-path" })
+        .description("Additional path(s) to folders containing collection files");
+    parser.add_argument()
+        .names({ "-s", "--stubs" })
+        .description("Instrument with library stubs for LD_PRELOAD")
+        .count(0);
+    parser.add_argument()
+        .names({ "-L", "--library" })
+        .description("Library with instrumentation routines (default: \"libtimemory\")")
+        .count(1);
+    parser.add_argument()
+        .names({ "-S", "--stdlib" })
+        .description(
+            "Enable instrumentation of C++ standard library functions. Use with caution! "
+            "timemory uses the STL internally so this may cause deadlocks. Use the "
+            "'-E/--regex-exclude' option to exclude any function causing deadlocks")
         .count(0);
 
     if(_cmdc == 0)
@@ -1205,19 +1302,17 @@ main(int argc, char** argv)
         return 0;
     }
 
+    if(parser.exists("e"))
+        werror = true;
+
     if(parser.exists("v"))
-    {
-        /* Verbose option set */
         debugPrint = 1;
-    }
 
     if(parser.exists("m"))
-    {
         main_fname = parser.get<std::string>("m");
-    }
 
     if(parser.exists("l"))
-        instRoutineAtLoopLevel = true;
+        loop_level_instr = true;
 
     if(_cmdc == 0 && parser.exists("c"))
     {
@@ -1243,6 +1338,15 @@ main(int argc, char** argv)
         auto key      = parser.get<std::string>("o");
         strcpy(outfile, key.c_str());
     }
+
+    if(parser.exists("s") && !parser.exists("L"))
+        inputlib += "stubs/";
+
+    if(!parser.exists("L"))
+        inputlib += "libtimemory";
+
+    if(parser.exists("S"))
+        stl_func_instr = true;
 
     //----------------------------------------------------------------------------------//
     //
@@ -1280,15 +1384,50 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
+    //----------------------------------------------------------------------------------//
+    //
+    //                              COLLECTION OPTIONS
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    if(parser.exists("p"))
+    {
+        auto tmp = parser.get<std::vector<std::string>>("p");
+        for(auto itr : tmp)
+            prefix_collection_path(itr, collection_paths);
+    }
+
+    if(parser.exists("C"))
+    {
+        auto tmp = parser.get<std::vector<std::string>>("C");
+        for(auto itr : tmp)
+        {
+            if(itr.find('!') == 0)
+                read_collection(itr.substr(1), collection_excludes);
+            else
+                read_collection(itr, collection_includes);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    //                              MAIN
+    //
+    //----------------------------------------------------------------------------------//
+
     char* bindings = (char*) malloc(1024);
     dprintf("mutatee name = %s\n", mutname);
 
     // did we load a library?  if not, load the default
+    auto generate_libname = [](char* _targ, std::string _base, std::string _ext) {
+        sprintf(_targ, "%s%s", _base.c_str(), _ext.c_str());
+    };
+
     if(!loadlib)
     {
-        sprintf(libname, "libtimemory.so");
-        sprintf(baselibname, "libtimemory");
-        sprintf(staticlibname, "libtimemory.a");
+        generate_libname(libname, inputlib, "");
+        generate_libname(sharedlibname, inputlib, ".so");
+        generate_libname(staticlibname, inputlib, ".a");
         loadlib = true;
     }
 
@@ -1299,7 +1438,7 @@ main(int argc, char** argv)
 
     if(binaryRewrite)
     {
-        timemory_rewrite_binary(bpatch, mutname, outfile, (char*) libname,
+        timemory_rewrite_binary(bpatch, mutname, outfile, (char*) sharedlibname,
                                 (char*) staticlibname, bindings);
         char cwd[FUNCNAMELEN];
         auto ret = getcwd(cwd, FUNCNAMELEN);
@@ -1335,7 +1474,7 @@ main(int argc, char** argv)
     {
         dprintf("Before appThread->loadLibrary\n");
         // try and load the library
-        bool ret = appThread->loadLibrary(libname, true);
+        bool ret = appThread->loadLibrary(sharedlibname, true);
 
         if(ret == true)
         {
@@ -1347,7 +1486,7 @@ main(int argc, char** argv)
             {
                 (*m)[i]->getName(name, sizeof(name));
                 auto _name = std::string(name);
-                if(_name.find(baselibname) != std::string::npos)
+                if(_name.find(libname) != std::string::npos)
                 {
                     found = true;
                     break;
@@ -1355,17 +1494,17 @@ main(int argc, char** argv)
             }
             if(found)
             {
-                dprintf("%s loaded properly\n", libname);
+                dprintf("%s loaded properly\n", sharedlibname);
             }
             else
             {
-                fprintf(stderr, "Error in loading library %s\n", libname);
+                fprintf(stderr, "Error in loading library %s\n", sharedlibname);
                 return EXIT_FAILURE;
             }
         }
         else
         {
-            fprintf(stderr, "ERROR:%s not loaded properly. \n", libname);
+            fprintf(stderr, "ERROR:%s not loaded properly. \n", sharedlibname);
             fprintf(stderr, "Please make sure that its path is in your LD_LIBRARY_PATH "
                             "environment variable.\n");
             return EXIT_FAILURE;
@@ -1389,24 +1528,26 @@ main(int argc, char** argv)
     dprintf("Before modules loop\n");
     for(size_t j = 0; j < m->size(); j++)
     {
+        if(!(*m)[j]->getProcedures())
+            continue;
         sprintf(modulename, "Module %s\n", (*m)[j]->getName(fname, FUNCNAMELEN));
-        BPatch_Vector<BPatch_function*>* p = (*m)[j]->getProcedures();
+        BPatch_Vector<BPatch_function*> p = *((*m)[j]->getProcedures());
         dprintf("%s", modulename);
 
         if(!module_constraint(fname))
         {  // constraint
-            for(size_t i = 0; i < p->size(); ++i)
+            for(size_t i = 0; i < p.size(); ++i)
             {
                 // For all procedures within the module, iterate
-                (*p)[i]->getName(fname, FUNCNAMELEN);
-                if(!routine_constraint(fname))
+                p[i]->getName(fname, FUNCNAMELEN);
+                auto name = get_func_file_line_info(appImage, p[i]);
+                if(!routine_constraint(fname) && !name.get().empty() &&
+                   !routine_constraint(name.m_name.c_str()))
                 {
                     // routines that are ok to instrument
                     // get full source information
-                    // dprintf("Instrumenting %s\n", fname);
-                    get_func_file_line_info(appImage, (*p)[i], fname);
                     functions.append("|");
-                    functions.append(fname);
+                    functions.append(name.get().c_str());
                 }
             }
         }
@@ -1440,33 +1581,36 @@ main(int argc, char** argv)
 
     for(size_t j = 0; j < m->size(); j++)
     {
+        if(!(*m)[j]->getProcedures())
+            continue;
         sprintf(modulename, "Module %s\n", (*m)[j]->getName(fname, FUNCNAMELEN));
-        BPatch_Vector<BPatch_function*>* p = (*m)[j]->getProcedures();
+        BPatch_Vector<BPatch_function*> p = *((*m)[j]->getProcedures());
         dprintf("%s", modulename);
 
         if(!module_constraint(fname))
         {
             // constraint
-            for(size_t i = 0; i < p->size(); ++i)
+            for(size_t i = 0; i < p.size(); ++i)
             {
                 // For all procedures within the module, iterate
-                (*p)[i]->getName(fname, FUNCNAMELEN);
+                p[i]->getName(fname, FUNCNAMELEN);
+                inFunc    = p[i];
+                auto name = get_func_file_line_info(appImage, inFunc);
                 dprintf("Name %s\n", fname);
-                if(!routine_constraint(fname))
+                if(!routine_constraint(fname) && !name.m_name.empty() &&
+                   !routine_constraint(name.m_name.c_str()))
                 {
                     // routines that are ok to instrument
-                    inFunc = (*p)[i];
+                    dprintf("Instrumenting |> [ %s ]\n", name.m_name.c_str());
 
                     auto callee_entry_args = new BPatch_Vector<BPatch_snippet*>();
                     auto callee_exit_args  = new BPatch_Vector<BPatch_snippet*>();
 
-                    char name[1024];
-                    get_func_file_line_info(appImage, inFunc, name);
-
                     auto ret = new BPatch_retExpr();
-                    callee_entry_args->push_back(new BPatch_constExpr(name));
+                    callee_entry_args->push_back(
+                        new BPatch_constExpr(name.get().c_str()));
                     callee_entry_args->push_back(ret);
-                    callee_exit_args->push_back(new BPatch_constExpr(name));
+                    callee_exit_args->push_back(new BPatch_constExpr(name.get().c_str()));
 
                     // dprintf("Instrumenting-> %s Entry\n", fname);
                     invoke_routine_in_func(appThread, appImage, inFunc, BPatch_entry,

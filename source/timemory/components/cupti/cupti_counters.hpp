@@ -314,8 +314,8 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         return _data;
     }
 
-    template <typename _Tp>
-    using array_t = std::vector<_Tp>;
+    template <typename Tp>
+    using array_t = std::vector<Tp>;
 
     //----------------------------------------------------------------------------------//
     // array of descriptions
@@ -461,19 +461,19 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     //----------------------------------------------------------------------------------//
 
 private:
-    template <typename _Tp>
+    template <typename Tp>
     struct writer
     {
-        using const_iterator = typename _Tp::const_iterator;
-        _Tp& obj;
-        writer(_Tp& _obj)
+        using const_iterator = typename Tp::const_iterator;
+        Tp& obj;
+        writer(Tp& _obj)
         : obj(_obj)
         {}
 
         const_iterator begin() const { return obj.begin(); }
         const_iterator end() const { return obj.end(); }
 
-        friend std::ostream& operator<<(std::ostream& os, const writer<_Tp>& _obj)
+        friend std::ostream& operator<<(std::ostream& os, const writer<Tp>& _obj)
         {
             auto sz = std::distance(_obj.begin(), _obj.end());
             for(auto itr = _obj.begin(); itr != _obj.end(); ++itr)

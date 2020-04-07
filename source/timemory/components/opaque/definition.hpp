@@ -61,7 +61,7 @@ namespace factory
 template <typename Tp, typename Label, typename... Args,
           enable_if_t<(concepts::is_comp_wrapper<Tp>::value), int> = 0>
 static auto
-create_heap_variadic(Label&& _label, scope::data _scope, Args&&... args)
+create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
     return new Tp(std::forward<Label>(_label), true, _scope, std::forward<Args>(args)...);
 }
@@ -71,7 +71,7 @@ create_heap_variadic(Label&& _label, scope::data _scope, Args&&... args)
 template <typename Tp, typename Label, typename... Args,
           enable_if_t<(concepts::is_auto_wrapper<Tp>::value), int> = 0>
 static auto
-create_heap_variadic(Label&& _label, scope::data _scope, Args&&... args)
+create_heap_variadic(Label&& _label, scope::config _scope, Args&&... args)
 {
     return new Tp(std::forward<Label>(_label), _scope, std::forward<Args>(args)...);
 }
@@ -114,13 +114,13 @@ template <typename Toolset, enable_if_t<(trait::is_available<Toolset>::value &&
                                          !concepts::is_wrapper<Toolset>::value),
                                         int> = 0>
 auto
-get_opaque(scope::data _scope)
+get_opaque(scope::config _scope)
 {
     auto _typeid_hash = get_opaque_hash(demangle<Toolset>());
 
-    auto _init = []() {};
+    auto _init = []() { operation::init_storage<Toolset>(); };
 
-    auto _start = [=](const string_t& _prefix, scope::data arg_scope) {
+    auto _start = [=](const string_t& _prefix, scope::config arg_scope) {
         auto                            _hash   = add_hash_id(_prefix);
         Toolset*                        _result = new Toolset{};
         operation::set_prefix<Toolset>  _opprefix(*_result, _prefix);
@@ -132,10 +132,13 @@ get_opaque(scope::data _scope)
     };
 
     auto _stop = [=](void* v_result) {
-        Toolset*                     _result = static_cast<Toolset*>(v_result);
-        operation::stop<Toolset>     _opstop(*_result);
-        operation::pop_node<Toolset> _oppop(*_result);
-        consume_parameters(_opstop, _oppop);
+        if(v_result)
+        {
+            Toolset*                     _result = static_cast<Toolset*>(v_result);
+            operation::stop<Toolset>     _opstop(*_result);
+            operation::pop_node<Toolset> _oppop(*_result);
+            consume_parameters(_opstop, _oppop);
+        }
     };
 
     auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
@@ -164,7 +167,7 @@ get_opaque(scope::data _scope)
 template <typename Toolset, typename... Args,
           enable_if_t<(concepts::is_wrapper<Toolset>::value), int> = 0>
 auto
-get_opaque(scope::data _scope, Args&&... args)
+get_opaque(scope::config _scope, Args&&... args)
 {
     using Toolset_t = Toolset;
 
@@ -178,7 +181,7 @@ get_opaque(scope::data _scope, Args&&... args)
 
     auto _init = []() {};
 
-    auto _start = [=, &args...](const string_t& _prefix, scope::data arg_scope) {
+    auto _start = [=, &args...](const string_t& _prefix, scope::config arg_scope) {
         Toolset_t* _result = create_heap_variadic<Toolset_t>(_prefix, _scope + arg_scope,
                                                              std::forward<Args>(args)...);
         _result->start();
@@ -186,8 +189,11 @@ get_opaque(scope::data _scope, Args&&... args)
     };
 
     auto _stop = [=](void* v_result) {
-        Toolset_t* _result = static_cast<Toolset_t*>(v_result);
-        _result->stop();
+        if(v_result)
+        {
+            Toolset_t* _result = static_cast<Toolset_t*>(v_result);
+            _result->stop();
+        }
     };
 
     auto _get = [=](void* v_result, void*& ptr, size_t _hash) {
@@ -216,7 +222,7 @@ get_opaque(scope::data _scope, Args&&... args)
 template <typename Toolset, typename... Args,
           enable_if_t<(!trait::is_available<Toolset>::value), int> = 0>
 auto
-get_opaque(scope::data, Args&&...)
+get_opaque(scope::config, Args&&...)
 {
     return opaque{};
 }
@@ -330,7 +336,7 @@ get_opaque()
 //
 template <typename Toolset>
 opaque
-get_opaque(scope::data _scope)
+get_opaque(scope::config _scope)
 {
     return hidden::get_opaque<Toolset>(_scope);
 }

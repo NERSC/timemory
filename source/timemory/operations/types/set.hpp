@@ -101,19 +101,20 @@ struct set_scope
 
     TIMEMORY_DELETED_OBJECT(set_scope)
 
-    set_scope(type& obj, scope::data _data);
+    set_scope(type& obj, scope::config _data);
 
 private:
     //  If the component has a set_scope(...) member function
     template <typename T = type>
-    auto sfinae(T& obj, int, scope::data _data) -> decltype(obj.set_scope(_data), void())
+    auto sfinae(T& obj, int, scope::config _data)
+        -> decltype(obj.set_scope(_data), void())
     {
         obj.set_scope(_data);
     }
 
     //  If the component does not have a set_scope(...) member function
     template <typename T = type>
-    auto sfinae(T&, long, scope::data) -> decltype(void(), void())
+    auto sfinae(T&, long, scope::config) -> decltype(void(), void())
     {}
 };
 //
@@ -141,7 +142,7 @@ set_prefix<Tp>::set_prefix(type& obj, const string_t& prefix)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-set_scope<Tp>::set_scope(type& obj, scope::data _data)
+set_scope<Tp>::set_scope(type& obj, scope::config _data)
 {
     if(!trait::runtime_enabled<type>::get())
         return;

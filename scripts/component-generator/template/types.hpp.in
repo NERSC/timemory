@@ -30,12 +30,37 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
 // TIMEMORY_DECLARE_COMPONENT(@CXX_STRUCT@)
 //
+//--------------------------------------------------------------------------------------//
+//
+//                              STATISTICS
+//
+//--------------------------------------------------------------------------------------//
+//
+// TIMEMORY_STATISTICS_TYPE(component::@CXX_STRUCT@, @CXX_STRUCT_STAT_TYPE@)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              IS AVAILABLE
+//
+//--------------------------------------------------------------------------------------//
+//
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(@SOME_TRAIT@, component::@CXX_STRUCT@, true_type)
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(@SOME_TRAIT@, component::@CXX_STRUCT@, false_type)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              PROPERTIES
+//
+//--------------------------------------------------------------------------------------//
+//
+// TIMEMORY_PROPERTY_SPECIALIZATION(@CXX_STRUCT@, @CXX_ENUM@, "@STRING_ALIASES@", ...)
+//
 //======================================================================================//
-
-#include "timemory/components/@COMPONENT_FOLDER@/properties.hpp"
-#include "timemory/components/@COMPONENT_FOLDER@/traits.hpp"

@@ -109,14 +109,14 @@ is_initialized()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline void
-initialize(_Args&&... _args)
+initialize(ArgsT&&... _args)
 {
 #if defined(TIMEMORY_USE_UPCXX)
-    return upc::initialize(std::forward<_Args>(_args)...);
+    return upc::initialize(std::forward<ArgsT>(_args)...);
 #elif defined(TIMEMORY_USE_MPI)
-    return mpi::initialize(std::forward<_Args>(_args)...);
+    return mpi::initialize(std::forward<ArgsT>(_args)...);
 #else
     consume_parameters(_args...);
 #endif
@@ -136,14 +136,14 @@ finalize()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline int32_t
-rank(_Args&&... _args)
+rank(ArgsT&&... _args)
 {
 #if defined(TIMEMORY_USE_UPCXX)
-    return upc::rank(std::forward<_Args>(_args)...);
+    return upc::rank(std::forward<ArgsT>(_args)...);
 #elif defined(TIMEMORY_USE_MPI)
-    return mpi::rank(std::forward<_Args>(_args)...);
+    return mpi::rank(std::forward<ArgsT>(_args)...);
 #else
     consume_parameters(_args...);
     return 0;
@@ -152,14 +152,14 @@ rank(_Args&&... _args)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline int32_t
-size(_Args&&... _args)
+size(ArgsT&&... _args)
 {
 #if defined(TIMEMORY_USE_UPCXX)
-    return upc::size(std::forward<_Args>(_args)...);
+    return upc::size(std::forward<ArgsT>(_args)...);
 #elif defined(TIMEMORY_USE_MPI)
-    return mpi::size(std::forward<_Args>(_args)...);
+    return mpi::size(std::forward<ArgsT>(_args)...);
 #else
     consume_parameters(_args...);
     return 1;

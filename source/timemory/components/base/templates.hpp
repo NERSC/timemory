@@ -121,7 +121,7 @@ base<Tp, Value>::load() const
 template <typename Tp, typename Value>
 template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
 void
-base<Tp, Value>::insert_node(scope::data _scope, int64_t _hash)
+base<Tp, Value>::insert_node(scope::config _scope, int64_t _hash)
 {
     if(!is_on_stack)
     {

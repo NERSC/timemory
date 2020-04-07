@@ -134,7 +134,7 @@ add_timemory_google_test(apply_tests
                     timemory-plotting timemory-analysis-tools
                     ${_LIBRARY})
 
-if(TIMEMORY_USE_ARCH)
+if(TIMEMORY_USE_ARCH AND OFF)
     add_timemory_google_test(aligned_allocator_tests
         DISCOVER_TESTS
         SOURCES         aligned_allocator_tests.cpp

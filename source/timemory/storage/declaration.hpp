@@ -422,7 +422,7 @@ public:
 
     void insert_init();
 
-    iterator insert(scope::data scope_data, const Type& obj, uint64_t hash_id);
+    iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id);
 
     template <typename Vp>
     void append(const secondary_data_t<Vp>& _secondary);
@@ -470,7 +470,7 @@ private:
 //
 template <typename Type>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert(scope::data scope_data, const Type& obj, uint64_t hash_id)
+storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
 {
     insert_init();
     auto hash_depth = scope_data.compute_depth(_data().depth());

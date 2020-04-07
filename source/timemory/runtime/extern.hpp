@@ -43,7 +43,6 @@
 #include "timemory/components/user_bundle/extern.hpp"
 #include "timemory/containers/extern.hpp"
 #include "timemory/environment/extern.hpp"
-#include "timemory/ert/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"
 #include "timemory/operations/extern.hpp"
@@ -55,11 +54,11 @@
 #include "timemory/runtime/properties.hpp"
 #include "timemory/types.hpp"
 //
-TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, scope::data)
-TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, scope::data)
-TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_list_bundle, scope::data)
-TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ompt_bundle, scope::data)
-TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_mpip_bundle, scope::data)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_global_bundle, scope::config)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_tuple_bundle, scope::config)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_list_bundle, scope::config)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ompt_bundle, scope::config)
+TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_mpip_bundle, scope::config)
 //
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(full_auto_timer_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(minimal_auto_timer_t)

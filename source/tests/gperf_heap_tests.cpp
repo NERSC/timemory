@@ -64,9 +64,9 @@ get_test_name()
 }
 
 // this function ensures an allocation cannot be optimized
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());

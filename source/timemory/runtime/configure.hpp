@@ -92,7 +92,7 @@ void
 configure(const Container<Intp, ExtraArgs...>& components, bool flat)
 {
     for(auto itr : components)
-        runtime::configure<Bundle>(itr, scope::data{ flat });
+        runtime::configure<Bundle>(itr, scope::config{ flat });
 }
 
 //--------------------------------------------------------------------------------------//

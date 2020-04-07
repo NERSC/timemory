@@ -52,14 +52,14 @@ struct kokkos {
     using stream_t = cuda::stream_t;
     using fp16_t   = float;
 
-    template <typename _Tp>
-    static _Tp* alloc(size_t nsize)
+    template <typename Tp>
+    static Tp* alloc(size_t nsize)
     {
-        return static_cast<_Tp>(Kokkos::kokkos_malloc(nsize * sizeof(_Tp)));
+        return static_cast<Tp>(Kokkos::kokkos_malloc(nsize * sizeof(Tp)));
     }
 
-    template <typename _Tp>
-    static void free(_Tp* ptr)
+    template <typename Tp>
+    static void free(Tp* ptr)
     {
         Kokkos::kokkos_free(ptr);
     }
@@ -68,16 +68,16 @@ struct kokkos {
 };
 }  // namespace device
 namespace ert {
-template <typename _Tp, typename _Counter>
-class counter<device::kokkos, _Tp, _Counter> {
+template <typename Tp, typename _Counter>
+class counter<device::kokkos, Tp, _Counter> {
 public:
-    using _Device       = device::kokkos;
+    using DeviceT       = device::kokkos;
     using string_t      = std::string;
     using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
     using counter_type  = _Counter;
     using ert_data_t    = exec_data<_Counter>;
-    using this_type     = counter<_Device, _Tp, _Counter>;
+    using this_type     = counter<DeviceT, Tp, _Counter>;
     using callback_type = std::function<void(uint64_t, this_type&)>;
     using data_type     = typename ert_data_t::value_type;
     using data_ptr_t    = std::shared_ptr<ert_data_t>;
@@ -99,7 +99,7 @@ public:
     // standard creation
     //
     explicit counter(const exec_params& _params, data_ptr_t _exec_data,
-                     uint64_t _align = 8 * sizeof(_Tp))
+                     uint64_t _align = 8 * sizeof(Tp))
     : params(_params)
     , align(_align)
     , data(_exec_data)
@@ -111,7 +111,7 @@ public:
     // overload how to create the counter with a callback function
     //
     counter(const exec_params& _params, const callback_type& _func, data_ptr_t _exec_data,
-            uint64_t _align = 8 * sizeof(_Tp))
+            uint64_t _align = 8 * sizeof(Tp))
     : params(_params)
     , align(_align)
     , data(_exec_data)
@@ -125,19 +125,19 @@ public:
     ///  allocate a buffer for the ERT calculation
     ///     uses this function if device is CPU or device is GPU and type is not half2
     ///
-    Kokkos::View<_Tp*> get_buffer() const
+    Kokkos::View<Tp*> get_buffer() const
     {
-        align = std::max<uint64_t>(align, 8 * sizeof(_Tp));
+        align = std::max<uint64_t>(align, 8 * sizeof(Tp));
         compute_internal();
-        Kokkos::View<_Tp*> buffer("counter_buffer", nsize);
-        for(uint64_t i = 0; i < nsize; ++i) buffer(i) = _Tp(1.0);
+        Kokkos::View<Tp*> buffer("counter_buffer", nsize);
+        for(uint64_t i = 0; i < nsize; ++i) buffer(i) = Tp(1.0);
         return buffer;
     }
 
     //----------------------------------------------------------------------------------//
     //  destroy associated buffer
     //
-    void destroy_buffer(Kokkos::View<_Tp*>) const {}
+    void destroy_buffer(Kokkos::View<Tp*>) const {}
 
     //----------------------------------------------------------------------------------//
     // execute the callback that may customize the thread before returning the object
@@ -173,9 +173,9 @@ public:
                 ss << "scalar_op";
         }
 
-        auto      _label = tim::demangle<_Tp>();
+        auto      _label = tim::demangle<Tp>();
         data_type _data(ss.str(), working_set, trials, total_bytes, total_ops, nops,
-                        _counter, _Device::name(), _label, _itrp);
+                        _counter, DeviceT::name(), _label, _itrp);
 
 #if !defined(_WINDOWS)
         using namespace tim::stl::ostream;
@@ -192,10 +192,10 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Func>
-    void set_callback(_Func&& _f)
+    template <typename FuncT>
+    void set_callback(FuncT&& _f)
     {
-        configure_callback = std::forward<_Func>(_f);
+        configure_callback = std::forward<FuncT>(_f);
     }
 
     //----------------------------------------------------------------------------------//
@@ -251,7 +251,7 @@ public:
     exec_params        params                      = exec_params();
     int                bytes_per_element           = 0;
     int                memory_accesses_per_element = 0;
-    mutable uint64_t   align                       = sizeof(_Tp);
+    mutable uint64_t   align                       = sizeof(Tp);
     mutable uint64_t   nsize                       = 0;
     mutable data_ptr_t data                        = std::make_shared<ert_data_t>();
     std::string        label                       = "";
@@ -268,7 +268,7 @@ private:
     {
         nsize = params.memory_max / params.nproc / params.nthreads;
         nsize = nsize & (~(align - 1));
-        nsize = nsize / sizeof(_Tp);
+        nsize = nsize / sizeof(Tp);
         nsize = std::max<uint64_t>(nsize, 1);
     }
 };
@@ -277,11 +277,11 @@ private:
 ///
 ///     This is the "main" function for ERT
 ///
-template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Counter,
+template <size_t _Nops, size_t... _Nextra, typename Tp, typename _Counter,
           typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
 void
-ops_kokkos(counter<device::kokkos, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
+ops_kokkos(counter<device::kokkos, Tp, _Counter>& _counter, _FuncOps&& ops_func,
            _FuncStore&& store_func)
 {
     using ull = long long unsigned;
@@ -350,7 +350,7 @@ ops_kokkos(counter<device::kokkos, _Tp, _Counter>& _counter, _FuncOps&& ops_func
             // start the timer or anything else being recorded
             ct.start();
 
-            _Tp alpha = static_cast<_Tp>(0.5);
+            Tp alpha = static_cast<Tp>(0.5);
             for(decltype(ntrials) j = 0; j < ntrials; ++j)
             {
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n), [=](int i) {
@@ -363,12 +363,12 @@ ops_kokkos(counter<device::kokkos, _Tp, _Counter>& _counter, _FuncOps&& ops_func
                     // e.g. ERT_FLOP == 4 means 2 calls
                     constexpr size_t NUM_REP = _Nops / 2;
                     constexpr size_t MOD_REP = _Nops % 2;
-                    _Tp              beta    = static_cast<_Tp>(0.8);
+                    Tp               beta    = static_cast<Tp>(0.8);
                     apply<void>::unroll<NUM_REP + MOD_REP, device::gpu>(ops_func, beta,
                                                                         buf[i], alpha);
                     store_func(buf[i], beta);
                 });
-                alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
+                alpha *= static_cast<Tp>(1.0 - 1.0e-8);
             }
 
             // wait master thread notifies to proceed
@@ -397,11 +397,11 @@ ops_kokkos(counter<device::kokkos, _Tp, _Counter>& _counter, _FuncOps&& ops_func
 ///     This is invokes the "main" function for ERT for all the desired "FLOPs" that
 ///     are unrolled in the kernel
 ///
-template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
+template <size_t _Nops, size_t... _Nextra, typename DeviceT, typename Tp,
           typename _Counter, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
 void
-ops_kokkos(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
+ops_kokkos(counter<DeviceT, Tp, _Counter>& _counter, _FuncOps&& ops_func,
            _FuncStore&& store_func)
 {
     // execute a single parameter
@@ -414,22 +414,22 @@ ops_kokkos(counter<_Device, _Tp, _Counter>& _counter, _FuncOps&& ops_func,
 ///
 ///     This is invoked when TIMEMORY_USER_ERT_FLOPS is empty
 ///
-template <size_t... _Nops, typename _Device, typename _Tp, typename _Counter,
+template <size_t... _Nops, typename DeviceT, typename Tp, typename _Counter,
           typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nops) == 0), int> = 0>
 void
-ops_kokkos(counter<_Device, _Tp, _Counter>&, _FuncOps&&, _FuncStore&&)
+ops_kokkos(counter<DeviceT, Tp, _Counter>&, _FuncOps&&, _FuncStore&&)
 {}
 
 //======================================================================================//
 
-template <typename _Tp, typename _Counter>
-struct executor<device::kokkos, _Tp, _Counter> {
+template <typename Tp, typename _Counter>
+struct executor<device::kokkos, Tp, _Counter> {
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
     using device_type        = device::kokkos;
-    using value_type         = _Tp;
+    using value_type         = Tp;
     using configuration_type = configuration<device::kokkos, value_type, _Counter>;
     using counter_type       = counter<device::kokkos, value_type, _Counter>;
     using this_type          = executor<device::kokkos, value_type, _Counter>;
@@ -456,14 +456,14 @@ public:
     //----------------------------------------------------------------------------------//
     //  specialize the counter callback
     //
-    template <typename _Func>
+    template <typename FuncT>
     executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
-             _Func&& _counter_callback)
+             FuncT&& _counter_callback)
     {
         try
         {
             auto _counter = config.executor(_data);
-            _counter.set_callback(std::forward<_Func>(_counter_callback));
+            _counter.set_callback(std::forward<FuncT>(_counter_callback));
             callback(_counter);
         } catch(std::exception& e)
         {
@@ -493,22 +493,22 @@ public:
     static void execute(counter_type& _counter)
     {
         // vectorization number of ops
-        static constexpr const int SIZE_BITS = sizeof(_Tp) * 8;
+        static constexpr const int SIZE_BITS = sizeof(Tp) * 8;
         static_assert(SIZE_BITS > 0, "Calculated bits size is not greater than zero");
         static constexpr const int VEC = TIMEMORY_VEC / SIZE_BITS;
         static_assert(VEC > 0, "Calculated vector size is zero");
 
         // functions
-        auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-        auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+        auto store_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b) { a = b; };
+        auto add_func   = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
             a = b + c;
         };
-        auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+        auto fma_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
             a = a * b + c;
         };
 
         // set bytes per element
-        _counter.bytes_per_element = sizeof(_Tp);
+        _counter.bytes_per_element = sizeof(Tp);
         // set number of memory accesses per element from two functions
         _counter.memory_accesses_per_element = 2;
 
@@ -539,7 +539,7 @@ using init_list_t    = std::set<uint64_t>;
 //--------------------------------------------------------------------------------------//
 //  this will invoke ERT with the specified settings
 //
-template <typename _Tp, typename _Device = device::kokkos>
+template <typename Tp, typename DeviceT = device::kokkos>
 void
 run_ert(ert_data_ptr_t, int64_t num_threads, int64_t min_size, int64_t max_data,
         int64_t num_streams = 0, int64_t block_size = 0, int64_t num_gpus = 0);
@@ -625,22 +625,22 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Device>
+template <typename Tp, typename DeviceT>
 void
 run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_data,
         int64_t num_streams, int64_t block_size, int64_t num_gpus)
 {
     // create a label for this test
-    auto dtype = tim::demangle(typeid(_Tp).name());
-    auto htype = _Device::name();
+    auto dtype = tim::demangle(typeid(Tp).name());
+    auto htype = DeviceT::name();
     auto label = TIMEMORY_JOIN("_", __FUNCTION__, dtype, htype, num_threads, "threads",
                                min_size, "min-ws", max_data, "max-size");
 
     printf("\n[ert-example]> Executing %s...\n", label.c_str());
 
-    using ert_executor_type = ert::executor<_Device, _Tp, counter_type>;
+    using ert_executor_type = ert::executor<DeviceT, Tp, counter_type>;
     using ert_config_type   = typename ert_executor_type::configuration_type;
-    using ert_counter_type  = ert::counter<_Device, _Tp, counter_type>;
+    using ert_counter_type  = ert::counter<DeviceT, Tp, counter_type>;
 
     //
     // simple modifications to override method number of threads, number of streams,

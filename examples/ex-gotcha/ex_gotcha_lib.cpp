@@ -36,16 +36,16 @@ namespace ext
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Func, typename _Incr>
-_Tp
-work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
+template <typename Tp, typename FuncT, typename IncrT>
+Tp
+work(const std::string& fname, int nitr, FuncT&& func, IncrT&& incr)
 {
 #if !defined(VERBOSE)
     tim::consume_parameters(fname);
 #endif
 
-    _Tp val = 2.0;
-    _Tp sum = 0.0;
+    Tp val = 2.0;
+    Tp sum = 0.0;
 
     for(int i = 0; i < nitr; ++i)
     {

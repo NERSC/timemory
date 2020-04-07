@@ -306,9 +306,9 @@ get_event_info(int evt_type)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 static inline void
-attach(int event_set, _Tp pid_or_tid)
+attach(int event_set, Tp pid_or_tid)
 {
     // inform PAPI that a previously registered thread is disappearing
 #if defined(TIMEMORY_USE_PAPI)

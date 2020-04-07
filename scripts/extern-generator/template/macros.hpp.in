@@ -39,19 +39,13 @@
 //
 #    define TIMEMORY_@CHECK@_LINKAGE(...) __VA_ARGS__
 //
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_@CHECK@_EXTERN)
+//
+#    define TIMEMORY_@CHECK@_LINKAGE(...) extern __VA_ARGS__
+//
 #else
 //
-#    if !defined(TIMEMORY_USE_EXTERN)
-//
-#        define TIMEMORY_@CHECK@_LINKAGE(...) inline __VA_ARGS__
-//
-#    else
-//
-#        define TIMEMORY_EXTERN_@CHECK@
-//
-#        define TIMEMORY_@CHECK@_LINKAGE(...) extern __VA_ARGS__
-//
-#    endif
+#    define TIMEMORY_@CHECK@_LINKAGE(...) __VA_ARGS__
 //
 #endif
 //

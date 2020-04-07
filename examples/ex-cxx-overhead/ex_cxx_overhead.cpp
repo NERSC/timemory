@@ -92,7 +92,7 @@ fibonacci(int64_t n)
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::none>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::none>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t)
 {
@@ -101,8 +101,7 @@ fibonacci(int64_t n, int64_t)
 
 //======================================================================================//
 
-template <typename _Tp,
-          tim::enable_if_t<std::is_same<_Tp, mode::measure>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::measure>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -110,14 +109,14 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         nmeasure += toolkit_size;
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::blank>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::blank>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -125,14 +124,14 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         TIMEMORY_BLANK_MARKER(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::basic>::value, int> = 0>
+template <typename Tp, tim::enable_if_t<std::is_same<Tp, mode::basic>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -142,8 +141,8 @@ fibonacci(int64_t n, int64_t cutoff)
         auto labeler = [](int _n) { return TIMEMORY_JOIN("", "fibonacci[", _n, "]"); };
         auto fib     = [](int _n, int _cutoff) {
             return (_n < 2) ? _n
-                            : (fibonacci<_Tp>(_n - 1, _cutoff) +
-                               fibonacci<_Tp>(_n - 2, _cutoff));
+                            : (fibonacci<Tp>(_n - 1, _cutoff) +
+                               fibonacci<Tp>(_n - 2, _cutoff));
         };
         return tim::invoke<auto_tuple_t>(labeler(n), fib, n, cutoff);
     }
@@ -152,8 +151,8 @@ fibonacci(int64_t n, int64_t cutoff)
 
 //======================================================================================//
 
-template <typename _Tp,
-          tim::enable_if_t<std::is_same<_Tp, mode::blank_pointer>::value, int> = 0>
+template <typename Tp,
+          tim::enable_if_t<std::is_same<Tp, mode::blank_pointer>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -161,15 +160,15 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         TIMEMORY_BLANK_POINTER(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp,
-          tim::enable_if_t<std::is_same<_Tp, mode::basic_pointer>::value, int> = 0>
+template <typename Tp,
+          tim::enable_if_t<std::is_same<Tp, mode::basic_pointer>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -177,34 +176,34 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         TIMEMORY_BASIC_POINTER(auto_tuple_t, "[", n, "]");
         return (n < 2) ? n
-                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+                       : (fibonacci<Tp>(n - 1, cutoff) + fibonacci<Tp>(n - 2, cutoff));
     }
     return fibonacci(n);
 }
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 result_type
 run(int64_t n, int64_t cutoff, bool store = true)
 {
-    // bool is_none  = std::is_same<_Tp, mode::none>::value;
-    bool is_blank = std::is_same<_Tp, mode::blank>::value ||
-                    std::is_same<_Tp, mode::blank_pointer>::value;
-    bool is_basic = std::is_same<_Tp, mode::basic>::value ||
-                    std::is_same<_Tp, mode::basic_pointer>::value;
+    // bool is_none  = std::is_same<Tp, mode::none>::value;
+    bool is_blank = std::is_same<Tp, mode::blank>::value ||
+                    std::is_same<Tp, mode::blank_pointer>::value;
+    bool is_basic = std::is_same<Tp, mode::basic>::value ||
+                    std::is_same<Tp, mode::basic_pointer>::value;
 
     // bool        with_timing = !(is_none);
     // std::string space       = (with_timing) ? " " : "";
     auto signature =
-        TIMEMORY_LABEL(" [with timing = ", tim::demangle(typeid(_Tp).name()), "]");
+        TIMEMORY_LABEL(" [with timing = ", tim::demangle(typeid(Tp).name()), "]");
 
     nmeasure = 0;
     fibonacci<mode::measure>(n, cutoff);
 
     timer_tuple_t timer(signature, store);
     timer.start();
-    int64_t result = fibonacci<_Tp>(n, cutoff);
+    int64_t result = fibonacci<Tp>(n, cutoff);
     timer.stop();
 
     int64_t nuniq =
@@ -218,7 +217,7 @@ run(int64_t n, int64_t cutoff, bool store = true)
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 void
 launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure,
        int64_t& ex_unique, std::vector<timer_tuple_t>& timer_list)
@@ -229,7 +228,7 @@ launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure,
     do_print_result() = true;
     for(int i = 0; i < nitr; ++i)
     {
-        auto&& ret = run<_Tp>(nfib, cutoff);
+        auto&& ret = run<Tp>(nfib, cutoff);
         if(i == 0)
         {
             timer_list.push_back(std::get<0>(ret));
@@ -247,7 +246,7 @@ launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure,
 
     std::string prefix = std::to_string(nuniq) + " unique measurements and " +
                          std::to_string(nmeas) + " total measurements (" +
-                         tim::demangle(typeid(_Tp).name()) + ")";
+                         tim::demangle(typeid(Tp).name()) + ")";
     timer_list.push_back((timer_list.back() / nitr) - (timer_list.at(0) / nitr));
     timer_list.push_back(timer_list.back() / nmeas);
     timer_list.at(timer_list.size() - 2).rekey("difference vs. " + prefix);

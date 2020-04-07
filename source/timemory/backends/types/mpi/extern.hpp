@@ -144,7 +144,7 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
                    __LINE__);
         }
-        TAU_INIT(*argc, *argv);
+        TAU_INIT(argc, argv);
         auto ret = PMPI_Init(argc, argv);
         timemory_MPI_Init(argc, argv);
         return ret;
@@ -159,7 +159,7 @@ extern "C"
             printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
                    __FILE__, __LINE__);
         }
-        TAU_INIT(*argc, *argv);
+        TAU_INIT(argc, argv);
         auto ret = PMPI_Init_thread(argc, argv, req, prov);
         timemory_MPI_Init(argc, argv);
         return ret;

@@ -5,9 +5,13 @@ add_subdirectory(rusage)
 add_subdirectory(timing)
 add_subdirectory(trip_count)
 
-if(TIMEMORY_USE_ALLINEA)
+if(TIMEMORY_USE_ALLINEA_MAP)
     add_subdirectory(allinea)
 endif()
+
+# if(TIMEMORY_USE_CRAYPAT)
+    add_subdirectory(craypat)
+# endif()
 
 if(TIMEMORY_USE_CALIPER)
     add_subdirectory(caliper)

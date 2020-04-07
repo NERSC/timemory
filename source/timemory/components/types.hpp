@@ -93,7 +93,9 @@ struct no_store;
 
 //======================================================================================//
 
+#include "timemory/components/allinea/types.hpp"
 #include "timemory/components/caliper/types.hpp"
+#include "timemory/components/craypat/types.hpp"
 #include "timemory/components/cuda/types.hpp"
 #include "timemory/components/cupti/types.hpp"
 #include "timemory/components/gotcha/types.hpp"

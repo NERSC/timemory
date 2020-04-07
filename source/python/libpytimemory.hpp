@@ -146,10 +146,10 @@ public:
             m_ptr->stop();
     }
 
-    template <typename... _Args>
-    static void configure(_Args&&... _args)
+    template <typename... ArgsT>
+    static void configure(ArgsT&&... _args)
     {
-        tim::configure<pybundle_t>(std::forward<_Args>(_args)...);
+        tim::configure<pybundle_t>(std::forward<ArgsT>(_args)...);
     }
 
 private:
@@ -680,19 +680,19 @@ struct construct_dict<std::tuple<std::string, void*>>
 {
     using Type = std::tuple<std::string, void*>;
 
-    template <typename... _Args>
-    construct_dict(_Args&&...)
+    template <typename... ArgsT>
+    construct_dict(ArgsT&&...)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 struct dict
 {
-    static py::dict construct(std::tuple<_Types...>& _tup)
+    static py::dict construct(std::tuple<Types...>& _tup)
     {
-        using apply_types = std::tuple<construct_dict<_Types>...>;
+        using apply_types = std::tuple<construct_dict<Types>...>;
         py::dict _dict;
         ::tim::apply<void>::access<apply_types>(_tup, std::ref(_dict));
         return _dict;
@@ -701,12 +701,12 @@ struct dict
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-struct dict<std::tuple<_Types...>>
+template <typename... Types>
+struct dict<std::tuple<Types...>>
 {
-    static py::dict construct(std::tuple<_Types...>& _tup)
+    static py::dict construct(std::tuple<Types...>& _tup)
     {
-        return dict<_Types...>::construct(_tup);
+        return dict<Types...>::construct(_tup);
     }
 };
 

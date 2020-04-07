@@ -45,10 +45,10 @@ namespace policy
 {
 //======================================================================================//
 
-template <typename _Comp, typename _Tp>
+template <typename _Comp, typename Tp>
 struct record_statistics
 {
-    using type            = _Tp;
+    using type            = Tp;
     using this_type       = record_statistics<_Comp, type>;
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
@@ -67,8 +67,8 @@ struct record_statistics<_Comp, void>
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
-    template <typename... _Args>
-    static void apply(_Args&&...)
+    template <typename... ArgsT>
+    static void apply(ArgsT&&...)
     {}
 };
 
@@ -82,8 +82,8 @@ struct record_statistics<_Comp, std::tuple<>>
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
-    template <typename... _Args>
-    static void apply(_Args&&...)
+    template <typename... ArgsT>
+    static void apply(ArgsT&&...)
     {}
 };
 
@@ -217,11 +217,11 @@ struct output_archive<cereal::MinimalJSONOutputArchive, Api>
 
 //======================================================================================//
 
-template <typename _Tp>
-struct instance_tracker<_Tp, true>
+template <typename Tp>
+struct instance_tracker<Tp, true>
 {
 public:
-    using type                           = _Tp;
+    using type                           = Tp;
     using int_type                       = int64_t;
     static constexpr bool thread_support = true;
 
@@ -281,11 +281,11 @@ protected:
 
 //======================================================================================//
 
-template <typename _Tp>
-struct instance_tracker<_Tp, false>
+template <typename Tp>
+struct instance_tracker<Tp, false>
 {
 public:
-    using type                           = _Tp;
+    using type                           = Tp;
     using int_type                       = int64_t;
     static constexpr bool thread_support = false;
 

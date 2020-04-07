@@ -23,17 +23,42 @@
 // SOFTWARE.
 
 /**
- * \file timemory/components/@COMPONENT_FOLDER@/properties.hpp
- * \brief Specialization of the properties for the @COMPONENT_FOLDER@ components
+ * \file timemory/config/macros.hpp
+ * \brief Include the macros for config
  */
 
 #pragma once
 
-#include "timemory/components/macros.hpp"
-#include "timemory/enum.h"
-
 //======================================================================================//
 //
-// TIMEMORY_PROPERTY_SPECIALIZATION(@CXX_STRUCT@, @CXX_ENUM@, "@STRING_ALIASES@", ...)
+//                              Define macros for config
 //
 //======================================================================================//
+//
+#if defined(TIMEMORY_CONFIG_SOURCE)
+//
+#    define TIMEMORY_CONFIG_LINKAGE(...) __VA_ARGS__
+//
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONFIG_EXTERN)
+//
+#    define TIMEMORY_CONFIG_LINKAGE(...) extern __VA_ARGS__
+//
+#else
+//
+#    define TIMEMORY_CONFIG_LINKAGE(...) inline __VA_ARGS__
+//
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_INIT)
+#    define TIMEMORY_INIT(...) ::tim::timemory_init(__VA_ARGS__)
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_FINALIZE)
+#    define TIMEMORY_FINALIZE() ::tim::timemory_finalize()
+#endif
+//
+//--------------------------------------------------------------------------------------//

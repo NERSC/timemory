@@ -58,11 +58,11 @@ namespace component
 //  generic:
 //              cpu_roofline<T, ...>
 //
-template <typename... _Types>
+template <typename... Types>
 struct cpu_roofline
-: public base<cpu_roofline<_Types...>, std::pair<std::vector<long long>, double>>
+: public base<cpu_roofline<Types...>, std::pair<std::vector<long long>, double>>
 {
-    static_assert(!is_one_of<cuda::fp16_t, std::tuple<_Types...>>::value,
+    static_assert(!is_one_of<cuda::fp16_t, std::tuple<Types...>>::value,
                   "Error! No CPU roofline support for cuda::fp16_t");
 
     using size_type    = std::size_t;
@@ -70,7 +70,7 @@ struct cpu_roofline
     using array_type   = std::vector<long long>;
     using data_type    = long long*;
     using value_type   = std::pair<array_type, double>;
-    using this_type    = cpu_roofline<_Types...>;
+    using this_type    = cpu_roofline<Types...>;
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
     using record_type  = std::function<value_type()>;
@@ -81,26 +81,26 @@ struct cpu_roofline
     using device_t    = device::cpu;
     using count_type  = wall_clock;
     using ratio_t     = typename count_type::ratio_t;
-    using types_tuple = std::tuple<_Types...>;
+    using types_tuple = std::tuple<Types...>;
 
     using ert_data_t     = ert::exec_data<count_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
-    template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
+    template <typename Tp>
+    using ert_config_type = ert::configuration<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_counter_type = ert::counter<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_executor_type = ert::executor<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_callback_type = ert::callback<ert_executor_type<Tp>>;
 
     // variadic expansion for ERT types
-    using ert_config_t   = std::tuple<ert_config_type<_Types>...>;
-    using ert_counter_t  = std::tuple<ert_counter_type<_Types>...>;
-    using ert_executor_t = std::tuple<ert_executor_type<_Types>...>;
-    using ert_callback_t = std::tuple<ert_callback_type<_Types>...>;
+    using ert_config_t   = std::tuple<ert_config_type<Types>...>;
+    using ert_counter_t  = std::tuple<ert_counter_type<Types>...>;
+    using ert_executor_t = std::tuple<ert_executor_type<Types>...>;
+    using ert_callback_t = std::tuple<ert_callback_type<Types>...>;
 
     static_assert(std::tuple_size<ert_config_t>::value ==
                       std::tuple_size<types_tuple>::value,
@@ -369,10 +369,10 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tp, typename _Func>
-    static void set_executor_callback(_Func&& f)
+    template <typename Tp, typename FuncT>
+    static void set_executor_callback(FuncT&& f)
     {
-        ert_executor_type<_Tp>::get_callback() = std::forward<_Func>(f);
+        ert_executor_type<Tp>::get_callback() = std::forward<FuncT>(f);
     }
 
     //----------------------------------------------------------------------------------//
@@ -412,7 +412,7 @@ struct cpu_roofline
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join("_", demangle(typeid(_Types).name())...);
+        return apply<std::string>::join("_", demangle(typeid(Types).name())...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -544,19 +544,19 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Func>
-    void configure_record(_Func&& _func)
+    template <typename FuncT>
+    void configure_record(FuncT&& _func)
     {
-        m_record = std::forward<_Func>(_func);
+        m_record = std::forward<FuncT>(_func);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Func>
-    void configure_record(const MODE& _mode, _Func&& _func)
+    template <typename FuncT>
+    void configure_record(const MODE& _mode, FuncT&& _func)
     {
         if(event_mode() == _mode)
-            m_record = std::forward<_Func>(_func);
+            m_record = std::forward<FuncT>(_func);
     }
 
     //----------------------------------------------------------------------------------//

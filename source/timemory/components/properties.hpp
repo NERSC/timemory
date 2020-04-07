@@ -84,7 +84,7 @@ struct properties;
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
+template <typename Tp>
 struct state
 {
     static bool& has_storage()

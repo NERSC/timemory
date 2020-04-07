@@ -28,6 +28,8 @@ RUN ./apt.sh
 
 # spack configuration
 COPY ./config/spack.sh /tmp/spack.sh
+COPY ./config/packages.yaml /tmp/packages.yaml
+COPY ./config/config.yaml /tmp/config.yaml
 RUN ./spack.sh
 
 # build the common dependencies

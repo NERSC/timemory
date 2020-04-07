@@ -8,6 +8,7 @@ add_subdirectory(environment)
 add_subdirectory(settings)
 add_subdirectory(plotting)
 add_subdirectory(manager)
+add_subdirectory(config)
 add_subdirectory(operations)
 add_subdirectory(backends)
 

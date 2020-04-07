@@ -37,6 +37,8 @@ using namespace tim::component;
 
 CEREAL_CLASS_VERSION(tim::settings, 1)
 CEREAL_CLASS_VERSION(tim::env_settings, 0)
+CEREAL_CLASS_VERSION(tim::component::wall_clock, 0)
+CEREAL_CLASS_VERSION(tim::statistics<double>, 0)
 
 //======================================================================================//
 
@@ -60,15 +62,13 @@ extern "C"
 
 //======================================================================================//
 
-struct timemory_trace;
 using string_t           = std::string;
-using user_trace_bundle  = user_bundle<0, timemory_trace>;
 using traceset_t         = tim::component_tuple<user_trace_bundle>;
 using library_toolset_t  = TIMEMORY_LIBRARY_TYPE;
 using toolset_t          = typename library_toolset_t::component_type;
 using region_map_t       = std::unordered_map<std::string, std::stack<uint64_t>>;
 using record_map_t       = std::unordered_map<uint64_t, toolset_t>;
-using trace_map_t        = std::unordered_map<size_t, std::vector<traceset_t*>>;
+using trace_map_t        = std::unordered_map<size_t, std::deque<traceset_t*>>;
 using component_enum_t   = std::vector<TIMEMORY_COMPONENT>;
 using components_stack_t = std::deque<component_enum_t>;
 
@@ -566,52 +566,40 @@ extern "C"
 
     //----------------------------------------------------------------------------------//
 
-    void timemory_dyninst_init(void)
+    void timemory_dyninst_init(int rank)
     {
-        PRINT_HERE("%s", "");
+        PRINT_HERE("rank = %i", rank);
         library_dyninst_init = true;
-        user_trace_bundle::reset();
-        auto env_result = tim::get_env<string_t>("TIMEMORY_TRACE_COMPONENTS", "");
-        std::set<int> comp_config;
-        for(auto& itr : get_current_components())
-            comp_config.insert(itr);
-        for(auto itr : tim::enumerate_components(tim::delimit(env_result)))
-            comp_config.insert(itr);
-        tim::configure<user_trace_bundle>(comp_config);
         tim::manager::use_exit_hook(false);
         tim::settings::destructor_report() = false;
         tim::set_env<std::string>("TIMEMORY_DESTRUCTOR_REPORT", "OFF");
 
-#if defined(_LINUX)
-        auto _cmdline = tim::read_command_line(tim::get_rusage_pid());
-        if(tim::settings::verbose() > 1 || tim::settings::debug())
-        {
-            for(size_t i = 0; i < _cmdline.size(); ++i)
-                std::cout << _cmdline.at(i) << " ";
-            std::cout << std::endl;
-        }
+        user_trace_bundle::global_init(nullptr);
+        if(user_trace_bundle::bundle_size() == 0)
+            user_trace_bundle::configure<wall_clock>();
 
-        int    _argc = _cmdline.size();
-        char** _argv = new char*[_argc];
-        for(int i = 0; i < _argc; ++i)
-            _argv[i] = (char*) _cmdline.at(i).c_str();
-        timemory_init_library(_argc, _argv);
-        delete[] _argv;
-#endif
+        auto init_func = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+        tim::config::read_command_line(init_func);
     }
 
     //----------------------------------------------------------------------------------//
 
     void timemory_dyninst_finalize(void)
     {
+        PRINT_HERE("%s", "");
         if(!library_dyninst_init)
             return;
-        PRINT_HERE("%s", "");
+        // do the finalization
         library_dyninst_init = false;
+        // reset traces just in case
         user_trace_bundle::reset();
-        tim::settings::plot_output() = false;
-        tim::settings::enabled()     = false;
+        // have the manager finalize
+        tim::manager::instance()->finalize();
+        // finalize the library
         timemory_finalize_library();
+        // just in case
+        tim::settings::enabled() = false;
+        PRINT_HERE("%s", "");
     }
 
     //----------------------------------------------------------------------------------//
@@ -620,7 +608,7 @@ extern "C"
     {
         PRINT_HERE("[id = %llu]", (long long unsigned) id);
         if(!library_dyninst_init)
-            timemory_dyninst_init();
+            timemory_dyninst_init(id);
     }
 
     //----------------------------------------------------------------------------------//

@@ -23,30 +23,72 @@
 // SOFTWARE.
 
 /**
- * \file timemory/components/@COMPONENT_FOLDER@/traits.hpp
- * \brief Configure the type-traits for the @COMPONENT_FOLDER@ components
+ * \file timemory/config/declaration.hpp
+ * \brief The declaration for the types for config without definitions
  */
 
 #pragma once
 
-#include "timemory/components/@COMPONENT_FOLDER@/types.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/mpl/type_traits.hpp"
-#include "timemory/mpl/types.hpp"
+#include "timemory/config/macros.hpp"
+#include "timemory/config/types.hpp"
+#include "timemory/manager/declaration.hpp"
 
-//--------------------------------------------------------------------------------------//
-//
-//                              STATISTICS
+namespace tim
+{
 //
 //--------------------------------------------------------------------------------------//
-
-// TIMEMORY_STATISTICS_TYPE(component::@CXX_STRUCT@, @CXX_STRUCT_STAT_TYPE@)
-
-//--------------------------------------------------------------------------------------//
 //
-//                              IS AVAILABLE
+//                              config
 //
 //--------------------------------------------------------------------------------------//
+//
+template <typename... Types, typename... Args,
+          enable_if_t<(sizeof...(Types) > 0 && sizeof...(Args) >= 2), int>>
+inline void
+timemory_init(Args&&... _args)
+{
+    using tuple_type = tuple_concat_t<Types...>;
+    manager::get_storage<tuple_type>::initialize();
+    timemory_init(std::forward<Args>(_args)...);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace config
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Func>
+void
+read_command_line(Func&& _func)
+{
+#if defined(_LINUX)
+    auto _cmdline = tim::read_command_line(tim::process::get_target_id());
+    if(tim::settings::verbose() > 1 || tim::settings::debug())
+    {
+        for(size_t i = 0; i < _cmdline.size(); ++i)
+            std::cout << _cmdline.at(i) << " ";
+        std::cout << std::endl;
+    }
 
-// TIMEMORY_DEFINE_CONCRETE_TRAIT(@SOME_TRAIT@, component::@CXX_STRUCT@, true_type)
-// TIMEMORY_DEFINE_CONCRETE_TRAIT(@SOME_TRAIT@, component::@CXX_STRUCT@, false_type)
+    int    _argc = _cmdline.size();
+    char** _argv = new char*[_argc];
+    for(int i = 0; i < _argc; ++i)
+        _argv[i] = (char*) _cmdline.at(i).c_str();
+    _func(_argc, _argv);
+    delete[] _argv;
+#else
+    consume_parameters(_func);
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace config
+}  // namespace tim
+
+#if !defined(TIMEMORY_CONFIG_SOURCE) && !defined(TIMEMORY_USE_EXTERN) &&                 \
+    !defined(TIMEMORY_USE_CONFIG_EXTERN)
+#    include "timemory/config/definition.hpp"
+#endif

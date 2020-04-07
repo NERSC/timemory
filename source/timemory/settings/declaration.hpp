@@ -197,10 +197,10 @@ struct TIMEMORY_SETTINGS_DLL settings
 
     /// timemory will try to call MPI_Init or MPI_Init_thread during certain
     /// timemory_init()
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_init, "TIMEMORY_MPI_INIT", true)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_init, "TIMEMORY_MPI_INIT", false)
 
     /// timemory will try to call MPI_Finalize during timemory_finalize()
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_finalize, "TIMEMORY_MPI_FINALIZE", true)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_finalize, "TIMEMORY_MPI_FINALIZE", false)
 
     /// use MPI_Init and MPI_Init_thread
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_thread, "TIMEMORY_MPI_THREAD", true)
@@ -384,6 +384,14 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, ert_skip_ops, "TIMEMORY_ERT_SKIP_OPS", "")
 
     //----------------------------------------------------------------------------------//
+    //      Craypat
+    //----------------------------------------------------------------------------------//
+
+    /// set the craypat categories to collect
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(string_t, craypat_categories, "TIMEMORY_CRAYPAT",
+                                    get_env<std::string>("PAT_RT_PERFCTR", ""))
+
+    //----------------------------------------------------------------------------------//
     //      Signals
     //--------------------------------------------/settings/declaration.hpp-------------------------//
 
@@ -489,10 +497,10 @@ public:
     template <size_t Idx = 0>
     static int64_t indent_width(int64_t _w = settings::width());
 
-    template <typename _Tp, size_t Idx = 0>
+    template <typename Tp, size_t Idx = 0>
     static int64_t indent_width(int64_t _w = indent_width<Idx>());
 
-    template <typename _Tp>
+    template <typename Tp>
     static size_t data_width(int64_t _idx, int64_t _w);
 };
 //
@@ -509,7 +517,7 @@ settings::indent_width(int64_t _w)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename _Tp, size_t Idx>
+template <typename Tp, size_t Idx>
 int64_t
 settings::indent_width(int64_t _w)
 {
@@ -520,7 +528,7 @@ settings::indent_width(int64_t _w)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename _Tp>
+template <typename Tp>
 size_t
 settings::data_width(int64_t _idx, int64_t _w)
 {

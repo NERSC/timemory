@@ -98,6 +98,7 @@ public:
     void cleanup(const std::string&);
     void cleanup();
     void finalize();
+    void read_command_line();
 
     void add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file);

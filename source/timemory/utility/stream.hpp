@@ -750,7 +750,7 @@ struct header_stream
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 void
 write_header(stream& _os, const std::string& _label, std::ios_base::fmtflags _fmt = {},
              int _width = 0, int _prec = 0, bool _center = true)

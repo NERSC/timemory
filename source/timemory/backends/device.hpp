@@ -61,9 +61,9 @@ namespace device
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline void
-consume_parameters(_Args&&...)
+consume_parameters(ArgsT&&...)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -78,14 +78,14 @@ struct cpu
     using stream_t = cuda::stream_t;
     using fp16_t   = float;
 
-    template <typename _Tp>
-    static _Tp* alloc(std::size_t nsize)
+    template <typename Tp>
+    static Tp* alloc(std::size_t nsize)
     {
-        return new _Tp[nsize];
+        return new Tp[nsize];
     }
 
-    template <typename _Tp>
-    static void free(_Tp* ptr)
+    template <typename Tp>
+    static void free(Tp* ptr)
     {
         delete[] ptr;
     }
@@ -101,14 +101,14 @@ struct gpu
     using stream_t = cuda::stream_t;
     using fp16_t   = cuda::fp16_t;
 
-    template <typename _Tp>
-    static _Tp* alloc(std::size_t nsize)
+    template <typename Tp>
+    static Tp* alloc(std::size_t nsize)
     {
-        return cuda::malloc<_Tp>(nsize);
+        return cuda::malloc<Tp>(nsize);
     }
 
-    template <typename _Tp>
-    static void free(_Tp* ptr)
+    template <typename Tp>
+    static void free(Tp* ptr)
     {
         cuda::free(ptr);
     }
@@ -118,14 +118,14 @@ struct gpu
     using stream_t = int;
     using fp16_t   = float;
 
-    template <typename _Tp>
-    static _Tp* alloc(std::size_t nsize)
+    template <typename Tp>
+    static Tp* alloc(std::size_t nsize)
     {
-        return new _Tp[nsize];
+        return new Tp[nsize];
     }
 
-    template <typename _Tp>
-    static void free(_Tp* ptr)
+    template <typename Tp>
+    static void free(Tp* ptr)
     {
         delete[] ptr;
     }
@@ -144,18 +144,18 @@ using default_device = cpu;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Up>
+template <typename Up>
 struct is_gpu
 {
-    static constexpr bool value = std::is_same<_Up, device::gpu>::value;
+    static constexpr bool value = std::is_same<Up, device::gpu>::value;
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Up>
+template <typename Up>
 struct is_cpu
 {
-    static constexpr bool value = std::is_same<_Up, device::cpu>::value;
+    static constexpr bool value = std::is_same<Up, device::cpu>::value;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -172,13 +172,13 @@ using enable_if_cpu_t = enable_if_t<(is_cpu<T>::value == B), U>;
 
 namespace impl
 {
-template <typename _Tp, typename _Intp, bool _Val = true>
+template <typename Tp, typename _Intp, bool _Val = true>
 using enable_if_gpu_int_t =
-    enable_if_t<(is_gpu<_Tp>::value == _Val && std::is_integral<_Intp>::value)>;
+    enable_if_t<(is_gpu<Tp>::value == _Val && std::is_integral<_Intp>::value)>;
 
-template <typename _Tp, typename _Intp, bool _Val = true>
+template <typename Tp, typename _Intp, bool _Val = true>
 using enable_if_cpu_int_t =
-    enable_if_t<(is_cpu<_Tp>::value == _Val && std::is_integral<_Intp>::value)>;
+    enable_if_t<(is_cpu<Tp>::value == _Val && std::is_integral<_Intp>::value)>;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -221,10 +221,10 @@ protected:
 //
 //======================================================================================//
 
-template <typename _Device>
+template <typename DeviceT>
 struct params
 {
-    using stream_t = typename _Device::stream_t;
+    using stream_t = typename DeviceT::stream_t;
     params()       = default;
 
     explicit params(uint32_t _grid, uint32_t _block, uint32_t _shmem = 0,
@@ -274,35 +274,35 @@ struct params
 
 // execute a function with provided device parameters
 //
-template <typename _Device, typename _Func, typename... _Args,
-          enable_if_cpu_t<_Device> = 0>
+template <typename DeviceT, typename FuncT, typename... ArgsT,
+          enable_if_cpu_t<DeviceT> = 0>
 void
-launch(params<_Device>&, _Func&& _func, _Args&&... _args)
+launch(params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
 {
-    std::forward<_Func>(_func)(std::forward<_Args>(_args)...);
+    std::forward<FuncT>(_func)(std::forward<ArgsT>(_args)...);
 }
 
 //--------------------------------------------------------------------------------------//
 // overload that passes size
 //
-template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          impl::enable_if_cpu_int_t<_Device, _Intp> = 0>
+template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          impl::enable_if_cpu_int_t<DeviceT, _Intp> = 0>
 void
-launch(const _Intp&, params<_Device>&, _Func&& _func, _Args&&... _args)
+launch(const _Intp&, params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
 {
-    std::forward<_Func>(_func)(std::forward<_Args>(_args)...);
+    std::forward<FuncT>(_func)(std::forward<ArgsT>(_args)...);
 }
 
 //--------------------------------------------------------------------------------------//
 // overload that passes size
 //
-template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          typename _Stream                          = typename _Device::stream_t,
-          impl::enable_if_cpu_int_t<_Device, _Intp> = 0>
+template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          typename _Stream                          = typename DeviceT::stream_t,
+          impl::enable_if_cpu_int_t<DeviceT, _Intp> = 0>
 void
-launch(const _Intp&, _Stream, params<_Device>&, _Func&& _func, _Args&&... _args)
+launch(const _Intp&, _Stream, params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
 {
-    std::forward<_Func>(_func)(std::forward<_Args>(_args)...);
+    std::forward<FuncT>(_func)(std::forward<ArgsT>(_args)...);
 }
 
 //======================================================================================//
@@ -315,16 +315,16 @@ launch(const _Intp&, _Stream, params<_Device>&, _Func&& _func, _Args&&... _args)
 
 // execute a function with provided device parameters
 //
-template <typename _Device, typename _Func, typename... _Args,
-          enable_if_gpu_t<_Device> = 0>
+template <typename DeviceT, typename FuncT, typename... ArgsT,
+          enable_if_gpu_t<DeviceT> = 0>
 void
-launch(params<_Device>& _p, _Func&& _func, _Args&&... _args)
+launch(params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
 #if defined(__NVCC__)
     if(_p.grid == 0)
         _p.grid = 1;
-    std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
-        std::forward<_Args>(_args)...);
+    std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
+        std::forward<ArgsT>(_args)...);
     TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
     consume_parameters(_p, _func, _args...);
@@ -336,18 +336,18 @@ launch(params<_Device>& _p, _Func&& _func, _Args&&... _args)
 //--------------------------------------------------------------------------------------//
 // overload that passes size
 //
-template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          impl::enable_if_gpu_int_t<_Device, _Intp> = 0>
+template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          impl::enable_if_gpu_int_t<DeviceT, _Intp> = 0>
 void
-launch(const _Intp& _nsize, params<_Device>& _p, _Func&& _func, _Args&&... _args)
+launch(const _Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
 #if defined(__NVCC__)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
         _p.grid = 1;
-    std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
-        std::forward<_Args>(_args)...);
+    std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
+        std::forward<ArgsT>(_args)...);
     TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
     consume_parameters(_p, _func, _args..., _nsize);
@@ -359,20 +359,20 @@ launch(const _Intp& _nsize, params<_Device>& _p, _Func&& _func, _Args&&... _args
 //--------------------------------------------------------------------------------------//
 // overload that passes size and stream
 //
-template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          typename _Stream                                = typename _Device::stream_t,
-          impl::enable_if_gpu_int_t<_Device, _Intp, true> = 0>
+template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          typename _Stream                                = typename DeviceT::stream_t,
+          impl::enable_if_gpu_int_t<DeviceT, _Intp, true> = 0>
 void
-launch(const _Intp& _nsize, _Stream _stream, params<_Device>& _p, _Func&& _func,
-       _Args&&... _args)
+launch(const _Intp& _nsize, _Stream _stream, params<DeviceT>& _p, FuncT&& _func,
+       ArgsT&&... _args)
 {
 #if defined(__NVCC__)
     if(_p.grid == 0 && _nsize > 0)
         _p.grid = _p.compute(_nsize);
     else if(_p.grid == 0)
         _p.grid = 1;
-    std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _stream>>>(
-        std::forward<_Args>(_args)...);
+    std::forward<FuncT>(_func)<<<_p.grid, _p.block, _p.shmem, _stream>>>(
+        std::forward<ArgsT>(_args)...);
     TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
     consume_parameters(_p, _func, _args..., _nsize, _stream);
@@ -388,7 +388,7 @@ launch(const _Intp& _nsize, _Stream _stream, params<_Device>& _p, _Func&& _func,
 //
 //======================================================================================//
 
-template <typename _Device, size_t DIM = 0, typename _Intp = int32_t>
+template <typename DeviceT, size_t DIM = 0, typename _Intp = int32_t>
 struct grid_strided_range : impl::range<_Intp>
 {
     using base_type = impl::range<_Intp>;
@@ -399,19 +399,19 @@ struct grid_strided_range : impl::range<_Intp>
 //--------------------------------------------------------------------------------------//
 // overload for 0/x
 //
-template <typename _Device, typename _Intp>
-struct grid_strided_range<_Device, 0, _Intp> : impl::range<_Intp>
+template <typename DeviceT, typename _Intp>
+struct grid_strided_range<DeviceT, 0, _Intp> : impl::range<_Intp>
 {
     using base_type = impl::range<_Intp>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
-    template <typename _Dev                                       = _Device,
+    template <typename _Dev                                       = DeviceT,
               enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
     DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
     : base_type(blockIdx.x * blockDim.x + threadIdx.x, max_iter, blockDim.x * gridDim.x)
     {}
 
-    template <typename _Dev                                       = _Device,
+    template <typename _Dev                                       = DeviceT,
               enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
 #endif
     explicit grid_strided_range(_Intp max_iter)
@@ -426,19 +426,19 @@ struct grid_strided_range<_Device, 0, _Intp> : impl::range<_Intp>
 //--------------------------------------------------------------------------------------//
 // overload for 1/y
 //
-template <typename _Device, typename _Intp>
-struct grid_strided_range<_Device, 1, _Intp> : impl::range<_Intp>
+template <typename DeviceT, typename _Intp>
+struct grid_strided_range<DeviceT, 1, _Intp> : impl::range<_Intp>
 {
     using base_type = impl::range<_Intp>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
-    template <typename _Dev                                       = _Device,
+    template <typename _Dev                                       = DeviceT,
               enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
     DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
     : base_type(blockIdx.y * blockDim.y + threadIdx.y, max_iter, blockDim.y * gridDim.y)
     {}
 
-    template <typename _Dev                                       = _Device,
+    template <typename _Dev                                       = DeviceT,
               enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
 #endif
     explicit grid_strided_range(_Intp max_iter)
@@ -453,19 +453,19 @@ struct grid_strided_range<_Device, 1, _Intp> : impl::range<_Intp>
 //--------------------------------------------------------------------------------------//
 // overload for 2/z
 //
-template <typename _Device, typename _Intp>
-struct grid_strided_range<_Device, 2, _Intp> : impl::range<_Intp>
+template <typename DeviceT, typename _Intp>
+struct grid_strided_range<DeviceT, 2, _Intp> : impl::range<_Intp>
 {
     using base_type = impl::range<_Intp>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
-    template <typename _Dev                                       = _Device,
+    template <typename _Dev                                       = DeviceT,
               enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
     DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
     : base_type(blockIdx.z * blockDim.z + threadIdx.z, max_iter, blockDim.z * gridDim.z)
     {}
 
-    template <typename _Dev                                       = _Device,
+    template <typename _Dev                                       = DeviceT,
               enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
 #endif
     explicit grid_strided_range(_Intp max_iter)

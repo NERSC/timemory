@@ -122,9 +122,9 @@ consume(long n)
 }
 
 // this function ensures an allocation cannot be optimized
-template <typename _Tp>
+template <typename Tp>
 inline size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
@@ -146,11 +146,11 @@ allocate()
     printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 }
 
-template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
-          typename _Func = std::function<_Vp(_Vp)>>
+template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
+          typename FuncT = std::function<Vp(Vp)>>
 inline void
-print_info(const _Tp& obj, const _Up& expected, const string_t& unit,
-           _Func _func = [](const _Vp& _obj) { return _obj; })
+print_info(const Tp& obj, const Up& expected, const string_t& unit,
+           FuncT _func = [](const Vp& _obj) { return _obj; })
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;

@@ -37,34 +37,34 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //  base overload
 //
-template <typename _Tp>
+template <typename Tp>
 struct type_id
 {
-    static std::string name() { return typeid(_Tp).name(); }
+    static std::string name() { return typeid(Tp).name(); }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct type_id<const _Tp>
+template <typename Tp>
+struct type_id<const Tp>
 {
-    static std::string name() { return std::string("K") + typeid(_Tp).name(); }
+    static std::string name() { return std::string("K") + typeid(Tp).name(); }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct type_id<const _Tp&>
+template <typename Tp>
+struct type_id<const Tp&>
 {
-    static std::string name() { return std::string("RK") + typeid(_Tp).name(); }
+    static std::string name() { return std::string("RK") + typeid(Tp).name(); }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct type_id<_Tp&>
+template <typename Tp>
+struct type_id<Tp&>
 {
-    static std::string name() { return std::string("R") + typeid(_Tp).name(); }
+    static std::string name() { return std::string("R") + typeid(Tp).name(); }
 };
 
 //--------------------------------------------------------------------------------------//

@@ -373,6 +373,40 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
+template <int Idx>
+using enumerator_t = typename tim::component::enumerator<Idx>::type;
+
+template <int I>
+using make_int_sequence = std::make_integer_sequence<int, I>;
+
+template <int... Ints>
+using int_sequence = std::integer_sequence<int, Ints...>;
+
+template <typename T, typename I>
+struct enumerated_list;
+
+template <template <typename...> class TupT, typename... T>
+struct enumerated_list<TupT<T...>, int_sequence<>>
+{
+    using type = tim::component_list<T...>;
+};
+
+using tim::component::nothing;
+using tim::component::placeholder;
+
+template <template <typename...> class TupT, int I, typename... T, int... Idx>
+struct enumerated_list<TupT<T...>, int_sequence<I, Idx...>>
+{
+    using Tp                         = enumerator_t<I>;
+    static constexpr bool is_nothing = std::is_same<Tp, placeholder<nothing>>::value;
+    using type                       = typename enumerated_list<
+        tim::conditional_t<(is_nothing), tim::component_list<T...>,
+                           tim::component_list<T..., Tp>>,
+        int_sequence<Idx...>>::type;
+};
+
+//--------------------------------------------------------------------------------------//
+
 template <size_t N>
 void
 write_component_info(std::ostream& os, const array_t<bool, N>& options,
@@ -381,7 +415,9 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     static_assert(N >= num_component_options,
                   "Error! Too few component options + fields");
 
-    auto _info = get_availability<complete_list_t>::get_info();
+    using seq_t       = make_int_sequence<TIMEMORY_COMPONENTS_END>;
+    using enum_list_t = typename enumerated_list<tim::type_list<>, seq_t>::type;
+    auto _info        = get_availability<enum_list_t>::get_info();
 
     using int_vec_t  = std::vector<int64_t>;
     using width_type = int_vec_t;

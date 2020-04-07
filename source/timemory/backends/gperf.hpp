@@ -60,9 +60,9 @@ namespace gperf
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 void
-consume_parameters(_Types&&...)
+consume_parameters(Types&&...)
 {}
 
 //--------------------------------------------------------------------------------------//

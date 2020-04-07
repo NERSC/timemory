@@ -112,11 +112,11 @@ struct custom_print
     using value_type = typename Tp::value_type;
     using base_type  = component::base<Tp, value_type>;
 
-    custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj, std::ostream& os,
+    custom_print(std::size_t N, std::size_t /*_Ntot*/, base_type& obj, std::ostream& os,
                  bool /*endline*/)
     {
         std::stringstream ss;
-        if(_N == 0)
+        if(N == 0)
             ss << std::endl;
         ss << "    " << obj << std::endl;
         os << ss.str();

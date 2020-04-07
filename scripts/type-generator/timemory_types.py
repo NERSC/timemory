@@ -67,6 +67,12 @@ components = [
     "user_mpip_bundle",
     "user_ompt_bundle",
     "ompt_handle",
+    "allinea_map",
+    "craypat_record",
+    "craypat_region",
+    "craypat_counters",
+    "craypat_flush_buffer",
+    "craypat_heap_stats"
 ]
 
 #

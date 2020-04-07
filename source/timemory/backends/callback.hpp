@@ -92,12 +92,12 @@ callback_thread()
 //--------------------------------------------------------------------------------------//
 //
 //
-template <typename _Func, typename... _Args>
+template <typename FuncT, typename... ArgsT>
 inline callback_thread_t&
-cutStartThread(_Func&& func, _Args&&... args)
+cutStartThread(FuncT&& func, ArgsT&&... args)
 {
     callback_thread_t _instance = callback_thread_t(
-        new std::thread(std::forward<_Func>(func), std::forward<_Args>(args)...));
+        new std::thread(std::forward<FuncT>(func), std::forward<ArgsT>(args)...));
     return std::move(_instance);
 }
 

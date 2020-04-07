@@ -891,6 +891,12 @@ configure(ompt_function_lookup_t lookup, ompt_data_t*)
     timemory_ompt_register_callback(ompt_callback_mutex_released,
                                     TIMEMORY_OMPT_CBDECL(mutex_released_cb_t::callback));
 
+    consume_parameters(ompt_set_callback, ompt_get_task_info, ompt_get_unique_id,
+                       ompt_get_thread_data, ompt_get_parallel_info, ompt_get_num_places,
+                       ompt_get_place_proc_ids, ompt_get_place_num,
+                       ompt_get_partition_place_nums, ompt_get_proc_id,
+                       ompt_enumerate_states, ompt_enumerate_mutex_impls);
+
     if(settings::verbose() > 0 || settings::debug())
         printf("\n");
 #else

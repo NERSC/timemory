@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -21,33 +21,48 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
 
-///
-/// define TIMEMORY_SOURCE to select appropriate macros
-///
-#if !defined(TIMEMORY_SOURCE)
-#    define TIMEMORY_SOURCE
+/**
+ * \file timemory/components/allinea/backends.hpp
+ * \brief Implementation of the AllineaMAP functions/utilities
+ */
+
+#pragma once
+
+#if defined(TIMEMORY_USE_ALLINEA_MAP)
+#    include "mapsampler_api.h"
 #endif
 
-// #if defined(TIMEMORY_USE_@COMPONENT_CHECK@)
-
+namespace tim
+{
+namespace backend
+{
+namespace allinea
+{
 //
-// include headers needed for full instantiation
+//--------------------------------------------------------------------------------------//
 //
-#include "timemory/mpl/operations.hpp"
-#include "timemory/plotting.hpp"
+void
+start_sampling()
+{
+#if defined(TIMEMORY_USE_ALLINEA_MAP)
+    allinea_start_sampling();
+#endif
+}
 //
-#include "timemory/components.hpp"
-#include "timemory/data/bits/storage.hpp"
-
-//======================================================================================//
-// clang-format off
+//--------------------------------------------------------------------------------------//
 //
-#include "timemory/components/@COMPONENT_FOLDER@/types.hpp"
-#include "timemory/components/@COMPONENT_FOLDER@/components.hpp"
-#include "timemory/components/@COMPONENT_FOLDER@/extern/base.hpp"
+void
+stop_sampling()
+{
+#if defined(TIMEMORY_USE_ALLINEA_MAP)
+    allinea_stop_sampling();
+#endif
+}
 //
-// clang-format on
-//======================================================================================//
-
-// #endif  // TIMEMORY_USE_@COMPONENT_CHECK@
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace allinea
+}  // namespace backend
+}  // namespace tim

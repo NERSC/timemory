@@ -72,8 +72,8 @@ private:
     ~env_settings();
 
 public:
-    template <typename _Tp>
-    void insert(const std::string& env_id, _Tp val);
+    template <typename Tp>
+    void insert(const std::string& env_id, Tp val);
 
     env_map_t      get() const;
     iterator       get(const string_t& _entry) { return m_env->find(_entry); }

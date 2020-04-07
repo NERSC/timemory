@@ -35,6 +35,11 @@ deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENA
 # 9
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
 deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
+# 10
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-10 main
+deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-10 main
+# dev
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME} main
 EOF
 # upgrade
 run-verbose apt-get update
@@ -56,7 +61,7 @@ run-verbose apt-get install -y build-essential cmake git-core ssed bash-completi
 
 # install compilers
 run-verbose apt-get -y install gcc-${GCC_VERSION} g++-${GCC_VERSION} gcc-${GCC_VERSION}-multilib
-run-verbose apt-get -y install clang-${CLANG_VERSION} libc++-dev libc++abi-dev
+run-verbose apt-get -y install clang-${CLANG_VERSION} libc++-dev libc++abi-dev clang-{8,9,10,11}
 
 DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
     libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \

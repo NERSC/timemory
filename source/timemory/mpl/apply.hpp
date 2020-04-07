@@ -394,9 +394,9 @@ struct apply<std::string>
     //      Helper
     //----------------------------------------------------------------------------------//
 
-    template <typename Tp, bool _Val = true, typename _Up = int,
-              typename _Dt = typename std::remove_const<decay_t<Tp>>::type>
-    using if_string_t = enable_if_t<(std::is_same<_Dt, char*>::value) == _Val, _Up>;
+    template <typename Tp, bool _Val = true, typename Up = int,
+              typename Dt = typename std::remove_const<decay_t<Tp>>::type>
+    using if_string_t = enable_if_t<(std::is_same<Dt, char*>::value) == _Val, Up>;
 
     //----------------------------------------------------------------------------------//
 

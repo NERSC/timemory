@@ -77,7 +77,7 @@ struct placeholder
     //----------------------------------------------------------------------------------//
     // specific to gotcha
     //
-    template <size_t _N, typename... Ret, typename... Args>
+    template <size_t N, typename... Ret, typename... Args>
     static void configure(Args&&...)
     {}
 };

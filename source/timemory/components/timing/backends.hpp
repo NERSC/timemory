@@ -30,6 +30,9 @@
 
 #pragma once
 
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
+
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -45,9 +48,6 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
-
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
 #if defined(_UNIX)
 
@@ -294,11 +294,11 @@ clock_tick()
 
 //--------------------------------------------------------------------------------------//
 // general struct for the differnt clock_gettime functions
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_now(clockid_t clock_id)
 {
-    constexpr _Tp factor = static_cast<_Tp>(std::nano::den) / Precision::den;
+    constexpr Tp factor = static_cast<Tp>(std::nano::den) / Precision::den;
 #if defined(_MACOS)
     return clock_gettime_nsec_np(clock_id) / factor;
 #else
@@ -311,14 +311,14 @@ get_clock_now(clockid_t clock_id)
 //--------------------------------------------------------------------------------------//
 // the system's real time (i.e. wall time) clock, expressed as the amount of time since
 // the epoch.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_real_now()
 {
     using clock_type    = std::chrono::steady_clock;
     using duration_type = std::chrono::duration<clock_type::rep, Precision>;
 
-    // return get_clock_now<_Tp, Precision>(CLOCK_REALTIME);
+    // return get_clock_now<Tp, Precision>(CLOCK_REALTIME);
     return std::chrono::duration_cast<duration_type>(clock_type::now().time_since_epoch())
         .count();
 }
@@ -326,22 +326,22 @@ get_clock_real_now()
 //--------------------------------------------------------------------------------------//
 // clock that increments monotonically, tracking the time since an arbitrary point,
 // and will continue to increment while the system is asleep.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_monotonic_now()
 {
-    return get_clock_now<_Tp, Precision>(CLOCK_MONOTONIC);
+    return get_clock_now<Tp, Precision>(CLOCK_MONOTONIC);
 }
 
 //--------------------------------------------------------------------------------------//
 // clock that increments monotonically, tracking the time since an arbitrary point like
 // CLOCK_MONOTONIC.  However, this clock is unaffected by frequency or time adjustments.
 // It should not be compared to other system time sources.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_monotonic_raw_now()
 {
-    return get_clock_now<_Tp, Precision>(CLOCK_MONOTONIC_RAW);
+    return get_clock_now<Tp, Precision>(CLOCK_MONOTONIC_RAW);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -349,22 +349,22 @@ get_clock_monotonic_raw_now()
 // threads)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // thread.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_thread_now()
 {
-    return get_clock_now<_Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
+    return get_clock_now<Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
 }
 
 //--------------------------------------------------------------------------------------//
 // this clock measures the CPU time within the current process (excludes child processes)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // process.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_process_now()
 {
-    return get_clock_now<_Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
+    return get_clock_now<Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -373,14 +373,14 @@ get_clock_process_now()
 // units are reported in number of clock ticks per second
 //
 // this function extracts only the CPU time spent in user-mode
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_user_now()
 {
     // return clock() / units::clocks_per_sec;
     struct tms _tms;
     ::times(&_tms);
-    return (_tms.tms_utime + _tms.tms_cutime) * static_cast<_Tp>(clock_tick<Precision>());
+    return (_tms.tms_utime + _tms.tms_cutime) * static_cast<Tp>(clock_tick<Precision>());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -389,17 +389,17 @@ get_clock_user_now()
 // units are reported in number of clock ticks per second
 //
 // this function extracts only the CPU time spent in kernel-mode
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_system_now()
 {
     tms _tms;
     ::times(&_tms);
 #if defined(_WINDOWS)
-    return (static_cast<_Tp>(_tms.tms_stime) + static_cast<_Tp>(_tms.tms_cstime)) *
-           static_cast<_Tp>(clock_tick<Precision>());
+    return (static_cast<Tp>(_tms.tms_stime) + static_cast<Tp>(_tms.tms_cstime)) *
+           static_cast<Tp>(clock_tick<Precision>());
 #else
-    return (_tms.tms_stime + _tms.tms_cstime) * static_cast<_Tp>(clock_tick<Precision>());
+    return (_tms.tms_stime + _tms.tms_cstime) * static_cast<Tp>(clock_tick<Precision>());
 #endif
 }
 
@@ -409,14 +409,14 @@ get_clock_system_now()
 // units are reported in number of clock ticks per second
 //
 // this function extracts only the CPU time spent in both user- and kernel- mode
-template <typename _Tp = double, typename Precision = std::ratio<1>>
-_Tp
+template <typename Tp = double, typename Precision = std::ratio<1>>
+Tp
 get_clock_cpu_now()
 {
     tms _tms;
     ::times(&_tms);
     return (_tms.tms_utime + _tms.tms_cutime + _tms.tms_stime + _tms.tms_cstime) *
-           static_cast<_Tp>(clock_tick<Precision>());
+           static_cast<Tp>(clock_tick<Precision>());
 }
 
 //--------------------------------------------------------------------------------------//

@@ -95,18 +95,18 @@ get_test_name()
 {
     return ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
     return v.at(dist(rng));
 }
-template <typename _Tp>
+template <typename Tp>
 void
-serialize(const std::string& fname, const std::string& title, const _Tp& obj)
+serialize(const std::string& fname, const std::string& title, const Tp& obj)
 {
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     std::stringstream     ss;

@@ -24,7 +24,9 @@
 
 #pragma once
 
+#include "timemory/components/allinea/components.hpp"
 #include "timemory/components/caliper/components.hpp"
+#include "timemory/components/craypat/components.hpp"
 #include "timemory/components/cuda/components.hpp"
 #include "timemory/components/cupti/components.hpp"
 #include "timemory/components/general.hpp"

@@ -25,8 +25,10 @@
 #pragma once
 
 #include "timemory/components.hpp"
+#include "timemory/config/definition.hpp"
 #include "timemory/containers/definition.hpp"
 #include "timemory/environment/definition.hpp"
+#include "timemory/ert/definition.hpp"
 #include "timemory/hash/definition.hpp"
 #include "timemory/manager/definition.hpp"
 #include "timemory/operations/definition.hpp"

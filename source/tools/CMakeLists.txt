@@ -184,6 +184,11 @@ if(TIMEMORY_USE_DYNINST)
     endif()
 
     install(TARGETS timemory-run DESTINATION bin)
+
+    file(GLOB COLLECTION_FILES "${CMAKE_CURRENT_LIST_DIR}/collections/*")
+    foreach(_FILE ${COLLECTION_FILES})
+        install(FILES ${_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/collections)
+    endforeach()
 endif()
 
 

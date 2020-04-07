@@ -73,23 +73,80 @@
 namespace tim
 {
 //
-//--------------------------------------------------------------------------------------//
-// use this function to get rid of "unused parameter" warnings
+/// Alias template make_integer_sequence
+template <typename Tp, Tp Num>
+using make_integer_sequence = std::make_integer_sequence<Tp, Num>;
 //
-template <typename... _Args>
+/// Alias template index_sequence
+template <size_t... Idx>
+using index_sequence = std::integer_sequence<size_t, Idx...>;
+//
+/// Alias template make_index_sequence
+template <size_t Num>
+using make_index_sequence = std::make_integer_sequence<size_t, Num>;
+//
+/// Alias template index_sequence_for
+template <typename... Types>
+using index_sequence_for = std::make_index_sequence<sizeof...(Types)>;
+//
+/// Alias template for enable_if
+template <bool B, typename T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
+//
+/// Alias template for decay
+template <typename T>
+using decay_t = typename std::decay<T>::type;
+//
+template <bool Val, typename Lhs, typename Rhs>
+using conditional_t = typename std::conditional<(Val), Lhs, Rhs>::type;
+//
+using true_type = std::true_type;
+//
+using false_type = std::false_type;
+//
+template <int N>
+using priority_constant = std::integral_constant<int, N>;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct identity
+{
+    using type = T;
+};
+//
+template <typename T>
+using identity_t = typename identity<T>::type;
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class type_list
+/// \brief lightweight tuple-alternative for meta-programming logic
+template <typename... Tp>
+struct type_list
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \fn consume_parameters
+/// \brief use this function to get rid of "unused parameter" warnings
+template <typename... ArgsT>
 void
-consume_parameters(_Args&&...)
+consume_parameters(ArgsT&&...)
 {}
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp, typename _Deleter>
+template <typename Tp, typename _Deleter>
 class singleton;
 //
 //--------------------------------------------------------------------------------------//
-// clang-format off
-namespace cupti { struct result; }
-// clang-format on
+//
+namespace cupti
+{
+struct result;
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 namespace scope
@@ -164,31 +221,31 @@ get_default()
 //
 //--------------------------------------------------------------------------------------//
 //
-struct data : public data_type
+struct config : public data_type
 {
-    data()
+    config()
     : data_type(get_default())
     {}
 
-    data(const data_type& obj)
+    config(const data_type& obj)
     : data_type(obj)
     {}
 
-    data(data_type&& obj)
+    config(data_type&& obj)
     : data_type(std::forward<data_type>(obj))
     {}
 
-    data(bool _flat)
+    config(bool _flat)
     : data_type(generate(input_type{ { _flat, false, false } },
                          std::make_index_sequence<scope_count>{}))
     {}
 
-    data(bool _flat, bool _timeline)
+    config(bool _flat, bool _timeline)
     : data_type(generate(input_type{ { _flat, _timeline, false } },
                          std::make_index_sequence<scope_count>{}))
     {}
 
-    data(bool _flat, bool _timeline, bool _tree)
+    config(bool _flat, bool _timeline, bool _tree)
     : data_type(generate(input_type{ { _flat, _timeline, _tree } },
                          std::make_index_sequence<scope_count>{}))
     {}
@@ -198,23 +255,23 @@ struct data : public data_type
                                 std::is_same<Arg, flat>::value ||
                                 std::is_same<Arg, timeline>::value),
                                int> = 0>
-    data(Arg&&, Args&&... args)
+    config(Arg&&, Args&&... args)
     {
         *this += std::forward<Arg>();
         TIMEMORY_FOLD_EXPRESSION(*this += std::forward<Args>(args));
     }
 
-    ~data()           = default;
-    data(const data&) = default;
-    data(data&&)      = default;
-    data& operator=(const data&) = default;
-    data& operator=(data&&) = default;
+    ~config()             = default;
+    config(const config&) = default;
+    config(config&&)      = default;
+    config& operator=(const config&) = default;
+    config& operator=(config&&) = default;
 
     template <typename T, std::enable_if_t<(std::is_same<T, tree>::value ||
                                             std::is_same<T, flat>::value ||
                                             std::is_same<T, timeline>::value),
                                            int> = 0>
-    data& operator+=(T)
+    config& operator+=(T)
     {
         this->data_type::set(T::value, true);
         return *this;
@@ -224,7 +281,7 @@ struct data : public data_type
                                             std::is_same<T, flat>::value ||
                                             std::is_same<T, timeline>::value),
                                            int> = 0>
-    data& set(bool val = true)
+    config& set(bool val = true)
     {
         this->data_type::set(T::value, val);
         return *this;
@@ -241,7 +298,7 @@ struct data : public data_type
     bool is_flat_timeline() const { return (is_flat() && is_timeline()); }
     bool is_tree_timeline() const { return (is_tree() && is_timeline()); }
 
-    friend std::ostream& operator<<(std::ostream& os, const data& obj)
+    friend std::ostream& operator<<(std::ostream& os, const config& obj)
     {
         std::stringstream ss;
         ss << std::boolalpha << "tree: " << obj.is_tree() << ", flat: " << obj.is_flat()
@@ -267,7 +324,7 @@ struct data : public data_type
             return _current;
         }
         // if neither flat nor timeline are enabled, return the nested depth
-        return ((_current >= 0) ? (_current + 1) : 1);
+        return _current + 1;
     }
 
     uint64_t compute_hash(uint64_t _id, uint64_t _depth, uint64_t& _counter)
@@ -288,32 +345,32 @@ struct data : public data_type
 //
 //--------------------------------------------------------------------------------------//
 //
-inline const data
-operator+(data _lhs, tree _rhs)
+inline const config
+operator+(config _lhs, tree _rhs)
 {
     return (_lhs += _rhs);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-inline const data
-operator+(data _lhs, flat _rhs)
+inline const config
+operator+(config _lhs, flat _rhs)
 {
     return (_lhs += _rhs);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-inline const data
-operator+(data _lhs, timeline _rhs)
+inline const config
+operator+(config _lhs, timeline _rhs)
 {
     return (_lhs += _rhs);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-inline const data
-operator+(data _lhs, data _rhs)
+inline const config
+operator+(config _lhs, config _rhs)
 {
     return either(_lhs, _rhs, std::make_index_sequence<scope_count>{});
 }

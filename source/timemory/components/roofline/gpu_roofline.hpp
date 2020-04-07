@@ -55,14 +55,14 @@ namespace component
 //              gpu_roofline<double>
 //
 //
-template <typename... _Types>
+template <typename... Types>
 struct gpu_roofline
-: public base<gpu_roofline<_Types...>, std::tuple<typename cupti_activity::value_type,
-                                                  typename cupti_counters::value_type>>
+: public base<gpu_roofline<Types...>, std::tuple<typename cupti_activity::value_type,
+                                                 typename cupti_counters::value_type>>
 {
     using value_type   = std::tuple<typename cupti_activity::value_type,
                                   typename cupti_counters::value_type>;
-    using this_type    = gpu_roofline<_Types...>;
+    using this_type    = gpu_roofline<Types...>;
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
@@ -73,26 +73,26 @@ struct gpu_roofline
     using result_type   = std::vector<double>;
     using label_type    = std::vector<std::string>;
     using count_type    = wall_clock;
-    using types_tuple   = std::tuple<_Types...>;
+    using types_tuple   = std::tuple<Types...>;
 
     using ert_data_t     = ert::exec_data<count_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
-    template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
+    template <typename Tp>
+    using ert_config_type = ert::configuration<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_counter_type = ert::counter<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_executor_type = ert::executor<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_callback_type = ert::callback<ert_executor_type<Tp>>;
 
     // variadic expansion for ERT types
-    using ert_config_t   = std::tuple<ert_config_type<_Types>...>;
-    using ert_counter_t  = std::tuple<ert_counter_type<_Types>...>;
-    using ert_executor_t = std::tuple<ert_executor_type<_Types>...>;
-    using ert_callback_t = std::tuple<ert_callback_type<_Types>...>;
+    using ert_config_t   = std::tuple<ert_config_type<Types>...>;
+    using ert_counter_t  = std::tuple<ert_counter_type<Types>...>;
+    using ert_executor_t = std::tuple<ert_executor_type<Types>...>;
+    using ert_callback_t = std::tuple<ert_callback_type<Types>...>;
 
     static_assert(std::tuple_size<ert_config_t>::value ==
                       std::tuple_size<types_tuple>::value,
@@ -274,7 +274,7 @@ public:
 
     static std::string get_type_string()
     {
-        return apply<std::string>::join("_", demangle(typeid(_Types).name())...);
+        return apply<std::string>::join("_", demangle(typeid(Types).name())...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -305,10 +305,10 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tp, typename _Func>
-    static void set_executor_callback(_Func&& f)
+    template <typename Tp, typename FuncT>
+    static void set_executor_callback(FuncT&& f)
     {
-        ert_executor_type<_Tp>::get_callback() = std::forward<_Func>(f);
+        ert_executor_type<Tp>::get_callback() = std::forward<FuncT>(f);
     }
 
     //----------------------------------------------------------------------------------//
@@ -900,14 +900,14 @@ struct gpu_roofline<cuda::fp16_t>
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 
     // short-hand for variadic expansion
-    template <typename _Tp>
-    using ert_config_type = ert::configuration<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_counter_type = ert::counter<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_executor_type = ert::executor<device_t, _Tp, count_type>;
-    template <typename _Tp>
-    using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
+    template <typename Tp>
+    using ert_config_type = ert::configuration<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_counter_type = ert::counter<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_executor_type = ert::executor<device_t, Tp, count_type>;
+    template <typename Tp>
+    using ert_callback_type = ert::callback<ert_executor_type<Tp>>;
 
     // variadic expansion for ERT types
     using ert_config_t   = std::tuple<ert_config_type<cuda::fp16_t>>;
@@ -1017,10 +1017,10 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tp, typename _Func>
-    static void set_executor_callback(_Func&& f)
+    template <typename Tp, typename FuncT>
+    static void set_executor_callback(FuncT&& f)
     {
-        ert_executor_type<_Tp>::get_callback() = std::forward<_Func>(f);
+        ert_executor_type<Tp>::get_callback() = std::forward<FuncT>(f);
     }
 
     //----------------------------------------------------------------------------------//

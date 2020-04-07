@@ -54,9 +54,9 @@ component_list<Types...>::component_list()
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename _Func>
+template <typename FuncT>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
-                                         scope::data _scope, const _Func& _func)
+                                         scope::config _scope, const FuncT& _func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
 , m_data(data_type{})
 {
@@ -73,10 +73,10 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename _Func>
+template <typename FuncT>
 component_list<Types...>::component_list(const captured_location_t& loc,
-                                         const bool& store, scope::data _scope,
-                                         const _Func& _func)
+                                         const bool& store, scope::config _scope,
+                                         const FuncT& _func)
 : bundle_type(loc.get_hash(), store, _scope)
 , m_data(data_type{})
 {
@@ -93,9 +93,9 @@ component_list<Types...>::component_list(const captured_location_t& loc,
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename _Func>
+template <typename FuncT>
 component_list<Types...>::component_list(size_t _hash, const bool& store,
-                                         scope::data _scope, const _Func& _func)
+                                         scope::config _scope, const FuncT& _func)
 : bundle_type(_hash, store, _scope)
 , m_data(data_type{})
 {
@@ -148,7 +148,7 @@ component_list<Types...>::operator=(const this_type& rhs)
 //
 template <typename... Types>
 component_list<Types...>
-component_list<Types...>::clone(bool store, scope::data _scope)
+component_list<Types...>::clone(bool store, scope::config _scope)
 {
     component_list tmp(*this);
     tmp.m_store = store;

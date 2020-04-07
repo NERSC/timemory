@@ -69,6 +69,10 @@ TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
 //
 TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 //
+TIMEMORY_BUNDLE_INDEX(trace_bundle_idx, 20000)
+//
+TIMEMORY_BUNDLE_INDEX(profiler_bundle_idx, 22000)
+//
 TIMEMORY_COMPONENT_ALIAS(user_global_bundle,
                          user_bundle<global_bundle_idx, api::native_tag>)
 //
@@ -80,6 +84,12 @@ TIMEMORY_COMPONENT_ALIAS(user_list_bundle, user_bundle<list_bundle_idx, api::nat
 TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::native_tag>)
 //
 TIMEMORY_COMPONENT_ALIAS(user_mpip_bundle, user_bundle<mpip_bundle_idx, api::native_tag>)
+//
+TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
+                         user_bundle<trace_bundle_idx, api::native_tag>)
+//
+TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
+                         user_bundle<profiler_bundle_idx, api::native_tag>)
 //
 //======================================================================================//
 //
@@ -118,14 +128,14 @@ struct ompt_handle
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t _Idx, typename _Type>
-struct is_user_bundle<component::user_bundle<_Idx, _Type>> : true_type
+template <size_t Idx, typename Type>
+struct is_user_bundle<component::user_bundle<Idx, Type>> : true_type
 {};
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t _Idx, typename _Type>
-struct requires_prefix<component::user_bundle<_Idx, _Type>> : true_type
+template <size_t Idx, typename Type>
+struct requires_prefix<component::user_bundle<Idx, Type>> : true_type
 {};
 //
 //--------------------------------------------------------------------------------------//
@@ -148,6 +158,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_
                                  "ompt_bundle")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE,
-                                 "user_mpip_bundle"
+                                 "user_mpip_bundle",
                                  "mpip",
                                  "mpi_tools", "mpi")

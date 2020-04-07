@@ -48,13 +48,9 @@
 //
 namespace tim
 {
-template <int N>
-using priority_constant = std::integral_constant<int, N>;
-
-using true_type                      = std::true_type;
-using false_type                     = std::false_type;
+//
 using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
-
+//
 //======================================================================================//
 // type-traits for customization
 //
@@ -250,29 +246,13 @@ using output_archive_t = output_archive<trait::output_archive_t<T>, TIMEMORY_API
 //
 
 }  // namespace policy
-
-//======================================================================================//
 //
-///     \class type_list
-///     \brief lightweight tuple-alternative for meta-programming logic
+//--------------------------------------------------------------------------------------//
 //
-//======================================================================================//
-
-template <typename... Tp>
-struct type_list
-{};
-
-//======================================================================================//
-//
-//  Pre-C++11 tuple expansion
-//
-//======================================================================================//
-
-// for pre-C++14 tuple expansion to arguments
 namespace impl
 {
 //--------------------------------------------------------------------------------------//
-
+//
 template <typename... Types>
 struct tuple_concat
 {
@@ -342,33 +322,6 @@ struct type_concat<type_list<Ts0...>, type_list<Ts1...>, Rest...>
 }  // namespace impl
 
 //======================================================================================//
-
-/// Alias template make_integer_sequence
-template <typename Tp, Tp Num>
-using make_integer_sequence = std::make_integer_sequence<Tp, Num>;
-
-/// Alias template index_sequence
-template <size_t... Idx>
-using index_sequence = std::integer_sequence<size_t, Idx...>;
-
-/// Alias template make_index_sequence
-template <size_t Num>
-using make_index_sequence = std::make_integer_sequence<size_t, Num>;
-
-/// Alias template index_sequence_for
-template <typename... Types>
-using index_sequence_for = std::make_index_sequence<sizeof...(Types)>;
-
-/// Alias template for enable_if
-template <bool B, typename T = void>
-using enable_if_t = typename std::enable_if<B, T>::type;
-
-/// Alias template for decay
-template <typename T>
-using decay_t = typename std::decay<T>::type;
-
-template <bool Val, typename Lhs, typename Rhs>
-using conditional_t = typename std::conditional<(Val), Lhs, Rhs>::type;
 
 template <typename... Ts>
 using tuple_concat_t = typename impl::tuple_concat<Ts...>::type;
@@ -570,11 +523,11 @@ namespace mpl
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _Out, typename _In>
+template <typename Out, typename In>
 auto
-convert(const _In& _in) -> decltype(impl::convert<_In, _Out>::apply(_in))
+convert(const In& _in) -> decltype(impl::convert<In, Out>::apply(_in))
 {
-    return impl::convert<_In, _Out>::apply(_in);
+    return impl::convert<In, Out>::apply(_in);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -650,17 +603,6 @@ resize(T& _targ, size_t _n) -> decltype(_targ.resize(_n), void())
 {
     _targ.resize(_n);
 }
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T>
-struct identity
-{
-    using type = T;
-};
-
-template <typename T>
-using identity_t = typename identity<T>::type;
 
 //--------------------------------------------------------------------------------------//
 

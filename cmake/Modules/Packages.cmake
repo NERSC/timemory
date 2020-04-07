@@ -44,6 +44,8 @@ add_interface_library(timemory-tau)
 add_interface_library(timemory-ompt)
 add_interface_library(timemory-python)
 add_interface_library(timemory-plotting)
+add_interface_library(timemory-allinea-map)
+add_interface_library(timemory-craypat)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-gperftools-compile-options)
@@ -1258,6 +1260,50 @@ if(Dyninst_FOUND AND Boost_FOUND)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               AllineaMAP
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_ALLINEA_MAP)
+    find_package(AllineaMAP ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(AllineaMAP_FOUND)
+    target_link_libraries(timemory-allinea-map INTERFACE ${AllineaMAP_LIBRARIES})
+    target_include_directories(timemory-allinea-map SYSTEM INTERFACE ${AllineaMAP_INCLUDE_DIRS})
+    target_compile_definitions(timemory-allinea-map INTERFACE TIMEMORY_USE_ALLINEA_MAP)
+else()
+    set(TIMEMORY_USE_ALLINEA_MAP OFF)
+    inform_empty_interface(timemory-allinea-map "Allinea MAP")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               CrayPAT
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_CRAYPAT)
+    find_package(CrayPAT ${TIMEMORY_FIND_REQUIREMENT} COMPONENTS ${CrayPAT_COMPONENTS})
+endif()
+
+if(CrayPAT_FOUND)
+    target_link_libraries(timemory-craypat INTERFACE ${CrayPAT_LIBRARIES})
+    target_link_directories(timemory-craypat INTERFACE ${CrayPAT_LIBRARY_DIRS})
+    target_include_directories(timemory-craypat SYSTEM INTERFACE ${CrayPAT_INCLUDE_DIRS})
+    target_compile_definitions(timemory-craypat INTERFACE TIMEMORY_USE_CRAYPAT CRAYPAT)
+    add_target_flag_if_avail(timemory-craypat "-g" "-debug pubnames"
+        "-Qlocation,ld,${CrayPAT_LIBRARY_DIR}" "-fno-omit-frame-pointer"
+        "-fno-optimize-sibling-calls")
+else()
+    set(TIMEMORY_USE_CRAYPAT OFF)
+    inform_empty_interface(timemory-craypat "CrayPAT")
 endif()
 
 

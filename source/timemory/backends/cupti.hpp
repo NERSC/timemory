@@ -75,7 +75,7 @@ static uint64_t dummy_kernel_id = 0;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 GLOBAL_CALLABLE void
 warmup()
 {}
@@ -1560,9 +1560,9 @@ finalize_trace(const std::vector<activity_kind_t>& _kind_types)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-start_trace(_Tp* obj, bool flush)
+start_trace(Tp* obj, bool flush)
 {
     auto& _receiver = get_receiver();
     // clang-format off
@@ -1573,9 +1573,9 @@ start_trace(_Tp* obj, bool flush)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline void
-stop_trace(_Tp* obj)
+stop_trace(Tp* obj)
 {
     auto& _receiver = get_receiver();
     cuda::device_sync();

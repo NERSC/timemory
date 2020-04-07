@@ -48,11 +48,11 @@ get_unique_id()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-_Tp&
+template <typename Tp>
+Tp&
 get_tl_static()
 {
-    static thread_local _Tp _instance;
+    static thread_local Tp _instance;
     return _instance;
 }
 

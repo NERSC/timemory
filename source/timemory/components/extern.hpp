@@ -26,8 +26,20 @@
 
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_ALLINEA_MAP_EXTERN)
+#    include "timemory/components/allinea/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_CALIPER_EXTERN)
 #    include "timemory/components/caliper/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_CRAYPAT_EXTERN)
+#    include "timemory/components/craypat/extern.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//

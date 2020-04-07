@@ -37,4 +37,8 @@
 //
 #include "timemory/@FOLDER@/declaration.hpp"
 //
+#if defined(TIMEMORY_@CHECK@_SOURCE)
+#    include "timemory/@FOLDER@/definition.hpp"
+#endif
+//
 //======================================================================================//

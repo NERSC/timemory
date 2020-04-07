@@ -209,40 +209,40 @@ struct unique<InTuple<In...>, OutTuple<Out...>>
 
 //======================================================================================//
 
-template <template <typename> class _Prio, typename _Beg, typename Tp, typename _End>
+template <template <typename> class PrioT, typename _Beg, typename Tp, typename _End>
 struct sortT;
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename> class _Prio, typename Tuple, typename _Beg = type_list<>,
+template <template <typename> class PrioT, typename Tuple, typename _Beg = type_list<>,
           typename _End = type_list<>>
-using sort = typename sortT<_Prio, Tuple, _Beg, _End>::type;
+using sort = typename sortT<PrioT, Tuple, _Beg, _End>::type;
 
 //--------------------------------------------------------------------------------------//
 //  Initiate recursion (zeroth sort operation)
 //
-template <template <typename> class _Prio, typename _In, typename... _InT>
-struct sortT<_Prio, type_list<_In, _InT...>, type_list<>, type_list<>>
+template <template <typename> class PrioT, typename In, typename... InT>
+struct sortT<PrioT, type_list<In, InT...>, type_list<>, type_list<>>
 {
     using type =
-        typename sortT<_Prio, type_list<_InT...>, type_list<>, type_list<_In>>::type;
+        typename sortT<PrioT, type_list<InT...>, type_list<>, type_list<In>>::type;
 };
 
 //--------------------------------------------------------------------------------------//
 //  Initiate recursion (zeroth sort operation)
 //
-template <template <typename> class _Prio, typename _In, typename... _InT>
-struct sortT<_Prio, type_list<type_list<_In, _InT...>>, type_list<>, type_list<>>
+template <template <typename> class PrioT, typename In, typename... InT>
+struct sortT<PrioT, type_list<type_list<In, InT...>>, type_list<>, type_list<>>
 {
     using type =
-        typename sortT<_Prio, type_list<_InT...>, type_list<>, type_list<_In>>::type;
+        typename sortT<PrioT, type_list<InT...>, type_list<>, type_list<In>>::type;
 };
 
 //--------------------------------------------------------------------------------------//
 //  Terminate recursion (last sort operation)
 //
-template <template <typename> class _Prio, typename... _BegT, typename... _EndT>
-struct sortT<_Prio, type_list<>, type_list<_BegT...>, type_list<_EndT...>>
+template <template <typename> class PrioT, typename... _BegT, typename... _EndT>
+struct sortT<PrioT, type_list<>, type_list<_BegT...>, type_list<_EndT...>>
 {
     using type = type_list<_BegT..., _EndT...>;
 };
@@ -250,63 +250,63 @@ struct sortT<_Prio, type_list<>, type_list<_BegT...>, type_list<_EndT...>>
 //--------------------------------------------------------------------------------------//
 //  If no current end, transfer begin to end ()
 //
-template <template <typename> class _Prio, typename _In, typename... _InT,
+template <template <typename> class PrioT, typename In, typename... InT,
           typename... _BegT>
-struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>, type_list<>>
+struct sortT<PrioT, type_list<In, InT...>, type_list<_BegT...>, type_list<>>
 {
-    using type = typename sortT<_Prio, type_list<_In, _InT...>, type_list<>,
+    using type = typename sortT<PrioT, type_list<In, InT...>, type_list<>,
                                 type_list<_BegT...>>::type;
 };
 
 //--------------------------------------------------------------------------------------//
 //  Specialization for first sort operation
 //
-template <template <typename> class _Prio, typename _In, typename Tp, typename... _InT>
-struct sortT<_Prio, type_list<_In, _InT...>, type_list<>, type_list<Tp>>
+template <template <typename> class PrioT, typename In, typename Tp, typename... InT>
+struct sortT<PrioT, type_list<In, InT...>, type_list<>, type_list<Tp>>
 {
-    static constexpr bool value = (_Prio<_In>::value < _Prio<Tp>::value);
+    static constexpr bool value = (PrioT<In>::value < PrioT<Tp>::value);
 
     using type = conditional_t<
         (value),
-        typename sortT<_Prio, type_list<_InT...>, type_list<>, type_list<_In, Tp>>::type,
-        typename sortT<_Prio, type_list<_InT...>, type_list<>, type_list<Tp, _In>>::type>;
+        typename sortT<PrioT, type_list<InT...>, type_list<>, type_list<In, Tp>>::type,
+        typename sortT<PrioT, type_list<InT...>, type_list<>, type_list<Tp, In>>::type>;
 };
 
 //--------------------------------------------------------------------------------------//
 //  Specialization for second sort operation
 //
-template <template <typename> class _Prio, typename _In, typename _Ta, typename _Tb,
-          typename... _BegT, typename... _InT>
-struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>, type_list<_Ta, _Tb>>
+template <template <typename> class PrioT, typename In, typename At, typename Bt,
+          typename... _BegT, typename... InT>
+struct sortT<PrioT, type_list<In, InT...>, type_list<_BegT...>, type_list<At, Bt>>
 {
-    static constexpr bool iavalue = (_Prio<_In>::value < _Prio<_Ta>::value);
-    static constexpr bool ibvalue = (_Prio<_In>::value < _Prio<_Tb>::value);
-    static constexpr bool abvalue = (_Prio<_Ta>::value <= _Prio<_Tb>::value);
+    static constexpr bool iavalue = (PrioT<In>::value < PrioT<At>::value);
+    static constexpr bool ibvalue = (PrioT<In>::value < PrioT<Bt>::value);
+    static constexpr bool abvalue = (PrioT<At>::value <= PrioT<Bt>::value);
 
     using type = conditional_t<
         (iavalue),
         typename sortT<
-            _Prio, type_list<_InT...>, sort<_Prio, type_list<_BegT..., _In>>,
-            conditional_t<(abvalue), type_list<_Ta, _Tb>, type_list<_Tb, _Ta>>>::type,
+            PrioT, type_list<InT...>, sort<PrioT, type_list<_BegT..., In>>,
+            conditional_t<(abvalue), type_list<At, Bt>, type_list<Bt, At>>>::type,
         typename sortT<
-            _Prio, type_list<_InT...>, sort<_Prio, type_list<_BegT..., _Ta>>,
-            conditional_t<(ibvalue), type_list<_In, _Tb>, type_list<_Tb, _In>>>::type>;
+            PrioT, type_list<InT...>, sort<PrioT, type_list<_BegT..., At>>,
+            conditional_t<(ibvalue), type_list<In, Bt>, type_list<Bt, In>>>::type>;
 };
 
 //--------------------------------------------------------------------------------------//
 //  Specialization for all other sort operations after first and second
 //
-template <template <typename> class _Prio, typename _In, typename Tp, typename... _InT,
+template <template <typename> class PrioT, typename In, typename Tp, typename... InT,
           typename... _BegT, typename... _EndT>
-struct sortT<_Prio, type_list<_In, _InT...>, type_list<_BegT...>, type_list<Tp, _EndT...>>
+struct sortT<PrioT, type_list<In, InT...>, type_list<_BegT...>, type_list<Tp, _EndT...>>
 {
-    static constexpr bool value = (_Prio<_In>::value < _Prio<Tp>::value);
+    static constexpr bool value = (PrioT<In>::value < PrioT<Tp>::value);
 
     using type =
         conditional_t<(value),
-                      typename sortT<_Prio, type_list<_InT...>, type_list<>,
-                                     type_list<_BegT..., _In, Tp, _EndT...>>::type,
-                      typename sortT<_Prio, type_list<_In, _InT...>,
+                      typename sortT<PrioT, type_list<InT...>, type_list<>,
+                                     type_list<_BegT..., In, Tp, _EndT...>>::type,
+                      typename sortT<PrioT, type_list<In, InT...>,
                                      type_list<_BegT..., Tp>, type_list<_EndT...>>::type>;
 };
 
@@ -389,31 +389,31 @@ using get_data_label_t = typename impl::template get_data_tuple<TypeList>::label
 
 namespace mpl
 {
-template <template <typename> class _Prio, typename Tuple, typename _Beg = type_list<>,
+template <template <typename> class PrioT, typename Tuple, typename _Beg = type_list<>,
           typename _End = type_list<>>
-using sort = convert_t<typename impl::sortT<_Prio, convert_t<Tuple, type_list<>>,
+using sort = convert_t<typename impl::sortT<PrioT, convert_t<Tuple, type_list<>>,
                                             convert_t<_Beg, type_list<>>,
                                             convert_t<_End, type_list<>>>::type,
                        std::tuple<>>;
 
 }  // namespace mpl
 
-template <typename Tp, typename _Op>
+template <typename Tp, typename OpT>
 struct negative_priority;
 
-template <typename Tp, typename _Op>
+template <typename Tp, typename OpT>
 struct positive_priority;
 
-template <typename Tp, template <typename> class _Op>
-struct negative_priority<Tp, _Op<Tp>>
+template <typename Tp, template <typename> class OpT>
+struct negative_priority<Tp, OpT<Tp>>
 {
-    static constexpr bool value = (_Op<Tp>::value < 0);
+    static constexpr bool value = (OpT<Tp>::value < 0);
 };
 
-template <typename Tp, template <typename> class _Op>
-struct positive_priority<Tp, _Op<Tp>>
+template <typename Tp, template <typename> class OpT>
+struct positive_priority<Tp, OpT<Tp>>
 {
-    static constexpr bool value = (_Op<Tp>::value > 0);
+    static constexpr bool value = (OpT<Tp>::value > 0);
 };
 
 template <typename Tp>

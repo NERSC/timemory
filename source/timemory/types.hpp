@@ -32,6 +32,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/config/types.hpp"
 #include "timemory/containers/types.hpp"
 #include "timemory/environment/types.hpp"
 #include "timemory/ert/types.hpp"
@@ -57,6 +58,7 @@
 //
 #if !defined(TIMEMORY_COMPONENT_TYPES)
 #   define TIMEMORY_COMPONENT_TYPES             \
+    component::allinea_map,                     \
     component::caliper,                         \
     component::cpu_clock,                       \
     component::cpu_roofline_dp_flops,           \

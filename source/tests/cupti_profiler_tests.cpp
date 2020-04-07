@@ -83,26 +83,26 @@ saxpy(int64_t n, float a, float* x, float* y)
 }
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
+template <typename Tp>
 DEVICE_CALLABLE inline void
-add_func(_Tp& a, const _Tp& b, const _Tp& c)
+add_func(Tp& a, const Tp& b, const Tp& c)
 {
     a = b + c;
 }
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
+template <typename Tp>
 DEVICE_CALLABLE inline void
-fma_func(_Tp& a, const _Tp& b, const _Tp& c)
+fma_func(Tp& a, const Tp& b, const Tp& c)
 {
     a = a * b + c;
 }
 //--------------------------------------------------------------------------------------//
 //  print an array to a string
 //
-template <typename _Tp>
+template <typename Tp>
 std::string
-array_to_string(const _Tp& arr, const std::string& delimiter = ", ",
+array_to_string(const Tp& arr, const std::string& delimiter = ", ",
                 const int& _width = 16, const int& _break = 8,
                 const std::string& _break_delim = "\t")
 {

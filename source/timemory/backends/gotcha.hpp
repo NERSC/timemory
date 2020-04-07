@@ -197,13 +197,13 @@ wrap(binding_t& _bind, std::string& _label)
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _N>
-std::array<error_t, _N>
-wrap(std::array<binding_t, _N>& _arr, const std::array<bool, _N>& _filled,
-     std::array<std::string, _N>& _labels)
+template <size_t N>
+std::array<error_t, N>
+wrap(std::array<binding_t, N>& _arr, const std::array<bool, N>& _filled,
+     std::array<std::string, N>& _labels)
 {
-    std::array<error_t, _N> _ret;
-    for(size_t i = 0; i < _N; ++i)
+    std::array<error_t, N> _ret;
+    for(size_t i = 0; i < N; ++i)
     {
         if(_filled[i])
             _ret[i] = wrap(_arr[i], _labels[i]);

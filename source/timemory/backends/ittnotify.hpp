@@ -42,9 +42,9 @@ namespace ittnotify
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 void
-consume_parameters(_Args&&...)
+consume_parameters(ArgsT&&...)
 {}
 
 //--------------------------------------------------------------------------------------//

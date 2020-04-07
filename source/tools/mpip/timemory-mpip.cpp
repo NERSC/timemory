@@ -33,10 +33,9 @@
 
 using namespace tim::component;
 
-using api_t             = tim::api::native_tag;
-using library_toolset_t = TIMEMORY_LIBRARY_TYPE;
-using mpi_toolset_t     = typename library_toolset_t::component_type;
-using mpip_handle_t     = mpip_handle<mpi_toolset_t, api_t>;
+using api_t         = tim::api::native_tag;
+using mpi_toolset_t = tim::component_list<user_mpip_bundle>;
+using mpip_handle_t = mpip_handle<mpi_toolset_t, api_t>;
 
 extern "C"
 {
@@ -45,22 +44,8 @@ extern "C"
         // provide environment variable for enabling/disabling
         if(tim::get_env<bool>("ENABLE_TIMEMORY_MPIP", true))
         {
-            using string_t = std::string;
-
             configure_mpip<mpi_toolset_t, api_t>();
-
-            auto env_ret  = tim::get_env<string_t>("TIMEMORY_PROFILER_COMPONENTS", "");
-            auto env_enum = tim::enumerate_components(tim::delimit(env_ret));
-            if(env_enum.empty())
-            {
-                env_ret  = tim::get_env<string_t>("TIMEMORY_COMPONENT_LIST_INIT", "");
-                env_enum = tim::enumerate_components(tim::delimit(env_ret));
-            }
-
-            mpi_toolset_t::get_initializer() = [env_enum](auto& cl) {
-                ::tim::initialize(cl, env_enum);
-            };
-
+            user_mpip_bundle::global_init(nullptr);
             return activate_mpip<mpi_toolset_t, api_t>();
         }
         else

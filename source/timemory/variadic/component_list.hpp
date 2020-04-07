@@ -73,7 +73,7 @@ class component_list : public heap_bundle<available_tuple<concat<Types...>>>
     template <typename TupleC, typename ListC>
     friend class component_hybrid;
 
-    template <typename... _Types>
+    template <typename... Tp>
     friend class auto_list;
 
 public:
@@ -137,18 +137,18 @@ public:
 
     template <typename Func = initializer_type>
     explicit component_list(const string_t& key, const bool& store = true,
-                            scope::data _scope = scope::get_default(),
-                            const Func&        = get_initializer());
+                            scope::config _scope = scope::get_default(),
+                            const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_list(const captured_location_t& loc, const bool& store = true,
-                            scope::data _scope = scope::get_default(),
-                            const Func&        = get_initializer());
+                            scope::config _scope = scope::get_default(),
+                            const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_list(size_t _hash, const bool& store = true,
-                            scope::data _scope = scope::get_default(),
-                            const Func&        = get_initializer());
+                            scope::config _scope = scope::get_default(),
+                            const Func&          = get_initializer());
 
     ~component_list();
 
@@ -161,7 +161,7 @@ public:
     component_list(const component_list& rhs);
     component_list& operator=(const component_list& rhs);
 
-    component_list clone(bool store, scope::data _scope = scope::get_default());
+    component_list clone(bool store, scope::config _scope = scope::get_default());
 
 public:
     //----------------------------------------------------------------------------------//
@@ -608,20 +608,20 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 auto
-get(const component_list<_Types...>& _obj)
-    -> decltype(std::declval<component_list<_Types...>>().get())
+get(const component_list<Types...>& _obj)
+    -> decltype(std::declval<component_list<Types...>>().get())
 {
     return _obj.get();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 auto
-get_labeled(const component_list<_Types...>& _obj)
-    -> decltype(std::declval<component_list<_Types...>>().get_labeled())
+get_labeled(const component_list<Types...>& _obj)
+    -> decltype(std::declval<component_list<Types...>>().get_labeled())
 {
     return _obj.get_labeled();
 }

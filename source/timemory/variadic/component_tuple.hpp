@@ -70,7 +70,7 @@ class component_tuple : public stack_bundle<available_tuple<concat<Types...>>>
     template <typename TupleC, typename ListC>
     friend class component_hybrid;
 
-    template <typename... _Types>
+    template <typename... Tp>
     friend class auto_tuple;
 
 public:
@@ -156,18 +156,18 @@ public:
 
     template <typename Func = initializer_type>
     explicit component_tuple(const string_t& key, const bool& store = true,
-                             scope::data _scope = scope::get_default(),
-                             const Func&        = get_initializer());
+                             scope::config _scope = scope::get_default(),
+                             const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(const captured_location_t& loc, const bool& store = true,
-                             scope::data _scope = scope::get_default(),
-                             const Func&        = get_initializer());
+                             scope::config _scope = scope::get_default(),
+                             const Func&          = get_initializer());
 
     template <typename Func = initializer_type>
     explicit component_tuple(size_t _hash, const bool& store = true,
-                             scope::data _scope = scope::get_default(),
-                             const Func&        = get_initializer());
+                             scope::config _scope = scope::get_default(),
+                             const Func&          = get_initializer());
 
     ~component_tuple();
 
@@ -180,7 +180,7 @@ public:
     component_tuple& operator=(const component_tuple& rhs) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple clone(bool store, scope::data _scope = scope::get_default());
+    component_tuple clone(bool store, scope::config _scope = scope::get_default());
 
 public:
     //----------------------------------------------------------------------------------//
@@ -548,7 +548,7 @@ protected:
     const data_type& get_data() const;
     void             set_prefix(const string_t&) const;
     void             set_prefix(size_t) const;
-    void             set_scope(scope::data);
+    void             set_scope(scope::config);
 
 protected:
     // objects
@@ -562,20 +562,20 @@ protected:
 
 //======================================================================================//
 
-template <typename... _Types>
+template <typename... Types>
 auto
-get(const component_tuple<_Types...>& _obj)
-    -> decltype(std::declval<component_tuple<_Types...>>().get())
+get(const component_tuple<Types...>& _obj)
+    -> decltype(std::declval<component_tuple<Types...>>().get())
 {
     return _obj.get();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 auto
-get_labeled(const component_tuple<_Types...>& _obj)
-    -> decltype(std::declval<component_tuple<_Types...>>().get_labeled())
+get_labeled(const component_tuple<Types...>& _obj)
+    -> decltype(std::declval<component_tuple<Types...>>().get_labeled())
 {
     return _obj.get_labeled();
 }

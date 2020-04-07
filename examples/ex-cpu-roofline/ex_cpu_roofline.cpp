@@ -68,7 +68,7 @@ void
 check(auto_list_t& l);
 void
 check_const(const auto_list_t& l);
-template <typename _Tp>
+template <typename Tp>
 void customize_roofline(int64_t, int64_t, int64_t);
 
 //--------------------------------------------------------------------------------------//
@@ -241,13 +241,13 @@ check(auto_list_t& l)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
 customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor)
 {
     using ert_params_t   = tim::ert::exec_params;
     using ert_data_ptr_t = typename roofline_t::ert_data_ptr_t;
-    using ert_counter_t  = typename roofline_t::ert_counter_type<_Tp>;
+    using ert_counter_t  = typename roofline_t::ert_counter_type<Tp>;
 
     // sets up the configuration
     roofline_ert_config_t::get_executor() = [=](ert_data_ptr_t data) {
@@ -257,7 +257,7 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
         auto l3_size = tim::ert::cache_size::get<3>();
         auto lm_size = tim::ert::cache_size::get_max();
 
-        auto     dtype      = tim::demangle(typeid(_Tp).name());
+        auto     dtype      = tim::demangle(typeid(Tp).name());
         uint64_t align_size = 64;
         uint64_t max_size   = memory_factor * lm_size;
 
@@ -283,12 +283,12 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
     // does the execution of ERT
     auto callback = [=](ert_counter_t& _counter) {
         // these are the kernel functions we want to calculate the peaks with
-        auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
-        auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-        auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+        auto store_func = [](Tp& a, const Tp& b) { a = b; };
+        auto add_func   = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
+        auto fma_func   = [](Tp& a, const Tp& b, const Tp& c) { a = a * b + c; };
 
         // set bytes per element
-        _counter.bytes_per_element = sizeof(_Tp);
+        _counter.bytes_per_element = sizeof(Tp);
         // set number of memory accesses per element from two functions
         _counter.memory_accesses_per_element = 2;
 
@@ -304,7 +304,7 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
     };
 
     // set the callback
-    roofline_t::set_executor_callback<_Tp>(callback);
+    roofline_t::set_executor_callback<Tp>(callback);
 }
 
 //--------------------------------------------------------------------------------------//

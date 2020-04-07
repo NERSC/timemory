@@ -73,9 +73,9 @@ fibonacci(long n)
 }
 
 // this function ensures an allocation cannot be optimized
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
@@ -146,14 +146,14 @@ read_write()
     }
 }
 
-template <typename _Tp>
+template <typename Tp>
 string_t
-get_info(const _Tp& obj)
+get_info(const Tp& obj)
 {
     stringstream_t ss;
-    auto           _unit = static_cast<double>(_Tp::get_unit());
-    ss << "value = " << obj.get_value() / _unit << " " << _Tp::get_display_unit()
-       << ", accum = " << obj.get_accum() / _unit << " " << _Tp::get_display_unit()
+    auto           _unit = static_cast<double>(Tp::get_unit());
+    ss << "value = " << obj.get_value() / _unit << " " << Tp::get_display_unit()
+       << ", accum = " << obj.get_accum() / _unit << " " << Tp::get_display_unit()
        << std::endl;
     return ss.str();
 }
@@ -200,9 +200,9 @@ get_test_name()
     return ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
-template <typename _Tp>
+template <typename Tp>
 void
-print_info(const _Tp& obj, int64_t expected)
+print_info(const Tp& obj, int64_t expected)
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;

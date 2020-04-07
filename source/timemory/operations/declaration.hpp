@@ -166,7 +166,7 @@ public:
         return get_entry_sfinae_<Tp>(_data, _idx);
     }
 
-    template <typename Tp, size_t _Idx>
+    template <typename Tp, size_t Idx>
     static Tp get_entry(const Tp& _data, size_t)
     {
         return _data;
@@ -197,18 +197,18 @@ public:
     }
 
 public:
-    template <typename Tp, typename _Wp, typename _Pp>
+    template <typename Tp, typename Wp, typename Pp>
     static void write(std::vector<std::stringstream*>& _os,
-                      std::ios_base::fmtflags _format, const Tp& _data, const _Wp& _width,
-                      const _Pp& _prec)
+                      std::ios_base::fmtflags _format, const Tp& _data, const Wp& _width,
+                      const Pp& _prec)
     {
         size_t num_data = get_distance(_data);
 
         for(size_t i = 0; i < num_data; ++i)
         {
             auto  _idata  = get_entry<Tp>(_data, i);
-            auto  _iwidth = get_entry<_Wp>(_width, i);
-            auto  _iprec  = get_entry<_Pp>(_prec, i);
+            auto  _iwidth = get_entry<Wp>(_width, i);
+            auto  _iprec  = get_entry<Pp>(_prec, i);
             auto* ss      = new std::stringstream;
             ss->setf(_format);
             (*ss) << std::setw(_iwidth) << std::setprecision(_iprec) << _idata;
@@ -216,19 +216,19 @@ public:
         }
     }
 
-    template <typename... Tp, size_t... _Idx, typename _Wp, typename _Pp>
+    template <typename... Tp, size_t... Idx, typename Wp, typename Pp>
     static void write(std::vector<std::stringstream*>& _os,
                       std::ios_base::fmtflags _format, const std::tuple<Tp...>& _data,
-                      const _Wp& _width, const _Pp& _prec, index_sequence<_Idx...>)
+                      const Wp& _width, const Pp& _prec, index_sequence<Idx...>)
     {
         TIMEMORY_FOLD_EXPRESSION(
-            write(_os, _format, std::get<_Idx>(_data), _width, _prec));
+            write(_os, _format, std::get<Idx>(_data), _width, _prec));
     }
 
-    template <typename... Tp, typename _Wp, typename _Pp>
+    template <typename... Tp, typename Wp, typename Pp>
     static void write(std::vector<std::stringstream*>& _os,
                       std::ios_base::fmtflags _format, const std::tuple<Tp...>& _data,
-                      const _Wp& _width, const _Pp& _prec)
+                      const Wp& _width, const Pp& _prec)
     {
         constexpr size_t N = sizeof...(Tp);
         write(_os, _format, _data, _width, _prec, make_index_sequence<N>{});
@@ -292,11 +292,11 @@ public:
         return ss.str();
     }
 
-    template <typename... T, size_t... _Idx>
-    static strvec_t as_string_vec(const std::tuple<T...>& _obj, index_sequence<_Idx...>)
+    template <typename... T, size_t... Idx>
+    static strvec_t as_string_vec(const std::tuple<T...>& _obj, index_sequence<Idx...>)
     {
         using init_list_type = std::initializer_list<std::string>;
-        auto&& ret           = init_list_type{ (as_string(std::get<_Idx>(_obj)))... };
+        auto&& ret           = init_list_type{ (as_string(std::get<Idx>(_obj)))... };
         return strvec_t(ret);
     }
 

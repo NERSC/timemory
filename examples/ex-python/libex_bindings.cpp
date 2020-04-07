@@ -43,34 +43,34 @@
 
 namespace py = pybind11;
 
-template <typename _Tp>
-using vector_t = std::vector<_Tp>;
+template <typename Tp>
+using vector_t = std::vector<Tp>;
 
 static std::mt19937 rng;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline vector_t<_Tp>
+template <typename Tp>
+inline vector_t<Tp>
 generate(const int64_t& nsize)
 {
-    std::vector<_Tp> sendbuf(nsize, 0.0);
-    std::mt19937     rng;
+    std::vector<Tp> sendbuf(nsize, 0.0);
+    std::mt19937    rng;
     rng.seed(54561434UL);
-    auto dist = [&]() { return std::generate_canonical<_Tp, 10>(rng); };
+    auto dist = [&]() { return std::generate_canonical<Tp, 10>(rng); };
     std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
     return sendbuf;
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline vector_t<_Tp>
-allreduce(const vector_t<_Tp>& sendbuf)
+template <typename Tp>
+inline vector_t<Tp>
+allreduce(const vector_t<Tp>& sendbuf)
 {
-    vector_t<_Tp> recvbuf(sendbuf.size(), 0.0);
+    vector_t<Tp> recvbuf(sendbuf.size(), 0.0);
 #if defined(USE_MPI) || defined(TIMEMORY_USE_MPI)
-    auto dtype = (std::is_same<_Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
+    auto dtype = (std::is_same<Tp, float>::value) ? MPI_FLOAT : MPI_DOUBLE;
     MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), dtype, MPI_SUM,
                   MPI_COMM_WORLD);
 #else

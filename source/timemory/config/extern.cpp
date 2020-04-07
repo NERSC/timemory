@@ -22,29 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-///
-/// define TIMEMORY_SOURCE to select appropriate macros
-///
-#if !defined(TIMEMORY_SOURCE)
-#    define TIMEMORY_SOURCE
-#endif
-
-// #if defined(TIMEMORY_USE_@COMPONENT_CHECK@)
-
-//
-// include headers needed for full instantiation
-//
-#include "timemory/data/bits/storage.hpp"
-#include "timemory/data/storage.hpp"
-#include "timemory/plotting.hpp"
-
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/components/@COMPONENT_FOLDER@/components.hpp"
-#include "timemory/components/@COMPONENT_FOLDER@/extern/operations.hpp"
-//
-// clang-format on
-//======================================================================================//
-
-// #endif  // TIMEMORY_USE_@COMPONENT_CHECK@
+#include "timemory/config/extern.hpp"

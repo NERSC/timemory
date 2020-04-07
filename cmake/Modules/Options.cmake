@@ -262,6 +262,10 @@ add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
     "Enable dynamic instrumentation" ON)
+add_option(TIMEMORY_USE_ALLINEA_MAP
+    "Enable control for AllineaMAP sampler" ON)
+add_option(TIMEMORY_USE_CRAYPAT
+    "Enable CrayPAT support" ON)
 add_option(TIMEMORY_USE_OMPT
     "Enable OpenMP tooling" OFF)
 if(CMAKE_CXX_COMPILER_IS_CLANG)

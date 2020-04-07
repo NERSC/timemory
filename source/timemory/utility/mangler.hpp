@@ -100,7 +100,7 @@ struct mangler<std::tuple<Args...>>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Func, typename _Traits = function_traits<_Func>>
+template <typename FuncT, typename _Traits = function_traits<FuncT>>
 std::string
 mangle(const std::string& func)
 {

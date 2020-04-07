@@ -187,16 +187,16 @@ private:
     void* operator new[](std::size_t) noexcept { return nullptr; }
     void  operator delete[](void*) noexcept {}
 
-    template <typename _Tp = Type, typename _Ptr = Pointer,
-              enable_if_t<(std::is_same<_Ptr, std::shared_ptr<_Tp>>::value)> = 0>
+    template <typename Tp = Type, typename _Ptr = Pointer,
+              enable_if_t<(std::is_same<_Ptr, std::shared_ptr<Tp>>::value)> = 0>
     deleter_t& get_deleter()
     {
         static deleter_t _instance = [](Pointer&) {};
         return _instance;
     }
 
-    template <typename _Tp = Type, typename _Ptr = Pointer,
-              enable_if_t<!(std::is_same<_Ptr, std::shared_ptr<_Tp>>::value)> = 0>
+    template <typename Tp = Type, typename _Ptr = Pointer,
+              enable_if_t<!(std::is_same<_Ptr, std::shared_ptr<Tp>>::value)> = 0>
     deleter_t& get_deleter()
     {
         static deleter_t _instance = [](Pointer& _master) {

@@ -98,14 +98,14 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline bool
-isfinite(const _Tp& arg)
+isfinite(const Tp& arg)
 {
 #if defined(_WINDOWS)
     // Windows seems to be missing std::isfinite
-    return (arg == arg && arg != std::numeric_limits<_Tp>::infinity() &&
-            arg != -std::numeric_limits<_Tp>::infinity())
+    return (arg == arg && arg != std::numeric_limits<Tp>::infinity() &&
+            arg != -std::numeric_limits<Tp>::infinity())
                ? true
                : false;
 #else
@@ -126,7 +126,7 @@ using auto_lock_t = std::unique_lock<mutex_t>;
 //
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 mutex_t&
 type_mutex(const uint64_t& _n = 0)
 {
@@ -170,11 +170,11 @@ demangle(const std::string& _str)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 inline std::string
 demangle()
 {
-    return demangle(typeid(_Tp).name());
+    return demangle(typeid(Tp).name());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -360,10 +360,10 @@ delimit(std::string _str, const std::string& _delims)
 
 //--------------------------------------------------------------------------------------//
 //  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
-template <typename _Func>
+template <typename FuncT>
 inline str_list_t
 delimit(std::string _str, const std::string& _delims,
-        const _Func& strop = [](const std::string& s) { return s; })
+        const FuncT& strop = [](const std::string& s) { return s; })
 {
     str_list_t _list;
     while(_str.length() > 0)

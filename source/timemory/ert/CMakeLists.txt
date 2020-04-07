@@ -8,6 +8,7 @@ else()
 endif()
 
 build_intermediate_library(
+    USE_INTERFACE
     NAME                ert
     TARGET              ert
     CATEGORY            EXTERN

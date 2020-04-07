@@ -97,11 +97,11 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
 template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
-                                           scope::data _scope, const Func& init_func)
+                                           scope::config _scope, const Func& init_func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
-              _scope + scope::data(get_config<variadic::flat_scope>(),
-                                   get_config<variadic::timeline_scope>(),
-                                   get_config<variadic::tree_scope>()))
+              _scope + scope::config(get_config<variadic::flat_scope>(),
+                                     get_config<variadic::timeline_scope>(),
+                                     get_config<variadic::tree_scope>()))
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -122,12 +122,12 @@ component_tuple<Types...>::component_tuple(const string_t& key, const bool& stor
 template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           const bool& store, scope::data _scope,
+                                           const bool& store, scope::config _scope,
                                            const Func& init_func)
 : bundle_type(loc.get_hash(), store,
-              _scope + scope::data(get_config<variadic::flat_scope>(),
-                                   get_config<variadic::timeline_scope>(),
-                                   get_config<variadic::tree_scope>()))
+              _scope + scope::config(get_config<variadic::flat_scope>(),
+                                     get_config<variadic::timeline_scope>(),
+                                     get_config<variadic::tree_scope>()))
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -148,11 +148,11 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
 template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
-                                           scope::data _scope, const Func& init_func)
+                                           scope::config _scope, const Func& init_func)
 : bundle_type(hash, store,
-              _scope + scope::data(get_config<variadic::flat_scope>(),
-                                   get_config<variadic::timeline_scope>(),
-                                   get_config<variadic::tree_scope>()))
+              _scope + scope::config(get_config<variadic::flat_scope>(),
+                                     get_config<variadic::timeline_scope>(),
+                                     get_config<variadic::tree_scope>()))
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -183,7 +183,7 @@ inline component_tuple<Types...>::~component_tuple()
 //
 template <typename... Types>
 component_tuple<Types...>
-component_tuple<Types...>::clone(bool _store, scope::data _scope)
+component_tuple<Types...>::clone(bool _store, scope::config _scope)
 {
     component_tuple tmp(*this);
     tmp.m_store = _store;
@@ -472,7 +472,7 @@ component_tuple<Types...>::set_prefix(size_t _hash) const
 //
 template <typename... Types>
 void
-component_tuple<Types...>::set_scope(scope::data val)
+component_tuple<Types...>::set_scope(scope::config val)
 {
     m_scope = val;
     apply_v::access<operation_t<operation::set_scope>>(m_data, val);

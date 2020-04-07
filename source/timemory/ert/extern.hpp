@@ -30,13 +30,27 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ERT_EXTERN)
+#if defined(TIMEMORY_ERT_SOURCE)
+#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#    endif
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ERT_EXTERN)
+#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#    endif
+#else
+#    if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE)
+#        define TIMEMORY_ERT_EXTERN_TEMPLATE(...)
+#    endif
+#endif
 
-#    include "timemory/backends/device.hpp"
-#    include "timemory/components/timing/wall_clock.hpp"
-#    include "timemory/ert/configuration.hpp"
-#    include "timemory/ert/counter.hpp"
-#    include "timemory/ert/data.hpp"
+#include "timemory/backends/device.hpp"
+#include "timemory/components.hpp"
+#include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/ert/configuration.hpp"
+#include "timemory/ert/counter.hpp"
+#include "timemory/ert/data.hpp"
+#include "timemory/operations/extern.hpp"
 
 namespace tim
 {
@@ -44,15 +58,17 @@ namespace ert
 {
 //
 //
-// extern template class exec_data<component::wall_clock>;
+TIMEMORY_ERT_EXTERN_TEMPLATE(class exec_data<component::wall_clock>)
 //
-// extern template class counter<device::cpu, float, component::wall_clock>;
-// extern template class counter<device::cpu, double, component::wall_clock>;
+TIMEMORY_ERT_EXTERN_TEMPLATE(class counter<device::cpu, float, component::wall_clock>)
+TIMEMORY_ERT_EXTERN_TEMPLATE(class counter<device::cpu, double, component::wall_clock>)
 //
-// extern template struct configuration<device::cpu, float, component::wall_clock>;
-// extern template struct configuration<device::cpu, double, component::wall_clock>;
+TIMEMORY_ERT_EXTERN_TEMPLATE(
+    struct configuration<device::cpu, float, component::wall_clock>)
+TIMEMORY_ERT_EXTERN_TEMPLATE(
+    struct configuration<device::cpu, double, component::wall_clock>)
 //
-#    if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_CUDA)
 //
 // extern template class counter<device::gpu, float, component::wall_clock>;
 // extern template class counter<device::gpu, double, component::wall_clock>;
@@ -62,10 +78,8 @@ namespace ert
 // extern template struct configuration<device::gpu, double, component::wall_clock>;
 // extern template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
 //
-#    endif
+#endif
 //
 //
 }  // namespace ert
 }  // namespace tim
-
-#endif

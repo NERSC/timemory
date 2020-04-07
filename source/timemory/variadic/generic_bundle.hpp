@@ -201,7 +201,7 @@ private:
 
 public:
     explicit generic_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
-                            scope::data _scope = scope::get_default())
+                            scope::config _scope = scope::get_default())
     : m_store(_store && settings::enabled())
     , m_is_pushed(false)
     , m_scope(_scope)
@@ -283,11 +283,11 @@ protected:
 
 protected:
     // objects
-    bool        m_store     = false;
-    bool        m_is_pushed = false;
-    scope::data m_scope     = scope::get_default();
-    int64_t     m_laps      = 0;
-    uint64_t    m_hash      = 0;
+    bool          m_store     = false;
+    bool          m_is_pushed = false;
+    scope::config m_scope     = scope::get_default();
+    int64_t       m_laps      = 0;
+    uint64_t      m_hash      = 0;
 
 protected:
     struct persistent_data

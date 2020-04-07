@@ -105,9 +105,8 @@ class storage;
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
-using storage_singleton =
-    singleton<_Tp, std::unique_ptr<_Tp, impl::storage_deleter<_Tp>>>;
+template <typename Tp>
+using storage_singleton = singleton<Tp, std::unique_ptr<Tp, impl::storage_deleter<Tp>>>;
 //
 //--------------------------------------------------------------------------------------//
 //

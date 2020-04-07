@@ -115,9 +115,9 @@ using id_t = int;
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline void
-cali_consume_parameters(_Args&&...)
+cali_consume_parameters(ArgsT&&...)
 {}
 
 //--------------------------------------------------------------------------------------//
@@ -192,9 +192,9 @@ end(const std::string& _id)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Type, typename _Attr>
+template <typename Tp, typename AttrT>
 inline id_t
-create_attribute(const std::string& _id, _Type _type, _Attr _attr)
+create_attribute(const std::string& _id, Tp _type, AttrT _attr)
 {
 #if defined(TIMEMORY_USE_CALIPER)
     return cali_create_attribute(_id.c_str(), _type, _attr);

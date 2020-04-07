@@ -37,9 +37,9 @@
 
 namespace tim
 {
-template <typename... _Args>
+template <typename... ArgsT>
 void
-timemory_init(_Args...)
+timemory_init(ArgsT...)
 {}
 inline void
 timemory_finalize()
@@ -52,12 +52,12 @@ print_env()
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
-    template <typename... _Types, typename... _Args>
-    static void configure(_Args&&...)
+    template <typename... Types, typename... ArgsT>
+    static void configure(ArgsT&&...)
     {}
 
-    template <typename... _Args>
-    dummy(_Args&&...)
+    template <typename... ArgsT>
+    dummy(ArgsT&&...)
     {}
     ~dummy()            = default;
     dummy(const dummy&) = default;
@@ -68,11 +68,11 @@ struct dummy
     void start() {}
     void stop() {}
     void report_at_exit(bool) {}
-    template <typename... _Args>
-    void mark_begin(_Args&&...)
+    template <typename... ArgsT>
+    void mark_begin(ArgsT&&...)
     {}
-    template <typename... _Args>
-    void mark_end(_Args&&...)
+    template <typename... ArgsT>
+    void mark_end(ArgsT&&...)
     {}
     friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
 };
@@ -207,16 +207,16 @@ struct dummy
 //
 //======================================================================================//
 //
-// 3.5 total
-#    include "timemory/runtime/configure.hpp"    // 3.5
-#    include "timemory/runtime/enumerate.hpp"    // 3.5
-#    include "timemory/runtime/initialize.hpp"   // 3.1
-#    include "timemory/runtime/insert.hpp"       // 3.1
-#    include "timemory/runtime/properties.hpp"   // 3.2
+#    include "timemory/definition.hpp"
 //
 //======================================================================================//
 //
-#    include "timemory/definition.hpp"
+// 3.5 total
+#    include "timemory/runtime/configure.hpp"   // 3.5
+#    include "timemory/runtime/enumerate.hpp"   // 3.5
+#    include "timemory/runtime/initialize.hpp"  // 3.1
+#    include "timemory/runtime/insert.hpp"      // 3.1
+#    include "timemory/runtime/properties.hpp"  // 3.2
 //
 //======================================================================================//
 //

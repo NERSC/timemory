@@ -22,23 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/components/@COMPONENT_FOLDER@/extern/storage.hpp
- * \brief Declare the extern storage instances for @COMPONENT_FOLDER@ components
- */
-
-#pragma once
-
-#include "timemory/components/@COMPONENT_FOLDER@/components.hpp"
-#include "timemory/components/macros.hpp"
-#include "timemory/data/storage.hpp"
-
-// #if defined(TIMEMORY_USE_@COMPONENT_CHECK@)
-
-//======================================================================================//
-//
-// TIMEMORY_EXTERN_STORAGE(component::@CXX_STRUCT@)
-//
-//======================================================================================//
-
-// #endif  // TIMEMORY_USE_@COMPONENT_CHECK@
+#include "timemory/components/allinea/extern.hpp"

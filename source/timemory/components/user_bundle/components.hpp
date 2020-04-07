@@ -41,6 +41,87 @@
 //
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace env
+{
+using user_bundle_variables_t =
+    std::unordered_map<size_t, std::pair<std::string, std::vector<std::string>>>;
+//
+static inline user_bundle_variables_t&
+get_user_bundle_variables()
+{
+    static user_bundle_variables_t _instance = {
+        { component::global_bundle_idx, { "TIMEMORY_GLOBAL_COMPONENTS", {} } },
+        { component::tuple_bundle_idx,
+          { "TIMEMORY_TUPLE_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
+        { component::list_bundle_idx,
+          { "TIMEMORY_LIST_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
+        { component::ompt_bundle_idx,
+          { "TIMEMORY_OMPT_COMPONENTS",
+            { "TIMEMORY_PROFILER_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
+              "TIMEMORY_COMPONENT_LIST_INIT" } } },
+        { component::mpip_bundle_idx,
+          { "TIMEMORY_MPIP_COMPONENTS",
+            { "TIMEMORY_PROFILER_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
+              "TIMEMORY_COMPONENT_LIST_INIT" } } },
+        { component::trace_bundle_idx,
+          { "TIMEMORY_TRACE_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
+        { component::profiler_bundle_idx,
+          { "TIMEMORY_PROFILER_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } }
+    };
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename VecT>
+auto
+get_bundle_components(const std::string& custom_env, const VecT& fallback_env)
+{
+    using string_t = std::string;
+    auto env_tool  = get_env<string_t>(custom_env, "");
+    if(env_tool.empty())
+    {
+        for(const auto& itr : fallback_env)
+        {
+            env_tool = get_env<string_t>(itr);
+            if(env_tool.length() > 0)
+                break;
+        }
+    }
+    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
+    return env_enum;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, typename Api,
+          enable_if_t<(std::is_same<Api, api::native_tag>::value), int> = 0>
+void
+initialize_bundle()
+{
+    using user_bundle_type = component::user_bundle<Idx, Api>;
+    auto itr               = env::get_user_bundle_variables().find(Idx);
+    if(itr != env::get_user_bundle_variables().end())
+    {
+        auto env_enum = env::get_bundle_components(itr->second.first, itr->second.second);
+        tim::configure<user_bundle_type>(env_enum);
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, typename Api,
+          enable_if_t<!(std::is_same<Api, api::native_tag>::value), int> = 0>
+void
+initialize_bundle()
+{}
+}  // namespace env
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace component
 {
 //
@@ -63,7 +144,7 @@ public:
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
-    using start_func_t  = std::function<void*(const string_t&, scope::data)>;
+    using start_func_t  = std::function<void*(const string_t&, scope::config)>;
     using stop_func_t   = std::function<void(void*)>;
     using get_func_t    = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
@@ -87,7 +168,7 @@ public:
     user_bundle() = default;
 
     explicit user_bundle(const string_t& _prefix,
-                         scope::data     _scope = scope::get_default())
+                         scope::config   _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
     {}
@@ -104,7 +185,7 @@ public:
     }
 
     user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
-                scope::data _scope = scope::get_default())
+                scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
     , m_bundle(_bundle_vec)
@@ -270,10 +351,10 @@ public:
                          factory::get_typeids<Types>()));
     }
 
-    void set_scope(scope::data val) { m_scope = val; }
+    void set_scope(scope::config val) { m_scope = val; }
 
 protected:
-    scope::data    m_scope   = scope::get_default();
+    scope::config  m_scope   = scope::get_default();
     string_t       m_prefix  = "";
     typeid_set_t   m_typeids = get_typeids();
     opaque_array_t m_bundle  = get_data();
@@ -316,7 +397,9 @@ private:
 template <size_t Idx, typename Tag>
 void
 user_bundle<Idx, Tag>::global_init(storage_type*)
-{}
+{
+    env::initialize_bundle<Idx, Tag>();
+}
 //
 //--------------------------------------------------------------------------------------//
 //

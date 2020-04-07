@@ -301,7 +301,7 @@ protected:
     //
     template <typename Up = Tp, typename Vp = Value,
               enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
-    void insert_node(scope::data, int64_t);
+    void insert_node(scope::config, int64_t);
 
     // pop the node off the graph
     template <typename Up = Tp, typename Vp = Value,

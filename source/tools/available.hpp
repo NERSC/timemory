@@ -133,8 +133,8 @@ public:
     }
 
 public:
-    template <typename _Tp>
-    inline void saveValue(_Tp _val)
+    template <typename Tp>
+    inline void saveValue(Tp _val)
     {
         if(current_stream)
         {

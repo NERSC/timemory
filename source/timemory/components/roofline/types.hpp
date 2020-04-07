@@ -191,8 +191,8 @@ namespace tim
 namespace trait
 {
 //
-template <typename... _Types>
-struct units<component::cpu_roofline<_Types...>>
+template <typename... Types>
+struct units<component::cpu_roofline<Types...>>
 {
     using type         = double;
     using display_type = std::vector<std::string>;

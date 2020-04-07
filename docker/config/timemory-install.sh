@@ -66,31 +66,31 @@ run-verbose make install -j6
 #                           timemory
 #--------------------------------------------------------------------------------------------#
 
-run-verbose cd ${ROOT_DIR}
-run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/NERSC/timemory.git timemory-source
-run-verbose cd timemory-source
+# run-verbose cd ${ROOT_DIR}
+# run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/NERSC/timemory.git timemory-source
+# run-verbose cd timemory-source
 
-SOURCE_DIR=$(pwd)
-run-verbose mkdir timemory-build
-run-verbose cd timemory-build
+# SOURCE_DIR=$(pwd)
+# run-verbose mkdir timemory-build
+# run-verbose cd timemory-build
 
-run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
-run-verbose ninja -j6
-run-verbose ninja install
+# run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
+# run-verbose ninja -j6
+# run-verbose ninja install
 
 #--------------------------------------------------------------------------------------------#
 #                           tomopy
 #--------------------------------------------------------------------------------------------#
 
-run-verbose cd ${ROOT_DIR}
-run-verbose git clone https://github.com/jrmadsen/tomopy.git tomopy
-run-verbose cd tomopy
-run-verbose git checkout accelerated-redesign
-run-verbose conda env create -n tomopy -f envs/linux-36.yml
-source activate
-run-verbose conda activate tomopy
-run-verbose python -m pip install -vvv .
-run-verbose conda clean -a -y
+# run-verbose cd ${ROOT_DIR}
+# run-verbose git clone https://github.com/jrmadsen/tomopy.git tomopy
+# run-verbose cd tomopy
+# run-verbose git checkout accelerated-redesign
+# run-verbose conda env create -n tomopy -f envs/linux-36.yml
+# source activate
+# run-verbose conda activate tomopy
+# run-verbose python -m pip install -vvv .
+# run-verbose conda clean -a -y
 
 #--------------------------------------------------------------------------------------------#
 #                           Cleanup

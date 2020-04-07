@@ -102,21 +102,21 @@ public:
 
 public:
     template <typename Func = initializer_type>
-    explicit auto_list(const string_t&, scope::data = scope::get_default(),
+    explicit auto_list(const string_t&, scope::config = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
                        const Func&         = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit auto_list(const captured_location_t&, scope::data = scope::get_default(),
+    explicit auto_list(const captured_location_t&, scope::config = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
                        const Func&         = get_initializer());
 
     template <typename Func = initializer_type>
-    explicit auto_list(size_t, scope::data = scope::get_default(),
+    explicit auto_list(size_t, scope::config = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
                        const Func&         = get_initializer());
 
-    explicit auto_list(component_type& tmp, scope::data = scope::get_default(),
+    explicit auto_list(component_type& tmp, scope::config = scope::get_default(),
                        bool            report_at_exit = settings::destructor_report());
     ~auto_list();
 
@@ -288,7 +288,7 @@ private:
 
 template <typename... Types>
 template <typename Func>
-auto_list<Types...>::auto_list(const string_t& key, scope::data _scope,
+auto_list<Types...>::auto_list(const string_t& key, scope::config _scope,
                                bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
@@ -307,7 +307,7 @@ auto_list<Types...>::auto_list(const string_t& key, scope::data _scope,
 
 template <typename... Types>
 template <typename Func>
-auto_list<Types...>::auto_list(const captured_location_t& loc, scope::data _scope,
+auto_list<Types...>::auto_list(const captured_location_t& loc, scope::config _scope,
                                bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
@@ -326,7 +326,7 @@ auto_list<Types...>::auto_list(const captured_location_t& loc, scope::data _scop
 
 template <typename... Types>
 template <typename Func>
-auto_list<Types...>::auto_list(size_t _hash, scope::data _scope, bool report_at_exit,
+auto_list<Types...>::auto_list(size_t _hash, scope::config _scope, bool report_at_exit,
                                const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
@@ -344,7 +344,7 @@ auto_list<Types...>::auto_list(size_t _hash, scope::data _scope, bool report_at_
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_list<Types...>::auto_list(component_type& tmp, scope::data _scope,
+auto_list<Types...>::auto_list(component_type& tmp, scope::config _scope,
                                bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)

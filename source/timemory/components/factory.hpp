@@ -50,7 +50,7 @@
             namespace factory                                                            \
             {                                                                            \
             template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>();                     \
-            template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(scope::data);          \
+            template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(scope::config);        \
             template TIMEMORY_FACTORY_DLL std::set<size_t> get_typeids<TYPE>();          \
             }                                                                            \
             }                                                                            \
@@ -64,7 +64,7 @@
             namespace factory                                                            \
             {                                                                            \
             extern template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>();              \
-            extern template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(scope::data);   \
+            extern template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(scope::config); \
             extern template TIMEMORY_FACTORY_DLL std::set<size_t> get_typeids<TYPE>();   \
             }                                                                            \
             }                                                                            \

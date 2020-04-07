@@ -235,7 +235,7 @@ endif()
 
 if(TIMEMORY_BUILD_OMPT)
     set(_OMPT_TARGETS)
-    foreach(OMPT_TARGET omp ompimp omptarget.rtl.cuda omptarget)
+    foreach(OMPT_TARGET omp omptarget)
         if(TARGET ${OMPT_TARGET})
             list(APPEND _OMPT_TARGETS ${OMPT_TARGET})
         endif()

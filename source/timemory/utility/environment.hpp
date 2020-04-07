@@ -88,8 +88,8 @@ private:
     }
 
 public:
-    template <typename _Tp>
-    void insert(const std::string& env_id, _Tp val)
+    template <typename Tp>
+    void insert(const std::string& env_id, Tp val)
     {
 #if !defined(TIMEMORY_DISABLE_STORE_ENVIRONMENT)
         std::stringstream ss;
@@ -260,9 +260,9 @@ env_settings::instance()
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-_Tp
-get_env(const std::string& env_id, _Tp _default = _Tp())
+template <typename Tp>
+Tp
+get_env(const std::string& env_id, Tp _default = Tp())
 {
     if(env_id.empty())
         return _default;
@@ -272,13 +272,13 @@ get_env(const std::string& env_id, _Tp _default = _Tp())
     {
         std::string        str_var = std::string(env_var);
         std::istringstream iss(str_var);
-        _Tp                var = _Tp();
+        Tp                 var = Tp();
         iss >> var;
-        env_settings::instance()->insert<_Tp>(env_id, var);
+        env_settings::instance()->insert<Tp>(env_id, var);
         return var;
     }
     // record default value
-    env_settings::instance()->insert<_Tp>(env_id, _default);
+    env_settings::instance()->insert<Tp>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -345,9 +345,9 @@ get_env(const std::string& env_id, bool _default)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-_Tp
-load_env(const std::string& env_id, _Tp _default = _Tp())
+template <typename Tp>
+Tp
+load_env(const std::string& env_id, Tp _default = Tp())
 {
     if(env_id.empty())
         return _default;
@@ -357,7 +357,7 @@ load_env(const std::string& env_id, _Tp _default = _Tp())
     if(itr != _env_settings->end())
     {
         std::istringstream iss(itr->second);
-        _Tp                var = _Tp();
+        Tp                 var = Tp();
         iss >> var;
         return var;
     }
@@ -416,9 +416,9 @@ print_env(std::ostream& os = std::cout)
 
 #if defined(_MACOS) || (defined(_LINUX) && (_POSIX_C_SOURCE >= 200112L))
 
-template <typename _Tp>
+template <typename Tp>
 void
-set_env(const std::string& env_var, const _Tp& _val, int override = 0)
+set_env(const std::string& env_var, const Tp& _val, int override = 0)
 {
     std::stringstream ss_val;
     ss_val << _val;
@@ -427,9 +427,9 @@ set_env(const std::string& env_var, const _Tp& _val, int override = 0)
 
 #else
 
-template <typename... _Args>
+template <typename... ArgsT>
 void
-set_env(_Args&&...)
+set_env(ArgsT&&...)
 {}
 
 #endif

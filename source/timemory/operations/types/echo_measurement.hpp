@@ -105,34 +105,34 @@ struct echo_measurement<Tp, true> : public common_utils
     //
     struct impl
     {
-        template <typename Tuple, typename... Args, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        template <typename Tuple, typename... Args, size_t... Nt,
+                  enable_if_t<(sizeof...(Nt) == 0), char> = 0>
         static std::string name_generator(const string_t&, Tuple, Args&&...,
-                                          index_sequence<_Nt...>)
+                                          index_sequence<Nt...>)
         {
             return "";
         }
 
-        template <typename Tuple, typename... Args, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+        template <typename Tuple, typename... Args, size_t Idx, size_t... Nt,
+                  enable_if_t<(sizeof...(Nt) == 0), char> = 0>
         static std::string name_generator(const string_t& _prefix, Tuple _units,
-                                          Args&&... _args, index_sequence<_Idx, _Nt...>)
+                                          Args&&... _args, index_sequence<Idx, Nt...>)
         {
-            return generate_name(_prefix, std::get<_Idx>(_units),
+            return generate_name(_prefix, std::get<Idx>(_units),
                                  std::forward<Args>(_args)...);
         }
 
-        template <typename Tuple, typename... Args, size_t _Idx, size_t... _Nt,
-                  enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+        template <typename Tuple, typename... Args, size_t Idx, size_t... Nt,
+                  enable_if_t<(sizeof...(Nt) > 0), char> = 0>
         static std::string name_generator(const string_t& _prefix, Tuple _units,
-                                          Args&&... _args, index_sequence<_Idx, _Nt...>)
+                                          Args&&... _args, index_sequence<Idx, Nt...>)
         {
             return join(
                 ",",
                 name_generator<Tuple>(_prefix, _units, std::forward<Args>(_args)...,
-                                      index_sequence<_Idx>{}),
+                                      index_sequence<Idx>{}),
                 name_generator<Tuple>(_prefix, _units, std::forward<Args>(_args)...,
-                                      index_sequence<_Nt...>{}));
+                                      index_sequence<Nt...>{}));
         }
     };
 
@@ -178,9 +178,9 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// generate a measurement tag
     ///
-    template <typename _Vt>
+    template <typename Vt>
     static void generate_measurement(std::ostream& os, const attributes_t& attributes,
-                                     const _Vt& value)
+                                     const Vt& value)
     {
         os << "<DartMeasurement";
         os << " " << attribute_string("type", "numeric/double");
@@ -193,9 +193,9 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// generate a measurement tag
     ///
-    template <typename _Vt, typename... _Extra>
+    template <typename Vt, typename... _Extra>
     static void generate_measurement(std::ostream& os, attributes_t attributes,
-                                     const std::vector<_Vt, _Extra...>& value)
+                                     const std::vector<Vt, _Extra...>& value)
     {
         auto _default_name = attributes["name"];
         int  i             = 0;
@@ -256,7 +256,7 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// assumes type is not a iterable
     ///
-    template <typename Up = Tp, typename _Vt = value_type,
+    template <typename Up = Tp, typename Vt = value_type,
               enable_if_t<(is_enabled<Up>::value), char> = 0,
               enable_if_t<!(trait::array_serialization<Up>::value ||
                             trait::iterable_measurement<Up>::value),
@@ -280,7 +280,7 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// assumes type is iterable
     ///
-    template <typename Up = Tp, typename _Vt = value_type,
+    template <typename Up = Tp, typename Vt = value_type,
               enable_if_t<(is_enabled<Up>::value), char> = 0,
               enable_if_t<(trait::array_serialization<Up>::value ||
                            trait::iterable_measurement<Up>::value),
@@ -310,7 +310,7 @@ struct echo_measurement<Tp, true> : public common_utils
         std::cout << ss.str() << std::flush;
     }
 
-    template <typename... Args, typename Up = Tp, typename _Vt = value_type,
+    template <typename... Args, typename Up = Tp, typename Vt = value_type,
               enable_if_t<!(is_enabled<Up>::value), char> = 0>
     echo_measurement(Up&, Args&&...)
     {}

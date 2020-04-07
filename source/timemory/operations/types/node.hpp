@@ -59,7 +59,7 @@ struct insert_node
 
     TIMEMORY_DELETED_OBJECT(insert_node)
 
-    insert_node(base_type& obj, scope::data _scope, int64_t _hash)
+    insert_node(base_type& obj, scope::config _scope, int64_t _hash)
     {
         if(!trait::runtime_enabled<type>::get())
             return;
@@ -79,9 +79,7 @@ private:
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
     void sfinae(Up&, long, Args&&...)
-    {
-        SFINAE_WARNING(type);
-    }
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -124,9 +122,7 @@ private:
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
     void sfinae(Up&, long, long, Args&&...)
-    {
-        SFINAE_WARNING(type);
-    }
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//

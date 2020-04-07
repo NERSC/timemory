@@ -42,4 +42,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_@CHECK@_SOURCE) ||                                                  \
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_@CHECK@_EXTERN))
+#endif
 }  // namespace tim
