@@ -31,6 +31,9 @@
 #include "timemory/components.hpp"
 #include "timemory/dll.hpp"
 // clang-format on
+#include "timemory/storage/declaration.hpp"
+#include "timemory/storage/definition.hpp"
+#include "timemory/storage/extern.hpp"
 
 #if defined(TIMEMORY_FACTORY_SOURCE)
 #    define TIMEMORY_FACTORY_DLL tim_dll_export

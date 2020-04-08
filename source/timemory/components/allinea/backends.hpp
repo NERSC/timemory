@@ -43,7 +43,7 @@ namespace allinea
 //
 //--------------------------------------------------------------------------------------//
 //
-void
+inline void
 start_sampling()
 {
 #if defined(TIMEMORY_USE_ALLINEA_MAP)
@@ -53,7 +53,7 @@ start_sampling()
 //
 //--------------------------------------------------------------------------------------//
 //
-void
+inline void
 stop_sampling()
 {
 #if defined(TIMEMORY_USE_ALLINEA_MAP)

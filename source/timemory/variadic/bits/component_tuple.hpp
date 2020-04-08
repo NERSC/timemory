@@ -171,7 +171,7 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-inline component_tuple<Types...>::~component_tuple()
+component_tuple<Types...>::~component_tuple()
 {
     // IF_CONSTEXPR(get_config<variadic::auto_stop>()) { stop(); }
     stop();

@@ -36,7 +36,6 @@
 //
 #include "timemory/components/ompt/components.hpp"
 #include "timemory/components/ompt/types.hpp"
-#include "timemory/components/user_bundle/components.hpp"
 //
 #if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
     (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
