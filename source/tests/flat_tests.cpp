@@ -176,8 +176,10 @@ TEST_F(flat_tests, general)
     auto esize = tim::storage<wall_clock>::instance()->size();
     printf("\nbsize = %lu\n", (unsigned long) bsize);
     printf("esize = %lu\n\n", (unsigned long) esize);
+    auto data = tim::storage<wall_clock>::instance()->get();
 
     EXPECT_EQ(esize - bsize, 2);
+    EXPECT_EQ(data.at(bsize + 1).depth(), 0);
 }
 
 //--------------------------------------------------------------------------------------//
