@@ -132,6 +132,3 @@ struct dynamic_base : std::false_type
 }  // namespace tim
 //
 //======================================================================================//
-
-#include "timemory/components/base/properties.hpp"
-#include "timemory/components/base/traits.hpp"

@@ -33,7 +33,6 @@
 #include "timemory/components/macros.hpp"
 //
 #include "timemory/components/user_bundle/components.hpp"
-#include "timemory/components/user_bundle/overloads.hpp"
 #include "timemory/components/user_bundle/types.hpp"
 //
 #include "timemory/environment/extern.hpp"
@@ -63,7 +62,7 @@
 //
 //======================================================================================//
 //
-#if defined(TIMEMORY_USER_BUNDLE_SOURCE)
+#if defined(TIMEMORY_SOURCE) || defined(TIMEMORY_USER_BUNDLE_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //

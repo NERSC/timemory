@@ -33,3 +33,12 @@
 //
 // clang-format on
 //======================================================================================//
+
+// template class tim::component_list<tim::component::user_bundle<11100ul,
+// tim::api::native_tag>, tim::component::gperftools_cpu_profiler,
+// tim::component::gperftools_heap_profiler, tim::component::caliper,
+// tim::component::tau_marker, tim::component::papi_array<8ul>,
+// tim::component::cpu_roofline<float, double>, tim::component::cuda_event,
+// tim::component::nvtx_marker, tim::component::cupti_activity,
+// tim::component::cupti_counters, tim::component::gpu_roofline<float>,
+// tim::component::gpu_roofline<double> >;

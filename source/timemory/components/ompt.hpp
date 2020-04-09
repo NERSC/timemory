@@ -37,10 +37,10 @@
 #    include "timemory/components/macros.hpp"
 //
 #    include "timemory/components/ompt/components.hpp"
-#    include "timemory/components/ompt/ompt.hpp"
+#    include "timemory/components/ompt/tool.hpp"
 #    include "timemory/components/ompt/types.hpp"
 //
-#    include "timemory/extern.hpp"
+//#    include "timemory/extern.hpp"
 //
 //--------------------------------------------------------------------------------------//
 

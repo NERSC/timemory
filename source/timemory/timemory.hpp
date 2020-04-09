@@ -249,4 +249,5 @@ generic_serialization(const std::string& fname, const Tp& obj)
 //
 }  // namespace tim
 
+#    include "timemory/variadic/definition.hpp"
 #endif  // ! defined(DISABLE_TIMEMORY)

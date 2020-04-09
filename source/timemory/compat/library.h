@@ -47,6 +47,12 @@
 #include "timemory/enum.h"
 
 //======================================================================================//
+
+#if !defined(TIMEMORY_DECL)
+#    define TIMEMORY_DECL extern tim_dll
+#endif
+
+//======================================================================================//
 //
 //      C struct for settings
 //
@@ -65,67 +71,6 @@ typedef struct
     int scientific;
     // skipping remainder
 } timemory_settings;
-
-//======================================================================================//
-/*
-// c library
-#pragma weak c_timemory_init
-#pragma weak c_timemory_finalize
-#pragma weak c_timemory_enabled
-#pragma weak c_timemory_create_auto_timer
-#pragma weak c_timemory_delete_auto_timer
-#pragma weak c_timemory_create_auto_tuple
-#pragma weak c_timemory_delete_auto_tuple
-#pragma weak c_timemory_blank_label
-#pragma weak c_timemory_basic_label
-#pragma weak c_timemory_label
-// cxx library
-#pragma weak cxx_timemory_init
-#pragma weak cxx_timemory_enabled
-#pragma weak cxx_timemory_create_auto_timer
-#pragma weak cxx_timemory_create_auto_tuple
-#pragma weak cxx_timemory_delete_auto_timer
-#pragma weak cxx_timemory_delete_auto_tuple
-#pragma weak cxx_timemory_label
-*/
-// function pointers
-#pragma weak timemory_create_function
-#pragma weak timemory_create_function
-// generic library
-#pragma weak timemory_get_unique_id
-#pragma weak timemory_create_record
-#pragma weak timemory_delete_record
-#pragma weak timemory_init_library
-#pragma weak timemory_finalize_library
-#pragma weak timemory_pause
-#pragma weak timemory_resume
-#pragma weak timemory_set_default
-#pragma weak timemory_push_components
-#pragma weak timemory_push_components_enum
-#pragma weak timemory_pop_components
-#pragma weak timemory_begin_record
-#pragma weak timemory_begin_record_types
-#pragma weak timemory_begin_record_enum
-#pragma weak timemory_get_begin_record
-#pragma weak timemory_get_begin_record_types
-#pragma weak timemory_get_begin_record_enum
-#pragma weak timemory_end_record
-#pragma weak timemory_push_region
-#pragma weak timemory_pop_region
-#pragma weak timemory_register_trace
-#pragma weak timemory_deregister_trace
-#pragma weak timemory_dyninst_init
-#pragma weak timemory_dyninst_finalize
-#pragma weak timemory_init_trace
-#pragma weak timemory_fini_trace
-#pragma weak timemory_mpi_init_stub
-#pragma weak timemory_get_rank
-
-//======================================================================================//
-
-#if !defined(TIMEMORY_DECL)
-#    define TIMEMORY_DECL extern tim_dll
-#endif
 
 //======================================================================================//
 

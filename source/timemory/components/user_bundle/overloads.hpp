@@ -33,12 +33,6 @@
 
 #pragma once
 
-#include "timemory/components/user_bundle/components.hpp"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/runtime/properties.hpp"
-#include "timemory/variadic/component_tuple.hpp"
-
 //======================================================================================//
 //
 #if defined(TIMEMORY_USER_BUNDLE_SOURCE)

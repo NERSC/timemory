@@ -32,7 +32,7 @@
 
 #include "timemory/hash/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/types.hpp"
 #include "timemory/variadic/component_list.hpp"
 
 //======================================================================================//

@@ -39,18 +39,14 @@
 
 #if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
 
-// clang-format off
-#    define TIMEMORY_C_SETTINGS_INIT {}
+#    define TIMEMORY_C_SETTINGS_INIT                                                     \
+        {}
 #    define TIMEMORY_C_INIT(...)
-// clang-format on
-
 #    define TIMEMORY_C_AUTO_LABEL(...) ""
-
 #    define TIMEMORY_C_BLANK_AUTO_TIMER(...) NULL
 #    define TIMEMORY_C_BASIC_AUTO_TIMER(...) NULL
 #    define TIMEMORY_C_AUTO_TIMER(...) NULL
 #    define FREE_TIMEMORY_C_AUTO_TIMER(...)
-
 #    define TIMEMORY_C_BASIC_AUTO_TUPLE(...) NULL
 #    define TIMEMORY_C_BLANK_AUTO_TUPLE(...) NULL
 #    define TIMEMORY_C_AUTO_TUPLE(...) NULL
@@ -58,9 +54,9 @@
 
 #else  // !defined(DISABLE_TIMEMORY)
 
+#    include "timemory/compat/library.h"
 #    include "timemory/compat/macros.h"
 #    include "timemory/enum.h"
-#    include "timemory/compat/library.h"
 
 //======================================================================================//
 //
@@ -74,11 +70,12 @@
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_C_BLANK_LABEL(c_str) c_timemory_blank_label(c_str)
+#    define TIMEMORY_C_BLANK_LABEL(c_str) c_str
 
-#    define TIMEMORY_C_BASIC_LABEL(c_str) c_timemory_basic_label(_TIM_FUNC, c_str)
+#    define TIMEMORY_C_BASIC_LABEL(c_str) c_timemory_basic_label(__FUNCTION__, c_str)
 
-#    define TIMEMORY_C_LABEL(c_str) c_timemory_label(_TIM_FUNC, __FILE__, __LINE__, c_str)
+#    define TIMEMORY_C_LABEL(c_str)                                                      \
+        c_timemory_label(__FUNCTION__, __FILE__, __LINE__, c_str)
 
 //--------------------------------------------------------------------------------------//
 

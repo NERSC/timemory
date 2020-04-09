@@ -198,7 +198,7 @@ TEST_F(timeline_tests, nested)
     printf("\nbsize = %lu\n", (unsigned long) bsize);
     printf("esize = %lu\n\n", (unsigned long) esize);
     auto data = tim::storage<wall_clock>::instance()->get();
-    
+
     EXPECT_EQ(esize - bsize, 11);
     EXPECT_EQ(data.at(bsize + 1).depth(), 1);
 }

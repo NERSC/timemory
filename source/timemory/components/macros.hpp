@@ -467,60 +467,50 @@
 
 //======================================================================================//
 
-#if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_COMPONENT_SOURCE)
 //
 //--------------------------------------------------------------------------------------//
 //
-#    if defined(TIMEMORY_SOURCE) && defined(TIMEMORY_COMPONENT_SOURCE)
+#    if !defined(TIMEMORY_EXTERN_OPERATIONS)
+#        define TIMEMORY_EXTERN_OPERATIONS(...)                                          \
+            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(__VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_OPERATIONS)
-#            define TIMEMORY_EXTERN_OPERATIONS(...)                                      \
-                TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(__VA_ARGS__)
-#        endif
+#    if !defined(TIMEMORY_EXTERN_STORAGE)
+#        define TIMEMORY_EXTERN_STORAGE(...)                                             \
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_STORAGE)
-#            define TIMEMORY_EXTERN_STORAGE(...)                                         \
-                TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
-#        endif
+#    if !defined(TIMEMORY_EXTERN_TEMPLATE)
+#        define TIMEMORY_EXTERN_TEMPLATE(...) template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_TEMPLATE)
-#            define TIMEMORY_EXTERN_TEMPLATE(...)                                        \
-                template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
-#        endif
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_COMPONENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
-#    else
+#    if !defined(TIMEMORY_EXTERN_OPERATIONS)
+#        define TIMEMORY_EXTERN_OPERATIONS(...)                                          \
+            TIMEMORY_DECLARE_EXTERN_OPERATIONS(__VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_OPERATIONS)
-#            define TIMEMORY_EXTERN_OPERATIONS(...)                                      \
-                TIMEMORY_DECLARE_EXTERN_OPERATIONS(__VA_ARGS__)
-#        endif
+#    if !defined(TIMEMORY_EXTERN_STORAGE)
+#        define TIMEMORY_EXTERN_STORAGE(...) TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
+#    endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#        if !defined(TIMEMORY_EXTERN_STORAGE)
-#            define TIMEMORY_EXTERN_STORAGE(...)                                         \
-                TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
-#        endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#        if !defined(TIMEMORY_EXTERN_TEMPLATE)
-#            define TIMEMORY_EXTERN_TEMPLATE(...)                                        \
-                extern template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
-#        endif
-//
-//--------------------------------------------------------------------------------------//
-//
+#    if !defined(TIMEMORY_EXTERN_TEMPLATE)
+#        define TIMEMORY_EXTERN_TEMPLATE(...)                                            \
+            extern template TIMEMORY_COMPONENT_DLL __VA_ARGS__;
 #    endif
 //
 //--------------------------------------------------------------------------------------//

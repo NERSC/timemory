@@ -59,12 +59,14 @@ manager_wrapper::get()
 
 //======================================================================================//
 
-template <typename... Types>
 struct pyenumeration
 {
-    template <typename T>
+    template <size_t Idx>
     static void generate(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
     {
+        using T = typename tim::component::enumerator<Idx>::type;
+        if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
+            return;
         using property_t = tim::component::properties<T>;
         std::string id   = property_t::enum_string();
         for(auto& itr : id)
@@ -74,17 +76,13 @@ struct pyenumeration
                       T::description().c_str());
     }
 
-    static void components(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
+    template <size_t... Idx>
+    static void components(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum,
+                           std::index_sequence<Idx...>)
     {
-        TIMEMORY_FOLD_EXPRESSION(generate<Types>(_pyenum));
+        TIMEMORY_FOLD_EXPRESSION(pyenumeration::generate<Idx>(_pyenum));
     }
 };
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-struct pyenumeration<tim::type_list<Types...>> : pyenumeration<Types...>
-{};
 
 //======================================================================================//
 //  Python wrappers
@@ -139,8 +137,8 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     //----------------------------------------------------------------------------------//
 
-    using component_pyenumeration_t = pyenumeration<tim::complete_types_t>;
-    component_pyenumeration_t::components(components_enum);
+    pyenumeration::components(components_enum,
+                              std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
 
     //==================================================================================//
     //

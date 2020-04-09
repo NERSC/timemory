@@ -41,8 +41,14 @@
 #include "timemory/components/rusage/components.hpp"
 #include "timemory/components/timing/components.hpp"
 #include "timemory/components/trip_count/components.hpp"
-#include "timemory/components/user_bundle/components.hpp"
 
+// allinea components
+#if defined(TIMEMORY_USE_ALLINEA_MAP)
+#    include "timemory/components/allinea/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
 #    include "timemory/components/caliper/components.hpp"
@@ -125,6 +131,10 @@
 #if defined(TIMEMORY_USE_VTUNE)
 #    include "timemory/components/vtune/components.hpp"
 #endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#include "timemory/components/user_bundle/components.hpp"
 //
 //--------------------------------------------------------------------------------------//
 //

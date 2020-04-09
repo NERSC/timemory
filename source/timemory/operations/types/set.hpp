@@ -70,18 +70,22 @@ struct set_prefix
 private:
     //  If the component has a set_prefix(const string_t&) member function
     template <typename U = type>
-    auto sfinae(U& obj, int, const string_t& prefix)
+    auto sfinae(U& obj, int, int, const string_t& prefix)
         -> decltype(obj.set_prefix(prefix), void())
     {
-        if(!trait::runtime_enabled<U>::get())
-            return;
-
         obj.set_prefix(prefix);
+    }
+
+    template <typename U = type>
+    auto sfinae(U& obj, int, long, const string_t& prefix)
+        -> decltype(obj.set_prefix(prefix.c_str()), void())
+    {
+        obj.set_prefix(prefix.c_str());
     }
 
     //  If the component does not have a set_prefix(const string_t&) member function
     template <typename U = type>
-    auto sfinae(U&, long, const string_t&) -> decltype(void(), void())
+    auto sfinae(U&, long, long, const string_t&) -> decltype(void(), void())
     {}
 };
 //
@@ -127,7 +131,8 @@ set_prefix<Tp>::set_prefix(type& obj, const string_t& prefix)
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    obj.set_prefix(prefix);
+    sfinae(obj, 0, 0, prefix);
+    // obj.set_prefix(prefix);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -136,7 +141,10 @@ template <typename Tp>
 template <typename Up, enable_if_t<!(trait::requires_prefix<Up>::value), int>>
 set_prefix<Tp>::set_prefix(type& obj, const string_t& prefix)
 {
-    sfinae(obj, 0, prefix);
+    if(!trait::runtime_enabled<type>::get())
+        return;
+
+    sfinae(obj, 0, 0, prefix);
 }
 //
 //--------------------------------------------------------------------------------------//

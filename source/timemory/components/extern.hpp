@@ -26,7 +26,7 @@
 
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_ALLINEA_MAP_EXTERN)
+#if defined(TIMEMORY_USE_ALLINEA_EXTERN)
 #    include "timemory/components/allinea/extern.hpp"
 #endif
 //
@@ -74,12 +74,6 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_OMPT_EXTERN)
-#    include "timemory/components/ompt/extern.hpp"
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
 #if defined(TIMEMORY_USE_PAPI_EXTERN)
 #    include "timemory/components/papi/extern.hpp"
 #endif
@@ -104,8 +98,32 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#include "timemory/components/rusage/extern.hpp"
-#include "timemory/components/timing/extern.hpp"
-#include "timemory/components/trip_count/extern.hpp"
+#if defined(TIMEMORY_USE_RUSAGE_EXTERN)
+#    include "timemory/components/rusage/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_TIMING_EXTERN)
+#    include "timemory/components/timing/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_TRIP_COUNT_EXTERN)
+#    include "timemory/components/trip_count/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_OMPT_EXTERN)
+#    include "timemory/components/ompt/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    include "timemory/components/user_bundle/extern.hpp"
+#endif
 //
 //--------------------------------------------------------------------------------------//

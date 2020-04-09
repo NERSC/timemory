@@ -34,7 +34,6 @@
 //
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/types.hpp"
-#include "timemory/components/user_bundle/types.hpp"
 
 //======================================================================================//
 //

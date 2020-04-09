@@ -38,7 +38,7 @@
 #include "timemory/components/ompt/types.hpp"
 //
 #if defined(TIMEMORY_COMPONENT_SOURCE) ||                                                \
-    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN))
+    (!defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_OMPT_EXTERN))
 // source/header-only requirements
 #    include "timemory/environment/declaration.hpp"
 #    include "timemory/operations/definition.hpp"

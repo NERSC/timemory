@@ -23,3 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components/ompt/extern.hpp"
+
+// template struct tim::component::base<tim::component::ompt_native_handle, void>;
+// TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(component::ompt_native_handle, false)
+// TIMEMORY_INSTANTIATE_EXTERN_STORAGE(component::ompt_native_handle, ompt_native_handle)

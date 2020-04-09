@@ -30,31 +30,9 @@
 //
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/components.hpp"
-#include "timemory/components/user_bundle/components.hpp"
 //
 namespace tim
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-namespace component
-{
-//
-template <>
-inline void
-user_bundle<ompt_bundle_idx, api::native_tag>::global_init(storage_type*)
-{
-    auto parse_env = [](string_t _env, string_t _default) {
-        if(_env.length() > 0)
-            return get_env<string_t>(_env, _default);
-        return _default;
-    };
-    auto env_tool = parse_env("OMPT_COMPONENTS", parse_env("GLOBAL_COMPONENTS", ""));
-    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
-    tim::configure<this_type>(env_enum);
-}
-//
-}  // namespace component
 //
 //--------------------------------------------------------------------------------------//
 //

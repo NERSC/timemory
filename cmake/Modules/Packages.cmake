@@ -1085,7 +1085,7 @@ if(TIMEMORY_USE_OMPT)
         set(OPENMP_STANDALONE_BUILD ON CACHE BOOL "Needed by ompt")
         set(OPENMP_ENABLE_TESTING OFF CACHE BOOL "Do not test")
         if(TIMEMORY_USE_CUDA)
-            set(OPENMP_ENABLE_LIBOMPTARGET ON CACHE BOOL "OpenMP target tooling")
+            set(OPENMP_ENABLE_LIBOMPTARGET OFF CACHE BOOL "OpenMP target tooling")
         else()
             set(OPENMP_ENABLE_LIBOMPTARGET OFF CACHE BOOL "OpenMP target tooling")
         endif()
@@ -1184,7 +1184,7 @@ endif()
 if(NOT TIMEMORY_USE_COVERAGE)
     add_target_flag_if_avail(timemory-roofline-options
         "-finline-functions" "-funroll-loops" "-ftree-vectorize"
-        "-ftree-loop-optimize" "-ftree-loop-vectorize" "-O3")
+        "-ftree-loop-optimize" "-ftree-loop-vectorize")
 endif()
 
 set(VECTOR_DEFINITION               TIMEMORY_VEC)

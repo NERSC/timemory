@@ -22,13 +22,15 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdlib.h>
-
 #include "timemory/enum.h"
 #include "timemory/library.h"
 #include "timemory/timemory.h"
+
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if !defined(tim_cdll)
 #    if defined(_WINDOWS)
@@ -49,6 +51,19 @@ extern "C"
 {
 #endif
 
+    char* strdup(const char* s)
+    {
+        size_t slen   = strlen(s);
+        char*  result = malloc(slen + 1);
+        if(result == NULL)
+        {
+            return NULL;
+        }
+
+        memcpy(result, s, slen + 1);
+        return result;
+    }
+
     //==================================================================================//
 
     void c_timemory_init(int argc, char** argv, timemory_settings _settings)
@@ -68,7 +83,10 @@ extern "C"
 
     void* c_timemory_create_auto_timer(const char* tag)
     {
-        return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag) : NULL;
+        void* _ret = NULL;
+        if(cxx_timemory_enabled())
+            _ret = cxx_timemory_create_auto_timer(tag);
+        return _ret;
     }
 
     //==================================================================================//

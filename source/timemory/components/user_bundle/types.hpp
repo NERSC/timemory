@@ -36,13 +36,6 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-//======================================================================================//
-
-#if defined(TIMEMORY_USE_GOTCHA) && defined(TIMEMORY_USE_MPI)
-#    if !defined(TIMEMORY_USE_MPIP)
-#        define TIMEMORY_USE_MPIP
-#    endif
-#endif
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -90,20 +83,6 @@ TIMEMORY_COMPONENT_ALIAS(user_trace_bundle,
 //
 TIMEMORY_COMPONENT_ALIAS(user_profiler_bundle,
                          user_bundle<profiler_bundle_idx, api::native_tag>)
-//
-//======================================================================================//
-//
-//                              IS AVAILABLE
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_USE_OMPT)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_ompt_bundle, false_type)
-#endif
-
-#if !defined(TIMEMORY_USE_MPIP)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::user_mpip_bundle, false_type)
-#endif
 
 //--------------------------------------------------------------------------------------//
 //
@@ -148,11 +127,11 @@ struct requires_prefix<component::user_bundle<Idx, Type>> : true_type
 TIMEMORY_PROPERTY_SPECIALIZATION(user_global_bundle, USER_GLOBAL_BUNDLE,
                                  "user_global_bundle", "global_bundle")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle",
-                                 "list_bundle")
-//
 TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
                                  "user_tuple_bundle", "tuple_bundle")
+//
+TIMEMORY_PROPERTY_SPECIALIZATION(user_list_bundle, USER_LIST_BUNDLE, "user_list_bundle",
+                                 "list_bundle")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
                                  "ompt_bundle")
