@@ -3,6 +3,15 @@ if(NOT TIMEMORY_BUILD_GTEST AND NOT TIMEMORY_BUILD_TESTING)
 	return()
 endif()
 
+add_library(extern-test-templates SHARED
+    extern_templates.cpp)
+
+target_link_libraries(extern-test-templates PUBLIC
+    timemory-headers
+    timemory-compile-options
+    timemory-arch
+    timemory-vector)
+
 add_library(gotcha-tests-lib SHARED
     gotcha_tests_lib.hpp
     gotcha_tests_lib.cpp)

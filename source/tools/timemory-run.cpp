@@ -434,7 +434,7 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
     if(snippet == nullptr)
     {
         fprintf(stderr, "Unable to create snippet to call callee\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // Then find the points using loc (entry/exit) for the given function
@@ -446,7 +446,7 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
         if(loc == BPatch_entry)
         {
             appThread->insertSnippet(*snippet, *points, BPatch_callBefore,
-                                     BPatch_lastSnippet);
+                                     BPatch_firstSnippet);
         }
         else
         {
@@ -943,7 +943,7 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     if(mutatee_addr_space == nullptr)
     {
         fprintf(stderr, "Failed to open binary %s\n", mutateeName);
-        return -1;
+        throw std::runtime_error("Failed to open binary");
     }
 
     BPatch_image*                    mutateeImage = mutatee_addr_space->getImage();
@@ -994,13 +994,13 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     if(!mainFunc)
     {
         fprintf(stderr, "Couldn't find %s(), aborting\n", main_fname.c_str());
-        return -1;
+        throw std::runtime_error("Could not find main function");
     }
 
     if(!entryTrace || !exitTrace || !setupFunc || !cleanupFunc)
     {
         fprintf(stderr, "Couldn't find entry/exit/setup/cleanup functions, aborting\n");
-        return -1;
+        throw std::runtime_error("Not entry/exit/setup/cleanup functions");
     }
 
     BPatch_Vector<BPatch_point*>* main_init_entry = mainFunc->findPoint(BPatch_entry);
@@ -1570,7 +1570,7 @@ main(int argc, char** argv)
     // initArgs.push_back(&funcName);
     initArgs.push_back(&isMPI);
 
-    initialize(appThread, appImage, initArgs);
+    // initialize(appThread, appImage, initArgs);
 
     dprintf("Did initialize\n");
 
@@ -1597,7 +1597,7 @@ main(int argc, char** argv)
                 inFunc    = p[i];
                 auto name = get_func_file_line_info(appImage, inFunc);
                 dprintf("Name %s\n", fname);
-                if(!routine_constraint(fname) && !name.m_name.empty() &&
+                if(!routine_constraint(fname) && !name.get().empty() &&
                    !routine_constraint(name.m_name.c_str()))
                 {
                     // routines that are ok to instrument
@@ -1612,13 +1612,10 @@ main(int argc, char** argv)
                     callee_entry_args->push_back(ret);
                     callee_exit_args->push_back(new BPatch_constExpr(name.get().c_str()));
 
-                    // dprintf("Instrumenting-> %s Entry\n", fname);
                     invoke_routine_in_func(appThread, appImage, inFunc, BPatch_entry,
                                            enterstub, callee_entry_args);
-                    // dprintf("Instrumenting-> %s Exit...", fname);
                     invoke_routine_in_func(appThread, appImage, inFunc, BPatch_exit,
                                            exitstub, callee_exit_args);
-                    // dprintf("Done\n");
                 }
             }
         }
@@ -1631,7 +1628,7 @@ main(int argc, char** argv)
     if(exitpoint == nullptr)
     {
         fprintf(stderr, "UNABLE TO FIND exit()\n");
-        // exit(1);
+        exit(1);
     }
     else
     {
@@ -1656,7 +1653,7 @@ main(int argc, char** argv)
         auto             mpistubargs = new BPatch_Vector<BPatch_snippet*>();
         BPatch_paramExpr paramRank(1);
         mpistubargs->push_back(&paramRank);
-        invoke_routine_in_func(appThread, appImage, mpiinit, mpiinitstub, mpistubargs);
+        // invoke_routine_in_func(appThread, appImage, mpiinit, mpiinitstub, mpistubargs);
         delete mpistubargs;
     }
 
@@ -1675,17 +1672,20 @@ main(int argc, char** argv)
             bpatch->waitForStatusChange();
             if(appThread->isStopped())
                 _continue_exec();
+            /*
             if(_ncount++ > 50)
             {
                 printf("Terminating application after 50 status changes...\n");
                 appThread->terminateExecution();
                 return;
-            }
+                }*/
         }
         if(appThread->isTerminated())
             printf("End of application\n");
     };
 
+    appThread->continueExecution();
+    std::this_thread::sleep_for(std::chrono::seconds(10));
     _continue_exec();
     _wait_exec();
 

@@ -83,7 +83,7 @@
     private:                                                                             \
         static TYPE generate__##FUNC()                                                   \
         {                                                                                \
-            auto _parse = []() { FUNC() = tim::get_env(ENV_VAR, FUNC()); };              \
+            auto _parse = []() { FUNC() = tim::get_env<TYPE>(ENV_VAR, FUNC()); };        \
             get_parse_callbacks().push_back(_parse);                                     \
             return get_env<TYPE>(ENV_VAR, INIT);                                         \
         }
@@ -113,7 +113,7 @@
     private:                                                                             \
         TYPE generate__##FUNC()                                                          \
         {                                                                                \
-            auto _parse = []() { FUNC() = tim::get_env(ENV_VAR, FUNC()); };              \
+            auto _parse = []() { FUNC() = tim::get_env<TYPE>(ENV_VAR, FUNC()); };        \
             get_parse_callbacks().push_back(_parse);                                     \
             return get_env<TYPE>(ENV_VAR, INIT);                                         \
         }                                                                                \
@@ -125,15 +125,17 @@
 #if !defined(TIMEMORY_MEMBER_STATIC_REFERENCE)
 #    define TIMEMORY_MEMBER_STATIC_REFERENCE(TYPE, FUNC, ENV_VAR, ...)                   \
     public:                                                                              \
-        static TYPE& FUNC() { return __VA_ARGS__; }                                      \
+        static TYPE& FUNC() { return std::ref(__VA_ARGS__).get(); }                      \
                                                                                          \
     private:                                                                             \
         TYPE& generate__##FUNC()                                                         \
         {                                                                                \
-            auto _parse = []() { FUNC() = tim::get_env(ENV_VAR, FUNC()); };              \
+            auto _parse = []() {                                                         \
+                std::ref(__VA_ARGS__).get() = tim::get_env<TYPE>(ENV_VAR, __VA_ARGS__);  \
+            };                                                                           \
             get_parse_callbacks().push_back(_parse);                                     \
-            __VA_ARGS__ = get_env<TYPE>(ENV_VAR, __VA_ARGS__);                           \
-            return __VA_ARGS__;                                                          \
+            std::ref(__VA_ARGS__).get() = get_env<TYPE>(ENV_VAR, __VA_ARGS__);           \
+            return std::ref(__VA_ARGS__).get();                                          \
         }                                                                                \
         TYPE* m__##FUNC = &generate__##FUNC();
 #endif

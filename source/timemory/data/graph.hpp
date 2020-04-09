@@ -2310,18 +2310,21 @@ template <typename T, typename AllocatorT>
 template <class StrictWeakOrdering>
 void
 graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
-                           StrictWeakOrdering comp, bool deep)
+                           StrictWeakOrdering /*comp*/, bool /*deep*/)
 {
     if(from == to)
         return;
+    throw std::runtime_error("Not implemented!");
+    /*
     // make list of sorted nodes
     // CHECK: if multiset stores equivalent nodes in the order in which they
     // are inserted, then this routine should be called 'stable_sort'.
-    std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>> nodes(comp);
-    sibling_iterator                                              it = from, it2 = to;
+    std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>> _nodes(
+        compare_nodes<StrictWeakOrdering>(comp));
+    sibling_iterator it = from, it2 = to;
     while(it != to)
     {
-        nodes.insert(it.node);
+        _nodes.insert(it.node);
         ++it;
     }
     // reassemble
@@ -2331,8 +2334,8 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
     graph_node* prev = from.node->prev_sibling;
     graph_node* next = it2.node->next_sibling;
     typename std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>>::iterator
-        nit = nodes.begin(),
-        eit = nodes.end();
+        nit = _nodes.begin(),
+        eit = _nodes.end();
     if(prev == 0)
     {
         if((*nit)->parent != 0)  // to catch "sorting the head" situations, when
@@ -2369,7 +2372,7 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
 
     if(deep)
     {  // sort the children of each node too
-        sibling_iterator bcs(*nodes.begin());
+        sibling_iterator bcs(*_nodes.begin());
         sibling_iterator ecs(*eit);
         ++ecs;
         while(bcs != ecs)
@@ -2378,6 +2381,7 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
             ++bcs;
         }
     }
+    */
 }
 
 //--------------------------------------------------------------------------------------//

@@ -157,7 +157,5 @@ TIMEMORY_PROPERTY_SPECIALIZATION(user_tuple_bundle, USER_TUPLE_BUNDLE,
 TIMEMORY_PROPERTY_SPECIALIZATION(user_ompt_bundle, USER_OMPT_BUNDLE, "user_ompt_bundle",
                                  "ompt_bundle")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE,
-                                 "user_mpip_bundle",
-                                 "mpip",
-                                 "mpi_tools", "mpi")
+TIMEMORY_PROPERTY_SPECIALIZATION(user_mpip_bundle, USER_MPIP_BUNDLE, "user_mpip_bundle",
+                                 "mpip", "mpi_tools", "mpi")

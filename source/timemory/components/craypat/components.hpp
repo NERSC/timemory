@@ -221,11 +221,15 @@ struct craypat_counters : base<craypat_counters, std::vector<unsigned long>>
 private:
     struct persistent_data
     {
-        std::vector<std::tuple<int, int, strvector_t>> m_categories = {
-            { PAT_CTRS_CPU, 0, strvector_t{} },   { PAT_CTRS_NETWORK, 0, strvector_t{} },
-            { PAT_CTRS_ACCEL, 0, strvector_t{} }, { PAT_CTRS_RAPL, 0, strvector_t{} },
-            { PAT_CTRS_PM, 0, strvector_t{} },    { PAT_CTRS_UNCORE, 0, strvector_t{} }
-        };
+        using category_tuple_t  = std::tuple<int, int, strvector_t>;
+        using category_vector_t = std::vector<category_tuple_t>;
+        category_vector_t m_categories =
+            category_vector_t({ category_tuple_t{ PAT_CTRS_CPU, 0, strvector_t{} },
+                                category_tuple_t{ PAT_CTRS_NETWORK, 0, strvector_t{} },
+                                category_tuple_t{ PAT_CTRS_ACCEL, 0, strvector_t{} },
+                                category_tuple_t{ PAT_CTRS_RAPL, 0, strvector_t{} },
+                                category_tuple_t{ PAT_CTRS_PM, 0, strvector_t{} },
+                                category_tuple_t{ PAT_CTRS_UNCORE, 0, strvector_t{} } });
         strvector_t m_labels = {};
         size_t      m_events = 0;
     };

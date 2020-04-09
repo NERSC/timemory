@@ -57,6 +57,18 @@ if(TARGET custom-record-functions)
         LINK_LIBRARIES  custom-record-functions)
 endif()
 
+add_timemory_google_test(flat_tests
+    DISCOVER_TESTS
+    SOURCES         flat_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-plotting timemory-analysis-tools extern-test-templates)
+
+add_timemory_google_test(timeline_tests
+    DISCOVER_TESTS
+    SOURCES         timeline_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-plotting timemory-analysis-tools extern-test-templates)
+                  
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp

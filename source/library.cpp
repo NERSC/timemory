@@ -510,7 +510,7 @@ extern "C"
 
     int64_t timemory_register_trace(const char* name)
     {
-        if(tim::settings::verbose() > 3)
+        if(tim::settings::verbose() > 2 || tim::settings::debug())
             PRINT_HERE("%s", name);
 
         using hasher_t                       = std::hash<std::string>;
@@ -537,7 +537,7 @@ extern "C"
 
     void timemory_deregister_trace(const char* name)
     {
-        if(tim::settings::verbose() > 3)
+        if(tim::settings::verbose() > 2 || tim::settings::debug())
             PRINT_HERE("%s", name);
 
         using hasher_t                       = std::hash<std::string>;

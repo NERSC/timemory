@@ -311,18 +311,24 @@ struct config : public data_type
         // flat:     always at depth of 1
         // tree:     features nesting
         // timeline: retains current depth
+        // static thread_local bool last_was_timeline = false;
         if(is_flat())
         {
+            // last_was_timeline = false;
             // flat + timeline will be differentiated via compute_hash
             // flat + tree is invalid and flat takes precedence
             return 1;
         }
         else if(is_timeline())
         {
+            // bool _incr = (_current == 0 || !last_was_timeline);
+            // last_was_timeline = true;
             // tree + timeline is essentially a flat profile at the given depth
             // bc returning a nested depth for tree + timeline would look like recursion
-            return _current;
+            // return (_incr) ? _current + 1 : _current;
+            return _current + 1;
         }
+        // last_was_timeline = false;
         // if neither flat nor timeline are enabled, return the nested depth
         return _current + 1;
     }
