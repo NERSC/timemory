@@ -1532,7 +1532,7 @@ main(int argc, char** argv)
             continue;
         sprintf(modulename, "Module %s\n", (*m)[j]->getName(fname, FUNCNAMELEN));
         BPatch_Vector<BPatch_function*> p = *((*m)[j]->getProcedures());
-        dprintf("%s", modulename);
+        // dprintf("%s", modulename);
 
         if(!module_constraint(fname))
         {  // constraint
@@ -1668,7 +1668,7 @@ main(int argc, char** argv)
         uint64_t _ncount = 0;
         while(!appThread->isTerminated())
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             bpatch->waitForStatusChange();
             if(appThread->isStopped())
                 _continue_exec();
@@ -1685,7 +1685,6 @@ main(int argc, char** argv)
     };
 
     appThread->continueExecution();
-    std::this_thread::sleep_for(std::chrono::seconds(10));
     _continue_exec();
     _wait_exec();
 

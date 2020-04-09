@@ -524,7 +524,7 @@ extern "C"
                    (long long unsigned) id, (long long int) n);
 #endif
 
-        _trace_map[id].push_back(new traceset_t(name, true));
+        _trace_map[id].push_back(new traceset_t(name));
         _trace_map[id].back()->start();
 
         if(tim::settings::verbose() > 3)
@@ -580,6 +580,7 @@ extern "C"
 
         auto init_func = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
         tim::config::read_command_line(init_func);
+        tim::settings::parse();
     }
 
     //----------------------------------------------------------------------------------//
