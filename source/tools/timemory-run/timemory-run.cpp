@@ -60,7 +60,8 @@ main(int argc, char** argv)
 
     // bpatch->setTrampRecursive(true); /* enable C++ support */
     // bpatch->setBaseTrampDeletion(true);
-    // bpatch->setMergeTramp(false);
+    bpatch->setTypeChecking(false);
+    bpatch->setMergeTramp(true);
     bpatch->setSaveFPR(true);
 
     int _argc = argc;
@@ -476,7 +477,7 @@ main(int argc, char** argv)
     // one time code. To avoid this, we first start the one time code and then
     // iterate through the list of routines to select for instrumentation and
     // instrument these. So, we need to iterate twice.
-
+    appThread->beginInsertionSet();
     for(size_t j = 0; j < m.size(); j++)
     {
         if(!m[j]->getProcedures())
@@ -550,15 +551,27 @@ main(int argc, char** argv)
         auto             mpistubargs = new BPatch_Vector<BPatch_snippet*>();
         BPatch_paramExpr paramRank(1);
         mpistubargs->push_back(&paramRank);
-        // invoke_routine_in_func(appThread, appImage, mpiinit, mpiinitstub, mpistubargs);
+        invoke_routine_in_func(appThread, appImage, mpiinit, mpiinitstub, mpistubargs);
         delete mpistubargs;
+    }
+
+    auto success = appThread->finalizeInsertionSet(true);
+
+    if(!success)
+    {
+        fprintf(stderr, "Instrumentation failure! Detaching from process and exiting...\n");
+        appThread->detach(true);
+        exit(EXIT_FAILURE);
     }
 
     printf("Executing...\n");
 
     auto _continue_exec = [&]() {
-        if(!appThread->continueExecution())
-            fprintf(stderr, "continueExecution failed\n");
+        if(appThread->terminationStatus() == NoExit)
+        {
+            if(!appThread->continueExecution())
+                fprintf(stderr, "continueExecution failed\n");
+        }
     };
 
     auto _wait_exec = [&]() {
@@ -569,16 +582,28 @@ main(int argc, char** argv)
             if(appThread->isStopped())
                 _continue_exec();
         }
-        if(appThread->isTerminated())
-            printf("End of application\n");
     };
 
     appThread->continueExecution();
     _continue_exec();
     _wait_exec();
 
+
     if(!appThread->isTerminated())
         appThread->terminateExecution();
+
+    if(appThread->terminationStatus() == ExitedNormally)
+    {
+        if(appThread->isTerminated())
+            printf("End of application\n");
+    }
+    else if(appThread->terminationStatus() == ExitedViaSignal)
+    {
+        auto sign = appThread->getExitSignal();
+        fprintf(stderr, "Application exited with signal: %i\n", int (sign));
+    }
+
+    auto code = appThread->getExitCode();
 
     // cleanup
     for(int i = 0; i < argc; ++i)
@@ -588,7 +613,7 @@ main(int argc, char** argv)
         delete[] _cmdv[i];
     delete[] _cmdv;
     delete bpatch;
-    return 0;
+    return code;
 }
 
 //======================================================================================//
