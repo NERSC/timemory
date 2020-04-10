@@ -37,6 +37,8 @@
 #include "timemory/components/user_bundle/backends.hpp"
 #include "timemory/components/user_bundle/types.hpp"
 
+#include "timemory/runtime/types.hpp"
+
 //======================================================================================//
 //
 namespace tim

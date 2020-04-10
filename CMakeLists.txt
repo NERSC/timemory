@@ -1,3 +1,4 @@
+
 ##########################################################################################
 #       CMake settings
 ##########################################################################################
@@ -89,9 +90,9 @@ include(GNUInstallDirs)
 set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
 
 if(UNIX AND NOT APPLE)
-    set(CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/timemory;${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 else()
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    set(CMAKE_INSTALL_RPATH "@rpath/timemory:@loader_path/timemory:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 endif()
 
 # create the full path version and generic path versions

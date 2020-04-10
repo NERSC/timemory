@@ -22,4 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/properties.hpp"
+//
 #include "timemory/components/user_bundle/extern.hpp"
