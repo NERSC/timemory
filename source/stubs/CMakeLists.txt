@@ -11,6 +11,7 @@ foreach(LIB_TYPE shared static)
     string(TOUPPER "${LIB_TYPE}" UC_LIB_TYPE)
 
     build_library(
+        NO_CACHE_LIST
         ${LIB_PARAMS}
         TARGET_NAME         timemory-stubs-${LIB_TYPE}
         OUTPUT_NAME         timemory

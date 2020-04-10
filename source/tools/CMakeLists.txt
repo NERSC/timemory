@@ -22,197 +22,39 @@ if(_MPIP AND NOT TARGET timemory-cxx-shared)
     set(_MPIP OFF)
 endif()
 
-set(_STATIC_LIB)
-foreach(_TARG hash settings manager timing-component rusage-component)
-    if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
-        list(APPEND _STATIC_LIB timemory-${_TARG}-static)
-    endif()
-endforeach()
-
 add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF) # still dev
 add_option(TIMEMORY_BUILD_DYNINST_TOOLS "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
+add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ${_MPIP})
 
-if(TIMEMORY_USE_MPI)
-    add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ${_MPIP})
-endif()
-
-if(TIMEMORY_BUILD_MPIP AND NOT TARGET timemory-cxx-shared)
-    message(AUTHOR_WARNING "Missing CMake target 'timemory-cxx-shared' for timemory-mpip. Disabling TIMEMORY_BUILD_MPIP...")
+if(TIMEMORY_BUILD_MPIP AND (NOT TARGET timemory-cxx-shared OR NOT TIMEMORY_USE_MPI))
+    message(AUTHOR_WARNING "TIMEMORY_BUILD_MPIP requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_MPI=ON...")
     set(TIMEMORY_BUILD_MPIP OFF PARENT_SCOPE)
+    set(TIMEMORY_BUILD_MPIP OFF)
 endif()
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-avail tool
 #
-if(TIMEMORY_BUILD_AVAIL)
-    add_executable(timemory-avail
-        ${CMAKE_CURRENT_LIST_DIR}/available.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/available.hpp)
-    target_include_directories(timemory-avail PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-    target_link_libraries(timemory-avail PRIVATE timemory-extensions timemory-headers)
-    set_target_properties(timemory-avail PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
-    install(TARGETS timemory-avail DESTINATION bin)
-endif()
-
+add_subdirectory(timemory-avail)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
-if(TIMEMORY_BUILD_TIMEM)
-    add_library(timem-libexplain INTERFACE)
-
-    add_option(TIMEMORY_BUILD_TOOLS_LIBEXPECT "Enable using libexpect to diagnose errors" OFF)
-    if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
-
-        find_path(LIBEXPLAIN_INCLUDE_DIR
-            NAMES libexplain/execvp.h
-            PATH_SUFFIXES include)
-
-        find_library(LIBEXPLAIN_LIBRARY
-            NAMES explain
-            PATH_SUFFIXES lib lib64 lib32)
-
-        if(LIBEXPLAIN_INCLUDE_DIR AND LIBEXPLAIN_LIBRARY)
-            target_include_directories(timem-libexplain INTERFACE ${LIBEXPLAIN_INCLUDE_DIR})
-            target_compile_definitions(timem-libexplain INTERFACE TIMEMORY_USE_LIBEXPLAIN)
-            target_link_libraries(timem-libexplain INTERFACE ${LIBEXPLAIN_LIBRARY})
-        else()
-            set(TIMEMORY_BUILD_TOOLS_LIBEXPECT OFF)
-        endif()
-
-    endif()
-
-    add_executable(timem timem.cpp timem.hpp)
-
-    target_link_libraries(timem PRIVATE
-        timemory-compile-options
-        timemory-arch
-        timemory-vector
-        timemory-headers
-        timemory-papi
-        timem-libexplain
-        ${_STATIC_LIB})
-
-    set_target_properties(timem PROPERTIES
-        INSTALL_RPATH_USE_LINK_PATH ON)
-
-    # timem installation
-    install(TARGETS timem DESTINATION bin)
-
-    # add_executable(timem-sampler timem-sampler.cpp timem.hpp)
-    #
-    # target_link_libraries(timem-sampler PRIVATE
-    #    timemory-compile-options
-    #    timemory-arch
-    #    timemory-vector
-    #    timemory-headers
-    #    # timemory-papi
-    #    timem-libexplain)
-    #
-    # set_target_properties(timem-sampler PROPERTIES
-    #    INSTALL_RPATH_USE_LINK_PATH ON)
-    #
-    # timem-sampler installation
-    # install(TARGETS timem-sampler DESTINATION bin)
-
-endif()
-
+add_subdirectory(timem)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-run
 #
-if(TIMEMORY_USE_DYNINST)
-
-    file(GLOB_RECURSE EXCLUDE_SOURCE_FILES
-        ${PROJECT_SOURCE_DIR}/source/*.c
-        ${PROJECT_SOURCE_DIR}/source/*.cu
-        ${PROJECT_SOURCE_DIR}/source/*.cpp
-        ${PROJECT_SOURCE_DIR}/external/*.c
-        ${PROJECT_SOURCE_DIR}/external/*.C
-        ${PROJECT_SOURCE_DIR}/external/*.cu
-        ${PROJECT_SOURCE_DIR}/external/*.cc
-        ${PROJECT_SOURCE_DIR}/external/*.cxx
-        ${PROJECT_SOURCE_DIR}/external/*.cpp
-    )
-
-    foreach(_FILE ${EXCLUDE_SOURCE_FILES})
-        if(NOT "${_FILE}" MATCHES "/tests/" AND
-            NOT "${_FILE}" MATCHES "/test/" AND
-            NOT "${_FILE}" MATCHES "/unittests/" AND
-            NOT "${_FILE}" MATCHES "google-test" AND
-            NOT "${_FILE}" MATCHES "/example/" AND
-            NOT "${_FILE}" MATCHES "/examples/" AND
-            NOT "${_FILE}" MATCHES "/doc/" AND
-            NOT "${_FILE}" MATCHES "/docs/")
-            get_filename_component(_FILE "${_FILE}" NAME)
-            list(APPEND _EXCLUDE ${_FILE})
-        endif()
-    endforeach()
-
-    list(REMOVE_DUPLICATES _EXCLUDE)
-    set(EXCLUDE_SOURCE_FILES ${_EXCLUDE})
-    unset(_EXCLUDE)
-    string(REPLACE ";" "|" EXCLUDE_SOURCE_FILES "${EXCLUDE_SOURCE_FILES}")
-    configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp.in
-        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp @ONLY)
-
-    add_executable(timemory-run timemory-run.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp)
-
-    target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-
-    target_link_libraries(timemory-run PRIVATE
-        timemory-headers
-        timemory-dyninst
-        # timemory-compile-options
-        # timemory-arch
-        # timemory-stubs-shared
-    )
-
-    set_target_properties(timemory-run PROPERTIES
-        INSTALL_RPATH_USE_LINK_PATH ON)
-
-    if(UNIX AND NOT APPLE)
-        file(RELATIVE_PATH _RELATIVE_RPATH
-            ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
-            ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-        message(STATUS "RELATIVE RPATH from [${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}] to [${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}] = ${_RELATIVE_RPATH}")
-        set_target_properties(timemory-run PROPERTIES INSTALL_RPATH
-            "\$ORIGIN/${_RELATIVE_PATH}")
-    endif()
-
-    install(TARGETS timemory-run DESTINATION bin)
-
-    file(GLOB COLLECTION_FILES "${CMAKE_CURRENT_LIST_DIR}/collections/*")
-    foreach(_FILE ${COLLECTION_FILES})
-        install(FILES ${_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/collections)
-    endforeach()
-endif()
-
+add_subdirectory(timemory-run)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-mpip library
 #
-if(TIMEMORY_BUILD_MPIP)
-    add_subdirectory(mpip)
-endif()
+add_subdirectory(timemory-mpip)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-connector libraries for kokkos
 #
-if(TIMEMORY_BUILD_KOKKOS_TOOLS)
-    add_subdirectory(kokkos-connector)
-endif()
-
-#----------------------------------------------------------------------------------------#
-# Build and install templight-xml tool
-#
-if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/templight-xml")
-    option(TIMEMORY_BUILD_TEMPLIGHT_XML "Build templight XML summarizer" OFF)
-    mark_as_advanced(TIMEMORY_BUILD_TEMPLIGHT_XML)
-    if(TIMEMORY_BUILD_TEMPLIGHT_XML)
-        add_subdirectory(templight-xml)
-    endif()
-endif()
+add_subdirectory(kokkos-connector)

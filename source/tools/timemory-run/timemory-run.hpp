@@ -69,16 +69,39 @@ using string_t = std::string;
 struct function_signature;
 
 //======================================================================================//
+//
+//                                  Global Variables
+//
+//======================================================================================//
+
+static int         expectError      = NO_ERROR;
+static int         debugPrint       = 0;
+static int         binaryRewrite    = 0;  /* by default, it is turned off */
+static int         errorPrint       = 0;  // external "dyninst" tracing
+static bool        loop_level_instr = false;
+static bool        werror           = false;
+static bool        stl_func_instr   = false;
+static std::string main_fname       = "main";
+static std::string argv0            = "";
+
+static BPatch_function*               name_reg;
+static BPatch_Vector<BPatch_snippet*> init_names;
+static BPatch_Vector<BPatch_snippet*> fini_names;
+static BPatch*                        bpatch;
+static std::vector<std::regex>        regex_include;
+static std::vector<std::regex>        regex_exclude;
+static std::set<std::string>          collection_includes;
+static std::set<std::string>          collection_excludes;
+static std::vector<std::string> collection_paths = { "collections", "tools/collections",
+                                                     "../share/tools/collections" };
+
+//
+//======================================================================================//
 
 // control debug printf statements
 #define dprintf(...)                                                                     \
     if(debugPrint)                                                                       \
         fprintf(stderr, __VA_ARGS__);
-
-//======================================================================================//
-
-void
-check_cost(BPatch_snippet snippet);
 
 //======================================================================================//
 
@@ -91,24 +114,87 @@ consume_parameters(T&&...)
 
 extern "C"
 {
-    bool check_project_source_file_for_instrumentation(const string_t& fname);
-
-    bool are_file_include_exclude_lists_empty(void);
-
+    bool are_file_include_exclude_lists_empty();
+    void read_collection(const std::string& fname, std::set<std::string>& collection_set);
     bool process_file_for_instrumentation(const string_t& file_name);
-
     bool instrument_entity(const string_t& function_name);
-
-    function_signature get_func_file_line_info(BPatch_image*    mutateeAddressSpace,
-                                               BPatch_function* f);
-
-    function_signature get_loop_file_line_info(BPatch_image*          mutateeImage,
-                                               BPatch_flowGraph*      cfGraph,
-                                               BPatch_basicBlockLoop* loopToInstrument,
-                                               BPatch_function*       f);
-
-    extern bool match_name(const string_t& str1, const string_t& str2);
+    int  module_constraint(char* fname);
+    int  routine_constraint(const char* fname);
+    bool check_project_source_file_for_instrumentation(const string_t& fname);
 }
+
+//======================================================================================//
+
+function_signature
+get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f);
+
+function_signature
+get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
+                        BPatch_basicBlockLoop* loopToInstrument, BPatch_function* f);
+
+void
+insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
+             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc,
+             BPatch_flowGraph* cfGraph, BPatch_basicBlockLoop* loopToInstrument,
+             function_signature& name);
+
+void
+insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
+             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc,
+             function_signature& name);
+
+void
+errorFunc(BPatchErrorLevel level, int num, const char** params);
+
+BPatch_function*
+find_function(BPatch_image* appImage, const char* functionName);
+
+BPatchSnippetHandle*
+invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
+                       BPatch_function* function, BPatch_procedureLocation loc,
+                       BPatch_function*                callee,
+                       BPatch_Vector<BPatch_snippet*>* callee_args);
+
+BPatchSnippetHandle*
+invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
+                       BPatch_Vector<BPatch_point*> points, BPatch_function* callee,
+                       BPatch_Vector<BPatch_snippet*>* callee_args);
+
+void
+initialize(BPatch_process* appThread, BPatch_image* appImage,
+           BPatch_Vector<BPatch_snippet*>& initArgs);
+
+void
+check_cost(BPatch_snippet snippet);
+
+void
+error_func_real(BPatchErrorLevel level, int num, const char* const* params);
+
+void
+error_func_fake(BPatchErrorLevel level, int num, const char* const* params);
+
+bool
+find_func_or_calls(std::vector<const char*> names, BPatch_Vector<BPatch_point*>& points,
+                   BPatch_image*            appImage,
+                   BPatch_procedureLocation loc = BPatch_locEntry);
+
+bool
+find_func_or_calls(const char* name, BPatch_Vector<BPatch_point*>& points,
+                   BPatch_image* image, BPatch_procedureLocation loc = BPatch_locEntry);
+
+int
+check_if_mpi(BPatch_image* appImage, BPatch_Vector<BPatch_point*>& mpiinit,
+             BPatch_function*& mpiinitstub, bool binaryRewrite);
+
+function_signature
+get_func_file_line_info(BPatch_image* mutatee_addr_space, BPatch_function* f);
+
+bool
+load_dependent_libraries(BPatch_binaryEdit* bedit, char* bindings);
+
+int
+timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
+                        char* sharedlibname, char* staticlibname, char* bindings);
 
 //======================================================================================//
 
@@ -225,3 +311,5 @@ struct function_signature
         return m_signature;
     }
 };
+
+//======================================================================================//

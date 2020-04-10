@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
+# this is for internal use
+if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory" AND NOT TIMEMORY_BUILD_KOKKOS_TOOLS)
+    return()
+endif()
+
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(STATUS "Error! Building from the source directory may overwrite Makefile")
     message(STATUS "Remove 'CMakeCache.txt' and 'CMakeFiles' and build in separate directory")

@@ -22,18 +22,15 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#include "available.hpp"
+#include "timemory-avail.hpp"
 //
 #include "timemory/components.hpp"
-//
+#include "timemory/components/definition.hpp"
 #include "timemory/components/placeholder.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/skeletons.hpp"
-//
-#include "timemory/components/definition.hpp"
-//
 #include "timemory/timemory.hpp"
-//
+
 #include <array>
 #include <iomanip>
 #include <iostream>
