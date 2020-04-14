@@ -1017,7 +1017,7 @@ instrument_entity(const std::string& function_name)
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
     {
-        dprintf("Skipping stl function '%s'...\n", function_name.c_str());
+        // dprintf("Skipping stl function '%s'...\n", function_name.c_str());
         return false;
     }
 
