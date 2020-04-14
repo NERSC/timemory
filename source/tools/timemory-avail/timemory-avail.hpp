@@ -61,8 +61,8 @@ class SettingsTextArchive
 , public traits::TextArchive
 {
 public:
-    using width_type   = std::array<uint64_t, 4>;
-    using value_type   = std::array<std::string, 4>;
+    using width_type   = std::array<uint64_t, 5>;
+    using value_type   = std::array<std::string, 5>;
     using array_type   = std::vector<value_type>;
     using exclude_type = std::set<std::string>;
 
@@ -102,10 +102,9 @@ public:
     {
         if(exclude_stream.count(name) == 0)
         {
-            static constexpr size_t idx = 0;
             output_stream->push_back(value_type{});
             current_stream           = &output_stream->back();
-            current_stream->at(idx)  = name;
+            current_stream->at(0)    = name;
             std::string       func   = name;
             const std::string prefix = "TIMEMORY_";
             func                     = func.erase(0, prefix.length());
@@ -113,7 +112,7 @@ public:
                            [](char& c) { return tolower(c); });
             std::stringstream ss;
             ss << "settings::" << func << "()";
-            current_stream->at(idx + 1) = ss.str();
+            current_stream->at(3) = ss.str();
         }
         else
         {
@@ -125,10 +124,9 @@ public:
     {
         if(current_stream)
         {
-            static constexpr size_t idx = 2;
-            std::stringstream       ss;
+            std::stringstream ss;
             ss << std::boolalpha << name;
-            current_stream->at(idx) = ss.str();
+            current_stream->at(2) = ss.str();
         }
     }
 
@@ -138,10 +136,9 @@ public:
     {
         if(current_stream)
         {
-            static constexpr size_t idx = 3;
-            std::stringstream       ssval;
+            std::stringstream ssval;
             ssval << std::boolalpha << _val;
-            current_stream->at(idx) = ssval.str();
+            current_stream->at(1) = ssval.str();
         }
         current_stream = nullptr;
     }

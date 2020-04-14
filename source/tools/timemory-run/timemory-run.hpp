@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
 #include "timemory/environment.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/argparse.hpp"
@@ -35,6 +36,7 @@
 #include "BPatch_Vector.h"
 #include "BPatch_addressSpace.h"
 #include "BPatch_basicBlockLoop.h"
+#include "BPatch_callbacks.h"
 #include "BPatch_function.h"
 #include "BPatch_point.h"
 #include "BPatch_process.h"
@@ -68,30 +70,42 @@ using string_t = std::string;
 
 struct function_signature;
 
+using exec_callback_t = BPatchExecCallback;
+using exit_callback_t = BPatchExitCallback;
+
 //======================================================================================//
 //
 //                                  Global Variables
 //
 //======================================================================================//
 
-static int         expectError      = NO_ERROR;
-static int         debugPrint       = 0;
-static int         binaryRewrite    = 0;  /* by default, it is turned off */
-static int         errorPrint       = 0;  // external "dyninst" tracing
-static bool        loop_level_instr = false;
-static bool        werror           = false;
-static bool        stl_func_instr   = false;
-static std::string main_fname       = "main";
-static std::string argv0            = "";
+static int         expectError        = NO_ERROR;
+static int         debugPrint         = 0;
+static int         binaryRewrite      = 0;  /* by default, it is turned off */
+static int         errorPrint         = 0;  // external "dyninst" tracing
+static bool        loop_level_instr   = false;
+static bool        werror             = false;
+static bool        stl_func_instr     = false;
+static bool        use_mpi            = false;
+static std::string main_fname         = "main";
+static std::string argv0              = "";
+static std::string default_components = "wall_clock";
+static std::string instr_push_func    = "timemory_push_trace";
+static std::string instr_pop_func     = "timemory_pop_trace";
 
-static BPatch_function*               name_reg;
-static BPatch_Vector<BPatch_snippet*> init_names;
-static BPatch_Vector<BPatch_snippet*> fini_names;
-static BPatch*                        bpatch;
-static std::vector<std::regex>        regex_include;
-static std::vector<std::regex>        regex_exclude;
-static std::set<std::string>          collection_includes;
-static std::set<std::string>          collection_excludes;
+using snippet_t     = BPatch_snippet;
+using snippet_vec_t = BPatch_Vector<snippet_t*>;
+
+static BPatch*              bpatch          = nullptr;
+static BPatch_funcCallExpr* initialize_expr = nullptr;
+static BPatch_funcCallExpr* terminate_expr  = nullptr;
+static snippet_vec_t        init_names;
+static snippet_vec_t        fini_names;
+
+static std::vector<std::regex>  regex_include;
+static std::vector<std::regex>  regex_exclude;
+static std::set<std::string>    collection_includes;
+static std::set<std::string>    collection_excludes;
 static std::vector<std::string> collection_paths = { "collections", "tools/collections",
                                                      "../share/tools/collections" };
 
@@ -181,10 +195,6 @@ find_func_or_calls(std::vector<const char*> names, BPatch_Vector<BPatch_point*>&
 bool
 find_func_or_calls(const char* name, BPatch_Vector<BPatch_point*>& points,
                    BPatch_image* image, BPatch_procedureLocation loc = BPatch_locEntry);
-
-int
-check_if_mpi(BPatch_image* appImage, BPatch_Vector<BPatch_point*>& mpiinit,
-             BPatch_function*& mpiinitstub, bool binaryRewrite);
 
 function_signature
 get_func_file_line_info(BPatch_image* mutatee_addr_space, BPatch_function* f);
@@ -311,5 +321,35 @@ struct function_signature
         return m_signature;
     }
 };
+
+//======================================================================================//
+
+static void
+timemory_thread_exit(BPatch_thread* proc, BPatch_exitType exit_type)
+{
+    if(proc && terminate_expr)
+    {
+        switch(exit_type)
+        {
+            case ExitedNormally:
+            {
+                fprintf(stderr, "[timemory-run]> Thread exited normally\n");
+                proc->oneTimeCode(*terminate_expr);
+                break;
+            }
+            case ExitedViaSignal:
+            {
+                fprintf(stderr, "[timemory-run]> Thread terminated unexpectedly\n");
+                break;
+            }
+            case NoExit:
+            default:
+            {
+                fprintf(stderr, "[timemory-run]> %s invoked with NoExit\n", __FUNCTION__);
+                break;
+            }
+        }
+    }
+}
 
 //======================================================================================//

@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/declaration.hpp"
@@ -757,13 +759,22 @@ storage<Type, true>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
-        m_manager         = tim::manager::instance();
-        bool   _is_master = singleton_t::is_master(this);
-        func_t _finalize  = [&]() {
+        m_manager       = tim::manager::instance();
+        bool _is_master = singleton_t::is_master(this);
+        auto _cleanup   = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                this->stack_clear();
+                auto& _obj = _instance->smart_instance();
+                if(_obj)
+                    _obj->stack_clear();
+            }
+        };
+        func_t _finalize = [&]() {
+            auto _instance = this_type::get_singleton();
+            if(_instance)
+            {
+                _cleanup();
                 _instance->reset(this);
                 _instance->smart_instance().reset();
                 if(_is_master)
@@ -771,7 +782,9 @@ storage<Type, true>::get_shared_manager()
             }
             trait::runtime_enabled<Type>::set(false);
         };
-        m_manager->add_finalizer(Type::get_label(), std::move(_finalize), _is_master);
+
+        m_manager->add_finalizer(Type::get_label(), std::move(_cleanup),
+                                 std::move(_finalize), _is_master);
     }
 }
 //
@@ -929,18 +942,29 @@ storage<Type, false>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
-        m_manager         = tim::manager::instance();
-        bool   _is_master = singleton_t::is_master(this);
-        func_t _finalize  = [&]() {
+        m_manager       = tim::manager::instance();
+        bool _is_master = singleton_t::is_master(this);
+        auto _cleanup   = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                this->stack_clear();
+                auto& _obj = _instance->smart_instance();
+                if(_obj)
+                    _obj->stack_clear();
+            }
+        };
+        func_t _finalize = [&]() {
+            auto _instance = this_type::get_singleton();
+            if(_instance)
+            {
+                _cleanup();
                 _instance->reset(this);
             }
             trait::runtime_enabled<Type>::set(false);
         };
-        m_manager->add_finalizer(Type::get_label(), std::move(_finalize), _is_master);
+
+        m_manager->add_finalizer(Type::get_label(), std::move(_cleanup),
+                                 std::move(_finalize), _is_master);
     }
 }
 //

@@ -35,20 +35,6 @@
 
 using namespace tim::component;
 
-CEREAL_CLASS_VERSION(tim::settings, 1)
-CEREAL_CLASS_VERSION(tim::env_settings, 0)
-CEREAL_CLASS_VERSION(tim::component::wall_clock, 0)
-CEREAL_CLASS_VERSION(tim::statistics<double>, 0)
-
-//======================================================================================//
-
-namespace
-{
-static auto library_manager_handle  = tim::manager::master_instance();
-static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
-static thread_local bool library_dyninst_init = false;
-}  // namespace
-
 //======================================================================================//
 
 extern "C"
@@ -63,12 +49,10 @@ extern "C"
 //======================================================================================//
 
 using string_t           = std::string;
-using traceset_t         = tim::component_tuple<user_trace_bundle>;
 using library_toolset_t  = TIMEMORY_LIBRARY_TYPE;
 using toolset_t          = typename library_toolset_t::component_type;
 using region_map_t       = std::unordered_map<std::string, std::stack<uint64_t>>;
 using record_map_t       = std::unordered_map<uint64_t, toolset_t>;
-using trace_map_t        = std::unordered_map<size_t, std::deque<traceset_t*>>;
 using component_enum_t   = std::vector<TIMEMORY_COMPONENT>;
 using components_stack_t = std::deque<component_enum_t>;
 
@@ -81,15 +65,6 @@ static record_map_t&
 get_record_map()
 {
     static thread_local record_map_t _instance;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-static trace_map_t&
-get_trace_map()
-{
-    static thread_local trace_map_t _instance;
     return _instance;
 }
 
@@ -244,22 +219,17 @@ extern "C"
         // clear the map
         _record_map.clear();
 
-        for(auto& itr : get_trace_map())
-        {
-            for(auto& eitr : itr.second)
-            {
-                eitr->stop();
-                delete eitr;
-            }
-            // delete all the records
-            itr.second.clear();
-        }
-
-        // delete all the records
-        get_trace_map().clear();
+        // have the manager finalize
+        tim::manager::instance()->finalize();
 
         // do the finalization
         tim::timemory_finalize();
+
+        // just in case
+        tim::settings::enabled() = false;
+
+        // set the finalization state to true
+        tim::dmp::is_finalized() = true;
 
         // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)
@@ -505,128 +475,6 @@ extern "C"
             itr->second.pop();
         }
     }
-
-    //----------------------------------------------------------------------------------//
-
-    int64_t timemory_register_trace(const char* name)
-    {
-        if(tim::settings::verbose() > 2 || tim::settings::debug())
-            PRINT_HERE("%s", name);
-
-        using hasher_t                       = std::hash<std::string>;
-        static thread_local auto& _trace_map = get_trace_map();
-        size_t                    id         = hasher_t()(std::string(name));
-        int64_t                   n          = _trace_map[id].size();
-
-#if defined(DEBUG)
-        if(tim::settings::verbose() > 2)
-            printf("beginning trace for '%s' (id = %llu, offset = %lli)...\n", name,
-                   (long long unsigned) id, (long long int) n);
-#endif
-
-        _trace_map[id].push_back(new traceset_t(name));
-        _trace_map[id].back()->start();
-
-        if(tim::settings::verbose() > 3)
-            PRINT_HERE("%s", name);
-
-        return n;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void timemory_deregister_trace(const char* name)
-    {
-        if(tim::settings::verbose() > 2 || tim::settings::debug())
-            PRINT_HERE("%s", name);
-
-        using hasher_t                       = std::hash<std::string>;
-        static thread_local auto& _trace_map = get_trace_map();
-        size_t                    id         = hasher_t()(std::string(name));
-        int64_t                   ntotal     = _trace_map[id].size();
-        int64_t                   offset     = ntotal - 1;
-
-        if(tim::settings::verbose() > 2)
-            printf("ending trace for %llu [offset = %lli]...\n", (long long unsigned) id,
-                   (long long int) offset);
-
-        if(offset >= 0 && ntotal > 0)
-        {
-            if(_trace_map[id].back())
-            {
-                _trace_map[id].back()->stop();
-                delete _trace_map[id].back();
-            }
-            _trace_map[id].pop_back();
-        }
-
-        if(tim::settings::verbose() > 3)
-            PRINT_HERE("%s", name);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void timemory_dyninst_init(int rank)
-    {
-        PRINT_HERE("rank = %i", rank);
-        library_dyninst_init = true;
-        tim::manager::use_exit_hook(false);
-        tim::settings::destructor_report() = false;
-        tim::set_env<std::string>("TIMEMORY_DESTRUCTOR_REPORT", "OFF");
-
-        user_trace_bundle::global_init(nullptr);
-        if(user_trace_bundle::bundle_size() == 0)
-            user_trace_bundle::configure<wall_clock>();
-
-        auto init_func = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-        tim::config::read_command_line(init_func);
-        tim::settings::parse();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void timemory_dyninst_finalize(void)
-    {
-        PRINT_HERE("%s", "");
-        if(!library_dyninst_init)
-            return;
-        // do the finalization
-        library_dyninst_init = false;
-        // reset traces just in case
-        user_trace_bundle::reset();
-        // have the manager finalize
-        tim::manager::instance()->finalize();
-        // finalize the library
-        timemory_finalize_library();
-        // just in case
-        tim::settings::enabled() = false;
-        PRINT_HERE("%s", "");
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void timemory_init_trace(uint64_t id)
-    {
-        PRINT_HERE("[id = %llu]", (long long unsigned) id);
-        if(!library_dyninst_init)
-            timemory_dyninst_init(id);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    void timemory_fini_trace(void) { PRINT_HERE("%s", ""); }
-
-    //----------------------------------------------------------------------------------//
-
-    void timemory_mpi_init_stub(int _rank)
-    {
-        PRINT_HERE("[rank = %i]", _rank);
-        tim::consume_parameters(_rank);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    int timemory_get_rank(void) { return tim::dmp::rank(); }
 
     //==================================================================================//
     //

@@ -61,6 +61,7 @@
 #if defined(_UNIX)
 #    include <cxxabi.h>
 #    include <errno.h>
+#    include <execinfo.h>
 #    include <stdio.h>
 #    include <string.h>
 #    include <sys/stat.h>
@@ -281,6 +282,67 @@ get_max_threads()
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+//
+#if defined(_UNIX)
+//
+template <size_t Depth, size_t Offset = 0,
+          typename Func = std::function<std::string(const char*)>>
+static inline auto
+get_backtrace(Func&& func = [](const char* inp) { return std::string(inp); })
+{
+    static_assert((Depth - Offset) >= 1, "Error Depth - Offset should be >= 1");
+
+    using type = std::result_of_t<Func(const char*)>;
+    // destination
+    std::array<type, Depth> btrace;
+    btrace.fill((std::is_pointer<type>::value) ? nullptr : type{});
+
+    // plus one for this stack-frame
+    std::array<void*, Depth + Offset> buffer;
+    // size of returned buffer
+    auto sz = backtrace(buffer.data(), Depth + Offset);
+    // size of relevant data
+    auto n = sz - Offset;
+
+    // skip ahead (Offset + 1) stack frames
+    char** bsym = backtrace_symbols(buffer.data() + Offset, n);
+
+    // report errors
+    if(bsym == nullptr)
+        perror("backtrace_symbols");
+    else
+    {
+        for(decltype(n) i = 0; i < n; ++i)
+            btrace[i] = func(bsym[i]);
+        free(bsym);
+    }
+    return btrace;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t Depth, size_t Offset = 0>
+static inline auto
+get_demangled_backtrace()
+{
+    auto demangle_bt = [](const char* cstr) {
+        auto str = std::string(cstr);
+        auto beg = str.find("(_Z");
+        auto end = str.find("+0x", beg);
+        if(beg != std::string::npos && end != std::string::npos)
+        {
+            auto len = end - (beg + 1);
+            auto dem = demangle(str.substr(beg + 1, len));
+            str      = str.replace(beg + 1, len, dem);
+        }
+        return str;
+    };
+    return get_backtrace<Depth, Offset>(std::move(demangle_bt));
+}
+//
+#endif
+//
 //--------------------------------------------------------------------------------------//
 //  delimit a string into a set
 //

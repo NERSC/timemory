@@ -12,7 +12,6 @@ export PATH=/opt/conda/bin:/usr/local/cuda/bin:${PATH}
 export CC=$(which cc)
 export CXX=$(which c++)
 export CUDACXX=$(which nvcc)
-export CPATH=${CPATH}:/usr/include/mpich
 export CUDA_HOME=$(realpath /usr/local/cuda)
 export LIBRARY_PATH=/usr/local/lib:${LIBRARY_PATH}
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
@@ -39,18 +38,18 @@ run-verbose make install -j6
 #                           TAU
 #--------------------------------------------------------------------------------------------#
 
-# run-verbose cd ${ROOT_DIR}
-# run-verbose wget http://tau.uoregon.edu/tau.tgz
-# run-verbose tar -xzf tau.tgz
-# run-verbose cd tau-*
-# export CFLAGS="-O3 -fPIC"
-# export CPPFLAGS="-O3 -fPIC"
+run-verbose cd ${ROOT_DIR}
+run-verbose wget http://tau.uoregon.edu/tau.tgz
+run-verbose tar -xzf tau.tgz
+run-verbose cd tau-*
+export CFLAGS="-O3 -fPIC"
+export CPPFLAGS="-O3 -fPIC"
 # run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich -cuda=/usr/local/cuda
-# run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich
-# run-verbose make -j6
-# run-verbose make install -j6
-# unset CFLAGS
-# unset CPPFLAGS
+run-verbose ./configure -python -prefix=/usr/local -pthread -papi=/usr -mpi -mpiinc=/usr/include/mpich
+run-verbose make -j6
+run-verbose make install -j6
+unset CFLAGS
+unset CPPFLAGS
 
 #--------------------------------------------------------------------------------------------#
 #                           UPC++

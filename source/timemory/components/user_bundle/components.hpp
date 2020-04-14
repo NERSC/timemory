@@ -39,6 +39,8 @@
 
 #include "timemory/runtime/types.hpp"
 
+#include <regex>
+
 //======================================================================================//
 //
 namespace tim
@@ -58,8 +60,7 @@ get_user_bundle_variables()
         { component::global_bundle_idx, { "TIMEMORY_GLOBAL_COMPONENTS", {} } },
         { component::tuple_bundle_idx,
           { "TIMEMORY_TUPLE_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
-        { component::list_bundle_idx,
-          { "TIMEMORY_LIST_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
+        { component::list_bundle_idx, { "TIMEMORY_LIST_COMPONENTS", {} } },
         { component::ompt_bundle_idx,
           { "TIMEMORY_OMPT_COMPONENTS",
             { "TIMEMORY_PROFILER_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
@@ -83,13 +84,17 @@ auto
 get_bundle_components(const std::string& custom_env, const VecT& fallback_env)
 {
     using string_t = std::string;
-    auto env_tool  = get_env<string_t>(custom_env, "");
-    if(env_tool.empty())
+    const auto regex_constants =
+        std::regex_constants::ECMAScript | std::regex_constants::icase;
+    auto env_tool = get_env<string_t>(custom_env, "");
+    if(env_tool.empty() &&
+       !std::regex_match(env_tool, std::regex("none", regex_constants)))
     {
         for(const auto& itr : fallback_env)
         {
             env_tool = get_env<string_t>(itr);
-            if(env_tool.length() > 0)
+            if(env_tool.length() > 0 ||
+               std::regex_match(env_tool, std::regex("none", regex_constants)))
                 break;
         }
     }
@@ -316,7 +321,19 @@ public:
 
     void get() {}
 
-    void set_prefix(const string_t& _prefix) { m_prefix = _prefix; }
+    void set_prefix(const string_t& _prefix)
+    {
+        // skip unnecessary copies
+        if(!m_bundle.empty())
+            m_prefix = _prefix;
+    }
+
+    void set_scope(const scope::config& val)
+    {
+        // skip unnecessary copies
+        if(!m_bundle.empty())
+            m_scope = val;
+    }
 
     size_t size() const { return m_bundle.size(); }
 
@@ -352,8 +369,6 @@ public:
             this->insert(factory::get_opaque<Types>(std::forward<Args>(args)...),
                          factory::get_typeids<Types>()));
     }
-
-    void set_scope(scope::config val) { m_scope = val; }
 
 protected:
     scope::config  m_scope   = scope::get_default();

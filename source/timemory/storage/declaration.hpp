@@ -291,11 +291,9 @@ namespace impl
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename StorageType, typename Type,
-          typename HashMap   = typename StorageType::iterator_hash_map_t,
-          typename GraphData = typename StorageType::graph_data_t>
+template <typename StorageType, typename Type, typename HashMap, typename GraphData>
 typename StorageType::iterator
-insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
                  HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
                  uint64_t);
 //
@@ -548,7 +546,7 @@ typename storage<Type, true>::iterator
 storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
     bool _has_head = _data().has_head();
-    return insert_heirarchy<this_type, Type>(hash_id, obj, hash_depth, m_node_ids,
+    return insert_hierarchy<this_type, Type>(hash_id, obj, hash_depth, m_node_ids,
                                              m_graph_data_instance, _has_head,
                                              m_is_master, m_thread_idx);
 }
@@ -922,7 +920,7 @@ struct storage_deleter : public std::default_delete<StorageType>
 //
 template <typename StorageType, typename Type, typename HashMap, typename GraphData>
 typename StorageType::iterator
-insert_heirarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
                  HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
                  uint64_t tid)
 {

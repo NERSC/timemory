@@ -90,6 +90,7 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
+    extern void timemory_MPI_Comm_set_attr(void);
     extern void timemory_MPI_Init(int* argc, char*** argv);
     extern int  MPI_Init(int* argc, char*** argv);
 #        if !defined(TIMEMORY_MPI_INIT) || (TIMEMORY_MPI_INIT > 0)
@@ -120,7 +121,7 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-    TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Init(int* argc, char*** argv)
+    TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Comm_set_attr(void)
     {
         int comm_key = 0;
         MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_MPI_Finalize, &comm_key, NULL);
@@ -128,6 +129,13 @@ extern "C"
 
         static auto _manager = timemory_manager_master_instance();
         tim::consume_parameters(_manager);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Init(int* argc, char*** argv)
+    {
+        timemory_MPI_Comm_set_attr();
         ::tim::timemory_init(*argc, *argv);
     }
     //

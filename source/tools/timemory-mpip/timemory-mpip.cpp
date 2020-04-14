@@ -36,6 +36,7 @@ using namespace tim::component;
 using api_t         = tim::api::native_tag;
 using mpi_toolset_t = tim::component_list<user_mpip_bundle>;
 using mpip_handle_t = mpip_handle<mpi_toolset_t, api_t>;
+uint64_t global_id  = 0;
 
 extern "C"
 {
@@ -59,10 +60,16 @@ extern "C"
         return deactivate_mpip<mpi_toolset_t, api_t>(id);
     }
 
+    void register_timemory_mpip() { global_id = init_timemory_mpip_tools(); }
+    void deregister_timemory_mpip() { global_id = stop_timemory_mpip_tools(global_id); }
+
+    // Below are for FORTRAN codes
     uint64_t init_timemory_mpip_tools_() { return init_timemory_mpip_tools(); }
     uint64_t stop_timemory_mpip_tools_(uint64_t id)
     {
         return stop_timemory_mpip_tools(id);
     }
+    void register_timemory_mpip_() { register_timemory_mpip(); }
+    void deregister_timemory_mpip_() { deregister_timemory_mpip(); }
 
 }  // extern "C"

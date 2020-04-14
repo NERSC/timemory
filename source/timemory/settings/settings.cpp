@@ -49,6 +49,11 @@ get_parse_callbacks()
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_SETTINGS_LINKAGE(setting_description_map_t&)
+get_setting_descriptions() { return get_descriptions<settings, api::native_tag>(); }
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
 
 #endif

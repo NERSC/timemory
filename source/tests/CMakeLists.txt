@@ -68,12 +68,20 @@ add_timemory_google_test(timeline_tests
     SOURCES         timeline_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-plotting timemory-analysis-tools extern-test-templates)
-                  
+
+add_timemory_google_test(data_tracker_tests
+    DISCOVER_TESTS
+    SOURCES         data_tracker_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
+
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS
     SOURCES         threading_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools timemory-ompt)
+                    timemory-plotting timemory-analysis-tools timemory-ompt
+                    ${_LIBRARY})
 
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS
@@ -86,7 +94,8 @@ add_timemory_google_test(user_bundle_tests
     DISCOVER_TESTS
     SOURCES         user_bundle_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools)
+                    timemory-plotting timemory-analysis-tools
+                    ${_LIBRARY})
 
 add_timemory_google_test(mangle_tests
     DISCOVER_TESTS
@@ -99,7 +108,8 @@ add_timemory_google_test(tuple_tests
     DISCOVER_TESTS
     SOURCES         tuple_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-papi timemory-plotting timemory-analysis-tools timemory-caliper)
+                    timemory-papi timemory-plotting timemory-analysis-tools timemory-caliper
+                    ${_LIBRARY})
 
 add_timemory_google_test(macro_tests
     DISCOVER_TESTS
@@ -166,7 +176,8 @@ if(TIMEMORY_USE_CUDA)
         SOURCES         cuda_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
                         timemory-cuda    timemory-cudart timemory-develop-options
-                        timemory-plotting timemory-analysis-tools)
+                        timemory-plotting timemory-analysis-tools
+                        ${_LIBRARY})
 endif()
 
 if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_NVTX)
@@ -175,7 +186,8 @@ if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_NVTX)
         SOURCES         cuda_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options timemory-develop-options
                         timemory-cuda    timemory-cudart timemory-nvtx
-                        timemory-plotting timemory-analysis-tools)
+                        timemory-plotting timemory-analysis-tools
+                        ${_LIBRARY})
 endif()
 
 if(TIMEMORY_USE_CUPTI AND HAS_CUDA_DRIVER_LIBRARY)
@@ -252,7 +264,8 @@ if(TIMEMORY_USE_MPI)
         DISCOVER_TESTS
         SOURCES         mpi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                        timemory-plotting timemory-analysis-tools timemory-mpi)
+                        timemory-plotting timemory-analysis-tools timemory-mpi
+                        ${_LIBRARY})
 endif()
 
 if(TIMEMORY_USE_UPCXX)
@@ -275,4 +288,5 @@ add_timemory_google_test(derived_tests
     DISCOVER_TESTS
     SOURCES         derived_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools timemory-mpi)
+                    timemory-plotting timemory-analysis-tools timemory-mpi
+                    ${_LIBRARY})

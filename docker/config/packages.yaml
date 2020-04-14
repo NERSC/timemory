@@ -14,6 +14,22 @@
 #   ~/.spack/packages.yaml
 # -------------------------------------------------------------------------
 packages:
+  cmake:
+    paths:
+        cmake: /usr/bin/cmake
+    buildable: False
+  dyninst:
+    variants: build_type=Release
+  mpich:
+    variants: pmi=pmi2
+  papi:
+    variants: +rapl+powercap+lmsensors~example
+  caliper:
+    variants: +callpath+dyninst+gotcha+libpfm+mpi+sampler
+  openmpi:
+    variants: ~vt-pmi+cuda+thread_multiple fabrics=auto
+  tau:
+    variants: ~ompt+openmp+papi~pdt+pthreads+python+mpi~likwid+libunwind~cuda~phase
   all:
     compiler: [gcc, intel, pgi, clang, xl, nag, fj, gfortran]
     providers:
@@ -35,7 +51,7 @@ packages:
       mariadb-client: [mariadb-c-client, mariadb]
       mkl: [intel-mkl]
       mpe: [mpe2]
-      mpi: [mpich, openmpi]
+      mpi: [mpich]
       mysql-client: [mysql, mariadb-c-client]
       opencl: [pocl]
       pil: [py-pillow]

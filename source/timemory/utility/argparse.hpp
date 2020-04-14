@@ -35,6 +35,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -200,6 +201,8 @@ struct argument_parser
     //
     struct argument
     {
+        using callback_t = std::function<void(void*)>;
+
         enum Position : int
         {
             LAST   = -1,
@@ -256,10 +259,36 @@ struct argument_parser
             return *this;
         }
 
+        template <typename T>
+        argument& set_default(const T& val)
+        {
+            m_callback = [&](void* obj) { obj = (void*) new T(val); };
+            return *this;
+        }
+
+        template <typename T>
+        argument& set_default(T& val)
+        {
+            m_callback = [&](void* obj) { obj = (void*) &val; };
+            return *this;
+        }
+
+        template <typename T>
+        argument& choices(const std::initializer_list<T>& _choices)
+        {
+            for(auto&& itr : _choices)
+            {
+                std::stringstream ss;
+                ss << itr;
+                m_choices.insert(ss.str());
+            }
+            return *this;
+        }
+
         bool found() const { return m_found; }
 
         template <typename T>
-        typename std::enable_if<helpers::is_vector<T>::value, T>::type get()
+        std::enable_if_t<helpers::is_vector<T>::value, T> get()
         {
             T                      t = T{};
             typename T::value_type vt;
@@ -273,11 +302,12 @@ struct argument_parser
         }
 
         template <typename T>
-        typename std::enable_if<!helpers::is_vector<T>::value, T>::type get()
+        std::enable_if_t<!helpers::is_vector<T>::value, T> get()
         {
-            std::istringstream in(get<std::string>());
+            auto               inp = get<std::string>();
+            std::istringstream iss(inp);
             T                  t = T{};
-            in >> t >> std::ws;
+            iss >> t >> std::ws;
             return t;
         }
 
@@ -291,6 +321,22 @@ struct argument_parser
 
         argument() {}
 
+        arg_result check(const std::string& value)
+        {
+            if(m_choices.size() > 0)
+            {
+                if(m_choices.find(value) == m_choices.end())
+                {
+                    std::stringstream ss;
+                    ss << "Invalid choice: '" << value << "'. Valid choices: ";
+                    for(const auto& itr : m_choices)
+                        ss << "'" << itr << "' ";
+                    return arg_result(ss.str());
+                }
+            }
+            return arg_result();
+        }
+
         friend struct argument_parser;
         int                      m_position = Position::IGNORE;
         int                      m_count    = Count::ANY;
@@ -299,6 +345,9 @@ struct argument_parser
         bool                     m_found    = false;
         bool                     m_required = false;
         int                      m_index    = -1;
+        void*                    m_default  = nullptr;
+        callback_t               m_callback = [](void*) {};
+        std::set<std::string>    m_choices  = {};
 
         std::vector<std::string> m_values{};
     };
@@ -320,23 +369,10 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    argument& add_argument(const std::string& name, const std::string& long_name,
-                           const std::string& desc, const bool required = false)
+    argument& add_argument(const std::initializer_list<std::string>& _names,
+                           const std::string& desc, bool req = false)
     {
-        m_arguments.push_back(argument(name, desc, required));
-        m_arguments.back().m_names.push_back(long_name);
-        m_arguments.back().m_index = static_cast<int>(m_arguments.size()) - 1;
-        return m_arguments.back();
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    argument& add_argument(const std::string& name, const std::string& desc,
-                           const bool required = false)
-    {
-        m_arguments.push_back(argument(name, desc, required));
-        m_arguments.back().m_index = static_cast<int>(m_arguments.size()) - 1;
-        return m_arguments.back();
+        return add_argument().names(_names).description(desc).required(req);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -357,9 +393,7 @@ struct argument_parser
                 if(v.first != argument::Position::LAST)
                 {
                     for(; current < v.first; ++current)
-                    {
                         std::cout << " [" << current << "]";
-                    }
                     std::cout
                         << " ["
                         << helpers::ltrim(
@@ -379,9 +413,7 @@ struct argument_parser
             }
             if(m_positional_arguments.find(argument::Position::LAST) ==
                m_positional_arguments.end())
-            {
                 std::cout << " [options...]";
-            }
             std::cout << " " << _extra << std::endl;
         }
         std::cout << "\nOptions:" << std::endl;
@@ -389,15 +421,23 @@ struct argument_parser
         {
             std::string name = a.m_names[0];
             for(size_t n = 1; n < a.m_names.size(); ++n)
-            {
                 name.append(", " + a.m_names[n]);
-            }
-            std::cout << "    " << std::setw(23) << std::left << name << std::setw(23)
-                      << a.m_desc;
-            if(a.m_required)
+            std::stringstream ss;
+            ss << name;
+            if(a.m_choices.size() > 0)
             {
-                std::cout << " (Required)";
+                ss << " [";
+                auto itr = a.m_choices.begin();
+                ss << " " << *itr++;
+                for(; itr != a.m_choices.end(); ++itr)
+                    ss << " | " << *itr;
+                ss << " ] ";
             }
+            std::cout << "    " << std::setw(m_width) << std::left << ss.str();
+
+            std::cout << " " << std::setw(m_width) << a.m_desc;
+            if(a.m_required)
+                std::cout << " (Required)";
             std::cout << std::endl;
         }
         std::cout << '\n';
@@ -429,15 +469,11 @@ struct argument_parser
                     std::string name = helpers::ltrim(
                         n, [](int c) -> bool { return c != static_cast<int>('-'); });
                     if(m_name_map.find(name) != m_name_map.end())
-                    {
                         return arg_result("Duplicate of argument name: " + n);
-                    }
                     m_name_map[name] = a.m_index;
                 }
                 if(a.m_position >= 0 || a.m_position == argument::Position::LAST)
-                {
                     m_positional_arguments[a.m_position] = a.m_index;
-                }
             }
 
             m_bin = _args.at(0);
@@ -450,9 +486,7 @@ struct argument_parser
                 current_arg = _args.at(argv_index);
                 arg_len     = current_arg.length();
                 if(arg_len == 0)
-                {
                     continue;
-                }
                 if(argv_index == argc - 1 &&
                    m_positional_arguments.find(argument::Position::LAST) !=
                        m_positional_arguments.end())
@@ -461,74 +495,49 @@ struct argument_parser
                     arg_result b = err;
                     err          = add_value(current_arg, argument::Position::LAST);
                     if(b)
-                    {
-                        // PRINT_HERE("%s", "");
                         return b;
-                    }
                     if(err)
-                    {
-                        // PRINT_HERE("%s", "");
                         return err;
-                    }
-                    // PRINT_HERE("%s", "");
                     continue;
                 }
                 if(arg_len >= 2 && !helpers::is_numeric(current_arg))
                 {
-                    // PRINT_HERE("%s", "");
                     // ignores the case if the arg is just a -
                     // look for -a (short) or --arg (long) args
                     if(current_arg[0] == '-')
                     {
                         err = end_argument();
                         if(err)
-                        {
-                            // PRINT_HERE("%s", "");
                             return err;
-                        }
                         // look for --arg (long) args
                         if(current_arg[1] == '-')
                         {
                             err = begin_argument(current_arg.substr(2), true, argv_index);
                             if(err)
-                            {
-                                // PRINT_HERE("%s", "");
                                 return err;
-                            }
                         }
                         else
                         {  // short args
                             err =
                                 begin_argument(current_arg.substr(1), false, argv_index);
                             if(err)
-                            {
-                                // PRINT_HERE("%s", "");
                                 return err;
-                            }
                         }
                     }
                     else
                     {
-                        // PRINT_HERE("%s", "");
                         // argument value
                         err = add_value(current_arg, argv_index);
                         if(err)
-                        {
-                            // PRINT_HERE("%s", "");
                             return err;
-                        }
                     }
                 }
                 else
                 {
-                    // PRINT_HERE("%s", "");
                     // argument value
                     err = add_value(current_arg, argv_index);
                     if(err)
-                    {
-                        // PRINT_HERE("%s", "");
                         return err;
-                    }
                 }
             }
         }
@@ -538,10 +547,7 @@ struct argument_parser
         }
         err = end_argument();
         if(err)
-        {
-            // PRINT_HERE("%s", "");
             return err;
-        }
         for(auto& a : m_arguments)
         {
             if(a.m_required && !a.m_found)
@@ -554,7 +560,6 @@ struct argument_parser
                                   std::to_string(a.m_position));
             }
         }
-        // PRINT_HERE("%s", "");
         return arg_result();
     }
     //
@@ -572,11 +577,9 @@ struct argument_parser
     {
         std::string n = helpers::ltrim(
             name, [](int c) -> bool { return c != static_cast<int>('-'); });
-        auto it = m_name_map.find(n);
-        if(it != m_name_map.end())
-        {
-            return m_arguments[static_cast<size_t>(it->second)].m_found;
-        }
+        auto itr = m_name_map.find(n);
+        if(itr != m_name_map.end())
+            return m_arguments[static_cast<size_t>(itr->second)].m_found;
         return false;
     }
     //
@@ -585,11 +588,9 @@ struct argument_parser
     template <typename T>
     T get(const std::string& name)
     {
-        auto t = m_name_map.find(name);
-        if(t != m_name_map.end())
-        {
-            return m_arguments[static_cast<size_t>(t->second)].get<T>();
-        }
+        auto itr = m_name_map.find(name);
+        if(itr != m_name_map.end())
+            return m_arguments[static_cast<size_t>(itr->second)].get<T>();
         return T{};
     }
 
@@ -625,7 +626,8 @@ private:
             m_current                                             = nmf->second;
             m_arguments[static_cast<size_t>(nmf->second)].m_found = true;
             if(equal_pos == 0 || (equal_pos < 0 && arg_name.length() < arg.length()))
-            {  // malformed argument
+            {
+                // malformed argument
                 return arg_result("Malformed argument: " + arg);
             }
             else if(equal_pos > 0)
@@ -665,43 +667,47 @@ private:
     //
     arg_result add_value(const std::string& value, int location)
     {
+        auto unnamed = [&]() {
+            auto itr = m_positional_arguments.find(location);
+            if(itr != m_positional_arguments.end())
+            {
+                argument& a = m_arguments[static_cast<size_t>(itr->second)];
+                a.m_values.push_back(value);
+                a.m_found = true;
+            }
+        };
+
         if(m_current >= 0)
         {
             arg_result err;
             size_t     c = static_cast<size_t>(m_current);
             consume_parameters(c);
             argument& a = m_arguments[static_cast<size_t>(m_current)];
+
+            err = a.check(value);
+            if(err)
+                return err;
+
             if(a.m_count >= 0 && static_cast<int>(a.m_values.size()) >= a.m_count)
             {
                 err = end_argument();
                 if(err)
-                {
                     return err;
-                }
-                goto unnamed;
+                unnamed();
             }
-            a.m_values.resize(a.m_values.size() + 1);
-            a.m_values.back() = value;
+
+            a.m_values.push_back(value);
             if(a.m_count >= 0 && static_cast<int>(a.m_values.size()) >= a.m_count)
             {
                 err = end_argument();
                 if(err)
-                {
                     return err;
-                }
             }
             return arg_result();
         }
         else
         {
-        unnamed:
-            auto it = m_positional_arguments.find(location);
-            if(it != m_positional_arguments.end())
-            {
-                argument& a = m_arguments[static_cast<size_t>(it->second)];
-                a.m_values.push_back(value);
-                a.m_found = true;
-            }
+            unnamed();
             // TODO
             return arg_result();
         }
@@ -716,15 +722,11 @@ private:
             argument& a = m_arguments[static_cast<size_t>(m_current)];
             m_current   = -1;
             if(static_cast<int>(a.m_values.size()) < a.m_count)
-            {
                 return arg_result("Too few arguments given for " + a.m_names[0]);
-            }
             if(a.m_count >= 0)
             {
                 if(static_cast<int>(a.m_values.size()) > a.m_count)
-                {
                     return arg_result("Too many arguments given for " + a.m_names[0]);
-                }
             }
         }
         return arg_result();
@@ -732,6 +734,7 @@ private:
 
     bool                       m_help_enabled         = false;
     int                        m_current              = -1;
+    int                        m_width                = 30;
     std::string                m_desc                 = {};
     std::string                m_bin                  = {};
     std::vector<argument>      m_arguments            = {};

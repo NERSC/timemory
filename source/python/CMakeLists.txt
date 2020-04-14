@@ -59,7 +59,7 @@ set_target_properties(libpytimemory PROPERTIES
 
 if(UNIX AND NOT APPLE)
     set_target_properties(libpytimemory PROPERTIES
-        INSTALL_RPATH "\$ORIGIN/../../..")
+        INSTALL_RPATH "\$ORIGIN/../../..:\$ORIGIN/../../../timemory:\$ORIGIN")
 endif()
 
 set(PYTHON_SUBMODULE_FOLDERS
@@ -77,7 +77,7 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
         configure_file(${SOURCE_DIR}/${_SUBMODULE}.py
             ${BINARY_DIR}/${_SUBMODULE}.py @ONLY)
         install(FILES ${BINARY_DIR}/${_SUBMODULE}.py
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/${_SUBMODULE}/)
     endif()
 
     # copy over the init file
@@ -85,7 +85,7 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
         configure_file(${SOURCE_DIR}/__init__.py
             ${BINARY_DIR}/__init__.py @ONLY)
         install(FILES ${BINARY_DIR}/__init__.py
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/${_SUBMODULE}/)
     endif()
 
     # copy over the main file
@@ -93,7 +93,7 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
         configure_file(${SOURCE_DIR}/__main__.py
             ${BINARY_DIR}/__main__.py @ONLY)
         install(FILES ${BINARY_DIR}/__main__.py
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_SUBMODULE}/)
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/${_SUBMODULE}/)
     endif()
 
 endforeach()
@@ -132,7 +132,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_cxx_info.txt "${MPI_CXX_
 
 foreach(_TYPE exe c cxx)
     install(FILES ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/mpi_support)
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/mpi_support)
 endforeach(_TYPE exe c cxx)
 
 
@@ -143,19 +143,19 @@ configure_file(${PROJECT_SOURCE_DIR}/timemory/__init__.py.in
     ${CMAKE_BINARY_DIR}/timemory/__init__.py @ONLY)
 
 install(FILES ${CMAKE_BINARY_DIR}/timemory/__init__.py
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
 
 foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
     configure_file(${PROJECT_SOURCE_DIR}/timemory/${PYLIB_SUBMODULE}.py
         ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
 
     install(FILES ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
 endforeach()
 
 # Python library target
 install(TARGETS libpytimemory
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
 
 #----------------------------------------------------------------------------
 # Python tools

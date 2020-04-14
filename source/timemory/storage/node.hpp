@@ -253,7 +253,7 @@ save(Archive& ar, const tim::node::result<Tp>& r)
        cereal::make_nvp("stats", r.stats()),
        cereal::make_nvp("rolling_hash", r.rolling_hash()));
     // clang-format on
-    // ar(cereal::make_nvp("heirarchy", r.hierarchy()));
+    // ar(cereal::make_nvp("hierarchy", r.hierarchy()));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -270,7 +270,7 @@ load(Archive& ar, tim::node::result<Tp>& r)
        cereal::make_nvp("stats", r.stats()),
        cereal::make_nvp("rolling_hash", r.rolling_hash()));
     // clang-format on
-    // ar(cereal::make_nvp("heirarchy", r.hierarchy()));
+    // ar(cereal::make_nvp("hierarchy", r.hierarchy()));
 }
 //
 //--------------------------------------------------------------------------------------//

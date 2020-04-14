@@ -82,6 +82,10 @@ get<Type, true>::get(storage_type& data, result_type& ret)
     bool _use_tid_prefix    = (!settings::collapse_threads() || _thread_scope_only);
     auto _num_thr_count     = manager::get_thread_count();
 
+    data.m_node_init = dmp::is_initialized();
+    data.m_node_rank = dmp::rank();
+    data.m_node_size = dmp::size();
+
     //------------------------------------------------------------------------------//
     //
     //  Compute the thread prefix

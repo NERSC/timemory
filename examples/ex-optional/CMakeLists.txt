@@ -10,8 +10,8 @@ file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)
 add_executable(ex_optional_on ${sources})
 add_executable(ex_optional_off ${sources})
 
-target_link_libraries(ex_optional_on timemory)
-target_link_libraries(ex_optional_off timemory-compile-options)
+target_link_libraries(ex_optional_on timemory timemory-mpi)
+target_link_libraries(ex_optional_off timemory-compile-options timemory-mpi)
 target_compile_definitions(ex_optional_on PRIVATE USE_TIMEMORY)
 
 install(TARGETS ex_optional_on ex_optional_off DESTINATION bin)

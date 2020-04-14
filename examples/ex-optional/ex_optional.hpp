@@ -25,6 +25,10 @@
 
 #pragma once
 
+#if defined(TIMEMORY_USE_MPI)
+#    include <mpi.h>
+#endif
+
 #if defined(USE_TIMEMORY)
 
 #    include "timemory/timemory.hpp"
@@ -54,8 +58,13 @@ void                              timemory_finalize() {}
 
 namespace mpi
 {
+#    if defined(TIMEMORY_USE_MPI)
+static inline void initialize(int& argc, char**& argv) { MPI_Init(&argc, &argv); }
+static inline void finalize() { MPI_Finalize(); }
+#    else
 template <typename... Args> static inline void initialize(Args&&...) {}
 static inline void                             finalize() {}
+#    endif
 }
 
 /// this provides "functionality" for *_HANDLE macros

@@ -91,8 +91,8 @@ public:
     // storage-types add functors to destroy the instances
     template <typename Func>
     void add_cleanup(const std::string&, Func&&);
-    template <typename Func>
-    void add_finalizer(const std::string&, Func&&, bool);
+    template <typename StackFunc, typename FinalFunc>
+    void add_finalizer(const std::string&, StackFunc&&, FinalFunc&&, bool);
     void remove_cleanup(const std::string&);
     void remove_finalizer(const std::string&);
     void cleanup(const std::string&);
@@ -244,6 +244,8 @@ private:
     graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
     graph_hash_alias_ptr_t m_hash_aliases = get_hash_aliases();
     finalizer_list_t       m_finalizer_cleanups;
+    finalizer_list_t       m_master_cleanup;
+    finalizer_list_t       m_worker_cleanup;
     finalizer_list_t       m_master_finalizers;
     finalizer_list_t       m_worker_finalizers;
     mutex_t                m_mutex;
@@ -322,9 +324,10 @@ manager::add_cleanup(const std::string& _key, Func&& _func)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename Func>
+template <typename StackFunc, typename FinalFunc>
 void
-manager::add_finalizer(const std::string& _key, Func&& _func, bool _is_master)
+manager::add_finalizer(const std::string& _key, StackFunc&& _stack_func,
+                       FinalFunc&& _inst_func, bool _is_master)
 {
     // ensure there are no duplicates
     remove_finalizer(_key);
@@ -336,12 +339,19 @@ manager::add_finalizer(const std::string& _key, Func&& _func, bool _is_master)
     if(m_write_metadata == 0)
         m_write_metadata = 1;
 
-    auto _entry = finalizer_pair_t{ _key, std::forward<Func>(_func) };
+    auto _stack_entry = finalizer_pair_t{ _key, std::forward<StackFunc>(_stack_func) };
+    auto _final_entry = finalizer_pair_t{ _key, std::forward<FinalFunc>(_inst_func) };
 
     if(_is_master)
-        m_master_finalizers.push_back(_entry);
+    {
+        m_master_cleanup.push_back(_stack_entry);
+        m_master_finalizers.push_back(_final_entry);
+    }
     else
-        m_worker_finalizers.push_back(_entry);
+    {
+        m_worker_cleanup.push_back(_stack_entry);
+        m_worker_finalizers.push_back(_final_entry);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//

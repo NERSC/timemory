@@ -332,11 +332,24 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto _finalize = [&]() {
         try
         {
-            // python GC seems to cause occasional problems
-            tim::settings::stack_clearing() = false;
-            tim::timemory_finalize();
+            if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
+            {
+                // python GC seems to cause occasional problems
+                tim::settings::stack_clearing() = false;
+                tim::timemory_finalize();
+            }
         } catch(std::exception& e)
         {
+#if defined(_UNIX)
+            auto bt = tim::get_demangled_backtrace<32>();
+            for(const auto& itr : bt)
+            {
+                std::cerr << "\nBacktrace:\n";
+                if(itr.length() > 0)
+                    std::cerr << itr << "\n";
+                std::cerr << "\n" << std::flush;
+            }
+#endif
             PRINT_HERE("ERROR: %s", e.what());
         }
     };

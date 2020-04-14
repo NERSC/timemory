@@ -504,8 +504,13 @@ private:
     template <size_t N, typename Ret, typename... Args>
     static bool is_permitted(const std::string& _func)
     {
-        if(_func.find("MPI_") != std::string::npos ||
-           _func.find("mpi_") != std::string::npos)
+        // if instruments are being used, we need to restrict using GOTCHAs around
+        // certain MPI functions which can cause deadlocks. However, allow
+        // these GOTCHA components which serve as function replacements to
+        // wrap these functions
+        if(std::is_same<operator_type, void>::value &&
+           (_func.find("MPI_") != std::string::npos ||
+            _func.find("mpi_") != std::string::npos))
         {
             static auto mpi_reject_list = { "MPI_Init",           "MPI_Finalize",
                                             "MPI_Pcontrol",       "MPI_Init_thread",

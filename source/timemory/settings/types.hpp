@@ -32,6 +32,7 @@
 #include "timemory/settings/macros.hpp"
 
 #include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -44,8 +45,9 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-using setting_callback_t     = std::function<void()>;
-using setting_callback_vec_t = std::vector<setting_callback_t>;
+using setting_callback_t        = std::function<void()>;
+using setting_callback_vec_t    = std::vector<setting_callback_t>;
+using setting_description_map_t = std::map<std::string, std::string>;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -58,15 +60,31 @@ struct settings;
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename... T>
+static inline setting_description_map_t&
+get_descriptions()
+{
+    static setting_description_map_t _instance;
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
 //
 extern setting_callback_vec_t&
 get_parse_callbacks();
 //
+extern setting_description_map_t&
+get_setting_descriptions();
+//
 #else
 //
 setting_callback_vec_t&
 get_parse_callbacks();
+//
+setting_description_map_t&
+get_setting_descriptions();
 //
 #endif
 //

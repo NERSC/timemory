@@ -219,6 +219,15 @@ manager::finalize()
 
     //
     //  ideally, only one of these will be populated
+    //  these clear the stack before outputting
+    //
+    // finalize workers first
+    _finalize(m_worker_cleanup);
+    // finalize masters second
+    _finalize(m_master_cleanup);
+
+    //
+    //  ideally, only one of these will be populated
     //
     // finalize workers first
     _finalize(m_worker_finalizers);
@@ -420,6 +429,8 @@ manager::remove_finalizer(const std::string& _key)
         }
     };
 
+    _remove_finalizer(m_master_cleanup);
+    _remove_finalizer(m_worker_cleanup);
     _remove_finalizer(m_master_finalizers);
     _remove_finalizer(m_worker_finalizers);
 }

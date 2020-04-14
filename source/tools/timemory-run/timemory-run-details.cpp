@@ -26,7 +26,7 @@
 
 //======================================================================================//
 //
-// For selective instrumentation (unused)
+//  For selective instrumentation (unused)
 //
 bool
 are_file_include_exclude_lists_empty()
@@ -36,8 +36,8 @@ are_file_include_exclude_lists_empty()
 
 //======================================================================================//
 //
-// gets information (line number, filename, and column number) about
-// the instrumented loop and formats it properly.
+//  Gets information (line number, filename, and column number) about
+//  the instrumented loop and formats it properly.
 //
 function_signature
 get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
@@ -127,7 +127,7 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
 
 //======================================================================================//
 //
-// We create a new name that embeds the file and line information in the name
+//  We create a new name that embeds the file and line information in the name
 //
 function_signature
 get_func_file_line_info(BPatch_image* mutatee_addr_space, BPatch_function* f)
@@ -194,7 +194,7 @@ get_func_file_line_info(BPatch_image* mutatee_addr_space, BPatch_function* f)
 
 //======================================================================================//
 //
-// Error callback routine.
+//  Error callback routine.
 //
 void
 errorFunc(BPatchErrorLevel level, int num, const char** params)
@@ -215,7 +215,7 @@ errorFunc(BPatchErrorLevel level, int num, const char** params)
 
 //======================================================================================//
 //
-// For compatibility purposes
+//  For compatibility purposes
 //
 BPatch_function*
 find_function(BPatch_image* appImage, const char* functionName)
@@ -291,7 +291,9 @@ error_func_real(BPatchErrorLevel level, int num, const char* const* params)
 }
 
 //======================================================================================//
-// We've a null error function when we don't want to display an error
+//
+//  We've a null error function when we don't want to display an error
+//
 void
 error_func_fake(BPatchErrorLevel level, int num, const char* const* params)
 {
@@ -305,53 +307,52 @@ bool
 find_func_or_calls(std::vector<const char*> names, BPatch_Vector<BPatch_point*>& points,
                    BPatch_image* appImage, BPatch_procedureLocation loc)
 {
-    BPatch_function* func = nullptr;
-    for(std::vector<const char*>::iterator i = names.begin(); i != names.end(); ++i)
+    using function_t     = BPatch_function;
+    using point_t        = BPatch_point;
+    using function_vec_t = BPatch_Vector<function_t*>;
+    using point_vec_t    = BPatch_Vector<point_t*>;
+
+    function_t* func = nullptr;
+    for(auto nitr = names.begin(); nitr != names.end(); ++nitr)
     {
-        BPatch_function* f = find_function(appImage, *i);
+        function_t* f = find_function(appImage, *nitr);
         if(f && f->getModule()->isSharedLib())
         {
             func = f;
             break;
         }
     }
+
     if(func)
     {
-        BPatch_Vector<BPatch_point*>*          fpoints = func->findPoint(loc);
-        BPatch_Vector<BPatch_point*>::iterator k;
+        point_vec_t* fpoints = func->findPoint(loc);
         if(fpoints && fpoints->size())
         {
-            for(k = fpoints->begin(); k != fpoints->end(); k++)
-            {
-                points.push_back(*k);
-            }
+            for(auto pitr = fpoints->begin(); pitr != fpoints->end(); ++pitr)
+                points.push_back(*pitr);
             return true;
         }
     }
 
     // Moderately expensive loop here.  Perhaps we should make a name->point map first
     // and just do lookups through that.
-    BPatch_Vector<BPatch_function*>* all_funcs           = appImage->getProcedures();
-    auto                             initial_points_size = points.size();
-    for(std::vector<const char*>::iterator i = names.begin(); i != names.end(); ++i)
+    function_vec_t* all_funcs           = appImage->getProcedures();
+    auto            initial_points_size = points.size();
+    for(auto nitr = names.begin(); nitr != names.end(); ++nitr)
     {
-        BPatch_Vector<BPatch_function*>::iterator j;
-        for(j = all_funcs->begin(); j != all_funcs->end(); j++)
+        for(auto fitr = all_funcs->begin(); fitr != all_funcs->end(); ++fitr)
         {
-            BPatch_function* f = *j;
+            function_t* f = *fitr;
             if(f->getModule()->isSharedLib())
                 continue;
-            BPatch_Vector<BPatch_point*>* fpoints = f->findPoint(BPatch_locSubroutine);
-            if(!fpoints || !fpoints->size())
+            point_vec_t* fpoints = f->findPoint(BPatch_locSubroutine);
+            if(!fpoints || fpoints->empty())
                 continue;
-            BPatch_Vector<BPatch_point*>::iterator j;
-            for(j = fpoints->begin(); j != fpoints->end(); j++)
+            for(auto pitr = fpoints->begin(); pitr != fpoints->end(); pitr++)
             {
-                std::string callee = (*j)->getCalledFunctionName();
-                if(callee == std::string(*i))
-                {
-                    points.push_back(*j);
-                }
+                std::string callee = (*pitr)->getCalledFunctionName();
+                if(callee == std::string(*nitr))
+                    points.push_back(*pitr);
             }
         }
         if(points.size() != initial_points_size)
@@ -370,32 +371,4 @@ find_func_or_calls(const char* name, BPatch_Vector<BPatch_point*>& points,
     std::vector<const char*> v;
     v.push_back(name);
     return find_func_or_calls(v, points, image, loc);
-}
-
-//======================================================================================//
-//
-// check if the application has an MPI library routine MPI_Comm_rank
-//
-int
-check_if_mpi(BPatch_image* appImage, BPatch_Vector<BPatch_point*>& mpiinit,
-             BPatch_function*& mpiinitstub, bool binaryRewrite)
-{
-    consume_parameters(binaryRewrite);
-
-    std::vector<const char*> _init_names;
-    _init_names.push_back("MPI_Init");
-    _init_names.push_back("PMPI_Init");
-    bool ismpi = find_func_or_calls(_init_names, mpiinit, appImage, BPatch_locExit);
-
-    mpiinitstub = find_function(appImage, "timemory_mpi_init_stub");
-    if(mpiinitstub == (BPatch_function*) nullptr)
-        printf("*** MPIInitStubInt not found! \n");
-
-    if(!ismpi)
-    {
-        dprintf("*** This is not an MPI Application! \n");
-        return 0;
-    }
-    else
-        return 1;
 }

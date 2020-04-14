@@ -136,14 +136,10 @@ extern "C"
     TIMEMORY_DECL void timemory_push_region(const char* name);
     TIMEMORY_DECL void timemory_pop_region(const char* name);
 
-    TIMEMORY_DECL int64_t timemory_register_trace(const char* name);
-    TIMEMORY_DECL void    timemory_deregister_trace(const char* name);
-    TIMEMORY_DECL void    timemory_dyninst_init(void);
-    TIMEMORY_DECL void    timemory_dyninst_finalize(void);
-    TIMEMORY_DECL void    timemory_init_trace(uint64_t id);
-    TIMEMORY_DECL void    timemory_fini_trace(void);
-    TIMEMORY_DECL void    timemory_mpi_init_stub(int rank);
-    TIMEMORY_DECL int     timemory_get_rank(void);
+    TIMEMORY_DECL void timemory_push_trace(const char* name);
+    TIMEMORY_DECL void timemory_pop_trace(const char* name);
+    TIMEMORY_DECL void timemory_trace_init(const char*);
+    TIMEMORY_DECL void timemory_trace_finalize(void);
 
 #if defined(__cplusplus)
 }

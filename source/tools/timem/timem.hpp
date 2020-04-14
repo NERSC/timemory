@@ -351,18 +351,18 @@ papi_array_t::get_display() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-class custom_component_tuple : public component_tuple<Types...>
+class timem_tuple : public component_tuple<Types...>
 {
 public:
     using base_type = component_tuple<Types...>;
 
 public:
-    explicit custom_component_tuple(const string_t& key)
+    explicit timem_tuple(const string_t& key)
     : base_type(key, true, true)
     , printed(false)
     {}
 
-    ~custom_component_tuple()
+    ~timem_tuple()
     {
         if(!printed)
         {
@@ -404,8 +404,7 @@ public:
     //
     //----------------------------------------------------------------------------------//
     //
-    friend std::ostream& operator<<(std::ostream&                           os,
-                                    const custom_component_tuple<Types...>& obj)
+    friend std::ostream& operator<<(std::ostream& os, const timem_tuple<Types...>& obj)
     {
         obj.printed = true;
         std::stringstream ssp;
@@ -434,11 +433,11 @@ public:
 //
 #if !defined(TIMEM_BUNDLER)
 #    define TIMEM_BUNDLER                                                                \
-        tim::custom_component_tuple<wall_clock, user_clock, system_clock, cpu_clock,     \
-                                    cpu_util, peak_rss, page_rss, virtual_memory,        \
-                                    num_major_page_faults, num_minor_page_faults,        \
-                                    priority_context_switch, voluntary_context_switch,   \
-                                    read_bytes, written_bytes, papi_array_t>
+        tim::timem_tuple<wall_clock, user_clock, system_clock, cpu_clock, cpu_util,      \
+                         peak_rss, page_rss, virtual_memory, num_major_page_faults,      \
+                         num_minor_page_faults, priority_context_switch,                 \
+                         voluntary_context_switch, read_bytes, written_bytes,            \
+                         papi_array_t>
 #endif
 
 using comp_tuple_t = TIMEM_BUNDLER;

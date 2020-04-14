@@ -55,8 +55,8 @@ main(int argc, char** argv)
     BPatch_Vector<BPatch_point*> mpiinit;
     BPatch_function*             mpiinitstub = nullptr;
     bpatch                                   = new BPatch;  // create a new version.
-    std::string functions;  // string variable to hold function names
-    std::string inputlib = "";
+    std::string        inputlib              = "";
+    tim::process::id_t _pid                  = -1;
 
     // bpatch->setTrampRecursive(true); /* enable C++ support */
     // bpatch->setBaseTrampDeletion(true);
@@ -154,7 +154,7 @@ main(int argc, char** argv)
         .description("Include text file(s) listing function to include or exclude "
                      "(prefix with '!' to exclude)");
     parser.add_argument()
-        .names({ "-p", "--collection-path" })
+        .names({ "-P", "--collection-path" })
         .description("Additional path(s) to folders containing collection files");
     parser.add_argument()
         .names({ "-s", "--stubs" })
@@ -168,9 +168,25 @@ main(int argc, char** argv)
         .names({ "-S", "--stdlib" })
         .description(
             "Enable instrumentation of C++ standard library functions. Use with caution! "
-            "timemory uses the STL internally so this may cause deadlocks. Use the "
-            "'-E/--regex-exclude' option to exclude any function causing deadlocks")
+            "May causes deadlocks because timemory uses the STL internally. Use the "
+            "'-E/--regex-exclude' option to exclude any deadlocking functions")
         .count(0);
+    parser.add_argument()
+        .names({ "-p", "--pid" })
+        .description("Connect to running process")
+        .count(1);
+    parser.add_argument()
+        .names({ "-d", "--default-components" })
+        .description("Default components to instrument");
+    parser.add_argument()
+        .names({ "-M", "--mode" })
+        .description("Instrumentation mode. 'trace' mode is immutable, 'region' mode is "
+                     "mutable by timemory library interface")
+        .choices({ "trace", "region" })
+        .count(1);
+    parser.add_argument({ "--mpi" },
+                        "Enable MPI support (requires timemory built w/ MPI and GOTCHA "
+                        "support)");
 
     if(_cmdc == 0)
     {
@@ -241,6 +257,45 @@ main(int argc, char** argv)
     if(parser.exists("S"))
         stl_func_instr = true;
 
+    if(parser.exists("mpi"))
+        use_mpi = true;
+
+    if(parser.exists("p"))
+        _pid = parser.get<int>("p");
+
+    if(parser.exists("d"))
+    {
+        using argtype      = std::vector<std::string>;
+        auto _components   = parser.get<argtype>("d");
+        default_components = "";
+        for(size_t i = 0; i < _components.size(); ++i)
+        {
+            if(_components.at(i) == "none")
+            {
+                default_components = "";
+                break;
+            }
+            default_components += _components.at(i);
+            if(i + 1 < _components.size())
+                default_components += ",";
+        }
+    }
+
+    if(parser.exists("M"))
+    {
+        auto _mode = parser.get<std::string>("M");
+        if(_mode == "trace")
+        {
+            instr_push_func = "timemory_push_trace";
+            instr_pop_func  = "timemory_pop_trace";
+        }
+        else if(_mode == "region")
+        {
+            instr_push_func = "timemory_push_region";
+            instr_pop_func  = "timemory_pop_region";
+        }
+    }
+
     //----------------------------------------------------------------------------------//
     //
     //                              REGEX OPTIONS
@@ -283,9 +338,9 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
     //
-    if(parser.exists("p"))
+    if(parser.exists("P"))
     {
-        auto tmp = parser.get<std::vector<std::string>>("p");
+        auto tmp = parser.get<std::vector<std::string>>("P");
         for(auto itr : tmp)
             prefix_collection_path(itr, collection_paths);
     }
@@ -330,10 +385,9 @@ main(int argc, char** argv)
     // Register a callback function that prints any error messages
     bpatch->registerErrorCallback(error_func_real);
 
-    dprintf("Before createProcess\n");
-
     if(binaryRewrite)
     {
+        dprintf("Before timemory_rewrite_binary\n");
         timemory_rewrite_binary(bpatch, mutname, outfile, (char*) sharedlibname,
                                 (char*) staticlibname, bindings);
         char cwd[FUNCNAMELEN];
@@ -345,21 +399,63 @@ main(int argc, char** argv)
         return 0;
     }
 
-    appThread = bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
-
-    dprintf("After createProcess\n");
-
-    if(!appThread)
+    if(_pid >= 0)
     {
-        fprintf(stderr, "[timemory-run]> createProcess failed\n");
-        exit(1);
+        dprintf("Before processAttach\n");
+        char* _cmdv0 = (_cmdc > 0) ? _cmdv[0] : nullptr;
+        appThread    = bpatch->processAttach(_cmdv0, _pid);
+        if(!appThread)
+            fprintf(stderr, "[timemory-run]> Failed to connect to process %i\n",
+                    (int) _pid);
+    }
+    else
+    {
+        dprintf("Before processCreate\n");
+        appThread = bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
+        if(!appThread)
+            fprintf(stderr, "[timemory-run]> createProcess failed\n");
     }
 
+    if(!appThread)
+        exit(EXIT_FAILURE);
+
     dprintf("Before getImage and getModules\n");
+
     // get image
     BPatch_image*                  appImage = appThread->getImage();
     BPatch_Vector<BPatch_module*>* m_full   = appImage->getModules();
     BPatch_Vector<BPatch_module*>  m        = *m_full;
+
+    char                           modulename[512];
+    BPatch_Vector<BPatch_snippet*> initArgs;
+
+    dprintf("Before modules loop\n");
+    std::map<std::string, std::vector<function_signature>> functions;
+    for(size_t j = 0; j < m.size(); j++)
+    {
+        if(!m[j]->getProcedures())
+            continue;
+
+        sprintf(modulename, "Module %s\n", m[j]->getName(fname, FUNCNAMELEN));
+        BPatch_Vector<BPatch_function*>* p = m[j]->getProcedures();
+
+        if(!module_constraint(fname))
+        {
+            for(size_t i = 0; i < p->size(); ++i)
+            {
+                // For all procedures within the module, iterate
+                p->at(i)->getName(fname, FUNCNAMELEN);
+                auto name = get_func_file_line_info(appImage, p->at(i));
+                if(!routine_constraint(fname) && !name.get().empty() &&
+                   !routine_constraint(name.m_name.c_str()))
+                {
+                    // routines that are ok to instrument
+                    // get full source information
+                    functions[fname].emplace_back(name);
+                }
+            }
+        }
+    }
 
     dprintf("Module size before loading instrumentation library: %lu\n",
             (long unsigned) m.size());
@@ -415,59 +511,37 @@ main(int argc, char** argv)
             (long unsigned) m.size());
 
     dprintf("Before find_function\n");
-    BPatch_function* enterstub     = find_function(appImage, "timemory_register_trace");
-    BPatch_function* exitstub      = find_function(appImage, "timemory_deregister_trace");
-    BPatch_function* setupFunc     = find_function(appImage, "timemory_dyninst_init");
-    BPatch_function* terminatestub = find_function(appImage, "timemory_dyninst_finalize");
-    name_reg                       = find_function(appImage, "timemory_register_trace");
 
-    char                           modulename[512];
-    BPatch_Vector<BPatch_snippet*> initArgs;
+    auto* enterstub     = find_function(appImage, instr_push_func.c_str());
+    auto* exitstub      = find_function(appImage, instr_pop_func.c_str());
+    auto* setupstub     = find_function(appImage, "timemory_trace_init");
+    auto* terminatestub = find_function(appImage, "timemory_trace_finalize");
+    auto* mpistub       = find_function(appImage, "timemory_trace_set_mpi");
 
-    dprintf("Before modules loop\n");
-    for(size_t j = 0; j < m.size(); j++)
+    if(use_mpi && !mpistub)
     {
-        if(!m[j]->getProcedures())
-            continue;
-        sprintf(modulename, "Module %s\n", m[j]->getName(fname, FUNCNAMELEN));
-        BPatch_Vector<BPatch_function*>* p = m[j]->getProcedures();
-        // dprintf("%s", modulename);
-
-        if(!module_constraint(fname))
-        {
-            for(size_t i = 0; i < p->size(); ++i)
-            {
-                // For all procedures within the module, iterate
-                p->at(i)->getName(fname, FUNCNAMELEN);
-                auto name = get_func_file_line_info(appImage, p->at(i));
-                if(!routine_constraint(fname) && !name.get().empty() &&
-                   !routine_constraint(name.m_name.c_str()))
-                {
-                    // routines that are ok to instrument
-                    // get full source information
-                    functions.append("|");
-                    functions.append(name.get().c_str());
-                }
-            }
-        }
+        throw std::runtime_error("MPI support was requested but timemory was not built "
+                                 "with MPI and GOTCHA support");
+    }
+    else if(use_mpi)
+    {
+        BPatch_Vector<BPatch_snippet*> mpiArgs;
+        mpiArgs.push_back(new BPatch_constExpr(use_mpi));
+        BPatch_funcCallExpr mpiExpr(*mpistub, mpiArgs);
+        appThread->oneTimeCode(mpiExpr);
     }
 
-    std::cout << "functions: " << functions << std::endl;
-
-    // When we look for MPI calls, we shouldn't display an error message for
-    // not find MPI_Comm_rank in the case of a sequential app. So, we turn the
-    // Error callback to be Null and turn back the error settings later. This
-    // way, it works for both MPI and sequential tasks.
-    bpatch->registerErrorCallback(error_func_fake);  // turn off error reporting
-    BPatch_constExpr isMPI(check_if_mpi(appImage, mpiinit, mpiinitstub, binaryRewrite));
-    bpatch->registerErrorCallback(error_func_real);  // turn it back on
-
     BPatch_Vector<BPatch_snippet*> setupArgs;
-    BPatch_funcCallExpr            setupExpr(*setupFunc, setupArgs);
+    setupArgs.push_back(new BPatch_constExpr(default_components.c_str()));
+    BPatch_funcCallExpr setupExpr(*setupstub, setupArgs);
     appThread->oneTimeCode(setupExpr);
 
-    // initArgs.push_back(&funcName);
-    initArgs.push_back(&isMPI);
+    BPatch_Vector<BPatch_snippet*> terminateArgs;
+    BPatch_funcCallExpr            terminateExpr(*terminatestub, terminateArgs);
+    terminate_expr = &terminateExpr;
+
+    auto exit_callback = bpatch->registerExitCallback(&timemory_thread_exit);
+    consume_parameters(exit_callback);
 
     initialize(appThread, appImage, initArgs);
 
@@ -484,6 +558,11 @@ main(int argc, char** argv)
             continue;
         sprintf(modulename, "Module %s\n", m[j]->getName(fname, FUNCNAMELEN));
         BPatch_Vector<BPatch_function*>* p = m[j]->getProcedures();
+
+        // auto mitr = functions.find(modulename);
+        // if(mitr == functions.end())
+        //    continue;
+
         dprintf("%s", modulename);
 
         if(!module_constraint(fname))
@@ -504,10 +583,8 @@ main(int argc, char** argv)
                     auto callee_entry_args = new BPatch_Vector<BPatch_snippet*>();
                     auto callee_exit_args  = new BPatch_Vector<BPatch_snippet*>();
 
-                    auto ret = new BPatch_retExpr();
                     callee_entry_args->push_back(
                         new BPatch_constExpr(name.get().c_str()));
-                    callee_entry_args->push_back(ret);
                     callee_exit_args->push_back(new BPatch_constExpr(name.get().c_str()));
 
                     invoke_routine_in_func(appThread, appImage, inFunc, BPatch_entry,
@@ -559,7 +636,8 @@ main(int argc, char** argv)
 
     if(!success)
     {
-        fprintf(stderr, "Instrumentation failure! Detaching from process and exiting...\n");
+        fprintf(stderr,
+                "Instrumentation failure! Detaching from process and exiting...\n");
         appThread->detach(true);
         exit(EXIT_FAILURE);
     }
@@ -567,11 +645,8 @@ main(int argc, char** argv)
     printf("Executing...\n");
 
     auto _continue_exec = [&]() {
-        if(appThread->terminationStatus() == NoExit)
-        {
-            if(!appThread->continueExecution())
-                fprintf(stderr, "continueExecution failed\n");
-        }
+        if(!appThread->continueExecution())
+            fprintf(stderr, "continueExecution failed\n");
     };
 
     auto _wait_exec = [&]() {
@@ -588,7 +663,6 @@ main(int argc, char** argv)
     _continue_exec();
     _wait_exec();
 
-
     if(!appThread->isTerminated())
         appThread->terminateExecution();
 
@@ -600,7 +674,7 @@ main(int argc, char** argv)
     else if(appThread->terminationStatus() == ExitedViaSignal)
     {
         auto sign = appThread->getExitSignal();
-        fprintf(stderr, "Application exited with signal: %i\n", int (sign));
+        fprintf(stderr, "Application exited with signal: %i\n", int(sign));
     }
 
     auto code = appThread->getExitCode();
@@ -622,10 +696,6 @@ int
 timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
                         char* sharedlibname, char* staticlibname, char* bindings)
 {
-    using namespace std;
-    BPatch_Vector<BPatch_point*> mpiinit;
-    BPatch_function*             mpiinitstub = nullptr;
-
     dprintf("Inside timemory_rewrite_binary, name=%s, out=%s\n", mutateeName, outfile);
     BPatch_binaryEdit* mutatee_addr_space = bpatch->openBinary(mutateeName, false);
 
@@ -637,9 +707,7 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
 
     BPatch_image*                   mutateeImage = mutatee_addr_space->getImage();
     BPatch_Vector<BPatch_function*> allFuncs     = *mutateeImage->getProcedures();
-    bool                            isStaticExecutable;
-
-    isStaticExecutable = mutatee_addr_space->isStaticExecutable();
+    bool isStaticExecutable = mutatee_addr_space->isStaticExecutable();
 
     if(isStaticExecutable)
     {
@@ -660,25 +728,15 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
         assert(result);
     }
 
-    BPatch_function* entryTrace = find_function(mutateeImage, "timemory_register_trace");
-    BPatch_function* exitTrace = find_function(mutateeImage, "timemory_deregister_trace");
-    BPatch_function* setupFunc = find_function(mutateeImage, "timemory_dyninst_init");
-    BPatch_function* cleanupFunc =
-        find_function(mutateeImage, "timemory_dyninst_finalize");
-    BPatch_function* mainFunc = find_function(mutateeImage, main_fname.c_str());
-    name_reg                  = find_function(mutateeImage, "timemory_register_trace");
+    auto* entryTrace  = find_function(mutateeImage, instr_push_func.c_str());
+    auto* exitTrace   = find_function(mutateeImage, instr_pop_func.c_str());
+    auto* setupFunc   = find_function(mutateeImage, "timemory_trace_init");
+    auto* cleanupFunc = find_function(mutateeImage, "timemory_trace_finalize");
+    auto* mainFunc    = find_function(mutateeImage, main_fname.c_str());
+    auto* mpiFunc     = find_function(mutateeImage, "timemory_trace_set_mpi");
 
-    // This heuristic guesses that debugging info. is available if main
-    // is not defined in the DEFAULT_MODULE
-    bool           hasDebuggingInfo = false;
-    BPatch_module* mainModule       = mainFunc->getModule();
-    if(nullptr != mainModule)
-    {
-        char moduleName[MUTNAMELEN];
-        mainModule->getName(moduleName, MUTNAMELEN);
-        if(strcmp(moduleName, "DEFAULT_MODULE") != 0)
-            hasDebuggingInfo = true;
-    }
+    dprintf("Instrumenting with '%s' and '%s'...\n", instr_push_func.c_str(),
+            instr_pop_func.c_str());
 
     if(!mainFunc)
     {
@@ -692,6 +750,24 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
         throw std::runtime_error("Not entry/exit/setup/cleanup functions");
     }
 
+    if(use_mpi && !mpiFunc)
+    {
+        throw std::runtime_error("MPI support was requested but timemory was not built "
+                                 "with MPI and GOTCHA support");
+    }
+
+    // This heuristic guesses that debugging info. is available if main
+    // is not defined in the DEFAULT_MODULE
+    bool           hasDebuggingInfo = false;
+    BPatch_module* mainModule       = mainFunc->getModule();
+    if(nullptr != mainModule)
+    {
+        char moduleName[MUTNAMELEN];
+        mainModule->getName(moduleName, MUTNAMELEN);
+        if(strcmp(moduleName, "DEFAULT_MODULE") != 0)
+            hasDebuggingInfo = true;
+    }
+
     BPatch_Vector<BPatch_point*>* main_init_entry = mainFunc->findPoint(BPatch_entry);
     BPatch_Vector<BPatch_point*>* main_fini_entry = mainFunc->findPoint(BPatch_exit);
 
@@ -703,39 +779,38 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     assert(main_fini_entry->size());
     assert((*main_fini_entry)[0]);
 
+    // begin insertion
     mutatee_addr_space->beginInsertionSet();
 
-    int              ismpi = check_if_mpi(mutateeImage, mpiinit, mpiinitstub, true);
-    BPatch_constExpr isMPI(ismpi);
-
+    BPatch_Vector<BPatch_snippet*> mpi_params;
     BPatch_Vector<BPatch_snippet*> init_params;
     BPatch_Vector<BPatch_snippet*> fini_params;
-    init_params.push_back(&isMPI);
+
+    mpi_params.push_back(new BPatch_constExpr(use_mpi));
+    init_params.push_back(new BPatch_constExpr(default_components.c_str()));
+
+    BPatch_funcCallExpr* mpi_call = nullptr;
+    if(mpiFunc)
+        mpi_call = new BPatch_funcCallExpr(*mpiFunc, mpi_params);
 
     BPatch_funcCallExpr setup_call(*setupFunc, init_params);
     BPatch_funcCallExpr cleanup_call(*cleanupFunc, fini_params);
 
+    if(mpi_call)
+        init_names.push_back(mpi_call);
     init_names.push_back(&setup_call);
     fini_names.push_back(&cleanup_call);
 
-    if(ismpi && mpiinitstub)
-    {
-        // Create a snippet that calls timemory_mpi_init_stub with the rank after MPI_Init
-        BPatch_function* mpi_rank = find_function(mutateeImage, "timemory_get_rank");
-        assert(mpi_rank);
-        BPatch_Vector<BPatch_snippet*> rank_args;
-        BPatch_funcCallExpr            getrank(*mpi_rank, rank_args);
-        BPatch_Vector<BPatch_snippet*> mpiinitargs;
-        mpiinitargs.push_back(&getrank);
-        BPatch_funcCallExpr initmpi(*mpiinitstub, mpiinitargs);
-        mutatee_addr_space->insertSnippet(initmpi, mpiinit, BPatch_callAfter,
-                                          BPatch_firstSnippet);
-    }
-
-    for(auto it = allFuncs.begin(); it != allFuncs.end(); ++it)
+    for(auto itr = allFuncs.begin(); itr != allFuncs.end(); ++itr)
     {
         char fname[FUNCNAMELEN];
-        (*it)->getName(fname, FUNCNAMELEN);
+        (*itr)->getName(fname, FUNCNAMELEN);
+
+        if(!(*itr)->isInstrumentable())
+        {
+            dprintf("Skipping uninstrumentable function: %s\n", fname);
+            continue;
+        }
 
         // STATIC EXECUTABLE FUNCTION EXCLUDE
         // Temporarily avoid some functions -- this isn't a solution
@@ -746,7 +821,7 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
             // Always instrument _fini to ensure instrumentation disabled correctly
             if(hasDebuggingInfo && strcmp(fname, "_fini") != 0)
             {
-                BPatch_module* funcModule = (*it)->getModule();
+                BPatch_module* funcModule = (*itr)->getModule();
                 if(funcModule != nullptr)
                 {
                     char moduleName[MUTNAMELEN];
@@ -758,37 +833,35 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
         }
 
         char modname[1024];
-        (*it)->getModuleName(modname, 1024);
+        (*itr)->getModuleName(modname, 1024);
         if(strstr(modname, "libdyninstAPI_RT"))
             continue;
 
         if(module_constraint(modname))
             continue;
 
-        auto name = get_func_file_line_info(mutatee_addr_space->getImage(), *it);
+        auto name = get_func_file_line_info(mutatee_addr_space->getImage(), *itr);
         if(name.get().empty() || routine_constraint(fname) ||
            routine_constraint(name.m_name.c_str()) || !instrument_entity(name.m_name) ||
            !instrument_entity(name.get()))
             continue;
 
-        insert_trace(*it, mutatee_addr_space, entryTrace, exitTrace, name);
+        insert_trace(*itr, mutatee_addr_space, entryTrace, exitTrace, name);
 
         if(loop_level_instr)
         {
             dprintf("Generating CFG at loop level: %s\n", fname);
-            BPatch_flowGraph*                     flow = (*it)->getCFG();
+            BPatch_flowGraph*                     flow = (*itr)->getCFG();
             BPatch_Vector<BPatch_basicBlockLoop*> basicLoop;
             dprintf("Generating outer loop info : %s\n", fname);
             flow->getOuterLoops(basicLoop);
             dprintf("Before instrumenting at loop level: %s\n", fname);
 
-            for(BPatch_Vector<BPatch_basicBlockLoop*>::iterator loopIt =
-                    basicLoop.begin();
-                loopIt != basicLoop.end(); loopIt++)
+            for(auto litr = basicLoop.begin(); litr != basicLoop.end(); litr++)
             {
                 dprintf("Instrumenting at the loop level: %s\n", fname);
-                insert_trace(*it, mutatee_addr_space, entryTrace, exitTrace, flow,
-                             *loopIt, name);
+                insert_trace(*itr, mutatee_addr_space, entryTrace, exitTrace, flow, *litr,
+                             name);
             }
         }
     }
@@ -799,6 +872,8 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     BPatch_sequence fini_sequence(fini_names);
     mutatee_addr_space->insertSnippet(fini_sequence, *main_fini_entry, BPatch_callAfter,
                                       BPatch_firstSnippet);
+
+    // finalize insertion
     mutatee_addr_space->finalizeInsertionSet(false, nullptr);
 
     if(isStaticExecutable)
@@ -882,10 +957,15 @@ process_file_for_instrumentation(const std::string& file_name)
     std::regex ext_regex("\\.(c|C|S)$");
     std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
                              "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)");
-    std::regex corelib_regex("^lib(rt-|m-|dl-|m-|gcc|c-|stdc++|c++)");
+    std::regex corelib_regex("^lib(rt-|m-|dl-|m-|util-|gcc|c-|stdc++|c++|python)");
+    // these are all due to TAU
+    std::regex prefix_regex("^(Tau|Profiler|Rts|Papi|Py|Comp_xl\\.cpp|Comp_gnu\\.cpp|"
+                            "UserEvent\\.cpp|FunctionInfo\\.cpp|PthreadLayer\\.cpp|"
+                            "Comp_intel[0-9]\\.cpp|Tracer\\.cpp)");
     if(check_project_source_file_for_instrumentation(file_name) ||
        std::regex_search(file_name, ext_regex) ||
        std::regex_search(file_name, corelib_regex) ||
+       std::regex_search(file_name, prefix_regex) ||
        std::regex_search(file_name, userlib_regex))
         return false;
 
@@ -930,13 +1010,16 @@ instrument_entity(const std::string& function_name)
     std::regex exclude(
         "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|\\{lambda|::_["
         "A-Z]|::__[A-Za-z]|std::max|std::min|std::fill|std::forward|std::get)");
-    std::regex leading(
-        "^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(|\\(__|_"
-        "GLOBAL|targ|PMPI_|new|delete|std::allocator|std::_|std::move|nvtx|gcov)");
+    std::regex leading("^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(|\\(__|_"
+                       "GLOBAL|targ|PMPI_|new|delete|std::allocator|std::move|nvtx|gcov|"
+                       "main\\.cold\\.|TAU|tau|Tau)");
     std::regex stlfunc("^std::");
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
+    {
+        dprintf("Skipping stl function '%s'...\n", function_name.c_str());
         return false;
+    }
 
     // don't instrument the functions when key is found anywhere in function name
     if(std::regex_search(function_name, exclude))
@@ -1003,9 +1086,7 @@ insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
     BPatch_Vector<BPatch_snippet*> entryTraceArgs;
     BPatch_Vector<BPatch_snippet*> exitTraceArgs;
 
-    auto ret = new BPatch_retExpr();
     entryTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
-    entryTraceArgs.push_back(ret);
     exitTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
 
     BPatch_funcCallExpr entryTrace(*traceEntryFunc, entryTraceArgs);
@@ -1035,23 +1116,20 @@ insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
 {
     dprintf("Instrumenting |> [ %s ]\n", name.m_name.c_str());
 
-    BPatch_Vector<BPatch_point*>* funcEntry = funcToInstr->findPoint(BPatch_entry);
-    BPatch_Vector<BPatch_point*>* funcExit  = funcToInstr->findPoint(BPatch_exit);
+    BPatch_Vector<BPatch_point*> funcEntry = *funcToInstr->findPoint(BPatch_entry);
+    BPatch_Vector<BPatch_point*> funcExit  = *funcToInstr->findPoint(BPatch_exit);
 
     BPatch_Vector<BPatch_snippet*> entryTraceArgs;
     BPatch_Vector<BPatch_snippet*> exitTraceArgs;
 
-    auto ret = new BPatch_retExpr();
     entryTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
-    entryTraceArgs.push_back(ret);
     exitTraceArgs.push_back(new BPatch_constExpr(name.get().c_str()));
 
     BPatch_funcCallExpr entryTrace(*traceEntryFunc, entryTraceArgs);
     BPatch_funcCallExpr exitTrace(*traceExitFunc, exitTraceArgs);
 
-    mutatee->insertSnippet(entryTrace, *funcEntry, BPatch_callBefore,
-                           BPatch_firstSnippet);
-    mutatee->insertSnippet(exitTrace, *funcExit, BPatch_callAfter, BPatch_lastSnippet);
+    mutatee->insertSnippet(entryTrace, funcEntry, BPatch_callBefore, BPatch_firstSnippet);
+    mutatee->insertSnippet(exitTrace, funcExit, BPatch_callAfter, BPatch_firstSnippet);
 }
 
 //======================================================================================//
@@ -1205,7 +1283,7 @@ module_constraint(char* fname)
         return true;
 
     if(process_file_for_instrumentation(std::string(fname)))
-        return false; // ok to instrument
+        return false;  // ok to instrument
 
     if(_fname == "DEFAULT_MODULE" || _fname == "LIBRARY_MODULE")
         return false;
@@ -1312,14 +1390,13 @@ load_dependent_libraries(BPatch_binaryEdit* bedit, char* bindings)
     sprintf(cmd, "%s/timemory_show_libs %s/../lib/Makefile.timemory%s", bindir, bindir,
             bindings);
     dprintf("cmd = %s\n", cmd);
-    FILE* fp;
-    fp = popen(cmd, "r");
+    FILE* fp = popen(cmd, "r");
 
     if(fp == nullptr)
     {
         perror("timemory-run: Error launching timemory_show_libs to get list of "
                "dependent static libraries for static binary");
-        return 1;
+        return false;
     }
 
     while((fgets(deplibs, 1024, fp)) != nullptr)

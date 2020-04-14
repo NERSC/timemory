@@ -19,14 +19,52 @@
 | GitHub | `git clone https://github.com/NERSC/timemory.git` |
 | PyPi   | `pip install timemory`                            |
 
+
+## Purpose
+
+The goal of timemory is to create an open-source performance measurement and analyis package
+which can be used to adapt to any existing C/C++ performance measurement and analysis API and
+is arbitrarily extendable by users within their application. In other words, timemory strives
+to be a universal adaptor toolkit for performance measurement and analysis.
+
 ## Overview
 
-- Timemory is designed as a __*modular*__ framework for performance measurement and analysis
+Timemory is designed, first and foremost, to be a portable, modular, and fully customizable toolkit
+for performance measurement and analysis of serial and parallel programs written in C, C++, Fortran, Python, and CUDA.
+
+Timemory arose out of the need for a universal
+adapator kit for the various APIs provided several existing tools and a straight-forward and intuitive method
+for user-defined expression of performance measurements which can easily encapsulated in a generic structure.
+Performance measurement components written with timemory are arbitrarily scalable up to any number of threads and
+processes and fully support intermixing different measurements at different locations within the program -- this
+uniquely enables timemory to be deployed to collect performance data at scale in HPC because highly detailed collection can
+occur at specific locations within the program where ubiquitous collection would simulatenously degrade performance
+significantly and require a prohibitive amount of memory.
+
+- Timemory is designed as a __*modular and customizable framework*__ to simplify and facilitate the __*creation and implementation of performance measurement and analysis tools*__
+    - Within projects, timemory can be used as:
+        - A backend to bundle instrumentation and sampling tools together, support serialization to JSON/XML, and provide statistics among other uses.
+        - A frontend to invoke other instrumentation and sampling tools
+    - Independently, timemory can be used to create command-line tools and libraries which instrument library calls
+        - The [timem](source/tools/timem/README.md) executable is an example of using timemory to create an extended version of UNIX `time` command-line tool that includes additional information on memory usage, context switches, and hardware counters.
+        - The [timemory-run](source/tools/timemory-run/README.md) executable is an example of using timemory and [Dyninst](https://github.com/dyninst/dyninst) to create a command-line tool capable of runtime instrumentation and binary re-writing.
+        - The [kokkos-tools](source/tools/kokkos-tools/README.md) collection is an example of using timemory to create instrumentation for a project-provided API.
+        - The [timemory-mpip](source/tools/timemory-mpip/README.md) library is an example of using timemory + [GOTCHA](https://github.com/LLNL/GOTCHA) to wrap ~245 dynamically-linked MPI function calls with a common set of instrumentation which fully supports inspection of the incoming arguments and return values as needed.
+    - The [timemory-avail](source/tools/timemory-avail/README.md) tool provides a way to query the available components, settings, and hardware counters for an installation
 - The goals of timemory are to provide:
     - __*Common instrumentation framework*__
         - Eliminate need for projects to explicitly support multiple instrumentation frameworks
     - High performance when enabled
     - Low overhead when enabled at compile time but disabled at runtime
+    - Zero overhead when disabled at compile time
+    - Allow performance measurements to be inter-mixed arbitrarily with zero overhead for the measurement types that are not used in a region, e.g.:
+        - Instrument measurements of A, B, and C around arbitrary region 1
+        - Instrument measurements of A and C around arbitrary region 1.1 (nested with Section 1)
+        - Instrument measurements of C around arbitrary region 2
+        - Instrument measurements of D around arbitrary region 3
+        - No instrumentation around arbitrary region 4
+    - Provide an intuitive and simple API for creating measurement tools which is relatively future-proof
+        - Most performance tools which permit user extensions rely on the user populating structs/classes which inform the framework about data-types and features
 
 ## Why Use timemory?
 
@@ -41,22 +79,60 @@
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
     - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 
+## Timemory is designed to be future-proof by avoiding internally-defined data types
+
+Most performance tools which permit user extensions usually rely on one of two methods:
+
+1. User populating structs/class fields for specifying value types and which features to enable
+2. Using dynamic polymorphism to inherit from a base class
+
+The problem is that structuring a tool in either of these fashions is that it necessitates defining
+specific function signatures which may require changes as capabilities evolve.
+Additionally, with respect to (1), these data types can become quite complex and/or opaque.
+With respect to (2), the virtual table can impact performance.
+Timemory, in contrast, is designed to query the presence of function _names_ for feature detection and adapts accordingly
+to the overloads of that function name and it's return type. This is all possible due to the
+template-based design of timemory which makes extensive use of variadic functions to accept any arguments at a high-level and
+SFINAE to decide at compile-time which function to invoke (if a function is invoked at all).
+For example:
+
+- component A can contain these member functions:
+    - `void start()`
+    - `int get()`
+- component B can contains these member functions:
+    - `void start()`
+    - `void start(cudaStream_t)`
+    - `double get()`
+- component C can contain these member functions:
+    - `void start()`
+
+And for a given bundle `component_tuple<A, B, C> obj`:
+
+- Invoking `obj.start()` calls the following member functions on instances of A, B, and C:
+    - `A::start()`
+    - `B::start()`
+    - `C::start()`
+- Invoking `obj.start(cudaStream_t)` calls the following member functions on instances of A, B, and C:
+    - `A::start()`
+    - `B::start(cudaStream_t)`
+    - `C::start()`
+- Invoking `obj.get()`:
+    - Returns `std::tuple<int, double>` because it detects the two return types from A and B and the lack of `get()` member function in component C.
+
 ### Support for Multiple Instrumentation APIs
 
-- NVTX for Nsight-Systems and NVprof
 - [LIKWID](https://github.com/RRZE-HPC/likwid)
 - [Caliper](https://github.com/LLNL/Caliper)
 - [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
-- ittnotify (Intel VTune and Advisor)
-- OMPT (OpenMP tools)
-- MPIP
-
-### Create Your Own Performance and Analysis Tools
-
-- Written in C++
-- Direct access to performance analysis data in Python and C++
-- Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
-    - Flexible and easily extensible interface: no data type restrictions in custom components
+- [gperftools](https://github.com/gperftools/gperftools)
+- MPI
+- OpenMP
+- CrayPAT
+- Allinea-MAP
+- PAPI
+- ittnotify (Intel Parallel Studio API)
+- CUPTI (NVIDIA performance API)
+- NVTX (NVIDIA marker API)
 
 ### Generic Bundling of Multiple Tools
 
@@ -73,14 +149,17 @@
 - Number of context switches
 - Trip counts
 - CUDA kernel runtime(s)
+- Data value tracking
 
 ### Powerful GOTCHA Extensions
 
-- [GOTCHA](https://github.com/LLNL/GOTCHA) is an API for LD_PRELOAD
+- [GOTCHA](https://github.com/LLNL/GOTCHA) is an API wrapping function calls similar to the use of LD_PRELOAD
     - Significantly simplify existing implementations
 - Scoped GOTCHA
-- Use gotcha component to replace external function calls with own instrumentation
-- Use gotcha component to instrument external library calls
+    - Enables temporary wrapping over regions
+- Use gotcha component to replace external function calls with custom replacements
+    - E.g. replace the C math function `exp` with custom `exp` implementation
+- Use gotcha component to wrap external library calls with custom instrumentation
 
 ### Multi-language Support
 
@@ -99,68 +178,123 @@ external library function calls.
 
 Timemory provides also provides Python and C interfaces.
 
-## Purpose
-
-The goal of the package is to provide as easy way to regularly report on the performance
-of your code. If you have ever added something like this in your code:
-
-```python
-tstart = time.now()
-# do something
-tstop = time.now()
-print("Elapsed time: {}".format(tstop - tstart))
-```
-
-Timemory streamlines this work. In C++ codes, all you have to do is include the headers.
-It comes in handy especially when optimizing a
-certain algorithm or section of your code -- you just insert a line of code that specifies what
-you want to measure and run your code: initialization and output are automated.
-
 ## Profiling and timemory
 
-Timemory is not a full profiler (yet). The ultimate goal is to create a customizable profiler.
-Currently, timemory supports explicit instrumentation (i.e. minor modifications to source code)
-and explicit wrapping of dynamically-linked functions.
-Using profilers are currently important for _discovering where to place timemory markers_ or
-_which dynamically function calls to wrap with GOTCHA_.
+Timemory includes the [timemory-run](source/tools/timemory-run/README.md) as a full profiler for Linux systems.
+This executable supports dynamic instrumentation (instrumenting at the target applicaiton's runtime), attaching
+to a running process, and binary re-writing (creating a new instrumented binary). The instrumented applications
+support flat-profiling, call-stack profiling, and timeline profiling and can be configured to use any of the
+components timemory provides or, with a little work, can also be used to instrument custom components defined by the user.
+
+Timemory was designed, first and foremost, as an API because sometimes it is easier to just instrument the specific
+region of code that is being targeted for optimization and performance analysis is always easier when there is a
+built-in method within the code around critical performance regions and excludes unnecessary information (and additional
+overheads).
 The library provides an easy-to-use method for always-on general HPC analysis metrics
 (i.e. timing, memory usage, etc.) with the same or less overhead than if these metrics were to
-records and stored in a custom solution and, for C++ code, extensively
-inlined.
+records and stored in a custom solution -- the path through the timemory code between calling `start()` on a
+bundle of components to `start()` being called on a component itself is essentially optimized down to a direct call
+on the member function.
 Functionally, the overhead is non-existant: sampling profilers (e.g. gperftools, VTune)
 at standard sampling rates barely notice the presence of timemory unless it is been
 used _very_ unwisely.
 
-Additional tools are provided, such as hardware counters, to increase optimization productivity.
-What to check whether those changes increased data locality (i.e. decreased cache misses) but don't care about any other sections of the code?
-Use the following and set `TIMEMORY_PAPI_EVENTS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM"` in
-the environment:
-
-```cpp
-using hwcounters_t = tim::auto_tuple<tim::component::papi_vector>;
-TIMEMORY_CALIPER(roi, hwcounters_t, "");
-//
-// do something in region of interest...
-//
-TIMEMORY_CALIPER_APPLY(roi, stop);
-```
-
-and delete it when finished. It's three extra LOC that may reduce the time
-spent: changing code, then runnning profiler, then opening output in profiler,
-then finding ROI, then comparing to previous results, and then repeating from
-4 hours to 1.
-
 In general, profilers are not run frequently enough and performance degradation
 or memory bloat can go undetected for several commits until a production run crashes or
 underperforms. This generally leads to a scramble to detect which revision caused the issue.
-Here, timemory can decrease performance regression identification time.
+Timemory can decrease performance regression identification time and can be used easily create
+a built-in performance monitoring system.
 When timemory is combined with a continuous integration reporting system,
-this scramble can be mitigated fairly quickly because the high-level reporting
-provided allows one to associate a region and commit with exact performance numbers.
-Once timemory has been used to help identify the offending commit and identify the general
-region in the offending code, a full profiler should be launched for the fine-grained diagnosis.
+this scramble can be mitigated fairly quickly because the high-level monitoring system
+will allow developers to quickly associate a region and commit with changes in performance.
+Once this region + commit have been identified, a full profiler would then be launched for fine-grained analysis.
+
+## Quick Performance Analysis with timemory
+
+Want to check whether those changes increased data locality (i.e. decreased cache misses) but don't care
+about any other sections of the code?
+Use the following and set `TIMEMORY_PAPI_EVENTS="PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM"` in
+the environment:
+
+### C / C++ Library Interface
+
+```cpp
+timemory_push_components("papi_vector");
+timemory_push_region("MY_REGION_OF_INTEREST");
+//
+// do something in region of interest...
+//
+timemory_pop_region("MY_REGION_OF_INTEREST");
+```
+
+### Fortran
+
+```fortran
+call timemory_push_components("papi_vector")
+call timemory_push_region("MY_REGION_OF_INTEREST")
+!
+! do something in region of interest...
+!
+call timemory_pop_region("MY_REGION_OF_INTEREST")
+```
+
+### C++ Template Interface
+
+```cpp
+using hwcounters_t = tim::component_tuple<tim::component::papi_vector>;
+
+hwcounters_t roi("MY_REGION_OF_INTEREST");
+roi.start();
+//
+// do something in region of interest...
+//
+roi.stop();
+```
+
+Or encoding the PAPI enumeration types explicitly:
+
+```cpp
+using hwcounters_t = tim::component_tuple<tim::component::papi_tuple<PAPI_L1_TCM, PAPI_L2_TCM, PAPI_L3_TCM>>;
+
+hwcounters_t roi("MY_REGION_OF_INTEREST");
+roi.start();
+//
+// do something in region of interest...
+//
+roi.stop();
+```
+
+### Python Context Manager
+
+```python
+from timemory.util import marker
+
+with marker("MY_REGION_OF_INTEREST", [timemory.component.papi_vector]):
+    #
+    # do something in region of interest...
+    #
+```
+
+### C Enumeration Interface
+
+```cpp
+void* roi = TIMEMORY_BLANK_MARKER("MY_REGION_OF_INTEREST", PAPI_VECTOR);
+//
+// do something in region of interest...
+//
+FREE_TIMEMORY_MARKER(roi)
+```
+
+and delete it when finished. It's a couple of extra LOC that will reduce time
+spent: changing code, then runnning profiler, then opening output in profiler,
+then finding ROI, then comparing to previous results, and then repeating.
 
 ## Create Your Own Tools/Components
+
+- Written in C++
+- Direct access to performance analysis data in Python and C++
+- Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
+    - Flexible and easily extensible interface: no data type restrictions in custom components
 
 There are numerous instrumentation APIs available but very few provide the ability for _users_ to create
 tools/components that will fully integrate with the instrumentation API in their code. The
@@ -223,9 +357,8 @@ struct wall_clock : public base<wall_clock, int64_t>
 
     void stop()
     {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
     }
 };
 
@@ -303,12 +436,7 @@ Using the pure template interface will cause longer compile-times and is only av
 so a library interface for C, C++, and Fortran is also available:
 
 ```cpp
-#include <timemory/timemory.hpp>
-
-using namespace tim::component;
-using comp_bundle_t = tim::component_tuple_t <wall_clock, tau_marker>;
-using auto_bundle_t = tim::auto_tuple_t      <wall_clock, tau_marker>;
-// "auto" types automatically start/stop based on scope
+#include <timemory/library.h>
 
 void foo()
 {

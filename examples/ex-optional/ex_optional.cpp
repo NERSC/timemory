@@ -39,7 +39,7 @@
 
 namespace impl
 {
-long fibonacci(long n);
+static long fibonacci(long n);
 }
 long fibonacci(long n);
 void status();
@@ -154,4 +154,5 @@ void status()
 #else
     printf("\n#----------------- TIMEMORY is disabled ----------------#\n\n");
 #endif
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }

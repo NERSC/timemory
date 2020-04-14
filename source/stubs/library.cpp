@@ -89,14 +89,10 @@ extern "C"
     void     timemory_pop_region(const char*) {}
 
     // tracing API
-    int64_t timemory_register_trace(const char*) { RETURN_MAX(int64_t); }
-    void    timemory_deregister_trace(const char*) {}
-    void    timemory_dyninst_init(void) {}
-    void    timemory_dyninst_finalize(void) {}
-    void    timemory_init_trace(uint64_t) {}
-    void    timemory_fini_trace(void) {}
-    void    timemory_mpi_init_stub(int) {}
-    int     timemory_get_rank(void) { return 0; }
+    void timemory_push_trace(const char*) {}
+    void timemory_pop_trace(const char*) {}
+    void timemory_trace_init(const char*) {}
+    void timemory_trace_finalize(void) {}
 
     void     timemory_create_record_(const char*, uint64_t*, int, int*) {}
     void     timemory_delete_record_(uint64_t) {}

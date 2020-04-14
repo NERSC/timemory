@@ -79,9 +79,6 @@ template <typename Tp>
 inline Tp sqr(Tp);
 
 template <typename Tp>
-inline Tp sqr(Tp);
-
-template <typename Tp>
 inline Tp
 min(const Tp&, const Tp&);
 
@@ -112,6 +109,67 @@ divide(Tp&, const Up&);
 template <typename Tp>
 inline Tp
 percent_diff(const Tp&, const Tp&);
+
+//--------------------------------------------------------------------------------------//
+//              dummy overloads for std::tuple<>
+//
+inline std::tuple<> abs(std::tuple<>) { return std::tuple<>{}; }
+
+inline std::tuple<> sqrt(std::tuple<>) { return std::tuple<>{}; }
+
+inline std::tuple<>
+pow(std::tuple<>, double)
+{
+    return std::tuple<>{};
+}
+
+inline std::tuple<> sqr(std::tuple<>) { return std::tuple<>{}; }
+
+inline std::tuple<>
+min(const std::tuple<>&, const std::tuple<>&)
+{
+    return std::tuple<>{};
+}
+
+inline std::tuple<>
+max(const std::tuple<>&, const std::tuple<>&)
+{
+    return std::tuple<>{};
+}
+
+inline void
+assign(std::tuple<>&, std::tuple<>&&)
+{}
+
+inline std::tuple<>&
+plus(std::tuple<>& lhs, const std::tuple<>&)
+{
+    return lhs;
+}
+
+inline std::tuple<>&
+minus(std::tuple<>& lhs, const std::tuple<>&)
+{
+    return lhs;
+}
+
+inline std::tuple<>&
+multiply(std::tuple<>& lhs, const std::tuple<>&)
+{
+    return lhs;
+}
+
+inline std::tuple<>&
+divide(std::tuple<>& lhs, const std::tuple<>&)
+{
+    return lhs;
+}
+
+inline std::tuple<>
+percent_diff(const std::tuple<>&, const std::tuple<>&)
+{
+    return std::tuple<>{};
+}
 
 //--------------------------------------------------------------------------------------//
 
