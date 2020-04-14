@@ -300,10 +300,10 @@ struct apply<void>
     static void apply_access_with_indices(Tuple&& __t, index_sequence<Idx...>,
                                           Args&&... __args)
     {
-        constexpr auto Nt = sizeof...(Idx);
         // call constructor
         TIMEMORY_FOLD_EXPRESSION(decay_t<typename std::tuple_element<Idx, Access>::type>(
-            Idx, Nt, std::forward<decltype(std::get<Idx>(__t))>(std::get<Idx>(__t)),
+            Idx, sizeof...(Idx),
+            std::forward<decltype(std::get<Idx>(__t))>(std::get<Idx>(__t)),
             std::forward<Args>(__args)...));
     }
 

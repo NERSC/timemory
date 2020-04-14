@@ -32,6 +32,7 @@
 #include "timemory/timemory.hpp"
 #include "timemory/utility/argparse.hpp"
 
+#include <algorithm>
 #include <array>
 #include <iomanip>
 #include <iostream>

@@ -218,6 +218,8 @@ struct dummy
 #    include "timemory/runtime/insert.hpp"      // 3.1
 #    include "timemory/runtime/properties.hpp"  // 3.2
 //
+#    include "timemory/components/general.hpp"
+//
 //======================================================================================//
 //
 namespace tim

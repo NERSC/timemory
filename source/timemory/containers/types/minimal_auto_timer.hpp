@@ -51,8 +51,6 @@
 //
 //======================================================================================//
 //
-// clang-format off
-//
 TIMEMORY_EXTERN_TUPLE(minimal_auto_timer_t, TIMEMORY_MINIMAL_TUPLE_TYPES)
 //
 //--------------------------------------------------------------------------------------//
@@ -63,7 +61,4 @@ TIMEMORY_EXTERN_LIST(minimal_auto_timer_t, TIMEMORY_MINIMAL_LIST_TYPES)
 //
 TIMEMORY_EXTERN_HYBRID(minimal_auto_timer_t)
 //
-// clang-format on
-//
 //--------------------------------------------------------------------------------------//
-//

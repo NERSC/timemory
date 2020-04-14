@@ -51,8 +51,6 @@
 //
 //======================================================================================//
 //
-// clang-format off
-//
 TIMEMORY_EXTERN_TUPLE(full_auto_timer_t, TIMEMORY_FULL_TUPLE_TYPES)
 //
 //--------------------------------------------------------------------------------------//
@@ -63,7 +61,4 @@ TIMEMORY_EXTERN_LIST(full_auto_timer_t, TIMEMORY_FULL_LIST_TYPES)
 //
 TIMEMORY_EXTERN_HYBRID(full_auto_timer_t)
 //
-// clang-format on
-//
 //--------------------------------------------------------------------------------------//
-//

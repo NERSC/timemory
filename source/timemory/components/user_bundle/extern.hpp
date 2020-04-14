@@ -60,6 +60,8 @@
 //
 #include "timemory/components/extern.hpp"
 //
+#include "timemory/runtime/enumerate.hpp"
+//
 //======================================================================================//
 //
 #if defined(TIMEMORY_SOURCE) || defined(TIMEMORY_USER_BUNDLE_SOURCE)

@@ -38,7 +38,6 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/variadic/types.hpp"
 
-#include "timemory/components/general.hpp"
 #include "timemory/components/rusage/components.hpp"
 #include "timemory/components/timing/components.hpp"
 #include "timemory/components/trip_count/components.hpp"

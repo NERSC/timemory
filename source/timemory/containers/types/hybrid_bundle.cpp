@@ -22,41 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//
 #include "timemory/components/user_bundle/types.hpp"
 //
 #include "timemory/components/user_bundle/components.hpp"
 //
-#include "timemory/operations/extern.hpp"
-//
-#include "timemory/components/user_bundle/extern.hpp"
-
-//
 #include "timemory/utility/macros.hpp"
-//
-#if !defined(_WINDOWS)
-//
-//               THIS JUST SERVES AS A COMPILATION TEST!
-//
-extern template struct tim::component::base<
-    tim::component::user_bundle<tim::component::tuple_bundle_idx, tim::api::native_tag>,
-    void>;
-//
-extern template struct tim::component::base<
-    tim::component::user_bundle<tim::component::list_bundle_idx, tim::api::native_tag>,
-    void>;
-//
-extern template struct tim::component::user_bundle<tim::component::tuple_bundle_idx,
-                                                   tim::api::native_tag>;
-//
-extern template struct tim::component::user_bundle<tim::component::list_bundle_idx,
-                                                   tim::api::native_tag>;
-//
-#endif
-
-//======================================================================================//
 //
 #include "timemory/plotting/definition.hpp"
 //
 #include "timemory/containers/types/hybrid_bundle.hpp"
 //
-//======================================================================================//
