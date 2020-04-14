@@ -63,9 +63,6 @@ struct serialization
               enable_if_t<(is_enabled<Up>::value), char> = 0>
     serialization(const Up& obj, Archive& ar, const unsigned int)
     {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
         // clang-format off
         ar(cereal::make_nvp("is_transient", obj.get_is_transient()),
            cereal::make_nvp("laps", obj.get_laps()),

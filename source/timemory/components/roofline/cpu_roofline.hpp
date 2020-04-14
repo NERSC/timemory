@@ -247,7 +247,7 @@ struct cpu_roofline
         if(!is_configured())
         {
             if(settings::debug() || settings::verbose() > 1)
-                DEBUG_PRINT_HERE("%s", "configuring cpu_roofline");
+                PRINT_HERE("%s", "configuring cpu_roofline");
 
             is_configured() = true;
             for(auto itr : get_events())
@@ -384,9 +384,10 @@ public:
 
     cpu_roofline()
     : base_type()
-    , m_papi_vector(std::make_shared<papi_vector>())
-    , m_wall_clock(std::make_shared<wall_clock>())
     {
+        configure();
+        m_papi_vector                        = std::make_shared<papi_vector>();
+        m_wall_clock                         = std::make_shared<wall_clock>();
         std::tie(value.second, accum.second) = std::make_pair(0, 0);
     }
 
