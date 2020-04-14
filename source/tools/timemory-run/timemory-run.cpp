@@ -1211,18 +1211,18 @@ initialize(BPatch_process* appThread, BPatch_image* appImage,
            BPatch_Vector<BPatch_snippet*>& initArgs)
 {
     // Find the initialization function and call it
-    BPatch_function* init_func = find_function(appImage, "timemory_init_trace");
+    BPatch_function* init_func = find_function(appImage, "timemory_trace_init");
     if(init_func == nullptr)
     {
-        fprintf(stderr, "Unable to find function timemory_init_trace\n");
+        fprintf(stderr, "Unable to find function timemory_trace_init\n");
         exit(1);
     }
 
     // Find the finalization function and call it
-    BPatch_function* fini_func = find_function(appImage, "timemory_fini_trace");
+    BPatch_function* fini_func = find_function(appImage, "timemory_trace_finalize");
     if(fini_func == nullptr)
     {
-        fprintf(stderr, "Unable to find function timemory_fini_trace\n");
+        fprintf(stderr, "Unable to find function timemory_trace_finalize\n");
         exit(1);
     }
 
