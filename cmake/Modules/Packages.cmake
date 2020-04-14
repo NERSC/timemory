@@ -450,6 +450,9 @@ if(MPI_FOUND)
         # compile flags
         to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
         foreach(_FLAG ${_FLAGS})
+            if(EXISTS "${_FLAG}" AND IS_DIRECTORY "${_FLAG}")
+                continue()
+            endif()
             if(NOT CMAKE_VERSION VERSION_LESS 3.13)
                 target_link_options(timemory-mpi INTERFACE
                     $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
