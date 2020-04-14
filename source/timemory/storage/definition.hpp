@@ -759,22 +759,13 @@ storage<Type, true>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
-        m_manager       = tim::manager::instance();
-        bool _is_master = singleton_t::is_master(this);
-        auto _cleanup   = [&]() {
-            auto _instance = this_type::get_singleton();
-            if(_instance && _is_master)
-            {
-                auto& _obj = _instance->smart_master_instance();
-                if(_obj)
-                    _obj->stack_clear();
-            }
-        };
-        func_t _finalize = [&]() {
+        m_manager         = tim::manager::instance();
+        bool   _is_master = singleton_t::is_master(this);
+        auto   _cleanup   = [&]() {};
+        func_t _finalize  = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                _cleanup();
                 _instance->reset(this);
                 _instance->smart_instance().reset();
                 if(_is_master)
@@ -942,22 +933,13 @@ storage<Type, false>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
-        m_manager       = tim::manager::instance();
-        bool _is_master = singleton_t::is_master(this);
-        auto _cleanup   = [&]() {
-            auto _instance = this_type::get_singleton();
-            if(_instance && _is_master)
-            {
-                auto& _obj = _instance->smart_master_instance();
-                if(_obj)
-                    _obj->stack_clear();
-            }
-        };
-        func_t _finalize = [&]() {
+        m_manager         = tim::manager::instance();
+        bool   _is_master = singleton_t::is_master(this);
+        auto   _cleanup   = [&]() {};
+        func_t _finalize  = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                _cleanup();
                 _instance->reset(this);
                 _instance->smart_instance().reset();
                 if(_is_master)
