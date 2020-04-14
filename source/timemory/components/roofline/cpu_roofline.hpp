@@ -29,6 +29,7 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/settings/declaration.hpp"
 
+#include "timemory/components/papi/components.hpp"
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
 
@@ -145,24 +146,6 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static int event_set() { return private_event_set(); }
-
-    //----------------------------------------------------------------------------------//
-
-    static event_type events()
-    {
-        return (private_events()) ? (*private_events()) : event_type{};
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static size_type size()
-    {
-        return (private_events()) ? (private_events()->size()) : 0;
-    }
-
-    //----------------------------------------------------------------------------------//
-
     static MODE& event_mode()
     {
         auto aslc = [](std::string str) {
@@ -201,27 +184,6 @@ struct cpu_roofline
     {
         static ert_data_ptr_t _instance = std::make_shared<ert_data_t>();
         return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static bool initialize_papi()
-    {
-        static thread_local bool _initalized = false;
-        static thread_local bool _working    = false;
-        if(!_initalized)
-        {
-            papi::init();
-            papi::register_thread();
-            _initalized = true;
-            _working    = papi::working();
-            if(!_working)
-            {
-                std::cerr << "Warning! PAPI failed to initialized!\n";
-                std::cerr << std::flush;
-            }
-        }
-        return _working;
     }
 
     //----------------------------------------------------------------------------------//
@@ -272,100 +234,32 @@ struct cpu_roofline
                     _events.push_back(itr);
             }
 
-            auto array_events = papi_array_t::get_initializer()();
-            for(auto& itr : array_events)
-            {
-                if(std::find(_events.begin(), _events.end(), itr) == _events.end())
-                    _events.push_back(itr);
-            }
-
             return _events;
         }();
-
-        if(private_events()->empty())
-            *private_events() = _instance;
 
         return _instance;
     }
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_init(storage_type*)
+    static void global_init(storage_type*)
     {
-        if(!initialize_papi())
-            return;
-
-        static thread_local bool _first = true;
-        if(!_first)
-            return;
-        _first = true;
-
-        // create the hardware counter events to accumulate
-        event_type _events = get_events();
-
-        // found that PAPI occassionally seg-faults during add_event...
-        static std::mutex            _mutex;
-        std::unique_lock<std::mutex> _lock(_mutex);
-
-        papi::create_event_set(&private_event_set(), settings::papi_multiplexing());
-        if(event_set() == PAPI_NULL)
-        {
-            fprintf(stderr, "[cpu_roofline]> event_set is PAPI_NULL!\n");
-        }
-        else
-        {
-            for(auto itr : _events)
-            {
-                if(papi::add_event(event_set(), itr))
-                {
-                    if(settings::verbose() > 1 || settings::debug())
-                        printf("[cpu_roofline]> Added event %s to event set %i\n",
-                               papi::get_event_code_name(itr).c_str(), event_set());
-                }
-                else
-                {
-                    auto pitr = std::find(private_events()->begin(),
-                                          private_events()->end(), itr);
-                    if(pitr != private_events()->end())
-                        private_events()->erase(pitr);
-
-                    if(!settings::papi_quiet())
-                        fprintf(stderr,
-                                "[cpu_roofline]> Failed to add event %s to event "
-                                "set %i\n",
-                                papi::get_event_code_name(itr).c_str(), event_set());
-                }
-            }
-        }
-
-        if(private_events()->size() == 0)
-            throw std::runtime_error("No events for the roofline!");
-        if(private_events()->size() != events().size())
-            throw std::runtime_error("Mismatched!");
-
-        if(private_events()->size() > 0)
-            papi::start(event_set());
+        DEBUG_PRINT_HERE("%s", "adding events to papi_vector");
+        for(auto itr : get_events())
+            papi_vector::add_event(itr);
     }
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_finalize(storage_type*)
+    static void thread_init(storage_type*)
     {
-        // found that PAPI occassionally seg-faults during add_event so adding here too...
-        static std::mutex            _mutex;
-        std::unique_lock<std::mutex> _lock(_mutex);
-
-        if(event_set() != PAPI_NULL && events().size() > 0)
-        {
-            // stop PAPI counters
-            array_type event_values(events().size(), 0);
-            papi::stop(event_set(), event_values.data());
-            papi::remove_events(event_set(), private_events()->data(), events().size());
-            papi::destroy_event_set(event_set());
-        }
-        private_event_set() = PAPI_NULL;
-        papi::unregister_thread();
+        DEBUG_PRINT_HERE("%s", "thread initialization of cpu_roofline");
+        papi_vector::configure();
     }
+
+    //----------------------------------------------------------------------------------//
+
+    static void thread_finalize(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 
@@ -424,36 +318,20 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static display_unit_type display_unit()
+    display_unit_type display_unit()
     {
-        display_unit_type _units{};
-        auto              labels = events_label_array();
-        for(size_type i = 0; i < labels.size(); ++i)
-        {
-            std::stringstream ss;
-            ss << labels[i];
-            if(ss.str().length() == 0)
-            {
-                _units.push_back("");
-            }
-            else
-            {
-                if(event_mode() == MODE::OP)
-                    ss << " / " << count_type::display_unit();
-                _units.push_back(ss.str());
-            }
-        }
-
+        auto _units = m_papi_vector->display_unit_array();
+        _units.push_back(m_wall_clock->display_unit());
         return _units;
     }
 
     //----------------------------------------------------------------------------------//
 
-    static unit_type get_unit() { return unit(); }
+    unit_type get_unit() { return unit(); }
 
     //----------------------------------------------------------------------------------//
 
-    static display_unit_type get_display_unit() { return display_unit(); }
+    display_unit_type get_display_unit() { return display_unit(); }
 
     //----------------------------------------------------------------------------------//
 
@@ -477,23 +355,21 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static value_type record()
+    value_type record()
     {
-        array_type read_values(size(), 0);
-        papi::read(event_set(), read_values.data());
-        auto delta_duration =
-            count_type::record() / static_cast<double>(ratio_t::den) * units::sec;
-        return value_type(read_values, delta_duration);
+        auto hwcount  = m_papi_vector->record();
+        auto duration = m_wall_clock->record();
+        return value_type(hwcount, duration);
     }
 
 public:
     //----------------------------------------------------------------------------------//
 
     cpu_roofline()
-    : m_events(get_events())
-    , m_record([]() { return this_type::record(); })
+    : base_type()
+    , m_papi_vector(std::make_shared<papi_vector>())
+    , m_wall_clock(std::make_shared<wall_clock>())
     {
-        resize(m_events.size());
         std::tie(value.second, accum.second) = std::make_pair(0, 0);
     }
 
@@ -509,15 +385,8 @@ public:
 
     std::vector<double> get() const
     {
-        auto                _n = size() + 1;
-        std::vector<double> _data(_n, 0.0);
-        const auto&         obj = (is_transient) ? accum : value;
-
-        for(size_t i = 0; i < obj.first.size(); ++i)
-            _data[i] += static_cast<double>(obj.first[i]);
-
-        _data.back() += obj.second;
-
+        auto _data = m_papi_vector->get();
+        _data.push_back(m_wall_clock->get());
         return _data;
     }
 
@@ -526,50 +395,32 @@ public:
     void start()
     {
         set_started();
-        value = m_record();
+        m_wall_clock->start();
+        m_papi_vector->start();
+        value = value_type{ m_papi_vector->get_value(), m_wall_clock->get_value() };
     }
 
     //----------------------------------------------------------------------------------//
 
     void stop()
     {
-        auto tmp = m_record();
-        resize(std::max<size_type>(tmp.first.size(), value.first.size()));
-        for(size_type i = 0; i < accum.first.size(); ++i)
-            accum.first[i] += (tmp.first[i] - value.first[i]);
-        accum.second += (tmp.second - value.second);
-        value = std::move(tmp);
+        m_papi_vector->stop();
+        m_wall_clock->stop();
+        value = value_type{ m_papi_vector->get_value(), m_wall_clock->get_value() };
+        accum += value_type{ m_papi_vector->get_accum(), m_wall_clock->get_accum() };
         set_stopped();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename FuncT>
-    void configure_record(FuncT&& _func)
-    {
-        m_record = std::forward<FuncT>(_func);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename FuncT>
-    void configure_record(const MODE& _mode, FuncT&& _func)
-    {
-        if(event_mode() == _mode)
-            m_record = std::forward<FuncT>(_func);
     }
 
     //----------------------------------------------------------------------------------//
 
     this_type& operator+=(const this_type& rhs)
     {
-        resize(std::max<size_type>(m_events.size(), events().size()));
-        for(size_type i = 0; i < accum.first.size(); ++i)
-            accum.first[i] += rhs.accum.first[i];
-        for(size_type i = 0; i < value.first.size(); ++i)
-            value.first[i] += rhs.value.first[i];
-        accum.second += rhs.accum.second;
-        value.second += rhs.value.second;
+        if(rhs.value.first.size() > value.first.size())
+            value.first.resize(rhs.value.first.size());
+        if(rhs.accum.first.size() > accum.first.size())
+            accum.first.resize(rhs.accum.first.size());
+        value += rhs.value;
+        accum += rhs.accum;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -579,67 +430,15 @@ public:
 
     this_type& operator-=(const this_type& rhs)
     {
-        resize(std::max<size_type>(m_events.size(), events().size()));
-        for(size_type i = 0; i < accum.first.size(); ++i)
-            accum.first[i] -= rhs.accum.first[i];
-        for(size_type i = 0; i < value.first.size(); ++i)
-            value.first[i] -= rhs.value.first[i];
-        accum.second -= rhs.accum.second;
-        value.second -= rhs.value.second;
+        if(rhs.value.first.size() > value.first.size())
+            value.first.resize(rhs.value.first.size());
+        if(rhs.accum.first.size() > accum.first.size())
+            accum.first.resize(rhs.accum.first.size());
+        value -= rhs.value;
+        accum -= rhs.accum;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    iterator begin()
-    {
-        auto& obj = (accum.second > 0) ? accum.first : value.first;
-        return obj.begin();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    const_iterator begin() const
-    {
-        const auto& obj = (accum.second > 0) ? accum.first : value.first;
-        return obj.begin();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    iterator end()
-    {
-        auto& obj = (accum.second > 0) ? accum.first : value.first;
-        return obj.end();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    const_iterator end() const
-    {
-        const auto& obj = (accum.second > 0) ? accum.first : value.first;
-        return obj.end();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    double get_elapsed(const int64_t& _unit = count_type::get_unit()) const
-    {
-        auto& obj = (accum.second > 0) ? accum : value;
-        return static_cast<double>(obj.second) *
-               (static_cast<double>(_unit) / units::sec);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    double get_counted() const
-    {
-        double _sum = 0.0;
-        for(auto itr = begin(); itr != end(); ++itr)
-            _sum += static_cast<double>(*itr);
-        return _sum;
     }
 
 protected:
@@ -671,7 +470,7 @@ public:
         using namespace tim::stl::ostream;
 
         // output the time
-        auto&             _obj = (obj.accum.second > 0) ? obj.accum : obj.value;
+        auto&             _obj = (obj.is_transient) ? obj.accum : obj.value;
         std::stringstream sst;
         auto              t_value = _obj.second;
         auto              t_label = count_type::get_label();
@@ -739,8 +538,8 @@ public:
            cereal::make_nvp("mode", get_mode_string()),
            cereal::make_nvp("type", get_type_string()));
 
-        const auto& labels = events_label_array();
-        auto        data   = get();
+        auto labels = label_array();
+        auto data   = get();
         ar.setNextName("repr_data");
         ar.startNode();
         auto litr = labels.begin();
@@ -749,9 +548,10 @@ public:
             ar(cereal::make_nvp(*litr, double(*ditr)));
         ar.finishNode();
 
-        ar(cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
-           cereal::make_nvp("units", unit_array()),
-           cereal::make_nvp("display_units", display_unit_array()));
+        ar(cereal::make_nvp("value", value));
+        ar(cereal::make_nvp("accum", accum));
+        ar(cereal::make_nvp("units", unit_array()));
+        ar(cereal::make_nvp("display_units", display_unit_array()));
     }
 
     //----------------------------------------------------------------------------------//
@@ -759,37 +559,8 @@ public:
     //
     strvec_t label_array() const
     {
-        strvec_t arr;
-        for(const auto& itr : m_events)
-            arr.push_back(papi::get_event_info(itr).short_descr);
+        strvec_t arr = m_papi_vector->label_array();
         arr.push_back("Runtime");
-
-        for(auto& itr : arr)
-        {
-            size_t n = std::string::npos;
-            while((n = itr.find("L/S")) != std::string::npos)
-                itr.replace(n, 3, "Loads_Stores");
-        }
-
-        for(auto& itr : arr)
-        {
-            size_t n = std::string::npos;
-            while((n = itr.find("/")) != std::string::npos)
-                itr.replace(n, 1, "_per_");
-        }
-
-        for(auto& itr : arr)
-        {
-            size_t n = std::string::npos;
-            while((n = itr.find(" ")) != std::string::npos)
-                itr.replace(n, 1, "_");
-
-            while((n = itr.find("__")) != std::string::npos)
-                itr.replace(n, 2, "_");
-        }
-
-        if(events_label_array().size() < arr.size())
-            events_label_array() = arr;
         return arr;
     }
 
@@ -798,9 +569,7 @@ public:
     //
     strvec_t description_array() const
     {
-        std::vector<std::string> arr(m_events.size());
-        for(size_type i = 0; i < m_events.size(); ++i)
-            arr[i] = papi::get_event_info(m_events[i]).long_descr;
+        strvec_t arr = m_papi_vector->description_array();
         arr.push_back("Runtime");
         return arr;
     }
@@ -809,9 +578,7 @@ public:
     //
     strvec_t display_unit_array() const
     {
-        strvec_t arr;
-        for(const auto& itr : m_events)
-            arr.push_back(papi::get_event_info(itr).units);
+        strvec_t arr = m_papi_vector->display_unit_array();
         arr.push_back(count_type::get_display_unit());
         return arr;
     }
@@ -821,8 +588,8 @@ public:
     //
     std::vector<int64_t> unit_array() const
     {
-        std::vector<int64_t> arr(m_events.size() + 1, 1);
-        arr.back() = count_type::get_unit();
+        auto arr = m_papi_vector->unit_array();
+        arr.push_back(count_type::get_unit());
         return arr;
     }
 
@@ -830,43 +597,8 @@ private:
     //----------------------------------------------------------------------------------//
     // these are needed after the global label array is destroyed
     //
-    event_type  m_events = get_events();
-    record_type m_record = []() { return this_type::record(); };
-
-    //----------------------------------------------------------------------------------//
-
-    void resize(size_type sz)
-    {
-        sz = std::max<size_type>(size(), sz);
-        value.first.resize(std::max<size_type>(sz, value.first.size()), 0);
-        accum.first.resize(std::max<size_type>(sz, accum.first.size()), 0);
-    }
-
-private:
-    //----------------------------------------------------------------------------------//
-
-    static strvec_t& events_label_array()
-    {
-        static thread_local strvec_t _instance{};
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static event_type* private_events()
-    {
-        using pointer_t                    = std::unique_ptr<event_type>;
-        static thread_local auto _instance = pointer_t(new event_type{});
-        return _instance.get();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static int& private_event_set()
-    {
-        static thread_local int _instance = PAPI_NULL;
-        return _instance;
-    }
+    std::shared_ptr<papi_vector> m_papi_vector{ nullptr };
+    std::shared_ptr<wall_clock>  m_wall_clock{ nullptr };
 
 public:
     //----------------------------------------------------------------------------------//

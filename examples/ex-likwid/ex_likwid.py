@@ -14,7 +14,7 @@ def get_tools(extra=[]):
     """
     Return the LIKWID components
     """
-    components = ["likwid_perfmon", "likwid_nvmon"] + extra
+    components = ["likwid_marker", "likwid_nvmarker"] + extra
     return [getattr(timemory.component, x) for x in components]
 
 

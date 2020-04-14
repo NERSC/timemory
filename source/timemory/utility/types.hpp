@@ -184,7 +184,7 @@ using input_type                    = std::array<bool, scope_count>;
 static inline input_type&
 get_fields()
 {
-    static input_type _instance{ false, false, false };
+    static input_type _instance{ { false, false, false } };
     return _instance;
 }
 //

@@ -52,11 +52,22 @@
 #include "timemory/ert/data.hpp"
 #include "timemory/operations/extern.hpp"
 
+#if defined(TIMEMORY_USE_CUDA)
+#    include "timemory/components/cuda/backends.hpp"
+#endif
+
 namespace tim
 {
 namespace ert
 {
 //
+//--------------------------------------------------------------------------------------//
+//
+//                   Don't enter this block while compiling CUDA
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_ERT_SOURCE_CUDA)
 //
 TIMEMORY_ERT_EXTERN_TEMPLATE(class exec_data<component::wall_clock>)
 //
@@ -68,18 +79,39 @@ TIMEMORY_ERT_EXTERN_TEMPLATE(
 TIMEMORY_ERT_EXTERN_TEMPLATE(
     struct configuration<device::cpu, double, component::wall_clock>)
 //
-#if defined(TIMEMORY_USE_CUDA)
-//
-// extern template class counter<device::gpu, float, component::wall_clock>;
-// extern template class counter<device::gpu, double, component::wall_clock>;
-// extern template class counter<device::gpu, cuda::fp16_t, component::wall_clock>;
-//
-// extern template struct configuration<device::gpu, float, component::wall_clock>;
-// extern template struct configuration<device::gpu, double, component::wall_clock>;
-// extern template struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>;
-//
 #endif
 //
+//--------------------------------------------------------------------------------------//
+//
+//                   Don't enter this block while compiling C++
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_ERT_SOURCE_CXX)
+//
+#    if defined(TIMEMORY_USE_CUDA)
+//
+TIMEMORY_ERT_EXTERN_TEMPLATE(class counter<device::gpu, float, component::wall_clock>)
+TIMEMORY_ERT_EXTERN_TEMPLATE(class counter<device::gpu, double, component::wall_clock>)
+//
+#        if defined(TIMEMORY_CUDA_FP16)
+TIMEMORY_ERT_EXTERN_TEMPLATE(
+    class counter<device::gpu, cuda::fp16_t, component::wall_clock>)
+#        endif
+//
+TIMEMORY_ERT_EXTERN_TEMPLATE(
+    struct configuration<device::gpu, float, component::wall_clock>)
+TIMEMORY_ERT_EXTERN_TEMPLATE(
+    struct configuration<device::gpu, double, component::wall_clock>)
+//
+#        if defined(TIMEMORY_CUDA_FP16)
+TIMEMORY_ERT_EXTERN_TEMPLATE(
+    struct configuration<device::gpu, cuda::fp16_t, component::wall_clock>)
+#        endif
+//
+#    endif
+//
+#endif
 //
 }  // namespace ert
 }  // namespace tim

@@ -38,6 +38,12 @@
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/types.hpp"
 
+#include <algorithm>
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+
 //======================================================================================//
 //
 namespace tim
@@ -73,6 +79,12 @@ struct papi_vector
     static const short precision = 3;
     static const short width     = 8;
 
+    template <typename... T>
+    friend struct cpu_roofline;
+
+    template <typename... T>
+    friend struct gpu_roofline;
+
     //----------------------------------------------------------------------------------//
 
     static void overflow_handler(int evt_set, void* address, long long overflow_vector,
@@ -81,6 +93,19 @@ struct papi_vector
         fprintf(stderr, "[papi_vector%i]> Overflow at %p! bit=0x%llx \n", evt_set,
                 address, overflow_vector);
         consume_parameters(context);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static void add_event(int evt)
+    {
+        auto pevents = private_events();
+        if(pevents)
+        {
+            auto fitr = std::find(pevents->begin(), pevents->end(), evt);
+            if(fitr == pevents->end())
+                pevents->push_back(evt);
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -152,13 +177,30 @@ struct papi_vector
                 }
                 else
                 {
-                    if(settings::debug())
-                        printf("[papi_vector] Successfully created event '%s' with code "
-                               "'%i'...\n",
-                               itr.c_str(), evt_code);
-                    events_list.push_back(evt_code);
+                    auto fitr =
+                        std::find(events_list.begin(), events_list.end(), evt_code);
+                    if(fitr == events_list.end())
+                    {
+                        if(settings::debug())
+                            printf("[papi_vector] Successfully created event '%s' with "
+                                   "code '%i'...\n",
+                                   itr.c_str(), evt_code);
+                        events_list.push_back(evt_code);
+                    }
                 }
             }
+
+            auto pevents = private_events();
+            if(pevents)
+            {
+                for(auto itr = pevents->begin(); itr != pevents->end(); ++itr)
+                {
+                    auto fitr = std::find(events_list.begin(), events_list.end(), *itr);
+                    if(fitr == events_list.end())
+                        events_list.push_back(*itr);
+                }
+            }
+
             return events_list;
         };
         return _instance;
@@ -176,6 +218,7 @@ struct papi_vector
 
     static void configure()
     {
+        DEBUG_PRINT_HERE("%s", "configuring papi_vector");
         if(!is_configured() && initialize_papi())
         {
             auto events = get_events();
@@ -199,7 +242,11 @@ struct papi_vector
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_init(storage_type*) { configure(); }
+    static void thread_init(storage_type*)
+    {
+        DEBUG_PRINT_HERE("%s", "thread initialization of papi_vector");
+        configure();
+    }
 
     //----------------------------------------------------------------------------------//
 
@@ -216,7 +263,6 @@ struct papi_vector
             papi::destroy_event_set(_event_set());
             _event_set() = PAPI_NULL;
         }
-        papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//
@@ -325,17 +371,6 @@ struct papi_vector
     //----------------------------------------------------------------------------------//
 
 protected:
-    using base_type::accum;
-    using base_type::is_transient;
-    using base_type::laps;
-    using base_type::set_started;
-    using base_type::set_stopped;
-    using base_type::value;
-
-    friend struct base<this_type, value_type>;
-    using base_type::implements_storage_v;
-    friend class impl::storage<this_type, implements_storage_v>;
-
     // data types
     event_list events;
 
@@ -388,6 +423,31 @@ public:
         vector_t<std::string> arr(events.size(), "");
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).short_descr;
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find("L/S")) != std::string::npos)
+                itr.replace(n, 3, "Loads_Stores");
+        }
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find("/")) != std::string::npos)
+                itr.replace(n, 1, "_per_");
+        }
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find(" ")) != std::string::npos)
+                itr.replace(n, 1, "_");
+
+            while((n = itr.find("__")) != std::string::npos)
+                itr.replace(n, 2, "_");
+        }
+
         return arr;
     }
 
@@ -499,6 +559,14 @@ private:
     static bool& is_configured()
     {
         static thread_local bool _instance = false;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static std::shared_ptr<vector_t<int>> private_events()
+    {
+        static auto _instance = std::make_shared<vector_t<int>>();
         return _instance;
     }
 };

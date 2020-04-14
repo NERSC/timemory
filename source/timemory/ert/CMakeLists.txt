@@ -18,5 +18,6 @@ build_intermediate_library(
     DEPENDS             timemory-vector
                         timemory-cuda
                         # timemory-cudart
+                        timemory-timing-component
     PRIVATE_LINK        timemory-roofline-options
-    PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE)
+    PROPERTY_DEPENDS    GLOBAL)

@@ -766,10 +766,21 @@ storage<Type, true>::get_shared_manager()
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
+                if(settings::debug() || settings::verbose() > 1)
+                    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                               "calling _instance->reset(this)");
                 _instance->reset(this);
+                if(settings::debug() || settings::verbose() > 1)
+                    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                               "calling _instance->smart_instance().reset()");
                 _instance->smart_instance().reset();
                 if(_is_master)
+                {
+                    if(settings::debug() || settings::verbose() > 1)
+                        PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                                   "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();
+                }
             }
             trait::runtime_enabled<Type>::set(false);
         };
@@ -940,10 +951,21 @@ storage<Type, false>::get_shared_manager()
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
+                if(settings::debug() || settings::verbose() > 1)
+                    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                               "calling _instance->reset(this)");
                 _instance->reset(this);
+                if(settings::debug() || settings::verbose() > 1)
+                    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                               "calling _instance->smart_instance().reset()");
                 _instance->smart_instance().reset();
                 if(_is_master)
+                {
+                    if(settings::debug() || settings::verbose() > 1)
+                        PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                                   "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();
+                }
             }
             trait::runtime_enabled<Type>::set(false);
         };
