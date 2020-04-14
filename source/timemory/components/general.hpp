@@ -33,6 +33,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/data/handler.hpp"
+#include "timemory/mpl/concepts.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -118,20 +119,22 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     void start() {}
     void stop() {}
 
-    template <typename T, enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void store(const T& val)
     {
         handler_type::store(*this, val);
     }
 
-    template <typename T, enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void store(handler_type&&, const T& val)
     {
         handler_type::store(*this, val);
     }
 
     template <typename Func, typename T,
-              enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     auto store(Func&& f, const T& val)
         -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
                     void())
@@ -140,7 +143,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
     }
 
     template <typename Func, typename T,
-              enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     auto store(handler_type&&, Func&& f, const T& val)
         -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
                     void())
@@ -148,25 +151,29 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
         handler_type::store(*this, std::forward<Func>(f), val);
     }
 
-    template <typename T, enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_begin(const T& val)
     {
         handler_type::begin(*this, val);
     }
 
-    template <typename T, enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_end(const T& val)
     {
         handler_type::end(*this, val);
     }
 
-    template <typename T, enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_begin(handler_type&&, const T& val)
     {
         handler_type::begin(*this, val);
     }
 
-    template <typename T, enable_if_t<(std::is_same<T, InpT>::value), int> = 0>
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_end(handler_type&&, const T& val)
     {
         handler_type::end(*this, val);

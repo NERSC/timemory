@@ -506,6 +506,7 @@ protected:
     bool    text_output    = settings::text_output() && file_output;
     bool    dart_output    = settings::dart_output();
     bool    plot_output    = settings::plot_output() && json_output;
+    bool    flame_output   = settings::flamegraph_output() && file_output;
     bool    node_init      = dmp::is_initialized();
     int32_t node_rank      = dmp::rank();
     int32_t node_size      = dmp::size();
@@ -575,11 +576,6 @@ struct print<Tp, true> : public base::print
         if(node_init && node_rank > 0)
             return;
 
-        if(cout_output)
-            print_cout(data_stream);
-        else
-            printf("\n");
-
         if(file_output)
         {
             if(json_output)
@@ -590,16 +586,16 @@ struct print<Tp, true> : public base::print
                 print_plot(json_outfname, "");
         }
 
+        if(cout_output)
+            print_cout(data_stream);
+        else
+            printf("\n");
+
         if(dart_output)
             print_dart();
 
         if(!node_input.empty() && !node_delta.empty() && settings::diff_output())
         {
-            if(cout_output)
-                print_cout(diff_stream);
-            else
-                printf("\n");
-
             if(file_output)
             {
                 if(json_output)
@@ -619,6 +615,11 @@ struct print<Tp, true> : public base::print
                     print_plot(json_diffname, ss.str());
                 }
             }
+
+            if(cout_output)
+                print_cout(diff_stream);
+            else
+                printf("\n");
         }
 
         print_custom();

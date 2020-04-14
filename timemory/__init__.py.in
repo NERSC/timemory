@@ -79,7 +79,7 @@ before BEFORE running Python
 if os.environ.get("TIMEMORY_CXX_PLOT_MODE", None) is not None:
 
     from . import mpi_support
-    from . import mpi_support as mpi
+    from . import mpi
     from . import roofline
     from .common import *
 
@@ -102,8 +102,9 @@ else:
         from . import plotting
         from . import roofline
         from . import mpi_support
-        from . import mpi_support as mpi
+        from . import mpi
         from . import util
+        from . import bundle
         from . import options
         from . import units
         from . import signals
@@ -118,6 +119,7 @@ else:
                    'mpi_support',
                    'plotting',
                    'roofline',
+                   'bundle',
                    'tests',
                    'util',
                    'ert',
@@ -181,7 +183,7 @@ else:
         traceback.print_exception(exc_type, exc_value, exc_traceback)
 
         from . import mpi_support
-        from . import mpi_support as mpi
+        from . import mpi
         from . import roofline
         from .common import *
 

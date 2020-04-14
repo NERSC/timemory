@@ -399,7 +399,7 @@ print<Tp, true>::update_data()
     }
 #endif
 
-    if(settings::flamegraph_output())
+    if(flame_output)
         operation::finalize::flamegraph<Tp>(data, label);
 }
 //
@@ -490,9 +490,6 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results,
             ofs << std::endl;
         ofs.close();
     }
-
-    // if(settings::flamegraph_output())
-    //    operation::finalize::flamegraph<Tp>(data, label);
 }
 //
 //--------------------------------------------------------------------------------------//

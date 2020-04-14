@@ -9,7 +9,7 @@ from mpi4py import MPI
 
 import timemory
 from timemory.profiler import profile
-from timemory.util import auto_timer
+from timemory.bundle import auto_timer
 
 import libex_python_bindings as ex_bindings
 

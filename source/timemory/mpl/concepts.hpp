@@ -203,6 +203,19 @@ struct compatible_wrappers
     using type = std::conditional_t<(value), true_type, false_type>;
 };
 
+//----------------------------------------------------------------------------------//
+
+template <typename Lhs, typename Rhs>
+struct is_acceptable_conversion
+{
+    static constexpr bool value =
+        (std::is_same<Lhs, Rhs>::value ||
+         (std::is_integral<Lhs>::value && std::is_integral<Rhs>::value) ||
+         (std::is_floating_point<Lhs>::value && std::is_floating_point<Rhs>::value));
+};
+
+//----------------------------------------------------------------------------------//
+
 }  // namespace concepts
 
 template <typename T>
@@ -219,6 +232,8 @@ using is_stack_wrapper_t = typename concepts ::is_stack_wrapper<T>::type;
 
 template <typename T>
 using is_heap_wrapper_t = typename concepts ::is_heap_wrapper<T>::type;
+
+//----------------------------------------------------------------------------------//
 
 }  // namespace tim
 

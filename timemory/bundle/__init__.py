@@ -46,5 +46,4 @@ __all__ = ['util',
            'marker',
            'auto_tuple']
 
-from . import util
-from .util import *
+from ..util import *

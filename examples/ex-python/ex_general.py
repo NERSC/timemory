@@ -4,7 +4,7 @@ import sys
 import json
 import timemory
 from timemory.profiler import profile
-from timemory.util import auto_timer, auto_tuple
+from timemory.bundle import auto_timer, auto_tuple, marker
 
 def get_config(items=["wall_clock", "cpu_clock"]):
     return [getattr(timemory.component, x) for x in items]
@@ -24,8 +24,8 @@ def run_auto_timer(n):
     with auto_timer(key="auto_timer_ctx_manager"):
         fib(n)
 
-@auto_tuple(get_config())
-def run_auto_timer(n):
+@marker(["wall_clock", "peak_rss"])
+def run_marker(n):
     ''' Decorator and context manager for high-level custom collection '''
     fib(n)
     with auto_tuple(get_config(), key="auto_tuple_ctx_manager"):
@@ -36,9 +36,11 @@ if __name__ == "__main__":
 
     run_profile(n)
     run_auto_timer(n)
-    run_auto_tuple(n)
+    run_marker(n)
 
-    data = timemory.get() ''' Get the results as dictionary '''
+    # Get the results as dictionary
+    data = timemory.get()
 
     print("\n{}".format(json.dumps(data, indent=4, sort_keys=True)))
-    timemory.finalize() ''' Generate output '''
+    # Generate output
+    timemory.finalize()

@@ -269,7 +269,7 @@ roi.stop();
 ```python
 from timemory.util import marker
 
-with marker("MY_REGION_OF_INTEREST", [timemory.component.papi_vector]):
+with marker(["papi_vector"], key="MY_REGION_OF_INTEREST"):
     #
     # do something in region of interest...
     #
