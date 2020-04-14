@@ -447,20 +447,24 @@ if(MPI_FOUND)
         endforeach()
         unset(_FLAGS)
 
+        option(TIMEMORY_USE_MPI_LINK_FLAGS "Use MPI link flags" ON)
+        mark_as_advanced(TIMEMORY_USE_MPI_LINK_FLAGS)
         # compile flags
-        to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
-        foreach(_FLAG ${_FLAGS})
-            if(EXISTS "${_FLAG}" AND IS_DIRECTORY "${_FLAG}")
-                continue()
-            endif()
-            if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-                target_link_options(timemory-mpi INTERFACE
-                    $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-            else()
-                set_target_properties(timemory-mpi PROPERTIES
-                    INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-            endif()
-        endforeach()
+        if(TIMEMORY_USE_MPI_LINK_FLAGS)
+            to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
+            foreach(_FLAG ${_FLAGS})
+                if(EXISTS "${_FLAG}" AND IS_DIRECTORY "${_FLAG}")
+                    continue()
+                endif()
+                if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+                    target_link_options(timemory-mpi INTERFACE
+                        $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                else()
+                    set_target_properties(timemory-mpi PROPERTIES
+                        INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                endif()
+            endforeach()
+        endif()
         unset(_FLAGS)
 
     endforeach()
