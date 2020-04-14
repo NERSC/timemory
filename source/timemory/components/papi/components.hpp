@@ -116,6 +116,8 @@ struct papi_vector
         static thread_local bool _working    = false;
         if(!_initalized)
         {
+            if(settings::debug() || settings::verbose() > 2)
+                PRINT_HERE("%s", "Initializing papi");
             papi::init();
             papi::register_thread();
             _initalized = true;
@@ -156,6 +158,18 @@ struct papi_vector
 
             vector_t<string_t> events_str_list = delimit(events_str);
             vector_t<int>      events_list;
+
+            auto pevents = private_events();
+            if(pevents)
+            {
+                for(auto itr = pevents->begin(); itr != pevents->end(); ++itr)
+                {
+                    auto fitr = std::find(events_list.begin(), events_list.end(), *itr);
+                    if(fitr == events_list.end())
+                        events_list.push_back(*itr);
+                }
+            }
+
             for(const auto& itr : events_str_list)
             {
                 if(itr.length() == 0)
@@ -181,23 +195,19 @@ struct papi_vector
                         std::find(events_list.begin(), events_list.end(), evt_code);
                     if(fitr == events_list.end())
                     {
-                        if(settings::debug())
+                        if(settings::debug() || settings::verbose() > 1)
                             printf("[papi_vector] Successfully created event '%s' with "
                                    "code '%i'...\n",
                                    itr.c_str(), evt_code);
                         events_list.push_back(evt_code);
                     }
-                }
-            }
-
-            auto pevents = private_events();
-            if(pevents)
-            {
-                for(auto itr = pevents->begin(); itr != pevents->end(); ++itr)
-                {
-                    auto fitr = std::find(events_list.begin(), events_list.end(), *itr);
-                    if(fitr == events_list.end())
-                        events_list.push_back(*itr);
+                    else
+                    {
+                        if(settings::debug() || settings::verbose() > 1)
+                            printf("[papi_vector] Event '%s' with code '%i' already "
+                                   "exists...\n",
+                                   itr.c_str(), evt_code);
+                    }
                 }
             }
 
@@ -211,6 +221,8 @@ struct papi_vector
     static event_list get_events()
     {
         static event_list _instance = get_initializer()();
+        if(_instance.empty())
+            _instance = get_initializer()();
         return _instance;
     }
 
@@ -218,12 +230,15 @@ struct papi_vector
 
     static void configure()
     {
-        DEBUG_PRINT_HERE("%s", "configuring papi_vector");
         if(!is_configured() && initialize_papi())
         {
+            if(settings::debug() || settings::verbose() > 1)
+                PRINT_HERE("%s", "configuring papi_vector");
+
             auto events = get_events();
             if(events.size() > 0)
             {
+                is_configured() = true;
                 papi::create_event_set(&_event_set(), settings::papi_multiplexing());
                 papi::add_events(_event_set(), events.data(), events.size());
                 if(settings::papi_overflow() > 0)
@@ -235,7 +250,6 @@ struct papi_vector
                 if(settings::papi_attach())
                     papi::attach(_event_set(), process::get_target_id());
                 papi::start(_event_set());
-                is_configured() = true;
             }
         }
     }
@@ -244,7 +258,8 @@ struct papi_vector
 
     static void thread_init(storage_type*)
     {
-        DEBUG_PRINT_HERE("%s", "thread initialization of papi_vector");
+        if(settings::debug() || settings::verbose() > 2)
+            PRINT_HERE("%s", "thread initialization of papi_vector");
         configure();
     }
 
@@ -315,7 +330,11 @@ struct papi_vector
     void start()
     {
         if(tracker_type::get_thread_started() == 0)
-            papi::reset(_event_set());
+        {
+            configure();
+            if(_event_set() != PAPI_NULL)
+                papi::reset(_event_set());
+        }
 
         tracker_type::start();
         set_started();

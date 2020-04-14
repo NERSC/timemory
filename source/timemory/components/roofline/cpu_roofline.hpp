@@ -242,19 +242,36 @@ struct cpu_roofline
 
     //----------------------------------------------------------------------------------//
 
+    static void configure()
+    {
+        if(!is_configured())
+        {
+            if(settings::debug() || settings::verbose() > 1)
+                DEBUG_PRINT_HERE("%s", "configuring cpu_roofline");
+
+            is_configured() = true;
+            for(auto itr : get_events())
+                papi_vector::add_event(itr);
+            papi_vector::configure();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
     static void global_init(storage_type*)
     {
-        DEBUG_PRINT_HERE("%s", "adding events to papi_vector");
-        for(auto itr : get_events())
-            papi_vector::add_event(itr);
+        if(settings::debug() || settings::verbose() > 2)
+            PRINT_HERE("%s", "global initialization of cpu_roofline");
+        configure();
     }
 
     //----------------------------------------------------------------------------------//
 
     static void thread_init(storage_type*)
     {
-        DEBUG_PRINT_HERE("%s", "thread initialization of cpu_roofline");
-        papi_vector::configure();
+        if(settings::debug() || settings::verbose() > 2)
+            PRINT_HERE("%s", "thread initialization of cpu_roofline");
+        configure();
     }
 
     //----------------------------------------------------------------------------------//
@@ -279,7 +296,7 @@ struct cpu_roofline
             auto ert_config = get_finalizer();
             auto ert_data   = get_ert_data();
             apply<void>::access<ert_executor_t>(ert_config, ert_data);
-            if(ert_data && (settings::verbose() > 0 || settings::debug()))
+            if(ert_data && (settings::verbose() > 1 || settings::debug()))
                 std::cout << *(ert_data) << std::endl;
         }
     }
@@ -604,6 +621,15 @@ public:
     //----------------------------------------------------------------------------------//
 
     static void cleanup() {}
+
+private:
+    //----------------------------------------------------------------------------------//
+
+    static bool& is_configured()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
 };
 
 //--------------------------------------------------------------------------------------//

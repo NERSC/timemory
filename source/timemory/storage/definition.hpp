@@ -759,6 +759,14 @@ storage<Type, true>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        auto _label = Type::label();
+        for(auto& itr : _label)
+            itr = toupper(itr);
+        std::stringstream env_var;
+        env_var << "TIMEMORY_" << _label << "_ENABLED";
+        auto _enabled = tim::get_env<bool>(env_var.str(), true);
+        trait::runtime_enabled<Type>::set(_enabled);
+
         m_manager         = tim::manager::instance();
         bool   _is_master = singleton_t::is_master(this);
         auto   _cleanup   = [&]() {};
@@ -944,6 +952,14 @@ storage<Type, false>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        auto _label = Type::label();
+        for(auto& itr : _label)
+            itr = toupper(itr);
+        std::stringstream env_var;
+        env_var << "TIMEMORY_" << _label << "_ENABLED";
+        auto _enabled = tim::get_env<bool>(env_var.str(), true);
+        trait::runtime_enabled<Type>::set(_enabled);
+
         m_manager         = tim::manager::instance();
         bool   _is_master = singleton_t::is_master(this);
         auto   _cleanup   = [&]() {};
