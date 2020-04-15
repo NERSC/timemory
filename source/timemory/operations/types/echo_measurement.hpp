@@ -263,9 +263,6 @@ struct echo_measurement<Tp, true> : public common_utils
                           int>                           = 0>
     echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
-        if(!trait::runtime_enabled<Tp>::get())
-            return;
-
         auto prefix = generate_prefix(hierarchy);
         auto _unit  = type::get_display_unit();
         auto name   = generate_name(prefix, _unit);
@@ -287,9 +284,6 @@ struct echo_measurement<Tp, true> : public common_utils
                           int>                           = 0>
     echo_measurement(Up& obj, const strvec_t& hierarchy)
     {
-        if(!trait::runtime_enabled<Tp>::get())
-            return;
-
         auto prefix = generate_prefix(hierarchy);
         auto _data  = obj.get();
 

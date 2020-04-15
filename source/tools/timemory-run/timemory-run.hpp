@@ -83,6 +83,7 @@ static int         expectError        = NO_ERROR;
 static int         debugPrint         = 0;
 static int         binaryRewrite      = 0;  /* by default, it is turned off */
 static int         errorPrint         = 0;  // external "dyninst" tracing
+static int         verboseLevel       = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
 static bool        loop_level_instr   = false;
 static bool        werror             = false;
 static bool        stl_func_instr     = false;
@@ -114,7 +115,12 @@ static std::vector<std::string> collection_paths = { "collections", "tools/colle
 
 // control debug printf statements
 #define dprintf(...)                                                                     \
-    if(debugPrint)                                                                       \
+    if(debugPrint || verboseLevel > 0)                                                   \
+        fprintf(stderr, __VA_ARGS__);
+
+// control verbose printf statements
+#define verbprintf(LEVEL, ...)                                                           \
+    if(verboseLevel >= LEVEL)                                                            \
         fprintf(stderr, __VA_ARGS__);
 
 //======================================================================================//
@@ -134,7 +140,7 @@ extern "C"
     bool instrument_entity(const string_t& function_name);
     int  module_constraint(char* fname);
     int  routine_constraint(const char* fname);
-    bool check_project_source_file_for_instrumentation(const string_t& fname);
+    bool check_if_timemory_source_file(const string_t& fname);
 }
 
 //======================================================================================//

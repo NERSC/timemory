@@ -29,7 +29,7 @@
 #include <string>
 
 bool
-check_project_source_file_for_instrumentation(const std::string& fname)
+check_if_timemory_source_file(const std::string& fname)
 {
     // clang-format off
     //

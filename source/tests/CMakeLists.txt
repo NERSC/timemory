@@ -73,8 +73,7 @@ add_timemory_google_test(data_tracker_tests
     DISCOVER_TESTS
     SOURCES         data_tracker_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
-                    timemory-plotting timemory-analysis-tools
-                    ${_LIBRARY})
+                    timemory-plotting timemory-analysis-tools)
 
 add_timemory_google_test(threading_tests
     DISCOVER_TESTS

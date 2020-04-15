@@ -1,4 +1,8 @@
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
+
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-run
 #
