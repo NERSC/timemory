@@ -790,10 +790,6 @@ PYBIND11_MODULE(libpytimemory, tim)
                        (unsigned long) fsize, (unsigned long) isize,
                        (unsigned long) components.size());
         }
-
-        std::cout << "TYPEIDS: \n";
-        for(auto itr : pybundle_t::get_typeids())
-            std::cout << itr << std::endl;
     };
 
     pybundle_t::global_init(nullptr);
