@@ -92,11 +92,11 @@ build_script:
   - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
   - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
   - ls
-  # - .\outputs\runtime\%CONFIG%\ex_cxx_basic.exe
-  # - .\outputs\runtime\%CONFIG%\ex_optional_on.exe
   - .\outputs\runtime\%CONFIG%\ex_optional_off.exe
-  # - .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe
-  # - .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe
-  # - .\outputs\runtime\%CONFIG%\ex_c_minimal.exe
-  # - .\outputs\runtime\%CONFIG%\ex_c_minimal_library.exe
-  # - .\outputs\runtime\%CONFIG%\ex_c_timing.exe
+  - .\outputs\runtime\%CONFIG%\ex_cxx_basic.exe & exit 0
+  - .\outputs\runtime\%CONFIG%\ex_optional_on.exe & exit 0
+  - .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe & exit 0
+  - .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe & exit 0
+  - .\outputs\runtime\%CONFIG%\ex_c_minimal.exe & exit 0
+  - .\outputs\runtime\%CONFIG%\ex_c_minimal_library.exe & exit 0
+  - .\outputs\runtime\%CONFIG%\ex_c_timing.exe & exit 0
