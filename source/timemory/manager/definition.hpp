@@ -278,6 +278,18 @@ manager::exit_hook()
 //----------------------------------------------------------------------------------//
 //
 TIMEMORY_MANAGER_LINKAGE(void)
+manager::update_metadata_prefix()
+{
+    auto _settings = f_settings();
+    if(!_settings)
+        return;
+    auto _outp_prefix = _settings->get_output_prefix();
+    m_metadata_prefix = _outp_prefix;
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
 manager::write_metadata(const char* context)
 {
     if(m_rank != 0)
@@ -545,6 +557,16 @@ extern "C"
         auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
         if(!library_ctor)
             return;
+
+        auto       ld_preload   = tim::get_env<std::string>("LD_PRELOAD", "");
+        auto       dyld_preload = tim::get_env<std::string>("DYLD_INSERT_LIBRARIES", "");
+        std::regex lib_regex("libtimemory");
+        if(std::regex_search(ld_preload, lib_regex) ||
+           std::regex_search(dyld_preload, lib_regex))
+        {
+            tim::set_env("TIMEMORY_LIBRARY_CTOR", "OFF", 1);
+            return;
+        }
 
         auto _debug   = tim::settings::debug();
         auto _verbose = tim::settings::verbose();

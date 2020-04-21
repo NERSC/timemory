@@ -55,19 +55,18 @@ struct record
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(record)
 
+    record(type& obj, const type& rhs);
+
     template <typename T                                       = type, typename... Args,
               enable_if_t<(check_record_type<T>::value), char> = 0>
-    explicit record(base_type& obj, Args&&... args);
-
-    record(type& obj, const type& rhs);
+    explicit record(T& obj, Args&&... args);
 
     template <typename T                                        = type, typename... Args,
               enable_if_t<!(check_record_type<T>::value), char> = 0>
-    explicit record(base_type&, Args&&...);
+    explicit record(T&, Args&&...);
 
 private:
     //  satisfies mpl condition and accepts arguments
@@ -127,17 +126,6 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename T, typename... Args, enable_if_t<(check_record_type<T>::value), char>>
-record<Tp>::record(base_type& obj, Args&&... args)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-    sfinae<type, value_type>(obj, 0, 0, std::forward<Args>(args)...);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
 record<Tp>::record(type& obj, const type& rhs)
 {
     if(!trait::runtime_enabled<type>::get())
@@ -148,8 +136,19 @@ record<Tp>::record(type& obj, const type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
+template <typename T, typename... Args, enable_if_t<(check_record_type<T>::value), char>>
+record<Tp>::record(T& obj, Args&&... args)
+{
+    if(!trait::runtime_enabled<type>::get())
+        return;
+    sfinae<type, value_type>(obj, 0, 0, std::forward<Args>(args)...);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
 template <typename T, typename... Args, enable_if_t<!(check_record_type<T>::value), char>>
-record<Tp>::record(base_type&, Args&&...)
+record<Tp>::record(T&, Args&&...)
 {}
 //
 //--------------------------------------------------------------------------------------//

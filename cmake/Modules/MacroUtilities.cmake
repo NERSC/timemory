@@ -634,6 +634,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         target_link_libraries(${TARGET_NAME} PRIVATE
             timemory-compile-options
             timemory-develop-options
+            timemory-default-visibility
             ${_ANALYSIS_TOOLS}
             ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})
@@ -670,6 +671,8 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             EXPORT      ${PROJECT_NAME}-library-depends)
 
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_TARGETS ${TARGET_NAME})
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_INTERMEDIATE_${UPP_LINK}_TARGETS
+            ${TARGET_NAME})
 
     endforeach()
 

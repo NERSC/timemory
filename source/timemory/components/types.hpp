@@ -33,15 +33,15 @@
 
 #pragma once
 
-#include <cstdint>
-#include <iostream>
-#include <string>
-#include <type_traits>
-
 #include "timemory/api.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/components/skeletons.hpp"
 #include "timemory/utility/types.hpp"
+
+#include <cstdint>
+#include <iostream>
+#include <string>
+#include <type_traits>
 
 //======================================================================================//
 //

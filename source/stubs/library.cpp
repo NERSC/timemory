@@ -93,6 +93,7 @@ extern "C"
     void timemory_pop_trace(const char*) {}
     void timemory_trace_init(const char*) {}
     void timemory_trace_finalize(void) {}
+    void timemory_trace_set_mpi(bool) {}
 
     void     timemory_create_record_(const char*, uint64_t*, int, int*) {}
     void     timemory_delete_record_(uint64_t) {}

@@ -52,6 +52,10 @@
 #    define TIMEMORY_DECL extern tim_dll
 #endif
 
+#if defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_GOTCHA)
+#    define TIMEMORY_MPI_GOTCHA
+#endif
+
 //======================================================================================//
 //
 //      C struct for settings
@@ -82,64 +86,98 @@ extern "C"
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 
-    TIMEMORY_DECL timemory_create_func_t timemory_create_function;
-    TIMEMORY_DECL timemory_delete_func_t timemory_delete_function;
+    TIMEMORY_DECL timemory_create_func_t timemory_create_function
+                                         TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL timemory_delete_func_t timemory_delete_function
+                                         TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void        c_timemory_init(int argc, char** argv, timemory_settings);
-    TIMEMORY_DECL void        c_timemory_finalize(void);
-    TIMEMORY_DECL int         c_timemory_enabled(void);
-    TIMEMORY_DECL void*       c_timemory_create_auto_timer(const char*);
-    TIMEMORY_DECL void        c_timemory_delete_auto_timer(void*);
-    TIMEMORY_DECL void*       c_timemory_create_auto_tuple(const char*, ...);
-    TIMEMORY_DECL void        c_timemory_delete_auto_tuple(void*);
-    TIMEMORY_DECL const char* c_timemory_blank_label(const char*);
-    TIMEMORY_DECL const char* c_timemory_basic_label(const char*, const char*);
-    TIMEMORY_DECL const char* c_timemory_label(const char*, const char*, int,
-                                               const char*);
+    TIMEMORY_DECL void c_timemory_init(int argc, char** argv, timemory_settings)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void  c_timemory_finalize(void) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL int   c_timemory_enabled(void) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void* c_timemory_create_auto_timer(const char*)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void c_timemory_delete_auto_timer(void*) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void* c_timemory_create_auto_tuple(const char*, ...)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void c_timemory_delete_auto_tuple(void*) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL const char* c_timemory_blank_label(const char*)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL const char* c_timemory_basic_label(const char*, const char*)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL const char* c_timemory_label(const char*, const char*, int, const char*)
+        TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void  cxx_timemory_init(int, char**, timemory_settings);
-    TIMEMORY_DECL int   cxx_timemory_enabled(void);
-    TIMEMORY_DECL void* cxx_timemory_create_auto_timer(const char*);
-    TIMEMORY_DECL void* cxx_timemory_create_auto_tuple(const char*, int, const int*);
-    TIMEMORY_DECL void* cxx_timemory_delete_auto_timer(void*);
-    TIMEMORY_DECL void* cxx_timemory_delete_auto_tuple(void*);
+    TIMEMORY_DECL void cxx_timemory_init(int, char**, timemory_settings)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL int   cxx_timemory_enabled(void) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void* cxx_timemory_create_auto_timer(const char*)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void* cxx_timemory_create_auto_tuple(const char*, int, const int*)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void* cxx_timemory_delete_auto_timer(void*)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void* cxx_timemory_delete_auto_tuple(void*)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL const char* cxx_timemory_label(int, int, const char*, const char*,
-                                                 const char*);
+                                                 const char*)
+        TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL uint64_t timemory_get_unique_id(void);
+    TIMEMORY_DECL uint64_t timemory_get_unique_id(void) TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void     timemory_create_record(const char* name, uint64_t* id, int n,
-                                                  int* ct);
-    TIMEMORY_DECL void     timemory_delete_record(uint64_t nid);
-    TIMEMORY_DECL void     timemory_init_library(int argc, char** argv);
-    TIMEMORY_DECL void     timemory_finalize_library(void);
+                                                  int* ct) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void     timemory_delete_record(uint64_t nid)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_init_library(int argc, char** argv)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_finalize_library(void) TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void timemory_pause(void);
-    TIMEMORY_DECL void timemory_resume(void);
+    TIMEMORY_DECL void timemory_pause(void) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_resume(void) TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void timemory_set_default(const char* components);
-    TIMEMORY_DECL void timemory_push_components(const char* components);
-    TIMEMORY_DECL void timemory_push_components_enum(int args, ...);
-    TIMEMORY_DECL void timemory_pop_components(void);
+    TIMEMORY_DECL void timemory_set_default(const char* components)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_push_components(const char* components)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_push_components_enum(int args, ...)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_pop_components(void) TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void timemory_begin_record(const char* name, uint64_t* id);
-    TIMEMORY_DECL void timemory_begin_record_enum(const char* name, uint64_t*, ...);
+    TIMEMORY_DECL void timemory_begin_record(const char* name, uint64_t* id)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_begin_record_enum(const char* name, uint64_t*, ...)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_begin_record_types(const char* name, uint64_t*,
-                                                   const char*);
+                                                   const char*)
+        TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL uint64_t timemory_get_begin_record(const char* name);
-    TIMEMORY_DECL uint64_t timemory_get_begin_record_enum(const char* name, ...);
+    TIMEMORY_DECL uint64_t timemory_get_begin_record(const char* name)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL uint64_t timemory_get_begin_record_enum(const char* name, ...)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL uint64_t timemory_get_begin_record_types(const char* name,
-                                                           const char* ctypes);
+                                                           const char* ctypes)
+        TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void timemory_end_record(uint64_t id);
+    TIMEMORY_DECL void timemory_end_record(uint64_t id) TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void timemory_push_region(const char* name);
-    TIMEMORY_DECL void timemory_pop_region(const char* name);
+    TIMEMORY_DECL void timemory_push_region(const char* name)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_pop_region(const char* name)
+        TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void timemory_push_trace(const char* name);
-    TIMEMORY_DECL void timemory_pop_trace(const char* name);
-    TIMEMORY_DECL void timemory_trace_init(const char*);
-    TIMEMORY_DECL void timemory_trace_finalize(void);
+    TIMEMORY_DECL void timemory_push_trace(const char* name)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_pop_trace(const char* name)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_trace_init(const char*) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_trace_finalize(void) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_trace_set_env(const char*, const char*)
+        TIMEMORY_VISIBILITY("default");
+
+#if defined(TIMEMORY_MPI_GOTCHA)
+    TIMEMORY_DECL void timemory_trace_set_mpi(bool use) TIMEMORY_VISIBILITY("default");
+#endif
 
 #if defined(__cplusplus)
 }

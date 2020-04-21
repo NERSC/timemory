@@ -233,7 +233,11 @@ settings::parse()
         return;
 
     for(auto& itr : get_parse_callbacks())
-        itr();
+    {
+        if(settings::debug() && settings::verbose() > 0)
+            std::cerr << "Executing parse callback for: " << itr.first << std::endl;
+        itr.second();
+    }
 }
 //
 //----------------------------------------------------------------------------------//

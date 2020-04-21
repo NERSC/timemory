@@ -56,7 +56,6 @@ struct base_printer : public common_utils
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
     using widths_t   = std::vector<int64_t>;
 
     template <typename Up                                        = value_type,

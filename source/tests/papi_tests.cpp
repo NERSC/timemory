@@ -71,8 +71,8 @@ using return_type = std::tuple<ptr_t<Tp>, int64_t, int64_t>;
 namespace details
 {
 //--------------------------------------------------------------------------------------//
-template <typename Tp, int64_t _Unroll, typename _Component, typename... ArgsT>
-return_type<_Component>
+template <typename Tp, int64_t Nunroll, typename ComponentT, typename... ArgsT>
+return_type<ComponentT>
 run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
 {
     // auto op_func = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
@@ -83,7 +83,7 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
     auto cpubit_factor       = 8 / sizeof(Tp);
     auto mem_access_per_elem = 2;
 
-    int64_t nops         = _Unroll;
+    int64_t nops         = Nunroll;
     int64_t working_size = nsize * ntrials;
     int64_t total_bytes  = working_size * bytes_per_elem * mem_access_per_elem;
     int64_t total_lst    = total_bytes / lst_per_vec * cpubit_factor;
@@ -104,17 +104,17 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
     std::vector<Tp, tim::ert::aligned_allocator<Tp, 64>> array(nsize);
     std::memset(array.data(), 0, nsize * sizeof(Tp));
 
-    _Component::thread_init(nullptr);
+    ComponentT::thread_init(nullptr);
 
-    using pointer = ptr_t<_Component>;
-    pointer obj   = pointer(new _Component(std::forward<ArgsT>(_args)...));
+    using pointer = ptr_t<ComponentT>;
+    pointer obj   = pointer(new ComponentT(std::forward<ArgsT>(_args)...));
 
     obj->start();
-    tim::ert::ops_kernel<_Unroll, device_t>(ntrials, nsize, array.data(), op_func,
+    tim::ert::ops_kernel<Nunroll, device_t>(ntrials, nsize, array.data(), op_func,
                                             store_func);
     obj->stop();
 
-    _Component::thread_finalize(nullptr);
+    ComponentT::thread_finalize(nullptr);
 
     // return zeros if not working
     if(!tim::papi::working())
@@ -122,9 +122,9 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
         std::cout << "\n\nPAPI is not working so returning zeros instead of total_ops = "
                   << total_ops << " and total_lst = " << total_lst << "\n\n"
                   << std::endl;
-        return return_type<_Component>(obj, 0, 0);
+        return return_type<ComponentT>(obj, 0, 0);
     }
-    return return_type<_Component>(obj, total_ops, total_lst);
+    return return_type<ComponentT>(obj, total_ops, total_lst);
 }
 //--------------------------------------------------------------------------------------//
 inline std::string

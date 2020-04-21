@@ -59,7 +59,6 @@ struct mark_begin
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(mark_begin)
 
@@ -103,7 +102,6 @@ struct mark_end
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(mark_end)
 

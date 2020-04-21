@@ -48,11 +48,11 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 
 template <template <typename...> class CompList, typename... CompTypes,
-          typename _EnumT = int>
+          typename EnumT = int>
 inline void
-initialize(CompList<CompTypes...>& obj, std::initializer_list<_EnumT> components)
+initialize(CompList<CompTypes...>& obj, std::initializer_list<EnumT> components)
 {
-    initialize(obj, std::vector<_EnumT>(components));
+    initialize(obj, std::vector<EnumT>(components));
 }
 
 //--------------------------------------------------------------------------------------//

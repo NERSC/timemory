@@ -57,7 +57,6 @@ struct print_storage
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     //----------------------------------------------------------------------------------//
     // only if components are available

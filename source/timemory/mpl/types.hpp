@@ -33,16 +33,16 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/utility/types.hpp"
+
 #include <cstdint>
 #include <functional>
 #include <iostream>
 #include <string>
 #include <type_traits>
 #include <vector>
-
-#include "timemory/api.hpp"
-#include "timemory/mpl/concepts.hpp"
-#include "timemory/utility/types.hpp"
 
 //======================================================================================//
 //
@@ -221,7 +221,7 @@ namespace policy
 template <typename T, bool WithThreads = true>
 struct instance_tracker;
 
-template <typename _Comp, typename T = typename trait::statistics<_Comp>::type>
+template <typename CompT, typename T = typename trait::statistics<CompT>::type>
 struct record_statistics;
 
 template <typename Archive, typename Api = api::native_tag>

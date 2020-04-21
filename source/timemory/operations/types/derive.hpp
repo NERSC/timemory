@@ -93,7 +93,6 @@ struct derive
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     using derived_tuple_t                   = typename trait::derivation_types<Tp>::type;
     static constexpr size_t derived_tuple_v = std::tuple_size<derived_tuple_t>::value;

@@ -399,18 +399,18 @@ auto_hybrid<CompTuple, CompList>::~auto_hybrid()
 
 //======================================================================================//
 
-template <typename _Tuple, typename _List>
+template <typename TupleT, typename ListT>
 auto
-get(const auto_hybrid<_Tuple, _List>& _obj)
+get(const auto_hybrid<TupleT, ListT>& _obj)
 {
     return get(_obj.get_component());
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tuple, typename _List>
+template <typename TupleT, typename ListT>
 auto
-get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
+get_labeled(const auto_hybrid<TupleT, ListT>& _obj)
 {
     return get_labeled(_obj.get_component());
 }

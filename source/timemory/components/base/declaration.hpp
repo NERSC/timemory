@@ -335,20 +335,20 @@ public:
     static const short    width             = (percent_units_v) ? 6 : 8;
     static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
 
-    template <typename Up = Type, typename _Unit = typename trait::units<Up>::type,
-              enable_if_t<(std::is_same<_Unit, int64_t>::value), int> = 0>
+    template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
+              enable_if_t<(std::is_same<UnitT, int64_t>::value), int> = 0>
     static int64_t unit();
 
-    template <typename Up = Type, typename _Unit = typename Up::display_unit_type,
-              enable_if_t<(std::is_same<_Unit, std::string>::value), int> = 0>
+    template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
+              enable_if_t<(std::is_same<UnitT, std::string>::value), int> = 0>
     static std::string display_unit();
 
-    template <typename Up = Type, typename _Unit = typename trait::units<Up>::type,
-              enable_if_t<(std::is_same<_Unit, int64_t>::value), int> = 0>
+    template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
+              enable_if_t<(std::is_same<UnitT, int64_t>::value), int> = 0>
     static int64_t get_unit();
 
-    template <typename Up = Type, typename _Unit = typename Up::display_unit_type,
-              enable_if_t<(std::is_same<_Unit, std::string>::value), int> = 0>
+    template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
+              enable_if_t<(std::is_same<UnitT, std::string>::value), int> = 0>
 
     static std::string             get_display_unit();
     static short                   get_width();

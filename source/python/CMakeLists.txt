@@ -41,6 +41,7 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-external-shared
     timemory-python-compile-options
     timemory-mpip-library
+    timemory-ompt-library
     PRIVATE pybind11::module)
 
 if(TIMEMORY_USE_CUDA)
@@ -58,8 +59,8 @@ set_target_properties(libpytimemory PROPERTIES
     ${EXTRA_PROPERTIES})
 
 if(UNIX AND NOT APPLE)
-    set_target_properties(libpytimemory PROPERTIES
-        INSTALL_RPATH "\$ORIGIN/../../..:\$ORIGIN/../../../timemory:\$ORIGIN")
+    set_target_properties(libpytimemory PROPERTIES INSTALL_RPATH
+        "\$ORIGIN/../../..:\$ORIGIN/../../../timemory:\$ORIGIN:${CMAKE_INSTALL_RPATH}")
 endif()
 
 set(PYTHON_SUBMODULE_FOLDERS

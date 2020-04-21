@@ -338,8 +338,8 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Archive>
-    static void extra_serialization(_Archive& ar, const unsigned int)
+    template <typename Archive>
+    static void extra_serialization(Archive& ar, const unsigned int)
     {
         auto& _ert_data = get_ert_data();
         if(!_ert_data.get())  // for input

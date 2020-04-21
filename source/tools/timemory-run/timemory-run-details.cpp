@@ -61,9 +61,9 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
     unsigned long baseAddr = (unsigned long) (*loopStartInst)[0]->getAddress();
     unsigned long lastAddr =
         (unsigned long) (*loopExitInst)[loopExitInst->size() - 1]->getAddress();
-    dprintf("Loop: size of lastAddr = %lu: baseAddr = %lu, lastAddr = %lu\n",
-            (unsigned long) loopExitInst->size(), (unsigned long) baseAddr,
-            (unsigned long) lastAddr);
+    verbprintf(0, "Loop: size of lastAddr = %lu: baseAddr = %lu, lastAddr = %lu\n",
+               (unsigned long) loopExitInst->size(), (unsigned long) baseAddr,
+               (unsigned long) lastAddr);
 
     f->getName(fname, 1024);
 
@@ -99,7 +99,7 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
         // perfect solution, but we will work with the Dyninst team to find something
         // better.
         bool info2 = mutateeImage->getSourceLines((unsigned long) lastAddr, linesEnd);
-        dprintf("size of linesEnd = %lu\n", (unsigned long) linesEnd.size());
+        verbprintf(0, "size of linesEnd = %lu\n", (unsigned long) linesEnd.size());
 
         if(info2)
         {
@@ -226,7 +226,7 @@ find_function(BPatch_image* appImage, const char* functionName)
         appImage->findFunction(functionName, found_funcs, false, true, true)) ||
        !found_funcs.size())
     {
-        dprintf("timemory-run: Unable to find function %s\n", functionName);
+        verbprintf(0, "timemory-run: Unable to find function %s\n", functionName);
         return nullptr;
     }
     return found_funcs[0];

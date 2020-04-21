@@ -119,8 +119,8 @@ stop_profiler(uint64_t kernid)
 //  call this function if KokkosUserBundle is listed as one of the tools
 //  (long compile times)
 //
-template <typename _Tuple,
-          enable_if_t<(tim::is_one_of<KokkosUserBundle, _Tuple>::value), int> = 0>
+template <typename TupleT,
+          enable_if_t<(tim::is_one_of<KokkosUserBundle, TupleT>::value), int> = 0>
 static void
 configure(const std::vector<TIMEMORY_COMPONENT>& components)
 {
@@ -131,8 +131,8 @@ configure(const std::vector<TIMEMORY_COMPONENT>& components)
 //  call this function if KokkosUserBundle is NOT listed as one of the tools
 //  (drastically reduces compile times)
 //
-template <typename _Tuple,
-          enable_if_t<!(tim::is_one_of<KokkosUserBundle, _Tuple>::value), int> = 0>
+template <typename TupleT,
+          enable_if_t<!(tim::is_one_of<KokkosUserBundle, TupleT>::value), int> = 0>
 static void
 configure(const std::vector<TIMEMORY_COMPONENT>&)
 {}

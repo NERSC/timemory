@@ -262,16 +262,16 @@ private:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive, size_t... Idx>
-    void _save(_Archive& ar, const value_type& _tuple, index_sequence<Idx...>) const
+    template <typename Archive, size_t... Idx>
+    void _save(Archive& ar, const value_type& _tuple, index_sequence<Idx...>) const
     {
         ar(cereal::make_nvp(std::get<Idx>(m_labels), std::get<Idx>(_tuple))...);
     }
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive, size_t... Idx>
-    void _load(_Archive& ar, value_type& _tuple, index_sequence<Idx...>)
+    template <typename Archive, size_t... Idx>
+    void _load(Archive& ar, value_type& _tuple, index_sequence<Idx...>)
     {
         ar(cereal::make_nvp(std::get<Idx>(m_labels), std::get<Idx>(_tuple))...);
     }
@@ -283,12 +283,12 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename DeviceT, typename Tp, typename _Intp = int32_t,
+template <typename DeviceT, typename Tp, typename Intp = int32_t,
           device::enable_if_cpu_t<DeviceT> = 0>
 void
-initialize_buffer(Tp* A, const Tp& value, const _Intp& nsize)
+initialize_buffer(Tp* A, const Tp& value, const Intp& nsize)
 {
-    auto range = device::grid_strided_range<DeviceT, 0, _Intp>(nsize);
+    auto range = device::grid_strided_range<DeviceT, 0, Intp>(nsize);
     for(auto i = range.begin(); i < range.end(); i += range.stride())
         A[i] = value;
 }
@@ -299,12 +299,12 @@ initialize_buffer(Tp* A, const Tp& value, const _Intp& nsize)
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename DeviceT, typename Tp, typename _Intp = int32_t,
+template <typename DeviceT, typename Tp, typename Intp = int32_t,
           device::enable_if_gpu_t<DeviceT> = 0>
 GLOBAL_CALLABLE void
-initialize_buffer(Tp* A, Tp value, _Intp nsize)
+initialize_buffer(Tp* A, Tp value, Intp nsize)
 {
-    auto range = device::grid_strided_range<DeviceT, 0, _Intp>(nsize);
+    auto range = device::grid_strided_range<DeviceT, 0, Intp>(nsize);
     for(auto i = range.begin(); i < range.end(); i += range.stride())
         A[i] = value;
 }

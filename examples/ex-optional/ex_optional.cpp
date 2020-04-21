@@ -43,6 +43,7 @@ static long fibonacci(long n);
 }
 long fibonacci(long n);
 void status();
+void write(long, long);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -102,10 +103,12 @@ int main(int argc, char** argv)
     //
     //  Execute the work
     //
-    for(const auto& itr : fibvalues)
+#pragma omp parallel for
+    for(size_t i = 0; i < fibvalues.size(); ++i)
     {
+        auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
-        printf("fibonacci(%li) = %li\n", itr, ret);
+        write(itr, ret);
     }
 
     //
@@ -145,6 +148,12 @@ long fibonacci(long n)
 {
     TIMEMORY_BASIC_MARKER(auto_hybrid_t, "(", n, ")");
     return impl::fibonacci(n);
+}
+
+void write(long nfib, long answer)
+{
+#pragma omp critical
+    printf("fibonacci(%li) = %li\n", nfib, answer);
 }
 
 void status()

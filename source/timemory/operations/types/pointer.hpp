@@ -60,20 +60,8 @@ struct pointer_operator
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(pointer_operator)
-
-    template <typename Up                                        = Tp, typename... Args,
-              enable_if_t<(trait::is_available<Up>::value), int> = 0>
-    explicit pointer_operator(base_type* obj, Args&&... args)
-    {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
-        if(obj)
-            Op(*obj, std::forward<Args>(args)...);
-    }
 
     template <typename Up                                        = Tp, typename... Args,
               enable_if_t<(trait::is_available<Up>::value), int> = 0>
@@ -84,17 +72,6 @@ struct pointer_operator
 
         if(obj)
             Op(*obj, std::forward<Args>(args)...);
-    }
-
-    template <typename Up                                        = Tp, typename... Args,
-              enable_if_t<(trait::is_available<Up>::value), int> = 0>
-    explicit pointer_operator(base_type* obj, base_type* rhs, Args&&... args)
-    {
-        if(!trait::runtime_enabled<type>::get())
-            return;
-
-        if(obj && rhs)
-            Op(*obj, *rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up                                        = Tp, typename... Args,
@@ -126,12 +103,10 @@ struct pointer_deleter
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(pointer_deleter)
 
     explicit pointer_deleter(type*& obj) { delete obj; }
-    explicit pointer_deleter(base_type*& obj) { delete static_cast<type*&>(obj); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -145,7 +120,6 @@ struct pointer_counter
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(pointer_counter)
 

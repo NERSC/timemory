@@ -159,9 +159,9 @@ write_entry(std::ostream& os, const Tp& _entry, int64_t _w, bool center, bool ma
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _IntArray, size_t N>
+template <typename IntArrayT, size_t N>
 string_t
-banner(_IntArray _breaks, std::array<bool, N> _use, char filler = '-', char delim = '|')
+banner(IntArrayT _breaks, std::array<bool, N> _use, char filler = '-', char delim = '|')
 {
     stringstream_t ss;
     ss.fill(filler);

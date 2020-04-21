@@ -174,17 +174,17 @@ public:
         (mpl::get_tuple_size<user_bundle_types>::value != 0);
 
 public:
-    template <template <typename> class Op, typename _Tuple = type_tuple>
-    using operation_t = typename generic_operation<Op, _Tuple>::type;
+    template <template <typename> class Op, typename TupleT = type_tuple>
+    using operation_t = typename generic_operation<Op, TupleT>::type;
 
-    template <template <typename> class Op, typename _Tuple = type_tuple>
-    using custom_operation_t = typename custom_operation<Op, _Tuple>::type;
+    template <template <typename> class Op, typename TupleT = type_tuple>
+    using custom_operation_t = typename custom_operation<Op, TupleT>::type;
 
-    template <typename _Tuple = type_tuple>
-    using deleter_t = typename generic_deleter<_Tuple>::type;
+    template <typename TupleT = type_tuple>
+    using deleter_t = typename generic_deleter<TupleT>::type;
 
-    template <typename _Tuple = type_tuple>
-    using counter_t = typename generic_counter<_Tuple>::type;
+    template <typename TupleT = type_tuple>
+    using counter_t = typename generic_counter<TupleT>::type;
 
 public:
     using print_t = typename type_bundler::print_t;

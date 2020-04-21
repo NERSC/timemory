@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/compat/library.h"
+#include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
 
@@ -58,6 +60,9 @@ using components_stack_t = std::deque<component_enum_t>;
 
 static std::string spacer =
     "#-------------------------------------------------------------------------#";
+
+static auto _settings = tim::settings::shared_instance<tim::api::native_tag>();
+static auto _manager  = tim::manager::instance();
 
 //--------------------------------------------------------------------------------------//
 
@@ -182,12 +187,20 @@ extern "C"
             printf("%s\n\n", spacer.c_str());
         }
 
-        tim::settings::auto_output() = true;  // print when destructing
-        tim::settings::cout_output() = true;  // print to stdout
-        tim::settings::text_output() = true;  // print text files
-        tim::settings::json_output() = true;  // print to json
+        std::cout << "flat_profile = " << std::boolalpha << tim::settings::flat_profile()
+                  << '\n';
 
         tim::timemory_init(argc, argv);
+
+        _manager->update_metadata_prefix();
+
+        std::cout << "flat_profile = " << std::boolalpha << tim::settings::flat_profile()
+                  << '\n';
+
+        tim::settings::parse();
+
+        std::cout << "flat_profile = " << std::boolalpha << tim::settings::flat_profile()
+                  << '\n';
     }
 
     //----------------------------------------------------------------------------------//
@@ -230,6 +243,9 @@ extern "C"
 
         // set the finalization state to true
         tim::dmp::is_finalized() = true;
+
+        // reset manager
+        tim::manager::instance().reset();
 
         // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)

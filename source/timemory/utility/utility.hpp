@@ -346,11 +346,12 @@ get_demangled_backtrace()
 //--------------------------------------------------------------------------------------//
 //  delimit a string into a set
 //
-template <typename _Container = std::vector<std::string>,
-          typename _Predicate = std::function<string_t(string_t)>>
-inline _Container
-delimit(const string_t& line, const string_t& delimiters = ",; ",
-        _Predicate&& predicate = [](string_t s) -> string_t { return s; })
+template <typename ContainerT = std::vector<std::string>,
+          typename PredicateT = std::function<string_t(string_t)>>
+inline ContainerT
+delimit(
+    const string_t& line, const string_t& delimiters = ",; ",
+    PredicateT&& predicate = [](string_t s) -> string_t { return s; })
 {
     auto _get_first_not_of = [&delimiters](const string_t& _string, const size_t& _beg) {
         return _string.find_first_not_of(delimiters, _beg);
@@ -360,7 +361,7 @@ delimit(const string_t& line, const string_t& delimiters = ",; ",
         return _string.find_first_of(delimiters, _beg);
     };
 
-    _Container _result;
+    ContainerT _result;
     size_t     _beginp = 0;  // position that is the beginning of the new string
     size_t     _delimp = 0;  // position of the delimiter in the string
     while(_beginp < line.length() && _delimp < line.length())

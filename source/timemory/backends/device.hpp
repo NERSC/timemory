@@ -172,33 +172,33 @@ using enable_if_cpu_t = enable_if_t<(is_cpu<T>::value == B), U>;
 
 namespace impl
 {
-template <typename Tp, typename _Intp, bool _Val = true>
+template <typename Tp, typename Intp, bool Valv = true>
 using enable_if_gpu_int_t =
-    enable_if_t<(is_gpu<Tp>::value == _Val && std::is_integral<_Intp>::value)>;
+    enable_if_t<(is_gpu<Tp>::value == Valv && std::is_integral<Intp>::value)>;
 
-template <typename Tp, typename _Intp, bool _Val = true>
+template <typename Tp, typename Intp, bool Valv = true>
 using enable_if_cpu_int_t =
-    enable_if_t<(is_cpu<Tp>::value == _Val && std::is_integral<_Intp>::value)>;
+    enable_if_t<(is_cpu<Tp>::value == Valv && std::is_integral<Intp>::value)>;
 
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Intp>
+template <typename Intp>
 struct range
 {
-    using this_type = range<_Intp>;
+    using this_type = range<Intp>;
 
-    HOST_DEVICE_CALLABLE range(_Intp _begin, _Intp _end, _Intp _stride)
+    HOST_DEVICE_CALLABLE range(Intp _begin, Intp _end, Intp _stride)
     : m_begin(_begin)
     , m_end(_end)
     , m_stride(_stride)
     {}
 
-    HOST_DEVICE_CALLABLE _Intp& begin() { return m_begin; }
-    HOST_DEVICE_CALLABLE _Intp begin() const { return m_begin; }
-    HOST_DEVICE_CALLABLE _Intp& end() { return m_end; }
-    HOST_DEVICE_CALLABLE _Intp end() const { return m_end; }
-    HOST_DEVICE_CALLABLE _Intp& stride() { return m_stride; }
-    HOST_DEVICE_CALLABLE _Intp stride() const { return m_stride; }
+    HOST_DEVICE_CALLABLE Intp& begin() { return m_begin; }
+    HOST_DEVICE_CALLABLE Intp begin() const { return m_begin; }
+    HOST_DEVICE_CALLABLE Intp& end() { return m_end; }
+    HOST_DEVICE_CALLABLE Intp end() const { return m_end; }
+    HOST_DEVICE_CALLABLE Intp& stride() { return m_stride; }
+    HOST_DEVICE_CALLABLE Intp stride() const { return m_stride; }
 
     HOST_DEVICE_CALLABLE const char* c_str() const
     {
@@ -209,9 +209,9 @@ struct range
     }
 
 protected:
-    _Intp m_begin;
-    _Intp m_end;
-    _Intp m_stride;
+    Intp m_begin;
+    Intp m_end;
+    Intp m_stride;
 };
 }  // namespace impl
 
@@ -285,10 +285,10 @@ launch(params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
 //--------------------------------------------------------------------------------------//
 // overload that passes size
 //
-template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
-          impl::enable_if_cpu_int_t<DeviceT, _Intp> = 0>
+template <typename Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          impl::enable_if_cpu_int_t<DeviceT, Intp> = 0>
 void
-launch(const _Intp&, params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
+launch(const Intp&, params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
 {
     std::forward<FuncT>(_func)(std::forward<ArgsT>(_args)...);
 }
@@ -296,11 +296,11 @@ launch(const _Intp&, params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
 //--------------------------------------------------------------------------------------//
 // overload that passes size
 //
-template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
-          typename _Stream                          = typename DeviceT::stream_t,
-          impl::enable_if_cpu_int_t<DeviceT, _Intp> = 0>
+template <typename Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          typename StreamT                         = typename DeviceT::stream_t,
+          impl::enable_if_cpu_int_t<DeviceT, Intp> = 0>
 void
-launch(const _Intp&, _Stream, params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
+launch(const Intp&, StreamT, params<DeviceT>&, FuncT&& _func, ArgsT&&... _args)
 {
     std::forward<FuncT>(_func)(std::forward<ArgsT>(_args)...);
 }
@@ -336,10 +336,10 @@ launch(params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 //--------------------------------------------------------------------------------------//
 // overload that passes size
 //
-template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
-          impl::enable_if_gpu_int_t<DeviceT, _Intp> = 0>
+template <typename Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          impl::enable_if_gpu_int_t<DeviceT, Intp> = 0>
 void
-launch(const _Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
+launch(const Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
 {
 #if defined(__NVCC__)
     if(_p.grid == 0 && _nsize > 0)
@@ -359,11 +359,11 @@ launch(const _Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args
 //--------------------------------------------------------------------------------------//
 // overload that passes size and stream
 //
-template <typename _Intp, typename DeviceT, typename FuncT, typename... ArgsT,
-          typename _Stream                                = typename DeviceT::stream_t,
-          impl::enable_if_gpu_int_t<DeviceT, _Intp, true> = 0>
+template <typename Intp, typename DeviceT, typename FuncT, typename... ArgsT,
+          typename StreamT                               = typename DeviceT::stream_t,
+          impl::enable_if_gpu_int_t<DeviceT, Intp, true> = 0>
 void
-launch(const _Intp& _nsize, _Stream _stream, params<DeviceT>& _p, FuncT&& _func,
+launch(const Intp& _nsize, StreamT _stream, params<DeviceT>& _p, FuncT&& _func,
        ArgsT&&... _args)
 {
 #if defined(__NVCC__)
@@ -388,10 +388,10 @@ launch(const _Intp& _nsize, _Stream _stream, params<DeviceT>& _p, FuncT&& _func,
 //
 //======================================================================================//
 
-template <typename DeviceT, size_t DIM = 0, typename _Intp = int32_t>
-struct grid_strided_range : impl::range<_Intp>
+template <typename DeviceT, size_t DIM = 0, typename Intp = int32_t>
+struct grid_strided_range : impl::range<Intp>
 {
-    using base_type = impl::range<_Intp>;
+    using base_type = impl::range<Intp>;
     static_assert(DIM < 0 || DIM > 2,
                   "Error DIM parameter must be 0 (x), 1 (y), or 2 (z)");
 };
@@ -399,22 +399,22 @@ struct grid_strided_range : impl::range<_Intp>
 //--------------------------------------------------------------------------------------//
 // overload for 0/x
 //
-template <typename DeviceT, typename _Intp>
-struct grid_strided_range<DeviceT, 0, _Intp> : impl::range<_Intp>
+template <typename DeviceT, typename Intp>
+struct grid_strided_range<DeviceT, 0, Intp> : impl::range<Intp>
 {
-    using base_type = impl::range<_Intp>;
+    using base_type = impl::range<Intp>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
-    template <typename _Dev                                       = DeviceT,
-              enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
-    DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
+    template <typename DevT                                       = DeviceT,
+              enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
+    DEVICE_CALLABLE explicit grid_strided_range(Intp max_iter)
     : base_type(blockIdx.x * blockDim.x + threadIdx.x, max_iter, blockDim.x * gridDim.x)
     {}
 
-    template <typename _Dev                                       = DeviceT,
-              enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
+    template <typename DevT                                       = DeviceT,
+              enable_if_t<std::is_same<DevT, device::cpu>::value> = 0>
 #endif
-    explicit grid_strided_range(_Intp max_iter)
+    explicit grid_strided_range(Intp max_iter)
     : base_type(0, max_iter, 1)
     {}
 
@@ -426,22 +426,22 @@ struct grid_strided_range<DeviceT, 0, _Intp> : impl::range<_Intp>
 //--------------------------------------------------------------------------------------//
 // overload for 1/y
 //
-template <typename DeviceT, typename _Intp>
-struct grid_strided_range<DeviceT, 1, _Intp> : impl::range<_Intp>
+template <typename DeviceT, typename Intp>
+struct grid_strided_range<DeviceT, 1, Intp> : impl::range<Intp>
 {
-    using base_type = impl::range<_Intp>;
+    using base_type = impl::range<Intp>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
-    template <typename _Dev                                       = DeviceT,
-              enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
-    DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
+    template <typename DevT                                       = DeviceT,
+              enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
+    DEVICE_CALLABLE explicit grid_strided_range(Intp max_iter)
     : base_type(blockIdx.y * blockDim.y + threadIdx.y, max_iter, blockDim.y * gridDim.y)
     {}
 
-    template <typename _Dev                                       = DeviceT,
-              enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
+    template <typename DevT                                       = DeviceT,
+              enable_if_t<std::is_same<DevT, device::cpu>::value> = 0>
 #endif
-    explicit grid_strided_range(_Intp max_iter)
+    explicit grid_strided_range(Intp max_iter)
     : base_type(0, max_iter, 1)
     {}
 
@@ -453,22 +453,22 @@ struct grid_strided_range<DeviceT, 1, _Intp> : impl::range<_Intp>
 //--------------------------------------------------------------------------------------//
 // overload for 2/z
 //
-template <typename DeviceT, typename _Intp>
-struct grid_strided_range<DeviceT, 2, _Intp> : impl::range<_Intp>
+template <typename DeviceT, typename Intp>
+struct grid_strided_range<DeviceT, 2, Intp> : impl::range<Intp>
 {
-    using base_type = impl::range<_Intp>;
+    using base_type = impl::range<Intp>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
-    template <typename _Dev                                       = DeviceT,
-              enable_if_t<std::is_same<_Dev, device::gpu>::value> = 0>
-    DEVICE_CALLABLE explicit grid_strided_range(_Intp max_iter)
+    template <typename DevT                                       = DeviceT,
+              enable_if_t<std::is_same<DevT, device::gpu>::value> = 0>
+    DEVICE_CALLABLE explicit grid_strided_range(Intp max_iter)
     : base_type(blockIdx.z * blockDim.z + threadIdx.z, max_iter, blockDim.z * gridDim.z)
     {}
 
-    template <typename _Dev                                       = DeviceT,
-              enable_if_t<std::is_same<_Dev, device::cpu>::value> = 0>
+    template <typename DevT                                       = DeviceT,
+              enable_if_t<std::is_same<DevT, device::cpu>::value> = 0>
 #endif
-    explicit grid_strided_range(_Intp max_iter)
+    explicit grid_strided_range(Intp max_iter)
     : base_type(0, max_iter, 1)
     {}
 

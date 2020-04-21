@@ -52,7 +52,7 @@ if(USE_CUDA OR TIMEMORY_USE_CUDA)
     target_compile_definitions(ex_ert PRIVATE USE_CUDA)
 endif()
 
-find_package(Kokkos QUIET)
+find_package(Kokkos 3.0)
 if(Kokkos_FOUND AND USE_KOKKOS)
     add_executable(ex_ert_kokkos ex_ert_kokkos.cpp)
     target_link_libraries(ex_ert_kokkos timemory-ert-example Kokkos::kokkos)

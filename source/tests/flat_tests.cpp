@@ -128,10 +128,10 @@ class flat_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
+        tim::set_env("TIMEMORY_FLAT_PROFILE", "ON", 1);
         static bool configured = false;
         if(!configured)
         {
-            tim::set_env("TIMEMORY_FLAT_PROFILE", "ON", 1);
             configured                   = true;
             tim::settings::verbose()     = 0;
             tim::settings::debug()       = false;
@@ -143,6 +143,7 @@ protected:
             tim::settings::dart_count()  = 1;
             tim::settings::banner()      = false;
         }
+        tim::settings::parse();
     }
 };
 
@@ -154,9 +155,41 @@ TEST_F(flat_tests, parse)
     tim::set_env("TIMEMORY_FLAT_PROFILE", "ON", 1);
     tim::settings::parse();
     std::cout << "\nflat_profile() = " << std::boolalpha << tim::settings::flat_profile()
-              << '\n'
               << std::endl;
+    auto ret = tim::get_env<bool>("TIMEMORY_FLAT_PROFILE", false);
+    std::cout << "environment = " << std::boolalpha << ret << '\n' << std::endl;
+    ASSERT_TRUE(ret);
     ASSERT_TRUE(tim::settings::flat_profile());
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(flat_tests, get_default)
+{
+    tim::settings::flat_profile() = false;
+    tim::set_env("TIMEMORY_FLAT_PROFILE", "ON", 1);
+    tim::settings::parse();
+    auto _scope = tim::scope::config{};
+    std::cout << "\nscope: " << _scope << '\n' << std::endl;
+    ASSERT_TRUE(_scope.is_flat());
+    ASSERT_FALSE(_scope.is_tree());
+    ASSERT_FALSE(_scope.is_timeline());
+    ASSERT_FALSE(_scope.is_flat_timeline());
+    ASSERT_FALSE(_scope.is_tree_timeline());
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(flat_tests, flat)
+{
+    tim::settings::flat_profile() = false;
+    auto _scope                   = tim::scope::config(tim::scope::flat{});
+    std::cout << "\nscope: " << _scope << '\n' << std::endl;
+    ASSERT_TRUE(_scope.is_flat());
+    ASSERT_FALSE(_scope.is_tree());
+    ASSERT_FALSE(_scope.is_timeline());
+    ASSERT_FALSE(_scope.is_flat_timeline());
+    ASSERT_FALSE(_scope.is_tree_timeline());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -164,10 +197,9 @@ TEST_F(flat_tests, parse)
 TEST_F(flat_tests, general)
 {
     auto bsize = tim::storage<wall_clock>::instance()->size();
-    // tim::settings::flat_profile() = true;
 
-    long n = 25;
     {
+        long n = 25;
         TIMEMORY_BLANK_MARKER(toolset_t, details::get_test_name());
         auto ret = details::fibonacci(n, true);
         printf("\nfibonacci(%li) = %li\n", n, ret);

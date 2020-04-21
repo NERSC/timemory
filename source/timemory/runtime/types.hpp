@@ -146,12 +146,12 @@ insert(T* obj, Args&&... args)
 ///      required because of extra "hidden" template parameters in STL containers
 //
 template <typename Bundle_t, template <typename, typename...> class Container,
-          typename Intp, typename... ExtraArgs,
+          typename Intp, typename... ExtraArgs, typename... Args,
           typename std::enable_if<(std::is_integral<Intp>::value ||
                                    std::is_same<Intp, TIMEMORY_NATIVE_COMPONENT>::value),
                                   int>::type = 0>
 void
-configure(const Container<Intp, ExtraArgs...>& components, bool flat = false);
+configure(const Container<Intp, ExtraArgs...>& components, Args&&...);
 
 //======================================================================================//
 
@@ -195,7 +195,7 @@ initialize(CompList<CompTypes...>& obj, const std::string& env_var,
            const std::string& default_env)
 {
     auto env_result = tim::get_env(env_var, default_env);
-    ::tim::initialize(obj, enumerate_components(tim::delimit(env_result)));
+    tim::initialize(obj, enumerate_components(tim::delimit(env_result)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -223,7 +223,7 @@ void
 insert(Bundle<Idx, Type>& obj, const std::string& env_var, const std::string& default_env)
 {
     auto env_result = tim::get_env(env_var, default_env);
-    ::tim::insert(obj, enumerate_components(tim::delimit(env_result)));
+    tim::insert(obj, enumerate_components(tim::delimit(env_result)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -238,12 +238,13 @@ insert(T* obj, Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Bundle>
+template <typename Bundle, typename... Args>
 void
-configure(const std::string& env_var, const std::string& default_env, bool flat = false)
+configure(const std::string& env_var, const std::string& default_env, Args&&... args)
 {
     auto env_result = tim::get_env(env_var, default_env);
-    ::tim::configure<Bundle>(enumerate_components(tim::delimit(env_result)), flat);
+    tim::configure<Bundle>(enumerate_components(tim::delimit(env_result)),
+                           std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//

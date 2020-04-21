@@ -55,6 +55,10 @@ template <typename T>
 storage_initializer
 storage_initializer::get()
 {
+    auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
+    if(!library_ctor)
+        return storage_initializer{};
+
     if(!trait::runtime_enabled<T>::get())
         return storage_initializer{};
 

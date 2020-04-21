@@ -24,6 +24,11 @@
 
 #pragma once
 
+#include "timemory/mpl/bits/types.hpp"
+#include "timemory/mpl/math.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/utility/types.hpp"
+
 #include <array>
 #include <ostream>
 #include <sstream>
@@ -31,11 +36,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "timemory/mpl/bits/types.hpp"
-#include "timemory/mpl/math.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/utility/types.hpp"
 
 //======================================================================================//
 
@@ -314,10 +314,10 @@ operator*=(std::array<Lhs, N>& lhs, const Rhs& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Lhs, typename Rhs, typename _Arith,
-          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int>>
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<(std::is_arithmetic<decay_t<ArithT>>::value), int>>
 std::pair<Lhs, Rhs>&
-operator*=(std::pair<Lhs, Rhs>& lhs, const _Arith& rhs)
+operator*=(std::pair<Lhs, Rhs>& lhs, const ArithT& rhs)
 {
     math::multiply(lhs, rhs);
     return lhs;
@@ -362,10 +362,10 @@ operator/=(std::array<Lhs, N>& lhs, const Rhs& rhs)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Lhs, typename Rhs, typename _Arith,
-          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int>>
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<(std::is_arithmetic<decay_t<ArithT>>::value), int>>
 std::pair<Lhs, Rhs>&
-operator/=(std::pair<Lhs, Rhs>& lhs, const _Arith& rhs)
+operator/=(std::pair<Lhs, Rhs>& lhs, const ArithT& rhs)
 {
     math::divide(lhs, rhs);
     return lhs;

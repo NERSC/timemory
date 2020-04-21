@@ -35,6 +35,7 @@
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/operations/types.hpp"
 
 //
 //--------------------------------------------------------------------------------------//
@@ -120,6 +121,26 @@ struct requires_prefix<component::user_bundle<Idx, Type>> : true_type
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace trait
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace operation
+{
+template <size_t Idx, typename Type>
+struct reset<component::user_bundle<Idx, Type>>
+{
+    using type = component::user_bundle<Idx, Type>;
+
+    TIMEMORY_DELETED_OBJECT(reset)
+
+    template <typename... Args>
+    explicit reset(type&, Args&&...)
+    {}
+};
+}  // namespace operation
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace tim
 //
 //======================================================================================//

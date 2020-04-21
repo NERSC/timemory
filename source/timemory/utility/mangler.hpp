@@ -100,13 +100,13 @@ struct mangler<std::tuple<Args...>>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename FuncT, typename _Traits = function_traits<FuncT>>
+template <typename FuncT, typename TraitsT = function_traits<FuncT>>
 std::string
 mangle(const std::string& func)
 {
-    using _Tuple             = typename _Traits::args_type;
-    constexpr bool is_memfun = _Traits::is_memfun;
-    constexpr bool is_const  = _Traits::is_const;
+    using _Tuple             = typename TraitsT::args_type;
+    constexpr bool is_memfun = TraitsT::is_memfun;
+    constexpr bool is_const  = TraitsT::is_const;
     return impl::mangler<_Tuple>::mangle(func, is_memfun, is_const);
 }
 

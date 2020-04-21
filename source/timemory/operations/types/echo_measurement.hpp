@@ -68,7 +68,6 @@ struct echo_measurement<Tp, true> : public common_utils
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     //----------------------------------------------------------------------------------//
     /// generate a name attribute

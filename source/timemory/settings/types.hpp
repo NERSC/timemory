@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/compat/macros.h"
 #include "timemory/settings/macros.hpp"
 
 #include <functional>
@@ -46,7 +47,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 using setting_callback_t        = std::function<void()>;
-using setting_callback_vec_t    = std::vector<setting_callback_t>;
+using setting_callback_map_t    = std::map<std::string, setting_callback_t>;
 using setting_description_map_t = std::map<std::string, std::string>;
 //
 //--------------------------------------------------------------------------------------//
@@ -61,6 +62,16 @@ struct settings;
 //--------------------------------------------------------------------------------------//
 //
 template <typename... T>
+static inline setting_callback_map_t&
+get_parse_callback_map()
+{
+    static setting_callback_map_t _instance;
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... T>
 static inline setting_description_map_t&
 get_descriptions()
 {
@@ -70,23 +81,11 @@ get_descriptions()
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
-//
-extern setting_callback_vec_t&
-get_parse_callbacks();
-//
-extern setting_description_map_t&
-get_setting_descriptions();
-//
-#else
-//
-setting_callback_vec_t&
-get_parse_callbacks();
+setting_callback_map_t&
+get_parse_callbacks() TIMEMORY_VISIBILITY("default");
 //
 setting_description_map_t&
-get_setting_descriptions();
-//
-#endif
+get_setting_descriptions() TIMEMORY_VISIBILITY("default");
 //
 //--------------------------------------------------------------------------------------//
 //

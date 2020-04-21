@@ -86,8 +86,8 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive>
-    void serialize(_Archive& ar, const unsigned int)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
     {
         ar(cereal::make_nvp("data", data));
     }
@@ -668,13 +668,13 @@ public:
 
     /// Reduce duplicate nodes
     template <
-        typename _ComparePred = std::function<bool(sibling_iterator, sibling_iterator)>,
-        typename _ReducePred  = std::function<void(sibling_iterator, sibling_iterator)>>
+        typename ComparePred = std::function<bool(sibling_iterator, sibling_iterator)>,
+        typename ReducePred  = std::function<void(sibling_iterator, sibling_iterator)>>
     inline void reduce(
         const sibling_iterator&, const sibling_iterator&, std::set<sibling_iterator>&,
-        _ComparePred&& = [](sibling_iterator lhs,
-                            sibling_iterator rhs) { return (*lhs == *rhs); },
-        _ReducePred&& = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
+        ComparePred&& = [](sibling_iterator lhs,
+                           sibling_iterator rhs) { return (*lhs == *rhs); },
+        ReducePred&&  = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
 
     /// Sort (std::sort only moves values of nodes, this one moves children as
     /// well).
@@ -787,8 +787,8 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive>
-    void serialize(_Archive& ar, const unsigned int)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
     {
         for(auto itr = begin(); itr != end(); ++itr)
             ar(cereal::make_nvp("node", *itr));
@@ -2227,11 +2227,11 @@ graph<T, AllocatorT>::merge(const sibling_iterator& to1, const sibling_iterator&
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
-template <typename _ComparePred, typename _ReducePred>
+template <typename ComparePred, typename ReducePred>
 void
 graph<T, AllocatorT>::reduce(const sibling_iterator&     lhs, const sibling_iterator&,
-                             std::set<sibling_iterator>& _erase, _ComparePred&& _compare,
-                             _ReducePred&& _reduce)
+                             std::set<sibling_iterator>& _erase, ComparePred&& _compare,
+                             ReducePred&& _reduce)
 {
     if(!is_valid(lhs))
         return;

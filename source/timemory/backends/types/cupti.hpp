@@ -124,8 +124,8 @@ namespace cupti
 //--------------------------------------------------------------------------------------//
 
 using string_t = std::string;
-template <typename _Key, typename _Mapped>
-using map_t            = std::map<_Key, _Mapped>;
+template <typename KeyT, typename MappedT>
+using map_t            = std::map<KeyT, MappedT>;
 using strvec_t         = std::vector<string_t>;
 using boolvec_t        = std::vector<bool>;
 using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
@@ -1361,9 +1361,9 @@ disable(const std::vector<activity_kind_t>& _kind_types)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _ReqBuffFunc, typename _BuffCompFunc>
+template <typename ReqBuffFunc, typename BuffCompFunc>
 inline void
-register_callbacks(_ReqBuffFunc _reqbuff, _BuffCompFunc _buffcomp)
+register_callbacks(ReqBuffFunc _reqbuff, BuffCompFunc _buffcomp)
 {
 #if defined(TIMEMORY_USE_CUPTI)
     // typedef void (*BuffFunc)(uint8_t**, size_t*, size_t*);

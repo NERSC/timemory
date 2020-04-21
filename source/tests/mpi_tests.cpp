@@ -163,7 +163,7 @@ TEST_F(mpi_tests, general)
                            "/[master_thread]/0");
     run_fibonacci(40);
     run_fibonacci(41);
-    TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
+    TIMEMORY_CALIPER_APPLY0(master_thread_a, stop);
 
     {
         // run longer fibonacci calculations on two threads
@@ -173,7 +173,7 @@ TEST_F(mpi_tests, general)
         run_fibonacci(41);
     }
 
-    TIMEMORY_CALIPER_APPLY(tot, stop);
+    TIMEMORY_CALIPER_APPLY0(tot, stop);
 
     std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
 
@@ -284,7 +284,7 @@ TEST_F(mpi_tests, per_thread)
         t_40.join();
         t_41.join();
     }
-    TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
+    TIMEMORY_CALIPER_APPLY0(master_thread_a, stop);
 
     {
         // run longer fibonacci calculations on two threads
@@ -296,7 +296,7 @@ TEST_F(mpi_tests, per_thread)
         t_41.join();
     }
 
-    TIMEMORY_CALIPER_APPLY(tot, stop);
+    TIMEMORY_CALIPER_APPLY0(tot, stop);
 
     std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
 

@@ -40,10 +40,10 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_SETTINGS_LINKAGE(setting_callback_vec_t&)
+TIMEMORY_SETTINGS_LINKAGE(setting_callback_map_t&)
 get_parse_callbacks()
 {
-    static setting_callback_vec_t _instance;
+    static setting_callback_map_t _instance;
     return _instance;
 }
 //

@@ -110,14 +110,27 @@ endif()
 #
 add_interface_library(timemory-develop-options)
 if(TIMEMORY_BUILD_DEVELOPER)
-    add_target_flag_if_avail(timemory-develop-options "-Wshadow" "-Wextra")
+    add_target_flag_if_avail(timemory-develop-options "-Wshadow" "-Wextra" "-Wpedantic")
 endif()
 
+#----------------------------------------------------------------------------------------#
+# visibility build flags
+#
+add_interface_library(timemory-default-visibility)
+add_interface_library(timemory-protected-visibility)
 add_interface_library(timemory-hidden-visibility)
+
+add_target_flag_if_avail(timemory-default-visibility "-fvisibility=default")
+add_target_flag_if_avail(timemory-protected-visibility "-fvisibility=protected")
 add_target_flag_if_avail(timemory-hidden-visibility "-fvisibility=hidden")
-if(NOT cxx_timemory_hidden_visibility_fvisibility_hidden)
-    add_disabled_interface(timemory-hidden-visibility)
-endif()
+
+foreach(_TYPE default protected hidden)
+    if(NOT cxx_timemory_${_TYPE}_visibility_fvisibility_${_TYPE})
+        add_disabled_interface(timemory-${_TYPE}-visibility)
+    else()
+        target_compile_definitions(timemory-${_TYPE}-visibility INTERFACE TIMEMORY_USE_VISIBILITY)
+    endif()
+endforeach()
 
 #----------------------------------------------------------------------------------------#
 # developer build flags

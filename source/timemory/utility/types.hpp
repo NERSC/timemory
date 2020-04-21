@@ -137,7 +137,7 @@ consume_parameters(ArgsT&&...)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename _Deleter>
+template <typename Tp, typename DeleterT>
 class singleton;
 //
 //--------------------------------------------------------------------------------------//
@@ -181,7 +181,7 @@ using input_type                    = std::array<bool, scope_count>;
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline input_type&
+inline input_type&
 get_fields()
 {
     static input_type _instance{ { false, false, false } };
@@ -196,7 +196,7 @@ generate(Arg&& arg, std::index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
     data_type ret;
-    TIMEMORY_FOLD_EXPRESSION(ret.set(Idx, std::get<Idx>(arg)));
+    TIMEMORY_FOLD_EXPRESSION(ret.set(Idx, arg[Idx]));
     return ret;
 }
 //
@@ -255,9 +255,9 @@ struct config : public data_type
                                 std::is_same<Arg, flat>::value ||
                                 std::is_same<Arg, timeline>::value),
                                int> = 0>
-    config(Arg&&, Args&&... args)
+    config(Arg&& arg, Args&&... args)
     {
-        *this += std::forward<Arg>();
+        *this += std::forward<Arg>(arg);
         TIMEMORY_FOLD_EXPRESSION(*this += std::forward<Args>(args));
     }
 
@@ -302,33 +302,31 @@ struct config : public data_type
     {
         std::stringstream ss;
         ss << std::boolalpha << "tree: " << obj.is_tree() << ", flat: " << obj.is_flat()
-           << ", timeline: " << obj.is_timeline();
+           << ", timeline: " << obj.is_timeline()
+           << ". Values: flat::value = " << obj.test(flat::value)
+           << ", timeline::value = " << obj.test(timeline::value)
+           << ", tree::value = " << obj.test(tree::value);
         os << ss.str();
         return os;
     }
+
     uint64_t compute_depth(uint64_t _current)
     {
         // flat:     always at depth of 1
         // tree:     features nesting
         // timeline: retains current depth
-        // static thread_local bool last_was_timeline = false;
         if(is_flat())
         {
-            // last_was_timeline = false;
             // flat + timeline will be differentiated via compute_hash
             // flat + tree is invalid and flat takes precedence
             return 1;
         }
         else if(is_timeline())
         {
-            // bool _incr = (_current == 0 || !last_was_timeline);
-            // last_was_timeline = true;
             // tree + timeline is essentially a flat profile at the given depth
             // bc returning a nested depth for tree + timeline would look like recursion
-            // return (_incr) ? _current + 1 : _current;
             return _current + 1;
         }
-        // last_was_timeline = false;
         // if neither flat nor timeline are enabled, return the nested depth
         return _current + 1;
     }

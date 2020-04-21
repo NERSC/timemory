@@ -88,6 +88,8 @@ static bool        loop_level_instr   = false;
 static bool        werror             = false;
 static bool        stl_func_instr     = false;
 static bool        use_mpi            = false;
+static bool        use_mpip           = false;
+static bool        use_ompt           = false;
 static std::string main_fname         = "main";
 static std::string argv0              = "";
 static std::string default_components = "wall_clock";
@@ -172,13 +174,13 @@ find_function(BPatch_image* appImage, const char* functionName);
 BPatchSnippetHandle*
 invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
                        BPatch_function* function, BPatch_procedureLocation loc,
-                       BPatch_function*                callee,
-                       BPatch_Vector<BPatch_snippet*>* callee_args);
+                       BPatch_function*               callee,
+                       BPatch_Vector<BPatch_snippet*> callee_args);
 
 BPatchSnippetHandle*
 invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
                        BPatch_Vector<BPatch_point*> points, BPatch_function* callee,
-                       BPatch_Vector<BPatch_snippet*>* callee_args);
+                       BPatch_Vector<BPatch_snippet*> callee_args);
 
 void
 initialize(BPatch_process* appThread, BPatch_image* appImage,
@@ -268,15 +270,15 @@ struct function_signature
 {
     using location_t = std::pair<unsigned long, unsigned long>;
 
-    bool       m_loop      = false;
-    bool       m_info_beg  = false;
-    bool       m_info_end  = false;
-    location_t m_row       = { 0, 0 };
-    location_t m_col       = { 0, 0 };
-    string_t   m_return    = "void";
-    string_t   m_name      = "";
-    string_t   m_file      = "";
-    string_t   m_signature = "";
+    bool             m_loop      = false;
+    bool             m_info_beg  = false;
+    bool             m_info_end  = false;
+    location_t       m_row       = { 0, 0 };
+    location_t       m_col       = { 0, 0 };
+    string_t         m_return    = "void";
+    string_t         m_name      = "";
+    string_t         m_file      = "";
+    mutable string_t m_signature = "";
 
     function_signature(string_t _ret, string_t _name, string_t _file,
                        location_t _row = { 0, 0 }, location_t _col = { 0, 0 },
@@ -294,11 +296,9 @@ struct function_signature
             m_file = m_file.substr(m_file.find_last_of('/') + 1);
     }
 
-    operator const char*() { return get().c_str(); }
-
     static const char* get(function_signature& sig) { return sig.get().c_str(); }
 
-    std::string get()
+    std::string get() const
     {
         std::stringstream ss;
         if(m_loop && m_info_beg)

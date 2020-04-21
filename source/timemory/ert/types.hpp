@@ -44,16 +44,16 @@ struct exec_params;
 template <typename Tp = component::wall_clock>
 class exec_data;
 
-template <typename DeviceT, typename Tp, typename _Counter = component::wall_clock>
+template <typename DeviceT, typename Tp, typename CounterT = component::wall_clock>
 class counter;
 
-template <typename DeviceT, typename Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct configuration;
 
-template <typename DeviceT, typename Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct executor;
 
-template <typename _Executor>
+template <typename ExecutorT>
 struct callback;
 
 }  // namespace ert

@@ -33,6 +33,7 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include "timemory/components/user_bundle/backends.hpp"
 #include "timemory/components/user_bundle/types.hpp"
@@ -172,12 +173,19 @@ public:
     //  Captures the statically-defined data so these can be changed without
     //  affecting this instance
     //
-    user_bundle() = default;
+    user_bundle()
+    : m_scope(scope::get_default())
+    , m_prefix("")
+    , m_typeids(get_typeids())
+    , m_bundle(get_data())
+    {}
 
     explicit user_bundle(const string_t& _prefix,
                          scope::config   _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
+    , m_typeids(get_typeids())
+    , m_bundle(get_data())
     {}
 
     user_bundle(const user_bundle& rhs)
@@ -192,9 +200,10 @@ public:
     }
 
     user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
-                scope::config _scope = scope::get_default())
+                const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
+    , m_typeids(_typeids)
     , m_bundle(_bundle_vec)
     {}
 
@@ -235,13 +244,19 @@ public:
             for(auto&& itr : _typeids)
             {
                 if(itr > 0 && get_typeids().count(itr) > 0)
+                {
+                    PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
                     return;
+                }
                 sum += itr;
                 if(itr > 0)
                     get_typeids().insert(std::move(itr));
             }
             if(sum == 0)
+            {
+                PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
                 return;
+            }
 
             obj.init();
             get_data().emplace_back(std::forward<opaque>(obj));
@@ -393,6 +408,7 @@ private:
         return _instance;
     }
 
+public:
     //----------------------------------------------------------------------------------//
     //  Bundle data
     //

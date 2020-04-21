@@ -79,48 +79,48 @@ struct apply
     //----------------------------------------------------------------------------------//
     // prefix with _sep
     //
-    template <typename _Sep, typename _Arg,
+    template <typename SepT, typename Arg,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
-    static Ret join_tail(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg)
+    static Ret join_tail(std::stringstream& _ss, const SepT& _sep, Arg&& _arg)
     {
-        _ss << _sep << std::forward<_Arg>(_arg);
+        _ss << _sep << std::forward<Arg>(_arg);
         return _ss.str();
     }
 
     //----------------------------------------------------------------------------------//
     // prefix with _sep
     //
-    template <typename _Sep, typename _Arg, typename... Args,
+    template <typename SepT, typename Arg, typename... Args,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
-    static Ret join_tail(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
+    static Ret join_tail(std::stringstream& _ss, const SepT& _sep, Arg&& _arg,
                          Args&&... __args)
     {
-        _ss << _sep << std::forward<_Arg>(_arg);
-        return join_tail<_Sep, Args...>(_ss, _sep, std::forward<Args>(__args)...);
+        _ss << _sep << std::forward<Arg>(_arg);
+        return join_tail<SepT, Args...>(_ss, _sep, std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // don't prefix
     //
-    template <typename _Sep, typename _Arg,
+    template <typename SepT, typename Arg,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
-    static Ret join(std::stringstream& _ss, const _Sep&, _Arg&& _arg)
+    static Ret join(std::stringstream& _ss, const SepT&, Arg&& _arg)
     {
-        _ss << std::forward<_Arg>(_arg);
+        _ss << std::forward<Arg>(_arg);
         return _ss.str();
     }
 
     //----------------------------------------------------------------------------------//
     // don't prefix
     //
-    template <typename _Sep, typename _Arg, typename... Args,
+    template <typename SepT, typename Arg, typename... Args,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0,
               enable_if_t<(sizeof...(Args) > 0), int>                  = 0>
-    static Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
+    static Ret join(std::stringstream& _ss, const SepT& _sep, Arg&& _arg,
                     Args&&... __args)
     {
-        _ss << std::forward<_Arg>(_arg);
-        return join_tail<_Sep, Args...>(_ss, _sep, std::forward<Args>(__args)...);
+        _ss << std::forward<Arg>(_arg);
+        return join_tail<SepT, Args...>(_ss, _sep, std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -135,17 +135,17 @@ struct apply<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename Tp, typename _Tail>
+    template <typename Tp, typename Tail>
     struct get_index_of;
 
-    template <typename Tp, typename... _Tail>
-    struct get_index_of<Tp, std::tuple<Tp, _Tail...>>
+    template <typename Tp, typename... Tail>
+    struct get_index_of<Tp, std::tuple<Tp, Tail...>>
     {
         static constexpr int value = 0;
     };
 
-    template <typename Tp, typename... _Tail>
-    struct get_index_of<Tp, std::tuple<Tp*, _Tail...>>
+    template <typename Tp, typename... Tail>
+    struct get_index_of<Tp, std::tuple<Tp*, Tail...>>
     {
         static constexpr int value = 0;
     };
@@ -400,28 +400,28 @@ struct apply<std::string>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Sep, typename... Args, typename _Return = Ret,
+    template <typename SepT, typename... Args, typename ReturnT = Ret,
               size_t N = sizeof...(Args), enable_if_t<(N > 0), char> = 0>
-    static _Return join(_Sep&& separator, Args&&... __args) noexcept
+    static ReturnT join(SepT&& separator, Args&&... __args) noexcept
     {
         std::stringstream ss;
         ss << std::boolalpha;
-        return internal::apply<Ret>::template join<_Sep, Args...>(
-            std::ref(ss), std::forward<_Sep>(separator), std::forward<Args>(__args)...);
+        return internal::apply<Ret>::template join<SepT, Args...>(
+            std::ref(ss), std::forward<SepT>(separator), std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Sep, typename _Arg, if_string_t<_Arg, true> = 0>
-    static Ret join(_Sep&&, _Arg&& _arg) noexcept
+    template <typename SepT, typename Arg, if_string_t<Arg, true> = 0>
+    static Ret join(SepT&&, Arg&& _arg) noexcept
     {
         return std::move(_arg);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Sep, typename _Arg, if_string_t<_Arg, false> = 0>
-    static Ret join(_Sep&&, _Arg&& _arg) noexcept
+    template <typename SepT, typename Arg, if_string_t<Arg, false> = 0>
+    static Ret join(SepT&&, Arg&& _arg) noexcept
     {
         std::stringstream ss;
         ss << _arg;
@@ -469,8 +469,8 @@ struct apply
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Sep, typename Tuple, size_t... Idx>
-    static string_t join(_Sep&& separator, Tuple&& __tup, index_sequence<Idx...>) noexcept
+    template <typename SepT, typename Tuple, size_t... Idx>
+    static string_t join(SepT&& separator, Tuple&& __tup, index_sequence<Idx...>) noexcept
     {
         return apply<string_t>::join(separator, std::get<Idx>(__tup)...);
     }

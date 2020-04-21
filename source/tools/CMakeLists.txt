@@ -55,6 +55,11 @@ add_subdirectory(timemory-run)
 add_subdirectory(timemory-mpip)
 
 #----------------------------------------------------------------------------------------#
+# Build and install timemory-ompt library
+#
+add_subdirectory(timemory-ompt)
+
+#----------------------------------------------------------------------------------------#
 # Build and install timemory-connector libraries for kokkos
 #
 add_subdirectory(kokkos-connector)

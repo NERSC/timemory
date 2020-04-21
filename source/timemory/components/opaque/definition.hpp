@@ -343,6 +343,17 @@ get_opaque(scope::config _scope)
 //
 //--------------------------------------------------------------------------------------//
 //
+//  With bool arguments
+//
+template <typename Toolset>
+opaque
+get_opaque(bool _flat)
+{
+    return hidden::get_opaque<Toolset>(scope::config{ _flat });
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 //  Default with no args
 //
 template <typename Toolset>

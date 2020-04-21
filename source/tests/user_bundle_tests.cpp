@@ -350,9 +350,9 @@ TEST_F(user_bundle_tests, bundle_configure)
     tim::configure<custom_bundle_t>({ CPU_UTIL, PEAK_RSS });
 
     {
-        auto_custom_bundle_t _one(details::get_test_name());
+        auto_custom_bundle_t _one(details::get_test_name() + "/one");
         ret += details::fibonacci(35);
-        auto_custom_bundle_t _two(details::get_test_name());
+        auto_custom_bundle_t _two(details::get_test_name() + "/two");
         ret += details::fibonacci(35);
     }
 

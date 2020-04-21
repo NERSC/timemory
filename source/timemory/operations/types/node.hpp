@@ -55,11 +55,10 @@ struct insert_node
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(insert_node)
 
-    insert_node(base_type& obj, scope::config _scope, int64_t _hash)
+    insert_node(type& obj, scope::config _scope, int64_t _hash)
     {
         if(!trait::runtime_enabled<type>::get())
             return;
@@ -93,12 +92,11 @@ struct pop_node
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(pop_node)
 
     template <typename... Args>
-    explicit pop_node(base_type& obj, Args&&... args)
+    explicit pop_node(type& obj, Args&&... args)
     {
         sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }

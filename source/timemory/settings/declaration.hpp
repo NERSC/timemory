@@ -32,6 +32,7 @@
 #include "timemory/api.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/compat/macros.h"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
@@ -72,18 +73,10 @@ struct TIMEMORY_SETTINGS_DLL settings
     using strmap_t    = std::map<std::string, std::string>;
 
     template <typename Tag = api::native_tag>
-    static std::shared_ptr<settings> shared_instance()
-    {
-        static std::shared_ptr<settings> _instance = std::make_shared<settings>();
-        return _instance;
-    }
+    static std::shared_ptr<settings> shared_instance() TIMEMORY_VISIBILITY("default");
 
     template <typename Tag = api::native_tag>
-    static settings* instance()
-    {
-        static auto _instance = shared_instance<Tag>();
-        return _instance.get();
-    }
+    static settings* instance() TIMEMORY_VISIBILITY("default");
 
     settings()  = default;
     ~settings() = default;
@@ -140,14 +133,17 @@ struct TIMEMORY_SETTINGS_DLL settings
                                     false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, banner, "TIMEMORY_BANNER",
                                     "Notify about tim::manager creation and destruction",
-                                    true)
-    TIMEMORY_MEMBER_STATIC_REFERENCE(bool, flat_profile, "TIMEMORY_FLAT_PROFILE",
-                                     "Set the label hierarchy mode to default to flat",
-                                     scope::get_fields()[scope::flat::value])
+                                    (get_env<bool>("TIMEMORY_LIBRARY_CTOR", true)))
+    TIMEMORY_MEMBER_STATIC_REFERENCE(
+        bool, flat_profile, "TIMEMORY_FLAT_PROFILE",
+        "Set the label hierarchy mode to default to flat",
+        ([]() -> bool& { return scope::get_fields()[scope::flat::value]; }),
+        ([](bool v) { scope::get_fields()[scope::flat::value] = v; }))
     TIMEMORY_MEMBER_STATIC_REFERENCE(
         bool, timeline_profile, "TIMEMORY_TIMELINE_PROFILE",
         "Set the label hierarchy mode to default to timeline",
-        scope::get_fields()[scope::timeline::value])
+        ([]() -> bool& { return scope::get_fields()[scope::timeline::value]; }),
+        ([](bool v) { scope::get_fields()[scope::timeline::value] = v; }))
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS",
                                     "Enable/disable combining thread-specific data", true)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
@@ -243,9 +239,11 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY",
                                     "Enable pinning threads to CPUs (Linux-only)", false)
     /// target pid
-    TIMEMORY_MEMBER_STATIC_REFERENCE(process::id_t, target_pid, "TIMEMORY_TARGET_PID",
-                                     "Process ID for the components which require this",
-                                     process::get_target_id())
+    TIMEMORY_MEMBER_STATIC_REFERENCE(
+        process::id_t, target_pid, "TIMEMORY_TARGET_PID",
+        "Process ID for the components which require this",
+        ([]() -> process::id_t& { return process::get_target_id(); }),
+        ([](process::id_t v) { process::get_target_id() = v; }))
     /// configure component storage stack clearing
     TIMEMORY_MEMBER_STATIC_ACCESSOR(
         bool, stack_clearing, "TIMEMORY_STACK_CLEARING",
@@ -662,6 +660,26 @@ public:
     template <typename Tp>
     static size_t data_width(int64_t _idx, int64_t _w);
 };
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag>
+std::shared_ptr<settings>
+settings::shared_instance()
+{
+    static std::shared_ptr<settings> _instance = std::make_shared<settings>();
+    return _instance;
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag>
+settings*
+settings::instance()
+{
+    static auto _instance = shared_instance<Tag>();
+    return _instance.get();
+}
 //
 //----------------------------------------------------------------------------------//
 //

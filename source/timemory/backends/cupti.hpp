@@ -59,8 +59,8 @@ namespace cupti
 //--------------------------------------------------------------------------------------//
 
 using string_t = std::string;
-template <typename _Key, typename _Mapped>
-using map_t            = std::map<_Key, _Mapped>;
+template <typename KeyT, typename MappedT>
+using map_t            = std::map<KeyT, MappedT>;
 using strvec_t         = std::vector<string_t>;
 using boolvec_t        = std::vector<bool>;
 using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;

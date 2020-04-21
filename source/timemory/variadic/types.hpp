@@ -71,7 +71,7 @@ class component_tuple;
 template <typename... Types>
 class component_list;
 
-template <typename Tuple, typename _List>
+template <typename TupleT, typename ListT>
 class component_hybrid;
 
 template <typename... Types>
@@ -80,7 +80,7 @@ class auto_tuple;
 template <typename... Types>
 class auto_list;
 
-template <typename Tuple, typename _List>
+template <typename TupleT, typename ListT>
 class auto_hybrid;
 
 }  // namespace tim
@@ -601,13 +601,13 @@ template <typename... Types>
 TSTAG(struct)
 tuple_size<::tim::component_list<Types...>>;
 
-template <typename _Tuple, typename _List>
+template <typename TupleT, typename ListT>
 TSTAG(struct)
-tuple_size<::tim::component_hybrid<_Tuple, _List>>;
+tuple_size<::tim::component_hybrid<TupleT, ListT>>;
 
-template <typename _Tuple, typename _List>
+template <typename TupleT, typename ListT>
 TSTAG(struct)
-tuple_size<::tim::auto_hybrid<_Tuple, _List>>;
+tuple_size<::tim::auto_hybrid<TupleT, ListT>>;
 
 template <typename... Types>
 TSTAG(struct)

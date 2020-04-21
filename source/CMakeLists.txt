@@ -8,6 +8,7 @@
 add_subdirectory(stubs)
 
 include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME library)
 
 #----------------------------------------------------------------------------------------#
 # Locate sources and headers for this project
@@ -147,6 +148,7 @@ if(_BUILD_SHARED_CXX)
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
         timemory-develop-options
+        timemory-hidden-visibility
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
@@ -189,6 +191,7 @@ if(_BUILD_STATIC_CXX)
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
         timemory-develop-options
+        timemory-hidden-visibility
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
@@ -284,12 +287,26 @@ endif()
 add_subdirectory(tools)
 
 add_library(timemory-mpip-library INTERFACE)
-if(TARGET timemory-mpip)
-    target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPI_P)
-    target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip)
-    list(APPEND TIMEMORY_COMPILED_LIBRARIES timemory-mpip)
+add_library(timemory-ompt-library INTERFACE)
+
+set(_OMPT_LIB)
+if(TARGET timemory-ompt-shared)
+    set(_OMPT_LIB timemory-ompt-shared)
+elseif(TARGET timemory-ompt-static)
+    set(_OMPT_LIB timemory-ompt-static)
 endif()
 
+if(TARGET timemory-mpip)
+    target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPIP_LIBRARY)
+    target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip)
+    # list(APPEND TIMEMORY_COMPILED_LIBRARIES timemory-mpip)
+endif()
+
+if(_OMPT_LIB)
+    target_compile_definitions(timemory-ompt-library INTERFACE TIMEMORY_USE_OMPT_LIBRARY)
+    target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
+    # list(APPEND TIMEMORY_COMPILED_LIBRARIES timemory-mpip)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #

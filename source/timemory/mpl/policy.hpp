@@ -45,25 +45,25 @@ namespace policy
 {
 //======================================================================================//
 
-template <typename _Comp, typename Tp>
+template <typename CompT, typename Tp>
 struct record_statistics
 {
     using type            = Tp;
-    using this_type       = record_statistics<_Comp, type>;
+    using this_type       = record_statistics<CompT, type>;
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
-    static void apply(statistics<type>&, const _Comp&);
-    static void apply(type&, const _Comp&) {}
+    static void apply(statistics<type>&, const CompT&);
+    static void apply(type&, const CompT&) {}
 };
 
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Comp>
-struct record_statistics<_Comp, void>
+template <typename CompT>
+struct record_statistics<CompT, void>
 {
     using type            = void;
-    using this_type       = record_statistics<_Comp, type>;
+    using this_type       = record_statistics<CompT, type>;
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
@@ -74,11 +74,11 @@ struct record_statistics<_Comp, void>
 
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Comp>
-struct record_statistics<_Comp, std::tuple<>>
+template <typename CompT>
+struct record_statistics<CompT, std::tuple<>>
 {
     using type            = std::tuple<>;
-    using this_type       = record_statistics<_Comp, type>;
+    using this_type       = record_statistics<CompT, type>;
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 

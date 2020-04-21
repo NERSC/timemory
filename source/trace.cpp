@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/compat/library.h"
 #include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
@@ -35,13 +36,9 @@
 #include <iostream>
 #include <unordered_map>
 
-//#include <dlfcn.h>
+// #include <dlfcn.h>
 
 using namespace tim::component;
-
-#if defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_GOTCHA)
-#    define TIMEMORY_MPI_GOTCHA
-#endif
 
 CEREAL_CLASS_VERSION(tim::settings, 1)
 CEREAL_CLASS_VERSION(tim::env_settings, 0)
@@ -252,6 +249,13 @@ extern "C"
     void timemory_trace_set_mpi(bool use) { use_mpi_gotcha = use; }
     //
 #endif
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_trace_set_env(const char* env_var, const char* env_val)
+    {
+        tim::set_env<std::string>(env_var, env_val, 0);
+    }
     //
     //----------------------------------------------------------------------------------//
     //

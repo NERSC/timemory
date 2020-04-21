@@ -55,12 +55,11 @@ struct reset
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(reset)
 
     template <typename... Args>
-    explicit reset(base_type& obj, Args&&... args);
+    explicit reset(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition and accepts arguments
@@ -90,7 +89,7 @@ private:
 //
 template <typename Tp>
 template <typename... Args>
-reset<Tp>::reset(base_type& obj, Args&&... args)
+reset<Tp>::reset(Tp& obj, Args&&... args)
 {
     sfinae(obj, 0, 0, std::forward<Args>(args)...);
 }

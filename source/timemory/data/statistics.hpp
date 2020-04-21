@@ -33,19 +33,19 @@
 
 //----------------------------------------------------------------------------//
 
-#include <cmath>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-
 #include "timemory/data/functional.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/stl.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/stream.hpp"
+
+#include <cmath>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <limits>
 
 namespace tim
 {
@@ -250,8 +250,8 @@ public:
         return statistics(lhs) -= rhs;
     }
 
-    template <typename _Archive>
-    void serialize(_Archive& ar, const unsigned int)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
     {
         ar(cereal::make_nvp("sum", m_sum), cereal::make_nvp("sqr", m_sqr),
            cereal::make_nvp("min", m_min), cereal::make_nvp("max", m_max),

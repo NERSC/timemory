@@ -55,11 +55,11 @@ namespace policy
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Comp, typename Tp>
+template <typename CompT, typename Tp>
 inline void
-record_statistics<_Comp, Tp>::apply(statistics<Tp>& _stat, const _Comp& _obj)
+record_statistics<CompT, Tp>::apply(statistics<Tp>& _stat, const CompT& _obj)
 {
-    using result_type = decltype(std::declval<_Comp>().get());
+    using result_type = decltype(std::declval<CompT>().get());
     static_assert(std::is_same<result_type, Tp>::value,
                   "Error! The default implementation of "
                   "'policy::record_statistics<Component, T>::apply' requires 'T' to be "

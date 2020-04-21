@@ -115,14 +115,15 @@ public:
     /// \brief Set to 0 for yes if other output, -1 for never, or 1 for yes
     void    set_write_metadata(short v) { m_write_metadata = v; }
     void    write_metadata(const char* = "");
+    void    update_metadata_prefix();
     int32_t get_rank() const { return m_rank; }
     bool    is_finalizing() const { return m_is_finalizing; }
     void    is_finalizing(bool v) { m_is_finalizing = v; }
 
 public:
     // Public static functions
-    static pointer_t instance();
-    static pointer_t master_instance();
+    static pointer_t instance() TIMEMORY_VISIBILITY("default");
+    static pointer_t master_instance() TIMEMORY_VISIBILITY("default");
     static int32_t   total_instance_count() { return f_manager_instance_count().load(); }
     static void      use_exit_hook(bool val) { f_use_exit_hook() = val; }
     static void      exit_hook();

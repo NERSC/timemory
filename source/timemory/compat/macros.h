@@ -83,3 +83,9 @@
 #        define tim_dll
 #    endif
 #endif
+
+#if defined(TIMEMORY_USE_VISIBILITY)
+#    define TIMEMORY_VISIBILITY(mode) __attribute__((visibility(mode)))
+#else
+#    define TIMEMORY_VISIBILITY(mode)
+#endif

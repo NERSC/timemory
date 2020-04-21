@@ -317,7 +317,7 @@ initialize(Tp& obj, int idx)
 //
 template <typename Tp>
 void
-insert(Tp& obj, int idx, scope::config _scope)
+insert(Tp& obj, int idx, scope::config _scope = scope::get_default())
 {
     enumerator_insert(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, _scope);
 }
@@ -326,7 +326,7 @@ insert(Tp& obj, int idx, scope::config _scope)
 //
 template <typename Tp>
 void
-configure(int idx, scope::config _scope)
+configure(int idx, scope::config _scope = scope::get_default())
 {
     enumerator_configure<Tp>(idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, _scope);
 }
@@ -335,7 +335,7 @@ configure(int idx, scope::config _scope)
 //
 template <typename Tp>
 void
-configure(Tp& obj, int idx, scope::config _scope)
+configure(Tp& obj, int idx, scope::config _scope = scope::get_default())
 {
     enumerator_configure(obj, idx, make_int_sequence<TIMEMORY_COMPONENTS_END>{}, _scope);
 }

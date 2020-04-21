@@ -59,7 +59,6 @@ struct generic_operator
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(generic_operator)
 
@@ -67,8 +66,7 @@ struct generic_operator
     static void check()
     {
         using U = std::decay_t<std::remove_pointer_t<Up>>;
-        static_assert(std::is_same<U, type>::value || std::is_same<U, base_type>::value,
-                      "Error! Up != (type || base_type)");
+        static_assert(std::is_same<U, type>::value, "Error! Up != type");
     }
 
     //----------------------------------------------------------------------------------//
@@ -151,23 +149,20 @@ struct generic_deleter
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(generic_deleter)
 
     template <typename Up, enable_if_t<(std::is_pointer<Up>::value), int> = 0>
     explicit generic_deleter(Up& obj)
     {
-        static_assert(std::is_same<Up, type>::value || std::is_same<Up, base_type>::value,
-                      "Error! Up != (type || base_type)");
+        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         delete static_cast<type*&>(obj);
     }
 
     template <typename Up, enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
     explicit generic_deleter(Up&)
     {
-        static_assert(std::is_same<Up, type>::value || std::is_same<Up, base_type>::value,
-                      "Error! Up != (type || base_type)");
+        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
     }
 };
 //
@@ -182,23 +177,20 @@ struct generic_counter
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(generic_counter)
 
     template <typename Up, enable_if_t<(std::is_pointer<Up>::value), int> = 0>
     explicit generic_counter(const Up& obj, uint64_t& count)
     {
-        static_assert(std::is_same<Up, type>::value || std::is_same<Up, base_type>::value,
-                      "Error! Up != (type || base_type)");
+        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get() && obj) ? 1 : 0;
     }
 
     template <typename Up, enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
     explicit generic_counter(const Up&, uint64_t& count)
     {
-        static_assert(std::is_same<Up, type>::value || std::is_same<Up, base_type>::value,
-                      "Error! Up != (type || base_type)");
+        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get()) ? 1 : 0;
     }
 };

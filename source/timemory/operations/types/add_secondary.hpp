@@ -64,7 +64,6 @@ struct add_secondary
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
     using string_t   = std::string;
 
     //----------------------------------------------------------------------------------//

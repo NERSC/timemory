@@ -289,3 +289,17 @@ add_timemory_google_test(derived_tests
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-plotting timemory-analysis-tools timemory-mpi
                     ${_LIBRARY})
+
+set(_OMPT_TARGET)
+if(TARGET timemory-ompt-shared)
+    set(_OMPT_TARGET timemory-ompt-shared)
+elseif(TARGET timemory-ompt-static)
+    set(_OMPT_TARGET timemory-ompt-static)
+endif()
+
+if(_OMPT_TARGET)
+    add_timemory_google_test(ompt_handle_tests
+        DISCOVER_TESTS
+        SOURCES         ompt_handle_tests.cpp
+        LINK_LIBRARIES  ${_OMPT_TARGET})
+endif()

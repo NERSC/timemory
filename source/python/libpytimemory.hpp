@@ -76,25 +76,21 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-using pybundle_t = tim::component::user_global_bundle;
-
+using pybundle_t   = tim::component::user_global_bundle;
 using auto_timer_t = typename tim::auto_timer::type;
-
 using auto_usage_t =
     tim::auto_tuple_t<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
                       voluntary_context_switch, priority_context_switch>;
 using auto_list_t        = tim::available_auto_list_t;
 using component_bundle_t = tim::component_tuple<pybundle_t>;
-
-using tim_timer_t       = typename auto_timer_t::component_type;
-using rss_usage_t       = typename auto_usage_t::component_type;
-using component_list_t  = typename auto_list_t::component_type;
-using manager_t         = tim::manager;
-using sys_signal_t      = tim::sys_signal;
-using signal_settings_t = tim::signal_settings;
-using signal_set_t      = signal_settings_t::signal_set_t;
-using farray_t          = py::array_t<double, py::array::c_style | py::array::forcecast>;
-
+using tim_timer_t        = typename auto_timer_t::component_type;
+using rss_usage_t        = typename auto_usage_t::component_type;
+using component_list_t   = typename auto_list_t::component_type;
+using manager_t          = tim::manager;
+using sys_signal_t       = tim::sys_signal;
+using signal_settings_t  = tim::signal_settings;
+using signal_set_t       = signal_settings_t::signal_set_t;
+using farray_t           = py::array_t<double, py::array::c_style | py::array::forcecast>;
 using component_enum_vec = std::vector<TIMEMORY_COMPONENT>;
 
 //======================================================================================//
@@ -114,6 +110,9 @@ protected:
 
 class pycomponent_bundle
 {
+public:
+    using type = pybundle_t;
+
 public:
     pycomponent_bundle(component_bundle_t* _ptr = nullptr)
     : m_ptr(_ptr)
@@ -136,14 +135,26 @@ public:
 
     void start()
     {
+        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
+                         (m_ptr) ? m_ptr->get<pybundle_t>()->size() : 0);
         if(m_ptr)
             m_ptr->start();
     }
 
     void stop()
     {
+        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
+                         (m_ptr) ? m_ptr->get<pybundle_t>()->size() : 0);
         if(m_ptr)
             m_ptr->stop();
+    }
+
+    static size_t size() { return pybundle_t::bundle_size(); }
+
+    static void reset()
+    {
+        DEBUG_PRINT_HERE("size = %lu", size());
+        pybundle_t::reset();
     }
 
     template <typename... ArgsT>
@@ -660,12 +671,12 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 
 //======================================================================================//
 
-template <typename _Tuple>
+template <typename TupleT>
 struct construct_dict
 {
-    using Type = _Tuple;
+    using Type = TupleT;
 
-    construct_dict(_Tuple& _tup, py::dict& _dict)
+    construct_dict(TupleT& _tup, py::dict& _dict)
     {
         auto _label = std::get<0>(_tup);
         if(_label.size() > 0)

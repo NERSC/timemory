@@ -60,7 +60,6 @@ struct get
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(get)
 
@@ -77,7 +76,7 @@ private:
             obj.get(ptr, nhash);
     }
 
-    template <typename U = type>
+    template <typename U = type, typename base_type = typename U::base_type>
     auto get_sfinae(const U& obj, int, long, void*& ptr, size_t nhash)
         -> decltype(static_cast<const base_type&>(obj).get(ptr, nhash), void())
     {
@@ -108,7 +107,6 @@ struct get_data
     using data_type = decltype(std::declval<type>().get());
 
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(get_data)
 
@@ -180,7 +178,6 @@ struct get_labeled_data
     using data_type = std::tuple<std::string, decltype(std::declval<type>().get())>;
 
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(get_labeled_data)
 

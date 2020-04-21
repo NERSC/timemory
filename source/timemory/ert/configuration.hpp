@@ -58,13 +58,13 @@ namespace ert
 {
 //======================================================================================//
 
-template <typename DeviceT, typename Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct configuration
 {
-    using this_type       = configuration<DeviceT, Tp, _Counter>;
-    using ert_data_t      = exec_data<_Counter>;
+    using this_type       = configuration<DeviceT, Tp, CounterT>;
+    using ert_data_t      = exec_data<CounterT>;
     using device_t        = DeviceT;
-    using counter_t       = _Counter;
+    using counter_t       = CounterT;
     using ert_counter_t   = counter<device_t, Tp, counter_t>;
     using ert_data_ptr_t  = std::shared_ptr<ert_data_t>;
     using executor_func_t = std::function<ert_counter_t(ert_data_ptr_t)>;
@@ -271,7 +271,7 @@ public:
 
 //======================================================================================//
 
-template <typename DeviceT, typename Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct executor
 {
     static_assert(!std::is_same<DeviceT, device::gpu>::value,
@@ -282,11 +282,11 @@ struct executor
     //
     using device_type        = DeviceT;
     using value_type         = Tp;
-    using configuration_type = configuration<device_type, value_type, _Counter>;
-    using counter_type       = counter<device_type, value_type, _Counter>;
-    using this_type          = executor<device_type, value_type, _Counter>;
+    using configuration_type = configuration<device_type, value_type, CounterT>;
+    using counter_type       = counter<device_type, value_type, CounterT>;
+    using this_type          = executor<device_type, value_type, CounterT>;
     using callback_type      = std::function<void(counter_type&)>;
-    using ert_data_t         = exec_data<_Counter>;
+    using ert_data_t         = exec_data<CounterT>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -381,8 +381,8 @@ public:
 
 //======================================================================================//
 
-template <typename Tp, typename _Counter>
-struct executor<device::gpu, Tp, _Counter>
+template <typename Tp, typename CounterT>
+struct executor<device::gpu, Tp, CounterT>
 {
     using DeviceT = device::gpu;
     static_assert(std::is_same<DeviceT, device::gpu>::value,
@@ -393,11 +393,11 @@ struct executor<device::gpu, Tp, _Counter>
     //
     using device_type        = device::gpu;
     using value_type         = Tp;
-    using configuration_type = configuration<device_type, value_type, _Counter>;
-    using counter_type       = counter<device_type, value_type, _Counter>;
-    using this_type          = executor<device_type, value_type, _Counter>;
+    using configuration_type = configuration<device_type, value_type, CounterT>;
+    using counter_type       = counter<device_type, value_type, CounterT>;
+    using this_type          = executor<device_type, value_type, CounterT>;
     using callback_type      = std::function<void(counter_type&)>;
-    using ert_data_t         = exec_data<_Counter>;
+    using ert_data_t         = exec_data<CounterT>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -494,17 +494,17 @@ public:
 //======================================================================================//
 /// for variadic expansion to set the callback
 ///
-template <typename _Executor>
+template <typename ExecutorT>
 struct callback
 {
     template <typename FuncT>
     callback(FuncT&& f)
     {
-        _Executor::get_callback() = f;
+        ExecutorT::get_callback() = f;
     }
 
     template <typename FuncT>
-    callback(_Executor& _exec, FuncT&& f)
+    callback(ExecutorT& _exec, FuncT&& f)
     {
         _exec.callback = f;
     }
@@ -512,15 +512,15 @@ struct callback
 
 //======================================================================================//
 
-template <typename DeviceT, typename _Count, typename Tp, typename... Types,
-          typename _DataType = exec_data<_Count>,
-          typename _DataPtr  = std::shared_ptr<_DataType>,
+template <typename DeviceT, typename CounterT, typename Tp, typename... Types,
+          typename DataType = exec_data<CounterT>,
+          typename DataPtr  = std::shared_ptr<DataType>,
           typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
-std::shared_ptr<_DataType>
-execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+std::shared_ptr<DataType>
+execute(std::shared_ptr<DataType> _data = std::make_shared<DataType>())
 {
-    using _ConfigType = configuration<DeviceT, Tp, _Count>;
-    using _ExecType   = executor<DeviceT, Tp, _Count>;
+    using _ConfigType = configuration<DeviceT, Tp, CounterT>;
+    using _ExecType   = executor<DeviceT, Tp, CounterT>;
 
     _ConfigType _config;
     _ExecType(_config, _data);
@@ -530,15 +530,15 @@ execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
 
 //======================================================================================//
 
-template <typename DeviceT, typename _Count, typename Tp, typename... Types,
-          typename _DataType = exec_data<_Count>,
-          typename _DataPtr  = std::shared_ptr<_DataType>,
+template <typename DeviceT, typename CounterT, typename Tp, typename... Types,
+          typename DataType = exec_data<CounterT>,
+          typename DataPtr  = std::shared_ptr<DataType>,
           typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
-std::shared_ptr<_DataType>
-execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+std::shared_ptr<DataType>
+execute(std::shared_ptr<DataType> _data = std::make_shared<DataType>())
 {
-    execute<DeviceT, _Count, Tp>(_data);
-    execute<DeviceT, _Count, Types...>(_data);
+    execute<DeviceT, CounterT, Tp>(_data);
+    execute<DeviceT, CounterT, Types...>(_data);
     return _data;
 }
 

@@ -53,6 +53,7 @@
             namespace factory                                                            \
             {                                                                            \
             template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>();                     \
+            template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(bool);                 \
             template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(scope::config);        \
             template TIMEMORY_FACTORY_DLL std::set<size_t> get_typeids<TYPE>();          \
             }                                                                            \
@@ -67,6 +68,7 @@
             namespace factory                                                            \
             {                                                                            \
             extern template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>();              \
+            extern template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(bool);          \
             extern template TIMEMORY_FACTORY_DLL opaque get_opaque<TYPE>(scope::config); \
             extern template TIMEMORY_FACTORY_DLL std::set<size_t> get_typeids<TYPE>();   \
             }                                                                            \
@@ -77,7 +79,13 @@
 #    endif
 #endif
 
+TIMEMORY_EXTERN_FACTORY_TEMPLATE(allinea_map)
 TIMEMORY_EXTERN_FACTORY_TEMPLATE(caliper)
+TIMEMORY_EXTERN_FACTORY_TEMPLATE(craypat_record)
+TIMEMORY_EXTERN_FACTORY_TEMPLATE(craypat_region)
+TIMEMORY_EXTERN_FACTORY_TEMPLATE(craypat_counters)
+TIMEMORY_EXTERN_FACTORY_TEMPLATE(craypat_heap_stats)
+TIMEMORY_EXTERN_FACTORY_TEMPLATE(craypat_flush_buffer)
 TIMEMORY_EXTERN_FACTORY_TEMPLATE(cpu_clock)
 TIMEMORY_EXTERN_FACTORY_TEMPLATE(cpu_roofline_dp_flops)
 TIMEMORY_EXTERN_FACTORY_TEMPLATE(cpu_roofline_flops)

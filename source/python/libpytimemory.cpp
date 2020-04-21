@@ -31,11 +31,21 @@
 
 //======================================================================================//
 
-#if defined(TIMEMORY_USE_MPI_P)
+#if defined(TIMEMORY_USE_MPIP_LIBRARY)
 extern "C"
 {
     extern uint64_t init_timemory_mpip_tools();
     extern uint64_t stop_timemory_mpip_tools(uint64_t);
+}
+#endif
+
+//======================================================================================//
+
+#if defined(TIMEMORY_USE_OMPT_LIBRARY)
+extern "C"
+{
+    extern uint64_t init_timemory_ompt_tools();
+    extern uint64_t stop_timemory_ompt_tools(uint64_t);
 }
 #endif
 
@@ -293,18 +303,43 @@ PYBIND11_MODULE(libpytimemory, tim)
         tim::get_rusage_type() = RUSAGE_SELF;
 #endif
     };
+    //
     //----------------------------------------------------------------------------------//
+    //
     auto _init_mpip = [&]() {
-#if defined(TIMEMORY_USE_MPI_P)
+#if defined(TIMEMORY_USE_MPIP_LIBRARY)
         return init_timemory_mpip_tools();
 #else
         return 0;
 #endif
     };
+    //
     //----------------------------------------------------------------------------------//
+    //
     auto _stop_mpip = [&](uint64_t id) {
-#if defined(TIMEMORY_USE_MPI_P)
+#if defined(TIMEMORY_USE_MPIP_LIBRARY)
         return stop_timemory_mpip_tools(id);
+#else
+        tim::consume_parameters(id);
+        return 0;
+#endif
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto _init_ompt = [&]() {
+#if defined(TIMEMORY_USE_OMPT_LIBRARY)
+        return init_timemory_ompt_tools();
+#else
+        return 0;
+#endif
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto _stop_ompt = [&](uint64_t id) {
+#if defined(TIMEMORY_USE_OMPT_LIBRARY)
+        return stop_timemory_ompt_tools(id);
 #else
         tim::consume_parameters(id);
         return 0;
@@ -442,6 +477,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
     //----------------------------------------------------------------------------------//
     tim.def("mpi_init", _init_mpi, "Initialize MPI");
+    //----------------------------------------------------------------------------------//
+    tim.def("init_ompt", _init_ompt, "Activate OMPT (OpenMP tools) profiling");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_ompt", _stop_ompt, "Deactivate OMPT (OpenMP tools)  profiling",
+            py::arg("id"));
 
     //==================================================================================//
     //
@@ -450,9 +490,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
 
 #define SETTING_PROPERTY(TYPE, FUNC)                                                     \
-    settings.def_property_static(                                                        \
-        TIMEMORY_STRINGIZE(FUNC), [](py::object) { return ::tim::settings::FUNC(); },    \
-        [](py::object, TYPE v) { ::tim::settings::FUNC() = v; })
+    settings.def_property_static(TIMEMORY_STRINGIZE(FUNC),                               \
+                                 [](py::object) { return tim::settings::FUNC(); },       \
+                                 [](py::object, TYPE v) { tim::settings::FUNC() = v; })
 
     settings.def(py::init<>(), "Dummy");
 
@@ -474,6 +514,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, debug);
     SETTING_PROPERTY(bool, banner);
     SETTING_PROPERTY(bool, flat_profile);
+    SETTING_PROPERTY(bool, timeline_profile);
     SETTING_PROPERTY(bool, collapse_threads);
     SETTING_PROPERTY(bool, destructor_report);
     SETTING_PROPERTY(uint16_t, max_depth);
@@ -684,7 +725,8 @@ PYBIND11_MODULE(libpytimemory, tim)
                         py::return_value_policy::automatic);
     //----------------------------------------------------------------------------------//
 
-    auto configure_pybundle = [](py::list _args, bool flat_profile) {
+    auto configure_pybundle = [](py::list _args, bool flat_profile,
+                                 bool timeline_profile) {
         std::set<TIMEMORY_COMPONENT> components;
         if(_args.empty())
             components.insert(WALL_CLOCK);
@@ -721,8 +763,39 @@ PYBIND11_MODULE(libpytimemory, tim)
                                  "'timemory.component' and string");
             }
         }
-        pycomponent_bundle::configure(components, flat_profile);
+
+        size_t isize = pycomponent_bundle::size();
+        if(tim::settings::debug() || tim::settings::verbose() > 3)
+        {
+            PRINT_HERE("%s", "configuring pybundle");
+        }
+
+        using bundle_type = typename pycomponent_bundle::type;
+        tim::configure<bundle_type>(components,
+                                    tim::scope::config{ flat_profile, timeline_profile });
+
+        if(tim::settings::debug() || tim::settings::verbose() > 3)
+        {
+            size_t fsize = pycomponent_bundle::size();
+            if((fsize - isize) < components.size())
+            {
+                std::stringstream ss;
+                ss << "Warning: final size " << fsize << ", input size " << isize
+                   << ". Difference is less than the components size: "
+                   << components.size();
+                PRINT_HERE("%s", ss.str().c_str());
+                throw std::runtime_error(ss.str());
+            }
+            PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n", fsize,
+                       isize, components.size());
+        }
+
+        std::cout << "TYPEIDS: \n";
+        for(auto itr : pybundle_t::get_typeids())
+            std::cout << itr << std::endl;
     };
+
+    pybundle_t::global_init(nullptr);
 
     //==================================================================================//
     //
@@ -738,12 +811,12 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     comp_bundle.def("stop", &pycomponent_bundle::stop, "Stop the bundle");
     //----------------------------------------------------------------------------------//
-    comp_bundle.def_static("configure", configure_pybundle,
-                           py::arg("components")   = py::list(),
-                           py::arg("flat_profile") = false,
-                           "Configure the profiler types (default: 'wall_clock')");
+    comp_bundle.def_static(
+        "configure", configure_pybundle, py::arg("components") = py::list(),
+        py::arg("flat_profile") = false, py::arg("timeline_profile") = false,
+        "Configure the profiler types (default: 'wall_clock')");
     //----------------------------------------------------------------------------------//
-    comp_bundle.def_static("reset", &pybundle_t::reset,
+    comp_bundle.def_static("reset", &pycomponent_bundle::reset,
                            "Reset the components in the bundle");
 
     //==================================================================================//

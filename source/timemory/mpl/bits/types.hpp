@@ -105,27 +105,27 @@ tuple_printer(const _Tuple<Types...>& obj, std::ostream& os, index_sequence<Idx.
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, size_t N, typename _Other>
+template <typename Tp, size_t N, typename Other>
 std::array<Tp, N>&
-operator+=(std::array<Tp, N>&, _Other&&);
+operator+=(std::array<Tp, N>&, Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Lhs, typename Rhs, typename _Other>
+template <typename Lhs, typename Rhs, typename Other>
 std::pair<Lhs, Rhs>&
-operator+=(std::pair<Lhs, Rhs>&, _Other&&);
+operator+=(std::pair<Lhs, Rhs>&, Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp, typename... _Extra, typename _Other>
+template <typename Tp, typename... _Extra, typename Other>
 std::vector<Tp, _Extra...>&
-operator+=(std::vector<Tp, _Extra...>&, _Other&&);
+operator+=(std::vector<Tp, _Extra...>&, Other&&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types, typename _Other>
+template <typename... Types, typename Other>
 std::tuple<Types...>&
-operator+=(std::tuple<Types...>&, _Other&&);
+operator+=(std::tuple<Types...>&, Other&&);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -149,10 +149,10 @@ template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>&
 operator-=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
 
-template <typename Lhs, typename Rhs, typename _Arith,
-          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int> = 0>
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<(std::is_arithmetic<decay_t<ArithT>>::value), int> = 0>
 std::pair<Lhs, Rhs>&
-operator-=(std::pair<Lhs, Rhs>&, const _Arith&);
+operator-=(std::pair<Lhs, Rhs>&, const ArithT&);
 
 //--------------------------------------------------------------------------------------//
 
@@ -198,10 +198,10 @@ template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>&
 operator*=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
 
-template <typename Lhs, typename Rhs, typename _Arith,
-          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int> = 0>
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<(std::is_arithmetic<decay_t<ArithT>>::value), int> = 0>
 std::pair<Lhs, Rhs>&
-operator*=(std::pair<Lhs, Rhs>&, const _Arith&);
+operator*=(std::pair<Lhs, Rhs>&, const ArithT&);
 
 //--------------------------------------------------------------------------------------//
 
@@ -247,10 +247,10 @@ template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>&
 operator/=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
 
-template <typename Lhs, typename Rhs, typename _Arith,
-          enable_if_t<(std::is_arithmetic<decay_t<_Arith>>::value), int> = 0>
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<(std::is_arithmetic<decay_t<ArithT>>::value), int> = 0>
 std::pair<Lhs, Rhs>&
-operator/=(std::pair<Lhs, Rhs>&, const _Arith&);
+operator/=(std::pair<Lhs, Rhs>&, const ArithT&);
 
 //--------------------------------------------------------------------------------------//
 

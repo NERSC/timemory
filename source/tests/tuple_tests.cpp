@@ -391,7 +391,7 @@ TEST_F(tuple_tests, collapsed_threads)
             std::thread t2(run_fibonacci, 41);
             t2.join();
         }
-        TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
+        TIMEMORY_CALIPER_APPLY0(master_thread_a, stop);
     }
 
     {
@@ -406,10 +406,10 @@ TEST_F(tuple_tests, collapsed_threads)
         t1.join();
         t2.join();
 
-        TIMEMORY_CALIPER_APPLY(master_thread_a, stop);
+        TIMEMORY_CALIPER_APPLY0(master_thread_a, stop);
     }
 
-    TIMEMORY_CALIPER_APPLY(tot, stop);
+    TIMEMORY_CALIPER_APPLY0(tot, stop);
 
     std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
 

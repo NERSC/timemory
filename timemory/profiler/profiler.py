@@ -166,7 +166,13 @@ class profile():
 
     #------------------------------------------------------------------------------------#
     #
-    def __init__(self, components=[], *args, **kwargs):
+    def __init__(self, components=[], flat=False, timeline=False, *args, **kwargs):
+        """
+        Arguments:
+            - components [list of strings]  : list of timemory components
+            - flat [bool]                   : enable flat profiling
+            - timeline [bool]               : enable timeline profiling
+        """
         global _records
         global _include_line
         global _include_filepath
@@ -180,11 +186,13 @@ class profile():
 
         self._original_profiler_function = sys.getprofile()
         self._use = (not _is_running and profile.is_enabled() is True)
-        self._flat_profile = settings.flat_profile
+        self._flat_profile = (settings.flat_profile or flat)
+        self._timeline_profile = (settings.timeline_profile or timeline)
         self.components = components + _components.split(",")
         if len(self.components) == 0:
             self.components += ["wall_clock"]
         os.environ["TIMEMORY_PROFILER_COMPONENTS"] = ",".join(self.components)
+        print("USE = {}, COMPONENTS = {}".format(self._use, self.components))
 
     #------------------------------------------------------------------------------------#
     #
@@ -198,7 +206,8 @@ class profile():
             self._original_profiler_function = sys.getprofile()
             _is_running = True
             component_bundle.reset()
-            component_bundle.configure(self.components)
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
             sys.setprofile(_profiler_function)
 
     #------------------------------------------------------------------------------------#
@@ -228,7 +237,8 @@ class profile():
             self._original_profiler_function = sys.getprofile()
             _is_running = True
             component_bundle.reset()
-            component_bundle.configure(self.components)
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
@@ -258,7 +268,8 @@ class profile():
             self._original_profiler_function = sys.getprofile()
             _is_running = True
             component_bundle.reset()
-            component_bundle.configure(self.components)
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
             sys.setprofile(_profiler_function)
 
     #------------------------------------------------------------------------------------#
@@ -296,7 +307,8 @@ class profile():
             self._original_profiler_function = sys.getprofile()
             _is_running = True
             component_bundle.reset()
-            component_bundle.configure(self.components)
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
 
         try:
             exec(cmd, globals, locals)
