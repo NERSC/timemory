@@ -27,8 +27,8 @@
 #include "timemory/settings/types.hpp"
 //
 #include "timemory/settings/declaration.hpp"
-//
 #include "timemory/settings/definition.hpp"
+//
 
 TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
 
@@ -43,8 +43,7 @@ namespace tim
 TIMEMORY_SETTINGS_LINKAGE(setting_callback_map_t&)
 get_parse_callbacks()
 {
-    static setting_callback_map_t _instance;
-    return _instance;
+    return get_parse_callback_map<settings, api::native_tag>();
 }
 //
 //--------------------------------------------------------------------------------------//

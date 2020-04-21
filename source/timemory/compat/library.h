@@ -52,6 +52,10 @@
 #    define TIMEMORY_DECL extern tim_dll
 #endif
 
+#if !defined(TIMEMORY_CDECL)
+#    define TIMEMORY_CDECL extern tim_cdll
+#endif
+
 #if defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_GOTCHA)
 #    define TIMEMORY_MPI_GOTCHA
 #endif
@@ -91,21 +95,21 @@ extern "C"
     TIMEMORY_DECL timemory_delete_func_t timemory_delete_function
                                          TIMEMORY_VISIBILITY("default");
 
-    TIMEMORY_DECL void c_timemory_init(int argc, char** argv, timemory_settings)
+    TIMEMORY_CDECL void c_timemory_init(int argc, char** argv, timemory_settings)
         TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL void  c_timemory_finalize(void) TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL int   c_timemory_enabled(void) TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL void* c_timemory_create_auto_timer(const char*)
+    TIMEMORY_CDECL void  c_timemory_finalize(void) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_CDECL int   c_timemory_enabled(void) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_CDECL void* c_timemory_create_auto_timer(const char*)
         TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL void c_timemory_delete_auto_timer(void*) TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL void* c_timemory_create_auto_tuple(const char*, ...)
+    TIMEMORY_CDECL void c_timemory_delete_auto_timer(void*) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_CDECL void* c_timemory_create_auto_tuple(const char*, ...)
         TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL void c_timemory_delete_auto_tuple(void*) TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL const char* c_timemory_blank_label(const char*)
+    TIMEMORY_CDECL void c_timemory_delete_auto_tuple(void*) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_CDECL const char* c_timemory_blank_label(const char*)
         TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL const char* c_timemory_basic_label(const char*, const char*)
+    TIMEMORY_CDECL const char* c_timemory_basic_label(const char*, const char*)
         TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL const char* c_timemory_label(const char*, const char*, int, const char*)
+    TIMEMORY_CDECL const char* c_timemory_label(const char*, const char*, int, const char*)
         TIMEMORY_VISIBILITY("default");
 
     TIMEMORY_DECL void cxx_timemory_init(int, char**, timemory_settings)

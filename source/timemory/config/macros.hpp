@@ -29,9 +29,23 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 //======================================================================================//
 //
 //                              Define macros for config
+//
+//======================================================================================//
+//
+#if !defined(TIMEMORY_CONFIG_DLL)
+#    if defined(TIMEMORY_CONFIG_SOURCE)
+#         define TIMEMORY_CONFIG_DLL tim_dll_export
+#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_CONFIG_EXTERN)
+#         define TIMEMORY_CONFIG_DLL tim_dll_import
+#    else
+#         define TIMEMORY_CONFIG_DLL
+#    endif
+#endif
 //
 //======================================================================================//
 //

@@ -1,4 +1,8 @@
 
+if(WIN32)
+    return()
+endif()
+
 foreach(LIB_TYPE shared static)
 
     if("${LIB_TYPE}" STREQUAL "shared")

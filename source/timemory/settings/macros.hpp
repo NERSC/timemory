@@ -57,12 +57,14 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if !defined(TIMEMORY_SETTINGS_DLL)
 #if defined(TIMEMORY_SETTINGS_SOURCE)
 #    define TIMEMORY_SETTINGS_DLL tim_dll_export
 #elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
 #    define TIMEMORY_SETTINGS_DLL tim_dll_import
 #else
 #    define TIMEMORY_SETTINGS_DLL
+#endif
 #endif
 //
 //--------------------------------------------------------------------------------------//

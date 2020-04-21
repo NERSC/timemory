@@ -146,18 +146,17 @@ struct affinity
         return _instance;
     }
 
-    enum mode
+    enum MODE
     {
-        COMPACT,
-        NEAR,
-        SCATTER,
-        SPREAD,
-        EXPLICIT
+        COMPACT = 0,
+        SCATTER = 1,
+        SPREAD = 2,
+        EXPLICIT = 3
     };
 
-    static mode& get_mode()
+    static MODE& get_mode()
     {
-        static mode _instance = NEAR;
+        static MODE _instance = COMPACT;
         return _instance;
     }
 
@@ -192,8 +191,7 @@ struct affinity
         static functor_t _instance = [&](int64_t tid) {
             switch(get_mode())
             {
-                case COMPACT:
-                case NEAR: return _compact_instance(tid); break;
+                case COMPACT: return _compact_instance(tid); break;
                 case SCATTER:
                 case SPREAD: return _scatter_instance(tid); break;
                 case EXPLICIT: return _explicit_instance(tid); break;

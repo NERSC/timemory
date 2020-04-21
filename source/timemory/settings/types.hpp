@@ -62,7 +62,7 @@ struct settings;
 //--------------------------------------------------------------------------------------//
 //
 template <typename... T>
-static inline setting_callback_map_t&
+inline setting_callback_map_t&
 get_parse_callback_map()
 {
     static setting_callback_map_t _instance;
@@ -72,7 +72,7 @@ get_parse_callback_map()
 //--------------------------------------------------------------------------------------//
 //
 template <typename... T>
-static inline setting_description_map_t&
+inline setting_description_map_t&
 get_descriptions()
 {
     static setting_description_map_t _instance;
@@ -81,10 +81,10 @@ get_descriptions()
 //
 //--------------------------------------------------------------------------------------//
 //
-setting_callback_map_t&
+TIMEMORY_SETTINGS_DLL setting_callback_map_t&
 get_parse_callbacks() TIMEMORY_VISIBILITY("default");
 //
-setting_description_map_t&
+TIMEMORY_SETTINGS_DLL setting_description_map_t&
 get_setting_descriptions() TIMEMORY_VISIBILITY("default");
 //
 //--------------------------------------------------------------------------------------//

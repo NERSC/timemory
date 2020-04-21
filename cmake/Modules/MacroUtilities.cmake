@@ -569,10 +569,10 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     cmake_parse_arguments(
         COMP "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
 
-    if(WIN32)
-        # set_property(GLOBAL APPEND PROPERTY TIMEMORY_CXX_LIBRARY_SOURCES
-        #    ${COMP_HEADERS} ${COMP_SOURCES})
-        # return()
+    if(WIN32 AND NOT "${COMP_CATEGORY}" STREQUAL "GLOBAL")
+        set_property(GLOBAL APPEND PROPERTY TIMEMORY_CXX_LIBRARY_SOURCES
+           ${COMP_HEADERS})
+        return()
     endif()
 
     check_required(COMP_NAME)

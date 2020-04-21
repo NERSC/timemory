@@ -32,25 +32,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(tim_cdll)
-#    if defined(_WINDOWS)
-#        if defined(TIMEMORY_CDLL_EXPORT)
-#            define tim_cdll __declspec(dllexport)
-#        elif defined(TIMEMORY_CDLL_IMPORT)
-#            define tim_cdll __declspec(dllimport)
-#        else
-#            define tim_cdll
-#        endif
-#    else
-#        define tim_cdll
-#    endif
-#endif
-
 #if defined(__cplusplus)
 extern "C"
 {
 #endif
 
+#if !defined(_WINDOWS)
     char* strdup(const char* s)
     {
         size_t slen   = strlen(s);
@@ -63,6 +50,7 @@ extern "C"
         memcpy(result, s, slen + 1);
         return result;
     }
+#endif
 
     //==================================================================================//
 

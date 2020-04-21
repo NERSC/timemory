@@ -261,43 +261,63 @@ struct opaque_typeids
 //
 //--------------------------------------------------------------------------------------//
 //
-template <template <typename...> class Tuple, typename... T>
-struct opaque_typeids<Tuple<T...>>
+template <template <typename...> class TupleT, typename... T>
+struct opaque_typeids<TupleT<T...>>
 {
     using result_type = std::set<size_t>;
+    using this_type = opaque_typeids<TupleT<T...>>;
 
+#if !defined(_WINDOWS)
     template <typename U>
-    static auto get(result_type& ret)
+    static void get(result_type& ret)
     {
         ret.insert(get_opaque_hash(demangle<U>()));
     }
 
-    template <typename U       = Tuple<T...>,
+    template <typename U       = TupleT<T...>,
               enable_if_t<(trait::is_available<U>::value &&
-                           concepts::is_wrapper<Tuple<T...>>::value),
+                           concepts::is_wrapper<TupleT<T...>>::value),
                           int> = 0>
-    static auto get()
+    static result_type get()
     {
         result_type ret;
-        get<Tuple<T...>>(ret);
+        this_type::get<TupleT<T...>>(ret);
         TIMEMORY_FOLD_EXPRESSION(get<T>(ret));
         return ret;
     }
 
-    template <typename U       = Tuple<T...>,
+    template <typename U       = TupleT<T...>,
               enable_if_t<(trait::is_available<U>::value &&
-                           !concepts::is_wrapper<Tuple<T...>>::value),
+                           !concepts::is_wrapper<TupleT<T...>>::value),
                           int> = 0>
-    static auto get()
+    static result_type get()
     {
         result_type ret;
-        get<Tuple<T...>>(ret);
+        this_type::get<TupleT<T...>>(ret);
         return ret;
     }
+#else
+    template <typename U, enable_if_t<(trait::is_available<U>::value), int> = 0>
+    static void get(result_type& ret)
+    {
+        ret.insert(get_opaque_hash(demangle<U>()));
+    }
 
-    template <typename U                                         = Tuple<T...>,
+    template <typename U, enable_if_t<!(trait::is_available<U>::value), int> = 0>
+    static void get(result_type&)
+    {}
+
+    static result_type get()
+    {
+        result_type ret;
+        this_type::get<TupleT<T...>>(ret);
+        return ret;
+    }
+#endif
+
+    template <typename U                                         = TupleT<T...>,
               enable_if_t<!(trait::is_available<U>::value), int> = 0>
-    static auto get()
+    static result_type get()
     {
         return result_type({ 0 });
     }

@@ -87,7 +87,7 @@ build_script:
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_USE_MPI=OFF
-    -DTIMEMORY_BUILD_C=OFF
+    -DTIMEMORY_BUILD_C=ON
     -DTIMEMORY_BUILD_PYTHON=ON
     -DTIMEMORY_BUILD_EXAMPLES=ON
     -DTIMEMORY_BUILD_GTEST=OFF
@@ -97,7 +97,10 @@ build_script:
   - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
   - ls
   - .\outputs\runtime\%CONFIG%\ex_cxx_basic.exe
-  #- .\outputs\runtime\%CONFIG%\ex_optional_on.exe
+  - .\outputs\runtime\%CONFIG%\ex_optional_on.exe
   - .\outputs\runtime\%CONFIG%\ex_optional_off.exe
-  #- .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe
-  #- .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe
+  - .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe
+  - .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe
+  - .\outputs\runtime\%CONFIG%\ex_c_minimal.exe
+  - .\outputs\runtime\%CONFIG%\ex_c_minimal_library.exe
+  - .\outputs\runtime\%CONFIG%\ex_c_timing.exe

@@ -322,9 +322,11 @@
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                              \
                                 impl::storage_deleter<impl::storage<                                               \
                                     TYPE, implements_storage<TYPE>::value>>>>;                                     \
-            extern template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
+            extern template TIMEMORY_COMPONENT_DLL storage_singleton<                                               \
+                storage<TYPE, typename TYPE::value_type>>*                           \
                                                 get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
-            extern template storage_initializer storage_initializer::get<TYPE>();                                  \
+            extern template TIMEMORY_COMPONENT_DLL storage_initializer                              \
+            storage_initializer::get<TYPE>();                                  \
             }
 #    endif
 //
@@ -343,9 +345,11 @@
                 std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                       \
                                 impl::storage_deleter<impl::storage<                                        \
                                     TYPE, implements_storage<TYPE>::value>>>>;                              \
-            template storage_singleton<storage<TYPE, typename TYPE::value_type>>*                           \
+            template TIMEMORY_COMPONENT_DLL storage_singleton<                                               \
+                storage<TYPE, typename TYPE::value_type>>*                           \
                                          get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
-            template storage_initializer storage_initializer::get<TYPE>();                                  \
+            template TIMEMORY_COMPONENT_DLL storage_initializer                              \
+            storage_initializer::get<TYPE>();                                  \
             }                                                                                               \
             namespace                                                                                       \
             {                                                                                               \

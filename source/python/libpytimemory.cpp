@@ -786,8 +786,9 @@ PYBIND11_MODULE(libpytimemory, tim)
                 PRINT_HERE("%s", ss.str().c_str());
                 throw std::runtime_error(ss.str());
             }
-            PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n", fsize,
-                       isize, components.size());
+            PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n", 
+                       (unsigned long) fsize, (unsigned long) isize,
+                       (unsigned long) components.size());
         }
 
         std::cout << "TYPEIDS: \n";

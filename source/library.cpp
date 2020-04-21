@@ -26,6 +26,8 @@
 #include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
+//
+#include "timemory/config.hpp"
 
 #include <cstdarg>
 #include <deque>
@@ -187,20 +189,9 @@ extern "C"
             printf("%s\n\n", spacer.c_str());
         }
 
-        std::cout << "flat_profile = " << std::boolalpha << tim::settings::flat_profile()
-                  << '\n';
-
         tim::timemory_init(argc, argv);
-
         _manager->update_metadata_prefix();
-
-        std::cout << "flat_profile = " << std::boolalpha << tim::settings::flat_profile()
-                  << '\n';
-
         tim::settings::parse();
-
-        std::cout << "flat_profile = " << std::boolalpha << tim::settings::flat_profile()
-                  << '\n';
     }
 
     //----------------------------------------------------------------------------------//
