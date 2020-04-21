@@ -484,8 +484,8 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
     // depth and hash so it doesn't really matter which check happens first here
     // however, the query for is_timeline() is cheaper so we will check that
     // and fallback to inserting into tree without a check
-    if(scope_data.is_timeline())
-        return insert_timeline(hash_value, obj, hash_depth);
+    // if(scope_data.is_timeline())
+    //    return insert_timeline(hash_value, obj, hash_depth);
 
     // default fall-through if neither flat nor timeline
     return insert_tree(hash_value, obj, hash_depth);

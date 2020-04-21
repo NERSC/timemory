@@ -165,9 +165,10 @@ TEST_F(timeline_tests, general)
     // tim::settings::timeline_profile() = true;
 
     long n = 10;
+    for(long i = 0; i < n; ++i)
     {
         TIMEMORY_BLANK_MARKER(toolset_t, details::get_test_name());
-        auto ret = details::fibonacci(n, true);
+        auto ret = details::fibonacci(n, false);
         printf("\nfibonacci(%li) = %li\n", n, ret);
     }
 
@@ -176,7 +177,7 @@ TEST_F(timeline_tests, general)
     printf("esize = %lu\n\n", (unsigned long) esize);
     auto data = tim::storage<wall_clock>::instance()->get();
 
-    EXPECT_EQ(esize - bsize, 11);
+    EXPECT_EQ(esize - bsize, 10);
     EXPECT_EQ(data.at(bsize + 1).depth(), 0);
 }
 
@@ -187,11 +188,13 @@ TEST_F(timeline_tests, nested)
     auto bsize = tim::storage<wall_clock>::instance()->size();
     // tim::settings::timeline_profile() = true;
 
-    long n = 10;
+    long n = 5;
     {
         toolset_t t(details::get_test_name(), tim::scope::config{ false, false, false });
-        auto      ret = details::fibonacci(n, true);
-        printf("\nfibonacci(%li) = %li\n", n, ret);
+        long      ret = 0;
+        for(int i = 0; i < 5; ++i)
+            ret += details::fibonacci(n, true);
+        printf("\nfibonacci(%li) * 5 = %li\n", n, ret);
     }
 
     auto esize = tim::storage<wall_clock>::instance()->size();
@@ -199,8 +202,11 @@ TEST_F(timeline_tests, nested)
     printf("esize = %lu\n\n", (unsigned long) esize);
     auto data = tim::storage<wall_clock>::instance()->get();
 
-    EXPECT_EQ(esize - bsize, 11);
+    EXPECT_EQ(esize - bsize, 26);
     EXPECT_EQ(data.at(bsize + 1).depth(), 1);
+    EXPECT_EQ(data.at(bsize + 2).depth(), 2);
+    EXPECT_EQ(data.at(bsize + 6).depth(), 1);
+    EXPECT_EQ(data.at(bsize + 7).depth(), 2);
 }
 
 //--------------------------------------------------------------------------------------//

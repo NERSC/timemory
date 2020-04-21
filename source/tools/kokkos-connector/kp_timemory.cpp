@@ -24,18 +24,25 @@ static std::string spacer =
 struct KokkosProfiler;
 using KokkosUserBundle = tim::component::user_bundle<0, KokkosProfiler>;
 
+// memory trackers
+struct KokkosMemory
+{};
+using KokkosMemoryTracker = data_tracker<int64_t, KokkosMemory>;
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, KokkosMemoryTracker, std::true_type);
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, KokkosMemoryTracker, std::true_type);
+
 // set up the configuration of tools
-#if defined(KP_COMPONENTS)
-using profile_entry_t = tim::component_tuple<KP_COMPONENTS>;
-#else
-using profile_entry_t = tim::component_tuple<KokkosUserBundle>;
-#endif
+using profile_entry_t =
+    tim::component_hybrid<tim::component_tuple<KokkosUserBundle>,
+                          tim::component_list<cpu_util, KokkosMemoryTracker>>;
 
 // various data structurs used
 using section_entry_t = std::tuple<std::string, profile_entry_t>;
 using profile_stack_t = std::vector<profile_entry_t>;
 using profile_map_t   = std::unordered_map<uint64_t, profile_entry_t>;
 using section_map_t   = std::unordered_map<uint64_t, section_entry_t>;
+using pointer_map_t   = std::map<const void* const, profile_entry_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -62,6 +69,14 @@ static profile_map_t&
 get_profile_map()
 {
     return get_tl_static<profile_map_t>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+static pointer_map_t&
+get_pointer_map()
+{
+    return get_tl_static<pointer_map_t>();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -107,28 +122,6 @@ stop_profiler(uint64_t kernid)
         get_profile_map().at(kernid).stop();
 }
 
-//--------------------------------------------------------------------------------------//
-//  call this function if KokkosUserBundle is listed as one of the tools
-//  (long compile times)
-//
-template <typename TupleT,
-          enable_if_t<(tim::is_one_of<KokkosUserBundle, TupleT>::value), int> = 0>
-static void
-configure(const std::vector<TIMEMORY_COMPONENT>& components)
-{
-    tim::configure<KokkosUserBundle>(components);
-}
-
-//--------------------------------------------------------------------------------------//
-//  call this function if KokkosUserBundle is NOT listed as one of the tools
-//  (drastically reduces compile times)
-//
-template <typename TupleT,
-          enable_if_t<!(tim::is_one_of<KokkosUserBundle, TupleT>::value), int> = 0>
-static void
-configure(const std::vector<TIMEMORY_COMPONENT>&)
-{}
-
 //======================================================================================//
 //
 //      Kokkos symbols
@@ -141,8 +134,11 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
 {
     printf("%s\n", spacer.c_str());
     printf("# KokkosP: timemory Connector (sequence is %d, version: %llu)\n", loadSeq,
-           (long long int) interfaceVer);
+           (unsigned long long) interfaceVer);
     printf("%s\n\n", spacer.c_str());
+
+    KokkosMemoryTracker::label()       = "kokkos_memory";
+    KokkosMemoryTracker::description() = "Kokkos Memory tracker";
 
     // if using roofline, we want to suppress time_output which
     // would result in the second pass (required by roofline) to end
@@ -182,9 +178,9 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     // if a roofline component is not set in the environment, then add both the
     // cpu and gpu roofline
     if(use_roofline && env_result.find("roofline") == std::string::npos)
-        env_result = TIMEMORY_JOIN(";", env_result, "gpu_roofline_flops", "cpu_roofline");
+        env_result = TIMEMORY_JOIN(";", env_result, "gpu_roofline", "cpu_roofline");
     // configure the bundle to use these components
-    configure<profile_entry_t>(tim::enumerate_components(tim::delimit(env_result)));
+    tim::configure<KokkosUserBundle>(tim::enumerate_components(tim::delimit(env_result)));
 
 #if defined(TIMEMORY_USE_GOTCHA)
     //
@@ -236,23 +232,17 @@ kokkosp_finalize_library()
 extern "C" void
 kokkosp_begin_parallel_for(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-        *kernid    = get_unique_id();
-        create_profiler(pname, *kernid);
-        start_profiler(*kernid);
-    }
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
 }
 
 extern "C" void
 kokkosp_end_parallel_for(uint64_t kernid)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        stop_profiler(kernid);
-        destroy_profiler(kernid);
-    }
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -260,23 +250,17 @@ kokkosp_end_parallel_for(uint64_t kernid)
 extern "C" void
 kokkosp_begin_parallel_reduce(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-        *kernid    = get_unique_id();
-        create_profiler(pname, *kernid);
-        start_profiler(*kernid);
-    }
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
 }
 
 extern "C" void
 kokkosp_end_parallel_reduce(uint64_t kernid)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        stop_profiler(kernid);
-        destroy_profiler(kernid);
-    }
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -284,23 +268,17 @@ kokkosp_end_parallel_reduce(uint64_t kernid)
 extern "C" void
 kokkosp_begin_parallel_scan(const char* name, uint32_t devid, uint64_t* kernid)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
-        *kernid    = get_unique_id();
-        create_profiler(pname, *kernid);
-        start_profiler(*kernid);
-    }
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "dev", devid), name);
+    *kernid    = get_unique_id();
+    create_profiler(pname, *kernid);
+    start_profiler(*kernid);
 }
 
 extern "C" void
 kokkosp_end_parallel_scan(uint64_t kernid)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        stop_profiler(kernid);
-        destroy_profiler(kernid);
-    }
+    stop_profiler(kernid);
+    destroy_profiler(kernid);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -308,23 +286,17 @@ kokkosp_end_parallel_scan(uint64_t kernid)
 extern "C" void
 kokkosp_push_profile_region(const char* name)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        get_profile_stack().push_back(profile_entry_t(name, true));
-        get_profile_stack().back().start();
-    }
+    get_profile_stack().push_back(profile_entry_t(name, true));
+    get_profile_stack().back().start();
 }
 
 extern "C" void
 kokkosp_pop_profile_region()
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        if(get_profile_stack().empty())
-            return;
-        get_profile_stack().back().stop();
-        get_profile_stack().pop_back();
-    }
+    if(get_profile_stack().empty())
+        return;
+    get_profile_stack().back().stop();
+    get_profile_stack().pop_back();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -332,19 +304,15 @@ kokkosp_pop_profile_region()
 extern "C" void
 kokkosp_create_profile_section(const char* name, uint32_t* secid)
 {
-    if_constexpr(profile_entry_t::size() > 0)
-    {
-        *secid = get_unique_id();
-        auto pname =
-            TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "section", secid), name);
-        create_profiler(pname, *secid);
-    }
+    *secid     = get_unique_id();
+    auto pname = TIMEMORY_JOIN("/", "kokkos", TIMEMORY_JOIN("", "section", secid), name);
+    create_profiler(pname, *secid);
 }
 
 extern "C" void
 kokkosp_destroy_profile_section(uint32_t secid)
 {
-    if_constexpr(profile_entry_t::size() > 0) { destroy_profiler(secid); }
+    destroy_profiler(secid);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -352,13 +320,63 @@ kokkosp_destroy_profile_section(uint32_t secid)
 extern "C" void
 kokkosp_start_profile_section(uint32_t secid)
 {
-    if_constexpr(profile_entry_t::size() > 0) { start_profiler(secid); }
+    start_profiler(secid);
 }
 
 extern "C" void
 kokkosp_stop_profile_section(uint32_t secid)
 {
-    if_constexpr(profile_entry_t::size() > 0) { start_profiler(secid); }
+    start_profiler(secid);
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr,
+                      const uint64_t size)
+{
+    get_pointer_map().insert({ ptr, profile_entry_t(TIMEMORY_JOIN("/", "kokkos/allocate",
+                                                                  space.name, label)) });
+    get_pointer_map()[ptr].get_list().init<KokkosMemoryTracker>();
+    get_pointer_map()[ptr].start();
+    get_pointer_map()[ptr].store(std::plus<int64_t>{}, size);
+}
+
+extern "C" void
+kokkosp_deallocate_data(const SpaceHandle, const char*, const void* const ptr,
+                        const uint64_t)
+{
+    auto itr = get_pointer_map().find(ptr);
+    if(itr != get_pointer_map().end())
+    {
+        itr->second.stop();
+        get_pointer_map().erase(itr);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+kokkosp_begin_deep_copy(SpaceHandle dst_handle, const char* dst_name, const void*,
+                        SpaceHandle src_handle, const char* src_name, const void*,
+                        uint64_t size)
+{
+    auto name = TIMEMORY_JOIN("/", "kokkos/deep_copy",
+                              TIMEMORY_JOIN('=', dst_handle.name, dst_name),
+                              TIMEMORY_JOIN('=', src_handle.name, src_name));
+    get_profile_stack().push_back(profile_entry_t(name, true));
+    get_profile_stack().back().get_list().init<KokkosMemoryTracker>();
+    get_profile_stack().back().start();
+    get_profile_stack().back().store(std::plus<int64_t>{}, size);
+}
+
+extern "C" void
+kokkosp_end_deep_copy()
+{
+    if(get_profile_stack().empty())
+        return;
+    get_profile_stack().back().stop();
+    get_profile_stack().pop_back();
 }
 
 //--------------------------------------------------------------------------------------//

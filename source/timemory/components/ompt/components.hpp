@@ -111,6 +111,34 @@ struct ompt_handle
 
 private:
     using tracker_type::m_tot;
+
+public:
+    void set_prefix(const std::string& _prefix)
+    {
+        if(_prefix.empty())
+            return;
+        tim::auto_lock_t lk(get_persistent_data().m_mutex);
+        get_persistent_data().m_prefix = _prefix + "/";
+    }
+
+    static std::string get_prefix()
+    {
+        tim::auto_lock_t lk(get_persistent_data().m_mutex);
+        return get_persistent_data().m_prefix;
+    }
+
+private:
+    struct persistent_data
+    {
+        std::string m_prefix;
+        mutex_t     m_mutex;
+    };
+
+    static persistent_data& get_persistent_data()
+    {
+        static persistent_data _instance;
+        return _instance;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//

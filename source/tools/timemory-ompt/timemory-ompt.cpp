@@ -53,6 +53,8 @@ static auto                  settings       = tim::settings::shared_instance<api
 
 extern "C"
 {
+    void timemory_ompt_library_ctor() {}
+
     uint64_t init_timemory_ompt_tools()
     {
         // provide environment variable for enabling/disabling
@@ -110,6 +112,7 @@ extern "C"
     }
 
     // Below are for FORTRAN codes
+    void     timemory_ompt_library_ctor_() {}
     uint64_t init_timemory_ompt_tools_() { return init_timemory_ompt_tools(); }
     uint64_t stop_timemory_ompt_tools_(uint64_t id)
     {

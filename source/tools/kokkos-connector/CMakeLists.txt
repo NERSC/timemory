@@ -142,6 +142,14 @@ set_target_properties(kp_timemory PROPERTIES
 
 install(TARGETS kp_timemory DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
 
+add_library(kp_timemory_filter SHARED ${PROJECT_SOURCE_DIR}/kp_timemory_filter.cpp)
+target_link_libraries(kp_timemory_filter ${timemory_INTERFACE_LIBRARY})
+set_target_properties(kp_timemory_filter PROPERTIES
+    PREFIX          ""
+    LINKER_LANGUAGE ${LINKER_LANGUAGE})
+
+install(TARGETS kp_timemory_filter DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
+
 #
 #   Build the sample
 #
@@ -188,7 +196,7 @@ message(STATUS "")
 ##--------------------------------------------------------------------------------------##
 
 function(ADD_CONNECTOR_CONFIG _NAME)
-    cmake_parse_arguments(CONNECTOR "GPU" "" "COMPONENTS;TARGETS" ${ARGN})
+    cmake_parse_arguments(CONNECTOR "GPU" "" "COMPONENTS;TARGETS;DEFINITIONS" ${ARGN})
     if(NOT ${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG)
         return()
     endif()
@@ -226,6 +234,8 @@ function(ADD_CONNECTOR_CONFIG _NAME)
     target_link_libraries(kp_timemory_${_NAME} PRIVATE
         ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-headers
         ${CONNECTOR_TARGETS})
+    target_compile_definitions(kp_timemory_${_NAME} PRIVATE
+        ${CONNECTOR_DEFINITIONS})
     set_target_properties(kp_timemory_${_NAME} PROPERTIES
         PREFIX ""
         LINKER_LANGUAGE ${LINKER_LANGUAGE})
@@ -354,10 +364,18 @@ if(USE_GOTCHA)
         TARGETS ${timemory_INTERFACE_LIBRARY})
 endif()
 
-if(USE_OMPT)
+set(_OMPT_LIB)
+if(TARGET ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-shared)
+    set(_OMPT_LIB ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-shared)
+elseif(TARGET ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-static)
+    set(_OMPT_LIB ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-static)
+endif()
+
+if(USE_OMPT AND _OMPT_LIB)
     add_connector_config(ompt
-        COMPONENTS ompt_handle
-        TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-library)
+        COMPONENTS ompt_handle<tim::api::native_tag>
+        DEFINITIONS TIMEMORY_USE_OMPT_LIBRARY
+        TARGETS ${_OMPT_LIB})
 endif()
 
 if(USER_CONNECTOR_CONFIG AND USER_CONNECTOR_TYPES)

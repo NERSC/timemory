@@ -30,75 +30,7 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
-// base operating system
-
-#if defined(_WIN32) || defined(_WIN64)
-#    if !defined(_WINDOWS)
-#        define _WINDOWS
-#    endif
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__APPLE__) || defined(__MACH__)
-#    if !defined(_MACOS)
-#        define _MACOS
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
-#    if !defined(_LINUX)
-#        define _LINUX
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-//--------------------------------------------------------------------------------------//
-
-#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      Windows DLL settings
-//
-//======================================================================================//
-
-// Define macros for WIN32 for importing/exporting external symbols to DLLs
-#if !defined(tim_dll)
-#    if defined(_WINDOWS)
-#        if defined(TIMEMORY_DLL_EXPORT)
-#            define tim_dll __declspec(dllexport)
-#        elif defined(TIMEMORY_DLL_IMPORT)
-#            define tim_dll __declspec(dllimport)
-#        else
-#            define tim_dll
-#        endif
-#    else
-#        define tim_dll
-#    endif
-#endif
-
-//======================================================================================//
-//
-//      Symbol override
-//
-//======================================================================================//
-
-#if !defined(_WINDOWS)
-#    if defined(__clang__) && defined(__APPLE__)
-#        define TIMEMORY_WEAK_PREFIX
-#        define TIMEMORY_WEAK_POSTFIX __attribute__((weak_import))
-#    else
-#        define TIMEMORY_WEAK_PREFIX __attribute__((weak))
-#        define TIMEMORY_WEAK_POSTFIX
-#    endif
-#endif
+#include "timemory/compat/macros.h"
 
 //======================================================================================//
 //

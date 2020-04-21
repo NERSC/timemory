@@ -40,6 +40,8 @@ uint64_t global_id  = 0;
 
 extern "C"
 {
+    void timemory_mpip_library_ctor() {}
+
     uint64_t init_timemory_mpip_tools()
     {
         // provide environment variable for enabling/disabling
@@ -64,6 +66,7 @@ extern "C"
     void deregister_timemory_mpip() { global_id = stop_timemory_mpip_tools(global_id); }
 
     // Below are for FORTRAN codes
+    void     timemory_mpip_library_ctor_() {}
     uint64_t init_timemory_mpip_tools_() { return init_timemory_mpip_tools(); }
     uint64_t stop_timemory_mpip_tools_(uint64_t id)
     {

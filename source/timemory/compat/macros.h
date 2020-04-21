@@ -56,6 +56,42 @@
 
 #endif
 
+//======================================================================================//
+//
+//      Operating System
+//
+//======================================================================================//
+
+#if defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
+#    if !defined(_WINDOWS)
+#        define _WINDOWS
+#    endif
+#elif defined(__APPLE__) || defined(__MACH__)
+#    if !defined(_MACOS)
+#        define _MACOS
+#    endif
+#    if !defined(_UNIX)
+#        define _UNIX
+#    endif
+#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
+#    if !defined(_LINUX)
+#        define _LINUX
+#    endif
+#    if !defined(_UNIX)
+#        define _UNIX
+#    endif
+#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
+#    if !defined(_UNIX)
+#        define _UNIX
+#    endif
+#endif
+
+//======================================================================================//
+//
+//      Windows DLL settings
+//
+//======================================================================================//
+
 #if !defined(tim_cdll)
 #    if defined(_WINDOWS)
 #        if defined(TIMEMORY_CDLL_EXPORT)
@@ -84,8 +120,82 @@
 #    endif
 #endif
 
+//======================================================================================//
+//
+//      Visibility
+//
+//======================================================================================//
+
 #if defined(TIMEMORY_USE_VISIBILITY)
 #    define TIMEMORY_VISIBILITY(mode) __attribute__((visibility(mode)))
 #else
 #    define TIMEMORY_VISIBILITY(mode)
+#endif
+
+//======================================================================================//
+//
+//      General attribute
+//
+//======================================================================================//
+
+#if !defined(declare_attribute)
+#    if defined(__GNUC__) || defined(__clang__)
+#        define declare_attribute(attr) __attribute__((attr))
+#    elif defined(_WIN32)
+#        define declare_attribute(attr) __declspec(attr)
+#    endif
+#endif
+
+//======================================================================================//
+//
+//      Symbol override
+//
+//======================================================================================//
+
+#if !defined(TIMEMORY_WEAK_PREFIX)
+#    if !defined(_WINDOWS)
+#        if defined(__clang__) && defined(__APPLE__)
+#            define TIMEMORY_WEAK_PREFIX
+#        else
+#            define TIMEMORY_WEAK_PREFIX __attribute__((weak))
+#        endif
+#    else
+#        define TIMEMORY_WEAK_PREFIX
+#    endif
+#endif
+
+#if !defined(TIMEMORY_WEAK_POSTFIX)
+#    if !defined(_WINDOWS)
+#        if defined(__clang__) && defined(__APPLE__)
+#            define TIMEMORY_WEAK_POSTFIX __attribute__((weak_import))
+#        else
+#            define TIMEMORY_WEAK_POSTFIX
+#        endif
+#    else
+#        define TIMEMORY_WEAK_POSTFIX
+#    endif
+#endif
+
+//======================================================================================//
+//
+//      Library Constructor/Destructor
+//
+//======================================================================================//
+
+#if !defined(__library_ctor__)
+#    if !defined(_WINDOWS)
+#        define __library_ctor__ __attribute__((constructor))
+#    else
+#        define __library_ctor__
+#    endif
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(__library_dtor__)
+#    if !defined(_WINDOWS)
+#        define __library_dtor__ __attribute__((destructor))
+#    else
+#        define __library_dtor__
+#    endif
 #endif

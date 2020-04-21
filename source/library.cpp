@@ -126,6 +126,16 @@ get_current_components()
 
 extern "C"
 {
+#if !defined(_WINDOWS)
+    TIMEMORY_WEAK_PREFIX
+    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX;
+    TIMEMORY_WEAK_PREFIX
+    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX;
+
+    void timemory_mpip_library_ctor() {}
+    void timemory_ompt_library_ctor() {}
+#endif
+
     //----------------------------------------------------------------------------------//
     //  get a unique id
     //

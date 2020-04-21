@@ -123,14 +123,14 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
               enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void store(const T& val)
     {
-        handler_type::store(*this, val);
+        handler_type::store(*this, val / get_unit());
     }
 
     template <typename T,
               enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void store(handler_type&&, const T& val)
     {
-        handler_type::store(*this, val);
+        handler_type::store(*this, val / get_unit());
     }
 
     template <typename Func, typename T,
@@ -139,7 +139,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
         -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
                     void())
     {
-        handler_type::store(*this, std::forward<Func>(f), val);
+        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
     }
 
     template <typename Func, typename T,
@@ -148,35 +148,35 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
         -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
                     void())
     {
-        handler_type::store(*this, std::forward<Func>(f), val);
+        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
     }
 
     template <typename T,
               enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_begin(const T& val)
     {
-        handler_type::begin(*this, val);
+        handler_type::begin(*this, val / get_unit());
     }
 
     template <typename T,
               enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_end(const T& val)
     {
-        handler_type::end(*this, val);
+        handler_type::end(*this, val / get_unit());
     }
 
     template <typename T,
               enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_begin(handler_type&&, const T& val)
     {
-        handler_type::begin(*this, val);
+        handler_type::begin(*this, val / get_unit());
     }
 
     template <typename T,
               enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
     void mark_end(handler_type&&, const T& val)
     {
-        handler_type::end(*this, val);
+        handler_type::end(*this, val / get_unit());
     }
 
     auto get() const { return handler_type::get(*this); }
@@ -184,6 +184,7 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
 
     void set_value(const value_type& v) { value = v; }
 
+    using base_type::get_unit;
     using base_type::load;
     using base_type::value;
 };

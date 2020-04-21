@@ -68,3 +68,10 @@ using misc_gotcha_t = tim::component::gotcha<8, counter_t, void>;
 using gotcha_tools_t = tim::component_tuple<rand_gotcha_t, misc_gotcha_t>;
 
 //--------------------------------------------------------------------------------------//
+
+struct SpaceHandle
+{
+    char name[64];
+};
+
+//--------------------------------------------------------------------------------------//

@@ -252,6 +252,20 @@ struct cuda_profiler
         return _instance;
     }
 
+    static void global_init(storage_type*)
+    {
+#if defined(TIMEMORY_USE_CUDA)
+        cudaProfilerStop();
+#endif
+    }
+
+    static void global_finalize(storage_type*)
+    {
+#if defined(TIMEMORY_USE_CUDA)
+        cudaProfilerStop();
+#endif
+    }
+
     static void configure()
     {
         auto _config = get_initializer()();

@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/compat/macros.h"
 #include "timemory/dll.hpp"
 
 //======================================================================================//
@@ -36,26 +37,6 @@
 // Define macros for manager
 //
 //======================================================================================//
-//
-#if !defined(__library_ctor__)
-#    if !defined(_WINDOWS)
-#        define __library_ctor__ __attribute__((constructor))
-#    else
-#        define __library_ctor__
-#    endif
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(__library_dtor__)
-#    if !defined(_WINDOWS)
-#        define __library_dtor__ __attribute__((destructor))
-#    else
-#        define __library_dtor__
-#    endif
-#endif
-//
-//--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_MANAGER_SOURCE)
 //

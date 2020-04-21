@@ -106,7 +106,8 @@ static const char* ompt_sync_region_labels[] = { nullptr, "ompt_sync_region_barr
 template <typename Api>
 struct context_handler
 {
-public:
+    using api_type = Api;
+
     template <typename T, enable_if_t<(std::is_integral<T>::value), int> = 0>
     static auto get_hash(T val)
     {

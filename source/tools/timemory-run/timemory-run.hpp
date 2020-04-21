@@ -109,8 +109,9 @@ static std::vector<std::regex>  regex_include;
 static std::vector<std::regex>  regex_exclude;
 static std::set<std::string>    collection_includes;
 static std::set<std::string>    collection_excludes;
-static std::vector<std::string> collection_paths = { "collections", "tools/collections",
-                                                     "../share/tools/collections" };
+static std::vector<std::string> collection_paths = { "collections",
+                                                     "timemory/collections",
+                                                     "../share/timemory/collections" };
 
 //
 //======================================================================================//

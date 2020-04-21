@@ -96,33 +96,34 @@ class Timemory(CMakePackage):
         ]
 
         if '+python' in spec:
-            args.append('-DPYTHON_EXECUTABLE={0}'.format(
+            args.append('-DPYTHON_EXECUTABLE={}'.format(
                 spec['python'].command.path))
             args.append('-DTIMEMORY_TLS_MODEL=global-dynamic')
 
         if '+mpi' in spec:
-            args.append('-DMPI_C_COMPILER={0}'.format(spec['mpi'].mpicc))
-            args.append('-DMPI_CXX_COMPILER={0}'.format(spec['mpi'].mpicxx))
+            args.append('-DTIMEMORY_USE_MPI_LINK_FLAGS=OFF')
+            args.append('-DMPI_C_COMPILER={}'.format(spec['mpi'].mpicc))
+            args.append('-DMPI_CXX_COMPILER={}'.format(spec['mpi'].mpicxx))
 
         if '+cuda' in spec:
             for arch in ('auto', 'kepler', 'tesla', 'maxwell', 'pascal', 'volta',
                          'turing'):
                 if "cuda_arch={}".format(arch) in spec:
-                    args.append('-DTIMEMORY_CUDA_ARCH={0}'.format(arch))
+                    args.append('-DTIMEMORY_CUDA_ARCH={}'.format(arch))
                     break
 
         for dep in ('tools', 'examples', 'kokkos_tools'):
-            args.append('-DTIMEMORY_BUILD_{}={}'.format(dep.upper(),
-                                                        'ON' if '+{}'.format(dep) in spec else 'OFF'))
+            args.append('-DTIMEMORY_BUILD_{}={}'.format(
+                dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
         for dep in ('build_caliper', 'build_gotcha', 'build_ompt'):
-            args.append('-DTIMEMORY_{}={}'.format(dep.upper(),
-                                                  'ON' if '+{}'.format(dep) in spec else 'OFF'))
+            args.append('-DTIMEMORY_{}={}'.format(
+                dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
         for dep in ('python', 'mpi', 'tau', 'papi', 'ompt', 'cuda', 'cupti', 'vtune',
                     'upcxx', 'gotcha', 'likwid', 'caliper', 'dyninst', 'gperftools'):
-            args.append('-DTIMEMORY_USE_{}={}'.format(dep.upper(),
-                                                      'ON' if '+{}'.format(dep) in spec else 'OFF'))
+            args.append('-DTIMEMORY_USE_{}={}'.format(
+                dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
         args.append('-DTIMEMORY_KOKKOS_BUILD_CONFIG={}'.format(
             'ON' if '+kokkos_modules' in spec else 'OFF'))

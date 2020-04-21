@@ -47,12 +47,22 @@ struct craypat_record
 : base<craypat_record, void>
 , policy::instance_tracker<craypat_record>
 {
-    using tracker_type = policy::instance_tracker<craypat_record>;
+    using this_type    = craypat_record;
+    using value_type   = void;
+    using base_type    = base<this_type, void>;
+    using tracker_type = policy::instance_tracker<this_type>;
 
     static std::string label() { return "craypat_record"; }
     static std::string description()
     {
         return "Toggles CrayPAT recording on calling thread";
+    }
+
+    static void global_init(storage_type*) { backend::craypat::record(PAT_STATE_OFF); }
+
+    static void global_finalize(storage_type*)
+    {
+        backend::craypat::record(PAT_STATE_OFF);
     }
 
     void start()

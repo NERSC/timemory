@@ -113,11 +113,14 @@ settings::get_output_prefix(bool fake)
 
     if(_time_output)
     {
-        if(_dir.length() > 0 && _dir[_dir.length() - 1] != '/')
-            _dir += "/";
         // ensure that all output files use same local datetime
         static auto _local_datetime = get_local_datetime(_time_format.c_str());
-        _dir += _local_datetime;
+        if(_dir.find(_local_datetime) == std::string::npos)
+        {
+            if(_dir.length() > 0 && _dir[_dir.length() - 1] != '/')
+                _dir += "/";
+            _dir += _local_datetime;
+        }
     }
 
     if(!fake && (debug() || verbose() > 2))

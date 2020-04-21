@@ -61,6 +61,6 @@ if(TIMEMORY_USE_DYNINST)
 
     file(GLOB COLLECTION_FILES "${CMAKE_CURRENT_LIST_DIR}/collections/*")
     foreach(_FILE ${COLLECTION_FILES})
-        install(FILES ${_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/collections)
+        install(FILES ${_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/timemory/collections)
     endforeach()
 endif()
