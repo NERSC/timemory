@@ -72,15 +72,11 @@ function(ADD_CONNECTOR_OPTION _OPT _DESCRIPT _DEFAULT)
         option(${LONG_OPT} "timemory kokkos-tools: ${_DESCRIPT}" ${_DEFAULT})
     endif()
 
-    # message(STATUS "${LONG_OPT} = ${${LONG_OPT}}")
-    # message(STATUS "${_OPT} = ${${_OPT}}")
     set(${SHORT_OPT} ${${LONG_OPT}})
     set(${SHORT_OPT} ${${LONG_OPT}} PARENT_SCOPE)
 
     if(NOT TIMEMORY_KOKKOS_TOOLS_IN_SOURCE)
         message(STATUS "${_OPT} = ${${_OPT}}")
-    else()
-        # message(STATUS "${_OPT} = ${${_OPT}}")
     endif()
 
     set(${TIMEMORY_KOKKOS_TOOLS_OPTION}${_OPT}_COMPONENTS ${ARGN} PARENT_SCOPE)
@@ -95,6 +91,7 @@ add_connector_option(USE_TAU "Enable TAU support" OFF tau)
 add_connector_option(USE_CUDA "Enable CUDA support" OFF cuda cupti)
 add_connector_option(USE_PAPI "Enable PAPI support" OFF papi)
 add_connector_option(USE_NVTX "Enable NVTX support" OFF nvtx)
+add_connector_option(USE_OMPT "Enable OMPT support" OFF ompt-library)
 add_connector_option(USE_UPCXX "Enable UPC++ support" OFF upcxx)
 add_connector_option(USE_VTUNE "Enable VTune support" OFF vtune)
 add_connector_option(USE_GOTCHA "Enable GOTCHA support" OFF gotcha)
@@ -157,12 +154,6 @@ endif()
 #
 #   Build the configurations
 #
-
-if(USE_ROOFLINE AND USE_CUDA)
-    configure_file(${PROJECT_SOURCE_DIR}/kp_timemory.cpp
-        ${PROJECT_BINARY_DIR}/kp_timemory.cu COPYONLY)
-endif()
-
 # general options
 set(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS "all" CACHE STRING "List of connector configurations to build")
 if(TIMEMORY_KOKKOS_TOOLS_IN_SOURCE)
@@ -210,19 +201,23 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         return()
     endif()
 
-    set(SOURCE_FILE ${PROJECT_SOURCE_DIR}/kp_timemory.cpp)
-    if(CONNECTOR_GPU AND CUDA_AVAILABLE)
-        set_source_files_properties(${SOURCE_FILE} PROPERTIES
-            LANGUAGE CUDA
-            LINKER_LANGUAGE CUDA)
-    else()
-        set_source_files_properties(${SOURCE_FILE} PROPERTIES
-	    LANGUAGE CXX
-	    LINKER_LANGUAGE ${LINKER_LANGUAGE})
+    if(CONNECTOR_GPU AND NOT CUDA_AVAILABLE)
+        return()
     endif()
 
+    # configure the extension
+    set(_EXT cpp)
+    if(CONNECTOR_GPU AND CUDA_AVAILABLE)
+        set(_EXT cu)
+    endif()
+
+    # configure the components
     string(REPLACE ";" "," _COMPONENTS "${CONNECTOR_COMPONENTS}")
     message(STATUS "Building 'kp_timemory_${_NAME}' with '${_COMPONENTS}'...")
+    set(KP_COMPONENTS ${_COMPONENTS})
+
+    set(SOURCE_FILE ${PROJECT_BINARY_DIR}/kp_timemory_${_NAME}.${_EXT})
+    configure_file(${PROJECT_SOURCE_DIR}/kp_timemory.cpp.in ${SOURCE_FILE} @ONLY)
 
     add_library(kp_timemory_${_NAME} SHARED
         ${SOURCE_FILE} ${PROJECT_SOURCE_DIR}/kp_timemory.hpp)
@@ -231,8 +226,6 @@ function(ADD_CONNECTOR_CONFIG _NAME)
     target_link_libraries(kp_timemory_${_NAME} PRIVATE
         ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-headers
         ${CONNECTOR_TARGETS})
-    target_compile_definitions(kp_timemory_${_NAME} PRIVATE
-        KP_COMPONENTS=${_COMPONENTS})
     set_target_properties(kp_timemory_${_NAME} PROPERTIES
         PREFIX ""
         LINKER_LANGUAGE ${LINKER_LANGUAGE})
@@ -331,6 +324,9 @@ if(USE_VTUNE)
     add_connector_config(vtune_frame
         COMPONENTS vtune_frame
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-vtune)
+    add_connector_config(vtune_event
+        COMPONENTS vtune_event
+        TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-vtune)
 endif()
 
 if(USE_CALIPER)
@@ -356,6 +352,12 @@ if(USE_GOTCHA)
     add_connector_config(gotcha
         COMPONENTS ${GOTCHA_COMPONENTS}
         TARGETS ${timemory_INTERFACE_LIBRARY})
+endif()
+
+if(USE_OMPT)
+    add_connector_config(ompt
+        COMPONENTS ompt_handle
+        TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-library)
 endif()
 
 if(USER_CONNECTOR_CONFIG AND USER_CONNECTOR_TYPES)

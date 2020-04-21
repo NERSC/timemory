@@ -1,15 +1,11 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 # this is for internal use
-if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
-    if(NOT TIMEMORY_USE_OMPT)
-        return()
-    endif()
+if(NOT TIMEMORY_USE_OMPT)
+    return()
 endif()
 
 project(timemory-ompt-tool)
-
-# set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME ompt)
 
 set(LIB_TYPES)
 if(BUILD_SHARED_LIBS AND NOT TIMEMORY_SKIP_BUILD)

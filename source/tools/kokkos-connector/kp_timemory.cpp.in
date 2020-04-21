@@ -25,11 +25,10 @@ struct KokkosProfiler;
 using KokkosUserBundle = tim::component::user_bundle<0, KokkosProfiler>;
 
 // set up the configuration of tools
-#if defined(KP_COMPONENTS)
-using profile_entry_t = tim::component_tuple<KP_COMPONENTS>;
-#else
-using profile_entry_t = tim::component_tuple<KokkosUserBundle>;
-#endif
+using namespace tim::component;
+// clang-format off
+using profile_entry_t = tim::component_tuple<@KP_COMPONENTS@>;
+// clang-format on
 
 // various data structurs used
 using section_entry_t = std::tuple<std::string, profile_entry_t>;
@@ -64,6 +63,14 @@ get_profile_map()
     return get_tl_static<profile_map_t>();
 }
 
+//--------------------------------------------------------------------------------------//
+/*
+static section_map_t&
+get_section_map()
+{
+    return get_tl_static<section_map_t>();
+}
+*/
 //--------------------------------------------------------------------------------------//
 
 static profile_stack_t&
