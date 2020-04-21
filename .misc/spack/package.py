@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 
 from spack import *
+from sys import platform
 
 
 class Timemory(CMakePackage):
@@ -22,20 +23,23 @@ class Timemory(CMakePackage):
     version('3.0.1', commit='a5bb58b5e4d44b71f699f536ad1b56722f213ce6',
             submodules=True)
 
+    linux = False if platform == 'darwin' else True
+
     variant('python', default=True, description='Enable Python support')
     variant('mpi', default=True, description='Enable MPI support')
-    variant('tau', default=True, description='Enable TAU support')
-    variant('papi', default=True, description='Enable PAPI support')
+    variant('tau', default=False, description='Enable TAU support')
+    variant('papi', default=linux, description='Enable PAPI support')
     variant('ompt', default=True, description='Enable OpenMP tools support')
-    variant('cuda', default=True, description='Enable CUDA support')
-    variant('cupti', default=True, description='Enable CUPTI support')
+    variant('cuda', default=linux, description='Enable CUDA support')
+    variant('cupti', default=linux, description='Enable CUPTI support')
     variant('tools', default=True, description='Build/install command line tools')
     variant('vtune', default=False, description='Enable VTune support')
     variant('upcxx', default=False, description='Enable UPC++ support')
-    variant('gotcha', default=True, description='Enable GOTCHA support')
-    variant('likwid', default=True, description='Enable LIKWID support')
-    variant('dyninst', default=True, description='Enable dynamic instrumentation')
+    variant('gotcha', default=linux, description='Enable GOTCHA support')
+    variant('likwid', default=linux, description='Enable LIKWID support')
     variant('caliper', default=True, description='Enable Caliper support')
+    variant('dyninst', default=linux,
+            description='Enable dynamic instrumentation')
     variant('examples', default=False, description='Build/install examples')
     variant('gperftools', default=True,
             description='Enable gperftools support')
@@ -43,7 +47,7 @@ class Timemory(CMakePackage):
             description='Build generic kokkos-tools library, e.g. kp_timemory')
     variant('kokkos_modules', default=False,
             description='Build dedicated kokkos-tools libraries, e.g. kp_timemory_cpu_flops')
-    variant('build_caliper', default=False,
+    variant('build_caliper', default=True,
             description='Build Caliper submodule instead of spack installation')
     variant('build_gotcha', default=False,
             description='Build GOTCHA submodule instead of spack installation')
@@ -66,16 +70,18 @@ class Timemory(CMakePackage):
     depends_on('cuda', when='+cuda')
     depends_on('cuda', when='+cupti')
     depends_on('upcxx', when='+upcxx')
-    depends_on('gotcha', when='+gotcha')
     depends_on('likwid', when='+likwid')
-    depends_on('caliper', when='+caliper')
+    depends_on('gotcha', when='~build_gotcha+gotcha')
+    depends_on('caliper', when='~build_caliper+caliper')
     depends_on('dyninst', when='+dyninst')
     depends_on('gperftools', when='+gperftools')
     depends_on('intel-parallel-studio', when='+vtune')
 
     conflicts('+cupti', when='~cuda', msg='CUPTI requires CUDA')
-    conflicts('+kokkos_tools', when='~tools', msg='kokkos_tools requires +tools')
-    conflicts('+kokkos_modules', when='~tools', msg='kokkos_modules requires +tools')
+    conflicts('+kokkos_tools', when='~tools',
+              msg='+kokkos_tools requires +tools')
+    conflicts('+kokkos_modules', when='~tools',
+              msg='+kokkos_modules requires +tools')
 
     def cmake_args(self):
         spec = self.spec
@@ -107,18 +113,18 @@ class Timemory(CMakePackage):
 
         for dep in ('tools', 'examples', 'kokkos_tools'):
             args.append('-DTIMEMORY_BUILD_{}={}'.format(dep.upper(),
-                'ON' if '+{}'.format(dep) in spec else 'OFF')
+                                                        'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
         for dep in ('build_caliper', 'build_gotcha', 'build_ompt'):
             args.append('-DTIMEMORY_{}={}'.format(dep.upper(),
-                'ON' if '+{}'.format(dep) in spec else 'OFF')
+                                                  'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
         for dep in ('python', 'mpi', 'tau', 'papi', 'ompt', 'cuda', 'cupti', 'vtune',
                     'upcxx', 'gotcha', 'likwid', 'caliper', 'dyninst', 'gperftools'):
             args.append('-DTIMEMORY_USE_{}={}'.format(dep.upper(),
-                'ON' if '+{}'.format(dep) in spec else 'OFF')
+                                                      'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
         args.append('-DTIMEMORY_KOKKOS_BUILD_CONFIG={}'.format(
-            'ON' if '+kokkos_modules' in spec else 'OFF')
+            'ON' if '+kokkos_modules' in spec else 'OFF'))
 
         return args
