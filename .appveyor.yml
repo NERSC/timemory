@@ -98,5 +98,5 @@ build_script:
   # - .\outputs\runtime\%CONFIG%\ex_cxx_overhead.exe
   # - .\outputs\runtime\%CONFIG%\ex_cxx_tuple.exe
   # - .\outputs\runtime\%CONFIG%\ex_c_minimal.exe
-  - .\outputs\runtime\%CONFIG%\ex_c_minimal_library.exe
+  # - .\outputs\runtime\%CONFIG%\ex_c_minimal_library.exe
   # - .\outputs\runtime\%CONFIG%\ex_c_timing.exe
