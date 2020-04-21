@@ -34,7 +34,6 @@ foreach(_TYPE ${LIB_TYPES})
     target_link_libraries(${TARGET_NAME}
         PUBLIC
             timemory-headers
-            timemory-cxx-shared
             timemory-ompt
             timemory-cxx-${_LC_TYPE})
 
