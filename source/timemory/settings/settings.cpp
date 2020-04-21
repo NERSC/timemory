@@ -41,10 +41,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_LINKAGE(setting_callback_map_t&)
-get_parse_callbacks()
-{
-    return get_parse_callback_map<settings, api::native_tag>();
-}
+get_parse_callbacks() { return get_parse_callback_map<settings, api::native_tag>(); }
 //
 //--------------------------------------------------------------------------------------//
 //

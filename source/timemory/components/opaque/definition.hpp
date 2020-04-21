@@ -265,7 +265,7 @@ template <template <typename...> class TupleT, typename... T>
 struct opaque_typeids<TupleT<T...>>
 {
     using result_type = std::set<size_t>;
-    using this_type = opaque_typeids<TupleT<T...>>;
+    using this_type   = opaque_typeids<TupleT<T...>>;
 
 #if !defined(_WINDOWS)
     template <typename U>

@@ -148,9 +148,9 @@ struct affinity
 
     enum MODE
     {
-        COMPACT = 0,
-        SCATTER = 1,
-        SPREAD = 2,
+        COMPACT  = 0,
+        SCATTER  = 1,
+        SPREAD   = 2,
         EXPLICIT = 3
     };
 
