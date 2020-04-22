@@ -126,10 +126,10 @@ except:
 _default_min_percent = 0.05  # 5% of max
 """ Default minimum percent of max when reducing # of timing functions plotted """
 
-_default_img_dpi = 75
+_default_img_dpi = 60
 """ Default image dots-per-square inch """
 
-_default_img_size = {'w': 1600, 'h': 800}
+_default_img_size = {'w': 1000, 'h': 600}
 """ Default image size """
 
 _default_img_type = 'jpeg'
@@ -138,7 +138,7 @@ _default_img_type = 'jpeg'
 _default_log_x = False
 """Log scaled X axis"""
 
-_default_font_size = 16
+_default_font_size = 11
 """Font size for y-axis labels"""
 
 plotted_files = []
@@ -208,7 +208,8 @@ def add_plotted_files(name, filepath, echo_dart):
     """
     global plotted_files
     if echo_dart:
-        echo_dart_tag(name, filepath)
+        filerealpath = os.path.realpath(filepath)
+        echo_dart_tag(name, filerealpath)
     found = False
     for p in plotted_files:
         if p[0] == name and p[1] == filepath:

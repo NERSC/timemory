@@ -39,7 +39,7 @@
 
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/signals.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 

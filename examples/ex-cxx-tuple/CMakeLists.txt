@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(timemory-CXX-Tuple-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cxx_tuple)
-set(COMPONENTS compile-options threading analysis-tools OPTIONAL_COMPONENTS)
+set(COMPONENTS compile-options threading analysis-tools OPTIONAL_COMPONENTS cereal-xml cxx)
 
 option(USE_MPI "Enable MPI" ON)
 if(USE_MPI)
@@ -21,3 +21,4 @@ find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} timemory-cxx-tuple-example)
 install(TARGETS ${EXE_NAME} DESTINATION bin)
+

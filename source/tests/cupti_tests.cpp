@@ -79,26 +79,26 @@ saxpy(int64_t n, float a, float* x, float* y)
 }
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
+template <typename Tp>
 DEVICE_CALLABLE inline void
-add_func(_Tp& a, const _Tp& b, const _Tp& c)
+add_func(Tp& a, const Tp& b, const Tp& c)
 {
     a = b + c;
 }
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Tp>
+template <typename Tp>
 DEVICE_CALLABLE inline void
-fma_func(_Tp& a, const _Tp& b, const _Tp& c)
+fma_func(Tp& a, const Tp& b, const Tp& c)
 {
     a = a * b + c;
 }
 //--------------------------------------------------------------------------------------//
 //  print an array to a string
 //
-template <typename _Tp>
+template <typename Tp>
 std::string
-array_to_string(const _Tp& arr, const std::string& delimiter = ", ",
+array_to_string(const Tp& arr, const std::string& delimiter = ", ",
                 const int& _width = 16, const int& _break = 8,
                 const std::string& _break_delim = "\t")
 {
@@ -181,7 +181,7 @@ class cupti_tests : public ::testing::Test
 
 TEST_F(cupti_tests, activity)
 {
-    using tuple_t = tim::auto_tuple<real_clock, cupti_activity>::component_type;
+    using tuple_t            = tim::component_tuple_t<wall_clock, cupti_activity>;
     tim::settings::verbose() = 4;
     tim::settings::debug()   = true;
 
@@ -247,7 +247,7 @@ TEST_F(cupti_tests, activity)
         std::cout << itr << std::endl;
         // secondaries (individual kernels)
         std::cout << "Individual kernels:\n";
-        for(const auto& sitr : itr.get<cupti_activity>().get_secondary())
+        for(const auto& sitr : itr.get<cupti_activity>()->get_secondary())
         {
             std::cout << "    " << std::setw(kwidth) << sitr.first << " : "
                       << std::setw(12) << std::setprecision(8) << std::fixed
@@ -261,15 +261,15 @@ TEST_F(cupti_tests, activity)
 
     // secondaries (individual kernels)
     std::cout << "Individual kernels:\n";
-    for(const auto& itr : timer.get<cupti_activity>().get_secondary())
+    for(const auto& itr : timer.get<cupti_activity>()->get_secondary())
     {
         std::cout << "    " << std::setw(kwidth) << itr.first << " : " << std::setw(12)
                   << std::setprecision(8) << std::fixed << itr.second << "\n";
     }
     std::cout << "\n";
 
-    auto& rc = timer.get<real_clock>();
-    auto& ca = timer.get<cupti_activity>();
+    auto& rc = *timer.get<wall_clock>();
+    auto& ca = *timer.get<cupti_activity>();
 
     double rc_msec = (rc.get() / cupti_activity::get_unit()) * tim::units::msec;
     double ca_msec = (ca.get() / cupti_activity::get_unit()) * tim::units::msec;
@@ -291,8 +291,8 @@ TEST_F(cupti_tests, activity)
 TEST_F(cupti_tests, available)
 {
     CUdevice device;
-    CUDA_DRIVER_API_CALL(cuInit(0));
-    CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
 
     auto event_names  = tim::cupti::available_events(device);
     auto metric_names = tim::cupti::available_metrics(device);
@@ -338,7 +338,7 @@ TEST_F(cupti_tests, kernels)
     float*             data = tim::device::gpu::alloc<float>(num_data);
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
-    using tuple_t = tim::auto_tuple<real_clock, cupti_counters>::component_type;
+    using tuple_t = tim::component_tuple_t<wall_clock, cupti_counters>;
     tuple_t timer(details::get_test_name(), true);
 
     timer.start();
@@ -353,7 +353,7 @@ TEST_F(cupti_tests, kernels)
     int kwidth = 40;
     // secondaries (individual kernels)
     std::cout << "Individual kernels:\n";
-    for(const auto& itr : timer.get<cupti_counters>().get_secondary())
+    for(const auto& itr : timer.get<cupti_counters>()->get_secondary())
     {
         std::stringstream ss_beg, ss_data;
         ss_beg << "    " << std::setw(kwidth) << itr.first;
@@ -372,8 +372,8 @@ TEST_F(cupti_tests, kernels)
     tim::cuda::device_reset();
     printf("\n");
 
-    auto cupti_data   = timer.get<cupti_counters>().get();
-    auto cupti_labels = timer.get<cupti_counters>().label_array();
+    auto cupti_data   = timer.get<cupti_counters>()->get();
+    auto cupti_labels = timer.get<cupti_counters>()->label_array();
     std::cout << "CUPTI: data size = " << cupti_data.size()
               << ", label size = " << cupti_labels.size() << "\n"
               << std::endl;
@@ -436,7 +436,7 @@ TEST_F(cupti_tests, streams)
           "ldst_executed", "ldst_issued" });
 
     // must initialize storage before creating the stream
-    using tuple_t = tim::auto_tuple<real_clock, cupti_event>::component_type;
+    using tuple_t = tim::component_tuple_t<wall_clock, cupti_event>;
 
     tim::cuda::stream_t stream;
     tim::cuda::stream_create(stream);
@@ -470,8 +470,8 @@ TEST_F(cupti_tests, streams)
     std::cout << timer << std::endl;
     printf("\n");
 
-    auto cupti_data   = timer.get<cupti_event>().get();
-    auto cupti_labels = timer.get<cupti_event>().label_array();
+    auto cupti_data   = timer.get<cupti_event>()->get();
+    auto cupti_labels = timer.get<cupti_event>()->label_array();
     std::cout << "CUPTI: data size = " << cupti_data.size()
               << ", label size = " << cupti_labels.size() << "\n"
               << std::endl;
@@ -524,7 +524,7 @@ TEST_F(cupti_tests, streams)
 TEST_F(cupti_tests, roofline_activity)
 {
     using roofline_t = gpu_roofline<float>;
-    using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
+    using tuple_t    = tim::component_tuple_t<wall_clock, roofline_t>;
 
     num_iter *= 2;
     uint64_t                         nstream = 1;
@@ -589,7 +589,7 @@ TEST_F(cupti_tests, roofline_activity)
 TEST_F(cupti_tests, roofline_counters)
 {
     using roofline_t = gpu_roofline<float>;
-    using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
+    using tuple_t    = tim::component_tuple_t<wall_clock, roofline_t>;
 
     roofline_t::configure(roofline_t::MODE::COUNTERS);
     num_iter *= 2;

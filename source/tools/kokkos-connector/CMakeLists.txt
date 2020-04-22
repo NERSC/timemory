@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
+# this is for internal use
+if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory" AND NOT TIMEMORY_BUILD_KOKKOS_TOOLS)
+    return()
+endif()
+
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(STATUS "Error! Building from the source directory may overwrite Makefile")
     message(STATUS "Remove 'CMakeCache.txt' and 'CMakeFiles' and build in separate directory")
@@ -13,6 +18,7 @@ set(TIMEMORY_KOKKOS_TOOLS_IN_SOURCE OFF)
 # external project (i.e. in kokkos-tools) references interface libraries via "timemory::timemory-XYZ"
 # interal project (i.e. in timemory) references interface libraries via "timemory-XYZ"
 set(TIMEMORY_KOKKOS_TOOLS_PREFIX "timemory::")
+set(TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
 # the prefix for the options
 set(TIMEMORY_KOKKOS_TOOLS_OPTION "")
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
@@ -21,6 +27,8 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
     set(TIMEMORY_KOKKOS_TOOLS_OPTION "TIMEMORY_KOKKOS_")
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kokkos-tools)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kokkos-tools)
+    set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME kokkos)
+    set(TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/timemory/kokkos-tools)
 endif()
 
 include(CheckLanguage)
@@ -41,12 +49,12 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build flags" FORCE)
 endif()
 
-set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
-set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ language standard")
-set(CMAKE_CUDA_STANDARD 11 CACHE STRING "CUDA language standard")
+set(BUILD_SHARED_LIBS ON)
+set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ language standard")
+set(CMAKE_CUDA_STANDARD 14 CACHE STRING "CUDA language standard")
 set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "C++ language flags required")
 set(CMAKE_CUDA_STANDARD_REQUIRED ON CACHE BOOL "CUDA language flags required")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Use link path to set default rpath")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
 option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_SAMPLE "Build sample test" OFF)
 
@@ -64,15 +72,11 @@ function(ADD_CONNECTOR_OPTION _OPT _DESCRIPT _DEFAULT)
         option(${LONG_OPT} "timemory kokkos-tools: ${_DESCRIPT}" ${_DEFAULT})
     endif()
 
-    # message(STATUS "${LONG_OPT} = ${${LONG_OPT}}")
-    # message(STATUS "${_OPT} = ${${_OPT}}")
     set(${SHORT_OPT} ${${LONG_OPT}})
     set(${SHORT_OPT} ${${LONG_OPT}} PARENT_SCOPE)
 
     if(NOT TIMEMORY_KOKKOS_TOOLS_IN_SOURCE)
         message(STATUS "${_OPT} = ${${_OPT}}")
-    else()
-        # message(STATUS "${_OPT} = ${${_OPT}}")
     endif()
 
     set(${TIMEMORY_KOKKOS_TOOLS_OPTION}${_OPT}_COMPONENTS ${ARGN} PARENT_SCOPE)
@@ -87,6 +91,7 @@ add_connector_option(USE_TAU "Enable TAU support" OFF tau)
 add_connector_option(USE_CUDA "Enable CUDA support" OFF cuda cupti)
 add_connector_option(USE_PAPI "Enable PAPI support" OFF papi)
 add_connector_option(USE_NVTX "Enable NVTX support" OFF nvtx)
+add_connector_option(USE_OMPT "Enable OMPT support" OFF ompt-library)
 add_connector_option(USE_UPCXX "Enable UPC++ support" OFF upcxx)
 add_connector_option(USE_VTUNE "Enable VTune support" OFF vtune)
 add_connector_option(USE_GOTCHA "Enable GOTCHA support" OFF gotcha)
@@ -103,6 +108,10 @@ endif()
 
 # CMake INTERFACE target for timemory that provides include path
 set(COMPONENTS headers vector)
+
+if(TIMEMORY_KOKKOS_TOOLS_IN_SOURCE AND TARGET timemory-cxx-shared)
+    list(APPEND COMPONENTS cxx-shared)
+endif()
 
 foreach(_OPT ${_OPTIONS_LIST})
     if(${_OPT})
@@ -131,7 +140,15 @@ set_target_properties(kp_timemory PROPERTIES
     PREFIX          ""
     LINKER_LANGUAGE ${LINKER_LANGUAGE})
 
-install(TARGETS kp_timemory DESTINATION ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
+install(TARGETS kp_timemory DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
+
+add_library(kp_timemory_filter SHARED ${PROJECT_SOURCE_DIR}/kp_timemory_filter.cpp)
+target_link_libraries(kp_timemory_filter ${timemory_INTERFACE_LIBRARY})
+set_target_properties(kp_timemory_filter PROPERTIES
+    PREFIX          ""
+    LINKER_LANGUAGE ${LINKER_LANGUAGE})
+
+install(TARGETS kp_timemory_filter DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
 
 #
 #   Build the sample
@@ -145,33 +162,41 @@ endif()
 #
 #   Build the configurations
 #
-
-if(USE_ROOFLINE AND USE_CUDA)
-    configure_file(${PROJECT_SOURCE_DIR}/kp_timemory.cpp
-        ${PROJECT_BINARY_DIR}/kp_timemory.cu COPYONLY)
-endif()
-
 # general options
-option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG "Build various connector configurations" ON)
 set(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS "all" CACHE STRING "List of connector configurations to build")
+if(TIMEMORY_KOKKOS_TOOLS_IN_SOURCE)
+    add_option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG "Build various connector configurations" ON)
+    add_feature(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS "List of connector configurations to build")
+else()
+    option(${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG "Build various connector configurations" ON)
+endif()
 string(TOUPPER "${${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS}" _CONNECTORS)
+
+##--------------------------------------------------------------------------------------##
+
+if(NOT ${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG)
+    message(STATUS "")
+    message(STATUS "[${PROJECT_NAME} Disabled building explicit configurations with '${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG=OFF'")
+    message(STATUS "")
+    return()
+endif()
 
 ##--------------------------------------------------------------------------------------##
 
 message(STATUS "")
 message(STATUS "Building explicit connector configurations: ${_CONNECTORS}")
-message(STATUS "    Disable building explicit configurations with '-DBUILD_CONFIG=OFF'")
-message(STATUS "    Reduce explicit configurations with semi-colon delimited '-DBUILD_CONNECTORS=\"...\"'")
+message(STATUS "    Disable building explicit configurations with '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG=OFF'")
+message(STATUS "    Reduce explicit configurations with semi-colon delimited '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONNECTORS=\"...\"'")
 message(STATUS "")
 message(STATUS "Generating a custom configuration:")
-message(STATUS "    '-DUSER_CONNECTOR_CONFIG=\"...\"' --> name for the configuration")
-message(STATUS "    '-DUSER_CONNECTOR_TYPES=\"...\"'  --> semi-colon delimited list of components")
+message(STATUS "    '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}USER_CONNECTOR_CONFIG=\"...\"' --> name for the configuration")
+message(STATUS "    '-D${TIMEMORY_KOKKOS_TOOLS_OPTION}USER_CONNECTOR_TYPES=\"...\"'  --> semi-colon delimited list of components")
 message(STATUS "")
 
 ##--------------------------------------------------------------------------------------##
 
 function(ADD_CONNECTOR_CONFIG _NAME)
-    cmake_parse_arguments(CONNECTOR "GPU" "" "COMPONENTS;TARGETS" ${ARGN})
+    cmake_parse_arguments(CONNECTOR "GPU" "" "COMPONENTS;TARGETS;DEFINITIONS" ${ARGN})
     if(NOT ${TIMEMORY_KOKKOS_TOOLS_OPTION}BUILD_CONFIG)
         return()
     endif()
@@ -184,15 +209,23 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         return()
     endif()
 
-    set(SOURCE_FILE ${PROJECT_SOURCE_DIR}/kp_timemory.cpp)
-    if(CONNECTOR_GPU AND CUDA_AVAILABLE)
-        set_source_files_properties(${SOURCE_FILE} PROPERTIES
-            LANGUAGE CUDA
-            LINKER_LANGUAGE CUDA)
+    if(CONNECTOR_GPU AND NOT CUDA_AVAILABLE)
+        return()
     endif()
 
+    # configure the extension
+    set(_EXT cpp)
+    if(CONNECTOR_GPU AND CUDA_AVAILABLE)
+        set(_EXT cu)
+    endif()
+
+    # configure the components
     string(REPLACE ";" "," _COMPONENTS "${CONNECTOR_COMPONENTS}")
     message(STATUS "Building 'kp_timemory_${_NAME}' with '${_COMPONENTS}'...")
+    set(KP_COMPONENTS ${_COMPONENTS})
+
+    set(SOURCE_FILE ${PROJECT_BINARY_DIR}/kp_timemory_${_NAME}.${_EXT})
+    configure_file(${PROJECT_SOURCE_DIR}/kp_timemory.cpp.in ${SOURCE_FILE} @ONLY)
 
     add_library(kp_timemory_${_NAME} SHARED
         ${SOURCE_FILE} ${PROJECT_SOURCE_DIR}/kp_timemory.hpp)
@@ -202,12 +235,12 @@ function(ADD_CONNECTOR_CONFIG _NAME)
         ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-headers
         ${CONNECTOR_TARGETS})
     target_compile_definitions(kp_timemory_${_NAME} PRIVATE
-        KP_COMPONENTS=${_COMPONENTS})
+        ${CONNECTOR_DEFINITIONS})
     set_target_properties(kp_timemory_${_NAME} PROPERTIES
         PREFIX ""
         LINKER_LANGUAGE ${LINKER_LANGUAGE})
     install(TARGETS kp_timemory_${_NAME}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/kokkos-tools)
+        DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR})
 endfunction()
 
 ##--------------------------------------------------------------------------------------##
@@ -238,13 +271,13 @@ add_connector_config(context_switch
 
 if(USE_GPERFTOOLS_CPU)
     add_connector_config(gperftools_cpu
-        COMPONENTS gperf_cpu_profiler
+        COMPONENTS gperftools_cpu_profiler
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-gperftools-cpu)
 endif()
 
 if(USE_GPERFTOOLS_HEAP)
     add_connector_config(gperftools_heap
-        COMPONENTS gperf_heap_profiler
+        COMPONENTS gperftools_heap_profiler
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-gperftools-heap)
 endif()
 
@@ -301,6 +334,9 @@ if(USE_VTUNE)
     add_connector_config(vtune_frame
         COMPONENTS vtune_frame
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-vtune)
+    add_connector_config(vtune_event
+        COMPONENTS vtune_event
+        TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-vtune)
 endif()
 
 if(USE_CALIPER)
@@ -311,7 +347,7 @@ endif()
 
 if(USE_LIKWID)
     add_connector_config(likwid
-        COMPONENTS likwid_perfmon likwid_nvmon
+        COMPONENTS likwid_marker likwid_nvmarker
         TARGETS ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-likwid)
 endif()
 
@@ -326,6 +362,20 @@ if(USE_GOTCHA)
     add_connector_config(gotcha
         COMPONENTS ${GOTCHA_COMPONENTS}
         TARGETS ${timemory_INTERFACE_LIBRARY})
+endif()
+
+set(_OMPT_LIB)
+if(TARGET ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-shared)
+    set(_OMPT_LIB ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-shared)
+elseif(TARGET ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-static)
+    set(_OMPT_LIB ${TIMEMORY_KOKKOS_TOOLS_PREFIX}timemory-ompt-static)
+endif()
+
+if(USE_OMPT AND _OMPT_LIB)
+    add_connector_config(ompt
+        COMPONENTS ompt_handle<tim::api::native_tag>
+        DEFINITIONS TIMEMORY_USE_OMPT_LIBRARY
+        TARGETS ${_OMPT_LIB})
 endif()
 
 if(USER_CONNECTOR_CONFIG AND USER_CONNECTOR_TYPES)

@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "timemory/utility/macros.hpp"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -42,7 +44,7 @@
 
 #if defined(_MACOS)
 #    include <sys/sysctl.h>
-#elif defined(_WINDOWS)
+#elif defined(_WINDOWS) || defined(_WIN32) || defined(_WIN64)
 #    include <cstdlib>
 #    include <windows.h>
 #elif defined(_LINUX)

@@ -21,7 +21,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
+// clang-format off
 #include "gtest/gtest.h"
 
 #include "timemory/timemory.hpp"
@@ -37,11 +37,11 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
-using auto_tuple_t      = tim::auto_tuple<real_clock, cpu_clock, cpu_util>;
-using component_tuple_t = typename auto_tuple_t::component_type;
+using auto_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util>;
+using comp_tuple_t = typename auto_tuple_t::component_type;
 
 //--------------------------------------------------------------------------------------//
-
+//
 namespace details
 {
 //--------------------------------------------------------------------------------------//
@@ -174,6 +174,64 @@ TEST_F(macro_tests, marker)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(macro_tests, marker_auto_type)
+{
+    TIMEMORY_BLANK_MARKER(comp_tuple_t, details::get_test_name());
+    details::do_sleep(250);
+    details::consume(750);
+    timemory_variable_179.stop();
+    auto              key = timemory_variable_179.key();
+    std::stringstream expected;
+    expected << details::get_test_name();
+
+    using check_tuple_t = std::decay_t<decltype(timemory_variable_179)>;
+
+    std::cout << "\n";
+    std::cout << "comp_tuple  :: " << tim::demangle<comp_tuple_t>() << "\n";
+    std::cout << "auto_tuple  :: " << tim::demangle<auto_tuple_t>() << "\n";
+    std::cout << "check_tuple :: " << tim::demangle<check_tuple_t>() << "\n";
+    std::cout << "\n";
+    std::cout << timemory_variable_179 << std::endl;
+    std::cout << "\n";
+
+    if(!std::is_same<auto_tuple_t, check_tuple_t>::value)
+    {
+        FAIL();
+    }
+
+    if(timemory_variable_179.get<wall_clock>()->get() < 0.9)
+    {
+        FAIL();
+    }
+
+    if(timemory_variable_179.get<cpu_clock>()->get() < 0.7)
+    {
+        FAIL();
+    }
+
+    if(timemory_variable_179.get<cpu_util>()->get() < 70.0)
+    {
+        FAIL();
+    }
+
+    if(key != expected.str())
+    {
+        std::cout << std::endl;
+        std::cout << std::setw(12) << "key"
+                  << ": " << key << std::endl;
+        std::cout << std::setw(12) << "expected"
+                  << ": " << expected.str() << std::endl;
+        std::cout << std::endl;
+        FAIL();
+    }
+    else
+    {
+        SUCCEED();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
 int
 main(int argc, char** argv)
 {
@@ -191,8 +249,10 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }
 
 //--------------------------------------------------------------------------------------//
+// clang-format on

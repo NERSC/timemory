@@ -54,28 +54,28 @@ def get_timemory_config(config=""):
 #
 #   AUTO-TIMER
 #
-@timemory.util.auto_timer()
+@timemory.bundle.auto_timer()
 def foo():
     """
     Demonstrate decorator and context-manager with auto_timer
     Sleep for 2 seconds then run fibonacci calculation within context-manager
     """
     time.sleep(2)
-    with timemory.util.auto_timer(key="[fibonacci]"):
+    with timemory.bundle.auto_timer(key="[fibonacci]"):
         print("fibonacci({}) = {}".format(nfib, fibonacci(nfib)))
 
 
 #
 #   AUTO-TUPLE
 #
-@timemory.util.auto_tuple(get_timemory_config(), key="")
+@timemory.bundle.auto_tuple(get_timemory_config(), key="")
 def bar():
     """
     Demonstrate decorator and context-manager with auto_tuple
     Run fibonacci calculation and then sleep for 2 seconds within context-manager
     """
     print("fibonacci({}) = {}".format(nfib, fibonacci(nfib)))
-    with timemory.util.auto_tuple(get_timemory_config(), key="[sleep]"):
+    with timemory.bundle.auto_tuple(get_timemory_config(), key="[sleep]"):
         time.sleep(2)
 
 
@@ -83,7 +83,7 @@ def bar():
 #   EXECUTE
 #
 if __name__ == "__main__":
-    
+
     # do some work
     foo()
     bar()

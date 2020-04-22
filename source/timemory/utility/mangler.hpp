@@ -31,7 +31,7 @@
 #pragma once
 
 #include "timemory/mpl/apply.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -44,13 +44,17 @@ namespace tim
 
 namespace impl
 {
-template <typename... _Args>
+template <typename... Args>
 struct mangler
 {
-    static std::string mangle(std::string func, bool is_memfun, bool is_const)
+    static std::string mangle(std::string func, bool is_memfun, bool is_const, bool nsp)
     {
-        auto        nargs = sizeof...(_Args);
-        std::string ret   = "_Z";
+        auto nargs = sizeof...(Args);
+
+        // non-namespaced functions must add "E";
+        auto addE = (func.find("::") < func.find('('));
+
+        std::string ret = "_Z";
         if(func.length() > 0 && func[0] == '&')
             func = func.substr(1);
         auto delim = delimit(func, ":()<>");
@@ -63,27 +67,30 @@ struct mangler
             ret += std::to_string(itr.length());
             ret += itr;
         }
-        ret += "E";
 
+        if(addE || nsp)
+            ret += "E";
         if(nargs == 0)
             ret += "v";
         else
-            ret += apply<std::string>::join("", type_id<_Args>::name()...);
+            ret += apply<std::string>::join("", type_id<Args>::name()...);
 
-        if(settings::verbose() > 1 || settings::debug())
-            printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
+        // if(settings::verbose() > 1 || settings::debug())
+        //    printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
+
         return ret;
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
-struct mangler<std::tuple<_Args...>>
+template <typename... Args>
+struct mangler<std::tuple<Args...>>
 {
-    static std::string mangle(std::string func, bool is_memfun, bool is_const)
+    static std::string mangle(std::string func, bool is_memfun, bool is_const,
+                              bool nsp = false)
     {
-        return mangler<_Args...>::mangle(func, is_memfun, is_const);
+        return mangler<Args...>::mangle(func, is_memfun, is_const, nsp);
     }
 };
 
@@ -93,13 +100,13 @@ struct mangler<std::tuple<_Args...>>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Func, typename _Traits = function_traits<_Func>>
+template <typename FuncT, typename TraitsT = function_traits<FuncT>>
 std::string
 mangle(const std::string& func)
 {
-    using _Tuple             = typename _Traits::args_type;
-    constexpr bool is_memfun = _Traits::is_memfun;
-    constexpr bool is_const  = _Traits::is_const;
+    using _Tuple             = typename TraitsT::args_type;
+    constexpr bool is_memfun = TraitsT::is_memfun;
+    constexpr bool is_const  = TraitsT::is_const;
     return impl::mangler<_Tuple>::mangle(func, is_memfun, is_const);
 }
 

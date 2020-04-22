@@ -440,26 +440,37 @@ def get_hotspots(op_data, ai_data):
     def get_runtime(_data, extra=[]):
         opts = ["runtime", "elapsed"] + extra
         for opt in opts:
-            if opt in _data:
+            if opt in _data.keys():
                 return float(_data[opt])
+            elif opt.title() in _data.keys():
+                return float(_data[opt.title()])
+        # print("Could not find runtime field in {}. Searched: {}".format(_data, opts))
         return None
 
     def get_flops(_data, extra=[]):
         opts = ["flops", "counted_ops", "flop_count", "flop_count_sp", "flop_count_dp",
-                "flop_count_hp", "DP operations", "SP operations"] + extra
+                "flop_count_hp", "DP_operations", "SP_operations"] + extra
         for opt in opts:
-            if opt in _data:
+            if opt in _data.keys():
                 value = float(_data[opt])
                 if value > 0.0:
                     return value
+            elif opt.title() in _data.keys():
+                value = float(_data[opt.title()])
+                if value > 0.0:
+                    return value
+        # print("Could not find flops field in {}. Searched: {}".format(_data, opts))
         return None
 
     def get_bandwidth(_data, extra=[]):
         opts = ["bandwidth", "counted_ins",
-                "ldst_executed", "L/S completed"] + extra
+                "ldst_executed", "L/S completed", "Loads_Stores_completed"] + extra
         for opt in opts:
-            if opt in _data:
+            if opt in _data.keys():
                 return float(_data[opt])
+            elif opt.title() in _data.keys():
+                return float(_data[opt.title()])
+        # print("Could not find bandwidth field in {}. Searched: {}".format(_data, opts))
         return None
 
     def check_ignore(_ai, _op):
@@ -499,21 +510,21 @@ def get_hotspots(op_data, ai_data):
         label = op_graph_data[i]["prefix"]
         runtimes += filter(None, [get_runtime(ai_repr), get_runtime(op_repr)])
 
-        if op_type == "gpu":
-            flop = get_flops(op_repr)
-            bandwidth = get_bandwidth(op_repr)
-        elif op_type == "cpu":
-            flop = get_flops(op_repr)
-            if flop is None:
-                flop = get_flops(op_repr, ["counted"])
+        flop = get_flops(op_repr)
 
         if flop is None:
+            print("No flops found in {}!".format(op_repr))
             continue
 
-        if ai_type == "cpu":
+        if op_type == "gpu" or ai_type == "gpu":
+            bandwidth = get_bandwidth(op_repr)
+        elif ai_type == "cpu" or op_type == "cpu":
             bandwidth = get_bandwidth(ai_repr)
+
+        if bandwidth is None:
+            bandwidth = get_bandwidth(op_repr)
             if bandwidth is None:
-                bandwidth = get_bandwidth(ai_repr, ["counted"])
+                bandwidth = get_bandwidth(ai_repr)
 
         runtime = 0.0
         for rt in runtimes:
@@ -582,6 +593,8 @@ def get_hotspots_integer(op_data, ai_data):
         for opt in opts:
             if opt in _data:
                 return float(_data[opt])
+            elif opt.title() in _data:
+                return float(_data[opt.title()])
         return None
 
     def get_int_ops_scaled(_data, extra=[]):
@@ -617,7 +630,8 @@ def get_hotspots_integer(op_data, ai_data):
 
     def get_L1_transactions(_data, extra=[]):
         _L1_transactions = 0
-        opts = ["gld_transactions", "gst_transactions", "shared_store_transactions", "shared_load_transactions"] + extra
+        opts = ["gld_transactions", "gst_transactions", "shared_store_transactions",
+                "shared_load_transactions"] + extra
         for opt in opts:
             if "shared" in opt:
                 _L1_transactions += float(_data[opt])*4

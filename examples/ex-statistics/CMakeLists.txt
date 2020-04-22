@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 project(timemory-Statistics-Example LANGUAGES C CXX)
 
+# this example manipulates global type-traits which significantly
+# change the implementation of the components. Thus, this example cannot
+# link to the pre-compiled library w/ extern component templates
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-statistics-example)
-set(COMPONENTS headers compile-options analysis-tools OPTIONAL_COMPONENTS cxx)
+set(COMPONENTS headers compile-options analysis-tools
+    OPTIONAL_COMPONENTS mpi settings manager hash)
 
 option(USE_PAPI "Enable PAPI support" OFF)
 option(USE_CALIPER "Enable Caliper support" OFF)

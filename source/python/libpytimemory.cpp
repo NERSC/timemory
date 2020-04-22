@@ -23,20 +23,29 @@
 // SOFTWARE.
 //
 
+#include "timemory/components/ompt.hpp"
+//
 #include "libpytimemory.hpp"
-#include "timemory/timemory.hpp"
-#include <cstdio>
-#include <pybind11/pybind11.h>
+//
+#include "timemory/components/definition.hpp"
 
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/backends/cupti.hpp"
-#endif
+//======================================================================================//
 
-#if defined(TIMEMORY_USE_MPI_P)
+#if defined(TIMEMORY_USE_MPIP_LIBRARY)
 extern "C"
 {
     extern uint64_t init_timemory_mpip_tools();
     extern uint64_t stop_timemory_mpip_tools(uint64_t);
+}
+#endif
+
+//======================================================================================//
+
+#if defined(TIMEMORY_USE_OMPT_LIBRARY)
+extern "C"
+{
+    extern uint64_t init_timemory_ompt_tools();
+    extern uint64_t stop_timemory_ompt_tools(uint64_t);
 }
 #endif
 
@@ -57,6 +66,33 @@ manager_wrapper::get()
 {
     return manager_t::instance().get();
 }
+
+//======================================================================================//
+
+struct pyenumeration
+{
+    template <size_t Idx>
+    static void generate(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum)
+    {
+        using T = typename tim::component::enumerator<Idx>::type;
+        if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
+            return;
+        using property_t = tim::component::properties<T>;
+        std::string id   = property_t::enum_string();
+        for(auto& itr : id)
+            itr = tolower(itr);
+        _pyenum.value(id.c_str(),
+                      static_cast<TIMEMORY_NATIVE_COMPONENT>(property_t::value),
+                      T::description().c_str());
+    }
+
+    template <size_t... Idx>
+    static void components(py::enum_<TIMEMORY_NATIVE_COMPONENT>& _pyenum,
+                           std::index_sequence<Idx...>)
+    {
+        TIMEMORY_FOLD_EXPRESSION(pyenumeration::generate<Idx>(_pyenum));
+    }
+};
 
 //======================================================================================//
 //  Python wrappers
@@ -105,61 +141,14 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Components submodule
     //
     //==================================================================================//
-    py::enum_<TIMEMORY_COMPONENT> components_enum(tim, "component", py::arithmetic(),
-                                                  "Components for TiMemory module");
+
+    py::enum_<TIMEMORY_NATIVE_COMPONENT> components_enum(
+        tim, "component", py::arithmetic(), "Components for timemory module");
+
     //----------------------------------------------------------------------------------//
-    components_enum.value("caliper", CALIPER)
-        .value("cpu_clock", CPU_CLOCK)
-        .value("cpu_roofline_dp_flops", CPU_ROOFLINE_DP_FLOPS)
-        .value("cpu_roofline_flops", CPU_ROOFLINE_FLOPS)
-        .value("cpu_roofline_sp_flops", CPU_ROOFLINE_SP_FLOPS)
-        .value("cpu_util", CPU_UTIL)
-        .value("cuda_event", CUDA_EVENT)
-        .value("cuda_profiler", CUDA_PROFILER)
-        .value("cupti_activity", CUPTI_ACTIVITY)
-        .value("cupti_counters", CUPTI_COUNTERS)
-        .value("data_rss", DATA_RSS)
-        .value("gperf_cpu_profiler", GPERF_CPU_PROFILER)
-        .value("gperf_heap_profiler", GPERF_HEAP_PROFILER)
-        .value("gpu_roofline_dp_flops", GPU_ROOFLINE_DP_FLOPS)
-        .value("gpu_roofline_flops", GPU_ROOFLINE_FLOPS)
-        .value("gpu_roofline_hp_flops", GPU_ROOFLINE_HP_FLOPS)
-        .value("gpu_roofline_sp_flops", GPU_ROOFLINE_SP_FLOPS)
-        .value("likwid_nvmon", LIKWID_NVMON)
-        .value("likwid_perfmon", LIKWID_PERFMON)
-        .value("monotonic_clock", MONOTONIC_CLOCK)
-        .value("monotonic_raw_clock", MONOTONIC_RAW_CLOCK)
-        .value("num_io_in", NUM_IO_IN)
-        .value("num_io_out", NUM_IO_OUT)
-        .value("num_major_page_faults", NUM_MAJOR_PAGE_FAULTS)
-        .value("num_minor_page_faults", NUM_MINOR_PAGE_FAULTS)
-        .value("num_msg_recv", NUM_MSG_RECV)
-        .value("num_msg_sent", NUM_MSG_SENT)
-        .value("num_signals", NUM_SIGNALS)
-        .value("num_swap", NUM_SWAP)
-        .value("nvtx_marker", NVTX_MARKER)
-        .value("page_rss", PAGE_RSS)
-        .value("papi_array", PAPI_ARRAY)
-        .value("peak_rss", PEAK_RSS)
-        .value("priority_context_switch", PRIORITY_CONTEXT_SWITCH)
-        .value("process_cpu_clock", PROCESS_CPU_CLOCK)
-        .value("process_cpu_util", PROCESS_CPU_UTIL)
-        .value("read_bytes", READ_BYTES)
-        .value("stack_rss", STACK_RSS)
-        .value("sys_clock", SYS_CLOCK)
-        .value("tau_marker", TAU_MARKER)
-        .value("thread_cpu_clock", THREAD_CPU_CLOCK)
-        .value("thread_cpu_util", THREAD_CPU_UTIL)
-        .value("trip_count", TRIP_COUNT)
-        .value("user_tuple_bundle", USER_TUPLE_BUNDLE)
-        .value("user_list_bundle", USER_LIST_BUNDLE)
-        .value("user_clock", USER_CLOCK)
-        .value("virtual_memory", VIRTUAL_MEMORY)
-        .value("voluntary_context_switch", VOLUNTARY_CONTEXT_SWITCH)
-        .value("vtune_event", VTUNE_EVENT)
-        .value("vtune_frame", VTUNE_FRAME)
-        .value("wall_clock", WALL_CLOCK)
-        .value("written_bytes", WRITTEN_BYTES);
+
+    pyenumeration::components(components_enum,
+                              std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
 
     //==================================================================================//
     //
@@ -169,7 +158,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::module sig = tim.def_submodule("signals", "Signals submodule");
     //----------------------------------------------------------------------------------//
     py::enum_<sys_signal_t> sys_signal_enum(sig, "sys_signal", py::arithmetic(),
-                                            "Signals for TiMemory module");
+                                            "Signals for timemory module");
     //----------------------------------------------------------------------------------//
     sys_signal_enum.value("Hangup", sys_signal_t::Hangup)
         .value("Interrupt", sys_signal_t::Interrupt)
@@ -205,8 +194,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto get_available_cupti_events = [=](int device) {
 #if defined(TIMEMORY_USE_CUPTI)
         CUdevice cu_device;
-        CUDA_DRIVER_API_CALL(cuInit(0));
-        CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
         return tim::cupti::available_events(cu_device);
 #else
         tim::consume_parameters(device);
@@ -217,8 +206,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto get_available_cupti_metrics = [=](int device) {
 #if defined(TIMEMORY_USE_CUPTI)
         CUdevice cu_device;
-        CUDA_DRIVER_API_CALL(cuInit(0));
-        CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
         auto     ret = tim::cupti::available_metrics(cu_device);
         py::list l;
         for(const auto& itr : ret)
@@ -251,15 +240,31 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Class declarations
     //
     //==================================================================================//
-    py::class_<manager_wrapper>          man(tim, "manager");
-    py::class_<tim_timer_t>              timer(tim, "timer");
-    py::class_<auto_timer_t>             auto_timer(tim, "auto_timer");
-    py::class_<component_list_t>         comp_list(tim, "component_tuple");
-    py::class_<auto_timer_decorator>     timer_decorator(tim, "timer_decorator");
-    py::class_<component_list_decorator> comp_decorator(tim, "component_decorator");
-    py::class_<pycomponent_bundle>       comp_bundle(tim, "component_bundle");
-    py::class_<rss_usage_t>              rss_usage(tim, "rss_usage");
-    py::class_<pytim::settings>          settings(tim, "settings");
+    py::class_<manager_wrapper> man(
+        tim, "manager", "object which controls static data lifetime and finalization");
+
+    py::class_<tim_timer_t> timer(tim, "timer",
+                                  "Auto-timer that does not start/stop based on scope");
+
+    py::class_<auto_timer_t> auto_timer(tim, "auto_timer", "Pre-configured bundle");
+
+    py::class_<component_list_t> comp_list(tim, "component_tuple",
+                                           "Generic component_tuple");
+
+    py::class_<auto_timer_decorator> timer_decorator(
+        tim, "timer_decorator", "Auto-timer type used in decorators");
+
+    py::class_<component_list_decorator> comp_decorator(
+        tim, "component_decorator", "Component list used in decorators");
+
+    py::class_<pycomponent_bundle> comp_bundle(
+        tim, "component_bundle", "Component bundle specific to Python interface");
+
+    py::class_<rss_usage_t> rss_usage(tim, "rss_usage",
+                                      "Pre-configured memory usage bundle");
+
+    py::class_<pytim::settings> settings(tim, "settings",
+                                         "Global configuration settings for timemory");
 
     //==================================================================================//
     //
@@ -298,18 +303,43 @@ PYBIND11_MODULE(libpytimemory, tim)
         tim::get_rusage_type() = RUSAGE_SELF;
 #endif
     };
+    //
     //----------------------------------------------------------------------------------//
+    //
     auto _init_mpip = [&]() {
-#if defined(TIMEMORY_USE_MPI_P)
+#if defined(TIMEMORY_USE_MPIP_LIBRARY)
         return init_timemory_mpip_tools();
 #else
         return 0;
 #endif
     };
+    //
     //----------------------------------------------------------------------------------//
+    //
     auto _stop_mpip = [&](uint64_t id) {
-#if defined(TIMEMORY_USE_MPI_P)
+#if defined(TIMEMORY_USE_MPIP_LIBRARY)
         return stop_timemory_mpip_tools(id);
+#else
+        tim::consume_parameters(id);
+        return 0;
+#endif
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto _init_ompt = [&]() {
+#if defined(TIMEMORY_USE_OMPT_LIBRARY)
+        return init_timemory_ompt_tools();
+#else
+        return 0;
+#endif
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto _stop_ompt = [&](uint64_t id) {
+#if defined(TIMEMORY_USE_OMPT_LIBRARY)
+        return stop_timemory_ompt_tools(id);
 #else
         tim::consume_parameters(id);
         return 0;
@@ -337,11 +367,24 @@ PYBIND11_MODULE(libpytimemory, tim)
     auto _finalize = [&]() {
         try
         {
-            // python GC seems to cause occasional problems
-            tim::settings::stack_clearing() = false;
-            tim::timemory_finalize();
+            if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
+            {
+                // python GC seems to cause occasional problems
+                tim::settings::stack_clearing() = false;
+                tim::timemory_finalize();
+            }
         } catch(std::exception& e)
         {
+#if defined(_UNIX)
+            auto bt = tim::get_demangled_backtrace<32>();
+            for(const auto& itr : bt)
+            {
+                std::cerr << "\nBacktrace:\n";
+                if(itr.length() > 0)
+                    std::cerr << itr << "\n";
+                std::cerr << "\n" << std::flush;
+            }
+#endif
             PRINT_HERE("ERROR: %s", e.what());
         }
     };
@@ -394,7 +437,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             "Enable signal detection");
     //----------------------------------------------------------------------------------//
     tim.def("has_mpi_support", [&]() { return tim::mpi::is_supported(); },
-            "Return if the TiMemory library has MPI support");
+            "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_children", set_rusage_child,
             "Set the rusage to record child processes");
@@ -434,6 +477,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
     //----------------------------------------------------------------------------------//
     tim.def("mpi_init", _init_mpi, "Initialize MPI");
+    //----------------------------------------------------------------------------------//
+    tim.def("init_ompt", _init_ompt, "Activate OMPT (OpenMP tools) profiling");
+    //----------------------------------------------------------------------------------//
+    tim.def("stop_ompt", _stop_ompt, "Deactivate OMPT (OpenMP tools)  profiling",
+            py::arg("id"));
 
     //==================================================================================//
     //
@@ -442,9 +490,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
 
 #define SETTING_PROPERTY(TYPE, FUNC)                                                     \
-    settings.def_property_static(                                                        \
-        TIMEMORY_STRINGIZE(FUNC), [](py::object) { return ::tim::settings::FUNC(); },    \
-        [](py::object, TYPE v) { ::tim::settings::FUNC() = v; })
+    settings.def_property_static(TIMEMORY_STRINGIZE(FUNC),                               \
+                                 [](py::object) { return tim::settings::FUNC(); },       \
+                                 [](py::object, TYPE v) { tim::settings::FUNC() = v; })
 
     settings.def(py::init<>(), "Dummy");
 
@@ -460,10 +508,13 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, dart_output);
     SETTING_PROPERTY(bool, time_output);
     SETTING_PROPERTY(bool, plot_output);
+    SETTING_PROPERTY(bool, diff_output);
+    SETTING_PROPERTY(bool, flamegraph_output);
     SETTING_PROPERTY(int, verbose);
     SETTING_PROPERTY(bool, debug);
     SETTING_PROPERTY(bool, banner);
     SETTING_PROPERTY(bool, flat_profile);
+    SETTING_PROPERTY(bool, timeline_profile);
     SETTING_PROPERTY(bool, collapse_threads);
     SETTING_PROPERTY(bool, destructor_report);
     SETTING_PROPERTY(uint16_t, max_depth);
@@ -502,11 +553,15 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(int32_t, node_count);
     // misc
     SETTING_PROPERTY(bool, stack_clearing);
+    SETTING_PROPERTY(bool, add_secondary);
+    SETTING_PROPERTY(tim::process::id_t, target_pid);
     // papi
     SETTING_PROPERTY(bool, papi_multiplexing);
     SETTING_PROPERTY(bool, papi_fail_on_error);
     SETTING_PROPERTY(bool, papi_quiet);
     SETTING_PROPERTY(string_t, papi_events);
+    SETTING_PROPERTY(bool, papi_attach);
+    SETTING_PROPERTY(int, papi_overflow);
     // cuda/nvtx/cupti
     SETTING_PROPERTY(uint64_t, cuda_event_batch_size);
     SETTING_PROPERTY(bool, nvtx_marker_device_sync);
@@ -557,7 +612,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("real_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = _timer.get<real_clock>();
+                  auto&        obj    = *(_timer.get<wall_clock>());
                   return obj.get();
               },
               "Elapsed wall clock");
@@ -565,7 +620,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("sys_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = _timer.get<system_clock>();
+                  auto&        obj    = *(_timer.get<system_clock>());
                   return obj.get();
               },
               "Elapsed system clock");
@@ -573,7 +628,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("user_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = _timer.get<user_clock>();
+                  auto&        obj    = *(_timer.get<user_clock>());
                   return obj.get();
               },
               "Elapsed user time");
@@ -672,7 +727,8 @@ PYBIND11_MODULE(libpytimemory, tim)
                         py::return_value_policy::automatic);
     //----------------------------------------------------------------------------------//
 
-    auto configure_pybundle = [](py::list _args, bool flat_profile) {
+    auto configure_pybundle = [](py::list _args, bool flat_profile,
+                                 bool timeline_profile) {
         std::set<TIMEMORY_COMPONENT> components;
         if(_args.empty())
             components.insert(WALL_CLOCK);
@@ -686,7 +742,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             {
                 _sitr = itr.cast<std::string>();
                 if(_sitr.length() > 0)
-                    _citr = tim::enumerate_component(_sitr);
+                    _citr = tim::runtime::enumerate(_sitr);
                 else
                     continue;
             } catch(...)
@@ -709,8 +765,36 @@ PYBIND11_MODULE(libpytimemory, tim)
                                  "'timemory.component' and string");
             }
         }
-        pycomponent_bundle::configure(components, flat_profile);
+
+        size_t isize = pycomponent_bundle::size();
+        if(tim::settings::debug() || tim::settings::verbose() > 3)
+        {
+            PRINT_HERE("%s", "configuring pybundle");
+        }
+
+        using bundle_type = typename pycomponent_bundle::type;
+        tim::configure<bundle_type>(components,
+                                    tim::scope::config{ flat_profile, timeline_profile });
+
+        if(tim::settings::debug() || tim::settings::verbose() > 3)
+        {
+            size_t fsize = pycomponent_bundle::size();
+            if((fsize - isize) < components.size())
+            {
+                std::stringstream ss;
+                ss << "Warning: final size " << fsize << ", input size " << isize
+                   << ". Difference is less than the components size: "
+                   << components.size();
+                PRINT_HERE("%s", ss.str().c_str());
+                throw std::runtime_error(ss.str());
+            }
+            PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n",
+                       (unsigned long) fsize, (unsigned long) isize,
+                       (unsigned long) components.size());
+        }
     };
+
+    pybundle_t::global_init(nullptr);
 
     //==================================================================================//
     //
@@ -726,12 +810,12 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     comp_bundle.def("stop", &pycomponent_bundle::stop, "Stop the bundle");
     //----------------------------------------------------------------------------------//
-    comp_bundle.def_static("configure", configure_pybundle,
-                           py::arg("components")   = py::list(),
-                           py::arg("flat_profile") = false,
-                           "Configure the profiler types (default: 'wall_clock')");
+    comp_bundle.def_static(
+        "configure", configure_pybundle, py::arg("components") = py::list(),
+        py::arg("flat_profile") = false, py::arg("timeline_profile") = false,
+        "Configure the profiler types (default: 'wall_clock')");
     //----------------------------------------------------------------------------------//
-    comp_bundle.def_static("reset", &pybundle_t::reset,
+    comp_bundle.def_static("reset", &pycomponent_bundle::reset,
                            "Reset the components in the bundle");
 
     //==================================================================================//
@@ -913,7 +997,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     // ---------------------------------------------------------------------- //
     opts.def("add_args_and_parse_known", &pytim::opt::add_args_and_parse_known,
              "Combination of timing.add_arguments and timing.parse_args. Returns "
-             "TiMemory args and replaces sys.argv with the unknown args (used to "
+             "timemory args and replaces sys.argv with the unknown args (used to "
              "fix issue with unittest module)",
              py::arg("parser") = py::none(), py::arg("fpath") = ".");
     // ---------------------------------------------------------------------- //

@@ -46,7 +46,7 @@ using default_device = device_t;
 using fp16_t = tim::cuda::fp16_t;
 #endif
 
-using simple_timer_t = tim::auto_tuple<wall_clock>;
+using simple_timer_t = tim::auto_tuple_t<wall_clock>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -75,18 +75,18 @@ using cpu_roofline_t = cpu_roofline_flops;
 //--------------------------------------------------------------------------------------//
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
+    tim::auto_tuple<wall_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
 
 //--------------------------------------------------------------------------------------//
 // amypx calculation
 //
-template <typename _Tp>
+template <typename Tp>
 GLOBAL_CALLABLE void
-amypx(int64_t n, _Tp* x, _Tp* y, int64_t nitr)
+amypx(int64_t n, Tp* x, Tp* y, int64_t nitr)
 {
     auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
     for(int i = range.begin(); i < range.end(); i += range.stride())
-        y[i] = static_cast<_Tp>(2.0) * y[i] + x[i];
+        y[i] = static_cast<Tp>(2.0) * y[i] + x[i];
 }
 
 //--------------------------------------------------------------------------------------//
@@ -111,22 +111,22 @@ amypx(int64_t n, fp16_t* x, fp16_t* y, int64_t nitr)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void customize_roofline(int64_t, int64_t, int64_t, int64_t, int64_t, int64_t);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
 exec_amypx(int64_t data_size, int64_t nitr, params_t params,
            std::vector<stream_t>& streams)
 {
-    auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
+    auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(Tp).name()));
 
-    _Tp* y    = tim::cuda::malloc<_Tp>(data_size * streams.size());
-    _Tp* x    = tim::cuda::malloc<_Tp>(data_size * streams.size());
-    _Tp  zero = 0.0;
-    _Tp  one  = 1.0;
+    Tp* y    = tim::cuda::malloc<Tp>(data_size * streams.size());
+    Tp* x    = tim::cuda::malloc<Tp>(data_size * streams.size());
+    Tp  zero = 0.0;
+    Tp  one  = 1.0;
 
     for(uint64_t i = 0; i < streams.size(); ++i)
     {
@@ -134,18 +134,18 @@ exec_amypx(int64_t data_size, int64_t nitr, params_t params,
         auto     _y     = y + data_size * i;
         auto     _x     = x + data_size * i;
         params.stream   = stream;
-        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y, 1);
+        tim::device::launch(data_size, stream, params, amypx<Tp>, data_size, _x, _y, 1);
         tim::cuda::stream_sync(stream);
         tim::device::launch(data_size, stream, params,
-                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _y, zero,
+                            tim::ert::initialize_buffer<device_t, Tp, int64_t>, _y, zero,
                             data_size);
         tim::device::launch(data_size, stream, params,
-                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _x, one,
+                            tim::ert::initialize_buffer<device_t, Tp, int64_t>, _x, one,
                             data_size);
         tim::cuda::stream_sync(stream);
 
         TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
-        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y,
+        tim::device::launch(data_size, stream, params, amypx<Tp>, data_size, _x, _y,
                             nitr);
         tim::cuda::stream_sync(stream);
         TIMEMORY_CALIPER_APPLY(0, stop);
@@ -162,33 +162,33 @@ void
 exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params,
                    std::vector<stream_t>& streams)
 {
-    using _Tp  = fp16_t;
-    auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
+    using Tp   = fp16_t;
+    auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(Tp).name()));
     // while(label.find("__") != std::string::npos)
     //     label.erase(label.find("__"), 1);
 
-    _Tp* y    = tim::cuda::malloc<_Tp>(data_size * streams.size());
-    _Tp* x    = tim::cuda::malloc<_Tp>(data_size * streams.size());
-    _Tp  zero = { 0.0, 0.0 };
-    _Tp  one  = { 1.0, 1.0 };
+    Tp* y    = tim::cuda::malloc<Tp>(data_size * streams.size());
+    Tp* x    = tim::cuda::malloc<Tp>(data_size * streams.size());
+    Tp  zero = { 0.0, 0.0 };
+    Tp  one  = { 1.0, 1.0 };
 
     for(uint64_t i = 0; i < streams.size(); ++i)
     {
         stream_t stream = streams.at(i);
         auto     _y     = y + data_size * i;
         auto     _x     = x + data_size * i;
-        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y, 1);
+        tim::device::launch(data_size, stream, params, amypx<Tp>, data_size, _x, _y, 1);
         tim::cuda::stream_sync(stream);
         tim::device::launch(data_size, stream, params,
-                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _y, zero,
+                            tim::ert::initialize_buffer<device_t, Tp, int64_t>, _y, zero,
                             data_size);
         tim::device::launch(data_size, stream, params,
-                            tim::ert::initialize_buffer<device_t, _Tp, int64_t>, _x, one,
+                            tim::ert::initialize_buffer<device_t, Tp, int64_t>, _x, one,
                             data_size);
         tim::cuda::stream_sync(stream);
 
         TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
-        tim::device::launch(data_size, stream, params, amypx<_Tp>, data_size, _x, _y,
+        tim::device::launch(data_size, stream, params, amypx<Tp>, data_size, _x, _y,
                             nitr);
         tim::cuda::stream_sync(stream);
         TIMEMORY_CALIPER_APPLY(0, stop);
@@ -276,14 +276,14 @@ main(int argc, char** argv)
 
     params_t params(grid_size, block_size, 0, 0);
 
-    real_clock total;
+    wall_clock total;
     total.start();
 
     //
     // overall timing
     //
     auto _main = TIMEMORY_BLANK_HANDLE(auto_tuple_t, argv[0]);
-    _main.report_at_exit(true);
+    //_main.report_at_exit(true);
 
     //
     // run amypx calculations
@@ -333,17 +333,17 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
 customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor,
                    int64_t num_streams, int64_t grid_size, int64_t block_size)
 {
     using namespace tim;
-    using counter_t         = component::real_clock;
+    using counter_t         = component::wall_clock;
     using ert_data_t        = ert::exec_data<counter_t>;
     using ert_params_t      = ert::exec_params;
     using ert_data_ptr_t    = std::shared_ptr<ert_data_t>;
-    using ert_executor_type = ert::executor<device_t, _Tp, counter_t>;
+    using ert_executor_type = ert::executor<device_t, Tp, counter_t>;
     using ert_config_type   = typename ert_executor_type::configuration_type;
     using ert_counter_type  = typename ert_executor_type::counter_type;
 
@@ -373,16 +373,16 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
         // does the execution of ERT
         auto callback = [=](ert_counter_type& _counter) {
             // these are the kernel functions we want to calculate the peaks with
-            auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-            auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+            auto store_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b) { a = b; };
+            auto add_func   = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
                 a = b + c;
             };
-            auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+            auto fma_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
                 a = a * b + c;
             };
 
             // set bytes per element
-            _counter.bytes_per_element = sizeof(_Tp);
+            _counter.bytes_per_element = sizeof(Tp);
             // set number of memory accesses per element from two functions
             _counter.memory_accesses_per_element = 2;
 
@@ -398,7 +398,7 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
         };
 
         // set the callback
-        gpu_roofline_t::set_executor_callback<_Tp>(callback);
+        gpu_roofline_t::set_executor_callback<Tp>(callback);
     }
 }
 

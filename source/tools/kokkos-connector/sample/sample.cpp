@@ -27,9 +27,9 @@ extern "C"
     void kokkosp_stop_profile_section(uint32_t sec_id);
 }
 
-template <typename _Tp>
-_Tp
-random_entry(const std::vector<_Tp>& v)
+template <typename Tp>
+Tp
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());

@@ -31,12 +31,11 @@
 
 #pragma once
 
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"  // macro definitions w/ no internal deps
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
-#include <algorithm>
 #include <cstdint>
 #include <unordered_map>
 
@@ -100,8 +99,8 @@ enum : int
 }  // namespace threading
 #endif
 
-template <typename _Tp>
-using communicator_map_t = std::unordered_map<comm_t, _Tp>;
+template <typename Tp>
+using communicator_map_t = std::unordered_map<comm_t, Tp>;
 
 inline int32_t
 rank(comm_t comm = comm_world_v);

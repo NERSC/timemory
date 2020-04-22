@@ -31,7 +31,10 @@
 #endif
 
 #include "timemory/library.h"
-#include "timemory/variadic/auto_tuple.hpp"
+#include "timemory/operations/definition.hpp"
+#include "timemory/plotting/definition.hpp"
+#include "timemory/storage/definition.hpp"
+#include "timemory/variadic/definition.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -39,7 +42,7 @@
 #define LABEL(...) TIMEMORY_LABEL(__VA_ARGS__)
 
 using namespace tim::component;
-using toolset_t     = tim::auto_tuple<real_clock>;
+using toolset_t     = tim::auto_tuple_t<wall_clock>;
 using toolset_ptr_t = std::shared_ptr<toolset_t>;
 using record_map_t  = std::unordered_map<uint64_t, toolset_ptr_t>;
 

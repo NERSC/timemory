@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <deque>
@@ -87,8 +86,8 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive>
-    void serialize(_Archive& ar, const unsigned int)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
     {
         ar(cereal::make_nvp("data", data));
     }
@@ -112,22 +111,22 @@ tgraph_node<T>::tgraph_node(T&& val)
 //  graph allocator that counts the size of the allocation
 //
 //
-template <typename _Tp>
-class graph_allocator : public std::allocator<_Tp>
+template <typename Tp>
+class graph_allocator : public std::allocator<Tp>
 {
 public:
     // The following will be the same for virtually all allocators.
-    using value_type      = _Tp;
-    using pointer         = _Tp*;
-    using reference       = _Tp&;
-    using const_pointer   = const _Tp*;
-    using const_reference = const _Tp&;
+    using value_type      = Tp;
+    using pointer         = Tp*;
+    using reference       = Tp&;
+    using const_pointer   = const Tp*;
+    using const_reference = const Tp&;
     using size_type       = size_t;
     using difference_type = ptrdiff_t;
     using boolvec_t       = std::deque<bool>;
     using voidvec_t       = std::vector<void*>;
     using sizevec_t       = std::vector<uint16_t>;
-    using base_type       = std::allocator<_Tp>;
+    using base_type       = std::allocator<Tp>;
 
 public:
     // constructors and destructors
@@ -148,13 +147,13 @@ public:
     bool operator==(const graph_allocator&) const { return true; }
 
 public:
-    _Tp*       address(_Tp& r) const { return &r; }
-    const _Tp* address(const _Tp& s) const { return &s; }
+    Tp*       address(Tp& r) const { return &r; }
+    const Tp* address(const Tp& s) const { return &s; }
 
     size_t max_size() const
     {
         // avoid signed/unsigned warnings independent of size_t definition
-        return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(_Tp);
+        return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(Tp);
     }
 
     // The following must be the same for all allocators.
@@ -167,18 +166,18 @@ public:
     using base_type::construct;
     using base_type::destroy;
     /*
-    void construct(_Tp* const p, const _Tp& val) const { new((void*) p) _Tp(val); }
+    void construct(Tp* const p, const Tp& val) const { new((void*) p) Tp(val); }
 
-    template <typename... _Args>
-    void construct(_Tp* const p, _Args&&... args) const
+    template <typename... ArgsT>
+    void construct(Tp* const p, ArgsT&&... args) const
     {
-        ::new((void*) p) _Tp(std::forward<_Args>(args)...);
+        ::new((void*) p) Tp(std::forward<ArgsT>(args)...);
     }
 
-    void destroy(_Tp* const p) const { p->~_Tp(); }
+    void destroy(Tp* const p) const { p->~Tp(); }
     */
 
-    _Tp* allocate(const size_t n) const
+    Tp* allocate(const size_t n) const
     {
         if(n == 0)
             return nullptr;
@@ -187,10 +186,10 @@ public:
         if(n > max_size())
         {
             throw std::length_error(
-                "graph_allocator<_Tp>::allocate() - Integer overflow.");
+                "graph_allocator<Tp>::allocate() - Integer overflow.");
         }
 
-        auto _check_page_entry = [&](size_t i, size_t& j) -> _Tp* {
+        auto _check_page_entry = [&](size_t i, size_t& j) -> Tp* {
             if(m_offset_avail[i][j])
             {
                 bool _block = true;
@@ -203,7 +202,7 @@ public:
                     }
                 if(_block)
                 {
-                    _Tp* ptr = ((_Tp*) m_pages[i]) + j;
+                    Tp* ptr = ((Tp*) m_pages[i]) + j;
                     for(size_t k = 0; k < n; ++k)
                         m_offset_avail[i][j + k] = false;
                     m_offset_empty[i] -= n;
@@ -248,10 +247,10 @@ public:
             m_offset_avail[m_next_page][m_next_offset + k] = false;
         m_offset_empty[m_next_page] -= n;
         m_next_offset += n;
-        return static_cast<_Tp*>(m_next_addr);
+        return static_cast<Tp*>(m_next_addr);
     }
 
-    void deallocate(_Tp* const ptr, const size_t n) const
+    void deallocate(Tp* const ptr, const size_t n) const
     {
         for(size_t j = 0; j < n; ++j)
         {
@@ -270,8 +269,8 @@ public:
     }
 
     // same for all allocators that ignore hints.
-    // template <typename U = _Tp>
-    _Tp* allocate(const size_t n, const void* /* const hint */) const
+    // template <typename U = Tp>
+    Tp* allocate(const size_t n, const void* /* const hint */) const
     {
         return allocate(n);
     }
@@ -285,8 +284,8 @@ public:
     }
 
 private:
-    template <typename... _Args>
-    void _consume(_Args&&...)
+    template <typename... ArgsT>
+    void _consume(ArgsT&&...)
     {}
 
     void add_pages(int npages = 1) const
@@ -298,7 +297,7 @@ private:
         // throw std::bad_alloc in the case of memory allocation failure.
         if(_space == nullptr)
         {
-            std::cerr << "Allocation of type " << typeid(_Tp).name() << " of size "
+            std::cerr << "Allocation of type " << typeid(Tp).name() << " of size "
                       << nbytes << " failed" << std::endl;
             throw std::bad_alloc();
         }
@@ -321,14 +320,14 @@ private:
         }
     }
 
-    const uint16_t    m_alloc_per_page            = units::get_page_size() / sizeof(_Tp);
-    mutable uint16_t  m_next_offset               = 0;
-    mutable size_t    m_next_page                 = 0;
-    mutable void*     m_next_addr                 = nullptr;
-    mutable voidvec_t m_pages                     = {};
-    mutable sizevec_t m_offset_empty              = {};
-    mutable std::vector<boolvec_t> m_offset_avail = {};
-    mutable voidvec_t              m_allocations  = {};
+    const uint16_t                 m_alloc_per_page = units::get_page_size() / sizeof(Tp);
+    mutable uint16_t               m_next_offset    = 0;
+    mutable size_t                 m_next_page      = 0;
+    mutable void*                  m_next_addr      = nullptr;
+    mutable voidvec_t              m_pages          = {};
+    mutable sizevec_t              m_offset_empty   = {};
+    mutable std::vector<boolvec_t> m_offset_avail   = {};
+    mutable voidvec_t              m_allocations    = {};
 };
 
 //======================================================================================//
@@ -372,9 +371,21 @@ public:
         iterator_base();
         iterator_base(graph_node*);
 
+        iterator_base(const iterator_base&) = default;
+        iterator_base(iterator_base&&)      = default;
+
+    public:
+        // public operators
+        iterator_base& operator=(const iterator_base&) = default;
+        iterator_base& operator=(iterator_base&&) = default;
+
+        operator bool() const { return node != nullptr; }
+
         T& operator*() const;
         T* operator->() const;
 
+    public:
+        // public member functions
         /// When called, the next increment/decrement skips children of this
         /// node.
         void skip_children();
@@ -385,11 +396,12 @@ public:
         sibling_iterator begin() const;
         sibling_iterator end() const;
 
-        operator bool() const { return node != nullptr; }
-
+    public:
+        // public data member
         graph_node* node = nullptr;
 
     protected:
+        // protected data member
         bool m_skip_current_children = false;
     };
 
@@ -402,6 +414,14 @@ public:
         pre_order_iterator(const iterator_base&);
         pre_order_iterator(const sibling_iterator&);
 
+        pre_order_iterator(const pre_order_iterator&) = default;
+        pre_order_iterator(pre_order_iterator&&)      = default;
+
+    public:
+        // public operators
+        pre_order_iterator& operator=(const pre_order_iterator&) = default;
+        pre_order_iterator& operator=(pre_order_iterator&&) = default;
+
         bool                operator==(const pre_order_iterator&) const;
         bool                operator!=(const pre_order_iterator&) const;
         pre_order_iterator& operator++();
@@ -412,6 +432,8 @@ public:
         pre_order_iterator& operator-=(unsigned int);
         pre_order_iterator  operator+(unsigned int);
 
+    public:
+        // public member functions
         pre_order_iterator& next_skip_children();
     };
 
@@ -432,6 +454,8 @@ public:
         sibling_iterator(const sibling_iterator&) = default;
         sibling_iterator(sibling_iterator&&)      = default;
 
+    public:
+        // public operators
         sibling_iterator& operator=(const sibling_iterator&) = default;
         sibling_iterator& operator=(sibling_iterator&&) = default;
 
@@ -445,8 +469,13 @@ public:
         sibling_iterator& operator-=(unsigned int);
         sibling_iterator  operator+(unsigned int);
 
+    public:
+        // public member functions
         graph_node* range_first() const;
         graph_node* range_last() const;
+
+    public:
+        // public data member
         graph_node* m_parent;
 
     private:
@@ -639,13 +668,13 @@ public:
 
     /// Reduce duplicate nodes
     template <
-        typename _ComparePred = std::function<bool(sibling_iterator, sibling_iterator)>,
-        typename _ReducePred  = std::function<void(sibling_iterator, sibling_iterator)>>
+        typename ComparePred = std::function<bool(sibling_iterator, sibling_iterator)>,
+        typename ReducePred  = std::function<void(sibling_iterator, sibling_iterator)>>
     inline void reduce(
         const sibling_iterator&, const sibling_iterator&, std::set<sibling_iterator>&,
-        _ComparePred&& = [](sibling_iterator lhs,
-                            sibling_iterator rhs) { return (*lhs == *rhs); },
-        _ReducePred&& = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
+        ComparePred&& = [](sibling_iterator lhs,
+                           sibling_iterator rhs) { return (*lhs == *rhs); },
+        ReducePred&&  = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
 
     /// Sort (std::sort only moves values of nodes, this one moves children as
     /// well).
@@ -758,8 +787,8 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename _Archive>
-    void serialize(_Archive& ar, const unsigned int)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
     {
         for(auto itr = begin(); itr != end(); ++itr)
             ar(cereal::make_nvp("node", *itr));
@@ -2198,11 +2227,11 @@ graph<T, AllocatorT>::merge(const sibling_iterator& to1, const sibling_iterator&
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
-template <typename _ComparePred, typename _ReducePred>
+template <typename ComparePred, typename ReducePred>
 void
 graph<T, AllocatorT>::reduce(const sibling_iterator&     lhs, const sibling_iterator&,
-                             std::set<sibling_iterator>& _erase, _ComparePred&& _compare,
-                             _ReducePred&& _reduce)
+                             std::set<sibling_iterator>& _erase, ComparePred&& _compare,
+                             ReducePred&& _reduce)
 {
     if(!is_valid(lhs))
         return;
@@ -2281,18 +2310,21 @@ template <typename T, typename AllocatorT>
 template <class StrictWeakOrdering>
 void
 graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
-                           StrictWeakOrdering comp, bool deep)
+                           StrictWeakOrdering /*comp*/, bool /*deep*/)
 {
     if(from == to)
         return;
+    throw std::runtime_error("Not implemented!");
+    /*
     // make list of sorted nodes
     // CHECK: if multiset stores equivalent nodes in the order in which they
     // are inserted, then this routine should be called 'stable_sort'.
-    std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>> nodes(comp);
-    sibling_iterator                                              it = from, it2 = to;
+    std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>> _nodes(
+        compare_nodes<StrictWeakOrdering>(comp));
+    sibling_iterator it = from, it2 = to;
     while(it != to)
     {
-        nodes.insert(it.node);
+        _nodes.insert(it.node);
         ++it;
     }
     // reassemble
@@ -2302,8 +2334,8 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
     graph_node* prev = from.node->prev_sibling;
     graph_node* next = it2.node->next_sibling;
     typename std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>>::iterator
-        nit = nodes.begin(),
-        eit = nodes.end();
+        nit = _nodes.begin(),
+        eit = _nodes.end();
     if(prev == 0)
     {
         if((*nit)->parent != 0)  // to catch "sorting the head" situations, when
@@ -2340,7 +2372,7 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
 
     if(deep)
     {  // sort the children of each node too
-        sibling_iterator bcs(*nodes.begin());
+        sibling_iterator bcs(*_nodes.begin());
         sibling_iterator ecs(*eit);
         ++ecs;
         while(bcs != ecs)
@@ -2349,6 +2381,7 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
             ++bcs;
         }
     }
+    */
 }
 
 //--------------------------------------------------------------------------------------//
@@ -2521,10 +2554,6 @@ graph<T, AllocatorT>::number_of_children(const iterator_base& it)
         return 0;
 
     unsigned int ret = 1;
-    //	  while(pos!=it.node->last_child) {
-    //		  ++ret;
-    //		  pos=pos->next_sibling;
-    //		  }
     while((pos = pos->next_sibling))
         ++ret;
     return ret;
@@ -3154,7 +3183,7 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::graph_node*
 graph<T, AllocatorT>::sibling_iterator::range_last() const
 {
-    return m_parent->last_child;
+    return (m_parent) ? m_parent->last_child : nullptr;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -24,9 +24,7 @@
 
 #pragma once
 
-#if !defined(TIMEMORY_EXTERN_TEMPLATES)
-#    define TIMEMORY_EXTERN_TEMPLATES
-#endif
+#define TIMEMORY_PYBIND11_SOURCE
 
 //======================================================================================//
 // disables a bunch of warnings
@@ -35,9 +33,31 @@
 
 //======================================================================================//
 
+#include "timemory/timemory.hpp"
+//
+#include "timemory/enum.h"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/insert.hpp"
+#include "timemory/runtime/invoker.hpp"
+#include "timemory/runtime/properties.hpp"
+#include "timemory/utility/signals.hpp"
+
+#include "pybind11/cast.h"
+#include "pybind11/embed.h"
+#include "pybind11/eval.h"
+#include "pybind11/functional.h"
+#include "pybind11/iostream.h"
+#include "pybind11/numpy.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
+#include "pybind11/stl.h"
+
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -49,30 +69,6 @@
 #include <thread>
 #include <vector>
 
-#include "pybind11/cast.h"
-#include "pybind11/chrono.h"
-#include "pybind11/embed.h"
-#include "pybind11/eval.h"
-#include "pybind11/functional.h"
-#include "pybind11/iostream.h"
-#include "pybind11/numpy.h"
-#include "pybind11/pybind11.h"
-#include "pybind11/pytypes.h"
-#include "pybind11/stl.h"
-
-#include "timemory/backends/dmp.hpp"
-#include "timemory/enum.h"
-#include "timemory/manager.hpp"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_timer.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
-
 //======================================================================================//
 
 namespace py = pybind11;
@@ -80,26 +76,21 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-struct pytim_project;
-using pybundle_t = tim::component::user_bundle<0, pytim_project>;
-
-using auto_timer_t = tim::auto_timer;
-
+using pybundle_t   = tim::component::user_global_bundle;
+using auto_timer_t = typename tim::auto_timer::type;
 using auto_usage_t =
-    tim::auto_tuple<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
-                    voluntary_context_switch, priority_context_switch>;
-using auto_list_t        = tim::complete_auto_list_t;
+    tim::auto_tuple_t<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
+                      voluntary_context_switch, priority_context_switch>;
+using auto_list_t        = tim::available_auto_list_t;
 using component_bundle_t = tim::component_tuple<pybundle_t>;
-
-using tim_timer_t       = typename auto_timer_t::component_type;
-using rss_usage_t       = typename auto_usage_t::component_type;
-using component_list_t  = typename auto_list_t::component_type;
-using manager_t         = tim::manager;
-using sys_signal_t      = tim::sys_signal;
-using signal_settings_t = tim::signal_settings;
-using signal_set_t      = signal_settings_t::signal_set_t;
-using farray_t          = py::array_t<double, py::array::c_style | py::array::forcecast>;
-
+using tim_timer_t        = typename auto_timer_t::component_type;
+using rss_usage_t        = typename auto_usage_t::component_type;
+using component_list_t   = typename auto_list_t::component_type;
+using manager_t          = tim::manager;
+using sys_signal_t       = tim::sys_signal;
+using signal_settings_t  = tim::signal_settings;
+using signal_set_t       = signal_settings_t::signal_set_t;
+using farray_t           = py::array_t<double, py::array::c_style | py::array::forcecast>;
 using component_enum_vec = std::vector<TIMEMORY_COMPONENT>;
 
 //======================================================================================//
@@ -119,6 +110,9 @@ protected:
 
 class pycomponent_bundle
 {
+public:
+    using type = pybundle_t;
+
 public:
     pycomponent_bundle(component_bundle_t* _ptr = nullptr)
     : m_ptr(_ptr)
@@ -141,20 +135,32 @@ public:
 
     void start()
     {
+        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
+                         (m_ptr) ? m_ptr->get<pybundle_t>()->size() : 0);
         if(m_ptr)
             m_ptr->start();
     }
 
     void stop()
     {
+        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
+                         (m_ptr) ? m_ptr->get<pybundle_t>()->size() : 0);
         if(m_ptr)
             m_ptr->stop();
     }
 
-    template <typename... _Args>
-    static void configure(_Args&&... _args)
+    static size_t size() { return pybundle_t::bundle_size(); }
+
+    static void reset()
     {
-        tim::configure<pybundle_t>(std::forward<_Args>(_args)...);
+        DEBUG_PRINT_HERE("size = %lu", size());
+        pybundle_t::reset();
+    }
+
+    template <typename... ArgsT>
+    static void configure(ArgsT&&... _args)
+    {
+        tim::configure<pybundle_t>(std::forward<ArgsT>(_args)...);
     }
 
 private:
@@ -273,7 +279,7 @@ components_enum_to_vec(py::list enum_list)
 component_list_t*
 create_component_list(std::string obj_tag, const component_enum_vec& components)
 {
-    auto obj = new component_list_t(obj_tag, true, tim::settings::flat_profile());
+    auto obj = new component_list_t(obj_tag, true);
     tim::initialize(*obj, components);
     return obj;
 }
@@ -338,7 +344,7 @@ manager()
 tim_timer_t*
 timer(std::string key)
 {
-    return new tim_timer_t(key, true, tim::settings::flat_profile());
+    return new tim_timer_t(key, true);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -346,7 +352,7 @@ timer(std::string key)
 auto_timer_t*
 auto_timer(std::string key, bool report_at_exit)
 {
-    return new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit);
+    return new auto_timer_t(key, tim::scope::get_default(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -354,7 +360,7 @@ auto_timer(std::string key, bool report_at_exit)
 rss_usage_t*
 rss_usage(std::string key, bool record)
 {
-    rss_usage_t* _rss = new rss_usage_t(key, true, tim::settings::flat_profile());
+    rss_usage_t* _rss = new rss_usage_t(key, true);
     if(record)
         _rss->measure();
     return _rss;
@@ -410,11 +416,11 @@ component_bundle(const std::string& func, const std::string& file, const int lin
     }
     using mode = tim::source_location::mode;
 
-    auto&& _flat = tim::settings::flat_profile();
+    auto&& _scope = tim::scope::get_default();
     auto&& _loc =
         tim::source_location(mode::complete, func.c_str(), line, file.c_str(), sargs);
     auto&& _obj = (tim::settings::enabled())
-                      ? new component_bundle_t(_loc.get_captured(sargs), true, _flat)
+                      ? new component_bundle_t(_loc.get_captured(sargs), true, _scope)
                       : nullptr;
     return new pycomponent_bundle(_obj);
 }
@@ -665,12 +671,12 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 
 //======================================================================================//
 
-template <typename _Tuple>
+template <typename TupleT>
 struct construct_dict
 {
-    using Type = _Tuple;
+    using Type = TupleT;
 
-    construct_dict(_Tuple& _tup, py::dict& _dict)
+    construct_dict(TupleT& _tup, py::dict& _dict)
     {
         auto _label = std::get<0>(_tup);
         if(_label.size() > 0)
@@ -685,19 +691,19 @@ struct construct_dict<std::tuple<std::string, void*>>
 {
     using Type = std::tuple<std::string, void*>;
 
-    template <typename... _Args>
-    construct_dict(_Args&&...)
+    template <typename... ArgsT>
+    construct_dict(ArgsT&&...)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 struct dict
 {
-    static py::dict construct(std::tuple<_Types...>& _tup)
+    static py::dict construct(std::tuple<Types...>& _tup)
     {
-        using apply_types = std::tuple<construct_dict<_Types>...>;
+        using apply_types = std::tuple<construct_dict<Types>...>;
         py::dict _dict;
         ::tim::apply<void>::access<apply_types>(_tup, std::ref(_dict));
         return _dict;
@@ -706,12 +712,12 @@ struct dict
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-struct dict<std::tuple<_Types...>>
+template <typename... Types>
+struct dict<std::tuple<Types...>>
 {
-    static py::dict construct(std::tuple<_Types...>& _tup)
+    static py::dict construct(std::tuple<Types...>& _tup)
     {
-        return dict<_Types...>::construct(_tup);
+        return dict<Types...>::construct(_tup);
     }
 };
 

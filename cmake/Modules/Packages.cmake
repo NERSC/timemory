@@ -14,7 +14,8 @@ enable_testing()
 
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
-add_interface_library(timemory-extern-init)
+add_interface_library(timemory-cereal-xml)
+add_interface_library(timemory-extern)
 add_interface_library(timemory-statistics)
 
 set(TIMEMORY_REQUIRED_INTERFACES
@@ -22,6 +23,7 @@ set(TIMEMORY_REQUIRED_INTERFACES
     timemory-cereal)
 
 add_interface_library(timemory-mpi)
+add_interface_library(timemory-no-mpi-init)
 add_interface_library(timemory-upcxx)
 add_interface_library(timemory-threading)
 
@@ -39,9 +41,11 @@ add_interface_library(timemory-gotcha)
 add_interface_library(timemory-likwid)
 add_interface_library(timemory-vtune)
 add_interface_library(timemory-tau)
-add_interface_library(timemory-openmp)
+add_interface_library(timemory-ompt)
 add_interface_library(timemory-python)
 add_interface_library(timemory-plotting)
+add_interface_library(timemory-allinea-map)
+add_interface_library(timemory-craypat)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-gperftools-compile-options)
@@ -80,7 +84,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-papi
     #
     timemory-cuda
-    timemory-cudart
+    # timemory-cudart
     timemory-nvtx
     timemory-cupti
     timemory-cudart-device
@@ -133,7 +137,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
 
 set(_GPERF_IN_LIBRARY OFF)
 # if not python or force requested
-if((NOT (TIMEMORY_USE_PYTHON OR TIMEMORY_BUILD_PYTHON)) OR TIMEMORY_FORCE_GPERF_PYTHON)
+if(NOT TIMEMORY_USE_PYTHON OR TIMEMORY_FORCE_GPERFTOOLS_PYTHON)
     list(APPEND TIMEMORY_EXTERNAL_SHARED_INTERFACES timemory-gperftools)
     list(APPEND TIMEMORY_EXTERNAL_STATIC_INTERFACES timemory-gperftools-static)
     set(_GPERF_IN_LIBRARY ON)
@@ -154,12 +158,16 @@ if(TIMEMORY_USE_SANITIZER)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)
 endif()
 
-if(TIMEMORY_USE_GPERF)
+if(TIMEMORY_USE_GPERFTOOLS AND NOT TIMEMORY_USE_COVERAGE)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools-cpu)
 endif()
 
 if(TIMEMORY_USE_COVERAGE)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-coverage)
+endif()
+
+if(TIMEMORY_USE_XRAY)
+    target_link_libraries(timemory-analysis-tools INTERFACE timemory-xray)
 endif()
 
 # not exported
@@ -294,7 +302,7 @@ target_link_libraries(timemory-headers INTERFACE timemory-threading)
 #----------------------------------------------------------------------------------------#
 
 if(NOT WIN32)
-    target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
+    target_compile_definitions(timemory-extern INTERFACE TIMEMORY_USE_EXTERN)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -331,7 +339,8 @@ target_include_directories(timemory-cereal SYSTEM INTERFACE
 
 # timemory-headers always provides timemory-cereal
 target_link_libraries(timemory-headers INTERFACE timemory-cereal)
-
+target_link_libraries(timemory-cereal-xml INTERFACE timemory-cereal)
+target_compile_definitions(timemory-cereal-xml INTERFACE TIMEMORY_USE_XML_ARCHIVE)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -412,6 +421,9 @@ else()
     set(MPI_FOUND OFF)
 endif()
 
+# interface to kill MPI init in headers
+target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_INIT=0)
+
 if(MPI_FOUND)
 
     foreach(_LANG C CXX)
@@ -435,17 +447,24 @@ if(MPI_FOUND)
         endforeach()
         unset(_FLAGS)
 
+        option(TIMEMORY_USE_MPI_LINK_FLAGS "Use MPI link flags" ON)
+        mark_as_advanced(TIMEMORY_USE_MPI_LINK_FLAGS)
         # compile flags
-        to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
-        foreach(_FLAG ${_FLAGS})
-            if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-                target_link_options(timemory-mpi INTERFACE
-                    $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-            else()
-                set_target_properties(timemory-mpi PROPERTIES
-                    INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-            endif()
-        endforeach()
+        if(TIMEMORY_USE_MPI_LINK_FLAGS)
+            to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
+            foreach(_FLAG ${_FLAGS})
+                if(EXISTS "${_FLAG}" AND IS_DIRECTORY "${_FLAG}")
+                    continue()
+                endif()
+                if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+                    target_link_options(timemory-mpi INTERFACE
+                        $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                else()
+                    set_target_properties(timemory-mpi PROPERTIES
+                        INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                endif()
+            endforeach()
+        endif()
         unset(_FLAGS)
 
     endforeach()
@@ -468,6 +487,11 @@ if(MPI_FOUND)
     # used by python
     if(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
         set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
+    endif()
+
+    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" ON)
+    if(NOT TIMEMORY_USE_MPI_INIT)
+        target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
     endif()
 
 else()
@@ -631,10 +655,12 @@ if(TIMEMORY_USE_PYTHON)
     string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
 
     if(SKBUILD)
-        set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory)
+        set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}
+            CACHE PATH "Installation directory for python")
     else()
         set(CMAKE_INSTALL_PYTHONDIR
-            ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
+            lib/python${PYBIND11_PYTHON_VERSION}/site-packages
+            CACHE PATH "Installation directory for python")
     endif()
 
     if(TIMEMORY_BUILD_PYTHON)
@@ -749,7 +775,7 @@ if(CUPTI_FOUND)
     target_link_libraries(timemory-cupti INTERFACE
         ${CUPTI_LIBRARIES}
         timemory-cuda
-        timemory-cudart
+        # timemory-cudart
         timemory-cudart-device)
 
     target_link_directories(timemory-cupti INTERFACE
@@ -798,7 +824,7 @@ if(_GPERF_COMPONENTS)
     list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
 endif()
 
-if(NOT TIMEMORY_FORCE_GPERF_PYTHON)
+if(NOT TIMEMORY_FORCE_GPERFTOOLS_PYTHON)
     if(TIMEMORY_USE_PYTHON)
         set(_GPERF_COMPONENTS )
         set(TIMEMORY_gperftools_COMPONENTS )
@@ -810,11 +836,15 @@ if(NOT TIMEMORY_FORCE_GPERF_PYTHON)
     endif()
 endif()
 
-if(TIMEMORY_USE_GPERF)
+if(TIMEMORY_USE_GPERFTOOLS)
     #
     # general set of compiler flags when using gperftools
     #
-    add_target_flag_if_avail(timemory-gperftools-compile-options "-g" "-rdynamic")
+    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
+        add_target_flag_if_avail(timemory-gperftools-compile-options "-g" "-rdynamic")
+    else()
+        add_target_flag_if_avail(timemory-gperftools-compile-options "-g")
+    endif()
 
     # NOTE:
     #   When compiling with programs with gcc, that you plan to link
@@ -849,10 +879,10 @@ if(TIMEMORY_USE_GPERF)
     set(_DEFINITIONS)
     foreach(_COMP ${_GPERF_COMPONENTS})
         if("tcmalloc" MATCHES "${_COMP}")
-            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERF_HEAP_PROFILER)
+            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
         endif()
         if("profiler")
-            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERF_CPU_PROFILER)
+            list(APPEND _DEFINITIONS TIMEMORY_USE_GPERFTOOLS_PROFILER)
         endif()
     endforeach()
 
@@ -870,7 +900,7 @@ if(TIMEMORY_USE_GPERF)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-all-gperftools
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "tcmalloc_and_profiler (preference for shared)"
         FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
@@ -878,7 +908,7 @@ if(TIMEMORY_USE_GPERF)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-cpu
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF_CPU_PROFILER
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_PROFILER
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "CPU profiler"
         FIND_ARGS               QUIET COMPONENTS profiler)
@@ -886,7 +916,7 @@ if(TIMEMORY_USE_GPERF)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-heap
-        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERF_HEAP_PROFILER
+        COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_TCMALLOC
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "heap profiler and heap checker"
         FIND_ARGS               QUIET COMPONENTS tcmalloc)
@@ -898,7 +928,7 @@ if(TIMEMORY_USE_GPERF)
         DESCRIPTION             "threading-optimized malloc replacement"
         FIND_ARGS               QUIET COMPONENTS tcmalloc_minimal)
 
-    if(TIMEMORY_USE_GPERF_STATIC)
+    if(TIMEMORY_USE_GPERFTOOLS_STATIC)
         # set local overloads
         set(gperftools_PREFER_SHARED OFF)
         set(gperftools_PREFER_STATIC ON)
@@ -993,7 +1023,11 @@ if(UNIX AND NOT APPLE)
             REPO_URL https://github.com/jrmadsen/GOTCHA.git
             REPO_BRANCH cmake-updates)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
-        list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha gotcha-include)
+        foreach(_LIB gotcha gotcha-include Gotcha)
+            if(TARGET ${_LIB})
+                list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_LIB})
+            endif()
+        endforeach()
     elseif(TIMEMORY_USE_GOTCHA)
         find_package(gotcha QUIET ${TIMEMORY_FIND_REQUIREMENT})
         set(TIMEMORY_BUILD_GOTCHA OFF)
@@ -1007,10 +1041,20 @@ endif()
 
 if(gotcha_FOUND)
     target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
-    target_link_libraries(timemory-gotcha INTERFACE gotcha)
-    add_target_flag_if_avail(timemory-gotcha "-rdynamic")
-    set_target_properties(timemory-gotcha PROPERTIES
-        INTERFACE_LINK_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
+    foreach(_LIB gotcha gotcha-include Gotcha Gotcha::gotcha Gotcha::Gotcha)
+        if(TARGET ${_LIB})
+            target_link_libraries(timemory-gotcha INTERFACE ${_LIB})
+        endif()
+    endforeach()
+    if(NOT CMAKE_CXX_COMPILER_IS_CLANG AND APPLE)
+        add_target_flag_if_avail(timemory-gotcha "-rdynamic")
+    endif()
+    if(TIMEMORY_BUILD_GOTCHA)
+        set_target_properties(timemory-gotcha PROPERTIES
+            INTERFACE_LINK_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>)
+        set_target_properties(timemory-gotcha PROPERTIES
+            INTERFACE_LINK_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
+    endif()
 else()
     set(TIMEMORY_USE_GOTCHA OFF)
     inform_empty_interface(timemory-gotcha "GOTCHA")
@@ -1043,43 +1087,61 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_USE_OPENMP AND CMAKE_CXX_COMPILER_IS_CLANG)
-    if(TIMEMORY_BUILD_OPENMP)
+#if(TIMEMORY_USE_OMPT AND CMAKE_CXX_COMPILER_IS_CLANG)
+if(TIMEMORY_USE_OMPT)
+    find_package(OpenMP ${TIMEMORY_FIND_REQUIREMENT})
+    if(TIMEMORY_BUILD_OMPT AND OpenMP_FOUND)
         set(OPENMP_STANDALONE_BUILD ON CACHE BOOL "Needed by ompt")
+        set(OPENMP_ENABLE_TESTING OFF CACHE BOOL "Do not test")
+        if(TIMEMORY_USE_CUDA)
+            set(OPENMP_ENABLE_LIBOMPTARGET OFF CACHE BOOL "OpenMP target tooling")
+        else()
+            set(OPENMP_ENABLE_LIBOMPTARGET OFF CACHE BOOL "OpenMP target tooling")
+        endif()
+        checkout_git_submodule(RECURSIVE
+            RELATIVE_PATH external/llvm-ompt
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            REPO_URL https://github.com/NERSC/LLVM-openmp.git
+            REPO_BRANCH timemory)
         add_subdirectory(external/llvm-ompt)
-    else()
-        find_package(OpenMP ${TIMEMORY_FIND_REQUIREMENT})
+        target_include_directories(timemory-ompt SYSTEM INTERFACE
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
+    elseif(OpenMP_FOUND)
         find_library(OMPT_LIBRARY
             NAME ompt ompprof
             PATH_SUFFIXES lib lib64)
+    else()
+        set(TIMEMORY_USE_OMPT OFF)
+        set(TIMEMORY_BUILD_OMPT OFF)
     endif()
 else()
-    set(TIMEMORY_BUILD_OPENMP OFF)
+    set(TIMEMORY_BUILD_OMPT OFF)
 endif()
 
-if(TIMEMORY_USE_OPENMP AND TIMEMORY_BUILD_OPENMP)
+if(TIMEMORY_USE_OMPT AND TIMEMORY_BUILD_OMPT)
     set(OMPT_EXPORT_TARGETS)
-    foreach(_TARG omp ompimp omptarget.rtl.cuda omptarget)
+    foreach(_TARG omp ompimp omptarget)
         if(TARGET ${_TARG})
-            target_link_libraries(timemory-openmp INTERFACE ${_TARG})
+            target_link_libraries(timemory-ompt INTERFACE ${_TARG})
             list(APPEND OMPT_EXPORT_TARGETS ${_TARG})
         endif()
     endforeach()
     if(NOT "${OMPT_EXPORT_TARGETS}" STREQUAL "")
-        target_compile_definitions(timemory-openmp INTERFACE TIMEMORY_USE_OPENMP)
+        target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
+        target_link_libraries(timemory-ompt INTERFACE OpenMP::OpenMP_CXX)
     else()
-        set(TIMEMORY_BUILD_OPENMP OFF)
-        set(TIMEMORY_USE_OPENMP OFF)
-        inform_empty_interface(timemory-openmp "OpenMP")
+        set(TIMEMORY_BUILD_OMPT OFF)
+        set(TIMEMORY_USE_OMPT OFF)
+        inform_empty_interface(timemory-ompt "OpenMP")
     endif()
-elseif(TIMEMORY_USE_OPENMP AND OpenMP_FOUND AND OMPT_LIBRARY)
-    target_link_libraries(timemory-openmp INTERFACE ${OMPT_LIBRARY})
-    target_link_libraries(timemory-openmp INTERFACE OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
-    target_compile_definitions(timemory-openmp INTERFACE TIMEMORY_USE_OPENMP)
+elseif(TIMEMORY_USE_OMPT AND OpenMP_FOUND AND OMPT_LIBRARY)
+    target_link_libraries(timemory-ompt INTERFACE ${OMPT_LIBRARY})
+    target_link_libraries(timemory-ompt INTERFACE OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
+    target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
 else()
-    set(TIMEMORY_BUILD_OPENMP OFF)
-    set(TIMEMORY_USE_OPENMP OFF)
-    inform_empty_interface(timemory-openmp "OpenMP")
+    set(TIMEMORY_BUILD_OMPT OFF)
+    set(TIMEMORY_USE_OMPT OFF)
+    inform_empty_interface(timemory-ompt "OpenMP")
 endif()
 
 
@@ -1128,9 +1190,11 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-add_target_flag_if_avail(timemory-roofline-options
-    "-finline-functions" "-funroll-loops" "-ftree-vectorize"
-    "-ftree-loop-optimize" "-ftree-loop-vectorize" "-O3")
+if(NOT TIMEMORY_USE_COVERAGE)
+    add_target_flag_if_avail(timemory-roofline-options
+        "-finline-functions" "-funroll-loops" "-ftree-vectorize"
+        "-ftree-loop-optimize" "-ftree-loop-vectorize")
+endif()
 
 set(VECTOR_DEFINITION               TIMEMORY_VEC)
 set(VECTOR_INTERFACE_TARGET         timemory-roofline-options)
@@ -1146,7 +1210,7 @@ target_link_libraries(timemory-gpu-roofline INTERFACE
     timemory-roofline-options
     timemory-cupti
     timemory-cuda
-    timemory-cudart
+    # timemory-cudart
     timemory-cudart-device)
 
 generate_composite_interface(timemory-roofline
@@ -1170,6 +1234,27 @@ if(TIMEMORY_USE_DYNINST)
 endif()
 
 if(Dyninst_FOUND AND Boost_FOUND)
+    # some installs of dyninst don't set this properly
+    find_path(DYNINST_HEADER_DIR
+        NAMES BPatch.h dyninstAPI_RT.h
+        HINTS ${Dyninst_DIR}
+        PATHS ${Dyninst_DIR}
+        PATH_SUFFIXES include)
+
+    # useful for defining the location of the runtime API
+    find_library(DYNINST_API_RT dyninstAPI_RT
+        HINTS ${Dyninst_DIR}
+        PATHS ${Dyninst_DIR}
+        PATH_SUFFIXES lib)
+
+    if(DYNINST_HEADER_DIR)
+        target_include_directories(timemory-dyninst SYSTEM INTERFACE ${DYNINST_HEADER_DIR})
+    endif()
+
+    if(DYNINST_API_RT)
+        target_compile_definitions(timemory-dyninst INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
+    endif()
+
     target_link_libraries(timemory-dyninst INTERFACE
         ${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
     foreach(_TARG Dyninst::dyninst Boost::headers Boost::atomic Boost::system Boost::thread Boost::date_time)
@@ -1184,6 +1269,50 @@ if(Dyninst_FOUND AND Boost_FOUND)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               AllineaMAP
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_ALLINEA_MAP)
+    find_package(AllineaMAP ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(AllineaMAP_FOUND)
+    target_link_libraries(timemory-allinea-map INTERFACE ${AllineaMAP_LIBRARIES})
+    target_include_directories(timemory-allinea-map SYSTEM INTERFACE ${AllineaMAP_INCLUDE_DIRS})
+    target_compile_definitions(timemory-allinea-map INTERFACE TIMEMORY_USE_ALLINEA_MAP)
+else()
+    set(TIMEMORY_USE_ALLINEA_MAP OFF)
+    inform_empty_interface(timemory-allinea-map "Allinea MAP")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               CrayPAT
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_CRAYPAT)
+    find_package(CrayPAT ${TIMEMORY_FIND_REQUIREMENT} COMPONENTS ${CrayPAT_COMPONENTS})
+endif()
+
+if(CrayPAT_FOUND)
+    target_link_libraries(timemory-craypat INTERFACE ${CrayPAT_LIBRARIES})
+    target_link_directories(timemory-craypat INTERFACE ${CrayPAT_LIBRARY_DIRS})
+    target_include_directories(timemory-craypat SYSTEM INTERFACE ${CrayPAT_INCLUDE_DIRS})
+    target_compile_definitions(timemory-craypat INTERFACE TIMEMORY_USE_CRAYPAT CRAYPAT)
+    add_target_flag_if_avail(timemory-craypat "-g" "-debug pubnames"
+        "-Qlocation,ld,${CrayPAT_LIBRARY_DIR}" "-fno-omit-frame-pointer"
+        "-fno-optimize-sibling-calls")
+else()
+    set(TIMEMORY_USE_CRAYPAT OFF)
+    inform_empty_interface(timemory-craypat "CrayPAT")
 endif()
 
 

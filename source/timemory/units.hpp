@@ -58,40 +58,40 @@ namespace tim
 
 namespace units
 {
-const int64_t psec = std::pico::den;
-const int64_t nsec = std::nano::den;
-const int64_t usec = std::micro::den;
-const int64_t msec = std::milli::den;
-const int64_t csec = std::centi::den;
-const int64_t dsec = std::deci::den;
-const int64_t sec  = 1;
+static constexpr int64_t psec = std::pico::den;
+static constexpr int64_t nsec = std::nano::den;
+static constexpr int64_t usec = std::micro::den;
+static constexpr int64_t msec = std::milli::den;
+static constexpr int64_t csec = std::centi::den;
+static constexpr int64_t dsec = std::deci::den;
+static constexpr int64_t sec  = 1;
 
-const int64_t byte     = 1;
-const int64_t kilobyte = 1000 * byte;
-const int64_t megabyte = 1000 * kilobyte;
-const int64_t gigabyte = 1000 * megabyte;
-const int64_t terabyte = 1000 * gigabyte;
-const int64_t petabyte = 1000 * terabyte;
+static constexpr int64_t byte     = 1;
+static constexpr int64_t kilobyte = 1000 * byte;
+static constexpr int64_t megabyte = 1000 * kilobyte;
+static constexpr int64_t gigabyte = 1000 * megabyte;
+static constexpr int64_t terabyte = 1000 * gigabyte;
+static constexpr int64_t petabyte = 1000 * terabyte;
 
-const int64_t kibibyte = 1024 * byte;
-const int64_t mebibyte = 1024 * kibibyte;
-const int64_t gibibyte = 1024 * mebibyte;
-const int64_t tebibyte = 1024 * gibibyte;
-const int64_t pebibyte = 1024 * tebibyte;
+static constexpr int64_t kibibyte = 1024 * byte;
+static constexpr int64_t mebibyte = 1024 * kibibyte;
+static constexpr int64_t gibibyte = 1024 * mebibyte;
+static constexpr int64_t tebibyte = 1024 * gibibyte;
+static constexpr int64_t pebibyte = 1024 * tebibyte;
 
-const int64_t B  = 1;
-const int64_t KB = 1000 * B;
-const int64_t MB = 1000 * KB;
-const int64_t GB = 1000 * MB;
-const int64_t TB = 1000 * GB;
-const int64_t PB = 1000 * TB;
+static constexpr int64_t B  = 1;
+static constexpr int64_t KB = 1000 * B;
+static constexpr int64_t MB = 1000 * KB;
+static constexpr int64_t GB = 1000 * MB;
+static constexpr int64_t TB = 1000 * GB;
+static constexpr int64_t PB = 1000 * TB;
 
-const int64_t Bi  = 1;
-const int64_t KiB = 1024 * Bi;
-const int64_t MiB = 1024 * KiB;
-const int64_t GiB = 1024 * MiB;
-const int64_t TiB = 1024 * GiB;
-const int64_t PiB = 1024 * TiB;
+static constexpr int64_t Bi  = 1;
+static constexpr int64_t KiB = 1024 * Bi;
+static constexpr int64_t MiB = 1024 * KiB;
+static constexpr int64_t GiB = 1024 * MiB;
+static constexpr int64_t TiB = 1024 * GiB;
+static constexpr int64_t PiB = 1024 * TiB;
 
 #if defined(_LINUX)
 

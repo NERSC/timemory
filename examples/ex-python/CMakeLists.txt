@@ -17,11 +17,15 @@ configure_file(${PROJECT_SOURCE_DIR}/ex_sample.py
 
 configure_file(${PROJECT_SOURCE_DIR}/ex_profiler.py
     ${CMAKE_BINARY_DIR}/ex_python_profiler @ONLY)
-  
+
+configure_file(${PROJECT_SOURCE_DIR}/ex_general.py
+    ${CMAKE_BINARY_DIR}/ex_python_general @ONLY)
+
 install(
     FILES
         ${CMAKE_BINARY_DIR}/ex_python_sample
         ${CMAKE_BINARY_DIR}/ex_python_profiler
+	${CMAKE_BINARY_DIR}/ex_python_general
     DESTINATION bin
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
@@ -46,9 +50,16 @@ find_package(timemory COMPONENTS headers OPTIONAL_COMPONENTS mpi cxx shared)
 
 pybind11_add_module(libex_python_bindings ${PROJECT_SOURCE_DIR}/libex_bindings.cpp)
 
+set(_COMPILE_OPTS) # for -Wno-attributes if available by the compiler
+if(TARGET timemory-compile-options)
+    set(_COMPILE_OPTS timemory-compile-options)
+elseif(TARGET timemory::timemory-compile-options)
+    set(_COMPILE_OPTS timemory::timemory-compile-options)
+endif()
+
 target_compile_definitions(libex_python_bindings PRIVATE USE_MPI)
 target_link_libraries(libex_python_bindings PRIVATE
-    MPI::MPI_C MPI::MPI_CXX)
+    MPI::MPI_C MPI::MPI_CXX ${_COMPILE_OPTS})
 
 # target_link_libraries(libex_python_bindings INTERFACE timemory-ex-python-bindings)
 

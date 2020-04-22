@@ -30,7 +30,7 @@
 using namespace tim::component;
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, caliper, user_clock, system_clock, cpu_util>;
+    tim::auto_tuple_t<wall_clock, caliper, user_clock, system_clock, cpu_util>;
 
 intmax_t time_fibonacci(intmax_t);
 intmax_t
@@ -55,7 +55,7 @@ main(int argc, char** argv)
     tim::settings::memory_precision()  = 3;
     tim::settings::memory_scientific() = false;
     tim::timemory_init(argc, argv);
-    tim::cali::init();
+    tim::backend::cali::init();
 
     std::vector<long> fibvalues;
     for(int i = 1; i < argc; ++i)

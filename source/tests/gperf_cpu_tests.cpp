@@ -40,11 +40,13 @@ using lock_t  = std::unique_lock<mutex_t>;
 static const int64_t niter     = 10;
 static const int64_t page_size = tim::units::get_page_size();
 
-using tuple_t = tim::component_tuple<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
-using list_t  = tim::component_list<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
+using tuple_t =
+    tim::component_tuple_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
+using list_t =
+    tim::component_list_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
 using auto_tuple_t  = typename tuple_t::auto_type;
 using auto_list_t   = typename list_t::auto_type;
-using mem_list_t    = tim::component_list<cpu_clock, cpu_util, peak_rss, page_rss>;
+using mem_list_t    = tim::component_list_t<cpu_clock, cpu_util, peak_rss, page_rss>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, mem_list_t>;
 
 //--------------------------------------------------------------------------------------//
@@ -94,9 +96,9 @@ consume(long n)
 }
 
 // this function ensures an allocation cannot be optimized
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     std::mt19937 rng;
@@ -130,12 +132,13 @@ class gperf_cpu_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-        list_t::get_initializer() = [](list_t& obj) {
-            obj.initialize<real_clock, gperf_cpu_profiler, gperf_heap_profiler>();
+        list_t::get_initializer() = [](auto& obj) {
+            obj.template initialize<wall_clock, gperftools_cpu_profiler,
+                                    gperftools_heap_profiler>();
         };
 
-        mem_list_t::get_initializer() = [](mem_list_t& obj) {
-            obj.initialize<cpu_clock, cpu_util, peak_rss, page_rss>();
+        mem_list_t::get_initializer() = [](auto& obj) {
+            obj.template initialize<cpu_clock, cpu_util, peak_rss, page_rss>();
         };
     }
 };
@@ -192,6 +195,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

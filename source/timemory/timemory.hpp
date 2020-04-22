@@ -30,15 +30,16 @@
 
 #pragma once
 
-#if defined(DISABLE_TIMEMORY)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
 
 #    include <ostream>
+#    include <string>
 
 namespace tim
 {
-template <typename... _Args>
+template <typename... ArgsT>
 void
-timemory_init(_Args...)
+timemory_init(ArgsT...)
 {}
 inline void
 timemory_finalize()
@@ -51,12 +52,12 @@ print_env()
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
-    template <typename... _Types, typename... _Args>
-    static void configure(_Args&&...)
+    template <typename... Types, typename... ArgsT>
+    static void configure(ArgsT&&...)
     {}
 
-    template <typename... _Args>
-    dummy(_Args&&...)
+    template <typename... ArgsT>
+    dummy(ArgsT&&...)
     {}
     ~dummy()            = default;
     dummy(const dummy&) = default;
@@ -67,11 +68,11 @@ struct dummy
     void start() {}
     void stop() {}
     void report_at_exit(bool) {}
-    template <typename... _Args>
-    void mark_begin(_Args&&...)
+    template <typename... ArgsT>
+    void mark_begin(ArgsT&&...)
     {}
-    template <typename... _Args>
-    void mark_end(_Args&&...)
+    template <typename... ArgsT>
+    void mark_end(ArgsT&&...)
     {}
     friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
 };
@@ -161,47 +162,94 @@ struct dummy
 
 #else
 
-// versioning header
-#    include "timemory/version.h"
+#    if !defined(TIMEMORY_MASTER_HEADER)
+#        define TIMEMORY_MASTER_HEADER
+#    endif
 
-#    include "timemory/components.hpp"
-#    include "timemory/manager.hpp"
-#    include "timemory/settings.hpp"
+#    if !defined(TIMEMORY_ENABLED)
+#        define TIMEMORY_ENABLED
+#    endif
+
+//
+#    include "timemory/extern.hpp"
+//
+//   versioning header
+//
+#    include "timemory/version.h"
+//
+#    include "timemory/api.hpp"
+#    include "timemory/enum.h"
 #    include "timemory/units.hpp"
 #    include "timemory/utility/macros.hpp"
+//
+#    include "timemory/components.hpp"  // 5.0
+#    include "timemory/settings.hpp"    // 3.1
 #    include "timemory/utility/mangler.hpp"
 #    include "timemory/utility/utility.hpp"
-#    include "timemory/variadic/auto_hybrid.hpp"
-#    include "timemory/variadic/auto_list.hpp"
-#    include "timemory/variadic/auto_timer.hpp"
-#    include "timemory/variadic/auto_user_bundle.hpp"
-#    include "timemory/variadic/macros.hpp"
-
-#    include "timemory/enum.h"
-
-// definitions of types
-#    include "timemory/types.hpp"
-#    include "timemory/utility/bits/storage.hpp"
-
-// allocator
-#    include "timemory/ert/aligned_allocator.hpp"
-#    include "timemory/ert/configuration.hpp"
-
+//
+#    include "timemory/containers/auto_timer.hpp"        // 3.8
+#    include "timemory/containers/auto_user_bundle.hpp"  // 5.5
+#    include "timemory/variadic/auto_hybrid.hpp"         // 9.7
+#    include "timemory/variadic/auto_list.hpp"           // 5.6
+#    include "timemory/variadic/auto_tuple.hpp"
+//
+#    include "timemory/types.hpp"                  // 3.5
+#    include "timemory/variadic/macros.hpp"        // 3.2
+//
+#    include "timemory/ert/aligned_allocator.hpp"  // 3.5
+#    include "timemory/ert/configuration.hpp"      // 4
+//
 //======================================================================================//
-
-#    include "timemory/extern/auto_timer.hpp"
-#    include "timemory/extern/auto_user_bundle.hpp"
-#    include "timemory/extern/complete_list.hpp"
-#    include "timemory/extern/ert.hpp"
-#    include "timemory/extern/init.hpp"
-
-//======================================================================================//
-
+//
 #    include "timemory/config.hpp"
-#    include "timemory/data/storage.hpp"
-#    include "timemory/plotting.hpp"
-#    include "timemory/utility/conditional.hpp"
-
+#    include "timemory/plotting.hpp"             // 3.5
+#    include "timemory/utility/conditional.hpp"  // 0.1
+//
+//======================================================================================//
+//
+#    include "timemory/definition.hpp"
+//
+//======================================================================================//
+//
+// 3.5 total
+#    include "timemory/runtime/configure.hpp"   // 3.5
+#    include "timemory/runtime/enumerate.hpp"   // 3.5
+#    include "timemory/runtime/initialize.hpp"  // 3.1
+#    include "timemory/runtime/insert.hpp"      // 3.1
+#    include "timemory/runtime/properties.hpp"  // 3.2
+//
+#    include "timemory/components/general.hpp"
+//
+//======================================================================================//
+//
+namespace tim
+{
 //--------------------------------------------------------------------------------------//
+/// args:
+///     1) filename
+///     2) reference an object
+///
+template <typename Tp>
+void
+generic_serialization(const std::string& fname, const Tp& obj)
+{
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
+    {
+        // ensure json write final block during destruction before the file is closed
+        using policy_type = policy::output_archive_t<Tp>;
+        auto oa           = policy_type::get(ofs);
+        oa->setNextName("timemory");
+        oa->startNode();
+        (*oa)(cereal::make_nvp("data", obj));
+        oa->finishNode();
+    }
+    if(ofs)
+        ofs << std::endl;
+    ofs.close();
+}
+//
+}  // namespace tim
 
+#    include "timemory/variadic/definition.hpp"
 #endif  // ! defined(DISABLE_TIMEMORY)

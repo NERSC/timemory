@@ -31,6 +31,7 @@
 
 from __future__ import absolute_import
 import os
+import six
 import sys
 import inspect
 from enum import Enum
@@ -48,6 +49,7 @@ __all__ = ['base_decorator',
            'auto_timer',
            'timer',
            'rss_usage',
+           'marker',
            'auto_tuple']
 
 
@@ -455,10 +457,9 @@ class rss_usage(base_decorator):
 
 #----------------------------------------------------------------------------------------#
 #
-class auto_tuple(base_decorator):
-    """ A decorator or context-manager for the auto-tuple, e.g.:
-        @timemory.util.auto_tuple(components=(timemory.components.wall_clock,
-                                              timemory.components.priority_context_switch)
+class marker(base_decorator):
+    """ A decorator or context-manager for a marker, e.g.:
+        @timemory.util.marker(components=("wall_clock", timemory.component.peak_rss))
         def main(n=5):
             for i in range(2):
                 fibonacci(n * (i+1))
@@ -467,14 +468,29 @@ class auto_tuple(base_decorator):
         # > [pyc] main(5)@'example.py':10 ...
     """
 
+    #------------------------------------------------------------------------------------#
+    #
+    @staticmethod
+    def get_components(items):
+        import timemory
+        ret = []
+        for x in items:
+            if isinstance(x, six.string_types):
+                try:
+                    ret.append(getattr(timemory.component, x))
+                except:
+                    pass
+            else:
+                ret.append(x)
+        return ret
 
     #------------------------------------------------------------------------------------#
     #
     def __init__(self, components=[], key="", add_args=False, is_class=False,
                  report_at_exit=False, mode="defer"):
-        super(auto_tuple, self).__init__(
+        super(marker, self).__init__(
             key=key, add_args=add_args, is_class=is_class, mode=mode)
-        self.components = components
+        self.components = marker.get_components(components)
         self.report_at_exit = report_at_exit
         self._self_obj = None
 
@@ -549,3 +565,6 @@ class auto_tuple(base_decorator):
             import traceback
             traceback.print_exception(
                 exc_type, exc_value, exc_traceback, limit=5)
+
+
+auto_tuple = marker

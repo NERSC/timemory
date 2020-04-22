@@ -52,7 +52,7 @@ add_arg_bool_option("papi", "TIMEMORY_USE_PAPI")
 add_arg_bool_option("dyninst", "TIMEMORY_USE_DYNINST")
 add_arg_bool_option("arch", "TIMEMORY_USE_ARCH")
 add_arg_bool_option("vtune", "TIMEMORY_USE_VTUNE")
-add_arg_bool_option("gperftools", "TIMEMORY_USE_GPERF")
+add_arg_bool_option("gperftools", "TIMEMORY_USE_GPERFTOOLS")
 add_arg_bool_option("pybind-install", "PYBIND11_INSTALL")
 add_arg_bool_option("build-testing", "TIMEMORY_BUILD_TESTING")
 parser.add_argument("--cxx-standard", default=14, type=int,
@@ -77,7 +77,7 @@ set_cmake_bool_option("TIMEMORY_USE_PAPI", args.enable_papi, args.disable_papi)
 set_cmake_bool_option("TIMEMORY_USE_DYNINST", args.enable_dyninst, args.disable_dyninst)
 set_cmake_bool_option("TIMEMORY_USE_ARCH", args.enable_arch, args.disable_arch)
 set_cmake_bool_option("TIMEMORY_USE_VTUNE", args.enable_vtune, args.disable_vtune)
-set_cmake_bool_option("TIMEMORY_USE_GPERF", args.enable_gperftools, args.disable_gperftools)
+set_cmake_bool_option("TIMEMORY_USE_GPERFTOOLS", args.enable_gperftools, args.disable_gperftools)
 set_cmake_bool_option("PYBIND11_INSTALL",
                       args.enable_pybind_install, args.disable_pybind_install)
 set_cmake_bool_option("TIMEMORY_BUILD_TESTING",

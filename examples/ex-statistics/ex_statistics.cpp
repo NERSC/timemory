@@ -29,27 +29,28 @@
 //--------------------------------------------------------------------------------------//
 // include these headers for declaration w/o instantiation
 //
+#include "timemory/components/macros.hpp"
 #include "timemory/mpl/types.hpp"
 
 //
-// all types use compact json
+// all types use pretty json
 //
-TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_json, void, std::false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_json, void, std::true_type)
+
+#include "timemory/components/types.hpp"
+
+//
+// configure these two types to always record statistics
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, component::monotonic_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::current_peak_rss, true_type)
 
 //--------------------------------------------------------------------------------------//
 // include rest of headers
 //
 #include "timemory/timemory.hpp"
-
-//
-// configure these two types to always record statistics
-//
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::wall_clock, std::true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::written_bytes,
-                               std::true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::read_bytes, std::true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::cpu_clock, std::false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(flat_storage, component::monotonic_clock, std::true_type)
 
 //
 // shorthand
@@ -60,8 +61,7 @@ using namespace tim;
 //
 // bundle of tools
 //
-using tuple_t = auto_tuple<wall_clock, monotonic_clock, cpu_clock, read_bytes,
-                           written_bytes, peak_rss, current_peak_rss>;
+using tuple_t = auto_tuple_t<wall_clock, monotonic_clock, cpu_clock, current_peak_rss>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -69,6 +69,16 @@ long
 fib(long n)
 {
     return (n < 2) ? n : (fib(n - 1) + fib(n - 2));
+}
+
+//--------------------------------------------------------------------------------------//
+
+long
+inst_fib(long n, bool encode_n)
+{
+    TIMEMORY_BASIC_MARKER(tuple_t, (encode_n) ? std::to_string(n) : "");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    return (n < 2) ? n : (inst_fib(n - 1, encode_n) + fib(n - 2));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -101,10 +111,17 @@ main(int argc, char** argv)
         // use the memory
         ans *= v.at(value_dist(gen) % v.size());
 
-        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 2, tuple_t, "occasional/", i % 2);
+        // generate a complex tail of instrumentation
+        ans += inst_fib((nfib / ((i % 3) + 2)) + (nfib % (i + 1)), false);
+
+        // occasionally create markers
+        TIMEMORY_CONDITIONAL_BASIC_MARKER(i % 3 == 2, tuple_t, "occasional/", i % 3);
         ans += fib(nfib - 1);
+        if(i % 3 == 2)
+            ans += inst_fib(5 + (i % 4), true);
 
         printf("Answer = %li\n", ans);
+
         if(i > 0)
             tim::settings::destructor_report() = false;
     }

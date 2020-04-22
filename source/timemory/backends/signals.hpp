@@ -193,8 +193,8 @@
 #endif
 
 #if defined(SIGNAL_COMPAT_COMPILER) && defined(SIGNAL_COMPAT_OS) &&                      \
-    !(defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER) ||         \
-      defined(TIMEMORY_USE_GPERF_HEAP_PROFILER))
+    !(defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) ||   \
+      defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC))
 #    if !defined(SIGNAL_AVAILABLE)
 #        define SIGNAL_AVAILABLE
 #    endif

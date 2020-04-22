@@ -25,12 +25,20 @@
 #include "gtest/gtest.h"
 
 #include <chrono>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
 #include <random>
 #include <thread>
 #include <vector>
 
 #include "timemory/timemory.hpp"
+
+static int    _argc = 0;
+static char** _argv = nullptr;
+
+using mutex_t = std::mutex;
+using lock_t  = std::unique_lock<mutex_t>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -59,12 +67,59 @@ fibonacci(long n)
     return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
 }
 
+// this function consumes approximately "t" milliseconds of cpu time
+void
+consume(long n)
+{
+    // a mutex held by one lock
+    mutex_t mutex;
+    // acquire lock
+    lock_t hold_lk(mutex);
+    // associate but defer
+    lock_t try_lk(mutex, std::defer_lock);
+    // get current time
+    auto now = std::chrono::steady_clock::now();
+    // try until time point
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
+        try_lk.try_lock();
+}
+
+// get a random entry from vector
+template <typename Tp>
+size_t
+random_entry(const std::vector<Tp>& v)
+{
+    std::mt19937 rng;
+    rng.seed(std::random_device()());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
+    return v.at(dist(rng));
+}
+
 }  // namespace details
 
 //--------------------------------------------------------------------------------------//
 
 class empty_tests : public ::testing::Test
-{};
+{
+protected:
+    void SetUp() override
+    {
+        static bool configured = false;
+        if(!configured)
+        {
+            configured                   = true;
+            tim::settings::verbose()     = 0;
+            tim::settings::debug()       = false;
+            tim::settings::json_output() = true;
+            tim::settings::mpi_thread()  = false;
+            tim::mpi::initialize(_argc, _argv);
+            tim::timemory_init(_argc, _argv);
+            tim::settings::dart_output() = true;
+            tim::settings::dart_count()  = 1;
+            tim::settings::banner()      = false;
+        }
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,19 +131,13 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = false;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
+    _argc = argc;
+    _argv = argv;
 
     auto ret = RUN_ALL_TESTS();
 
     tim::timemory_finalize();
-
+    tim::dmp::finalize();
     return ret;
 }
 

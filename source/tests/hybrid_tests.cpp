@@ -44,8 +44,8 @@ using lock_t         = std::unique_lock<mutex_t>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
-using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
-using list_t  = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
+using tuple_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util, peak_rss>;
+using list_t  = tim::component_list<wall_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                                    papi_array_t, vtune_frame, vtune_event>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 using hybrid_t      = typename auto_hybrid_t::component_type;
@@ -64,6 +64,18 @@ static const double timer_epsilon = 0.02;
 
 // acceptable compose error
 static const double compose_tolerance = 1.0e-9;
+
+//--------------------------------------------------------------------------------------//
+
+#include "timemory/operations/types/compose.hpp"
+
+inline tim::component::cpu_clock
+operator+(const tim::component::user_clock&   cuser,
+          const tim::component::system_clock& csys)
+{
+    return tim::operation::compose<tim::component::cpu_clock, tim::component::user_clock,
+                                   tim::component::system_clock>::generate(cuser, csys);
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -110,9 +122,9 @@ consume(long n)
 }
 
 // this function ensures an allocation cannot be optimized
-template <typename _Tp>
+template <typename Tp>
 inline size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
@@ -134,11 +146,11 @@ allocate()
     printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 }
 
-template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
-          typename _Func = std::function<_Vp(_Vp)>>
+template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
+          typename FuncT = std::function<Vp(Vp)>>
 inline void
-print_info(const _Tp& obj, const _Up& expected, const string_t& unit,
-           _Func _func = [](const _Vp& _obj) { return _obj; })
+print_info(const Tp& obj, const Up& expected, const string_t& unit,
+           FuncT _func = [](const Vp& _obj) { return _obj; })
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;
@@ -164,23 +176,88 @@ protected:
             return std::vector<int>({ PAPI_TOT_CYC, PAPI_LST_INS });
         };
 #endif
-        list_t::get_initializer() = [](list_t& l) {
-            l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
-                         papi_array_t>();
+        auto init = [](auto& l) {
+            l.template initialize<wall_clock, cpu_clock, cpu_util, peak_rss, page_rss,
+                                  papi_array_t>();
         };
+        list_t::get_initializer() = init;
     }
 };
 
 //--------------------------------------------------------------------------------------//
 
+template <typename T>
+using identity_type_t = typename T::type;
+
 TEST_F(hybrid_tests, type_check)
 {
-    using list_type = typename hybrid_t::list_type;
+    // derived inside hybrid
+    using tuple_type = tim::available_t<typename hybrid_t::tuple_type>;
+    using list_type  = tim::available_t<typename hybrid_t::list_type>;
+    // derived inside tuple/list
+    using tuple_impl = typename tuple_t::type;
+    using list_impl  = typename list_t::type;
+    using tuple_comp = typename tuple_t::component_type;
+    using list_comp  = typename list_t::component_type;
+
+    auto clt = tim::demangle<tim::complete_list_t>();
+    auto cli = tim::demangle<identity_type_t<tim::complete_list_t>>();
+    auto att = tim::demangle<tim::auto_timer>();
+    auto ati = tim::demangle<identity_type_t<tim::auto_timer>>();
+
+    auto make_readable = [](auto& itr, const auto& old_key, const auto& new_key) {
+        size_t n = 0;
+        while((n = itr.find(old_key)) != std::string::npos)
+            itr = itr.replace(n, old_key.length(), new_key);
+    };
+
+    auto apply_make_readable = [&](const auto& old_key, const auto& new_key) {
+        make_readable(clt, old_key, new_key);
+        make_readable(cli, old_key, new_key);
+        make_readable(att, old_key, new_key);
+        make_readable(ati, old_key, new_key);
+    };
+
+    auto old_key = std::string(", tim::component_");
+    auto new_key = std::string(",\n\ttim::component_");
+
+    apply_make_readable(old_key, new_key);
+
+    old_key = std::string("<tim::component_");
+    new_key = std::string("<\n\ttim::component_");
+
+    apply_make_readable(old_key, new_key);
+
+    old_key = std::string(", tim::component::");
+    new_key = std::string(",\n\t\ttim::component::");
+
+    apply_make_readable(old_key, new_key);
+
+    old_key = std::string("<tim::component::");
+    new_key = std::string("<\n\t\ttim::component::");
+
+    apply_make_readable(old_key, new_key);
+
     printf("\n");
-    std::cout << "list_t    = " << tim::demangle<list_t>() << std::endl;
-    std::cout << "list_type = " << tim::demangle<list_type>() << std::endl;
+    std::cout << "complete_list_type = " << clt << std::endl;
+    std::cout << "complete_list_impl = " << cli << std::endl;
     printf("\n");
-    ASSERT_TRUE((std::is_same<list_type, list_t>::value));
+    std::cout << "auto_timer_type = " << att << std::endl;
+    std::cout << "auto_timer_impl = " << ati << std::endl;
+    printf("\n");
+    std::cout << "tuple_impl = " << tim::demangle<tuple_impl>() << std::endl;
+    std::cout << "tuple_type = " << tim::demangle<tuple_type>() << std::endl;
+    std::cout << "tuple_comp = " << tim::demangle<tuple_comp>() << std::endl;
+    printf("\n");
+    std::cout << "list_impl  = " << tim::demangle<list_impl>() << std::endl;
+    std::cout << "list_type  = " << tim::demangle<list_type>() << std::endl;
+    std::cout << "list_comp  = " << tim::demangle<list_comp>() << std::endl;
+    printf("\n");
+
+    ASSERT_TRUE((std::is_same<tuple_type, tuple_impl>::value));
+    ASSERT_TRUE((std::is_same<list_type, list_impl>::value));
+    ASSERT_TRUE((std::is_same<tuple_comp, tuple_impl>::value));
+    ASSERT_FALSE((std::is_same<tuple_comp, list_impl>::value));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -202,21 +279,28 @@ TEST_F(hybrid_tests, hybrid)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    auto& t_rc   = obj.get_tuple().get<real_clock>();
-    auto& t_cpu  = obj.get_tuple().get<cpu_clock>();
-    auto& t_util = obj.get_tuple().get<cpu_util>();
+    auto* t_rc   = obj.get_tuple().get<wall_clock>();
+    auto* t_cpu  = obj.get_tuple().get<cpu_clock>();
+    auto* t_util = obj.get_tuple().get<cpu_util>();
 
-    details::print_info(t_rc, 1.0, "sec", clock_convert);
-    details::print_info(t_cpu, 1.25, "sec", clock_convert);
-    details::print_info(t_util, 125.0, "%", cpu_util_convert);
+    details::print_info(*t_rc, 1.0, "sec", clock_convert);
+    details::print_info(*t_cpu, 1.25, "sec", clock_convert);
+    details::print_info(*t_util, 125.0, "%", cpu_util_convert);
 
-    ASSERT_NEAR(1.0, t_rc.get(), timer_tolerance);
-    ASSERT_NEAR(1.25, t_cpu.get(), timer_tolerance);
-    ASSERT_NEAR(125.0, t_util.get(), util_tolerance);
+    ASSERT_TRUE(t_rc != nullptr);
+    ASSERT_TRUE(t_cpu != nullptr);
+    ASSERT_TRUE(t_util != nullptr);
 
-    auto* l_rc   = obj.get_list().get<real_clock>();
+    ASSERT_NEAR(1.0, t_rc->get(), timer_tolerance);
+    ASSERT_NEAR(1.25, t_cpu->get(), timer_tolerance);
+    ASSERT_NEAR(125.0, t_util->get(), util_tolerance);
+
+    auto* l_rc   = obj.get_list().get<wall_clock>();
     auto* l_cpu  = obj.get_list().get<cpu_clock>();
     auto* l_util = obj.get_list().get<cpu_util>();
+
+    // std::cout << tim::demangle<hybrid_t>() << std::endl;
+    // std::cout << obj << std::endl;
 
     ASSERT_TRUE(l_rc != nullptr);
     ASSERT_TRUE(l_cpu != nullptr);
@@ -226,9 +310,9 @@ TEST_F(hybrid_tests, hybrid)
     details::print_info(*l_cpu, 1.25, "sec", clock_convert);
     details::print_info(*l_util, 125.0, "%", cpu_util_convert);
 
-    ASSERT_NEAR(t_rc.get(), l_rc->get(), timer_epsilon);
-    ASSERT_NEAR(t_cpu.get(), l_cpu->get(), timer_epsilon);
-    ASSERT_NEAR(t_util.get(), l_util->get(), util_epsilon);
+    ASSERT_NEAR(t_rc->get(), l_rc->get(), timer_epsilon);
+    ASSERT_NEAR(t_cpu->get(), l_cpu->get(), timer_epsilon);
+    ASSERT_NEAR(t_util->get(), l_util->get(), util_epsilon);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -248,9 +332,9 @@ TEST_F(hybrid_tests, auto_timer)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    auto  _cpu  = obj.get_lhs().get<user_clock>() + obj.get_lhs().get<system_clock>();
-    auto& _rc   = obj.get_lhs().get<real_clock>();
-    auto& _util = obj.get_lhs().get<cpu_util>();
+    auto  _cpu  = *obj.get_lhs().get<user_clock>() + *obj.get_lhs().get<system_clock>();
+    auto& _rc   = *obj.get_lhs().get<wall_clock>();
+    auto& _util = *obj.get_lhs().get<cpu_util>();
 
     details::print_info(_rc, 1.0, "sec", clock_convert);
     details::print_info(_cpu, 1.25, "sec", clock_convert);
@@ -260,11 +344,11 @@ TEST_F(hybrid_tests, auto_timer)
     ASSERT_NEAR(1.25, _cpu.get(), timer_tolerance);
     ASSERT_NEAR(125.0, _util.get(), util_tolerance);
 
-    auto _cpu2 = obj.get<user_clock>() + obj.get<system_clock>();
+    auto _cpu2 = *obj.get<user_clock>() + *obj.get<system_clock>();
     ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2.get());
 
-    cpu_clock _cpu_obj = obj.get<user_clock>() + obj.get<system_clock>();
-    double    _cpu_val = obj.get<user_clock>().get() + obj.get<system_clock>().get();
+    cpu_clock _cpu_obj = *obj.get<user_clock>() + *obj.get<system_clock>();
+    double    _cpu_val = obj.get<user_clock>()->get() + obj.get<system_clock>()->get();
     ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
     details::print_info(_cpu_obj, _cpu_val, "sec");
 
@@ -289,8 +373,8 @@ TEST_F(hybrid_tests, compose)
     std::cout << "\n" << obj << std::endl;
 
     result_t  _cpu_ret = obj.get();
-    cpu_clock _cpu_obj = obj.get<user_clock>() + obj.get<system_clock>();
-    double    _cpu_val = obj.get<user_clock>().get() + obj.get<system_clock>().get();
+    cpu_clock _cpu_obj = *obj.get<user_clock>() + *obj.get<system_clock>();
+    double    _cpu_val = obj.get<user_clock>()->get() + obj.get<system_clock>()->get();
 
     details::print_info(_cpu_obj, 0.75, "sec");
 
@@ -321,6 +405,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

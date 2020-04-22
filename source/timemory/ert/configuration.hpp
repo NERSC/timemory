@@ -30,15 +30,15 @@
 
 #pragma once
 
-#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/components/timing.hpp"
+#include "timemory/components/cuda/backends.hpp"
+#include "timemory/components/timing/components.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/ert/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -58,14 +58,14 @@ namespace ert
 {
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct configuration
 {
-    using this_type       = configuration<_Device, _Tp, _Counter>;
-    using ert_data_t      = exec_data<_Counter>;
-    using device_t        = _Device;
-    using counter_t       = _Counter;
-    using ert_counter_t   = counter<device_t, _Tp, counter_t>;
+    using this_type       = configuration<DeviceT, Tp, CounterT>;
+    using ert_data_t      = exec_data<CounterT>;
+    using device_t        = DeviceT;
+    using counter_t       = CounterT;
+    using ert_counter_t   = counter<device_t, Tp, counter_t>;
     using ert_data_ptr_t  = std::shared_ptr<ert_data_t>;
     using executor_func_t = std::function<ert_counter_t(ert_data_ptr_t)>;
     using get_uint64_t    = std::function<uint64_t()>;
@@ -80,7 +80,7 @@ struct configuration
             if(settings::ert_num_threads() > 0)
                 return settings::ert_num_threads();
             // for checking if gpu
-            static constexpr bool is_gpu = device::is_gpu<_Device>::value;
+            static constexpr bool is_gpu = device::is_gpu<DeviceT>::value;
             return (is_gpu) ? settings::ert_num_threads_gpu()
                             : settings::ert_num_threads_cpu();
         };
@@ -116,7 +116,7 @@ struct configuration
     static get_uint64_t& get_alignment()
     {
         static get_uint64_t _instance = []() {
-            return std::max<uint64_t>(settings::ert_alignment(), 8 * sizeof(_Tp));
+            return std::max<uint64_t>(settings::ert_alignment(), 8 * sizeof(Tp));
         };
         return _instance;
     }
@@ -128,7 +128,7 @@ struct configuration
         static get_uint64_t _instance = []() {
             if(settings::ert_min_working_size() > 0)
                 return settings::ert_min_working_size();
-            static constexpr bool is_gpu = device::is_gpu<_Device>::value;
+            static constexpr bool is_gpu = device::is_gpu<DeviceT>::value;
             return (is_gpu) ? settings::ert_min_working_size_gpu()
                             : settings::ert_min_working_size_cpu();
         };
@@ -142,7 +142,7 @@ struct configuration
         static get_uint64_t _instance = []() -> uint64_t {
             if(settings::ert_max_data_size() > 0)
                 return settings::ert_max_data_size();
-            static constexpr bool is_gpu = device::is_gpu<_Device>::value;
+            static constexpr bool is_gpu = device::is_gpu<DeviceT>::value;
             if(is_gpu)
                 return settings::ert_max_data_size_gpu();
             else
@@ -172,9 +172,9 @@ struct configuration
     //----------------------------------------------------------------------------------//
     /// configure the number of threads, number of streams, block size, grid size, and
     /// alignment
-    template <typename Dev                                            = _Device,
+    template <typename Dev                                            = DeviceT,
               enable_if_t<std::is_same<Dev, device::cpu>::value, int> = 0>
-    static void configure(uint64_t nthreads, uint64_t alignment = sizeof(_Tp),
+    static void configure(uint64_t nthreads, uint64_t alignment = sizeof(Tp),
                           uint64_t nstreams = 0, uint64_t block_size = 0,
                           uint64_t grid_size = 0)
     {
@@ -188,9 +188,9 @@ struct configuration
     //----------------------------------------------------------------------------------//
     /// configure the number of threads, number of streams, block size, grid size, and
     /// alignment
-    template <typename Dev                                            = _Device,
+    template <typename Dev                                            = DeviceT,
               enable_if_t<std::is_same<Dev, device::gpu>::value, int> = 0>
-    static void configure(uint64_t nthreads, uint64_t alignment = sizeof(_Tp),
+    static void configure(uint64_t nthreads, uint64_t alignment = sizeof(Tp),
                           uint64_t nstreams = 1, uint64_t block_size = 1024,
                           uint64_t grid_size = 0)
     {
@@ -224,14 +224,14 @@ struct configuration
             ert_counter_t _counter(params, data, _align_size);
 
             // set bytes per element
-            _counter.bytes_per_element = sizeof(_Tp);
+            _counter.bytes_per_element = sizeof(Tp);
             // set number of memory accesses per element from two functions
             _counter.memory_accesses_per_element = 2;
 
             for(const auto& itr : _skip_ops)
                 _counter.add_skip_ops(itr);
 
-            auto dtype = demangle(typeid(_Tp).name());
+            auto dtype = demangle(typeid(Tp).name());
 
             printf(
                 "\n[ert::executor]> "
@@ -271,22 +271,22 @@ public:
 
 //======================================================================================//
 
-template <typename _Device, typename _Tp, typename _Counter>
+template <typename DeviceT, typename Tp, typename CounterT>
 struct executor
 {
-    static_assert(!std::is_same<_Device, device::gpu>::value,
+    static_assert(!std::is_same<DeviceT, device::gpu>::value,
                   "Error! Device should not be gpu");
 
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
-    using device_type        = _Device;
-    using value_type         = _Tp;
-    using configuration_type = configuration<device_type, value_type, _Counter>;
-    using counter_type       = counter<device_type, value_type, _Counter>;
-    using this_type          = executor<device_type, value_type, _Counter>;
+    using device_type        = DeviceT;
+    using value_type         = Tp;
+    using configuration_type = configuration<device_type, value_type, CounterT>;
+    using counter_type       = counter<device_type, value_type, CounterT>;
+    using this_type          = executor<device_type, value_type, CounterT>;
     using callback_type      = std::function<void(counter_type&)>;
-    using ert_data_t         = exec_data<_Counter>;
+    using ert_data_t         = exec_data<CounterT>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -308,14 +308,14 @@ public:
     //----------------------------------------------------------------------------------//
     //  specialize the counter callback
     //
-    template <typename _Func>
+    template <typename FuncT>
     executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
-             _Func&& _counter_callback)
+             FuncT&& _counter_callback)
     {
         try
         {
             auto _counter = config.executor(_data);
-            _counter.set_callback(std::forward<_Func>(_counter_callback));
+            _counter.set_callback(std::forward<FuncT>(_counter_callback));
             callback(_counter);
         } catch(std::exception& e)
         {
@@ -345,19 +345,19 @@ public:
     static void execute(counter_type& _counter)
     {
         // vectorization number of ops
-        static constexpr const int SIZE_BITS = sizeof(_Tp) * 8;
+        static constexpr const int SIZE_BITS = sizeof(Tp) * 8;
         static_assert(SIZE_BITS > 0, "Calculated bits size is not greater than zero");
         static constexpr const int VEC = TIMEMORY_VEC / SIZE_BITS;
         static_assert(VEC > 0, "Calculated vector size is zero");
 
         // functions
-        auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
-        // auto mult_func  = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b * c; };
-        auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-        auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+        auto store_func = [](Tp& a, const Tp& b) { a = b; };
+        // auto mult_func  = [](Tp& a, const Tp& b, const Tp& c) { a = b * c; };
+        auto add_func = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
+        auto fma_func = [](Tp& a, const Tp& b, const Tp& c) { a = a * b + c; };
 
         // set bytes per element
-        _counter.bytes_per_element = sizeof(_Tp);
+        _counter.bytes_per_element = sizeof(Tp);
         // set number of memory accesses per element from two functions
         _counter.memory_accesses_per_element = 2;
 
@@ -381,23 +381,23 @@ public:
 
 //======================================================================================//
 
-template <typename _Tp, typename _Counter>
-struct executor<device::gpu, _Tp, _Counter>
+template <typename Tp, typename CounterT>
+struct executor<device::gpu, Tp, CounterT>
 {
-    using _Device = device::gpu;
-    static_assert(std::is_same<_Device, device::gpu>::value,
+    using DeviceT = device::gpu;
+    static_assert(std::is_same<DeviceT, device::gpu>::value,
                   "Error! Device should be gpu");
 
     //----------------------------------------------------------------------------------//
     // useful aliases
     //
     using device_type        = device::gpu;
-    using value_type         = _Tp;
-    using configuration_type = configuration<device_type, value_type, _Counter>;
-    using counter_type       = counter<device_type, value_type, _Counter>;
-    using this_type          = executor<device_type, value_type, _Counter>;
+    using value_type         = Tp;
+    using configuration_type = configuration<device_type, value_type, CounterT>;
+    using counter_type       = counter<device_type, value_type, CounterT>;
+    using this_type          = executor<device_type, value_type, CounterT>;
     using callback_type      = std::function<void(counter_type&)>;
-    using ert_data_t         = exec_data<_Counter>;
+    using ert_data_t         = exec_data<CounterT>;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -419,14 +419,14 @@ public:
     //----------------------------------------------------------------------------------//
     //  specialize the counter callback
     //
-    template <typename _Func>
+    template <typename FuncT>
     executor(configuration_type& config, std::shared_ptr<ert_data_t> _data,
-             _Func&& _counter_callback)
+             FuncT&& _counter_callback)
     {
         try
         {
             auto _counter = config.executor(_data);
-            _counter.set_callback(std::forward<_Func>(_counter_callback));
+            _counter.set_callback(std::forward<FuncT>(_counter_callback));
             callback(_counter);
         } catch(std::exception& e)
         {
@@ -457,19 +457,19 @@ public:
     static void execute(counter_type& _counter)
     {
         // functions
-        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-        auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };
+        auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
             a = b + c;
         };
-        // auto mult_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+        // auto mult_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
         //    a = b * c;
         //};
-        auto fma_func = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+        auto fma_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
             a = a * b + c;
         };
 
         // set bytes per element
-        _counter.bytes_per_element = sizeof(_Tp);
+        _counter.bytes_per_element = sizeof(Tp);
         // set number of memory accesses per element from two functions
         _counter.memory_accesses_per_element = 2;
 
@@ -494,17 +494,17 @@ public:
 //======================================================================================//
 /// for variadic expansion to set the callback
 ///
-template <typename _Executor>
+template <typename ExecutorT>
 struct callback
 {
-    template <typename _Func>
-    callback(_Func&& f)
+    template <typename FuncT>
+    callback(FuncT&& f)
     {
-        _Executor::get_callback() = f;
+        ExecutorT::get_callback() = f;
     }
 
-    template <typename _Func>
-    callback(_Executor& _exec, _Func&& f)
+    template <typename FuncT>
+    callback(ExecutorT& _exec, FuncT&& f)
     {
         _exec.callback = f;
     }
@@ -512,15 +512,15 @@ struct callback
 
 //======================================================================================//
 
-template <typename _Device, typename _Count, typename _Tp, typename... _Types,
-          typename _DataType = exec_data<_Count>,
-          typename _DataPtr  = std::shared_ptr<_DataType>,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
-std::shared_ptr<_DataType>
-execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+template <typename DeviceT, typename CounterT, typename Tp, typename... Types,
+          typename DataType = exec_data<CounterT>,
+          typename DataPtr  = std::shared_ptr<DataType>,
+          typename std::enable_if<(sizeof...(Types) == 0), int>::type = 0>
+std::shared_ptr<DataType>
+execute(std::shared_ptr<DataType> _data = std::make_shared<DataType>())
 {
-    using _ConfigType = configuration<_Device, _Tp, _Count>;
-    using _ExecType   = executor<_Device, _Tp, _Count>;
+    using _ConfigType = configuration<DeviceT, Tp, CounterT>;
+    using _ExecType   = executor<DeviceT, Tp, CounterT>;
 
     _ConfigType _config;
     _ExecType(_config, _data);
@@ -530,15 +530,15 @@ execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
 
 //======================================================================================//
 
-template <typename _Device, typename _Count, typename _Tp, typename... _Types,
-          typename _DataType = exec_data<_Count>,
-          typename _DataPtr  = std::shared_ptr<_DataType>,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
-std::shared_ptr<_DataType>
-execute(std::shared_ptr<_DataType> _data = std::make_shared<_DataType>())
+template <typename DeviceT, typename CounterT, typename Tp, typename... Types,
+          typename DataType = exec_data<CounterT>,
+          typename DataPtr  = std::shared_ptr<DataType>,
+          typename std::enable_if<(sizeof...(Types) > 0), int>::type = 0>
+std::shared_ptr<DataType>
+execute(std::shared_ptr<DataType> _data = std::make_shared<DataType>())
 {
-    execute<_Device, _Count, _Tp>(_data);
-    execute<_Device, _Count, _Types...>(_data);
+    execute<DeviceT, CounterT, Tp>(_data);
+    execute<DeviceT, CounterT, Types...>(_data);
     return _data;
 }
 

@@ -79,8 +79,8 @@ TEST_F(cuda_tests, saxpy)
 {
     using params_t = tim::device::params<default_device>;
     using stream_t = default_device::stream_t;
-    using tuple_t  = tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event,
-                                    nvtx_marker>::component_type;
+    using tuple_t =
+        tim::component_tuple_t<wall_clock, cpu_clock, cpu_util, cuda_event, nvtx_marker>;
 
     tuple_t tot(details::get_test_name() + " total");
     tot.start();
@@ -142,11 +142,11 @@ TEST_F(cuda_tests, saxpy)
     tim::cuda::device_reset();
 
 #if defined(TIMEMORY_USE_CUDA)
-    auto ce = bw.get<cuda_event>();
+    auto ce = *bw.get<cuda_event>();
 #else
-    auto ce = bw.get<real_clock>();
+    auto ce = *bw.get<wall_clock>();
 #endif
-    auto rc = bw.get<real_clock>();
+    auto rc = *bw.get<wall_clock>();
 
     printf("Max error: %8.4e\n", maxError);
     printf("Sum error: %8.4e\n", sumError);
@@ -169,8 +169,8 @@ TEST_F(cuda_tests, saxpy_streams)
 {
     using params_t = tim::device::params<default_device>;
     using stream_t = default_device::stream_t;
-    using tuple_t  = tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event,
-                                    nvtx_marker>::component_type;
+    using tuple_t =
+        tim::component_tuple_t<wall_clock, cpu_clock, cpu_util, cuda_event, nvtx_marker>;
 
     tuple_t tot(details::get_test_name() + " total");
     tot.start();
@@ -259,11 +259,11 @@ TEST_F(cuda_tests, saxpy_streams)
     tim::cuda::device_reset();
 
 #if defined(TIMEMORY_USE_CUDA)
-    auto ce = bw.get<cuda_event>();
+    auto ce = *bw.get<cuda_event>();
 #else
-    auto ce = bw.get<real_clock>();
+    auto ce = *bw.get<wall_clock>();
 #endif
-    auto rc = bw.get<real_clock>();
+    auto rc = *bw.get<wall_clock>();
 
     printf("Max error: %8.4e\n", maxError);
     printf("Sum error: %8.4e\n", sumError);
@@ -301,6 +301,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

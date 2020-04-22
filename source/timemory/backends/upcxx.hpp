@@ -30,12 +30,10 @@
 
 #pragma once
 
-#include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"  // macro definitions w/ no internal deps
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
-#include <algorithm>
 #include <cstdint>
 #include <future>
 #include <unordered_map>
@@ -52,10 +50,10 @@ namespace upc
 {
 #if defined(TIMEMORY_USE_UPCXX)
 using comm_t = ::upcxx::team;
-template <typename _Tp>
-using future_t = ::upcxx::future<_Tp>;
-template <typename _Tp>
-using promise_t = ::upcxx::promise<_Tp>;
+template <typename Tp>
+using future_t = ::upcxx::future<Tp>;
+template <typename Tp>
+using promise_t = ::upcxx::promise<Tp>;
 inline comm_t&
 world()
 {
@@ -63,10 +61,10 @@ world()
 }
 #else
 using comm_t = int32_t;
-template <typename _Tp>
-using future_t = ::std::future<_Tp>;
-template <typename _Tp>
-using promise_t = ::std::promise<_Tp>;
+template <typename Tp>
+using future_t = ::std::future<Tp>;
+template <typename Tp>
+using promise_t = ::std::promise<Tp>;
 inline comm_t&
 world()
 {
@@ -80,13 +78,13 @@ world()
 inline void
 barrier(comm_t& comm = world());
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline int32_t
-rank(_Args&&...);
+rank(ArgsT&&...);
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline int32_t
-size(_Args&&...);
+size(ArgsT&&...);
 
 //--------------------------------------------------------------------------------------//
 
@@ -127,9 +125,9 @@ is_initialized()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline void
-initialize(_Args&&...)
+initialize(ArgsT&&...)
 {
 #if defined(TIMEMORY_USE_UPCXX)
     if(!is_initialized())
@@ -153,9 +151,9 @@ finalize()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline int32_t
-rank(_Args&&...)
+rank(ArgsT&&...)
 {
 #if defined(TIMEMORY_USE_UPCXX)
     if(is_initialized())
@@ -166,9 +164,9 @@ rank(_Args&&...)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 inline int32_t
-size(_Args&&...)
+size(ArgsT&&...)
 {
 #if defined(TIMEMORY_USE_UPCXX)
     if(is_initialized())

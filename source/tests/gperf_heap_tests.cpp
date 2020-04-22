@@ -42,8 +42,10 @@ using floating_t     = double;
 static const int64_t niter     = 10;
 static const int64_t page_size = tim::units::get_page_size();
 
-using tuple_t = tim::component_tuple<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
-using list_t  = tim::component_list<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
+using tuple_t =
+    tim::component_tuple_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
+using list_t =
+    tim::component_list_t<wall_clock, gperftools_cpu_profiler, gperftools_heap_profiler>;
 using auto_tuple_t  = typename tuple_t::auto_type;
 using auto_list_t   = typename list_t::auto_type;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
@@ -62,9 +64,9 @@ get_test_name()
 }
 
 // this function ensures an allocation cannot be optimized
-template <typename _Tp>
+template <typename Tp>
 size_t
-random_entry(const std::vector<_Tp>& v)
+random_entry(const std::vector<Tp>& v)
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
@@ -105,8 +107,9 @@ protected:
         setenv("MALLOCSTATS", "1", 1);
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "500", 1);
-        list_t::get_initializer() = [](list_t& obj) {
-            obj.initialize<real_clock, gperf_cpu_profiler, gperf_heap_profiler>();
+        list_t::get_initializer() = [](auto& obj) {
+            obj.template initialize<wall_clock, gperftools_cpu_profiler,
+                                    gperftools_heap_profiler>();
         };
     }
 };
@@ -147,6 +150,7 @@ main(int argc, char** argv)
     // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
     auto ret = RUN_ALL_TESTS();
 
+    tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;
 }

@@ -37,20 +37,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(DISABLE_TIMEMORY)
+#if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
 
-// clang-format off
-#    define TIMEMORY_C_SETTINGS_INIT {}
+#    define TIMEMORY_C_SETTINGS_INIT                                                     \
+        {}
 #    define TIMEMORY_C_INIT(...)
-// clang-format on
-
 #    define TIMEMORY_C_AUTO_LABEL(...) ""
-
 #    define TIMEMORY_C_BLANK_AUTO_TIMER(...) NULL
 #    define TIMEMORY_C_BASIC_AUTO_TIMER(...) NULL
 #    define TIMEMORY_C_AUTO_TIMER(...) NULL
 #    define FREE_TIMEMORY_C_AUTO_TIMER(...)
-
 #    define TIMEMORY_C_BASIC_AUTO_TUPLE(...) NULL
 #    define TIMEMORY_C_BLANK_AUTO_TUPLE(...) NULL
 #    define TIMEMORY_C_AUTO_TUPLE(...) NULL
@@ -58,14 +54,9 @@
 
 #else  // !defined(DISABLE_TIMEMORY)
 
+#    include "timemory/compat/library.h"
 #    include "timemory/compat/macros.h"
 #    include "timemory/enum.h"
-#    include "timemory/compat/library.h"
-
-// for sprintf macro,
-#    if defined(__cplusplus)
-#        include <memory>
-#    endif
 
 //======================================================================================//
 //
@@ -79,15 +70,17 @@
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_C_BLANK_LABEL(c_str) c_timemory_blank_label(c_str)
+#    define TIMEMORY_C_BLANK_LABEL(c_str) c_str
 
-#    define TIMEMORY_C_BASIC_LABEL(c_str) c_timemory_basic_label(_TIM_FUNC, c_str)
+#    define TIMEMORY_C_BASIC_LABEL(c_str) c_timemory_basic_label(__FUNCTION__, c_str)
 
-#    define TIMEMORY_C_LABEL(c_str) c_timemory_label(_TIM_FUNC, __FILE__, __LINE__, c_str)
+#    define TIMEMORY_C_LABEL(c_str)                                                      \
+        c_timemory_label(__FUNCTION__, __FILE__, __LINE__, c_str)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_C_BLANK_AUTO_TIMER(c_str) c_timemory_create_auto_timer(c_str)
+#    define TIMEMORY_C_BLANK_AUTO_TIMER(c_str)                                           \
+        c_timemory_create_auto_timer(TIMEMORY_C_BLANK_LABEL(c_str))
 
 #    define TIMEMORY_C_BASIC_AUTO_TIMER(c_str)                                           \
         c_timemory_create_auto_timer(TIMEMORY_C_BASIC_LABEL(c_str))
@@ -101,7 +94,8 @@
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_C_BLANK_MARKER(c_str, ...)                                          \
-        c_timemory_create_auto_tuple(c_str, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
+        c_timemory_create_auto_tuple(TIMEMORY_C_BLANK_LABEL(c_str), __VA_ARGS__,         \
+                                     TIMEMORY_COMPONENTS_END)
 
 #    define TIMEMORY_C_BASIC_MARKER(c_str, ...)                                          \
         c_timemory_create_auto_tuple(TIMEMORY_C_BASIC_LABEL(c_str), __VA_ARGS__,         \

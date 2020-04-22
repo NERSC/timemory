@@ -29,8 +29,8 @@
 
 using namespace tim::component;
 
-using auto_tuple_t = tim::auto_tuple<real_clock, likwid_perfmon, likwid_nvmon, user_clock,
-                                     system_clock, cpu_util>;
+using auto_tuple_t = tim::auto_tuple_t<wall_clock, likwid_marker, likwid_nvmarker,
+                                       user_clock, system_clock, cpu_util>;
 
 intmax_t time_fibonacci(intmax_t);
 intmax_t

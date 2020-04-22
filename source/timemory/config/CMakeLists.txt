@@ -1,0 +1,14 @@
+
+file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+
+build_intermediate_library(
+    USE_INTERFACE
+    NAME                config
+    TARGET              config
+    CATEGORY            GLOBAL
+    FOLDER              global
+    HEADERS             ${header_files}
+    SOURCES             ${source_files}
+    DEPENDS             timemory-headers
+    PROPERTY_DEPENDS    GLOBAL)

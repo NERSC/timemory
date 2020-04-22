@@ -39,10 +39,11 @@
 
 namespace impl
 {
-long fibonacci(long n);
+static long fibonacci(long n);
 }
 long fibonacci(long n);
 void status();
+void write(long, long);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -60,11 +61,11 @@ int main(int argc, char** argv)
 
     // setenv when available
 #if(_POSIX_C_SOURCE >= 200112L) || defined(_BSD_SOURCE) || defined(_UNIX)
-    setenv("TIMEMORY_TIMING_UNITS", "us", 0);
+    setenv("TIMEMORY_TIMING_UNITS", "ms", 0);
     setenv("TIMEMORY_MEMORY_UNITS", "kb", 0);
-    setenv("TIMEMORY_TIMING_WIDTH", "12", 0);
+    setenv("TIMEMORY_TIMING_WIDTH", "14", 0);
     setenv("TIMEMORY_MEMORY_WIDTH", "12", 0);
-    setenv("TIMEMORY_TIMING_PRECISION", "3", 0);
+    setenv("TIMEMORY_TIMING_PRECISION", "6", 0);
     setenv("TIMEMORY_MEMORY_PRECISION", "3", 0);
     setenv("TIMEMORY_TIMING_SCIENTIFIC", "OFF", 0);
     setenv("TIMEMORY_MEMORY_SCIENTIFIC", "OFF", 0);
@@ -73,8 +74,8 @@ int main(int argc, char** argv)
     //
     //  Dummy functions when USE_TIMEMORY not defined
     //
+    tim::mpi::initialize(argc, argv);
     tim::timemory_init(argc, argv);
-
     //
     //  Provide some work
     //
@@ -102,10 +103,12 @@ int main(int argc, char** argv)
     //
     //  Execute the work
     //
-    for(const auto& itr : fibvalues)
+#pragma omp parallel for
+    for(size_t i = 0; i < fibvalues.size(); ++i)
     {
+        auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
-        printf("fibonacci(%li) = %li\n", itr, ret);
+        write(itr, ret);
     }
 
     //
@@ -124,6 +127,7 @@ int main(int argc, char** argv)
     main.stop();
 
     tim::timemory_finalize();
+    tim::mpi::finalize();
     status();
 
     return EXIT_SUCCESS;
@@ -146,6 +150,12 @@ long fibonacci(long n)
     return impl::fibonacci(n);
 }
 
+void write(long nfib, long answer)
+{
+#pragma omp critical
+    printf("fibonacci(%li) = %li\n", nfib, answer);
+}
+
 void status()
 {
 #if defined(USE_TIMEMORY)
@@ -153,4 +163,5 @@ void status()
 #else
     printf("\n#----------------- TIMEMORY is disabled ----------------#\n\n");
 #endif
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }

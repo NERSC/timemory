@@ -9,7 +9,7 @@ project(timemory-LIKWID-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-likwid-example)
 set(COMPONENTS compile-options analysis-tools likwid)
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cxx)
 
 add_executable(ex_likwid ex_likwid.cpp)
 target_link_libraries(ex_likwid timemory-likwid-example)

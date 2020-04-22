@@ -72,7 +72,7 @@
 #endif
 
 #include "timemory/backends/device.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 
 namespace tim
 {
@@ -81,9 +81,9 @@ namespace ert
 namespace details
 {
 // variadic template function for eliminating unused-* warnings
-template <typename... _Args>
+template <typename... ArgsT>
 void
-consume_parameters(_Args&&...)
+consume_parameters(ArgsT&&...)
 {}
 }  // namespace details
 
@@ -95,42 +95,42 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 //
 namespace hidden
 {
-template <typename _Tp, typename _Device,
-          enable_if_t<std::is_same<_Device, device::cpu>::value> = 0>
-_Tp*
+template <typename Tp, typename DeviceT,
+          enable_if_t<std::is_same<DeviceT, device::cpu>::value> = 0>
+Tp*
 allocate_aligned(std::size_t size, std::size_t alignment)
 {
 #if defined(_ISOC11_SOURCE)
-    return static_cast<_Tp*>(aligned_alloc(alignment, size * sizeof(_Tp)));
+    return static_cast<Tp*>(aligned_alloc(alignment, size * sizeof(Tp)));
 #elif defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L)
     void* ptr = nullptr;
-    auto  ret = posix_memalign(&ptr, alignment, size * sizeof(_Tp));
+    auto  ret = posix_memalign(&ptr, alignment, size * sizeof(Tp));
     details::consume_parameters(ret);
-    return static_cast<_Tp*>(ptr);
+    return static_cast<Tp*>(ptr);
 #elif defined(_WINDOWS)
-    return static_cast<_Tp*>(_aligned_malloc(size * sizeof(_Tp), alignment));
+    return static_cast<Tp*>(_aligned_malloc(size * sizeof(Tp), alignment));
 #else
-    return new _Tp[size];
+    return new Tp[size];
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Device,
-          enable_if_t<std::is_same<_Device, device::gpu>::value> = 0>
-_Tp*
+template <typename Tp, typename DeviceT,
+          enable_if_t<std::is_same<DeviceT, device::gpu>::value> = 0>
+Tp*
 allocate_aligned(std::size_t size, std::size_t)
 {
-    return cuda::malloc<_Tp>(size);
+    return cuda::malloc<Tp>(size);
 }
 
 //--------------------------------------------------------------------------------------//
 //  free aligned array, should be used in conjunction with data allocated with above
 //
-template <typename _Tp, typename _Device,
-          enable_if_t<std::is_same<_Device, device::cpu>::value> = 0>
+template <typename Tp, typename DeviceT,
+          enable_if_t<std::is_same<DeviceT, device::cpu>::value> = 0>
 void
-free_aligned(_Tp* ptr)
+free_aligned(Tp* ptr)
 {
 #if defined(_ISOC11_SOURCE) || defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L) ||        \
     defined(_WINDOWS)
@@ -142,10 +142,10 @@ free_aligned(_Tp* ptr)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Device,
-          enable_if_t<std::is_same<_Device, device::gpu>::value> = 0>
+template <typename Tp, typename DeviceT,
+          enable_if_t<std::is_same<DeviceT, device::gpu>::value> = 0>
 void
-free_aligned(_Tp* ptr)
+free_aligned(Tp* ptr)
 {
     cuda::free(ptr);
 }
@@ -155,40 +155,40 @@ free_aligned(_Tp* ptr)
 //--------------------------------------------------------------------------------------//
 //  aligned allocation, alignment should be specified in bits
 //
-template <typename _Tp, typename _Device = device::cpu>
-_Tp*
+template <typename Tp, typename DeviceT = device::cpu>
+Tp*
 allocate_aligned(std::size_t size, std::size_t alignment)
 {
-    return hidden::allocate_aligned<_Tp, _Device>(size, alignment);
+    return hidden::allocate_aligned<Tp, DeviceT>(size, alignment);
 }
 
 //--------------------------------------------------------------------------------------//
 //  free aligned array, should be used in conjunction with data allocated with above
 //
-template <typename _Tp, typename _Device = device::cpu>
+template <typename Tp, typename DeviceT = device::cpu>
 void
-free_aligned(_Tp* ptr)
+free_aligned(Tp* ptr)
 {
-    hidden::free_aligned<_Tp, _Device>(ptr);
+    hidden::free_aligned<Tp, DeviceT>(ptr);
 }
 
 //--------------------------------------------------------------------------------------//
 //  allocator that can be used with STL containers
 //
-//  default template parameter _Align_v uses (8 * sizeof(_Tp)) because alignment should
-//  be specified in bits and sizeof(_Tp) return bytes so for float (sizeof == 4), this
+//  default template parameter _Align_v uses (8 * sizeof(Tp)) because alignment should
+//  be specified in bits and sizeof(Tp) return bytes so for float (sizeof == 4), this
 //  would be 32-bit alignment and for double (sizeof == 8), this would be 64-bit alignment
 //
-template <typename _Tp, std::size_t _Align_v = 8 * sizeof(_Tp)>
+template <typename Tp, std::size_t _Align_v = 8 * sizeof(Tp)>
 class aligned_allocator
 {
 public:
     // The following will be the same for virtually all allocators.
-    using value_type      = _Tp;
-    using pointer         = _Tp*;
-    using reference       = _Tp&;
-    using const_pointer   = const _Tp*;
-    using const_reference = const _Tp&;
+    using value_type      = Tp;
+    using pointer         = Tp*;
+    using reference       = Tp&;
+    using const_pointer   = const Tp*;
+    using const_reference = const Tp&;
     using size_type       = std::size_t;
     using difference_type = ptrdiff_t;
 
@@ -210,13 +210,13 @@ public:
     bool operator==(const aligned_allocator&) const { return true; }
 
 public:
-    _Tp*       address(_Tp& r) const { return &r; }
-    const _Tp* address(const _Tp& s) const { return &s; }
+    Tp*       address(Tp& r) const { return &r; }
+    const Tp* address(const Tp& s) const { return &s; }
 
     std::size_t max_size() const
     {
         // avoid signed/unsigned warnings independent of size_t definition
-        return (static_cast<std::size_t>(0) - static_cast<std::size_t>(1)) / sizeof(_Tp);
+        return (static_cast<std::size_t>(0) - static_cast<std::size_t>(1)) / sizeof(Tp);
     }
 
     // The following must be the same for all allocators.
@@ -226,21 +226,21 @@ public:
         typedef aligned_allocator<U, _Align_v> other;
     };
 
-    void construct(_Tp* const p, const _Tp& t) const
+    void construct(Tp* const p, const Tp& t) const
     {
         void* const pv = static_cast<void*>(p);
-        new(pv) _Tp(t);
+        new(pv) Tp(t);
     }
 
-    template <typename... _Args>
-    void construct(_Tp* const p, _Args&&... args) const
+    template <typename... ArgsT>
+    void construct(Tp* const p, ArgsT&&... args) const
     {
-        ::new((void*) p) _Tp(std::forward<_Args>(args)...);
+        ::new((void*) p) Tp(std::forward<ArgsT>(args)...);
     }
 
-    void destroy(_Tp* const p) const { p->~_Tp(); }
+    void destroy(Tp* const p) const { p->~Tp(); }
 
-    _Tp* allocate(const std::size_t n) const
+    Tp* allocate(const std::size_t n) const
     {
         if(n == 0)
             return nullptr;
@@ -249,32 +249,32 @@ public:
         if(n > max_size())
         {
             throw std::length_error(
-                "aligned_allocator<_Tp>::allocate() - Integer overflow.");
+                "aligned_allocator<Tp>::allocate() - Integer overflow.");
         }
 
         // Mallocator wraps malloc().
-        void* const ptr = allocate_aligned<_Tp, device::cpu>(n, _Align_v);
+        void* const ptr = allocate_aligned<Tp, device::cpu>(n, _Align_v);
 
         // throw std::bad_alloc in the case of memory allocation failure.
         if(ptr == nullptr)
         {
-            std::cerr << "Allocation of type " << typeid(_Tp).name() << " of size " << n
+            std::cerr << "Allocation of type " << typeid(Tp).name() << " of size " << n
                       << " and alignment " << _Align_v << " failed. ptr = " << ptr
                       << std::endl;
             throw std::bad_alloc();
         }
 
-        return static_cast<_Tp*>(ptr);
+        return static_cast<Tp*>(ptr);
     }
 
-    void deallocate(_Tp* const ptr, const std::size_t) const
+    void deallocate(Tp* const ptr, const std::size_t) const
     {
-        free_aligned<_Tp, device::cpu>(ptr);
+        free_aligned<Tp, device::cpu>(ptr);
     }
 
     // same for all allocators that ignore hints.
     template <typename U>
-    _Tp* allocate(const std::size_t n, const U* /* const hint */) const
+    Tp* allocate(const std::size_t n, const U* /* const hint */) const
     {
         return allocate(n);
     }

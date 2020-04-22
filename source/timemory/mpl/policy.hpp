@@ -30,10 +30,14 @@
 
 #pragma once
 
+#include "timemory/components/types.hpp"
+#include "timemory/data/statistics.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/runtime/types.hpp"
+#include "timemory/utility/serializer.hpp"
 
 namespace tim
 {
@@ -41,55 +45,183 @@ namespace policy
 {
 //======================================================================================//
 
-template <typename _Comp, typename _Tp>
+template <typename CompT, typename Tp>
 struct record_statistics
 {
-    using type            = _Tp;
-    using this_type       = record_statistics<_Comp, type>;
+    using type            = Tp;
+    using this_type       = record_statistics<CompT, type>;
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
-    static void apply(statistics<type>&, const _Comp&);
-    static void apply(type&, const _Comp&) {}
+    static void apply(statistics<type>&, const CompT&);
+    static void apply(type&, const CompT&) {}
 };
 
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Comp>
-struct record_statistics<_Comp, void>
+template <typename CompT>
+struct record_statistics<CompT, void>
 {
     using type            = void;
-    using this_type       = record_statistics<_Comp, type>;
+    using this_type       = record_statistics<CompT, type>;
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
-    template <typename... _Args>
-    static void apply(_Args&&...)
+    template <typename... ArgsT>
+    static void apply(ArgsT&&...)
     {}
 };
 
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Comp>
-struct record_statistics<_Comp, std::tuple<>>
+template <typename CompT>
+struct record_statistics<CompT, std::tuple<>>
 {
     using type            = std::tuple<>;
-    using this_type       = record_statistics<_Comp, type>;
+    using this_type       = record_statistics<CompT, type>;
     using policy_type     = this_type;
     using statistics_type = statistics<type>;
 
-    template <typename... _Args>
-    static void apply(_Args&&...)
+    template <typename... ArgsT>
+    static void apply(ArgsT&&...)
     {}
 };
 
 //======================================================================================//
 
-template <typename _Tp>
-struct instance_tracker<_Tp, true>
+template <typename Archive, typename Api>
+struct input_archive
+{
+    using type    = Archive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::JSONInputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::PrettyJSONOutputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct input_archive<cereal::MinimalJSONOutputArchive, Api>
+{
+    using type    = cereal::JSONInputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::istream& is) { return std::make_shared<type>(is); }
+};
+
+//======================================================================================//
+
+template <typename Archive, typename Api>
+struct output_archive
+{
+    using type    = Archive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::ostream& os) { return std::make_shared<type>(os); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Api>
+struct output_archive<cereal::PrettyJSONOutputArchive, Api>
+{
+    using type        = cereal::PrettyJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 2;
+        return value;
+    }
+
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        option_type opts(precision(), indent_char(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+///
+/// partial specialization for MinimalJSONOutputArchive
+///
+template <typename Api>
+struct output_archive<cereal::MinimalJSONOutputArchive, Api>
+{
+    using type        = cereal::MinimalJSONOutputArchive;
+    using pointer     = std::shared_ptr<type>;
+    using option_type = typename type::Options;
+    using indent_type = typename option_type::IndentChar;
+
+    static unsigned int& precision()
+    {
+        static unsigned int value = 16;
+        return value;
+    }
+    static unsigned int& indent_length()
+    {
+        static unsigned int value = 0;
+        return value;
+    }
+    static indent_type& indent_char()
+    {
+        static indent_type value = indent_type::space;
+        return value;
+    }
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        //  The last two options are meaningless for the minimal writer
+        option_type opts(precision(), indent_char(), indent_length());
+        return std::make_shared<type>(os, opts);
+    }
+};
+
+//======================================================================================//
+
+template <typename Tp>
+struct instance_tracker<Tp, true>
 {
 public:
-    using type                           = _Tp;
+    using type                           = Tp;
     using int_type                       = int64_t;
     static constexpr bool thread_support = true;
 
@@ -149,11 +281,11 @@ protected:
 
 //======================================================================================//
 
-template <typename _Tp>
-struct instance_tracker<_Tp, false>
+template <typename Tp>
+struct instance_tracker<Tp, false>
 {
 public:
-    using type                           = _Tp;
+    using type                           = Tp;
     using int_type                       = int64_t;
     static constexpr bool thread_support = false;
 
@@ -189,6 +321,8 @@ protected:
 protected:
     int_type m_tot = 0;
 };
+
+//======================================================================================//
 
 }  // namespace policy
 }  // namespace tim

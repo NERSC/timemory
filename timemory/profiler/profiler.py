@@ -54,6 +54,10 @@ _include_filepath = True
 _full_filepath = False
 
 
+def _default_functor():
+    return True
+
+
 def _profiler_function(frame, event, arg):
 
     global _records
@@ -135,10 +139,40 @@ class profile():
     """
     Provides decorators and context-manager for the timemory profilers
     """
+    global _default_functor
+
+    # static variable
+    _conditional_functor = _default_functor
 
     #------------------------------------------------------------------------------------#
     #
-    def __init__(self, components, *args, **kwargs):
+    @staticmethod
+    def condition(functor):
+        profile._conditional_functor = functor
+
+    #------------------------------------------------------------------------------------#
+    #
+    @staticmethod
+    def is_enabled():
+        ret = profile._conditional_functor()
+        try:
+            if ret is True:
+                return True
+            elif ret is False:
+                return False
+        except:
+            pass
+        return False
+
+    #------------------------------------------------------------------------------------#
+    #
+    def __init__(self, components=[], flat=False, timeline=False, *args, **kwargs):
+        """
+        Arguments:
+            - components [list of strings]  : list of timemory components
+            - flat [bool]                   : enable flat profiling
+            - timeline [bool]               : enable timeline profiling
+        """
         global _records
         global _include_line
         global _include_filepath
@@ -151,22 +185,45 @@ class profile():
         global _components
 
         self._original_profiler_function = sys.getprofile()
-        self._use = not _is_running
-        self._flat_profile = settings.flat_profile
+        self._use = (not _is_running and profile.is_enabled() is True)
+        self._flat_profile = (settings.flat_profile or flat)
+        self._timeline_profile = (settings.timeline_profile or timeline)
         self.components = components + _components.split(",")
         if len(self.components) == 0:
             self.components += ["wall_clock"]
         os.environ["TIMEMORY_PROFILER_COMPONENTS"] = ",".join(self.components)
+        print("USE = {}, COMPONENTS = {}".format(self._use, self.components))
 
     #------------------------------------------------------------------------------------#
     #
     def start(self):
-        pass
+        """
+        Start the profiler explicitly
+        """
+        global _is_running
+
+        if self._use:
+            self._original_profiler_function = sys.getprofile()
+            _is_running = True
+            component_bundle.reset()
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
+            sys.setprofile(_profiler_function)
 
     #------------------------------------------------------------------------------------#
     #
     def stop(self):
-        pass
+        """
+        Stop the profiler explicitly
+        """
+        global _is_running
+
+        if self._use:
+            _is_running = False
+            sys.setprofile(self._original_profiler_function)
+            import traceback
+            if exec_type is not None and exec_value is not None and exec_tb is not None:
+                traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
 
     #------------------------------------------------------------------------------------#
     #
@@ -179,9 +236,9 @@ class profile():
         if self._use:
             self._original_profiler_function = sys.getprofile()
             _is_running = True
-            self.start()
             component_bundle.reset()
-            component_bundle.configure(self.components)
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
@@ -195,7 +252,6 @@ class profile():
         _ret = function_wrapper
 
         if self._use:
-            self.stop()
             _is_running = False
 
         return _ret
@@ -212,17 +268,19 @@ class profile():
             self._original_profiler_function = sys.getprofile()
             _is_running = True
             component_bundle.reset()
-            self.start()
-            component_bundle.configure(self.components)
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
             sys.setprofile(_profiler_function)
 
     #------------------------------------------------------------------------------------#
     #
     def __exit__(self, exec_type, exec_value, exec_tb):
+        """
+        Context manager
+        """
         global _is_running
 
         if self._use:
-            self.stop()
             _is_running = False
             sys.setprofile(self._original_profiler_function)
 
@@ -248,14 +306,13 @@ class profile():
         if self._use:
             self._original_profiler_function = sys.getprofile()
             _is_running = True
-            self.start()
             component_bundle.reset()
-            component_bundle.configure(self.components)
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
 
         try:
             exec(cmd, globals, locals)
         finally:
             if self._use:
-                self.stop()
                 _is_running = False
         return self

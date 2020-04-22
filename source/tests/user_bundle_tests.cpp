@@ -24,6 +24,7 @@
 
 #include "gtest/gtest.h"
 
+#include "timemory/components/user_bundle/overloads.hpp"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/insert.hpp"
 #include "timemory/timemory.hpp"
@@ -130,13 +131,20 @@ protected:
         user_tuple_bundle::reset();
 
         auto bundle1_init = [](bundle1_t& _bundle) {
+            PRINT_HERE("%s", "bundle1_init");
             if(details::get_test_name() != "bundle_0" &&
                details::get_test_name() != "bundle_3")
+            {
+                PRINT_HERE("%s<%s, %s>", "initialize", "cpu_clock", "peak_rss");
                 _bundle.initialize<cpu_clock, peak_rss>();
+            }
         };
 
-        user_tuple_bundle::configure<bundle0_t>();
-        user_list_bundle::configure<bundle1_t>(bundle1_init);
+        user_tuple_bundle::configure<bundle0_t, wall_clock, cpu_util>();
+        user_list_bundle::configure<bundle1_t>(false, false, bundle1_init);
+
+        EXPECT_EQ(user_tuple_bundle::bundle_size(), 1);
+        EXPECT_EQ(user_list_bundle::bundle_size(), 1);
     }
 
 protected:
@@ -204,7 +212,7 @@ TEST_F(user_bundle_tests, comp_bundle)
 
     {
         comp_bundle_t _instance(details::get_test_name(), true);
-        _instance.get<user_tuple_bundle>().clear();
+        _instance.get<user_tuple_bundle>()->clear();
 
         _instance.start();
         ret += details::fibonacci(35);
@@ -230,13 +238,47 @@ TEST_F(user_bundle_tests, comp_bundle)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(user_bundle_tests, get_bundle)
+{
+    printf("TEST_NAME: %s\n", details::get_test_name().c_str());
+
+    wall_clock* wc = nullptr;
+    cpu_util*   cu = nullptr;
+    cpu_clock*  cc = nullptr;
+    peak_rss*   pr = nullptr;
+
+    comp_bundle_t _instance(details::get_test_name(), true);
+
+    _instance.start();
+    ret += details::fibonacci(35);
+    _instance.stop();
+
+    wc = _instance.get<wall_clock>();
+    cu = _instance.get<cpu_util>();
+    cc = _instance.get<cpu_clock>();
+    pr = _instance.get<peak_rss>();
+
+    printf("fibonacci(35) = %li\n", ret);
+
+    ASSERT_NE(wc, nullptr);
+    ASSERT_NE(cu, nullptr);
+    ASSERT_NE(cc, nullptr);
+    ASSERT_NE(pr, nullptr);
+
+    ASSERT_GT(wc->get(), 0.0);
+    ASSERT_GT(cu->get(), 0.0);
+    ASSERT_GT(cc->get(), 0.0);
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(user_bundle_tests, bundle_init_func)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
     using auto_hybrid_t = tim::auto_hybrid<bundle0_t, bundle1_t>;
 
-    auto init_func = [](auto_hybrid_t& ah) { ah.get_list().initialize<cpu_clock>(); };
+    auto init_func = [](auto& al) { al.get_list().template initialize<cpu_clock>(); };
 
     {
         auto_hybrid_t _bundle(details::get_test_name(), false, false, init_func);
@@ -269,7 +311,7 @@ TEST_F(user_bundle_tests, bundle_insert)
 
     auto init_func = [](auto_custom_bundle_t& al) {
         std::vector<std::string> _init   = { "wall_clock", "cpu_clock" };
-        auto&                    _bundle = al.get<custom_bundle_t>();
+        auto&                    _bundle = *al.get<custom_bundle_t>();
         tim::insert(_bundle, _init);
         tim::insert(_bundle, { CPU_UTIL, PEAK_RSS });
     };
@@ -308,9 +350,9 @@ TEST_F(user_bundle_tests, bundle_configure)
     tim::configure<custom_bundle_t>({ CPU_UTIL, PEAK_RSS });
 
     {
-        auto_custom_bundle_t _one(details::get_test_name());
+        auto_custom_bundle_t _one(details::get_test_name() + "/one");
         ret += details::fibonacci(35);
-        auto_custom_bundle_t _two(details::get_test_name());
+        auto_custom_bundle_t _two(details::get_test_name() + "/two");
         ret += details::fibonacci(35);
     }
 
@@ -338,8 +380,8 @@ TEST_F(user_bundle_tests, bundle_configure_ext)
                                       CPU_CLOCK,
                                       CPU_UTIL,
                                       DATA_RSS,
-                                      LIKWID_NVMON,
-                                      LIKWID_PERFMON,
+                                      LIKWID_NVMARKER,
+                                      LIKWID_MARKER,
                                       MONOTONIC_CLOCK,
                                       MONOTONIC_RAW_CLOCK,
                                       NUM_IO_IN,
@@ -402,8 +444,8 @@ TEST_F(user_bundle_tests, bundle_insert_ext)
                             CPU_CLOCK,
                             CPU_UTIL,
                             DATA_RSS,
-                            LIKWID_NVMON,
-                            LIKWID_PERFMON,
+                            LIKWID_NVMARKER,
+                            LIKWID_MARKER,
                             MONOTONIC_CLOCK,
                             MONOTONIC_RAW_CLOCK,
                             NUM_IO_IN,
@@ -481,7 +523,6 @@ main(int argc, char** argv)
     auto ret = RUN_ALL_TESTS();
 
     tim::timemory_finalize();
-
     return ret;
 }
 

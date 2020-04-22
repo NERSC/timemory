@@ -35,7 +35,7 @@
 #include <sstream>
 #include <string>
 
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 
 namespace tim
 {

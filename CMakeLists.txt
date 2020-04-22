@@ -1,3 +1,4 @@
+
 ##########################################################################################
 #       CMake settings
 ##########################################################################################
@@ -10,6 +11,20 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(STATUS "If unintented, please remove 'CMakeCache.txt' and 'CMakeFiles'")
     message(STATUS "and build from a separate directory")
     message(WARNING "In-source build")
+endif()
+
+option(TIMEMORY_CCACHE_BUILD "Enable ccache build" OFF)
+mark_as_advanced(TIMEMORY_CCACHE_BUILD)
+if(TIMEMORY_CCACHE_BUILD)
+    find_program(TIMEMORY_CCACHE_EXE ccache PATH_SUFFIXES bin)
+    if(TIMEMORY_CCACHE_EXE)
+        if(NOT EXISTS "${TIMEMORY_CCACHE_EXE}")
+            message(WARNING
+                "TIMEMORY_CCACHE_BUILD is ON but TIMEMORY_CCACHE_EXE (${TIMEMORY_CCACHE_EXE}) does not exist!")
+        else()
+            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${TIMEMORY_CCACHE_EXE}")
+        endif()
+    endif()
 endif()
 
 cmake_policy(SET CMP0048 NEW)
@@ -75,9 +90,9 @@ include(GNUInstallDirs)
 set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
 
 if(UNIX AND NOT APPLE)
-    set(CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-else()
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    set(CMAKE_INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/timemory:\$ORIGIN:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory")
+elseif(APPLE)
+    set(CMAKE_INSTALL_RPATH "@rpath/timemory:@loader_path/timemory:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 endif()
 
 # create the full path version and generic path versions
@@ -213,20 +228,20 @@ if(TIMEMORY_BUILD_CALIPER)
             list(APPEND _CALIPER_TARGETS ${CALIPER_TARGET})
         endif()
     endforeach()
-    list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_CALIPER_TARGETS})
+    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_CALIPER_TARGETS})
     install(TARGETS ${_CALIPER_TARGETS}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         EXPORT ${PROJECT_NAME}-library-depends)
 endif()
 
-if(TIMEMORY_BUILD_OPENMP)
+if(TIMEMORY_BUILD_OMPT)
     set(_OMPT_TARGETS)
-    foreach(OMPT_TARGET omp ompimp omptarget.rtl.cuda omptarget)
+    foreach(OMPT_TARGET omp omptarget)
         if(TARGET ${OMPT_TARGET})
             list(APPEND _OMPT_TARGETS ${OMPT_TARGET})
         endif()
     endforeach()
-    list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_OMPT_TARGETS})
+    list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_OMPT_TARGETS})
     install(TARGETS ${_OMPT_TARGETS}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         EXPORT ${PROJECT_NAME}-library-depends)
@@ -252,7 +267,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory")
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 endif()
 

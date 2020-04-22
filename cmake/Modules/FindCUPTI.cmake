@@ -40,6 +40,33 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 
+# try to find nvperf_host library
+find_library(CUPTI_nvperf_host_LIBRARY
+    NAMES           nvperf_host
+    HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+    PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+    PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
+
+#----------------------------------------------------------------------------------------#
+
+# try to find nvperf_host library
+find_library(CUPTI_nvperf_host_STATIC_LIBRARY
+    NAMES           nvperf_host_static
+    HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+    PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+    PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
+
+#----------------------------------------------------------------------------------------#
+
+# try to find nvperf_target library
+find_library(CUPTI_nvperf_target_LIBRARY
+    NAMES           nvperf_target
+    HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+    PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+    PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
+
+#----------------------------------------------------------------------------------------#
+
 # try to find cuda driver library
 find_library(CUPTI_cuda_LIBRARY
     NAMES           cuda
@@ -83,6 +110,18 @@ if(CUPTI_FOUND)
     set(CUPTI_INCLUDE_DIRS ${CUPTI_INCLUDE_DIR})
     set(CUPTI_LIBRARIES ${CUPTI_cupti_LIBRARY} ${CUPTI_cuda_LIBRARY})
     set(CUPTI_LIBRARY_DIRS ${CUPTI_cupti_LIBRARY_DIR})
+endif()
+
+#------------------------------------------------------------------------------#
+
+if(CUPTI_nvperf_host_LIBRARY)
+    list(APPEND CUPTI_LIBRARIES ${CUPTI_nvperf_host_LIBRARY})
+endif()
+
+#------------------------------------------------------------------------------#
+
+if(CUPTI_nvperf_target_LIBRARY)
+    list(APPEND CUPTI_LIBRARIES ${CUPTI_nvperf_target_LIBRARY})
 endif()
 
 #------------------------------------------------------------------------------#

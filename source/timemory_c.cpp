@@ -30,10 +30,6 @@
  *
  */
 
-#if !defined(TIMEMORY_EXTERN_TEMPLATES)
-#    define TIMEMORY_EXTERN_TEMPLATES
-#endif
-
 #if !defined(MAX_STR_LEN)
 #    define MAX_STR_LEN 512
 #endif
@@ -47,8 +43,10 @@
 #include <vector>
 
 using namespace tim::component;
-using auto_timer_t    = typename tim::auto_timer::component_type;
-using complete_list_t = tim::complete_list_t;
+using auto_timer_t      = tim::auto_timer;
+using library_toolset_t = TIMEMORY_LIBRARY_TYPE;
+using complete_list_t   = typename library_toolset_t::component_type;
+using free_cstr_set_t   = std::unordered_set<const char*>;
 
 //======================================================================================//
 //
@@ -60,10 +58,10 @@ using complete_list_t = tim::complete_list_t;
 
 //======================================================================================//
 
-static bool&
+static free_cstr_set_t&
 free_cstr()
 {
-    static thread_local bool _instance = false;
+    static thread_local free_cstr_set_t _instance;
     return _instance;
 }
 
@@ -71,7 +69,7 @@ free_cstr()
 
 extern "C"
 {
-    tim_api void cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
+    void cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
     {
 #    define PROCESS_SETTING(variable, type)                                              \
         if(_settings.variable >= 0)                                                      \
@@ -97,38 +95,38 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api int cxx_timemory_enabled(void) { return (tim::settings::enabled()) ? 1 : 0; }
+    int cxx_timemory_enabled(void) { return (tim::settings::enabled()) ? 1 : 0; }
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_create_auto_timer(const char* timer_tag)
+    void* cxx_timemory_create_auto_timer(const char* timer_tag)
     {
         if(!tim::settings::enabled())
             return nullptr;
         using namespace tim::component;
         std::string key_tag(timer_tag);
-        auto*       obj = new auto_timer_t(key_tag, true, tim::settings::flat_profile());
+        auto*       obj = new auto_timer_t(key_tag);
         obj->start();
         return (void*) obj;
     }
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_create_auto_tuple(const char* timer_tag,
-                                                 int         num_components,
-                                                 const int*  components)
+    void* cxx_timemory_create_auto_tuple(const char* timer_tag, int num_components,
+                                         const int* components)
     {
         if(!tim::settings::enabled())
             return nullptr;
         using namespace tim::component;
         std::string key_tag(timer_tag);
-        if(free_cstr())
+        auto        itr = free_cstr().find(timer_tag);
+        if(itr != free_cstr().end())
         {
             char* _tag = (char*) timer_tag;
             free(_tag);
-            free_cstr() = false;
+            free_cstr().erase(itr);
         }
-        auto obj = new complete_list_t(key_tag, true, tim::settings::flat_profile());
+        auto obj = new complete_list_t(key_tag);
 #    if defined(DEBUG)
         std::vector<int> _components;
         for(int i = 0; i < num_components; ++i)
@@ -148,7 +146,7 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_delete_auto_timer(void* ctimer)
+    void* cxx_timemory_delete_auto_timer(void* ctimer)
     {
         if(ctimer)
         {
@@ -161,7 +159,7 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api void* cxx_timemory_delete_auto_tuple(void* ctuple)
+    void* cxx_timemory_delete_auto_tuple(void* ctuple)
     {
         if(ctuple)
         {
@@ -174,8 +172,8 @@ extern "C"
 
     //======================================================================================//
 
-    tim_api const char* cxx_timemory_label(int _mode, int _line, const char* _func,
-                                           const char* _file, const char* _extra)
+    const char* cxx_timemory_label(int _mode, int _line, const char* _func,
+                                   const char* _file, const char* _extra)
     {
         if(!tim::settings::enabled())
             return "";
@@ -185,8 +183,6 @@ extern "C"
 
         if(_mode == 1 && (!_extra || strlen(_extra) == 0))
             return _func;
-
-        free_cstr() = true;
 
         std::stringstream ss;
 
@@ -229,6 +225,7 @@ extern "C"
                 sprintf(buff, "%s", ss.str().c_str());
             }
         }
+        free_cstr().insert((const char*) buff);
         return (const char*) buff;
     }
 

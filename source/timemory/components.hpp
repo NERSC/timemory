@@ -32,118 +32,110 @@
 #pragma once
 
 // forward declare any types
+#include "timemory/components/base/types.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/variadic/types.hpp"
 
-// general components
-#include "timemory/components/general.hpp"
-#include "timemory/components/rusage.hpp"
-#include "timemory/components/timing.hpp"
-#include "timemory/components/user_bundle.hpp"
+#include "timemory/components/rusage/components.hpp"
+#include "timemory/components/timing/components.hpp"
+#include "timemory/components/trip_count/components.hpp"
 
+// allinea components
+#if defined(TIMEMORY_USE_ALLINEA_MAP)
+#    include "timemory/components/allinea/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // caliper components
 #if defined(TIMEMORY_USE_CALIPER)
-#    include "timemory/components/caliper.hpp"
+#    include "timemory/components/caliper/components.hpp"
 #endif
-
-// gotcha components
-#if defined(TIMEMORY_USE_GOTCHA)
-#    include "timemory/components/derived/malloc_gotcha.hpp"
-#    include "timemory/components/gotcha.hpp"
+//
+//--------------------------------------------------------------------------------------//
+//
+// craypat
+#if defined(TIMEMORY_USE_CRAYPAT)
+#    include "timemory/components/craypat/components.hpp"
 #endif
-
-// cuda event
+//
+//--------------------------------------------------------------------------------------//
+//
+// cuda
 #if defined(TIMEMORY_USE_CUDA)
-#    include "timemory/components/cuda/event.hpp"
-#    include "timemory/components/cuda/profiler.hpp"
+#    include "timemory/components/cuda/components.hpp"
 #endif
-
-// nvtx marker
-#if defined(TIMEMORY_USE_NVTX)
-#    include "timemory/components/cuda/nvtx_marker.hpp"
-#endif
-
-// likwid
-#if defined(TIMEMORY_USE_LIKWID)
-#    include "timemory/components/likwid.hpp"
-#endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 // GPU hardware counter components
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti/activity.hpp"
-#    include "timemory/components/cupti/counters.hpp"
-#    include "timemory/components/roofline/gpu.hpp"
+#    include "timemory/components/cupti/components.hpp"
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
+// gotcha components
+#if defined(TIMEMORY_USE_GOTCHA)
+#    include "timemory/components/gotcha/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// gperftools components
+#if defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC) ||                                         \
+    defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) || defined(TIMEMORY_USE_GPERFTOOLS)
+#    include "timemory/components/gperftools/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// likwid
+#if defined(TIMEMORY_USE_LIKWID)
+#    include "timemory/components/likwid/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// OpenMP components
+#if defined(TIMEMORY_USE_OMPT)
+#    include "timemory/components/ompt/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // CPU/GPU hardware counter components
 #if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/papi/array.hpp"
-#    include "timemory/components/papi/tuple.hpp"
-#    include "timemory/components/roofline/cpu.hpp"
+#    include "timemory/components/papi/components.hpp"
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
+// Roofline components
+#if defined(TIMEMORY_USE_CUPTI) || defined(TIMEMORY_USE_PAPI)
+#    include "timemory/components/roofline/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // TAU component
 #if defined(TIMEMORY_USE_TAU)
-#    include "timemory/components/tau.hpp"
+#    include "timemory/components/tau_marker/components.hpp"
 #endif
-
+//
+//--------------------------------------------------------------------------------------//
+//
 // VTune components
 #if defined(TIMEMORY_USE_VTUNE)
-#    include "timemory/components/vtune/event.hpp"
-#    include "timemory/components/vtune/frame.hpp"
-#    include "timemory/components/vtune/profiler.hpp"
+#    include "timemory/components/vtune/components.hpp"
 #endif
-
-// OpenMP components
-#if defined(TIMEMORY_USE_OPENMP)
-#    include "timemory/components/openmp.hpp"
-#endif
-
-#include "timemory/backends/cuda.hpp"
-
-// device backend
-#include "timemory/backends/device.hpp"
-
-//======================================================================================//
 //
-//      helpers for generating components
-//
-//======================================================================================//
-
-// #include "timemory/runtime/enumerate.hpp"
-// #include "timemory/runtime/configure.hpp"
-// #include "timemory/runtime/insert.hpp"
-// #include "timemory/runtime/initialize.hpp"
-
-//======================================================================================//
-//
-//      default statistics (requires the components to be defined before implementing)
-//
-//======================================================================================//
-
-#include "timemory/mpl/policy.hpp"
-
-namespace tim
-{
-namespace policy
-{
 //--------------------------------------------------------------------------------------//
 //
-template <typename _Comp, typename _Tp>
-inline void
-record_statistics<_Comp, _Tp>::apply(statistics<_Tp>& _stat, const _Comp& _obj)
-{
-    using result_type = decltype(std::declval<_Comp>().get());
-    static_assert(std::is_same<result_type, _Tp>::value,
-                  "Error! The default implementation of "
-                  "'policy::record_statistics<Component, T>::apply' requires 'T' to be "
-                  "the same type as the return type from 'Component::get()'");
-
-    _stat += _obj.get();
-}
-
+#include "timemory/components/user_bundle/components.hpp"
+//
 //--------------------------------------------------------------------------------------//
-}  // namespace policy
-}  // namespace tim
+//
+#include "timemory/backends.hpp"

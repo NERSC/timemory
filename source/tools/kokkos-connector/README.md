@@ -118,8 +118,8 @@ timemory-avail -a
 | `gpu_roofline<cuda::half2, float, double>` | false     | `gpu_roofline_flops`           |
 | `gpu_roofline<cuda::half2>`                | false     | `gpu_roofline_hp_flops`        |
 | `gpu_roofline<float>`                      | false     | `gpu_roofline_sp_flops`        |
-| `likwid_nvmon`                             | false     | `likwid_nvmon`                 |
-| `likwid_perfmon`                           | true      | `likwid_perfmon`               |
+| `likwid_nvmarker`                          | false     | `likwid_nvmarker`              |
+| `likwid_marker`                            | true      | `likwid_marker`                |
 | `monotonic_clock`                          | true      | `monotonic_clock`              |
 | `monotonic_raw_clock`                      | true      | `monotonic_raw_clock`          |
 | `num_io_in`                                | true      | `num_io_in`                    |

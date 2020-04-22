@@ -33,7 +33,7 @@
 #include "timemory/api.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #include <sstream>
 #include <string>
@@ -54,30 +54,40 @@ struct handler
     using value_type = V;
 
     template <typename T>
-    static void record(T&, value_type& value, const value_type& v)
+    static void store(T& obj, const value_type& v)
     {
-        value = v;
+        obj.set_value(v);
+    }
+
+    template <typename T, typename Func>
+    static auto store(T& obj, Func&& f, const value_type& v)
+        -> decltype(obj.set_value(f(obj.get_value(), v)), void())
+    {
+        obj.set_value(f(obj.get_value(), v));
     }
 
     template <typename T>
-    static void compute(T&, value_type& accum, value_type& value, const value_type& v)
+    static void begin(T& obj, const value_type& v)
     {
-        accum += (v - value);
-        value = v;
+        store(obj, v);
     }
 
     template <typename T>
-    static value_type get(const T& obj)
+    static void end(T& obj, const value_type& v)
     {
-        return (obj.get_is_transient()) ? obj.get_accum() : obj.get_value();
+        obj.set_value(v - obj.get_value());
     }
 
     template <typename T>
-    static std::string get_display(const T& obj)
+    static auto get(const T& obj)
     {
-        std::stringstream ss;
-        ss << obj;
-        return ss.str();
+        return obj.load();
+    }
+
+    template <typename T>
+    static auto get_display(const T& obj)
+    {
+        return obj.load();
     }
 };
 }  // namespace data

@@ -76,91 +76,10 @@ corrupted sizes, set:
 before BEFORE running Python
 '''
 
-try:
-    from . import libpytimemory
-    from . import plotting
-    from . import roofline
-    from . import mpi_support
-    from . import mpi_support as mpi
-    from . import util
-    from . import options
-    from . import units
-    from . import signals
-    from .common import *
-    from .libpytimemory import *
-
-    __all__ = ['version_info',
-               'build_info',
-               'version',
-               # --------------- modules ---------------#
-               'libpytimemory',
-               'mpi_support',
-               'plotting',
-               'roofline',
-               'tests',
-               'util',
-               'ert',
-               'mpi',
-               # --------------- classes ---------------#
-               'manager',
-               'timer',
-               'auto_timer',
-               'timer_decorator',
-               'rss_usage',
-               # ------------ lib submodules -----------#
-               'units',
-               'options',
-               'signals',
-               'signals.sys_signal',
-               # --------------- functions -------------#
-               'report',
-               'LINE',
-               'FUNC',
-               'FILE',
-               'toggle',
-               'enable',
-               'disable',
-               'is_enabled',
-               'enabled',
-               'enable_signal_detection',
-               'disable_signal_detection',
-               'has_mpi_support',
-               'set_rusage_children',
-               'set_rusage_self',
-               'set_exit_action',
-               'timemory_init',
-               'timemory_finalize',
-               'initialize',
-               'finalize',
-               'mpi_init',
-               'mpi_finalize',
-               ]
-
-    # print("{}".format(sys.argv[:]))
-    args = copy.copy(sys.argv)
-    while len(args) > 0 and len(args[0]) > 0 and args[0][0] == '-':
-        args.pop(0)
-    # print("{}".format(args))
-
-    if len(args) == 0:
-        args.append("python")
-
-    if os.environ.get("TIMEMORY_LIBRARY_CTOR", True):
-        timemory_init(args)
-
-    if os.environ.get("TIMEMORY_LIBRARY_DTOR", True):
-        atexit.register(timemory_finalize)
-
-    settings.python_exe = "{}".format(sys.executable)
-    settings.command_line = args
-
-
-except Exception as e:
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    traceback.print_exception(exc_type, exc_value, exc_traceback)
+if os.environ.get("TIMEMORY_CXX_PLOT_MODE", None) is not None:
 
     from . import mpi_support
-    from . import mpi_support as mpi
+    from . import mpi
     from . import roofline
     from .common import *
 
@@ -176,6 +95,110 @@ except Exception as e:
                'FUNC',
                'FILE',
                ]
+else:
+
+    try:
+        from . import libpytimemory
+        from . import plotting
+        from . import roofline
+        from . import mpi_support
+        from . import mpi
+        from . import util
+        from . import bundle
+        from . import options
+        from . import units
+        from . import signals
+        from .common import *
+        from .libpytimemory import *
+
+        __all__ = ['version_info',
+                   'build_info',
+                   'version',
+                   # --------------- modules ---------------#
+                   'libpytimemory',
+                   'mpi_support',
+                   'plotting',
+                   'roofline',
+                   'bundle',
+                   'tests',
+                   'util',
+                   'ert',
+                   'mpi',
+                   # --------------- classes ---------------#
+                   'manager',
+                   'timer',
+                   'auto_timer',
+                   'timer_decorator',
+                   'rss_usage',
+                   # ------------ lib submodules -----------#
+                   'units',
+                   'options',
+                   'signals',
+                   'signals.sys_signal',
+                   # --------------- functions -------------#
+                   'report',
+                   'LINE',
+                   'FUNC',
+                   'FILE',
+                   'toggle',
+                   'enable',
+                   'disable',
+                   'is_enabled',
+                   'enabled',
+                   'enable_signal_detection',
+                   'disable_signal_detection',
+                   'has_mpi_support',
+                   'set_rusage_children',
+                   'set_rusage_self',
+                   'set_exit_action',
+                   'timemory_init',
+                   'timemory_finalize',
+                   'initialize',
+                   'finalize',
+                   'mpi_init',
+                   'mpi_finalize',
+                   ]
+
+        # print("{}".format(sys.argv[:]))
+        args = copy.copy(sys.argv)
+        while len(args) > 0 and len(args[0]) > 0 and args[0][0] == '-':
+            args.pop(0)
+        # print("{}".format(args))
+
+        if len(args) == 0:
+            args.append("python")
+
+        if os.environ.get("TIMEMORY_LIBRARY_CTOR", True):
+            timemory_init(args)
+
+        if os.environ.get("TIMEMORY_LIBRARY_DTOR", True):
+            atexit.register(timemory_finalize)
+
+        settings.python_exe = "{}".format(sys.executable)
+        settings.command_line = args
+
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
+
+        from . import mpi_support
+        from . import mpi
+        from . import roofline
+        from .common import *
+
+        __all__ = ['version_info',
+                'build_info',
+                'version',
+                # --------------- modules ---------------#
+                'mpi_support',
+                'roofline',
+                'mpi',
+                # --------------- functions -------------#
+                'LINE',
+                'FUNC',
+                'FILE',
+                ]
 
 sys.modules[__name__].__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@, @TIMEMORY_VERSION_MINOR@, @TIMEMORY_VERSION_PATCH@))
 sys.modules[__name__].__setattr__("version", "@TIMEMORY_VERSION@")

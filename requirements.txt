@@ -2,3 +2,4 @@ scikit-build
 numpy
 matplotlib
 pillow
+six

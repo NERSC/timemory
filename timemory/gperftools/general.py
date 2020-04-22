@@ -28,6 +28,16 @@ import sys
 import platform
 import subprocess as sp
 
+__all__ = [
+    "get_shared_lib_ext",
+    "get_library_prefixes",
+    "find_library_path",
+    "get_linked_libraries",
+    "echo_dart_measurement",
+    "execute",
+    "add_preload",
+    "post_process",
+]
 
 is_darwin = False
 is_linux = False
@@ -172,7 +182,7 @@ def execute(cmd, outf, keep_going=True, timeout=5*60):
     if errs is not None:
         print("{}".format(outs.decode('utf-8')))
 
-    if outs is not None:
+    if outs is not None and outf is not None:
         f = open(outf, 'w')
         f.write(outs)
 
@@ -187,7 +197,7 @@ def add_preload(libs):
     else:
         return
 
-    if isinstance(libs, list):
+    if isinstance(libs, list) or isinstance(libs, tuple):
         preload = ":".join(libs)
     elif libs is not None:
         preload = libs
@@ -201,3 +211,43 @@ def add_preload(libs):
                 current_preload, preload)
         else:
             os.environ[preload_env] = "{}".format(preload)
+
+
+def post_process(exe, fname,
+                 image_type="jpeg",
+                 echo_dart=False,
+                 liblist=[],
+                 args=["--no_strip_temp", "--functions"],
+                 generate=["text", "cum", "dot"],
+                 dot_args=[]):
+
+    linked = get_linked_libraries(exe)
+    libs = []
+    if linked is not None:
+        for _lib in linked:
+            signature = "--add_lib={}".format(_lib)
+            if signature not in libs:
+                libs += [signature]
+
+    if 'text' in generate:
+        execute(["google-pprof", "--text"] + libs +
+                args + [exe, fname], "{}.txt".format(fname))
+
+    if 'cum' in generate:
+        execute(["google-pprof", "--text", "--cum"] + libs +
+                args + [exe, fname], "{}.cum.txt".format(fname))
+
+    if 'dot' in generate:
+        oname = "{}.dot".format(fname)
+        iname = "{}.{}".format(fname, image_type)
+        execute(["google-pprof", "--dot"] +
+                libs + args + [exe, fname], oname)
+        execute(["dot"] + dot_args +
+                ["-T{}".format(image_type), oname, "-o", iname], None)
+        if echo_dart:
+            echo_dart_measurement(os.path.basename(
+                iname), os.path.realpath(iname), image_type)
+
+    if 'callgrind' in generate:
+        execute(["google-pprof", "--callgrind"] + libs +
+                args + [exe, fname], "{}.callgrind".format(fname))

@@ -59,13 +59,13 @@ class auto_list
 public:
     using this_type           = auto_list<Types...>;
     using base_type           = component_list<Types...>;
+    using auto_type           = this_type;
     using component_type      = typename base_type::component_type;
     using data_type           = typename component_type::data_type;
     using type_tuple          = typename component_type::type_tuple;
-    using data_value_type     = typename component_type::data_value_type;
-    using data_label_type     = typename component_type::data_label_type;
     using sample_type         = typename component_type::sample_type;
-    using init_func_t         = std::function<void(this_type&)>;
+    using type                = convert_t<typename component_type::type, auto_list<>>;
+    using initializer_type    = std::function<void(this_type&)>;
     using string_t            = std::string;
     using captured_location_t = typename component_type::captured_location_t;
 
@@ -79,7 +79,8 @@ public:
     static constexpr bool is_auto_hybrid      = false;
     static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
-    static constexpr bool contains_gotcha     = component_type::contains_gotcha;
+    static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -88,160 +89,185 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    static init_func_t& get_initializer()
+    static auto& get_initializer()
     {
-        static init_func_t _instance = [](this_type& al) {
-            static auto env_ret  = tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "");
-            static auto env_enum = enumerate_components(tim::delimit(env_ret));
-            ::tim::initialize(al, env_enum);
+        static auto env_enum = enumerate_components(
+            tim::delimit(tim::get_env<string_t>("TIMEMORY_AUTO_LIST_INIT", "")));
+
+        static initializer_type _instance = [=](this_type& cl) {
+            ::tim::initialize(cl, env_enum);
         };
         return _instance;
     }
 
 public:
-    template <typename _Func = init_func_t>
-    explicit auto_list(const string_t&, bool flat = settings::flat_profile(),
+    template <typename Func = initializer_type>
+    explicit auto_list(const string_t&, scope::config = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
-                       const _Func&        = get_initializer());
+                       const Func&         = get_initializer());
 
-    template <typename _Func = init_func_t>
-    explicit auto_list(const captured_location_t&, bool flat = settings::flat_profile(),
+    template <typename Func = initializer_type>
+    explicit auto_list(const captured_location_t&, scope::config = scope::get_default(),
                        bool report_at_exit = settings::destructor_report(),
-                       const _Func&        = get_initializer());
+                       const Func&         = get_initializer());
 
-    explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
-                       bool report_at_exit = settings::destructor_report());
+    template <typename Func = initializer_type>
+    explicit auto_list(size_t, scope::config = scope::get_default(),
+                       bool report_at_exit = settings::destructor_report(),
+                       const Func&         = get_initializer());
+
+    explicit auto_list(component_type& tmp, scope::config = scope::get_default(),
+                       bool            report_at_exit = settings::destructor_report());
     ~auto_list();
 
     // copy and move
-    inline auto_list(const this_type&) = default;
-    inline auto_list(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
+    auto_list(const this_type&) = default;
+    auto_list(this_type&&)      = default;
+    this_type& operator=(const this_type&) = default;
+    this_type& operator=(this_type&&) = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 
 public:
     // public member functions
-    inline component_type&       get_component() { return m_temporary_object; }
-    inline const component_type& get_component() const { return m_temporary_object; }
+    component_type&       get_component() { return m_temporary_object; }
+    const component_type& get_component() const { return m_temporary_object; }
 
-    inline operator component_type&() { return m_temporary_object; }
-    inline operator const component_type&() const { return m_temporary_object; }
+    operator component_type&() { return m_temporary_object; }
+    operator const component_type&() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
-    inline void measure()
-    {
-        if(m_enabled)
-            m_temporary_object.measure();
-    }
-    inline void sample()
-    {
-        if(m_enabled)
-            m_temporary_object.sample();
-    }
-    inline void start()
-    {
-        if(m_enabled)
-            m_temporary_object.start();
-    }
-    inline void stop()
-    {
-        if(m_enabled)
-            m_temporary_object.stop();
-    }
-    inline void push()
+    void push()
     {
         if(m_enabled)
             m_temporary_object.push();
     }
-    inline void pop()
+    void pop()
     {
         if(m_enabled)
             m_temporary_object.pop();
     }
-    template <typename... _Args>
-    inline void mark_begin(_Args&&... _args)
+    template <typename... Args>
+    void measure(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_begin(std::forward<_Args>(_args)...);
+            m_temporary_object.measure(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void mark_end(_Args&&... _args)
+    template <typename... Args>
+    void sample(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+            m_temporary_object.sample(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void store(_Args&&... _args)
+    template <typename... Args>
+    void start(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.store(std::forward<_Args>(_args)...);
+            m_temporary_object.start(std::forward<Args>(args)...);
     }
-    template <typename... _Args>
-    inline void audit(_Args&&... _args)
+    template <typename... Args>
+    void stop(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.audit(std::forward<_Args>(_args)...);
+            m_temporary_object.stop(std::forward<Args>(args)...);
     }
-
-    inline data_value_type get() const { return m_temporary_object.get(); }
-
-    inline data_label_type get_labeled() const
+    template <typename... Args>
+    void assemble(Args&&... args)
     {
-        return m_temporary_object.get_labeled();
+        if(m_enabled)
+            m_temporary_object.assemble(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void derive(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.derive(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void mark_begin(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_begin(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void mark_end(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_end(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void store(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.store(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void audit(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary_object.audit(std::forward<Args>(args)...);
+    }
+    template <template <typename> class OpT, typename... Args>
+    void invoke(Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.template invoke<OpT>(std::forward<Args>(_args)...);
+    }
+    template <typename... Args>
+    auto get(Args&&... args) const
+    {
+        return m_temporary_object.get(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    auto get_labeled(Args&&... args) const
+    {
+        return m_temporary_object.get_labeled(std::forward<Args>(args)...);
     }
 
-    inline bool enabled() const { return m_enabled; }
-    inline void report_at_exit(bool val) { m_report_at_exit = val; }
-    inline bool report_at_exit() const { return m_report_at_exit; }
+    bool enabled() const { return m_enabled; }
+    void report_at_exit(bool val) { m_report_at_exit = val; }
+    bool report_at_exit() const { return m_report_at_exit; }
 
-    inline bool             store() const { return m_temporary_object.store(); }
-    inline data_type&       data() { return m_temporary_object.data(); }
-    inline const data_type& data() const { return m_temporary_object.data(); }
-    inline int64_t          laps() const { return m_temporary_object.laps(); }
-    inline string_t         key() const { return m_temporary_object.key(); }
-    inline uint64_t         hash() const { return m_temporary_object.hash(); }
-    inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    bool             store() const { return m_temporary_object.store(); }
+    data_type&       data() { return m_temporary_object.data(); }
+    const data_type& data() const { return m_temporary_object.data(); }
+    int64_t          laps() const { return m_temporary_object.laps(); }
+    string_t         key() const { return m_temporary_object.key(); }
+    uint64_t         hash() const { return m_temporary_object.hash(); }
+    void             rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
-    template <typename _Tp>
-    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
+    template <typename Tp>
+    decltype(auto) get()
     {
-        return m_temporary_object.template get<_Tp>();
+        return m_temporary_object.template get<Tp>();
     }
 
-    template <typename _Tp>
-    auto get() const -> decltype(std::declval<const component_type>().template get<_Tp>())
+    template <typename Tp>
+    decltype(auto) get() const
     {
-        return m_temporary_object.template get<_Tp>();
+        return m_temporary_object.template get<Tp>();
     }
 
-    template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, type_tuple>::value == true), int> = 0>
-    void init(_Args&&... _args)
+    void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
+
+    template <typename T>
+    auto get_component()
+        -> decltype(std::declval<component_type>().template get_component<T>())
     {
-        m_temporary_object.template init<_Tp>(std::forward<_Args>(_args)...);
+        return m_temporary_object.template get_component<T>();
     }
 
-    template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, type_tuple>::value == false), int> = 0>
-    void init(_Args&&...)
-    {}
-
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
-    void initialize()
+    template <typename Tp, typename... Args>
+    void init(Args&&... _args)
     {
-        this->init<_Tp>();
+        m_temporary_object.template init<Tp>(std::forward<Args>(_args)...);
     }
 
-    template <typename _Tp, typename... _Tail,
-              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
-    void initialize()
+    template <typename... Tp, typename... Args>
+    void initialize(Args&&... _args)
     {
-        this->init<_Tp>();
-        this->initialize<_Tail...>();
+        m_temporary_object.template initialize<Tp...>(std::forward<Args>(_args)...);
     }
 
 public:
@@ -261,12 +287,13 @@ private:
 //======================================================================================//
 
 template <typename... Types>
-template <typename _Func>
-auto_list<Types...>::auto_list(const string_t& key, bool flat, bool report_at_exit,
-                               const _Func& _func)
+template <typename Func>
+auto_list<Types...>::auto_list(const string_t& key, scope::config _scope,
+                               bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(key, m_enabled, flat) : component_type{})
+, m_temporary_object(m_enabled ? component_type(key, m_enabled, _scope)
+                               : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -279,12 +306,13 @@ auto_list<Types...>::auto_list(const string_t& key, bool flat, bool report_at_ex
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename _Func>
-auto_list<Types...>::auto_list(const captured_location_t& loc, bool flat,
-                               bool report_at_exit, const _Func& _func)
+template <typename Func>
+auto_list<Types...>::auto_list(const captured_location_t& loc, scope::config _scope,
+                               bool report_at_exit, const Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(loc, m_enabled, flat) : component_type{})
+, m_temporary_object(m_enabled ? component_type(loc, m_enabled, _scope)
+                               : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
@@ -297,10 +325,30 @@ auto_list<Types...>::auto_list(const captured_location_t& loc, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit)
+template <typename Func>
+auto_list<Types...>::auto_list(size_t _hash, scope::config _scope, bool report_at_exit,
+                               const Func& _func)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, _scope)
+                               : component_type{})
+, m_reference_object(nullptr)
+{
+    if(m_enabled)
+    {
+        _func(*this);
+        m_temporary_object.start();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+auto_list<Types...>::auto_list(component_type& tmp, scope::config _scope,
+                               bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, flat))
+, m_temporary_object(tmp.clone(true, _scope))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
@@ -337,22 +385,20 @@ auto_list<Types...>::~auto_list()
 
 //======================================================================================//
 
-template <typename... _Types,
-          typename _Ret = typename auto_list<_Types...>::data_value_type>
-_Ret
-get(const auto_list<_Types...>& _obj)
+template <typename... Types>
+auto
+get(const auto_list<Types...>& _obj)
 {
-    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+    return get(_obj.get_component());
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types,
-          typename _Ret = typename auto_list<_Types...>::data_label_type>
-_Ret
-get_labeled(const auto_list<_Types...>& _obj)
+template <typename... Types>
+auto
+get_labeled(const auto_list<Types...>& _obj)
 {
-    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
+    return get_labeled(_obj.get_component());
 }
 
 //======================================================================================//

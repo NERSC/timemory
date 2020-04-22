@@ -28,16 +28,33 @@ import sys
 from . import general
 
 
-def execute(cmd, prefix="cpu.prof", freq=250, malloc_stats=0, realtime=1, preload=False,
-            args=["--no_strip_temp", "--functions"]):
+__all__ = ["execute"]
+
+
+def execute(cmd, prefix="cpu.prof",
+            freq=250,
+            malloc_stats=0,
+            realtime=1,
+            preload=True,
+            selected=0,
+            image_type="jpeg",
+            echo_dart=False,
+            libs=[],
+            args=["--no_strip_temp", "--functions"],
+            generate=["text", "cum", "dot"],
+            dot_args=[]):
 
     os.environ["CPUPROFILE_FREQUENCY"] = "{}".format(freq)
     os.environ["MALLOCSTATS"] = "{}".format(malloc_stats)
     os.environ["CPUPROFILE_REALTIME"] = "{}".format(realtime)
+    os.environ["PROFILESELECTED"] = "{}".format(selected)
 
     if preload:
-        _libpath = general.find_library_path("libprofiler")
-        if _libpath is not None:
+        _libpath = None
+        for libname in ("profiler", "tcmalloc_and_profiler"):
+            if _libpath is None:
+                _libpath = general.find_library_path(libname)
+        if _libpath is None:
             raise RuntimeError("Preload failed. Cannot find libprofiler")
         general.add_preload(_libpath)
 
@@ -56,17 +73,5 @@ def execute(cmd, prefix="cpu.prof", freq=250, malloc_stats=0, realtime=1, preloa
 
     general.execute(cmd, "{}.log".format(fname))
 
-    _libs = general.get_linked_libraries(exe)
-    _liblist = []
-    if _libs is not None:
-        for _lib in _libs:
-            _liblist += ["--add_lib={}".format(_lib)]
-
-    general.execute(["google-pprof", "--text"] + _liblist +
-                    args + [exe, fname], "{}.txt".format(fname))
-    general.execute(["google-pprof", "--text", "--cum"] + _liblist +
-                    args + [exe, fname], "{}.cum.txt".format(fname))
-    general.execute(["google-pprof", "--dot"] + _liblist +
-                    args + [exe, fname], "{}.dot".format(fname))
-    general.execute(["google-pprof", "--callgrind"] + _liblist +
-                    args + [exe, fname], "{}.callgrind".format(fname))
+    general.post_process(exe, fname, image_type, echo_dart,
+                         libs, args, generate, dot_args)

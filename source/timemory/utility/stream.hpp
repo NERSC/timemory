@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <iomanip>
 #include <iostream>
@@ -39,7 +40,7 @@
 #include <vector>
 
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -94,8 +95,8 @@ struct stream_entry
 
     void operator()(const string_t& val) { m_value = val; }
 
-    template <typename _Tp>
-    void construct(const _Tp& val)
+    template <typename Tp>
+    void construct(const Tp& val)
     {
         stringstream_t ss;
         ss.setf(m_format);
@@ -137,9 +138,9 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Stream, typename _Tp>
+template <typename StreamT, typename Tp>
 static void
-write_entry(_Stream& ss, const _Tp& obj)
+write_entry(StreamT& ss, const Tp& obj)
 {
     using stringstream_t = std::stringstream;
 
@@ -200,12 +201,12 @@ struct header : base::stream_entry
         base::stream_entry::construct(_val);
     }
 
-    template <typename _Tp>
-    explicit header(const _Tp& _val, format_flags _fmt, int _width, int _prec,
+    template <typename Tp>
+    explicit header(const Tp& _val, format_flags _fmt, int _width, int _prec,
                     bool _center = true)
     : base::stream_entry(0, -1, _fmt, _width, _prec, _center)
     {
-        base::stream_entry::construct(std::forward<_Tp>(_val));
+        base::stream_entry::construct(std::forward<Tp>(_val));
     }
 };
 
@@ -213,15 +214,15 @@ struct header : base::stream_entry
 
 struct entry : base::stream_entry
 {
-    template <typename _Tp>
-    explicit entry(_Tp&& _val, header& _hdr, bool _center = false, bool _left = false)
+    template <typename Tp>
+    explicit entry(Tp&& _val, header& _hdr, bool _center = false, bool _left = false)
     : base::stream_entry(_hdr)
     , m_hdr(&_hdr)
     , m_permit_empty(false)
     {
         m_center = _center;
         m_left   = _left;
-        base::stream_entry::construct(std::forward<_Tp>(_val));
+        base::stream_entry::construct(std::forward<Tp>(_val));
     }
 
     explicit entry(const std::string& _val, header& _hdr, bool _center = false,
@@ -322,6 +323,7 @@ public:
     void setf(format_flags v) { m_format = v; }
 
     void set_name(string_t v) { m_name = v; }
+    void set_banner(string_t v) { m_banner = v; }
 
     static int64_t index(const string_t& _val, const vector_t<string_t>& _obj)
     {
@@ -344,9 +346,9 @@ public:
         return idx;
     }
 
-    template <typename _Tp>
-    static int64_t index(const string_t&                                  _val,
-                         const vector_t<pair_t<string_t, vector_t<_Tp>>>& _obj)
+    template <typename Tp>
+    static int64_t index(const string_t&                                 _val,
+                         const vector_t<pair_t<string_t, vector_t<Tp>>>& _obj)
     {
         for(size_t i = 0; i < _obj.size(); ++i)
             if(_obj.at(i).first == _val)
@@ -354,9 +356,9 @@ public:
         return -1;
     }
 
-    template <typename _Tp>
-    static int64_t insert(const string_t&                            _val,
-                          vector_t<pair_t<string_t, vector_t<_Tp>>>& _obj)
+    template <typename Tp>
+    static int64_t insert(const string_t&                           _val,
+                          vector_t<pair_t<string_t, vector_t<Tp>>>& _obj)
     {
         auto idx = index(_val, _obj);
         if(idx < 0)
@@ -365,7 +367,7 @@ public:
             _obj.resize(_obj.size() + 1);
             _obj[idx].first = _val;
             if(settings::debug())
-                printf("[%s]> inserted '%s'...\n", demangle<_Tp>().c_str(), _val.c_str());
+                printf("[%s]> inserted '%s'...\n", demangle<Tp>().c_str(), _val.c_str());
         }
         return idx;
     }
@@ -438,7 +440,9 @@ public:
         stringstream_t       ss;
         map_t<string_t, int> offset;
 
-        obj.write_separator(ss);
+        obj.write_banner(ss);
+
+        obj.write_separator(ss, '-');
 
         int64_t norder_col = 0;
         for(const auto& itr : obj.m_order)
@@ -468,7 +472,7 @@ public:
         // end the line
         ss << obj.delim() << '\n';
 
-        obj.write_separator(ss);
+        obj.write_separator(ss, obj.m_delim);
 
         auto write_empty = [&](stringstream_t& _ss, int64_t _hidx, int64_t _offset) {
             const auto& _hitr  = obj.m_headers[_hidx].second;
@@ -527,17 +531,17 @@ public:
                 ss << obj.m_delim << '\n';
 
             if((i + 1) < obj.m_rows && (i % 10) == 9)
-                obj.write_separator(ss);
+                obj.write_separator(ss, obj.m_delim);
         }
 
-        obj.write_separator(ss);
+        obj.write_separator(ss, '-');
 
         os << ss.str();
         return os;
     }
 
-    template <typename _Stream>
-    void write_separator(_Stream& os) const
+    template <typename StreamT>
+    void write_separator(StreamT& os, char _delim) const
     {
         map_t<string_t, int> offset;
         stringstream_t       ss;
@@ -555,7 +559,10 @@ public:
             auto        _hsize = _hitr.size();
             const auto& _hdr   = _hitr.at(_offset % _hsize);
             auto        _w     = _hdr.width();
-            ss << m_delim << std::setw(_w) << "";
+            if(col == 1)
+                ss << m_delim << std::setw(_w) << "";
+            else
+                ss << _delim << std::setw(_w) << "";
             if(m_break.count(col) > 0)
                 break;
         }
@@ -564,8 +571,45 @@ public:
         os << ss.str();
     }
 
-    template <typename... _Tp, template <typename...> class _Tuple, size_t... _Idx>
-    static void write(stream&, const _Tuple<_Tp...>&, index_sequence<_Idx...>);
+    template <typename StreamT>
+    void write_banner(StreamT& os) const
+    {
+        if(m_banner.length() == 0)
+            return;
+
+        write_separator(os, '-');
+
+        map_t<string_t, int> offset;
+        stringstream_t       ss;
+
+        int64_t tot_w      = 0;
+        int64_t norder_col = 0;
+        for(const auto& _key : m_order)
+        {
+            int64_t col     = ++norder_col;
+            auto    _offset = offset[_key]++;
+            auto    _hidx   = index(_key, m_headers);
+            assert(_hidx >= 0);
+            const auto& _hitr  = m_headers[_hidx].second;
+            auto        _hsize = _hitr.size();
+            const auto& _hdr   = _hitr.at(_offset % _hsize);
+            tot_w += _hdr.width() + 1;
+            if(m_break.count(col) > 0)
+                break;
+        }
+
+        auto obeg = tot_w / 2;
+        obeg -= m_banner.length() / 2;
+        obeg += m_banner.length();
+        auto oend = tot_w - obeg;
+
+        ss << m_delim << std::setw(obeg) << std::right << m_banner << std::setw(oend)
+           << std::right << m_delim << '\n';
+        os << ss.str();
+    }
+
+    template <typename... Tp, template <typename...> class _Tuple, size_t... Idx>
+    static void write(stream&, const _Tuple<Tp...>&, index_sequence<Idx...>);
 
     void clear()
     {
@@ -665,6 +709,7 @@ private:
     int64_t      m_prefix_end   = 0;
     format_flags m_format       = {};
     string_t     m_name         = "";
+    string_t     m_banner       = "";
     header_map_t m_headers      = {};
     entry_map_t  m_entries      = {};
     order_map_t  m_order        = {};
@@ -673,7 +718,7 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 struct header_stream
 {
     using format_flags = std::ios_base::fmtflags;
@@ -685,8 +730,8 @@ struct header_stream
     , m_format(_fmt)
     {}
 
-    template <typename _Stream>
-    _Stream& operator()(_Stream& _os, const _Tp& _obj)
+    template <typename StreamT>
+    StreamT& operator()(StreamT& _os, const Tp& _obj)
     {
         _os << header(_obj, m_format, m_width, m_precision, m_center);
         return _os;
@@ -700,7 +745,7 @@ struct header_stream
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Args>
+template <typename... ArgsT>
 void
 write_header(stream& _os, const std::string& _label, std::ios_base::fmtflags _fmt = {},
              int _width = 0, int _prec = 0, bool _center = true)
@@ -711,9 +756,9 @@ write_header(stream& _os, const std::string& _label, std::ios_base::fmtflags _fm
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
-write_entry(stream& _os, const std::string& _label, const _Tp& _value, bool c = false,
+write_entry(stream& _os, const std::string& _label, const Tp& _value, bool c = false,
             bool l = false)
 {
     _os.set_name(_label);
@@ -732,9 +777,9 @@ write_entry(stream& _os, const std::string& _label, const std::string& _value,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
-write_entry(stream& _os, const std::vector<std::string>& _label, const _Tp& _value,
+write_entry(stream& _os, const std::vector<std::string>& _label, const Tp& _value,
             bool c = false, bool l = false)
 {
     write_entry(_os, _label.front(), _value, c, l);
@@ -742,7 +787,7 @@ write_entry(stream& _os, const std::vector<std::string>& _label, const _Tp& _val
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
+template <typename Tp>
 void
 write_entry(stream& _os, const std::string& _label,
             const std::vector<std::string>& _value, bool c = false, bool l = false)
@@ -753,9 +798,9 @@ write_entry(stream& _os, const std::string& _label,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Up>
+template <typename Tp, typename Up>
 void
-write_entry(stream& _os, const std::string& _label, const std::pair<_Tp, _Up>& _value,
+write_entry(stream& _os, const std::string& _label, const std::pair<Tp, Up>& _value,
             bool c = false, bool l = false)
 {
     write_entry(_os, _label, _value.first, c, l);
@@ -764,10 +809,10 @@ write_entry(stream& _os, const std::string& _label, const std::pair<_Tp, _Up>& _
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename _Up>
+template <typename Tp, typename Up>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::pair<_Tp, _Up>& _value, bool c = false, bool l = false)
+            const std::pair<Tp, Up>& _value, bool c = false, bool l = false)
 {
     size_t _L = _labels.size();
     write_entry(_os, _labels.at(0), _value.first, c, l);
@@ -776,10 +821,10 @@ write_entry(stream& _os, const std::vector<std::string>& _labels,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Alloc>
+template <typename Tp, typename... Alloc>
 void
 write_entry(stream& _os, const std::string& _label,
-            const std::vector<_Tp, _Alloc...>& _values, bool c = false, bool l = false)
+            const std::vector<Tp, Alloc...>& _values, bool c = false, bool l = false)
 {
     for(const auto& itr : _values)
         write_entry(_os, _label, itr, c, l);
@@ -787,22 +832,22 @@ write_entry(stream& _os, const std::string& _label,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Alloc>
+template <typename Tp, typename... Alloc>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::vector<_Tp, _Alloc...>& _values, bool c = false, bool l = false)
+            const std::vector<Tp, Alloc...>& _values, bool c = false, bool l = false)
 {
     size_t _L = _labels.size();
-    size_t _N = _values.size();
-    for(size_t i = 0; i < _N; ++i)
+    size_t N  = _values.size();
+    for(size_t i = 0; i < N; ++i)
         write_entry(_os, _labels.at(i % _L), _values.at(i), c, l);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
+template <typename Tp, size_t N>
 void
-write_entry(stream& _os, const std::string& _label, const std::array<_Tp, _N>& _values,
+write_entry(stream& _os, const std::string& _label, const std::array<Tp, N>& _values,
             bool c = false, bool l = false)
 {
     for(const auto& itr : _values)
@@ -811,64 +856,59 @@ write_entry(stream& _os, const std::string& _label, const std::array<_Tp, _N>& _
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
+template <typename Tp, size_t N>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::array<_Tp, _N>& _values, bool c = false, bool l = false)
+            const std::array<Tp, N>& _values, bool c = false, bool l = false)
 {
     size_t _L = _labels.size();
-    for(size_t i = 0; i < _N; ++i)
+    for(size_t i = 0; i < N; ++i)
         write_entry(_os, _labels.at(i % _L), _values.at(i), c, l);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, size_t... _Idx>
+template <typename... Types, size_t... Idx>
 void
-write_entry(stream& _os, const std::string& _label, const std::tuple<_Types...>& _values,
-            index_sequence<_Idx...>, bool c = false, bool l = false)
+write_entry(stream& _os, const std::string& _label, const std::tuple<Types...>& _values,
+            index_sequence<Idx...>, bool c = false, bool l = false)
 {
-    using init_list_type = std::initializer_list<int>;
-    auto&& ret =
-        init_list_type{ (write_entry(_os, _label, std::get<_Idx>(_values), c, l), 0)... };
-    consume_parameters(ret);
+    TIMEMORY_FOLD_EXPRESSION(write_entry(_os, _label, std::get<Idx>(_values), c, l));
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, size_t... _Idx>
+template <typename... Types, size_t... Idx>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::tuple<_Types...>& _values, index_sequence<_Idx...>, bool c = false,
+            const std::tuple<Types...>& _values, index_sequence<Idx...>, bool c = false,
             bool l = false)
 {
-    using init_list_type = std::initializer_list<int>;
-    size_t _L            = _labels.size();
-    auto&& ret           = init_list_type{ (
-        write_entry(_os, _labels.at(_Idx % _L), std::get<_Idx>(_values), c, l), 0)... };
-    consume_parameters(ret);
+    size_t _L = _labels.size();
+    TIMEMORY_FOLD_EXPRESSION(
+        write_entry(_os, _labels.at(Idx % _L), std::get<Idx>(_values), c, l));
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 void
-write_entry(stream& _os, const std::string& _labels, const std::tuple<_Types...>& _values,
+write_entry(stream& _os, const std::string& _labels, const std::tuple<Types...>& _values,
             bool c = false, bool l = false)
 {
-    constexpr size_t _N = sizeof...(_Types);
-    write_entry(_os, _labels, _values, make_index_sequence<_N>{}, c, l);
+    constexpr size_t N = sizeof...(Types);
+    write_entry(_os, _labels, _values, make_index_sequence<N>{}, c, l);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
+template <typename... Types>
 void
 write_entry(stream& _os, const std::vector<std::string>& _labels,
-            const std::tuple<_Types...>& _values, bool c = false, bool l = false)
+            const std::tuple<Types...>& _values, bool c = false, bool l = false)
 {
-    constexpr size_t _N = sizeof...(_Types);
-    write_entry(_os, _labels, _values, make_index_sequence<_N>{}, c, l);
+    constexpr size_t N = sizeof...(Types);
+    write_entry(_os, _labels, _values, make_index_sequence<N>{}, c, l);
 }
 
 //--------------------------------------------------------------------------------------//

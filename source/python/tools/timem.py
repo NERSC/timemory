@@ -2,8 +2,8 @@
 
 import os
 import sys
-import traceback
 import argparse
+import traceback
 
 
 """
@@ -71,8 +71,13 @@ if __name__ == "__main__":
         #
         set_environ("TIMEMORY_PRECISION", 6)
         set_environ("TIMEMORY_WIDTH", 12)
-        set_environ("TIMEMORY_SCIENTIFIC", 0)
-        set_environ("TIMEMORY_FILE_OUTPUT", 0)
+        set_environ("TIMEMORY_SCIENTIFIC", "OFF")
+        set_environ("TIMEMORY_FILE_OUTPUT", "OFF")
+        set_environ("TIMEMORY_BANNER", "OFF")
+        set_environ("TIMEMORY_AUTO_OUTPUT", "OFF")
+        set_environ("TIMEMORY_FILE_OUTPUT", "OFF")
+        set_environ("TIMEMORY_TEXT_OUTPUT", "OFF")
+        set_environ("TIMEMORY_SKIP_FINALIZE", "ON")
 
         #----------------------------------------------------------------------#
         #   parse arguments
@@ -92,8 +97,8 @@ if __name__ == "__main__":
         timemory.set_rusage_children()
 
         components = []
-        for c in ["wall_clock", "user_clock", "sys_clock", "cpu_clock", "cpu_util", "peak_rss",
-                  "num_minor_page_faults", "num_major_page_faults",
+        for c in ["wall_clock", "user_clock", "sys_clock", "cpu_clock", "cpu_util",
+                  "peak_rss", "num_minor_page_faults", "num_major_page_faults",
                   "voluntary_context_switch", "priority_context_switch"]:
             components.append(getattr(timemory.component, c))
 
@@ -102,7 +107,7 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             exe_name = "[{}]".format(sys.argv[1])
 
-        comp = timemory.component_tuple(components, "[]")
+        comp = timemory.component_tuple(components, "|")
         if len(sys.argv) > 1:
             comp.start()
             p = sp.Popen(sys.argv[1:])
@@ -112,20 +117,20 @@ if __name__ == "__main__":
             comp.start()
             comp.stop()
 
-        report = "{}".format(comp).replace(
-            "> [pyc] <module>@[]", "", 1).replace(" [laps: 1]", "", 1)
+        report = "{}".format(comp).strip().strip(">>>").strip().strip("|").strip()
         report = report.replace(": ", "", 1)
         suffix_report = report.split(",")
 
         strings = ["\n> {} total execution time :".format(exe_name)]
         for comp in suffix_report:
-            strings.append("    {}".format(comp))
+            if "laps" not in comp:
+                strings.append("    {}".format(comp))
 
         for s in strings:
             print("{}".format(s))
 
         # generate report
-        timemory.report()
+        # timemory.report()
 
         #----------------------------------------------------------------------#
         #   handler

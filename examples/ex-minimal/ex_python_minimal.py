@@ -1,7 +1,7 @@
 #!@PYTHON_EXECUTABLE@
 
 import timemory
-from timemory.util import auto_timer
+from timemory.bundle import auto_timer
 import sys
 
 

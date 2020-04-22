@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include "timemory/dll.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
@@ -64,6 +66,7 @@
 #    if !defined(_WINDOWS)
 #        define _WINDOWS
 #    endif
+
 //--------------------------------------------------------------------------------------//
 
 #elif defined(__APPLE__) || defined(__MACH__)
@@ -73,6 +76,7 @@
 #    if !defined(_UNIX)
 #        define _UNIX
 #    endif
+
 //--------------------------------------------------------------------------------------//
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
@@ -82,6 +86,7 @@
 #    if !defined(_UNIX)
 #        define _UNIX
 #    endif
+
 //--------------------------------------------------------------------------------------//
 
 #elif defined(__unix__) || defined(__unix) || defined(unix)
@@ -95,15 +100,6 @@
 //      LANGUAGE
 //
 //======================================================================================//
-
-// Define C++11
-#ifndef CXX11
-#    if __cplusplus > 199711L  // C++11
-#        define CXX11
-#    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
 
 // Define C++14
 #ifndef CXX14
@@ -123,11 +119,19 @@
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(CONSTEXPR_IF)
+#if !defined(CXX14)
+#    if !defined(_WINDOWS)
+#        error "timemory requires __cplusplus > 201103L (C++14)"
+#    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(IF_CONSTEXPR)
 #    if defined(CXX17)
-#        define IF_CONSTEXPR if constexpr
+#        define IF_CONSTEXPR(...) if constexpr(__VA_ARGS__)
 #    else
-#        define IF_CONSTEXPR if
+#        define IF_CONSTEXPR(...) if(__VA_ARGS__)
 #    endif
 #endif
 
@@ -186,162 +190,15 @@
 
 //======================================================================================//
 //
-//      GLOBAL LINKING
-//
-//======================================================================================//
-
-// Define macros for WIN32 for importing/exporting external symbols to DLLs
-#if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
-#    if defined(_TIMEMORY_DLL)
-#        define tim_api __declspec(dllexport)
-#    else
-#        if defined(_TIMEMORY_LINK_LIBRARY)
-#            define tim_api __declspec(dllimport)
-#        else
-#            define tim_api
-#        endif
-#    endif
-#else
-#    define tim_api
-#endif
-
-//======================================================================================//
-//
 //      WINDOWS WARNINGS
 //
 //======================================================================================//
 
 #if defined(_WINDOWS)
-#    pragma warning(disable : 4786)   // ID truncated to '255' char in debug info
-#    pragma warning(disable : 4068)   // unknown pragma
-#    pragma warning(disable : 4003)   // not enough actual params
-#    pragma warning(disable : 4244)   // possible loss of data
-#    pragma warning(disable : 4146)   // unsigned
-#    pragma warning(disable : 4129)   // unrecognized char escape
-#    pragma warning(disable : 4996)   // function may be unsafe
-#    pragma warning(disable : 4267)   // possible loss of data
-#    pragma warning(disable : 4700)   // uninitialized local variable used
-#    pragma warning(disable : 4217)   // locally defined symbol
-#    pragma warning(disable : 4251)   // needs to have dll-interface to be used
-#    pragma warning(disable : 4522)   // multiple assignment operators specified
-#    pragma warning(disable : 26495)  // Always initialize member variable (cereal issue)
-
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
-#endif
-
-//======================================================================================//
-//
-//      EXTERN TEMPLATE DECLARE AND INSTANTIATE
-//
-//======================================================================================//
-
-#if !defined(_WINDOWS)
-#    define _EXTERN_NAME_COMBINE(X, Y) X##Y
-#    define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
-#    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
-
-//--------------------------------------------------------------------------------------//
-//      extern declaration
-//
-#    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
-        extern template class ::tim::generic_bundle<__VA_ARGS__>;                        \
-        extern template class ::tim::component_tuple<__VA_ARGS__>;                       \
-        extern template class ::tim::auto_tuple<__VA_ARGS__>;                            \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
-
-#    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
-        extern template class ::tim::generic_bundle<__VA_ARGS__>;                        \
-        extern template class ::tim::component_list<__VA_ARGS__>;                        \
-        extern template class ::tim::auto_list<__VA_ARGS__>;                             \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
-
-#    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
-        extern template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),       \
-                                                      _EXTERN_LIST_ALIAS(_ALIAS)>;       \
-        extern template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),            \
-                                                 _EXTERN_LIST_ALIAS(_ALIAS)>;
-
-//--------------------------------------------------------------------------------------//
-//      extern instantiation
-//
-#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
-        template class ::tim::generic_bundle<__VA_ARGS__>;                               \
-        template class ::tim::component_tuple<__VA_ARGS__>;                              \
-        template class ::tim::auto_tuple<__VA_ARGS__>;                                   \
-        using _EXTERN_TUPLE_ALIAS(_ALIAS) = ::tim::component_tuple<__VA_ARGS__>;
-
-#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
-        template class ::tim::generic_bundle<__VA_ARGS__>;                               \
-        template class ::tim::component_list<__VA_ARGS__>;                               \
-        template class ::tim::auto_list<__VA_ARGS__>;                                    \
-        using _EXTERN_LIST_ALIAS(_ALIAS) = ::tim::component_list<__VA_ARGS__>;
-
-#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
-        template class ::tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),              \
-                                               _EXTERN_LIST_ALIAS(_ALIAS)>;              \
-        template class ::tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                   \
-                                          _EXTERN_LIST_ALIAS(_ALIAS)>;
-
-//--------------------------------------------------------------------------------------//
-//      extern storage singleton
-//
-#    define TIMEMORY_DECLARE_EXTERN_INIT(TYPE)                                           \
-        extern template impl::storage_singleton_t<storage<component::TYPE>>*             \
-        get_storage_singleton<storage<component::TYPE>>();                               \
-        extern template class impl::storage<component::TYPE,                             \
-                                            implements_storage<component::TYPE>::value>; \
-        extern template class storage<component::TYPE>;                                  \
-        extern template class singleton<                                                 \
-            impl::storage<component::TYPE, implements_storage<component::TYPE>::value>,  \
-            std::unique_ptr<                                                             \
-                impl::storage<component::TYPE,                                           \
-                              implements_storage<component::TYPE>::value>,               \
-                impl::storage_deleter<impl::storage<                                     \
-                    component::TYPE, implements_storage<component::TYPE>::value>>>>;
-
-#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
-        template impl::storage_singleton_t<storage<component::TYPE>>*                    \
-        get_storage_singleton<storage<component::TYPE>>();                               \
-        template class impl::storage<component::TYPE,                                    \
-                                     implements_storage<component::TYPE>::value>;        \
-        template class storage<component::TYPE>;                                         \
-        template class singleton<                                                        \
-            impl::storage<component::TYPE, implements_storage<component::TYPE>::value>,  \
-            std::unique_ptr<                                                             \
-                impl::storage<component::TYPE,                                           \
-                              implements_storage<component::TYPE>::value>,               \
-                impl::storage_deleter<impl::storage<                                     \
-                    component::TYPE, implements_storage<component::TYPE>::value>>>>;
-
-#else
-
-#    define _EXTERN_NAME_COMBINE(X, Y) X##Y
-#    define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
-#    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
-
-//--------------------------------------------------------------------------------------//
-//      extern declaration
-//
-#    define TIMEMORY_DECLARE_EXTERN_TUPLE(...)
-#    define TIMEMORY_DECLARE_EXTERN_LIST(...)
-#    define TIMEMORY_DECLARE_EXTERN_HYBRID(...)
-
-//--------------------------------------------------------------------------------------//
-//      extern instantiation
-//
-#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(...)
-
-//--------------------------------------------------------------------------------------//
-//      extern storage
-//
-#    define TIMEMORY_EXTERN_INIT_TYPE(...)
-#    define TIMEMORY_DECLARE_EXTERN_INIT(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(...)
-
+#    include <Windows.h>
 #endif
 
 //======================================================================================//
@@ -386,8 +243,10 @@
 #    if defined(DEBUG)
 #        define DEBUG_PRINT_HERE(fmt, ...)                                               \
             if(::tim::settings::debug())                                                 \
-            fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,       \
-                    __LINE__, __VA_ARGS__)
+            {                                                                            \
+                fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,   \
+                        __LINE__, __VA_ARGS__);                                          \
+            }
 #    else
 #        define DEBUG_PRINT_HERE(fmt, ...)
 #    endif

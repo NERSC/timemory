@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -50,35 +50,35 @@ namespace zip_impl
 {
 //======================================================================================//
 
-template <typename _Func, template <typename...> class _Tuple, typename... _Types,
-          size_t... _Idx>
-_Tuple<_Types...>
-zipper(_Func&& _func, const _Tuple<_Types...>& lhs, const _Tuple<_Types...>& rhs,
-       index_sequence<_Idx...>)
+template <typename FuncT, template <typename...> class _Tuple, typename... Types,
+          size_t... Idx>
+_Tuple<Types...>
+zipper(FuncT&& _func, const _Tuple<Types...>& lhs, const _Tuple<Types...>& rhs,
+       index_sequence<Idx...>)
 {
     using init_list_type = std::initializer_list<int>;
-    using result_type    = _Tuple<_Types...>;
+    using result_type    = _Tuple<Types...>;
 
     result_type ret{};
     auto&&      tmp = init_list_type{ (
-        std::get<_Idx>(ret) = _func(std::get<_Idx>(lhs), std::get<_Idx>(rhs)), 0)... };
+        std::get<Idx>(ret) = _func(std::get<Idx>(lhs), std::get<Idx>(rhs)), 0)... };
     consume_parameters(tmp);
     return ret;
 }
 
 //======================================================================================//
 
-template <typename _Tp>
+template <typename Tp>
 struct zip
 {
-    using type = _Tp;
+    using type = Tp;
 
-    zip(const _Tp& _v)
+    zip(const Tp& _v)
     : m_value(_v)
     {}
 
-    template <typename _Func>
-    zip(_Func&& _func, const type& _lhs, const type& _rhs)
+    template <typename FuncT>
+    zip(FuncT&& _func, const type& _lhs, const type& _rhs)
     {
         m_value = _func(_lhs, _rhs);
     }
@@ -104,8 +104,8 @@ struct zip<std::string>
     : m_value(_v)
     {}
 
-    template <typename _Func>
-    zip(_Func&& _func, const type& _lhs, const type& _rhs)
+    template <typename FuncT>
+    zip(FuncT&& _func, const type& _lhs, const type& _rhs)
     {
         m_value = _func(_lhs, _rhs);
     }
@@ -122,15 +122,15 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, size_t _N>
-struct zip<std::array<_Tp, _N>> : std::array<_Tp, _N>
+template <typename Tp, size_t N>
+struct zip<std::array<Tp, N>> : std::array<Tp, N>
 {
-    using type = std::array<_Tp, _N>;
+    using type = std::array<Tp, N>;
 
-    template <typename _Func>
-    zip(_Func&& _func, const type& _lhs, const type& _rhs)
+    template <typename FuncT>
+    zip(FuncT&& _func, const type& _lhs, const type& _rhs)
     {
-        for(size_t i = 0; i < _N; ++i)
+        for(size_t i = 0; i < N; ++i)
             (*this)[i] = _func(_lhs.at(i), _rhs.at(i));
     }
 
@@ -140,15 +140,15 @@ struct zip<std::array<_Tp, _N>> : std::array<_Tp, _N>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename... _Alloc>
-struct zip<std::vector<_Tp, _Alloc...>> : std::vector<_Tp, _Alloc...>
+template <typename Tp, typename... _Alloc>
+struct zip<std::vector<Tp, _Alloc...>> : std::vector<Tp, _Alloc...>
 {
-    using type = std::vector<_Tp, _Alloc...>;
+    using type = std::vector<Tp, _Alloc...>;
 
     using type::push_back;
 
-    template <typename _Func>
-    zip(_Func&& _func, const type& _lhs, const type& _rhs)
+    template <typename FuncT>
+    zip(FuncT&& _func, const type& _lhs, const type& _rhs)
     {
         for(size_t i = 0; i < std::min(_lhs.size(), _rhs.size()); ++i)
             push_back(_func(_lhs.at(i), _rhs.at(i)));
@@ -160,15 +160,15 @@ struct zip<std::vector<_Tp, _Alloc...>> : std::vector<_Tp, _Alloc...>
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class _Tuple, typename... _Types>
-struct zip<_Tuple<_Types...>> : _Tuple<_Types...>
+template <template <typename...> class _Tuple, typename... Types>
+struct zip<_Tuple<Types...>> : _Tuple<Types...>
 {
-    using type                   = _Tuple<_Types...>;
-    static constexpr size_t size = sizeof...(_Types);
+    using type                   = _Tuple<Types...>;
+    static constexpr size_t size = sizeof...(Types);
 
-    template <typename _Func>
-    zip(_Func&& _func, const type& _lhs, const type& _rhs)
-    : type(zipper(std::forward<_Func>(_func), _lhs, _rhs, make_index_sequence<size>{}))
+    template <typename FuncT>
+    zip(FuncT&& _func, const type& _lhs, const type& _rhs)
+    : type(zipper(std::forward<FuncT>(_func), _lhs, _rhs, make_index_sequence<size>{}))
     {}
 
     const type& get() const { return static_cast<const type&>(*this); }
@@ -179,13 +179,12 @@ struct zip<_Tuple<_Types...>> : _Tuple<_Types...>
 
 //======================================================================================//
 
-template <typename _Func, typename _Tp, typename... _Types>
-zip_impl::zip<decay_t<_Tp>>
-zip(_Func&& _func, _Tp&& _arg0, _Types&&... _args)
+template <typename FuncT, typename Tp, typename... Types>
+zip_impl::zip<decay_t<Tp>>
+zip(FuncT&& _func, Tp&& _arg0, Types&&... _args)
 {
-    return zip_impl::zip<decay_t<_Tp>>(std::forward<_Func>(_func),
-                                       std::forward<_Tp>(_arg0),
-                                       std::forward<_Types>(_args)...);
+    return zip_impl::zip<decay_t<Tp>>(std::forward<FuncT>(_func), std::forward<Tp>(_arg0),
+                                      std::forward<Types>(_args)...);
 }
 
 }  // namespace mpl

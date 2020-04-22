@@ -1,0 +1,52 @@
+# timemory-ompt
+
+Produces a `libtimemory-ompt.so` that uses GOTCHA wrappers around ~245 MPI functions.
+
+Four functions are provided for C, C++, and Fortran:
+
+- `uint64_t init_timemory_ompt_tools()`
+  - Returns the number of initializations
+- `uint64_t stop_timemory_ompt_tools(uint64_t idx)`
+  - Removes the initialization request at `idx`
+  - Returns the number of remaining initializations
+- `void register_timemory_ompt()`
+  - Ensures a global initialization exists until it deregistration
+- `void deregister_timemory_ompt()`
+  - Deactivates the global initialization
+
+## Usage
+
+The environement variable `ENABLE_TIMEMORY_OMPT` (default: `"ON"`) controls configuration of the instrumentation.
+This library configures the `tim::user_ompt_bundle` component with the components specified by the following environment variables in terms of priority:
+
+- `TIMEMORY_OMPT_COMPONENTS`
+- `TIMEMORY_PROFILER_COMPONENTS`
+- `TIMEMORY_GLOBAL_COMPONENTS`
+- `TIMEMORY_COMPONENT_LIST_INIT`
+
+When one of the above environment variables are set to `"none"`, then the priority search for component configurations is abandoned.
+
+### Examples
+
+The following will result in MPI function instrumented with `cpu_clock`:
+
+```console
+export TIMEMORY_OMPT_COMPONENTS="cpu_clock"
+export TIMEMORY_PROFILER_COMPONENTS="peak_rss"
+export TIMEMORY_GLOBAL_COMPONENTS="wall_clock"
+```
+
+The following will result in MPI functions containing no instrumentation:
+
+```console
+export TIMEMORY_OMPT_COMPONENTS="none"
+export TIMEMORY_PROFILER_COMPONENTS="peak_rss"
+export TIMEMORY_GLOBAL_COMPONENTS="wall_clock"
+```
+
+The following will result in MPI function instrumented with `wall_clock` and `page_rss`:
+
+```console
+export TIMEMORY_OMPT_COMPONENTS=""
+export TIMEMORY_GLOBAL_COMPONENTS="wall_clock,page_rss"
+```
