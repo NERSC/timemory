@@ -25,6 +25,8 @@ class Timemory(CMakePackage):
 
     linux = False if platform == 'darwin' else True
 
+    variant('shared', default=True, description='Build shared libraries')
+    variant('static', default=False, description='Build static libraries')
     variant('python', default=True, description='Enable Python support')
     variant('mpi', default=True, description='Enable MPI support')
     variant('tau', default=False, description='Enable TAU support')
@@ -56,6 +58,8 @@ class Timemory(CMakePackage):
     variant('cuda_arch', default='auto', description='CUDA architecture name',
             values=('auto', 'kepler', 'tesla', 'maxwell', 'pascal',
                     'volta', 'turing'), multi=False)
+    variant('cpu_target', default='auto',
+            description='Build for specific cpu architecture (specify cpu-model)')
 
     depends_on('cmake@3.11:', type='build')
 
@@ -106,11 +110,18 @@ class Timemory(CMakePackage):
             args.append('-DMPI_CXX_COMPILER={}'.format(spec['mpi'].mpicxx))
 
         if '+cuda' in spec:
-            for arch in ('auto', 'kepler', 'tesla', 'maxwell', 'pascal', 'volta',
-                         'turing'):
-                if "cuda_arch={}".format(arch) in spec:
-                    args.append('-DTIMEMORY_CUDA_ARCH={}'.format(arch))
-                    break
+            targ = "{}".format(spec.variants['cuda_arch']).split('=')[1]
+            key = '' if spec.satisfies('@:3.0.1') else 'TIMEMORY_'
+            # newer versions use 'TIMEMORY_CUDA_ARCH'
+            args.append('-D{}CUDA_ARCH={}'.format(key, targ))
+
+        cpu_target = "{}".format(spec.variants['cpu_target']).split('=')[1]
+        if cpu_target is not 'auto':
+            args.append('-DCpuArch_TARGET={}'.format(cpu_target))
+
+        for dep in ('shared', 'static'):
+            args.append('-DBUILD_{}_LIBS={}'.format(
+                dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
         for dep in ('tools', 'examples', 'kokkos_tools'):
             args.append('-DTIMEMORY_BUILD_{}={}'.format(

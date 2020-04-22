@@ -191,7 +191,7 @@ def run_pyctest():
         platform.uname()[0],
         helpers.GetSystemVersionInfo(),
         platform.uname()[4],
-        os.path.basename(os.path.realpath(os.environ["CXX"])),
+        os.path.basename(os.environ["CXX"]),
         compiler_version)
     pyct.BUILD_NAME = '-'.join(pyct.BUILD_NAME.split())
 
@@ -278,7 +278,10 @@ def run_pyctest():
                 pyct.BUILD_TYPE = "Debug"
         else:
             build_opts["TIMEMORY_USE_COVERAGE"] = "OFF"
-        pyct.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;/usr/.*")
+
+    pyct.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;/usr/.*")
+    pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS", "100")
+    pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS", "100")
 
     # Use the options to create a build name with configuration
     build_name = set()
