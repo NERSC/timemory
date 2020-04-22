@@ -1629,7 +1629,7 @@ tim::cupti::available_metrics(CUdevice device)
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
-            if(settings::verbose() > 0 || settings::debug())
+            if(settings::verbose() > 2 && settings::debug())
                 printf("Metric %s cannot be profiled as metric requires GPU"
                        "time duration for kernel run.\n",
                        metricName);
@@ -1862,7 +1862,7 @@ tim::cupti::available_metrics_info(CUdevice device)
         {
             std::get<1>(metric_info).push_back(false);
 
-            if(settings::verbose() > 0 || settings::debug())
+            if(settings::verbose() > 2 && settings::debug())
                 printf("Metric %s cannot be profiled as metric requires GPU"
                        "time duration for kernel run.\n",
                        metricName);

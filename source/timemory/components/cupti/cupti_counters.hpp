@@ -587,7 +587,7 @@ private:
             auto& _evt = std::get<1>(_dev_init);
             auto& _met = std::get<2>(_dev_init);
 
-            if(_evt.size() > 0 && _met.size() > 0)
+            if(_evt.size() > 0 || _met.size() > 0)
             {
                 _profiler.reset(new cupti::profiler(_evt, _met, _dev));
                 _used_devs.insert(_dev);
@@ -597,10 +597,14 @@ private:
                     _used_mets.insert(itr);
                 _labels = generate_labels();
             }
+            else
+            {
+                fprintf(stderr, "[cupti_counters]> Warning! No events or metrics!\n");
+            }
         }
         else
         {
-            fprintf(stderr, "[cupti_counters]> Warning! No devices available!");
+            fprintf(stderr, "[cupti_counters]> Warning! No devices available!\n");
         }
 
         if(_used_devs.size() > 0)

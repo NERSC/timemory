@@ -37,6 +37,8 @@
 //
 #include "timemory/operations/declaration.hpp"
 //
+#include "timemory/settings/declaration.hpp"
+//
 //======================================================================================//
 
 namespace tim
@@ -73,7 +75,8 @@ struct add_secondary
               enable_if_t<(trait::secondary_data<Up>::value), int> = 0>
     add_secondary(Storage* _storage, Iterator _itr, const Up& _rhs)
     {
-        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr)
+        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr ||
+           !settings::add_secondary())
             return;
 
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
@@ -99,7 +102,8 @@ private:
     auto add_secondary_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int)
         -> decltype(_rhs.get_secondary(), void())
     {
-        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr)
+        if(!trait::runtime_enabled<Tp>::get() || _storage == nullptr ||
+           !settings::add_secondary())
             return;
 
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;

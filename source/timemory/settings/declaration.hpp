@@ -249,6 +249,10 @@ struct TIMEMORY_SETTINGS_DLL settings
         bool, stack_clearing, "TIMEMORY_STACK_CLEARING",
         "Enable/disable stopping any markers still running during finalization", true)
 
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        bool, add_secondary, "TIMEMORY_ADD_SECONDARY",
+        "Enable/disable components adding secondary (child) entries", true)
+
     //==================================================================================//
     //
     //                          COMPONENTS SPECIFIC SETTINGS
@@ -771,6 +775,9 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_COUNT", dart_count)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_LABEL", dart_label)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_CPU_AFFINITY", cpu_affinity)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TARGET_PID", target_pid)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_STACK_CLEARING", stack_clearing)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_ADD_SECONDARY", add_secondary)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_MULTIPLEXING", papi_multiplexing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_FAIL_ON_ERROR", papi_fail_on_error)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_QUIET", papi_quiet)

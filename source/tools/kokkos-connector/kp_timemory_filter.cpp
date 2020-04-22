@@ -185,8 +185,9 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
         tim::get_env("KOKKOS_PROFILE_COMPONENTS", default_components));
 
     std::cout << "USING: " << tim::demangle<profile_entry_t>() << "\n" << std::endl;
-    kernel_regex_expr = tim::get_env<std::string>("KOKKOS_REGEX", kernel_regex_expr);
-    std::cout << "KOKKOS_REGEX : \"" << kernel_regex_expr << "\"\n" << std::endl;
+    kernel_regex_expr =
+        tim::get_env<std::string>("KOKKOS_PROFILE_REGEX", kernel_regex_expr);
+    std::cout << "KOKKOS_PROFILE_REGEX : \"" << kernel_regex_expr << "\"\n" << std::endl;
     kernel_regex = std::regex(kernel_regex_expr, regex_constants);
 }
 

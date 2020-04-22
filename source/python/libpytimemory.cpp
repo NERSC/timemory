@@ -553,6 +553,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(int32_t, node_count);
     // misc
     SETTING_PROPERTY(bool, stack_clearing);
+    SETTING_PROPERTY(bool, add_secondary);
+    SETTING_PROPERTY(tim::process::id_t, target_pid);
     // papi
     SETTING_PROPERTY(bool, papi_multiplexing);
     SETTING_PROPERTY(bool, papi_fail_on_error);
