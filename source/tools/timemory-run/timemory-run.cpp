@@ -318,8 +318,7 @@ main(int argc, char** argv)
     //  Helper function for adding regex expressions
     //
     auto add_regex = [](auto& regex_array, const std::string& regex_expr) {
-        auto regex_constants =
-            std::regex_constants::ECMAScript | std::regex_constants::icase;
+        auto regex_constants = std::regex_constants::ECMAScript;
         if(!regex_expr.empty())
             regex_array.push_back(std::regex(regex_expr, regex_constants));
     };
@@ -1130,15 +1129,13 @@ instrument_entity(const std::string& function_name)
     if(_user_include)
         return true;
 
-    std::regex exclude(
-        "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|\\{lambda|::_["
-        "A-Z]|::__[A-Za-z]|std::max|std::min|std::fill|std::forward|std::get|dyninst)");
+    std::regex exclude("(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
+                       "std::max|std::min|std::fill|std::forward|std::get|dyninst)");
     std::regex leading("^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(|\\(__|_"
                        "GLOBAL|targ|PMPI_|new|delete|std::allocator|std::move|nvtx|gcov|"
-                       "main\\.cold\\.|TAU|tau|Tau|dyn|RT|init|fini|[A-Za-z]_|_IO|dl|sys|"
-                       "pthread|posix)");
+                       "main\\.cold\\.|TAU|tau|Tau|dyn|RT|_IO|dl|sys|pthread|posix)");
     std::regex stlfunc("^std::");
-    std::set<std::string> whole = { "malloc", "free" };
+    std::set<std::string> whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
     {

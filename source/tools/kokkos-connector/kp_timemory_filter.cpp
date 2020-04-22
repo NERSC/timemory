@@ -44,8 +44,7 @@ using section_map_t   = std::unordered_map<uint64_t, section_entry_t>;
 //--------------------------------------------------------------------------------------//
 
 static std::string kernel_regex_expr = "^[A-Za-z]";
-static auto        regex_constants =
-    std::regex_constants::ECMAScript | std::regex_constants::icase;
+static auto        regex_constants   = std::regex_constants::ECMAScript;
 static auto kernel_regex = std::regex(kernel_regex_expr, regex_constants);
 
 //--------------------------------------------------------------------------------------//
