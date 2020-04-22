@@ -34,6 +34,11 @@ if(TIMEMORY_BUILD_MPIP AND (NOT TARGET timemory-cxx-shared OR NOT TIMEMORY_USE_M
     set(TIMEMORY_BUILD_MPIP OFF)
 endif()
 
+if(NOT TARGET timemory-cxx-shared AND TIMEMORY_BUILD_KOKKOS_TOOLS)
+    message(AUTHOR_WARNING "TIMEMORY_BUILD_KOKKOS_TOOLS requires BUILD_SHARED_LIBS=ON...")
+    set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF CACHE BOOL "Build the kokkos-tools libraries" FORCE)
+endif()
+
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-avail tool
 #
