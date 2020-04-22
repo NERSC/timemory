@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 # this is for internal use
-if(NOT TIMEMORY_USE_OMPT)
+if(NOT TIMEMORY_BUILD_OMPT_LIBRARY OR NOT TIMEMORY_USE_OMPT OR
+    NOT TARGET timemory-cxx-shared OR TIMEMORY_SKIP_BUILD)
     return()
 endif()
 

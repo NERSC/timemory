@@ -26,12 +26,17 @@ add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF) # still dev
 add_option(TIMEMORY_BUILD_DYNINST_TOOLS "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
-add_option(TIMEMORY_BUILD_MPIP "Build the mpiP library" ${_MPIP})
+add_option(TIMEMORY_BUILD_MPIP_LIBRARY "Build the mpiP library" ${_MPIP})
+add_option(TIMEMORY_BUILD_OMPT_LIBRARY "Build the OMPT library" ${_MPIP})
 
-if(TIMEMORY_BUILD_MPIP AND (NOT TARGET timemory-cxx-shared OR NOT TIMEMORY_USE_MPI))
-    message(AUTHOR_WARNING "TIMEMORY_BUILD_MPIP requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_MPI=ON...")
-    set(TIMEMORY_BUILD_MPIP OFF PARENT_SCOPE)
-    set(TIMEMORY_BUILD_MPIP OFF)
+if(TIMEMORY_BUILD_MPIP_LIBRARY AND (NOT TARGET timemory-cxx-shared OR NOT TIMEMORY_USE_MPI))
+    message(AUTHOR_WARNING "TIMEMORY_BUILD_MPIP_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_MPI=ON...")
+    set(TIMEMORY_BUILD_MPIP_LIBRARY OFF CACHE BOOL "Build the mpiP library" FORCE)
+endif()
+
+if(TIMEMORY_BUILD_OMPT_LIBRARY AND (NOT TARGET timemory-cxx-shared OR NOT TIMEMORY_USE_OMPT))
+    message(AUTHOR_WARNING "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
+    set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
 endif()
 
 if(NOT TARGET timemory-cxx-shared AND TIMEMORY_BUILD_KOKKOS_TOOLS)

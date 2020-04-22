@@ -41,14 +41,14 @@ class Timemory(CMakePackage):
     variant('likwid', default=linux, description='Enable LIKWID support')
     variant('caliper', default=True, description='Enable Caliper support')
     variant('dyninst', default=linux,
-            description='Enable dynamic instrumentation')
+            description='Build dynamic instrumentation tools')
     variant('examples', default=False, description='Build/install examples')
     variant('gperftools', default=True,
             description='Enable gperftools support')
     variant('kokkos_tools', default=True,
-            description='Build generic kokkos-tools library, e.g. kp_timemory')
-    variant('kokkos_modules', default=False,
-            description='Build dedicated kokkos-tools libraries, e.g. kp_timemory_cpu_flops')
+            description='Build generic kokkos-tools libraries, e.g. kp_timemory, kp_timemory_filter')
+    variant('kokkos_build_config', default=False,
+            description='Build pre-configured (i.e. dedicated) kokkos-tools libraries, e.g. kp_timemory_cpu_flops')
     variant('build_caliper', default=True,
             description='Build Caliper submodule instead of spack installation')
     variant('build_gotcha', default=False,
@@ -60,6 +60,24 @@ class Timemory(CMakePackage):
                     'volta', 'turing'), multi=False)
     variant('cpu_target', default='auto',
             description='Build for specific cpu architecture (specify cpu-model)')
+    variant('use_arch', default=False,
+            description='Build all of timemory w/ cpu_target architecture flags (default: roofline toolkit only)')
+    variant('tls_model', default='global-dynamic', description='Thread-local static model',
+            values=('global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'),
+            multi=False)
+    variant('lto', default=False, description='Build w/ link-time optimization')
+    variant('statistics', default=True,
+            description='Build components w/ support for statistics (min/max/stddev)')
+    variant('extra_optimizations', default=True,
+            description='Build timemory with extra optimization flags')
+    variant('cxxstd', default='14', description='C++ language standard',
+            values=('14', '17', '20'), multi=False)
+    variant('mpip_library', default=linux,
+            description='Build stand-alone timemory-mpip GOTCHA library')
+    variant('ompt_library', default=True,
+            description='Build stand-alone timemory-ompt library')
+    variant('require_packages', default=False,
+            description='find_package(...) resulting in NOTFOUND generates error')
 
     depends_on('cmake@3.11:', type='build')
 
@@ -86,23 +104,33 @@ class Timemory(CMakePackage):
               msg='+kokkos_tools requires +tools')
     conflicts('+kokkos_modules', when='~tools',
               msg='+kokkos_modules requires +tools')
+    conflicts('tls_model=local-dynamic', when='+python',
+              msg='+python require tls_model=global-dynamic')
+    conflicts('tls_model=initial-exec', when='+python',
+              msg='+python require tls_model=global-dynamic')
+    conflicts('tls_model=local-exec', when='+python',
+              msg='+python require tls_model=global-dynamic')
+    conflicts('+mpip_library', when='~mpi', msg='+mpip_library requires +mpi')
+    conflicts('+mpip_library', when='~gotcha', msg='+mpip_library requires +gotcha')
+    conflicts('+ompt_library', when='~ompt', msg='+ompt_library requires +ompt')
 
     def cmake_args(self):
         spec = self.spec
 
-        # Use spack install of Caliper and/or GOTCHA
-        # instead of internal submodule build
         args = [
             '-DTIMEMORY_BUILD_PYTHON=ON',
             '-DTIMEMORY_BUILD_TESTING=OFF',
-            '-DTIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON',
             '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON',
         ]
 
+        cxxstd = spec.variants['cxxstd'].value
+        args.append('-DCMAKE_CXX_STANDARD={}'.format(cxxstd))
+
+        tls = spec.variants['tls_model'].value
+        args.append('-DTIMEMORY_TLS_MODEL={}'.format(tls))
+
         if '+python' in spec:
-            args.append('-DPYTHON_EXECUTABLE={}'.format(
-                spec['python'].command.path))
-            args.append('-DTIMEMORY_TLS_MODEL=global-dynamic')
+            args.append('-DPYTHON_EXECUTABLE={}'.format(spec['python'].command.path))
 
         if '+mpi' in spec:
             args.append('-DTIMEMORY_USE_MPI_LINK_FLAGS=OFF')
@@ -110,33 +138,37 @@ class Timemory(CMakePackage):
             args.append('-DMPI_CXX_COMPILER={}'.format(spec['mpi'].mpicxx))
 
         if '+cuda' in spec:
-            targ = "{}".format(spec.variants['cuda_arch']).split('=')[1]
+            targ = spec.variants['cuda_arch'].value
             key = '' if spec.satisfies('@:3.0.1') else 'TIMEMORY_'
             # newer versions use 'TIMEMORY_CUDA_ARCH'
             args.append('-D{}CUDA_ARCH={}'.format(key, targ))
 
-        cpu_target = "{}".format(spec.variants['cpu_target']).split('=')[1]
+        cpu_target = spec.variants['cpu_target'].value
         if cpu_target is not 'auto':
             args.append('-DCpuArch_TARGET={}'.format(cpu_target))
 
+        # spack options which translate to TIMEMORY_<OPTION>
+        for dep in ('require_packages', 'build_caliper', 'build_gotcha', 'build_ompt',
+                    'kokkos_build_config'):
+            args.append('-DTIMEMORY_{}={}'.format(
+                dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
+
+        # spack options which translate to BUILD_<OPTION>_LIBS
         for dep in ('shared', 'static'):
             args.append('-DBUILD_{}_LIBS={}'.format(
                 dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
-        for dep in ('tools', 'examples', 'kokkos_tools'):
+        # spack options which translate to TIMEMORY_BUILD_<OPTION>
+        for dep in ('tools', 'examples', 'kokkos_tools', 'lto', 'extra_optimizations',
+                    'mpip_library', 'ompt_library'):
             args.append('-DTIMEMORY_BUILD_{}={}'.format(
                 dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
 
-        for dep in ('build_caliper', 'build_gotcha', 'build_ompt'):
-            args.append('-DTIMEMORY_{}={}'.format(
-                dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
-
+        # spack options which translate to TIMEMORY_USE_<OPTION>
         for dep in ('python', 'mpi', 'tau', 'papi', 'ompt', 'cuda', 'cupti', 'vtune',
-                    'upcxx', 'gotcha', 'likwid', 'caliper', 'dyninst', 'gperftools'):
+                    'upcxx', 'gotcha', 'likwid', 'caliper', 'dyninst', 'gperftools',
+                    'statistics'):
             args.append('-DTIMEMORY_USE_{}={}'.format(
                 dep.upper(), 'ON' if '+{}'.format(dep) in spec else 'OFF'))
-
-        args.append('-DTIMEMORY_KOKKOS_BUILD_CONFIG={}'.format(
-            'ON' if '+kokkos_modules' in spec else 'OFF'))
 
         return args
