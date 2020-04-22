@@ -586,31 +586,6 @@ main(int argc, char** argv)
         throw std::runtime_error("MPI support was requested but timemory was not built "
                                  "with MPI and GOTCHA support");
     }
-    else if(use_mpi)
-    {
-        BPatch_Vector<BPatch_snippet*> mpiArgs;
-        mpiArgs.push_back(new BPatch_constExpr(use_mpi));
-        BPatch_funcCallExpr mpiExpr(*mpistub, mpiArgs);
-        appThread->oneTimeCode(mpiExpr);
-    }
-
-    // appThread->beginInsertionSet();
-
-    BPatch_Vector<BPatch_snippet*> setupArgs;
-    setupArgs.push_back(new BPatch_constExpr(default_components.c_str()));
-    BPatch_funcCallExpr setupExpr(*setupstub, setupArgs);
-    appThread->oneTimeCode(setupExpr);
-
-    BPatch_Vector<BPatch_snippet*> terminateArgs;
-    BPatch_funcCallExpr            terminateExpr(*terminatestub, terminateArgs);
-    terminate_expr = &terminateExpr;
-
-    auto exit_callback = bpatch->registerExitCallback(&timemory_thread_exit);
-    consume_parameters(exit_callback);
-
-    initialize(appThread, appImage, initArgs);
-
-    verbprintf(0, "Did initialize\n");
 
     for(auto&& itr : instrumentations)
         itr(enterstub, exitstub);
@@ -632,6 +607,30 @@ main(int argc, char** argv)
         invoke_routine_in_func(appThread, appImage, exitpoint, BPatch_entry,
                                terminatestub, exitargs);
     }
+
+    BPatch_Vector<BPatch_snippet*> terminateArgs;
+    BPatch_funcCallExpr            terminateExpr(*terminatestub, terminateArgs);
+    terminate_expr = &terminateExpr;
+
+    auto exit_callback = bpatch->registerExitCallback(&timemory_thread_exit);
+    consume_parameters(exit_callback);
+
+    if(use_mpi)
+    {
+        BPatch_Vector<BPatch_snippet*> mpiArgs;
+        mpiArgs.push_back(new BPatch_constExpr(use_mpi));
+        BPatch_funcCallExpr mpiExpr(*mpistub, mpiArgs);
+        appThread->oneTimeCode(mpiExpr);
+    }
+
+    BPatch_Vector<BPatch_snippet*> setupArgs;
+    setupArgs.push_back(new BPatch_constExpr(default_components.c_str()));
+    BPatch_funcCallExpr setupExpr(*setupstub, setupArgs);
+    appThread->oneTimeCode(setupExpr);
+
+    // initialize(appThread, appImage, initArgs);
+
+    verbprintf(0, "Did initialize\n");
 
     /*auto success = appThread->finalizeInsertionSet(true);
 
@@ -660,12 +659,14 @@ main(int argc, char** argv)
         }
     };
 
-    appThread->continueExecution();
     _continue_exec();
     _wait_exec();
 
-    if(!appThread->isTerminated())
+    /*if(!appThread->isTerminated())
+    {
+        fprintf(stderr, "terminating execution\n");
         appThread->terminateExecution();
+    }*/
 
     if(appThread->terminationStatus() == ExitedNormally)
     {
@@ -1019,7 +1020,7 @@ read_collection(const std::string& fname, std::set<std::string>& collection_set)
 bool
 process_file_for_instrumentation(const std::string& file_name)
 {
-    std::regex ext_regex("\\.(C|S)$");
+    std::regex ext_regex("\\.(c|C|S)$");
     std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$");
     std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
                              "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)");
@@ -1131,11 +1132,13 @@ instrument_entity(const std::string& function_name)
 
     std::regex exclude(
         "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|\\{lambda|::_["
-        "A-Z]|::__[A-Za-z]|std::max|std::min|std::fill|std::forward|std::get)");
+        "A-Z]|::__[A-Za-z]|std::max|std::min|std::fill|std::forward|std::get|dyninst)");
     std::regex leading("^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(|\\(__|_"
                        "GLOBAL|targ|PMPI_|new|delete|std::allocator|std::move|nvtx|gcov|"
-                       "main\\.cold\\.|TAU|tau|Tau)");
+                       "main\\.cold\\.|TAU|tau|Tau|dyn|RT|init|fini|[A-Za-z]_|_IO|dl|sys|"
+                       "pthread|posix)");
     std::regex stlfunc("^std::");
+    std::set<std::string> whole = { "malloc", "free" };
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
     {
@@ -1151,10 +1154,18 @@ instrument_entity(const std::string& function_name)
                    function_name.c_str());
         return false;
     }
+
     // don't instrument the functions when key is found at the start of the function name
     if(std::regex_search(function_name, leading))
     {
-        verbprintf(2, "Excluding instrumentation for function '%s'...\n",
+        verbprintf(2, "Excluding leading match instrumentation for function '%s'...\n",
+                   function_name.c_str());
+        return false;
+    }
+
+    if(whole.count(function_name) > 0)
+    {
+        verbprintf(2, "Excluding while match instrumentation for function '%s'...\n",
                    function_name.c_str());
         return false;
     }

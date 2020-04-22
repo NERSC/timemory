@@ -169,7 +169,7 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     // timemory_init is expecting some args so generate some
     auto  dir  = TIMEMORY_JOIN("_", loadSeq, interfaceVer, devInfoCount);
     char* cstr = strdup(dir.c_str());
-    tim::timemory_init(1, &cstr, "", "");
+    tim::timemory_init(1, &cstr);
     free(cstr);
 
     std::string default_components = "wall_clock";

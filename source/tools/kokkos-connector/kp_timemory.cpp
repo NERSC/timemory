@@ -143,74 +143,27 @@ kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
     // if using roofline, we want to suppress time_output which
     // would result in the second pass (required by roofline) to end
     // up in a different directory
-    bool use_roofline = tim::get_env<bool>("KOKKOS_ROOFLINE", false);
-    // store this for later
-    std::string folder = tim::settings::output_path();
-
-    auto papi_events              = tim::get_env<std::string>("PAPI_EVENTS", "");
-    tim::settings::time_output()  = false;  // output in sub-dir with time
-    tim::settings::papi_events()  = papi_events;
-    tim::settings::auto_output()  = true;   // print when destructing
-    tim::settings::cout_output()  = true;   // print to stdout
-    tim::settings::text_output()  = true;   // print text files
-    tim::settings::json_output()  = true;   // print to json
-    tim::settings::banner()       = true;   // suppress banner
-    tim::settings::mpi_finalize() = false;  // don't finalize MPI during timemory_finalize
+    bool use_roofline            = tim::get_env<bool>("KOKKOS_ROOFLINE", false);
+    auto papi_events             = tim::get_env<std::string>("PAPI_EVENTS", "");
+    tim::settings::papi_events() = papi_events;
 
     // timemory_init is expecting some args so generate some
-    std::stringstream ss;
-    ss << loadSeq << "_" << interfaceVer << "_" << devInfoCount;
-    auto cstr = const_cast<char*>(ss.str().c_str());
-    tim::timemory_init(1, &cstr, "", "");
-    // over-ride the output path set by timemory_init to the
-    // original setting
-    tim::settings::output_path() = folder;
+    auto  dir  = TIMEMORY_JOIN("_", loadSeq, interfaceVer, devInfoCount);
+    char* cstr = strdup(dir.c_str());
+    tim::timemory_init(1, &cstr);
+    free(cstr);
 
-    // the environment variable to configure components
-    std::string env_var = "KOKKOS_TIMEMORY_COMPONENTS";
-    // if roofline is enabled, provide nothing by default
-    // if roofline is not enabled, profile wall-clock by default
-    std::string components = (use_roofline) ? "" : "wall_clock;peak_rss";
-    // query the environment
-    auto env_result = tim::get_env(env_var, components);
-    std::transform(env_result.begin(), env_result.end(), env_result.begin(),
-                   [](unsigned char c) -> unsigned char { return std::tolower(c); });
-    // if a roofline component is not set in the environment, then add both the
-    // cpu and gpu roofline
-    if(use_roofline && env_result.find("roofline") == std::string::npos)
-        env_result = TIMEMORY_JOIN(";", env_result, "gpu_roofline", "cpu_roofline");
-    // configure the bundle to use these components
-    tim::configure<KokkosUserBundle>(tim::enumerate_components(tim::delimit(env_result)));
+    std::string default_components =
+        (use_roofline) ? "gpu_roofline_flops, cpu_roofline" : "wall_clock, peak_rss";
 
-#if defined(TIMEMORY_USE_GOTCHA)
-    //
-    //  This is not really a general tool, especially not the GOTCHA that
-    //  intercepts the rand and srand. It is more of a demonstration
-    //  of how to use the gotcha interface
-    //
-    auto gotcha_lvl = tim::get_env("KOKKOS_GOTCHA_MODE", 0);
-    if(gotcha_lvl == 1 || gotcha_lvl > 2)
-    {
-        // when explicitly configured here, the gotcha wrappers are immediately generated
-        TIMEMORY_C_GOTCHA(rand_gotcha_t, 0, srand);
-        TIMEMORY_C_GOTCHA(rand_gotcha_t, 1, rand);
-    }
-    if(gotcha_lvl >= 2)
-    {
-        // for malloc/free specifically, we make sure the default activation
-        // of the gotcha is off. Wrapping malloc/free has the potential to include
-        // a limited number of malloc/free calls within the timemory library itself
-        misc_gotcha_t::get_default_ready() = false;
-        // when the initializer is overloaded, the gotcha is fully scoped
-        // via reference counting. When no components containing this gotcha
-        // is alive, the gotcha is disabled and all function calls use the original
-        // wrappee
-        misc_gotcha_t::get_initializer() = []() {
-            TIMEMORY_C_GOTCHA(misc_gotcha_t, 0, malloc);
-            TIMEMORY_C_GOTCHA(misc_gotcha_t, 1, free);
-        };
-    }
-#endif
+    if(!tim::settings::papi_events().empty() && !use_roofline)
+        default_components += ", papi_vector";
+
+    // check environment variables "KOKKOS_TIMEMORY_COMPONENTS" and
+    // "KOKKOS_PROFILE_COMPONENTS"
+    tim::env::configure<KokkosUserBundle>(
+        "KOKKOS_TIMEMORY_COMPONENTS",
+        tim::get_env("KOKKOS_PROFILE_COMPONENTS", default_components));
 }
 
 extern "C" void

@@ -340,8 +340,14 @@ timemory_thread_exit(BPatch_thread* proc, BPatch_exitType exit_type)
         {
             case ExitedNormally:
             {
-                fprintf(stderr, "[timemory-run]> Thread exited normally\n");
-                proc->oneTimeCode(*terminate_expr);
+                static bool _once = false;
+                if(!_once)
+                {
+                    _once = true;
+                    fprintf(stderr, "[timemory-run]> Thread exited normally\n");
+                    terminate_expr = nullptr;
+                    proc->oneTimeCode(*terminate_expr);
+                }
                 break;
             }
             case ExitedViaSignal:
@@ -357,6 +363,7 @@ timemory_thread_exit(BPatch_thread* proc, BPatch_exitType exit_type)
             }
         }
     }
+    proc->getProcess()->continueExecution();
 }
 
 //======================================================================================//
