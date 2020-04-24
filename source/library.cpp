@@ -128,9 +128,11 @@ extern "C"
 {
 #if !defined(_WINDOWS)
     TIMEMORY_WEAK_PREFIX
-    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX;
+    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
-    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX;
+    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
 
     void timemory_mpip_library_ctor() {}
     void timemory_ompt_library_ctor() {}

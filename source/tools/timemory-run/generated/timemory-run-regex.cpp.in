@@ -38,3 +38,15 @@ check_if_timemory_source_file(const std::string& fname)
     //
     // clang-format on
 }
+
+//======================================================================================//
+//
+static inline void
+consume()
+{
+    consume_parameters(initialize_expr, bpatch, use_ompt, use_mpi, use_mpip,
+                       stl_func_instr, werror, loop_level_instr, errorPrint,
+                       binaryRewrite, debugPrint, expectError);
+    if(false)
+        timemory_thread_exit(nullptr, ExitedNormally);
+}

@@ -286,26 +286,33 @@ endif()
 #
 add_subdirectory(tools)
 
-add_library(timemory-mpip-library INTERFACE)
-add_library(timemory-ompt-library INTERFACE)
+add_interface_library(timemory-mpip-library)
+add_interface_library(timemory-ompt-library)
 
 set(_OMPT_LIB)
+if(TARGET timemory-ompt-static)
+    set(_OMPT_LIB timemory-ompt-static)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ompt-static)
+endif()
+
 if(TARGET timemory-ompt-shared)
     set(_OMPT_LIB timemory-ompt-shared)
-elseif(TARGET timemory-ompt-static)
-    set(_OMPT_LIB timemory-ompt-static)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ompt-shared)
 endif()
 
 if(TARGET timemory-mpip)
     target_compile_definitions(timemory-mpip-library INTERFACE TIMEMORY_USE_MPIP_LIBRARY)
     target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip)
-    # list(APPEND TIMEMORY_COMPILED_LIBRARIES timemory-mpip)
+    list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mpip)
+else()
+    inform_empty_interface(timemory-mpip-library "MPIP standalone instrumentation library")
 endif()
 
 if(_OMPT_LIB)
     target_compile_definitions(timemory-ompt-library INTERFACE TIMEMORY_USE_OMPT_LIBRARY)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
-    # list(APPEND TIMEMORY_COMPILED_LIBRARIES timemory-mpip)
+else()
+    inform_empty_interface(timemory-ompt-library "OpenMP stand-alone instrumentation library")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -340,7 +347,8 @@ get_property(TIMEMORY_INTERMEDIATE_LIBRARIES GLOBAL PROPERTY TIMEMORY_INTERMEDIA
 set(LIBRARIES ${TIMEMORY_COMPILED_LIBRARIES}
               ${TIMEMORY_INTERFACE_LIBRARIES}
               ${TIMEMORY_INTERMEDIATE_LIBRARIES}
-              ${TIMEMORY_PACKAGE_LIBRARIES})
+              ${TIMEMORY_PACKAGE_LIBRARIES}
+              ${TIMEMORY_TOOL_LIBRARIES})
 
 export(TARGETS  ${LIBRARIES}
     NAMESPACE   ${PROJECT_NAME}::

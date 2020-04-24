@@ -92,9 +92,11 @@ static bool        use_mpip           = false;
 static bool        use_ompt           = false;
 static std::string main_fname         = "main";
 static std::string argv0              = "";
+static std::string cmdv0              = "";
 static std::string default_components = "wall_clock";
 static std::string instr_push_func    = "timemory_push_trace";
 static std::string instr_pop_func     = "timemory_pop_trace";
+static std::string prefer_library     = "";
 
 using snippet_t     = BPatch_snippet;
 using snippet_vec_t = BPatch_Vector<snippet_t*>;
@@ -105,8 +107,10 @@ static BPatch_funcCallExpr* terminate_expr  = nullptr;
 static snippet_vec_t        init_names;
 static snippet_vec_t        fini_names;
 
-static std::vector<std::regex>  regex_include;
-static std::vector<std::regex>  regex_exclude;
+static std::vector<std::regex>  func_include;
+static std::vector<std::regex>  func_exclude;
+static std::vector<std::regex>  file_include;
+static std::vector<std::regex>  file_exclude;
 static std::set<std::string>    collection_includes;
 static std::set<std::string>    collection_excludes;
 static std::vector<std::string> collection_paths = { "collections",
@@ -184,10 +188,6 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
                        BPatch_Vector<BPatch_snippet*> callee_args);
 
 void
-initialize(BPatch_process* appThread, BPatch_image* appImage,
-           BPatch_Vector<BPatch_snippet*>& initArgs);
-
-void
 check_cost(BPatch_snippet snippet);
 
 void
@@ -213,7 +213,7 @@ load_dependent_libraries(BPatch_binaryEdit* bedit, char* bindings);
 
 int
 timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
-                        char* sharedlibname, char* staticlibname, char* bindings);
+                        char* libname, char* bindings);
 
 //======================================================================================//
 
@@ -332,38 +332,43 @@ struct function_signature
 //======================================================================================//
 
 static void
-timemory_thread_exit(BPatch_thread* proc, BPatch_exitType exit_type)
+timemory_thread_exit(BPatch_thread* thread, BPatch_exitType exit_type)
 {
-    if(proc && terminate_expr)
+    if(!thread)
+        return;
+
+    BPatch_process* app = thread->getProcess();
+
+    if(!terminate_expr)
     {
-        switch(exit_type)
+        app->continueExecution();
+        return;
+    }
+
+    switch(exit_type)
+    {
+        case ExitedNormally:
         {
-            case ExitedNormally:
-            {
-                static bool _once = false;
-                if(!_once)
-                {
-                    _once = true;
-                    fprintf(stderr, "[timemory-run]> Thread exited normally\n");
-                    terminate_expr = nullptr;
-                    proc->oneTimeCode(*terminate_expr);
-                }
-                break;
-            }
-            case ExitedViaSignal:
-            {
-                fprintf(stderr, "[timemory-run]> Thread terminated unexpectedly\n");
-                break;
-            }
-            case NoExit:
-            default:
-            {
-                fprintf(stderr, "[timemory-run]> %s invoked with NoExit\n", __FUNCTION__);
-                break;
-            }
+            fprintf(stderr, "[timemory-run]> Thread exited normally\n");
+            break;
+        }
+        case ExitedViaSignal:
+        {
+            fprintf(stderr, "[timemory-run]> Thread terminated unexpectedly\n");
+            break;
+        }
+        case NoExit:
+        default:
+        {
+            fprintf(stderr, "[timemory-run]> %s invoked with NoExit\n", __FUNCTION__);
+            break;
         }
     }
-    proc->getProcess()->continueExecution();
+
+    // terminate_expr = nullptr;
+    thread->oneTimeCode(*terminate_expr);
+
+    app->continueExecution();
 }
 
 //======================================================================================//

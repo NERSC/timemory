@@ -115,6 +115,9 @@ main(int argc, char** argv)
     if(_cmdc > 0)
         std::cout << "\n [command]: " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
+    if(_cmdc > 0)
+        cmdv0 = _cmdv[0];
+
     // now can loop through the options.  If the first character is '-', then we know we
     // have an option.  Check to see if it is one of our options and process it.  If it is
     // unrecognized, then set the errflag to report an error.  When we come to a non '-'
@@ -136,11 +139,17 @@ main(int argc, char** argv)
         .description("Enable binary-rewrite to new executable")
         .count(1);
     parser.add_argument()
-        .names({ "-R", "--regex-include" })
+        .names({ "-I", "-R", "--function-include" })
         .description("Regex for selecting functions");
     parser.add_argument()
-        .names({ "-E", "--regex-exclude" })
+        .names({ "-E", "--function-exclude" })
         .description("Regex for excluding functions");
+    parser.add_argument()
+        .names({ "-MI", "-MR", "--module-include" })
+        .description("Regex for selecting modules/files/libraries");
+    parser.add_argument()
+        .names({ "-ME", "--module-exclude" })
+        .description("Regex for excluding modules/files/libraries");
     parser.add_argument()
         .names({ "-m", "--main-function" })
         .description("The primary function to instrument around, e.g. 'main'")
@@ -183,6 +192,11 @@ main(int argc, char** argv)
         .description("Instrumentation mode. 'trace' mode is immutable, 'region' mode is "
                      "mutable by timemory library interface")
         .choices({ "trace", "region" })
+        .count(1);
+    parser.add_argument()
+        .names({ "--prefer" })
+        .description("Prefer this library types when available")
+        .choices({ "shared", "static" })
         .count(1);
     parser
         .add_argument({ "--mpi" },
@@ -309,6 +323,9 @@ main(int argc, char** argv)
         }
     }
 
+    if(parser.exists("prefer"))
+        prefer_library = parser.get<std::string>("prefer");
+
     //----------------------------------------------------------------------------------//
     //
     //                              REGEX OPTIONS
@@ -323,8 +340,8 @@ main(int argc, char** argv)
             regex_array.push_back(std::regex(regex_expr, regex_constants));
     };
 
-    add_regex(regex_include, tim::get_env<std::string>("TIMEMORY_REGEX_INCLUDE", ""));
-    add_regex(regex_exclude, tim::get_env<std::string>("TIMEMORY_REGEX_EXCLUDE", ""));
+    add_regex(func_include, tim::get_env<std::string>("TIMEMORY_REGEX_INCLUDE", ""));
+    add_regex(func_exclude, tim::get_env<std::string>("TIMEMORY_REGEX_EXCLUDE", ""));
 
     using regex_arg_t = std::vector<std::string>;
 
@@ -332,14 +349,28 @@ main(int argc, char** argv)
     {
         auto keys = parser.get<regex_arg_t>("R");
         for(const auto& itr : keys)
-            add_regex(regex_include, itr);
+            add_regex(func_include, itr);
     }
 
     if(parser.exists("E"))
     {
         auto keys = parser.get<regex_arg_t>("E");
         for(const auto& itr : keys)
-            add_regex(regex_exclude, itr);
+            add_regex(func_exclude, itr);
+    }
+
+    if(parser.exists("FR"))
+    {
+        auto keys = parser.get<regex_arg_t>("FR");
+        for(const auto& itr : keys)
+            add_regex(file_include, itr);
+    }
+
+    if(parser.exists("FE"))
+    {
+        auto keys = parser.get<regex_arg_t>("FE");
+        for(const auto& itr : keys)
+            add_regex(file_exclude, itr);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -400,8 +431,7 @@ main(int argc, char** argv)
     if(binaryRewrite)
     {
         verbprintf(0, "Before timemory_rewrite_binary\n");
-        timemory_rewrite_binary(bpatch, mutname, outfile, (char*) sharedlibname,
-                                (char*) staticlibname, bindings);
+        timemory_rewrite_binary(bpatch, mutname, outfile, (char*) libname, bindings);
         char cwd[FUNCNAMELEN];
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
@@ -492,11 +522,9 @@ main(int argc, char** argv)
     }
 
     verbprintf(0, "Module size before loading instrumentation library: %lu\n",
-               (long unsigned) m.size());
+               (long unsigned) m_full->size());
 
     // Load the library that has entry and exit routines.
-    // Do not load the timemory library if we're rewriting the binary. Use LD_PRELOAD
-    // instead. The library may be loaded at a different location.
     auto load_library = [m_full, appThread, &parser](std::string _libname) {
         bpatch->setDelayedParsing(true);
         verbprintf(0, "Before appThread->loadLibrary(%s)...\n", _libname.c_str());
@@ -563,7 +591,7 @@ main(int argc, char** argv)
         load_library("timemory-ompt.so");
 
     verbprintf(0, "Module size after loading instrumentation library: %lu\n",
-               (long unsigned) m.size());
+               (long unsigned) m_full->size());
 
     verbprintf(0, "Before find_function\n");
 
@@ -596,13 +624,12 @@ main(int argc, char** argv)
     if(exitpoint == nullptr)
     {
         fprintf(stderr, "UNABLE TO FIND exit()\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     else
     {
         // When _exit is invoked, call termination routine
         BPatch_Vector<BPatch_snippet*> exitargs;
-        exitargs.push_back(new BPatch_constExpr("_exit"));
         invoke_routine_in_func(appThread, appImage, exitpoint, BPatch_entry,
                                terminatestub, exitargs);
     }
@@ -611,8 +638,8 @@ main(int argc, char** argv)
     BPatch_funcCallExpr            terminateExpr(*terminatestub, terminateArgs);
     terminate_expr = &terminateExpr;
 
-    auto exit_callback = bpatch->registerExitCallback(&timemory_thread_exit);
-    consume_parameters(exit_callback);
+    // auto exit_callback = bpatch->registerExitCallback(&timemory_thread_exit);
+    // consume_parameters(exit_callback);
 
     if(use_mpi)
     {
@@ -624,10 +651,10 @@ main(int argc, char** argv)
 
     BPatch_Vector<BPatch_snippet*> setupArgs;
     setupArgs.push_back(new BPatch_constExpr(default_components.c_str()));
+    setupArgs.push_back(new BPatch_constExpr(false));
+    setupArgs.push_back(new BPatch_constExpr(cmdv0.c_str()));
     BPatch_funcCallExpr setupExpr(*setupstub, setupArgs);
     appThread->oneTimeCode(setupExpr);
-
-    // initialize(appThread, appImage, initArgs);
 
     verbprintf(0, "Did initialize\n");
 
@@ -643,22 +670,26 @@ main(int argc, char** argv)
 
     printf("Executing...\n");
 
-    auto _continue_exec = [&]() {
-        if(!appThread->continueExecution())
-            fprintf(stderr, "continueExecution failed\n");
-    };
-
     auto _wait_exec = [&]() {
         while(!appThread->isTerminated())
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            appThread->continueExecution();
+            verbprintf(4, "Process is not terminated...\n");
+            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             bpatch->waitForStatusChange();
+            verbprintf(4, "Process status change...\n");
             if(appThread->isStopped())
-                _continue_exec();
+            {
+                verbprintf(4, "Process is stopped, continuing execution...\n");
+                if(!appThread->continueExecution())
+                {
+                    fprintf(stderr, "continueExecution failed\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
         }
     };
 
-    _continue_exec();
     _wait_exec();
 
     /*if(!appThread->isTerminated())
@@ -671,6 +702,8 @@ main(int argc, char** argv)
     {
         if(appThread->isTerminated())
             printf("End of application\n");
+        else
+            _wait_exec();
     }
     else if(appThread->terminationStatus() == ExitedViaSignal)
     {
@@ -695,7 +728,7 @@ main(int argc, char** argv)
 //
 int
 timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
-                        char* sharedlibname, char* staticlibname, char* bindings)
+                        char* libname, char* bindings)
 {
     verbprintf(0, "Inside timemory_rewrite_binary, name=%s, out=%s\n", mutateeName,
                outfile);
@@ -711,6 +744,7 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     BPatch_Vector<BPatch_function*> allFuncs     = *mutateeImage->getProcedures();
 
     auto load_library = [mutatee_addr_space](std::string _libname) {
+        verbprintf(0, "loading library: '%s'...", _libname.c_str());
         bool result = mutatee_addr_space->loadLibrary(_libname.c_str());
         verbprintf(1, "loadLibrary(%s) result = %d\n", _libname.c_str(), result);
         if(!result)
@@ -725,21 +759,22 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
     };
 
     bool isStaticExecutable = mutatee_addr_space->isStaticExecutable();
-    if(isStaticExecutable)
-        load_library(staticlibname);
-    else
-        load_library(sharedlibname);
+
+    auto get_library_ext = [=](std::string lname) {
+        if(!prefer_library.empty())
+            return (lname +
+                    ((prefer_library == "static" || isStaticExecutable) ? ".a" : ".so"));
+        else
+            return (lname + ((isStaticExecutable) ? ".a" : ".so"));
+    };
+
+    load_library(get_library_ext(libname));
 
     if(use_mpip && !isStaticExecutable)
         load_library("libtimemory-mpip.so");
 
     if(use_ompt)
-    {
-        if(isStaticExecutable)
-            load_library("libtimemory-ompt.a");
-        else
-            load_library("libtimemory-ompt.so");
-    }
+        load_library(get_library_ext("libtimemory-ompt"));
 
     auto* entryTrace  = find_function(mutateeImage, instr_push_func.c_str());
     auto* exitTrace   = find_function(mutateeImage, instr_pop_func.c_str());
@@ -827,12 +862,15 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
 
     mpi_params.push_back(new BPatch_constExpr(use_mpi));
     init_params.push_back(new BPatch_constExpr(default_components.c_str()));
+    init_params.push_back(new BPatch_constExpr(true));
+    init_params.push_back(new BPatch_constExpr(cmdv0.c_str()));
 
     BPatch_funcCallExpr setup_call(*setupFunc, init_params);
     BPatch_funcCallExpr cleanup_call(*cleanupFunc, fini_params);
 
     if(use_mpi && mpiFunc)
         init_names.push_back(new BPatch_funcCallExpr(*mpiFunc, mpi_params));
+
     init_names.push_back(&setup_call);
     fini_names.push_back(&cleanup_call);
 
@@ -907,8 +945,8 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
 
         auto name = get_func_file_line_info(mutatee_addr_space->getImage(), *itr);
         if(name.get().empty() || routine_constraint(fname) ||
-           routine_constraint(name.m_name.c_str()) || !instrument_entity(name.m_name) ||
-           !instrument_entity(name.get()))
+           routine_constraint(name.m_name.c_str()) ||
+           !(instrument_entity(name.m_name) || instrument_entity(name.get())))
             continue;
 
         insert_trace(*itr, mutatee_addr_space, entryTrace, exitTrace, name);
@@ -958,10 +996,10 @@ timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
         fprintf(stderr, "Error chdir('result') = %i\n", ret);
 
     mutatee_addr_space->writeFile(modifiedFileName.c_str());
-    if(!isStaticExecutable)
-    {
-        // unlink(sharedlibname);
-    }
+
+    // if(!isStaticExecutable)
+    //    unlink(sharedlibname);
+
     return 0;
 }
 
@@ -1031,50 +1069,49 @@ process_file_for_instrumentation(const std::string& file_name)
 
     if(check_if_timemory_source_file(file_name))
     {
-        verbprintf(3, "Excluding instrumentation for timemory source file: '%s'...\n",
+        verbprintf(3, "Excluding instrumentation [timemory source] : '%s'...\n",
                    file_name.c_str());
         return false;
     }
 
     if(std::regex_search(file_name, ext_regex))
     {
-        verbprintf(2, "Excluding instrumentation based on extension: '%s'...\n",
+        verbprintf(3, "Excluding instrumentation [file extension] : '%s'...\n",
                    file_name.c_str());
         return false;
     }
 
     if(std::regex_search(file_name, sys_regex))
     {
-        verbprintf(2, "Excluding instrumentation for system function: '%s'...\n",
+        verbprintf(3, "Excluding instrumentation [system library] : '%s'...\n",
                    file_name.c_str());
         return false;
     }
 
     if(std::regex_search(file_name, corelib_regex))
     {
-        verbprintf(2, "Excluding instrumentation for core library: '%s'...\n",
+        verbprintf(3, "Excluding instrumentation [core library] : '%s'...\n",
                    file_name.c_str());
         return false;
     }
 
     if(std::regex_search(file_name, userlib_regex))
     {
-        verbprintf(3, "Excluding instrumentation for timemory library: '%s'...\n",
+        verbprintf(3, "Excluding instrumentation [timemory library] : '%s'...\n",
                    file_name.c_str());
         return false;
     }
 
     if(std::regex_search(file_name, prefix_regex))
     {
-        verbprintf(3, "Excluding instrumentation for TAU prefix: '%s'...\n",
-                   file_name.c_str());
+        verbprintf(3, "Excluding instrumentation [TAU] : '%s'...\n", file_name.c_str());
         return false;
     }
 
     auto is_include = [&]() {
-        if(regex_include.empty())
+        if(file_include.empty())
             return true;
-        for(auto& itr : regex_include)
+        for(auto& itr : file_include)
         {
             if(std::regex_search(file_name, itr))
                 return true;
@@ -1083,7 +1120,7 @@ process_file_for_instrumentation(const std::string& file_name)
     };
 
     auto is_exclude = [&]() {
-        for(auto& itr : regex_exclude)
+        for(auto& itr : file_exclude)
         {
             if(std::regex_search(file_name, itr))
                 return true;
@@ -1110,13 +1147,22 @@ bool
 instrument_entity(const std::string& function_name)
 {
     auto is_include = [&](bool _if_empty) {
-        if(regex_include.empty())
+        if(func_include.empty())
             return _if_empty;
-        for(auto& itr : regex_include)
+        for(auto& itr : func_include)
+        {
+            if(std::regex_search(function_name, itr))
+                return true;
+        }
+        return false;
+    };
+
+    auto is_exclude = [&]() {
+        for(auto& itr : func_exclude)
         {
             if(std::regex_search(function_name, itr))
             {
-                verbprintf(1, "Including user-regexed function '%s'...\n",
+                verbprintf(2, "Excluding function [user-regex] : '%s'...\n",
                            function_name.c_str());
                 return true;
             }
@@ -1124,10 +1170,14 @@ instrument_entity(const std::string& function_name)
         return false;
     };
 
-    auto _user_include = is_include(false);
+    auto _user_include = is_include(false) && !is_exclude();
 
     if(_user_include)
+    {
+        verbprintf(2, "Including function [user-regex] : '%s'...\n",
+                   function_name.c_str());
         return true;
+    }
 
     std::regex exclude("(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
                        "std::max|std::min|std::fill|std::forward|std::get|dyninst)");
@@ -1139,15 +1189,14 @@ instrument_entity(const std::string& function_name)
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
     {
-        verbprintf(2, "Excluding STL instrumentation for function '%s'...\n",
-                   function_name.c_str());
+        verbprintf(3, "Excluding function [stl] : '%s'...\n", function_name.c_str());
         return false;
     }
 
     // don't instrument the functions when key is found anywhere in function name
     if(std::regex_search(function_name, exclude))
     {
-        verbprintf(3, "Excluding critical instrumentation on function '%s'...\n",
+        verbprintf(3, "Excluding function [critical, any match] : '%s'...\n",
                    function_name.c_str());
         return false;
     }
@@ -1155,32 +1204,23 @@ instrument_entity(const std::string& function_name)
     // don't instrument the functions when key is found at the start of the function name
     if(std::regex_search(function_name, leading))
     {
-        verbprintf(2, "Excluding leading match instrumentation for function '%s'...\n",
+        verbprintf(3, "Excluding function [critical, leading match] : '%s'...\n",
                    function_name.c_str());
         return false;
     }
 
     if(whole.count(function_name) > 0)
     {
-        verbprintf(2, "Excluding while match instrumentation for function '%s'...\n",
+        verbprintf(3, "Excluding function [critical, whole match] : '%s'...\n",
                    function_name.c_str());
         return false;
     }
 
-    auto is_exclude = [&]() {
-        for(auto& itr : regex_exclude)
-        {
-            if(std::regex_search(function_name, itr))
-            {
-                verbprintf(1, "Excluding user-regexed function '%s'...\n",
-                           function_name.c_str());
-                return true;
-            }
-        }
-        return false;
-    };
-
     bool use = is_include(true) && !is_exclude();
+    if(use)
+        verbprintf(2, "Including function [user-regex] : '%s'...\n",
+                   function_name.c_str());
+
     return use;
 }
 
@@ -1319,7 +1359,7 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
     if(snippet == NULL)
     {
         fprintf(stderr, "Unable to create snippet to call callee\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     if(points.size())
@@ -1329,73 +1369,6 @@ invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
     }
     delete snippet;
     return nullptr;
-}
-
-//======================================================================================//
-//
-// initialize calls InitCode, the initialization routine in the user
-// application. It is executed exactly once, before any other routine.
-//
-void
-initialize(BPatch_process* appThread, BPatch_image* appImage,
-           BPatch_Vector<BPatch_snippet*>& initArgs)
-{
-    // Find the initialization function and call it
-    BPatch_function* init_func = find_function(appImage, "timemory_trace_init");
-    if(init_func == nullptr)
-    {
-        fprintf(stderr, "Unable to find function timemory_trace_init\n");
-        exit(1);
-    }
-
-    // Find the finalization function and call it
-    BPatch_function* fini_func = find_function(appImage, "timemory_trace_finalize");
-    if(fini_func == nullptr)
-    {
-        fprintf(stderr, "Unable to find function timemory_trace_finalize\n");
-        exit(1);
-    }
-
-    if(binaryRewrite)
-    {
-        BPatch_Vector<BPatch_snippet*> finiArgs = {};
-        // check_cost(init_Expr);
-        // locate the entry point for main
-        BPatch_function* main_entry = find_function(appImage, main_fname.c_str());
-        if(main_entry == nullptr)
-        {
-            fprintf(stderr, "timemory-run: Unable to find function '%s'\n",
-                    main_fname.c_str());
-            exit(1);
-        }
-
-        if(!main_entry->findPoint(BPatch_entry))
-        {
-            fprintf(stderr,
-                    "timemory-run: entry points for '%s' or init_snippet for "
-                    "Init are null\n",
-                    main_fname.c_str());
-            exit(1);
-        }
-
-        auto init_points  = main_entry->findPoint(BPatch_entry);
-        auto init_snippet = BPatch_funcCallExpr(*init_func, initArgs);
-        auto fini_points  = main_entry->findPoint(BPatch_exit);
-        auto fini_snippet = BPatch_funcCallExpr(*fini_func, finiArgs);
-        // We invoke the init_snippet before any other call in main and fini_snippet after
-        // any other call in main
-        // Insert the init_snippet to be called before first snippet
-        appThread->insertSnippet(init_snippet, *init_points, BPatch_callBefore,
-                                 BPatch_firstSnippet);
-        // Insert the fini_snippet to be called before last snippet
-        appThread->insertSnippet(fini_snippet, *fini_points, BPatch_callAfter,
-                                 BPatch_firstSnippet);
-    }
-    else
-    {
-        BPatch_funcCallExpr init_Expr(*init_func, initArgs);
-        appThread->oneTimeCode(init_Expr);
-    }
 }
 
 //======================================================================================//
@@ -1412,10 +1385,7 @@ module_constraint(char* fname)
        _fname.find("tim::") != std::string::npos)
         return true;
 
-    if(process_file_for_instrumentation(std::string(fname)))
-        return false;  // ok to instrument
-
-    if((strcmp(fname, "DEFAULT_MODULE") == 0) ||
+    if((strcmp(fname, "DEFAULT_MODULE") == 0) || (strcmp(fname, "LIBRARY_MODULE") == 0) ||
        ((fname[len - 2] == '.') && (fname[len - 1] == 'c')) ||
        ((fname[len - 2] == '.') && (fname[len - 1] == 'C')) ||
        ((fname[len - 3] == '.') && (fname[len - 2] == 'c') && (fname[len - 1] == 'c')) ||
@@ -1426,18 +1396,17 @@ module_constraint(char* fname)
        ((fname[len - 4] == '.') && (fname[len - 3] == 'F') && (fname[len - 2] == '9') &&
         (fname[len - 1] == '0')) ||
        ((fname[len - 2] == '.') && (fname[len - 1] == 'F')) ||
-       ((fname[len - 2] == '.') && (fname[len - 1] == 'f')) ||
-       //((fname[len-3] == '.') && (fname[len-2] == 's') && (fname[len-1] == 'o'))||
-       (strcmp(fname, "LIBRARY_MODULE") == 0))
+       ((fname[len - 2] == '.') && (fname[len - 1] == 'f')))
     {
-        // It is ok to instrument this module. Constraint doesn't exist.
+        //((fname[len-3] == '.') && (fname[len-2] == 's') && (fname[len-1] == 'o'))||
         return false;
     }
-    else
-    {
-        // do not instrument
-        return true;
-    }
+
+    if(process_file_for_instrumentation(std::string(fname)))
+        return false;
+
+    // do not instrument
+    return true;
 }
 
 //======================================================================================//
@@ -1525,4 +1494,14 @@ load_dependent_libraries(BPatch_binaryEdit* bedit, char* bindings)
     }
 
     return true;
+}
+
+//======================================================================================//
+//
+static inline void
+consume()
+{
+    consume_parameters(initialize_expr, errorPrint, debugPrint, expectError);
+    if(false)
+        timemory_thread_exit(nullptr, ExitedNormally);
 }

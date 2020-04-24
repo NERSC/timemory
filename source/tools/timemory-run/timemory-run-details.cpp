@@ -372,3 +372,15 @@ find_func_or_calls(const char* name, BPatch_Vector<BPatch_point*>& points,
     v.push_back(name);
     return find_func_or_calls(v, points, image, loc);
 }
+
+//======================================================================================//
+//
+static inline void
+consume()
+{
+    consume_parameters(initialize_expr, bpatch, use_ompt, use_mpi, use_mpip,
+                       stl_func_instr, werror, loop_level_instr, errorPrint,
+                       binaryRewrite, debugPrint, expectError);
+    if(false)
+        timemory_thread_exit(nullptr, ExitedNormally);
+}

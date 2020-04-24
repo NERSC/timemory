@@ -177,7 +177,8 @@ extern "C"
         TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_pop_trace(const char* name)
         TIMEMORY_VISIBILITY("default");
-    TIMEMORY_DECL void timemory_trace_init(const char*) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_trace_init(const char*, bool, const char*)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_trace_finalize(void) TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_trace_set_env(const char*, const char*)
         TIMEMORY_VISIBILITY("default");

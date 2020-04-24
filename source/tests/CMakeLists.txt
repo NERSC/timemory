@@ -21,6 +21,13 @@ if(TIMEMORY_USE_TESTING_LINK_LIBRARY)
     endif()
 endif()
 
+if(TIMEMORY_USE_OMPT)
+    find_package(OpenMP QUIET)
+    if(OpenMP_FOUND)
+        set(_OPENMP OpenMP::OpenMP_CXX)
+    endif()
+endif()
+
 # add_library(no-store-merge INTERFACE)
 # add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 
@@ -80,7 +87,7 @@ add_timemory_google_test(threading_tests
     SOURCES         threading_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-plotting timemory-analysis-tools timemory-ompt
-                    ${_LIBRARY})
+                    ${_LIBRARY} ${_OPENMP})
 
 add_timemory_google_test(stl_overload_tests
     DISCOVER_TESTS
