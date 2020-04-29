@@ -74,49 +74,35 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
     if(settings::debug() || settings::verbose() > 2)
         PRINT_HERE("%s", "");
 
-    if(std::system(nullptr))
+    auto _info = TIMEMORY_LABEL("");
+
+    auto _file = _json_file;
     {
-        auto _file = _json_file;
+        std::ifstream ifs(_file.c_str());
+        bool          exists = ifs.good();
+        ifs.close();
+        if(!exists)
         {
-            std::ifstream ifs(_file.c_str());
-            bool          exists = ifs.good();
-            ifs.close();
-            if(!exists)
-            {
-                fprintf(
-                    stderr,
+            fprintf(stderr,
                     "[%s]> file '%s' does not exist. Plot generation is disabled...\n",
                     _label.c_str(), _file.c_str());
-                return;
-            }
-        }
-
-        auto cmd = operation::join(" ", settings::python_exe(), "-m", "timemory.plotting",
-                                   "-f", _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
-
-        if(_echo_dart)
-            cmd += " -e";
-
-        if(settings::verbose() > 2 || settings::debug())
-            PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
-
-        set_env<std::string>("TIMEMORY_BANNER", "OFF");
-        set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
-        int sysret = std::system(cmd.c_str());
-        set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "0", 1);
-
-        if(sysret != 0)
-        {
-            auto msg = TIMEMORY_JOIN("", "Error generating plots with command: '", cmd,
-                                     "'", " Exit code: ", sysret);
-            fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL("").c_str(), msg.c_str());
+            return;
         }
     }
-    else
-    {
-        fprintf(stderr, "[%s]> std::system unavailable. Plot generation is disabled...\n",
-                _label.c_str());
-    }
+
+    auto cmd = operation::join(" ", settings::python_exe(), "-m", "timemory.plotting",
+                               "-f", _file, "-t", "\"" + _prefix, "\"", "-o", _dir);
+
+    if(_echo_dart)
+        cmd += " -e";
+
+    if(settings::verbose() > 2 || settings::debug())
+        PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
+
+    set_env<std::string>("TIMEMORY_BANNER", "OFF");
+    set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
+    launch_process(cmd.c_str(), _info + " plot generation failed");
+    set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "0", 1);
 }
 //
 //--------------------------------------------------------------------------------------//

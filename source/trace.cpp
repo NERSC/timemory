@@ -214,6 +214,24 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
+#if !defined(_WINDOWS)
+    TIMEMORY_WEAK_PREFIX
+    void timemory_register_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    void timemory_register_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    void timemory_deregister_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    void timemory_deregister_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+
+    void timemory_register_mpip() {}
+    void timemory_register_ompt() {}
+    void timemory_deregister_mpip() {}
+    void timemory_deregister_ompt() {}
+#endif
+    //
+    //----------------------------------------------------------------------------------//
+    //
     void timemory_push_trace(const char* name)
     {
         if(tim::settings::verbose() > 2 || tim::settings::debug())
@@ -298,16 +316,17 @@ extern "C"
             mpi_trace_gotcha::get_command()          = cmd;
             return;
         }
-        else
+
+        if(library_trace_count++ == 0)
         {
             PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
                        (int) tim::process::get_id(), (int) tim::threading::get_id(),
                        args);
-        }
 
-        if(library_trace_count++ == 0)
-        {
             tim::manager::use_exit_hook(false);
+
+            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+            tim::config::read_command_line(_init);
 
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
 
@@ -317,6 +336,7 @@ extern "C"
             // configure bundle
             user_trace_bundle::global_init(nullptr);
 
+            /*
             if(read_command_line)
             {
                 auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
@@ -324,19 +344,24 @@ extern "C"
             }
             else if(strlen(cmd) > 0)
             {
-                /*
                 PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
                            (int) tim::process::get_id(), (int) tim::threading::get_id());
                 char* _cmd = new char[strlen(cmd) + 1];
                 strcpy(_cmd, cmd);
                 timemory_init_library(1, &_cmd);
-                delete[] _cmd;*/
-            }
+                delete[] _cmd;
+            }*/
 
             tim::settings::parse();
         }
         else
         {
+            PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
+                       (int) tim::process::get_id(), (int) tim::threading::get_id(),
+                       args);
+            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+            tim::config::read_command_line(_init);
+
             auto manager = tim::manager::instance();
             tim::consume_parameters(manager);
         }

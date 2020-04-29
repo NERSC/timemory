@@ -7,10 +7,10 @@ endif()
 
 project(timemory-mpip-tool)
 
-add_library(timemory-mpip SHARED ${PROJECT_SOURCE_DIR}/timemory-mpip.cpp)
+add_library(timemory-mpip-shared SHARED ${PROJECT_SOURCE_DIR}/timemory-mpip.cpp)
 
 # public link targets
-target_link_libraries(timemory-mpip
+target_link_libraries(timemory-mpip-shared
     PUBLIC
         timemory-headers
         timemory-cxx-shared
@@ -18,14 +18,16 @@ target_link_libraries(timemory-mpip
         timemory-gotcha)
 
 # private link targets
-target_link_libraries(timemory-mpip
+target_link_libraries(timemory-mpip-shared
     PRIVATE
         timemory-compile-options
         timemory-arch
         timemory-vector)
 
 # use rpath
-set_target_properties(timemory-mpip PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
+set_target_properties(timemory-mpip-shared PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ON
+    OUTPUT_NAME timemory-mpip)
 
 # installation
-install(TARGETS timemory-mpip DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS timemory-mpip-shared DESTINATION ${CMAKE_INSTALL_LIBDIR})

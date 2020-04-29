@@ -34,8 +34,8 @@
 #if defined(TIMEMORY_USE_MPIP_LIBRARY)
 extern "C"
 {
-    extern uint64_t init_timemory_mpip_tools();
-    extern uint64_t stop_timemory_mpip_tools(uint64_t);
+    extern uint64_t timemory_start_mpip();
+    extern uint64_t timemory_stop_mpip(uint64_t);
 }
 #endif
 
@@ -44,8 +44,8 @@ extern "C"
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
 extern "C"
 {
-    extern uint64_t init_timemory_ompt_tools();
-    extern uint64_t stop_timemory_ompt_tools(uint64_t);
+    extern uint64_t timemory_start_ompt();
+    extern uint64_t timemory_stop_ompt(uint64_t);
 }
 #endif
 
@@ -308,7 +308,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     auto _init_mpip = [&]() {
 #if defined(TIMEMORY_USE_MPIP_LIBRARY)
-        return init_timemory_mpip_tools();
+        return timemory_start_mpip();
 #else
         return 0;
 #endif
@@ -318,7 +318,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     auto _stop_mpip = [&](uint64_t id) {
 #if defined(TIMEMORY_USE_MPIP_LIBRARY)
-        return stop_timemory_mpip_tools(id);
+        return timemory_stop_mpip(id);
 #else
         tim::consume_parameters(id);
         return 0;
@@ -329,7 +329,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     auto _init_ompt = [&]() {
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
-        return init_timemory_ompt_tools();
+        return timemory_start_ompt();
 #else
         return 0;
 #endif
@@ -339,7 +339,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     auto _stop_ompt = [&](uint64_t id) {
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
-        return stop_timemory_ompt_tools(id);
+        return timemory_stop_ompt(id);
 #else
         tim::consume_parameters(id);
         return 0;

@@ -72,6 +72,10 @@ struct function_signature;
 
 using exec_callback_t = BPatchExecCallback;
 using exit_callback_t = BPatchExitCallback;
+using fork_callback_t = BPatchForkCallback;
+
+void
+timemory_prefork_callback(BPatch_thread* parent, BPatch_thread* child);
 
 //======================================================================================//
 //
@@ -79,17 +83,18 @@ using exit_callback_t = BPatchExitCallback;
 //
 //======================================================================================//
 
-static int         expectError        = NO_ERROR;
-static int         debugPrint         = 0;
-static int         binaryRewrite      = 0;  /* by default, it is turned off */
-static int         errorPrint         = 0;  // external "dyninst" tracing
-static int         verboseLevel       = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
+static int         expect_error       = NO_ERROR;
+static int         debug_print        = 0;
+static int         binary_rewrite     = 0;  /* by default, it is turned off */
+static int         error_print        = 0;  // external "dyninst" tracing
+static int         verbose_level      = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
 static bool        loop_level_instr   = false;
 static bool        werror             = false;
 static bool        stl_func_instr     = false;
 static bool        use_mpi            = false;
 static bool        use_mpip           = false;
 static bool        use_ompt           = false;
+static bool        is_static_exe      = false;
 static std::string main_fname         = "main";
 static std::string argv0              = "";
 static std::string cmdv0              = "";
@@ -98,14 +103,25 @@ static std::string instr_push_func    = "timemory_push_trace";
 static std::string instr_pop_func     = "timemory_pop_trace";
 static std::string prefer_library     = "";
 
-using snippet_t     = BPatch_snippet;
-using snippet_vec_t = BPatch_Vector<snippet_t*>;
+using snippet_t             = BPatch_snippet;
+using snippet_vec_t         = BPatch_Vector<snippet_t*>;
+using snippet_pointer_t     = std::shared_ptr<snippet_t>;
+using snippet_pointer_vec_t = std::vector<snippet_pointer_t>;
+using procedure_t           = BPatch_function;
+using procedure_vec_t       = BPatch_Vector<procedure_t*>;
+using call_expr_t           = BPatch_funcCallExpr;
+using call_expr_pointer_t   = std::shared_ptr<BPatch_funcCallExpr>;
+using address_space_t       = BPatch_addressSpace;
+using basic_loop_t          = BPatch_basicBlockLoop;
+using basic_loop_vec_t      = BPatch_Vector<basic_loop_t*>;
+using flow_graph_t          = BPatch_flowGraph;
+using patch_t               = BPatch;
 
-static BPatch*              bpatch          = nullptr;
-static BPatch_funcCallExpr* initialize_expr = nullptr;
-static BPatch_funcCallExpr* terminate_expr  = nullptr;
-static snippet_vec_t        init_names;
-static snippet_vec_t        fini_names;
+static patch_t*      bpatch          = nullptr;
+static call_expr_t*  initialize_expr = nullptr;
+static call_expr_t*  terminate_expr  = nullptr;
+static snippet_vec_t init_names;
+static snippet_vec_t fini_names;
 
 static std::vector<std::regex>  func_include;
 static std::vector<std::regex>  func_exclude;
@@ -117,17 +133,22 @@ static std::vector<std::string> collection_paths = { "collections",
                                                      "timemory/collections",
                                                      "../share/timemory/collections" };
 
+static std::set<std::string> available_modules;
+static std::set<std::string> available_procedures;
+static std::set<std::string> instrumented_modules;
+static std::set<std::string> instrumented_procedures;
+
 //
 //======================================================================================//
 
 // control debug printf statements
 #define dprintf(...)                                                                     \
-    if(debugPrint || verboseLevel > 0)                                                   \
+    if(debug_print || verbose_level > 0)                                                 \
         fprintf(stderr, __VA_ARGS__);
 
 // control verbose printf statements
 #define verbprintf(LEVEL, ...)                                                           \
-    if(verboseLevel >= LEVEL)                                                            \
+    if(verbose_level >= LEVEL)                                                           \
         fprintf(stderr, __VA_ARGS__);
 
 //======================================================================================//
@@ -136,6 +157,24 @@ template <typename... T>
 void
 consume_parameters(T&&...)
 {}
+
+//======================================================================================//
+
+static inline void
+dump_info(const std::string& _oname, const std::set<std::string> _data, int level)
+{
+    if(!debug_print && verbose_level > level)
+        return;
+
+    std::ofstream ofs(_oname);
+    if(ofs)
+    {
+        verbprintf(level, "Dumping '%s'...\n", _oname.c_str());
+        for(const auto& itr : _data)
+            ofs << itr << '\n';
+    }
+    ofs.close();
+}
 
 //======================================================================================//
 
@@ -153,39 +192,24 @@ extern "C"
 //======================================================================================//
 
 function_signature
-get_func_file_line_info(BPatch_image* mutateeAddressSpace, BPatch_function* f);
+get_func_file_line_info(BPatch_image* mutateeImage, BPatch_function* f);
 
 function_signature
-get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
-                        BPatch_basicBlockLoop* loopToInstrument, BPatch_function* f);
+get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_function* f,
+                        BPatch_flowGraph*      cfGraph,
+                        BPatch_basicBlockLoop* loopToInstrument);
 
 void
-insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
-             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc,
-             BPatch_flowGraph* cfGraph, BPatch_basicBlockLoop* loopToInstrument,
-             function_signature& name);
-
-void
-insert_trace(BPatch_function* funcToInstr, BPatch_addressSpace* mutatee,
-             BPatch_function* traceEntryFunc, BPatch_function* traceExitFunc,
-             function_signature& name);
+insert_instr(address_space_t* mutatee, BPatch_function* funcToInstr,
+             BPatch_function* traceFunc, BPatch_procedureLocation traceLoc,
+             function_signature& name, BPatch_flowGraph* cfGraph = nullptr,
+             BPatch_basicBlockLoop* loopToInstrument = nullptr);
 
 void
 errorFunc(BPatchErrorLevel level, int num, const char** params);
 
 BPatch_function*
 find_function(BPatch_image* appImage, const char* functionName);
-
-BPatchSnippetHandle*
-invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
-                       BPatch_function* function, BPatch_procedureLocation loc,
-                       BPatch_function*               callee,
-                       BPatch_Vector<BPatch_snippet*> callee_args);
-
-BPatchSnippetHandle*
-invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
-                       BPatch_Vector<BPatch_point*> points, BPatch_function* callee,
-                       BPatch_Vector<BPatch_snippet*> callee_args);
 
 void
 check_cost(BPatch_snippet snippet);
@@ -205,15 +229,8 @@ bool
 find_func_or_calls(const char* name, BPatch_Vector<BPatch_point*>& points,
                    BPatch_image* image, BPatch_procedureLocation loc = BPatch_locEntry);
 
-function_signature
-get_func_file_line_info(BPatch_image* mutatee_addr_space, BPatch_function* f);
-
 bool
-load_dependent_libraries(BPatch_binaryEdit* bedit, char* bindings);
-
-int
-timemory_rewrite_binary(BPatch* bpatch, const char* mutateeName, char* outfile,
-                        char* libname, char* bindings);
+load_dependent_libraries(address_space_t* bedit, char* bindings);
 
 //======================================================================================//
 
@@ -328,9 +345,118 @@ struct function_signature
         return m_signature;
     }
 };
-
+//
 //======================================================================================//
+//
+template <typename Tp>
+snippet_pointer_t
+get_snippet(Tp arg)
+{
+    return snippet_pointer_t(new BPatch_constExpr(arg));
+}
+//
+//======================================================================================//
+//
+inline snippet_pointer_t
+get_snippet(std::string arg)
+{
+    return snippet_pointer_t(new BPatch_constExpr(arg.c_str()));
+}
+//
+//======================================================================================//
+//
+template <typename... Args>
+snippet_pointer_vec_t
+get_snippets(Args&&... args)
+{
+    snippet_pointer_vec_t _tmp;
+    TIMEMORY_FOLD_EXPRESSION(_tmp.push_back(get_snippet(std::forward<Args>(args))));
+    return _tmp;
+}
+//
+//======================================================================================//
+//
+struct timemory_call_expr
+{
+    using snippet_pointer_t = std::shared_ptr<BPatch_snippet>;
 
+    template <typename... Args>
+    timemory_call_expr(Args&&... args)
+    : m_params(get_snippets(std::forward<Args>(args)...))
+    {}
+
+    snippet_vec_t get_params()
+    {
+        snippet_vec_t _ret;
+        for(auto& itr : m_params)
+            _ret.push_back(itr.get());
+        return _ret;
+    }
+
+    inline call_expr_pointer_t get(procedure_t* func)
+    {
+        return call_expr_pointer_t((func) ? new call_expr_t(*func, get_params())
+                                          : nullptr);
+    }
+
+private:
+    snippet_pointer_vec_t m_params;
+};
+//
+//======================================================================================//
+//
+static inline address_space_t*
+timemory_get_address_space(BPatch* bpatch, int _cmdc, char** _cmdv, bool _rewrite,
+                           int _pid = -1, std::string _name = "")
+{
+    address_space_t* mutatee = nullptr;
+
+    if(_rewrite)
+    {
+        mutatee = bpatch->openBinary(_name.c_str(), false);
+        if(!mutatee)
+        {
+            fprintf(stderr, "[timemory-run]> Failed to open binary '%s'\n",
+                    _name.c_str());
+            throw std::runtime_error("Failed to open binary");
+        }
+    }
+    else if(_pid >= 0)
+    {
+        verbprintf(0, "Before processAttach\n");
+        char* _cmdv0 = (_cmdc > 0) ? _cmdv[0] : nullptr;
+        mutatee      = bpatch->processAttach(_cmdv0, _pid);
+        if(!mutatee)
+        {
+            fprintf(stderr, "[timemory-run]> Failed to connect to process %i\n",
+                    (int) _pid);
+            throw std::runtime_error("Failed to attach to process");
+        }
+    }
+    else
+    {
+        verbprintf(0, "Before processCreate\n");
+        mutatee = bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
+        if(!mutatee)
+        {
+            std::stringstream ss;
+            for(int i = 0; i < _cmdc; ++i)
+            {
+                if(!_cmdv[i])
+                    continue;
+                ss << _cmdv[i] << " ";
+            }
+            fprintf(stderr, "[timemory-run]> Failed to create process: '%s'\n",
+                    ss.str().c_str());
+            throw std::runtime_error("Failed to create process");
+        }
+    }
+
+    return mutatee;
+}
+//
+//======================================================================================//
+//
 static void
 timemory_thread_exit(BPatch_thread* thread, BPatch_exitType exit_type)
 {
@@ -370,5 +496,31 @@ timemory_thread_exit(BPatch_thread* thread, BPatch_exitType exit_type)
 
     app->continueExecution();
 }
-
+//
 //======================================================================================//
+//
+static void
+timemory_fork_callback(BPatch_thread* parent, BPatch_thread* child)
+{
+    if(child)
+    {
+        auto* app = child->getProcess();
+        if(app)
+        {
+            app->stopExecution();
+            app->detach(true);
+            // app->terminateExecution();
+            // app->continueExecution();
+        }
+    }
+
+    if(parent)
+    {
+        auto app = parent->getProcess();
+        if(app)
+            app->continueExecution();
+    }
+}
+//
+//======================================================================================//
+//

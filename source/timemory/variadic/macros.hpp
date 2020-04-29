@@ -103,8 +103,7 @@ using string = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_LABEL(...)                                                          \
-        TIMEMORY_JOIN("_", TIMEMORY_FULL_LABEL, TIMEMORY_JOIN("", __VA_ARGS__))
+#    define TIMEMORY_LABEL(...) TIMEMORY_JOIN("", TIMEMORY_FULL_LABEL, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 

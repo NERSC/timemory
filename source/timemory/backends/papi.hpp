@@ -824,10 +824,10 @@ available_events_info()
             auto as_string = [](char* cstr) {
                 auto              n = strlen(cstr);
                 std::stringstream ss;
-                for(decltype(n) i = 0; i < n; ++i)
+                for(decltype(n) j = 0; j < n; ++j)
                 {
-                    ss << cstr[i];
-                    if(cstr[i] == '\0')
+                    ss << cstr[j];
+                    if(cstr[j] == '\0')
                         break;
                 }
                 return ss.str();

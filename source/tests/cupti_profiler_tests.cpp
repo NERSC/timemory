@@ -281,6 +281,59 @@ TEST_F(cupti_profiler_tests, general)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(cupti_profiler_tests, nested)
+{
+    using tuple_t = tim::component_tuple_t<wall_clock, cupti_profiler>;
+
+    tim::settings::cupti_metrics() =
+        "smsp__warps_launched.avg,smsp__warps_launched.max,smsp__warps_launched.sum,smsp_"
+        "_warps_launched_total.sum,smsp__warps_launched_total.max";
+
+    tuple_t timer(details::get_test_name());
+    timer.start();
+
+    num_iter *= 2;
+    uint64_t                         nstream = 1;
+    std::vector<tim::cuda::stream_t> streams(nstream);
+    for(auto& itr : streams)
+        tim::cuda::stream_create(itr);
+
+    std::vector<float> cpu_data(num_data, 0);
+    float*             data = tim::device::gpu::alloc<float>(num_data);
+    for(uint64_t i = 0; i < nstream; ++i)
+    {
+        auto _off      = i * (num_data / nstream);
+        auto _data     = data + _off;
+        auto _cpu_data = cpu_data.data() + _off;
+        auto _ndata    = (num_data / nstream);
+        if(i + 1 == nstream)
+            _ndata += num_data % nstream;
+        tim::cuda::memcpy(_data, _cpu_data, _ndata, tim::cuda::host_to_device_v,
+                          streams.at(i));
+    }
+
+    for(auto& itr : streams)
+        tim::cuda::stream_sync(itr);
+
+    for(int i = 0; i < num_iter; ++i)
+    {
+        tuple_t subtimer(details::get_test_name() + "_subtimer");
+        subtimer.start();
+        printf("[%s]> iteration %i...\n", details::get_test_name().c_str(), i);
+        auto _stream = streams.at(i % nstream);
+        details::KERNEL_A(data, num_data, _stream);
+        details::KERNEL_B(data, num_data, _stream);
+        subtimer.stop();
+    }
+    timer.stop();
+
+    tim::device::gpu::free(data);
+    tim::cuda::device_sync();
+    num_iter /= 2;
+}
+
+//--------------------------------------------------------------------------------------//
+
 int
 main(int argc, char** argv)
 {

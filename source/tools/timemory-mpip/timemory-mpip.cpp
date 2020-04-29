@@ -34,7 +34,7 @@
 using namespace tim::component;
 
 using api_t         = tim::api::native_tag;
-using mpi_toolset_t = tim::component_list<user_mpip_bundle>;
+using mpi_toolset_t = tim::component_tuple<user_mpip_bundle>;
 using mpip_handle_t = mpip_handle<mpi_toolset_t, api_t>;
 uint64_t global_id  = 0;
 
@@ -42,10 +42,10 @@ extern "C"
 {
     void timemory_mpip_library_ctor() {}
 
-    uint64_t init_timemory_mpip_tools()
+    uint64_t timemory_start_mpip()
     {
         // provide environment variable for enabling/disabling
-        if(tim::get_env<bool>("ENABLE_TIMEMORY_MPIP", true))
+        if(tim::get_env<bool>("TIMEMORY_ENABLE_MPIP", true))
         {
             configure_mpip<mpi_toolset_t, api_t>();
             user_mpip_bundle::global_init(nullptr);
@@ -57,22 +57,19 @@ extern "C"
         }
     }
 
-    uint64_t stop_timemory_mpip_tools(uint64_t id)
+    uint64_t timemory_stop_mpip(uint64_t id)
     {
         return deactivate_mpip<mpi_toolset_t, api_t>(id);
     }
 
-    void register_timemory_mpip() { global_id = init_timemory_mpip_tools(); }
-    void deregister_timemory_mpip() { global_id = stop_timemory_mpip_tools(global_id); }
+    void timemory_register_mpip() { global_id = timemory_start_mpip(); }
+    void timemory_deregister_mpip() { global_id = timemory_stop_mpip(global_id); }
 
     // Below are for FORTRAN codes
     void     timemory_mpip_library_ctor_() {}
-    uint64_t init_timemory_mpip_tools_() { return init_timemory_mpip_tools(); }
-    uint64_t stop_timemory_mpip_tools_(uint64_t id)
-    {
-        return stop_timemory_mpip_tools(id);
-    }
-    void register_timemory_mpip_() { register_timemory_mpip(); }
-    void deregister_timemory_mpip_() { deregister_timemory_mpip(); }
+    uint64_t timemory_start_mpip_() { return timemory_start_mpip(); }
+    uint64_t timemory_stop_mpip_(uint64_t id) { return timemory_stop_mpip(id); }
+    void     timemory_register_mpip_() { timemory_register_mpip(); }
+    void     timemory_deregister_mpip_() { timemory_deregister_mpip(); }
 
 }  // extern "C"

@@ -40,8 +40,9 @@ are_file_include_exclude_lists_empty()
 //  the instrumented loop and formats it properly.
 //
 function_signature
-get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_flowGraph* cfGraph,
-                        BPatch_basicBlockLoop* loopToInstrument, BPatch_function* f)
+get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_function* f,
+                        BPatch_flowGraph*      cfGraph,
+                        BPatch_basicBlockLoop* loopToInstrument)
 {
     if(!cfGraph || !loopToInstrument || !f)
         return function_signature("", "", "");
@@ -204,7 +205,7 @@ errorFunc(BPatchErrorLevel level, int num, const char** params)
     const char* msg = bpatch->getEnglishErrorString(num);
     bpatch->formatErrorString(line, sizeof(line), msg, params);
 
-    if(num != expectError)
+    if(num != expect_error)
     {
         printf("Error #%d (level %d): %s\n", num, level, line);
         // We consider some errors fatal.
@@ -263,11 +264,11 @@ error_func_real(BPatchErrorLevel level, int num, const char* const* params)
     if(num == 0)
     {
         // conditional reporting of warnings and informational messages
-        if(errorPrint)
+        if(error_print)
         {
             if(level == BPatchInfo)
             {
-                if(errorPrint > 1)
+                if(error_print > 1)
                     printf("%s\n", params[0]);
             }
             else
@@ -280,7 +281,7 @@ error_func_real(BPatchErrorLevel level, int num, const char* const* params)
         char        line[256];
         const char* msg = bpatch->getEnglishErrorString(num);
         bpatch->formatErrorString(line, sizeof(line), msg, params);
-        if(num != expectError)
+        if(num != expect_error)
         {
             printf("Error #%d (level %d): %s\n", num, level, line);
             // We consider some errors fatal.
@@ -379,8 +380,13 @@ static inline void
 consume()
 {
     consume_parameters(initialize_expr, bpatch, use_ompt, use_mpi, use_mpip,
-                       stl_func_instr, werror, loop_level_instr, errorPrint,
-                       binaryRewrite, debugPrint, expectError);
+                       stl_func_instr, werror, loop_level_instr, error_print,
+                       binary_rewrite, debug_print, expect_error, is_static_exe,
+                       available_modules, available_procedures, instrumented_modules,
+                       instrumented_procedures);
     if(false)
+    {
         timemory_thread_exit(nullptr, ExitedNormally);
+        timemory_fork_callback(nullptr, nullptr);
+    }
 }

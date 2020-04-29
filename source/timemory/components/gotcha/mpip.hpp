@@ -43,6 +43,10 @@
 #    include <mpi.h>
 #endif
 
+#if !defined(NUM_TIMEMORY_MPIP_WRAPPERS)
+#    define NUM_TIMEMORY_MPIP_WRAPPERS 246
+#endif
+
 namespace tim
 {
 namespace component
@@ -70,13 +74,15 @@ static uint64_t deactivate_mpip(uint64_t);
 template <typename Toolset, typename Tag>
 struct mpip_handle : base<mpip_handle<Toolset, Tag>, void>
 {
+    static constexpr size_t mpip_wrapper_count = NUM_TIMEMORY_MPIP_WRAPPERS;
+
     using value_type = void;
     using this_type  = mpip_handle<Toolset, Tag>;
     using base_type  = base<this_type, value_type>;
 
     using string_t      = std::string;
     using mpi_toolset_t = Toolset;
-    using mpip_gotcha_t = tim::component::gotcha<246, mpi_toolset_t, Tag>;
+    using mpip_gotcha_t = tim::component::gotcha<mpip_wrapper_count, mpi_toolset_t, Tag>;
     using mpip_tuple_t  = tim::component_tuple<mpip_gotcha_t>;
     using toolset_ptr_t = std::shared_ptr<mpip_tuple_t>;
 
@@ -88,7 +94,10 @@ struct mpip_handle : base<mpip_handle<Toolset, Tag>, void>
     void start()
     {
         if(get_tool_count()++ == 0)
+        {
             get_tool_instance() = std::make_shared<mpip_tuple_t>("timemory_mpip");
+            get_tool_instance()->start();
+        }
     }
 
     void stop()
@@ -157,6 +166,7 @@ tim::component::activate_mpip()
     if(!_handle.get())
     {
         _handle = std::make_shared<handle_t>();
+        _handle->start();
 
         auto cleanup_functor = [=]() {
             if(_handle)
@@ -209,8 +219,10 @@ template <typename Toolset, typename Tag>
 void
 tim::component::configure_mpip(std::set<std::string> permit, std::set<std::string> reject)
 {
+    static constexpr size_t mpip_wrapper_count = NUM_TIMEMORY_MPIP_WRAPPERS;
+
     using string_t      = std::string;
-    using mpip_gotcha_t = tim::component::gotcha<246, Toolset, Tag>;
+    using mpip_gotcha_t = tim::component::gotcha<mpip_wrapper_count, Toolset, Tag>;
 
     static bool is_initialized = false;
     if(!is_initialized)
@@ -466,23 +478,25 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         };
 
         // provide environment variable for suppressing wrappers
-        mpip_gotcha_t::get_reject_list() = [&reject]() {
+        mpip_gotcha_t::get_reject_list() = [reject]() {
+            auto _reject = reject;
             // check environment
             auto reject_list = tim::get_env<string_t>("TIMEMORY_MPIP_REJECT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(reject_list))
-                reject.insert(itr);
-            return reject;
+                _reject.insert(itr);
+            return _reject;
         };
 
         // provide environment variable for selecting wrappers
-        mpip_gotcha_t::get_permit_list() = [&permit]() {
+        mpip_gotcha_t::get_permit_list() = [permit]() {
+            auto _permit = permit;
             // check environment
             auto permit_list = tim::get_env<string_t>("TIMEMORY_MPIP_PERMIT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(permit_list))
-                permit.insert(itr);
-            return permit;
+                _permit.insert(itr);
+            return _permit;
         };
 
         is_initialized = true;
