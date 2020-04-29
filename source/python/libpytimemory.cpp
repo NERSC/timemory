@@ -306,7 +306,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //----------------------------------------------------------------------------------//
     //
-    auto _init_mpip = [&]() {
+    auto _start_mpip = [&]() {
 #if defined(TIMEMORY_USE_MPIP_LIBRARY)
         return timemory_start_mpip();
 #else
@@ -470,7 +470,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
     //----------------------------------------------------------------------------------//
-    tim.def("init_mpip", _init_mpip, "Activate MPIP profiling");
+    tim.def(
+        "init_mpip", _start_mpip,
+        "Activate MPIP profiling (function name deprecated -- use start_mpip instead)");
+    //----------------------------------------------------------------------------------//
+    tim.def("start_mpip", _start_mpip, "Activate MPIP profiling");
     //----------------------------------------------------------------------------------//
     tim.def("stop_mpip", _stop_mpip, "Deactivate MPIP profiling", py::arg("id"));
     //----------------------------------------------------------------------------------//

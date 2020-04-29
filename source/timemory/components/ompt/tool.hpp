@@ -881,7 +881,6 @@ configure(ompt_function_lookup_t lookup, ompt_data_t*)
 #else
     consume_parameters(lookup);
 #endif
-    PRINT_HERE("%s", "");
 }
 }  // namespace ompt
 //

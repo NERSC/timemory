@@ -10,24 +10,24 @@ project(timemory-mpip-tool)
 add_library(timemory-mpip-shared SHARED ${PROJECT_SOURCE_DIR}/timemory-mpip.cpp)
 
 # public link targets
-target_link_libraries(timemory-mpip-shared
-    PUBLIC
-        timemory-headers
-        timemory-cxx-shared
-        timemory-mpi
-        timemory-gotcha)
+target_link_libraries(timemory-mpip-shared PUBLIC
+    timemory-headers
+    timemory-cxx-shared
+    timemory-mpi
+    timemory-gotcha)
 
 # private link targets
-target_link_libraries(timemory-mpip-shared
-    PRIVATE
-        timemory-compile-options
-        timemory-arch
-        timemory-vector)
+target_link_libraries(timemory-mpip-shared PRIVATE
+    timemory-compile-options
+    timemory-arch
+    timemory-vector)
 
 # use rpath
 set_target_properties(timemory-mpip-shared PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH ON
-    OUTPUT_NAME timemory-mpip)
+    OUTPUT_NAME     timemory-mpip
+    VERSION         ${timemory_VERSION}
+    SOVERSION       ${timemory_VERSION_MAJOR}.${timemory_VERSION_MINOR})
 
 # installation
 install(TARGETS timemory-mpip-shared DESTINATION ${CMAKE_INSTALL_LIBDIR})

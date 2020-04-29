@@ -53,6 +53,8 @@ static auto                  settings       = tim::settings::shared_instance<api
 
 extern "C"
 {
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*);
+
     void timemory_ompt_library_ctor() {}
 
     uint64_t timemory_start_ompt()

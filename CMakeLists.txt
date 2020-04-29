@@ -127,7 +127,9 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 
 foreach(_TYPE MAJOR MINOR PATCH)
     set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}})
-endforeach(_TYPE MAJOR MINOR PATCH)
+    set(${PROJECT_NAME}_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}})
+endforeach()
+set(timemory_VERSION ${PROJECT_VERSION})
 set(LIBNAME timemory)
 
 #----------------------------------------------------------------------------------------#

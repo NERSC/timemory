@@ -45,6 +45,12 @@ if(NOT MPI_FOUND)
     return()
 endif()
 
+set(_OMP)
+find_package(OpenMP QUIET)
+if(OpenMP_FOUND)
+    set(_OMP OpenMP::OpenMP_CXX)
+endif()
+
 set(TIMEMORY_INTERFACE_LIBRARY timemory-ex-python-bindings)
 find_package(timemory COMPONENTS headers OPTIONAL_COMPONENTS mpi cxx shared)
 
@@ -59,7 +65,7 @@ endif()
 
 target_compile_definitions(libex_python_bindings PRIVATE USE_MPI)
 target_link_libraries(libex_python_bindings PRIVATE
-    MPI::MPI_C MPI::MPI_CXX ${_COMPILE_OPTS})
+    MPI::MPI_C MPI::MPI_CXX ${_OMP} ${_COMPILE_OPTS})
 
 # target_link_libraries(libex_python_bindings INTERFACE timemory-ex-python-bindings)
 

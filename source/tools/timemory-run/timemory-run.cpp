@@ -537,6 +537,9 @@ main(int argc, char** argv)
             return (lname + ((is_static_exe) ? ".a" : ".so"));
     };
 
+    auto* _mutatee_init = find_function(appImage, "_init");
+    auto* _mutatee_fini = find_function(appImage, "_fini");
+
     load_library(get_library_ext(libname));
 
     if(use_mpip && !is_static_exe)
@@ -570,8 +573,18 @@ main(int argc, char** argv)
 
     if(!main_func)
     {
-        fprintf(stderr, "Couldn't find %s(), aborting\n", main_fname.c_str());
-        throw std::runtime_error("Could not find main function");
+        fprintf(stderr, "[timemory-run]> Couldn't find '%s'\n", main_fname.c_str());
+        if(!_mutatee_init || !_mutatee_fini)
+        {
+            fprintf(stderr, "[timemory-run]> Couldn't find '%s' or '%s', aborting\n",
+                    "_init", "_fini");
+            throw std::runtime_error("Could not find main function");
+        }
+        else
+        {
+            fprintf(stderr, "[timemory-run]> using '%s' and '%s' in lieu of '%s'...",
+                    "_init", "_fini", main_fname.c_str());
+        }
     }
 
     using pair_t = std::pair<procedure_t*, std::string>;
@@ -582,11 +595,13 @@ main(int argc, char** argv)
           pair_t(fini_func, "timemory_trace_finalize"),
           pair_t(env_func, "timemory_trace_set_env") })
     {
+        if(itr.first == main_func && _mutatee_init && _mutatee_fini)
+            continue;
         if(!itr.first)
         {
             std::stringstream ss;
             ss << "Error! Couldn't find '" << itr.second.c_str() << "' function";
-            fprintf(stderr, "%s\n", ss.str().c_str());
+            fprintf(stderr, "[timemory-run]> %s\n", ss.str().c_str());
             throw std::runtime_error(ss.str());
         }
     }
@@ -611,18 +626,32 @@ main(int argc, char** argv)
 
     // This heuristic guesses that debugging info. is available if main
     // is not defined in the DEFAULT_MODULE
-    bool           has_debug_info = false;
-    BPatch_module* main_module    = main_func->getModule();
-    if(main_module)
+    bool has_debug_info = false;
+    if(main_func)
     {
-        char moduleName[MUTNAMELEN];
-        main_module->getName(moduleName, MUTNAMELEN);
-        if(strcmp(moduleName, "DEFAULT_MODULE") != 0)
-            has_debug_info = true;
+        BPatch_module* main_module = main_func->getModule();
+        if(main_module)
+        {
+            char moduleName[MUTNAMELEN];
+            main_module->getName(moduleName, MUTNAMELEN);
+            if(strcmp(moduleName, "DEFAULT_MODULE") != 0)
+                has_debug_info = true;
+        }
     }
 
-    BPatch_Vector<BPatch_point*>* main_entr_points = main_func->findPoint(BPatch_entry);
-    BPatch_Vector<BPatch_point*>* main_exit_points = main_func->findPoint(BPatch_exit);
+    BPatch_Vector<BPatch_point*>* main_entr_points = nullptr;
+    BPatch_Vector<BPatch_point*>* main_exit_points = nullptr;
+
+    if(main_func)
+    {
+        main_entr_points = main_func->findPoint(BPatch_entry);
+        main_exit_points = main_func->findPoint(BPatch_exit);
+    }
+    else
+    {
+        main_entr_points = _mutatee_init->findPoint(BPatch_entry);
+        main_exit_points = _mutatee_fini->findPoint(BPatch_exit);
+    }
 
     // begin insertion
     if(binary_rewrite)
@@ -630,6 +659,7 @@ main(int argc, char** argv)
 
     function_signature main_sign("int", "main", "");
 
+    auto main_call_args = timemory_call_expr(main_sign.get());
     auto init_call_args = timemory_call_expr(default_components, true, cmdv0);
     auto fini_call_args = timemory_call_expr();
     auto umpi_call_args = timemory_call_expr(use_mpi);
@@ -638,7 +668,6 @@ main(int argc, char** argv)
     auto ompt_call_args =
         timemory_call_expr("TIMEMORY_OMPT_COMPONENTS", default_components);
     auto none_call_args = timemory_call_expr();
-    auto main_call_args = timemory_call_expr(main_sign.get());
 
     auto init_call = init_call_args.get(init_func);
     auto fini_call = fini_call_args.get(fini_func);

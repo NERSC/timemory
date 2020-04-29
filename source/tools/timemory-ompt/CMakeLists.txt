@@ -18,6 +18,7 @@ if(BUILD_STATIC_LIBS AND NOT TIMEMORY_SKIP_BUILD)
 endif()
 
 foreach(_TYPE ${LIB_TYPES})
+
     string(TOLOWER "${_TYPE}" _LC_TYPE)
     if(NOT TARGET timemory-cxx-${_LC_TYPE})
         continue()
@@ -28,23 +29,23 @@ foreach(_TYPE ${LIB_TYPES})
     add_library(${TARGET_NAME} ${_TYPE} ${PROJECT_SOURCE_DIR}/timemory-ompt.cpp)
 
     # public link targets
-    target_link_libraries(${TARGET_NAME}
-        PUBLIC
-            timemory-headers
-            timemory-ompt
-            timemory-cxx-${_LC_TYPE})
+    target_link_libraries(${TARGET_NAME} PUBLIC
+        timemory-headers
+        timemory-ompt
+        timemory-cxx-${_LC_TYPE})
 
     # private link targets
-    target_link_libraries(${TARGET_NAME}
-        PRIVATE
-            timemory-compile-options
-            timemory-arch
-            timemory-vector)
+    target_link_libraries(${TARGET_NAME} PRIVATE
+        timemory-compile-options
+        timemory-arch
+        timemory-vector)
 
     # use rpath
     set_target_properties(${TARGET_NAME} PROPERTIES
         INSTALL_RPATH_USE_LINK_PATH ON
-        OUTPUT_NAME timemory-ompt)
+        OUTPUT_NAME     timemory-ompt
+        VERSION         ${timemory_VERSION}
+        SOVERSION       ${timemory_VERSION_MAJOR}.${timemory_VERSION_MINOR})
 
     # installation
     install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})

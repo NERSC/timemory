@@ -34,11 +34,16 @@
 #include "pybind11/stl.h"
 
 #include <random>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
 #if defined(USE_MPI) || defined(TIMEMORY_USE_MPI)
 #    include <mpi.h>
+#endif
+
+#if defined(_OPENMP)
+#    include <omp.h>
 #endif
 
 namespace py = pybind11;
@@ -90,11 +95,14 @@ run(int nitr, int nsize)
            nitr, nsize);
 
     double dsum = 0.0;
+#pragma omp parallel for
     for(int i = 0; i < nitr; ++i)
     {
         auto dsendbuf = generate<double>(nsize);
         auto drecvbuf = allreduce(dsendbuf);
-        dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+        auto dtmp     = std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+#pragma omp atomic
+        dsum += dtmp;
     }
     return dsum;
 }
@@ -103,7 +111,17 @@ run(int nitr, int nsize)
 
 PYBIND11_MODULE(libex_python_bindings, ex)
 {
-    ex.def("run", &run, "Run a calculation", py::arg("nitr") = 10,
+    auto _run = [](int nitr, int nsize) {
+        py::gil_scoped_release release;
+#if defined(_OPENMP)
+        int nrank = 1;
+        MPI_Comm_size(MPI_COMM_WORLD, &nrank);
+        omp_set_num_threads(std::thread::hardware_concurrency() / nrank);
+#endif
+        return run(nitr, nsize);
+    };
+
+    ex.def("run", _run, "Run a calculation", py::arg("nitr") = 10,
            py::arg("nsize") = 5000);
 }
 
