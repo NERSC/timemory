@@ -115,7 +115,7 @@ extern "C"
     void     timemory_ompt_library_ctor_() {}
     uint64_t timemory_start_ompt_() { return timemory_start_ompt(); }
     uint64_t timemory_stop_ompt_(uint64_t id) { return timemory_stop_ompt(id); }
-    void timemory_register_ompt_() { timemory_register_ompt(); }
-    void timemory_deregister_ompt_() { timemory_deregister_ompt(); }
+    void     timemory_register_ompt_() { timemory_register_ompt(); }
+    void     timemory_deregister_ompt_() { timemory_deregister_ompt(); }
 
 }  // extern "C"

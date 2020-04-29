@@ -270,7 +270,7 @@ main(int argc, char** argv)
     if(parser.exists("o"))
     {
         binary_rewrite = true;
-        auto key      = parser.get<std::string>("o");
+        auto key       = parser.get<std::string>("o");
         strcpy(outfile, key.c_str());
     }
 

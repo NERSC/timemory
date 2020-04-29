@@ -75,8 +75,7 @@ using pid_t = int;
 #    define DEFAULT_UMASK 0777
 #endif
 
-#if(_POSIX_C_SOURCE >= 2) || defined(_BSD_SOURCE) || defined(_SVID_SOURCE) ||            \
-    defined(_MACOS)
+#if(_POSIX_C_SOURCE >= 2) || defined(_BSD_SOURCE) || defined(_SVID_SOURCE)
 #    if !defined(TIMEMORY_USE_POPEN)
 #        define TIMEMORY_USE_POPEN
 #    endif
@@ -265,7 +264,7 @@ launch_process(const char* cmd, const std::string& extra = "")
 #else
     if(std::system(nullptr))
     {
-        int ec = std::system(cmd.c_str());
+        int ec = std::system(cmd);
 
         if(ec != 0)
         {
@@ -277,7 +276,7 @@ launch_process(const char* cmd, const std::string& extra = "")
     }
     else
     {
-        fprintf(stderr, "std::system unavailable for command: '%s'...\n", cmd,
+        fprintf(stderr, "std::system unavailable for command: '%s'... %s\n", cmd,
                 extra.c_str());
         return false;
     }

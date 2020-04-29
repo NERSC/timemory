@@ -138,8 +138,8 @@ extern "C"
                                               const char*  runtime_version)
         TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
 
-    void timemory_mpip_library_ctor() {}
-    void timemory_ompt_library_ctor() {}
+    void                      timemory_mpip_library_ctor() {}
+    void                      timemory_ompt_library_ctor() {}
     ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
     {
         return nullptr;
