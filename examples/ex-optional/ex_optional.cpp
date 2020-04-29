@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     //
     std::atomic<long> ret_sum;
 #pragma omp parallel for
-    for(size_t i = 0; i < fibvalues.size(); ++i)
+    for(int64_t i = 0; i < (int64_t) fibvalues.size(); ++i)
     {
         auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
