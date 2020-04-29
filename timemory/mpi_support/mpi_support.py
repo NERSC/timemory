@@ -89,4 +89,4 @@ def enable_mpip(permit=[], reject=[]):
         os.environ["TIMEMORY_MPIP_PERMIT_LIST"] = ";".join(permit)
     if len(reject) > 0:
         os.environ["TIMEMORY_MPIP_REJECT_LIST"] = ";".join(reject)
-    timemory.init_mpip()
+    timemory.start_mpip()

@@ -50,7 +50,7 @@ def run_mpi(nitr=100, nsize=1000000):
 
 def main(args):
     # start MPI wrappers
-    id = timemory.init_mpip()
+    id = timemory.start_mpip()
 
     run_mpi(args.iterations)
     ans = run_profile(args.iterations, args.size)

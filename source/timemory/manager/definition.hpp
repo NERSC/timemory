@@ -29,11 +29,10 @@
 
 #pragma once
 
-#include "timemory/manager/macros.hpp"
-//
-#include "timemory/manager/types.hpp"
-//
+#include "timemory/backends/process.hpp"
 #include "timemory/manager/declaration.hpp"
+#include "timemory/manager/macros.hpp"
+#include "timemory/manager/types.hpp"
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -108,9 +107,10 @@ manager::manager()
 
 #    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_first && settings::banner())
-        printf("#--------------------- tim::manager initialized [%i][%i] "
+        printf("#--------------------- tim::manager initialized "
+               "[rank=%i][id=%i][pid=%i] "
                "---------------------#\n\n",
-               m_rank, m_instance_count);
+               m_rank, m_instance_count, process::get_id());
 #    endif
 
     auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
@@ -137,9 +137,12 @@ manager::~manager()
 
 #    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_last && settings::banner())
-        printf("\n\n#---------------------- tim::manager destroyed [%i][%i] "
+    {
+        printf("\n\n#=--------------------- tim::manager destroyed "
+               "[rank=%i][id=%i][pid=%i] "
                "----------------------#\n",
-               m_rank, m_instance_count);
+               m_rank, m_instance_count, process::get_id());
+    }
 #    endif
 
     delete m_lock;

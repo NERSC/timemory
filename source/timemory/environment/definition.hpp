@@ -36,11 +36,16 @@
 #include <atomic>
 #include <iosfwd>
 #include <mutex>
+#include <regex>
 #include <sstream>
 #include <string>
 
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace regex_const = std::regex_constants;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -225,9 +230,9 @@ get_env(const std::string& env_id, bool _default)
             val = (bool) atoi(var.c_str());
         else
         {
-            for(auto& itr : var)
-                itr = tolower(itr);
-            if(var == "off" || var == "false")
+            const auto regex_constants = regex_const::ECMAScript | regex_const::icase;
+            const std::string pattern  = "^(off|false|no|n|f)$";
+            if(std::regex_match(var, std::regex(pattern, regex_constants)))
                 val = false;
         }
         env_settings::instance()->insert<bool>(env_id, val);
@@ -274,7 +279,13 @@ load_env(const std::string& env_id, bool _default)
     auto _env_settings = env_settings::instance();
     auto itr           = _env_settings->get(env_id);
     if(itr != _env_settings->end())
-        return (itr->second == "true") ? true : false;
+    {
+        const auto        regex_constants = regex_const::ECMAScript | regex_const::icase;
+        const std::string pattern         = "^(on|true|yes|y|t)$";
+        return (std::regex_match(itr->second, std::regex(pattern, regex_constants)))
+                   ? true
+                   : false;
+    }
 
     // return default if not specified in environment
     return _default;

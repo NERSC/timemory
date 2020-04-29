@@ -41,9 +41,9 @@ __status__ = "Development"
 __all__ = ['util',
            'base_decorator',
            'auto_timer',
+           'auto_tuple',
            'timer',
            'rss_usage',
-           'marker',
-           'auto_tuple']
+           'marker',]
 
 from ..util import *

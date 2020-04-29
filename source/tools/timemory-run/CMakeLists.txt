@@ -49,9 +49,9 @@ if(TIMEMORY_USE_DYNINST)
     target_link_libraries(timemory-run PRIVATE
         timemory-headers
         timemory-dyninst
-        # timemory-compile-options
-        # timemory-arch
-        # timemory-stubs-shared
+        timemory-arch
+        timemory-compile-options
+        timemory-roofline-options
     )
 
     set_target_properties(timemory-run PROPERTIES

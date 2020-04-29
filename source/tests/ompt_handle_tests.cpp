@@ -37,10 +37,10 @@
 
 extern "C"
 {
-    extern uint64_t init_timemory_ompt_tools();
-    extern uint64_t stop_timemory_ompt_tools(uint64_t id);
-    extern void     register_timemory_ompt();
-    extern void     deregister_timemory_ompt();
+    extern uint64_t timemory_start_ompt();
+    extern uint64_t timemory_stop_ompt(uint64_t id);
+    extern void     timemory_register_ompt();
+    extern void     timemory_deregister_ompt();
 }
 
 static const double pi_epsilon = std::numeric_limits<float>::epsilon();
@@ -150,7 +150,7 @@ TEST_F(ompt_handle_tests, off)
 
 TEST_F(ompt_handle_tests, registration)
 {
-    register_timemory_ompt();
+    timemory_register_ompt();
 
     omp_set_num_threads(4);
 
@@ -174,14 +174,14 @@ TEST_F(ompt_handle_tests, registration)
     printf("[%s]> sum: %lu\n", details::get_test_name().c_str(),
            static_cast<unsigned long>(sum));
 
-    deregister_timemory_ompt();
+    timemory_deregister_ompt();
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(ompt_handle_tests, init)
 {
-    auto idx = init_timemory_ompt_tools();
+    auto idx = timemory_start_ompt();
 
     uint64_t num_threads = 4;
     uint64_t num_steps   = 500000000;
@@ -206,7 +206,7 @@ TEST_F(ompt_handle_tests, init)
     ASSERT_NEAR(pi, M_PI, pi_epsilon);
 
     EXPECT_EQ(idx, 1);
-    idx = stop_timemory_ompt_tools(idx);
+    idx = timemory_stop_ompt(idx);
     EXPECT_EQ(idx, 0);
 }
 

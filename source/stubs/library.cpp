@@ -91,7 +91,7 @@ extern "C"
     // tracing API
     void timemory_push_trace(const char*) {}
     void timemory_pop_trace(const char*) {}
-    void timemory_trace_init(const char*) {}
+    void timemory_trace_init(const char*, bool, const char*) {}
     void timemory_trace_finalize(void) {}
     void timemory_trace_set_mpi(bool) {}
 

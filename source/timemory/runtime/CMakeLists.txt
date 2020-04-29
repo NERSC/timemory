@@ -7,7 +7,7 @@ build_intermediate_library(
     NAME                runtime
     TARGET              runtime
     CATEGORY            EXTERN
-    FOLDER              extern
+    FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
     PROPERTY_DEPENDS    GLOBAL COMPONENT USER_BUNDLE FACTORY)

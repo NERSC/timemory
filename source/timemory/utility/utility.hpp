@@ -75,6 +75,12 @@ using pid_t = int;
 #    define DEFAULT_UMASK 0777
 #endif
 
+#if(_POSIX_C_SOURCE >= 2) || defined(_BSD_SOURCE) || defined(_SVID_SOURCE)
+#    if !defined(TIMEMORY_USE_POPEN)
+#        define TIMEMORY_USE_POPEN
+#    endif
+#endif
+
 //--------------------------------------------------------------------------------------//
 
 // stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual
@@ -233,6 +239,54 @@ dirname(std::string _fname)
 
 //--------------------------------------------------------------------------------------//
 
+inline bool
+launch_process(const char* cmd, const std::string& extra = "")
+{
+#if defined(TIMEMORY_USE_POPEN)
+    FILE* fp = popen(cmd, "w");
+    if(fp == nullptr)
+    {
+        std::stringstream ss;
+        ss << "[timemory]> Error launching command: '" << cmd << "'... " << extra;
+        perror(ss.str().c_str());
+        return false;
+    }
+
+    auto ec = pclose(fp);
+    if(ec != 0)
+    {
+        std::stringstream ss;
+        ss << "[timemory]> Command: '" << cmd << "' returned a non-zero exit code: " << ec
+           << "... " << extra;
+        perror(ss.str().c_str());
+        return false;
+    }
+#else
+    if(std::system(nullptr))
+    {
+        int ec = std::system(cmd);
+
+        if(ec != 0)
+        {
+            fprintf(stderr,
+                    "[timemory]> Command: '%s' returned a non-zero exit code: %i... %s\n",
+                    cmd, ec, extra.c_str());
+            return false;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "std::system unavailable for command: '%s'... %s\n", cmd,
+                extra.c_str());
+        return false;
+    }
+#endif
+
+    return true;
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline int
 makedir(std::string _dir, int umask = DEFAULT_UMASK)
 {
@@ -249,7 +303,7 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
     {
         std::stringstream _sdir;
         _sdir << "mkdir -p " << _dir;
-        return system(_sdir.str().c_str());
+        return (launch_process(_sdir.str().c_str())) ? 0 : 1;
     }
 #elif defined(_WINDOWS)
     consume_parameters(umask);
@@ -263,7 +317,7 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
     {
         std::stringstream _sdir;
         _sdir << "dir " << _dir;
-        return system(_sdir.str().c_str());
+        return (launch_process(_sdir.str().c_str())) ? 0 : 1;
     }
 #endif
     return 0;

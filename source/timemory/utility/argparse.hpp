@@ -253,6 +253,12 @@ struct argument_parser
             return *this;
         }
 
+        argument& max_count(int count)
+        {
+            m_max_count = count;
+            return *this;
+        }
+
         argument& count(int count)
         {
             m_count = count;
@@ -311,6 +317,8 @@ struct argument_parser
             return t;
         }
 
+        size_t size() const { return m_values.size(); }
+
     private:
         argument(const std::string& name, const std::string& desc, bool required = false)
         : m_desc(desc)
@@ -338,16 +346,17 @@ struct argument_parser
         }
 
         friend struct argument_parser;
-        int                      m_position = Position::IGNORE;
-        int                      m_count    = Count::ANY;
-        std::vector<std::string> m_names    = {};
-        std::string              m_desc     = {};
-        bool                     m_found    = false;
-        bool                     m_required = false;
-        int                      m_index    = -1;
-        void*                    m_default  = nullptr;
-        callback_t               m_callback = [](void*) {};
-        std::set<std::string>    m_choices  = {};
+        int                      m_position  = Position::IGNORE;
+        int                      m_count     = Count::ANY;
+        int                      m_max_count = Count::ANY;
+        std::vector<std::string> m_names     = {};
+        std::string              m_desc      = {};
+        bool                     m_found     = false;
+        bool                     m_required  = false;
+        int                      m_index     = -1;
+        void*                    m_default   = nullptr;
+        callback_t               m_callback  = [](void*) {};
+        std::set<std::string>    m_choices   = {};
 
         std::vector<std::string> m_values{};
     };
@@ -593,6 +602,16 @@ struct argument_parser
             return m_arguments[static_cast<size_t>(itr->second)].get<T>();
         return T{};
     }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    int64_t get_count(const std::string& name)
+    {
+        auto itr = m_name_map.find(name);
+        if(itr != m_name_map.end())
+            return m_arguments[static_cast<size_t>(itr->second)].size();
+        return 0;
+    }
 
 private:
     //
@@ -723,7 +742,12 @@ private:
             m_current   = -1;
             if(static_cast<int>(a.m_values.size()) < a.m_count)
                 return arg_result("Too few arguments given for " + a.m_names[0]);
-            if(a.m_count >= 0)
+            if(a.m_max_count >= 0)
+            {
+                if(static_cast<int>(a.m_values.size()) > a.m_max_count)
+                    return arg_result("Too many arguments given for " + a.m_names[0]);
+            }
+            else if(a.m_count >= 0)
             {
                 if(static_cast<int>(a.m_values.size()) > a.m_count)
                     return arg_result("Too many arguments given for " + a.m_names[0]);

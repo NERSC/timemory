@@ -245,7 +245,8 @@ public:
             {
                 if(itr > 0 && get_typeids().count(itr) > 0)
                 {
-                    PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
+                    if(settings::verbose() > 1)
+                        PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
                     return;
                 }
                 sum += itr;

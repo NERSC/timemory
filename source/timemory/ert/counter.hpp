@@ -135,7 +135,7 @@ public:
             printf("[%s]> nsize = %llu\n", __FUNCTION__, (ull) nsize);
         Up* buffer = allocate_aligned<Up, DeviceT>(nsize, align);
         if(settings::debug())
-            printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
+            printf("[%s]> buffer = %p\n", __FUNCTION__, (void*) buffer);
         device::params<DeviceT> _params(0, 512, 0, 0);
         device::launch(nsize, _params, initialize_buffer<DeviceT, Up, uint64_t>, buffer,
                        Up(1), nsize);

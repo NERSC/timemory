@@ -6,7 +6,7 @@ build_intermediate_library(
     NAME                operations
     TARGET              operations
     CATEGORY            GLOBAL
-    FOLDER              global
+    FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
     PROPERTY_DEPENDS    GLOBAL)

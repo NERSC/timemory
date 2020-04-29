@@ -1346,7 +1346,7 @@ private:
     {
         static hash_array_t _instance = []() {
 #if defined(TIMEMORY_USE_CUDA)
-            hash_array_t _instance = {
+            hash_array_t _tmp = {
                 { string_hash()("malloc"),
                   string_hash()("calloc"),
                   string_hash()("cudaMalloc"),
@@ -1354,11 +1354,11 @@ private:
                   string_hash()("cudaFree") }
             };
 #else
-            hash_array_t _instance = { { string_hash()("malloc"), string_hash()("calloc"),
-                                         string_hash()("free") } };
+            hash_array_t _tmp = { { string_hash()("malloc"), string_hash()("calloc"),
+                                    string_hash()("free") } };
 #endif
 
-            return _instance;
+            return _tmp;
         }();
         return _instance;
     }

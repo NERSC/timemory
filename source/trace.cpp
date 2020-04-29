@@ -51,7 +51,7 @@ namespace
 {
 static auto library_manager_handle  = tim::manager::master_instance();
 static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
-static thread_local bool library_dyninst_init = false;
+static std::atomic<uint32_t> library_trace_count{ 0 };
 }  // namespace
 
 //======================================================================================//
@@ -94,7 +94,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     int operator()(int* argc, char*** argv)
     {
         auto ret = MPI_Init(argc, argv);
-        timemory_trace_init(get_trace_components().c_str());
+        timemory_trace_init(get_trace_components().c_str(), read_command_line(),
+                            get_command().c_str());
         set_attr();
         return ret;
     }
@@ -103,7 +104,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     int operator()(int* argc, char*** argv, int req, int* prov)
     {
         auto ret = MPI_Init_thread(argc, argv, req, prov);
-        timemory_trace_init(get_trace_components().c_str());
+        timemory_trace_init(get_trace_components().c_str(), read_command_line(),
+                            get_command().c_str());
         set_attr();
         return ret;
     }
@@ -121,6 +123,18 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     {
         static auto _instance =
             tim::get_env<std::string>("TIMEMORY_TRACE_COMPONENTS", "");
+        return _instance;
+    }
+
+    static bool& read_command_line()
+    {
+        static bool _instance = true;
+        return _instance;
+    }
+
+    static std::string& get_command()
+    {
+        static std::string _instance = "";
         return _instance;
     }
 };
@@ -159,6 +173,18 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
             tim::get_env<std::string>("TIMEMORY_TRACE_COMPONENTS", "");
         return _instance;
     }
+
+    static bool& read_command_line()
+    {
+        static bool _instance = true;
+        return _instance;
+    }
+
+    static std::string& get_command()
+    {
+        static std::string _instance = "";
+        return _instance;
+    }
 };
 
 using mpi_trace_bundle_t = tim::auto_tuple<>;
@@ -185,6 +211,24 @@ static std::shared_ptr<mpi_trace_bundle_t> mpi_gotcha_handle{ nullptr };
 
 extern "C"
 {
+    //
+    //----------------------------------------------------------------------------------//
+    //
+#if !defined(_WINDOWS)
+    TIMEMORY_WEAK_PREFIX
+    void timemory_register_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    void timemory_register_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    void timemory_deregister_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    void timemory_deregister_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+
+    void timemory_register_mpip() {}
+    void timemory_register_ompt() {}
+    void timemory_deregister_mpip() {}
+    void timemory_deregister_ompt() {}
+#endif
     //
     //----------------------------------------------------------------------------------//
     //
@@ -259,43 +303,65 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-    void timemory_trace_init(const char* args)
+    void timemory_trace_init(const char* args, bool read_command_line, const char* cmd)
     {
-        auto tid = tim::threading::get_id();
-
         if(use_mpi_gotcha && !mpi_gotcha_handle.get())
         {
-            PRINT_HERE("rank = %i, thread = %i", tim::dmp::rank(), (int) tid);
+            PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
+                       (int) tim::process::get_id(), (int) tim::threading::get_id());
             mpi_gotcha_handle =
                 std::make_shared<mpi_trace_bundle_t>("timemory_trace_mpi_gotcha");
             mpi_trace_gotcha::get_trace_components() = args;
+            mpi_trace_gotcha::read_command_line()    = read_command_line;
+            mpi_trace_gotcha::get_command()          = cmd;
             return;
         }
 
-        PRINT_HERE("rank = %i, thread = %i", tim::dmp::rank(), (int) tid);
-
-        auto settings_instance = tim::settings::instance<tim::api::native_tag>();
-        tim::consume_parameters(settings_instance);
-
-        if(tid == 0)
+        if(library_trace_count++ == 0)
         {
-            library_dyninst_init = true;
+            PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
+                       (int) tim::process::get_id(), (int) tim::threading::get_id(),
+                       args);
+
             tim::manager::use_exit_hook(false);
+
+            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+            tim::config::read_command_line(_init);
+
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
+
             // reset traces just in case
             user_trace_bundle::reset();
+
             // configure bundle
             user_trace_bundle::global_init(nullptr);
-            // add default
-            // if(user_trace_bundle::bundle_size() == 0)
-            //    user_trace_bundle::configure<wall_clock>();
 
-            auto init_func = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-            tim::config::read_command_line(init_func);
+            /*
+            if(read_command_line)
+            {
+                auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+                tim::config::read_command_line(_init);
+            }
+            else if(strlen(cmd) > 0)
+            {
+                PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
+                           (int) tim::process::get_id(), (int) tim::threading::get_id());
+                char* _cmd = new char[strlen(cmd) + 1];
+                strcpy(_cmd, cmd);
+                timemory_init_library(1, &_cmd);
+                delete[] _cmd;
+            }*/
+
             tim::settings::parse();
         }
         else
         {
+            PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
+                       (int) tim::process::get_id(), (int) tim::threading::get_id(),
+                       args);
+            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+            tim::config::read_command_line(_init);
+
             auto manager = tim::manager::instance();
             tim::consume_parameters(manager);
         }
@@ -305,26 +371,26 @@ extern "C"
     //
     void timemory_trace_finalize(void)
     {
+        if(library_trace_count.load() == 0)
+            return;
+
+        if(tim::settings::verbose() > 1 || tim::settings::debug())
+            PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
+                       (int) tim::process::get_id(), (int) tim::threading::get_id());
+
+        // do the finalization
+        auto _count = --library_trace_count;
+
         tim::auto_lock_t lk(tim::type_mutex<tim::api::native_tag>());
 
-        if(tim::threading::get_id() > 0)
+        if(_count > 0)
         {
             // have the manager finalize
             tim::manager::instance()->finalize();
             return;
         }
 
-        if(!library_dyninst_init)
-            return;
-
-        if(tim::settings::verbose() > 1 || tim::settings::debug())
-            PRINT_HERE("pid = %i, tid = %i", (int) tim::process::get_id(),
-                       (int) tim::threading::get_id());
-
         tim::mpi::barrier();
-
-        // do the finalization
-        library_dyninst_init = false;
 
         // reset traces just in case
         user_trace_bundle::reset();

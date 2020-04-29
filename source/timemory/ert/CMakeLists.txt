@@ -12,7 +12,7 @@ build_intermediate_library(
     NAME                ert
     TARGET              ert
     CATEGORY            EXTERN
-    FOLDER              extern
+    FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
     DEPENDS             timemory-vector

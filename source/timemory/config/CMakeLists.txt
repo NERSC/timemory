@@ -7,7 +7,7 @@ build_intermediate_library(
     NAME                config
     TARGET              config
     CATEGORY            GLOBAL
-    FOLDER              global
+    FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
     DEPENDS             timemory-headers

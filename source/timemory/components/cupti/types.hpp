@@ -38,6 +38,7 @@
 //
 TIMEMORY_DECLARE_COMPONENT(cupti_activity)
 TIMEMORY_DECLARE_COMPONENT(cupti_counters)
+TIMEMORY_DECLARE_COMPONENT(cupti_profiler)
 //
 //======================================================================================//
 //
@@ -47,6 +48,7 @@ TIMEMORY_DECLARE_COMPONENT(cupti_counters)
 //
 TIMEMORY_STATISTICS_TYPE(component::cupti_activity, double)
 TIMEMORY_STATISTICS_TYPE(component::cupti_counters, std::vector<double>)
+TIMEMORY_STATISTICS_TYPE(component::cupti_profiler, std::vector<double>)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -57,6 +59,7 @@ TIMEMORY_STATISTICS_TYPE(component::cupti_counters, std::vector<double>)
 #if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_counters, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_activity, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cupti_profiler, false_type)
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -91,6 +94,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(secondary_data, component::cupti_counters, true_t
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::cupti_counters, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::cupti_profiler, true_type)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -100,6 +104,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_unit_printing, component::cupti_counters, 
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::cupti_counters,
                                true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::cupti_profiler,
+                               true_type)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -108,6 +114,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_label_printing, component::cupti_counters,
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::cupti_counters, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::cupti_profiler, true_type)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -116,6 +123,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::cupti_counters, t
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_serialization, component::cupti_counters, true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_serialization, component::cupti_profiler, true_type)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -125,3 +133,5 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(custom_serialization, component::cupti_counters, 
 TIMEMORY_PROPERTY_SPECIALIZATION(cupti_activity, CUPTI_ACTIVITY, "cupti_activity", "")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(cupti_counters, CUPTI_COUNTERS, "cupti_counters", "")
+//
+// TIMEMORY_PROPERTY_SPECIALIZATION(cupti_profiler, CUPTI_PROFILER, "cupti_profiler", "")

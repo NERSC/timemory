@@ -35,6 +35,7 @@
 #include <initializer_list>
 #include <memory>
 #include <ostream>
+#include <random>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -342,9 +343,39 @@ struct config : public data_type
         if(is_tree() || is_flat())
             _id ^= _depth;
         if(is_timeline())
-            _id ^= (_counter++);
+        {
+#if defined(TIMEMORY_USE_TIMELINE_RNG)
+            _id ^= get_random_value<uint64_t>();
+#else
+            _id ^= _counter++;
+#endif
+        }
         return _id;
     }
+
+private:
+#if defined(TIMEMORY_USE_TIMELINE_RNG)
+    // random number generator
+    template <typename T = std::mt19937_64>
+    static inline T& get_rng(size_t initial_seed = 0)
+    {
+        static T _instance = [=]() {
+            T _rng;
+            _rng.seed((initial_seed == 0) ? std::random_device()() : initial_seed);
+            return _rng;
+        }();
+        return _instance;
+    }
+
+    // random integer
+    template <typename T, typename R = std::mt19937_64,
+              std::enable_if_t<(std::is_integral<T>::value), int> = 0>
+    static inline T get_random_value(T beg = 0, T end = std::numeric_limits<T>::max())
+    {
+        std::uniform_int_distribution<T> dist(beg, end);
+        return dist(get_rng<R>());
+    }
+#endif
 };
 //
 //--------------------------------------------------------------------------------------//

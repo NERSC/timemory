@@ -73,6 +73,10 @@ def _profiler_function(frame, event, arg):
     _count = copy.copy(_counter)
 
     if event in _start_events:
+        if not settings.enabled:
+            _skip_counts.append(_count)
+            return
+
         _func = "{}".format(frame.f_code.co_name)        
         _line = int(frame.f_lineno) if _include_line else -1
         _file = "" if not _include_filepath else "{}".format(

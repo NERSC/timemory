@@ -25,6 +25,7 @@
 
 #include "ex_optional.hpp"  // file that includes optional usage
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -37,6 +38,8 @@
 //
 //--------------------------------------------------------------------------------------//
 
+template <typename Tp> using vector_t = std::vector<Tp>;
+
 namespace impl
 {
 static long fibonacci(long n);
@@ -44,6 +47,7 @@ static long fibonacci(long n);
 long fibonacci(long n);
 void status();
 void write(long, long);
+void allreduce(const vector_t<long>& send, vector_t<long>& recv);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -57,8 +61,6 @@ void write(long, long);
 
 int main(int argc, char** argv)
 {
-    status();
-
     // setenv when available
 #if(_POSIX_C_SOURCE >= 200112L) || defined(_BSD_SOURCE) || defined(_UNIX)
     setenv("TIMEMORY_TIMING_UNITS", "ms", 0);
@@ -75,6 +77,7 @@ int main(int argc, char** argv)
     //  Dummy functions when USE_TIMEMORY not defined
     //
     tim::mpi::initialize(argc, argv);
+    status();
     tim::timemory_init(argc, argv);
     //
     //  Provide some work
@@ -103,13 +106,22 @@ int main(int argc, char** argv)
     //
     //  Execute the work
     //
+    std::atomic<long> ret_sum;
 #pragma omp parallel for
-    for(size_t i = 0; i < fibvalues.size(); ++i)
+    for(int64_t i = 0; i < (int64_t) fibvalues.size(); ++i)
     {
         auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
         write(itr, ret);
+        ret_sum += ret;
     }
+
+    std::vector<long> ret_reduce;
+    std::vector<long> ret_send;
+    for(size_t i = 0; i < fibvalues.size(); ++i)
+        ret_send.push_back(fibonacci(fibvalues.at(i)));
+    allreduce(ret_send, ret_reduce);
+    for(size_t i = 0; i < fibvalues.size(); ++i) write(fibvalues.at(i), ret_reduce.at(i));
 
     //
     // call <auto_tuple_t>.stop() or expand to nothing
@@ -126,9 +138,9 @@ int main(int argc, char** argv)
     //
     main.stop();
 
+    status();
     tim::timemory_finalize();
     tim::mpi::finalize();
-    status();
 
     return EXIT_SUCCESS;
 }
@@ -164,4 +176,19 @@ void status()
     printf("\n#----------------- TIMEMORY is disabled ----------------#\n\n");
 #endif
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+//--------------------------------------------------------------------------------------//
+
+void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
+{
+    recvbuf.resize(sendbuf.size(), 0L);
+#if defined(TIMEMORY_USE_MPI)
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), MPI_LONG, MPI_SUM,
+                  MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+#else
+    std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
+#endif
 }

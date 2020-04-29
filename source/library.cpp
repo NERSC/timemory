@@ -128,12 +128,22 @@ extern "C"
 {
 #if !defined(_WINDOWS)
     TIMEMORY_WEAK_PREFIX
-    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX;
+    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
-    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX;
+    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
+                                              const char*  runtime_version)
+        TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
 
-    void timemory_mpip_library_ctor() {}
-    void timemory_ompt_library_ctor() {}
+    void                      timemory_mpip_library_ctor() {}
+    void                      timemory_ompt_library_ctor() {}
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
+    {
+        return nullptr;
+    }
 #endif
 
     //----------------------------------------------------------------------------------//
@@ -201,7 +211,7 @@ extern "C"
 
         tim::timemory_init(argc, argv);
         _manager->update_metadata_prefix();
-        tim::settings::parse();
+        // tim::settings::parse();
     }
 
     //----------------------------------------------------------------------------------//

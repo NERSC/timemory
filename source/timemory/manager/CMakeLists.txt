@@ -7,7 +7,7 @@ build_intermediate_library(
     NAME                manager
     TARGET              manager
     CATEGORY            GLOBAL
-    FOLDER              global
+    FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
     PROPERTY_DEPENDS    GLOBAL)

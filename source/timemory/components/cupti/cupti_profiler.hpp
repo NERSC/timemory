@@ -140,6 +140,7 @@ public:
     using value_type = std::map<std::string, double>;
     using this_type  = cupti_profiler;
     using base_type  = base<this_type, value_type>;
+    using data_type  = std::vector<MetricNameValue>;
 
     // component-specific aliases
     using size_type = std::size_t;
@@ -155,35 +156,65 @@ public:
 
     static void global_finalize(storage_type*) { finalize(); }
 
+    value_type record()
+    {
+        auto&      chipName         = get_persistent_data().chipName;
+        auto&      counterDataImage = get_persistent_data().counterDataImage;
+        auto&      metricNames      = get_persistent_data().metricNames;
+        data_type  _data;
+        value_type _tmp;
+        GetMetricGpuValue(chipName, counterDataImage, metricNames, _data);
+        if(settings::verbose() > 0)
+            PRINT_HERE("METRIC_GPU_VALUE size: %li", (long int) _data.size());
+        for(const auto& itr : _data)
+        {
+            auto _prefix = itr.metricName + ".";
+            if(settings::verbose() > 0)
+                PRINT_HERE("    METRIC[%s] size: %li", itr.metricName.c_str(),
+                           (long int) itr.rangeNameMetricValueMap.size());
+            for(const auto& vitr : itr.rangeNameMetricValueMap)
+                _tmp[_prefix + vitr.first] = vitr.second;
+        }
+        return _tmp;
+    }
+
     void start()
     {
-        enable();
+        auto _count = get_counter()++;
+        if(_count == 0)
+        {
+            // enable();
+            TIMEMORY_CUPTI_API_CALL(cuptiProfilerBeginPass(&beginPassParams));
+            TIMEMORY_CUPTI_API_CALL(cuptiProfilerEnableProfiling(&enableProfilingParams));
+        }
+
+        value = record();
         TIMEMORY_CUPTI_API_CALL(cuptiProfilerPushRange(&pushRangeParams));
     }
 
     void stop()
     {
         TIMEMORY_CUPTI_API_CALL(cuptiProfilerPopRange(&popRangeParams));
-        disable();
-
-        auto& chipName         = get_persistent_data().chipName;
-        auto& counterDataImage = get_persistent_data().counterDataImage;
-        auto& metricNames      = get_persistent_data().metricNames;
-
-        PrintMetricValues(chipName, counterDataImage, metricNames);
-        std::vector<MetricNameValue> _data;
-        GetMetricGpuValue(chipName, counterDataImage, metricNames, _data);
-        PRINT_HERE("METRIC_GPU_VALUE size: %li", (long int) _data.size());
-        for(const auto& itr : _data)
+        auto _count = --get_counter();
+        if(_count == 0)
         {
-            auto _prefix = itr.metricName + ".";
-            PRINT_HERE("    METRIC[%s] size: %li", itr.metricName.c_str(),
-                       (long int) itr.rangeNameMetricValueMap.size());
-            for(const auto& vitr : itr.rangeNameMetricValueMap)
-            {
-                value[_prefix + vitr.first] = vitr.second;
-                accum[_prefix + vitr.first] += vitr.second;
-            }
+            TIMEMORY_CUPTI_API_CALL(
+                cuptiProfilerDisableProfiling(&disableProfilingParams));
+            TIMEMORY_CUPTI_API_CALL(cuptiProfilerEndPass(&endPassParams));
+            // disable();
+        }
+
+        cuda::stream_sync(0);
+        cuda::device_sync();
+
+        TIMEMORY_CUPTI_API_CALL(cuptiProfilerFlushCounterData(&flushCounterDataParams));
+
+        auto _tmp = record();
+        for(auto& itr : _tmp)
+        {
+            auto& vitr = value[itr.first];
+            vitr       = (itr.second - vitr);
+            accum[itr.first] += vitr;
         }
     }
 
@@ -208,13 +239,12 @@ public:
             auto _width = base_type::get_width();
             auto _flags = base_type::get_format_flags();
 
-            std::stringstream ss, ssv, ssi;
+            std::stringstream ssv, ssi;
             ssv.setf(_flags);
             ssv << std::setw(_width) << std::setprecision(_prec) << obj.second;
             if(!_label.empty())
                 ssi << " " << _label;
-            ss << ssv.str() << ssi.str();
-            os << ss.str();
+            os << ssv.str() << ssi.str();
         };
 
         const auto&       _data = (is_transient) ? accum : value;
@@ -247,6 +277,25 @@ public:
     static std::vector<int64_t> unit_array()
     {
         return std::vector<int64_t>(get_persistent_data().metricNames.size(), 1);
+    }
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        auto _get = [&](const value_type& _data) {
+            std::vector<double> values;
+            for(auto itr : _data)
+                values.push_back(itr.second);
+            return values;
+        };
+        std::vector<double> _disp  = _get(accum);
+        std::vector<double> _value = _get(value);
+        std::vector<double> _accum = _get(accum);
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
+           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp),
+           cereal::make_nvp("units", unit_array()),
+           cereal::make_nvp("display_units", display_unit_array()));
     }
 
 public:
@@ -323,21 +372,28 @@ protected:
                                       bool* isolated, bool* keepInstances);
 
 protected:
-    std::string*                    m_prefix        = nullptr;
+    std::string* m_prefix = nullptr;
+
     CUpti_Profiler_PushRange_Params pushRangeParams = {
         CUpti_Profiler_PushRange_Params_STRUCT_SIZE
     };
     CUpti_Profiler_PopRange_Params popRangeParams = {
         CUpti_Profiler_PopRange_Params_STRUCT_SIZE
     };
-    CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {
-        CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE
-    };
     CUpti_Profiler_BeginPass_Params beginPassParams = {
         CUpti_Profiler_BeginPass_Params_STRUCT_SIZE
     };
     CUpti_Profiler_EndPass_Params endPassParams = {
         CUpti_Profiler_EndPass_Params_STRUCT_SIZE
+    };
+    CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {
+        CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE
+    };
+    CUpti_Profiler_EnableProfiling_Params enableProfilingParams = {
+        CUpti_Profiler_EnableProfiling_Params_STRUCT_SIZE
+    };
+    CUpti_Profiler_DisableProfiling_Params disableProfilingParams = {
+        CUpti_Profiler_DisableProfiling_Params_STRUCT_SIZE
     };
 
 protected:
@@ -350,6 +406,7 @@ protected:
 
     struct persistent_data
     {
+        std::atomic<int64_t>     instCounter;
         CUdevice                 cuDevice;
         CUcontext                cuContext;
         bool                     enabled                = false;
@@ -374,6 +431,11 @@ protected:
     {
         static persistent_data _instance;
         return _instance;
+    }
+
+    static std::atomic<int64_t>& get_counter()
+    {
+        return get_persistent_data().instCounter;
     }
 };
 //
@@ -551,8 +613,8 @@ cupti_profiler::configure(int device)
     }
 
     auto& enabled   = get_persistent_data().enabled;
-    auto& cuContext = get_persistent_data().cuContext;
     auto& numRanges = get_persistent_data().numRanges;
+    auto& cuContext = get_persistent_data().cuContext;
 
     CUpti_Profiler_BeginSession_Params beginSessionParams = {
         CUpti_Profiler_BeginSession_Params_STRUCT_SIZE

@@ -8,7 +8,7 @@ if(TIMEMORY_USE_MPI)
         NAME                mpi_init
         TARGET              mpi_init
         CATEGORY            EXTERN
-        FOLDER              extern
+        FOLDER              components
         HEADERS             ${mpi_header_files}
         SOURCES             ${mpi_source_files}
         DEPENDS             timemory-mpi timemory-mpi-init timemory-manager

@@ -605,7 +605,7 @@ TEST_F(gotcha_tests, mpip)
     using mpip_gotcha_t = tim::component::gotcha<337, mpi_toolset_t>;
     using mpip_tuple_t  = tim::auto_tuple_t<wall_clock, mpip_gotcha_t>;
 
-    auto init_mpip_tools = []() {
+    auto init_mpip = []() {
         mpip_gotcha_t::get_initializer() = []() {
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 0, MPI_Send);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 1, MPI_Recv);
@@ -948,7 +948,7 @@ TEST_F(gotcha_tests, mpip)
     };
 
     if(tim::get_env<bool>("INIT_MPIP_TOOLS", true))
-        init_mpip_tools();
+        init_mpip();
 
     TIMEMORY_BLANK_POINTER(mpip_tuple_t, details::get_test_name());
 

@@ -53,12 +53,14 @@ static auto                  settings       = tim::settings::shared_instance<api
 
 extern "C"
 {
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*);
+
     void timemory_ompt_library_ctor() {}
 
-    uint64_t init_timemory_ompt_tools()
+    uint64_t timemory_start_ompt()
     {
         // provide environment variable for enabling/disabling
-        if(tim::get_env<bool>("ENABLE_TIMEMORY_OMPT", true))
+        if(tim::get_env<bool>("TIMEMORY_ENABLE_OMPT", true))
         {
             tim::auto_lock_t lk(tim::type_mutex<ompt_handle_t>());
             auto             idx = ++f_handle_count;
@@ -73,7 +75,7 @@ extern "C"
         }
     }
 
-    uint64_t stop_timemory_ompt_tools(uint64_t id)
+    uint64_t timemory_stop_ompt(uint64_t id)
     {
         if(id == 0)
         {
@@ -93,7 +95,7 @@ extern "C"
         return f_handle_map.size();
     }
 
-    void register_timemory_ompt()
+    void timemory_register_ompt()
     {
         DEBUG_PRINT_HERE("%s", "");
         tim::auto_lock_t lk(tim::type_mutex<ompt_handle_t>());
@@ -105,20 +107,17 @@ extern "C"
         }
     }
 
-    void deregister_timemory_ompt()
+    void timemory_deregister_ompt()
     {
         DEBUG_PRINT_HERE("%s", "");
-        stop_timemory_ompt_tools(0);
+        timemory_stop_ompt(0);
     }
 
     // Below are for FORTRAN codes
     void     timemory_ompt_library_ctor_() {}
-    uint64_t init_timemory_ompt_tools_() { return init_timemory_ompt_tools(); }
-    uint64_t stop_timemory_ompt_tools_(uint64_t id)
-    {
-        return stop_timemory_ompt_tools(id);
-    }
-    void register_timemory_ompt_() { register_timemory_ompt(); }
-    void deregister_timemory_ompt_() { deregister_timemory_ompt(); }
+    uint64_t timemory_start_ompt_() { return timemory_start_ompt(); }
+    uint64_t timemory_stop_ompt_(uint64_t id) { return timemory_stop_ompt(id); }
+    void     timemory_register_ompt_() { timemory_register_ompt(); }
+    void     timemory_deregister_ompt_() { timemory_deregister_ompt(); }
 
 }  // extern "C"
