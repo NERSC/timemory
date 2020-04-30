@@ -216,12 +216,13 @@ write_hw_counter_info(std::ostream&, const array_t<bool, N>& = array_t<bool, N>{
 
 enum
 {
-    FNAME = 0,
+    VAL   = 0,
     ENUM  = 1,
     LANG  = 2,
     CID   = 3,
-    DESC  = 4,
-    VAL   = 5
+    FNAME = 4,
+    DESC  = 5,
+    TOTAL = 6
 };
 
 //--------------------------------------------------------------------------------------//
@@ -233,19 +234,19 @@ main(int argc, char** argv)
     array_t<string_t, 6> fields   = {};
     array_t<bool, 6>     use_mark = {};
 
-    fields[CID]   = "STRING_IDS";
     fields[VAL]   = "VALUE_TYPE";
-    fields[DESC]  = "DESCRIPTION";
     fields[ENUM]  = "ENUMERATION";
     fields[LANG]  = "C++ ALIAS / PYTHON ENUMERATION";
     fields[FNAME] = "FILENAME";
+    fields[CID]   = "STRING_IDS";
+    fields[DESC]  = "DESCRIPTION";
 
-    use_mark[CID]   = false;
     use_mark[VAL]   = true;
-    use_mark[DESC]  = false;
     use_mark[ENUM]  = true;
     use_mark[LANG]  = true;
     use_mark[FNAME] = false;
+    use_mark[CID]   = false;
+    use_mark[DESC]  = false;
 
     bool include_settings    = false;
     bool include_components  = false;
@@ -262,7 +263,10 @@ main(int argc, char** argv)
         .add_argument({ "-d", "--description" },
                       "Output the description for the component")
         .count(0);
-    parser.add_argument({ "-e", "--enum" }, "Display the enumeration ID").count(0);
+    parser.add_argument()
+        .names({ "-e", "--enum" })
+        .description("Display the enumeration ID")
+        .count(0);
     parser.add_argument({ "-f", "--filename" }, "Output the filename for the component")
         .count(0);
     parser
@@ -285,54 +289,58 @@ main(int argc, char** argv)
     if(err)
         std::cerr << err << std::endl;
 
-    if(err || parser.exists("h"))
+    if(err || parser.exists("help"))
     {
         parser.print_help();
         return EXIT_FAILURE;
     }
 
-    if(parser.exists("a"))
+    if(parser.exists("all"))
         all_info = true;
 
-    if(parser.exists("A"))
+    if(parser.exists("alphabetical"))
         alphabetical = true;
 
-    if(parser.exists("f"))
+    if(parser.exists("filename"))
         options[FNAME] = !options[FNAME];
 
-    if(parser.exists("d"))
+    if(parser.exists("description"))
         options[DESC] = !options[DESC];
 
-    if(parser.exists("v"))
+    if(parser.exists("value"))
         options[VAL] = !options[VAL];
 
-    if(parser.exists("e"))
+    if(parser.exists("enum"))
         options[ENUM] = !options[ENUM];
 
-    if(parser.exists("l"))
+    std::cout << "parser.exists(enum) = " << std::boolalpha << parser.exists("enum")
+              << '\n';
+    std::cout << "parser.exists(e) = " << std::boolalpha << parser.exists("e") << '\n';
+
+    if(parser.exists("language-types"))
         options[LANG] = !options[LANG];
 
-    if(parser.exists("s"))
+    if(parser.exists("string"))
         options[CID] = !options[CID];
 
-    if(parser.exists("O"))
-        file = parser.get<std::string>("O");
+    if(parser.exists("output"))
+        file = parser.get<std::string>("output");
 
-    if(parser.exists("C"))
+    if(parser.exists("components"))
         include_components = true;
 
-    if(parser.exists("S"))
+    if(parser.exists("settings"))
     {
         include_settings = true;
     }
 
-    if(parser.exists("M"))
+    if(parser.exists("markdown"))
     {
         markdown = true;
         padding  = 6;
     }
 
-    if(parser.exists("H"))
+    if(parser.exists("hw-counters"))
     {
         include_hw_counters = true;
         padding             = 6;
@@ -430,7 +438,7 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     using width_type = int_vec_t;
     using width_bool = std::array<bool, N + 2>;
 
-    width_type _widths = width_type{ 40, 12, 20, 40, 20, 20, 20, 40 };
+    width_type _widths = width_type{ 40, 12, 20, 20, 20, 40, 20, 40 };
     width_bool _wusing = width_bool{ true, true };
     for(size_t i = 0; i < options.size(); ++i)
         _wusing[i + 2] = options[i];

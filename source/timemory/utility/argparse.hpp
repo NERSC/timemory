@@ -99,7 +99,20 @@ join(InputIt begin, InputIt end, const std::string& separator = " ")
 static inline bool
 is_numeric(const std::string& arg)
 {
-    return (arg.find_first_not_of("0123456789.e+-*/") == std::string::npos);
+    auto _nidx = arg.find_first_of("0123456789");
+    auto _oidx = arg.find_first_not_of("0123456789.Ee+-*/");
+
+    // must have number somewhere
+    if(_nidx == std::string::npos)
+        return false;
+
+    // if something other than number or scientific notation
+    if(_oidx != std::string::npos)
+        return false;
+
+    // numbers + possible scientific notation
+    return true;
+
     /*std::stringstream ss;
     ss << arg;
     float              f;

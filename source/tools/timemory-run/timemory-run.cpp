@@ -903,14 +903,14 @@ main(int argc, char** argv)
         bpatch->setInstrStackFrames(false);
         bpatch->setLivenessAnalysis(false);
 
+        verbprintf(4, "Registering fork callbacks...\n");
         auto _prefork  = bpatch->registerPreForkCallback(&timemory_fork_callback);
         auto _postfork = bpatch->registerPostForkCallback(&timemory_fork_callback);
-
-        consume_parameters(_prefork, _postfork);
 
         auto _wait_exec = [&]() {
             while(!appThread->isTerminated())
             {
+                verbprintf(3, "Continuing execution...\n");
                 appThread->continueExecution();
                 verbprintf(4, "Process is not terminated...\n");
                 // std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -928,6 +928,7 @@ main(int argc, char** argv)
             }
         };
 
+        verbprintf(4, "Entering wait for status change mode...\n");
         _wait_exec();
 
         if(appThread->terminationStatus() == ExitedNormally)
@@ -944,6 +945,7 @@ main(int argc, char** argv)
         }
 
         code = appThread->getExitCode();
+        consume_parameters(_prefork, _postfork);
     }
 
     // cleanup

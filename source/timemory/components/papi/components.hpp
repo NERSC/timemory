@@ -238,7 +238,6 @@ struct papi_vector
             auto events = get_events();
             if(events.size() > 0)
             {
-                is_configured() = true;
                 papi::create_event_set(&_event_set(), settings::papi_multiplexing());
                 papi::add_events(_event_set(), events.data(), events.size());
                 if(settings::papi_overflow() > 0)
@@ -250,6 +249,7 @@ struct papi_vector
                 if(settings::papi_attach())
                     papi::attach(_event_set(), process::get_target_id());
                 papi::start(_event_set());
+                is_configured() = true;
             }
         }
     }
@@ -316,11 +316,11 @@ struct papi_vector
     template <typename Tp = double>
     vector_t<Tp> get() const
     {
-        auto&        _data = (is_transient) ? accum : value;
-        vector_t<Tp> values(_data.size(), 0.0);
-        assert(_data.size() == events.size());
-        for(size_t i = 0; i < _data.size(); ++i)
-            values[i] = _data[i];
+        std::vector<Tp> values;
+        auto&           _data = (is_transient) ? accum : value;
+        for(auto& itr : _data)
+            values.push_back(itr);
+        values.resize(events.size());
         return values;
     }
 
@@ -332,8 +332,9 @@ struct papi_vector
         if(tracker_type::get_thread_started() == 0)
         {
             configure();
-            if(_event_set() != PAPI_NULL)
-                papi::reset(_event_set());
+            // if(_event_set() != PAPI_NULL)
+            //    papi::reset(_event_set());
+            events = get_events();
         }
 
         tracker_type::start();
@@ -345,15 +346,9 @@ struct papi_vector
 
     void stop()
     {
-        auto tmp = record();
         tracker_type::stop();
-
-        accum.resize(events.size(), 0);
-        for(size_type i = 0; i < events.size(); ++i)
-        {
-            value[i] = (tmp[i] - value[i]);
-            accum[i] += value[i];
-        }
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 
@@ -361,12 +356,8 @@ struct papi_vector
 
     this_type& operator+=(const this_type& rhs)
     {
-        value.resize(events.size(), 0);
-        accum.resize(events.size(), 0);
-        for(size_type i = 0; i < events.size(); ++i)
-            accum[i] += rhs.accum[i];
-        for(size_type i = 0; i < events.size(); ++i)
-            value[i] += rhs.value[i];
+        value += rhs.value;
+        accum += rhs.accum;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -376,12 +367,8 @@ struct papi_vector
 
     this_type& operator-=(const this_type& rhs)
     {
-        value.resize(events.size(), 0);
-        accum.resize(events.size(), 0);
-        for(size_type i = 0; i < events.size(); ++i)
-            accum[i] -= rhs.accum[i];
-        for(size_type i = 0; i < events.size(); ++i)
-            value[i] -= rhs.value[i];
+        value -= rhs.value;
+        accum -= rhs.accum;
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -405,7 +392,10 @@ public:
         return "papi_vector" + std::to_string((_event_set() < 0) ? 0 : _event_set());
     }
 
-    static std::string description() { return "Dynamic array of PAPI HW counters"; }
+    static std::string description()
+    {
+        return "Dynamically allocated array of PAPI HW counters";
+    }
 
     entry_type get_display(int evt_type) const
     {
@@ -861,7 +851,7 @@ public:
     {
         return "papi_array" + std::to_string((_event_set() < 0) ? 0 : _event_set());
     }
-    static std::string description() { return "Array of PAPI HW counters"; }
+    static std::string description() { return "Fixed-size array of PAPI HW counters"; }
 
     entry_type get_display(int evt_type) const
     {
@@ -897,6 +887,31 @@ public:
         std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
             arr[i] = papi::get_event_info(events[i]).short_descr;
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find("L/S")) != std::string::npos)
+                itr.replace(n, 3, "Loads_Stores");
+        }
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find("/")) != std::string::npos)
+                itr.replace(n, 1, "_per_");
+        }
+
+        for(auto& itr : arr)
+        {
+            size_t n = std::string::npos;
+            while((n = itr.find(" ")) != std::string::npos)
+                itr.replace(n, 1, "_");
+
+            while((n = itr.find("__")) != std::string::npos)
+                itr.replace(n, 2, "_");
+        }
+
         return arr;
     }
 

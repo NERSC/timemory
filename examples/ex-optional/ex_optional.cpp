@@ -119,7 +119,7 @@ int main(int argc, char** argv)
     std::vector<long> ret_reduce;
     std::vector<long> ret_send;
     for(size_t i = 0; i < fibvalues.size(); ++i)
-        ret_send.push_back(fibonacci(fibvalues.at(i)));
+        ret_send.push_back(fibonacci(fibvalues.at(i) % 20 + 10));
     allreduce(ret_send, ret_reduce);
     for(size_t i = 0; i < fibvalues.size(); ++i) write(fibvalues.at(i), ret_reduce.at(i));
 

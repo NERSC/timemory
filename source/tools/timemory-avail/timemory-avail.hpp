@@ -30,6 +30,8 @@
 
 #pragma once
 
+#define TIMEMORY_DISABLE_BANNER
+
 #include "cereal/external/base64.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/utility.hpp"
