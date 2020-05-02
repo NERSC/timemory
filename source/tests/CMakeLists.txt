@@ -64,6 +64,11 @@ if(TARGET custom-record-functions)
         LINK_LIBRARIES  custom-record-functions)
 endif()
 
+add_timemory_google_test(argparse_tests
+    SOURCES         argparse_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools)
+
 add_timemory_google_test(flat_tests
     DISCOVER_TESTS
     SOURCES         flat_tests.cpp

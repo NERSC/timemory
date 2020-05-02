@@ -67,8 +67,18 @@ if(NOT TIMEMORY_USE_SANITIZER)
     add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
 endif()
 
+add_interface_library(timemory-lto)
+add_target_flag_if_avail(timemory-lto "-flto=thin")
+if(NOT cxx_timemory_lto_flto_thin)
+    add_target_flag_if_avail(timemory-lto "-flto")
+    if(NOT cxx_timemory_lto_flto)
+        set(TIMEMORY_BUILD_LTO OFF)
+        add_disabled_interface(timemory-compile-timing)
+    endif()
+endif()
+
 if(TIMEMORY_BUILD_LTO)
-    add_flag_if_avail("-flto")
+    target_link_libraries(timemory-compile-options INTERFACE timemory-lto)
 endif()
 
 #----------------------------------------------------------------------------------------#

@@ -1,6 +1,6 @@
 
 
-set(PROCESSED )
+set_property(DIRECTORY PROPERTY PROCESSED )
 
 #----------------------------------------------------------------------------------------#
 
@@ -23,10 +23,11 @@ endfunction()
 
 function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
 
+    get_property(PROCESSED DIRECTORY PROPERTY PROCESSED)
     if("${_TARG}" IN_LIST PROCESSED)
         return()
     endif()
-    set(PROCESSED ${PROCESSED} ${_TARG} PARENT_SCOPE)
+    set_property(DIRECTORY APPEND PROPERTY PROCESSED ${_TARG})
 
     timemory_makefile_target(_FILE_TARG ${_TARG})
     timemory_makefile_target_name(_NAME ${_TARG})

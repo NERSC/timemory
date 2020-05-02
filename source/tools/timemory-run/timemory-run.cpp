@@ -177,7 +177,7 @@ main(int argc, char** argv)
         .description(
             "Enable instrumentation of C++ standard library functions. Use with caution! "
             "May causes deadlocks because timemory uses the STL internally. Use the "
-            "'-E/--regex-exclude' option to exclude any deadlocking functions")
+            "'-E/--function-exclude' option to exclude any deadlocking functions")
         .count(0);
     parser.add_argument()
         .names({ "-p", "--pid" })
@@ -370,16 +370,16 @@ main(int argc, char** argv)
             add_regex(func_exclude, itr);
     }
 
-    if(parser.exists("FR"))
+    if(parser.exists("MI"))
     {
-        auto keys = parser.get<regex_arg_t>("FR");
+        auto keys = parser.get<regex_arg_t>("MI");
         for(const auto& itr : keys)
             add_regex(file_include, itr);
     }
 
-    if(parser.exists("FE"))
+    if(parser.exists("ME"))
     {
-        auto keys = parser.get<regex_arg_t>("FE");
+        auto keys = parser.get<regex_arg_t>("ME");
         for(const auto& itr : keys)
             add_regex(file_exclude, itr);
     }
@@ -685,9 +685,9 @@ main(int argc, char** argv)
     auto ompt_end_call = none_call_args.get(ompt_end_stub);
 
     if(use_mpip)
-        verbprintf(1, "Adding mpip instrumentation...\n");
+        verbprintf(0, "+ Adding mpip instrumentation...\n");
     if(use_ompt)
-        verbprintf(1, "Adding ompt instrumentation...\n");
+        verbprintf(0, "+ Adding ompt instrumentation...\n");
 
     if(use_mpip && mpip_env_call)
         init_names.push_back(mpip_env_call.get());
@@ -849,7 +849,7 @@ main(int argc, char** argv)
         }
     }
 
-    verbprintf(0, "Before modules loop\n");
+    verbprintf(2, "Before modules loop\n");
     for(auto& m : modules)
     {
         char modname[1024];
@@ -860,12 +860,6 @@ main(int argc, char** argv)
         if(!m->getProcedures())
         {
             verbprintf(1, "Skipping module w/ no procedures: '%s'\n", modname);
-            continue;
-        }
-
-        if(module_constraint(modname) || !process_file_for_instrumentation(modname))
-        {
-            verbprintf(1, "Skipping constrained module: '%s'\n", modname);
             continue;
         }
 
@@ -1013,7 +1007,40 @@ read_collection(const std::string& fname, std::set<std::string>& collection_set)
 bool
 process_file_for_instrumentation(const std::string& file_name)
 {
-    std::regex ext_regex("\\.(c|C|S)$");
+    auto is_include = [&](bool _if_empty) {
+        if(file_include.empty())
+            return _if_empty;
+        for(auto& itr : file_include)
+        {
+            if(std::regex_search(file_name, itr))
+                return true;
+        }
+        return false;
+    };
+
+    auto is_exclude = [&]() {
+        for(auto& itr : file_exclude)
+        {
+            if(std::regex_search(file_name, itr))
+            {
+                verbprintf(2, "Excluding module [user-regex] : '%s'...\n",
+                           file_name.c_str());
+                return true;
+            }
+        }
+        return false;
+    };
+
+    auto _user_include = is_include(false) && !is_exclude();
+
+    if(_user_include)
+    {
+        verbprintf(2, "Including module [user-regex] : '%s'...\n", file_name.c_str());
+        return true;
+    }
+
+    std::string ext_str = (binary_rewrite) ? "\\.(C|S)$" : "\\.(c|C|S)$";
+    std::regex  ext_regex(ext_str);
     std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$");
     std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
                              "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)");
@@ -1064,27 +1091,7 @@ process_file_for_instrumentation(const std::string& file_name)
         return false;
     }
 
-    auto is_include = [&]() {
-        if(file_include.empty())
-            return true;
-        for(auto& itr : file_include)
-        {
-            if(std::regex_search(file_name, itr))
-                return true;
-        }
-        return false;
-    };
-
-    auto is_exclude = [&]() {
-        for(auto& itr : file_exclude)
-        {
-            if(std::regex_search(file_name, itr))
-                return true;
-        }
-        return false;
-    };
-
-    bool use = is_include() && !is_exclude();
+    bool use = is_include(true) && !is_exclude();
     if(use)
     {
         static std::set<std::string> already_reported;
@@ -1252,76 +1259,6 @@ insert_instr(BPatch_addressSpace* mutatee, BPatch_function* funcToInstr,
             mutatee->insertSnippet(*_trace, *itr);
     }
 }
-/*
-//======================================================================================//
-//
-// invoke_routine_in_func calls routine "callee" with no arguments when
-// Function "function" is invoked at the point given by location
-//
-BPatchSnippetHandle*
-invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
-                       BPatch_function* function, BPatch_procedureLocation loc,
-                       BPatch_function*               callee,
-                       BPatch_Vector<BPatch_snippet*> callee_args)
-{
-    consume_parameters(appImage);
-    // First create the snippet using the callee and the args
-    const BPatch_snippet* snippet = new BPatch_funcCallExpr(*callee, callee_args);
-
-    if(snippet == nullptr)
-    {
-        fprintf(stderr, "Unable to create snippet to call callee\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // Then find the points using loc (entry/exit) for the given function
-    const BPatch_Vector<BPatch_point*>* points = function->findPoint(loc);
-
-    if(points != nullptr)
-    {
-        // Insert the given snippet at the given point
-        if(loc == BPatch_entry)
-        {
-            appThread->insertSnippet(*snippet, *points, BPatch_callBefore,
-                                     BPatch_firstSnippet);
-        }
-        else
-        {
-            appThread->insertSnippet(*snippet, *points);
-        }
-    }
-    delete snippet;
-    return nullptr;
-}
-
-//======================================================================================//
-//
-// invoke_routine_in_func calls routine "callee" with no arguments when
-// Function "function" is invoked at the point given by location
-//
-BPatchSnippetHandle*
-invoke_routine_in_func(BPatch_process* appThread, BPatch_image* appImage,
-                       BPatch_Vector<BPatch_point*> points, BPatch_function* callee,
-                       BPatch_Vector<BPatch_snippet*> callee_args)
-{
-    consume_parameters(appImage);
-    // First create the snippet using the callee and the args
-    BPatch_snippet* snippet = new BPatch_funcCallExpr(*callee, callee_args);
-    if(snippet == NULL)
-    {
-        fprintf(stderr, "Unable to create snippet to call callee\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if(points.size())
-    {
-        // Insert the given snippet at the given point
-        appThread->insertSnippet(*snippet, points);
-    }
-    delete snippet;
-    return nullptr;
-}
-*/
 //======================================================================================//
 // Constraints for instrumentation. Returns true for those modules that
 // shouldn't be instrumented.

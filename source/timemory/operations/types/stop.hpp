@@ -55,35 +55,55 @@ struct stop
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
+
+    template <typename U>
+    using base_t = typename U::base_type;
 
     TIMEMORY_DELETED_OBJECT(stop)
 
     template <typename... Args>
-    explicit stop(base_type& obj, Args&&... args);
+    explicit stop(type& obj, Args&&... args);
 
     template <typename... Args>
-    explicit stop(base_type& obj, non_vexing&&, Args&&... args);
+    explicit stop(type& obj, non_vexing&&, Args&&... args);
 
 private:
-    //  satisfies mpl condition and accepts arguments
+    // resolution #1 (best)
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, Args&&... args)
+    auto sfinae(Up& obj, int, int, int, Args&&... args)
+        -> decltype(static_cast<base_t<Up>&>(obj).stop(crtp::base{},
+                                                       std::forward<Args>(args)...),
+                    void())
+    {
+        static_cast<base_t<Up>&>(obj).stop(crtp::base{}, std::forward<Args>(args)...);
+    }
+
+    // resolution #2
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, int, long, Args&&... args)
         -> decltype(obj.stop(std::forward<Args>(args)...), void())
     {
         obj.stop(std::forward<Args>(args)...);
     }
 
-    //  satisfies mpl condition but does not accept arguments
+    // resolution #3
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.stop(), void())
+    auto sfinae(Up& obj, int, long, long, Args&&...)
+        -> decltype(static_cast<base_t<Up>&>(obj).stop(crtp::base{}), void())
+    {
+        static_cast<base_t<Up>&>(obj).stop(crtp::base{});
+    }
+
+    // resolution #4
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, long, double, Args&&...) -> decltype(obj.stop(), void())
     {
         obj.stop();
     }
 
-    //  no member function or does not satisfy mpl condition
+    // resolution #5 (worst) - no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, Args&&...)
+    void sfinae(Up&, long, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
     }
@@ -100,12 +120,11 @@ struct priority_stop
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(priority_stop)
 
     template <typename... Args>
-    explicit priority_stop(base_type& obj, Args&&... args);
+    explicit priority_stop(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
@@ -132,12 +151,11 @@ struct standard_stop
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(standard_stop)
 
     template <typename... Args>
-    explicit standard_stop(base_type& obj, Args&&... args);
+    explicit standard_stop(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
@@ -164,12 +182,11 @@ struct delayed_stop
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
 
     TIMEMORY_DELETED_OBJECT(delayed_stop)
 
     template <typename... Args>
-    explicit delayed_stop(base_type& obj, Args&&... args);
+    explicit delayed_stop(type& obj, Args&&... args);
 
 private:
     //  satisfies mpl condition
@@ -189,11 +206,11 @@ private:
 //
 template <typename Tp>
 template <typename... Args>
-stop<Tp>::stop(base_type& obj, Args&&... args)
+stop<Tp>::stop(type& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
-    sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
 }
 
 //
@@ -201,11 +218,11 @@ stop<Tp>::stop(base_type& obj, Args&&... args)
 //
 template <typename Tp>
 template <typename... Args>
-stop<Tp>::stop(base_type& obj, non_vexing&&, Args&&... args)
+stop<Tp>::stop(type& obj, non_vexing&&, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
-    sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
 }
 
 //
@@ -213,7 +230,7 @@ stop<Tp>::stop(base_type& obj, non_vexing&&, Args&&... args)
 //
 template <typename Tp>
 template <typename... Args>
-priority_stop<Tp>::priority_stop(base_type& obj, Args&&... args)
+priority_stop<Tp>::priority_stop(type& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
@@ -228,7 +245,7 @@ priority_stop<Tp>::priority_stop(base_type& obj, Args&&... args)
 //
 template <typename Tp>
 template <typename... Args>
-standard_stop<Tp>::standard_stop(base_type& obj, Args&&... args)
+standard_stop<Tp>::standard_stop(type& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
@@ -243,7 +260,7 @@ standard_stop<Tp>::standard_stop(base_type& obj, Args&&... args)
 //
 template <typename Tp>
 template <typename... Args>
-delayed_stop<Tp>::delayed_stop(base_type& obj, Args&&... args)
+delayed_stop<Tp>::delayed_stop(type& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;

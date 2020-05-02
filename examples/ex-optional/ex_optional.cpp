@@ -185,8 +185,8 @@ void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
     recvbuf.resize(sendbuf.size(), 0L);
 #if defined(TIMEMORY_USE_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Allreduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), MPI_LONG, MPI_SUM,
-                  MPI_COMM_WORLD);
+    MPI_Allreduce((long*) sendbuf.data(), recvbuf.data(), sendbuf.size(), MPI_LONG,
+                  MPI_SUM, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 #else
     std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());

@@ -252,6 +252,15 @@
 #    endif
 #endif
 
+#if !defined(VERBOSE_PRINT_HERE)
+#    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, fmt, ...)                                  \
+        if(::tim::settings::verbose() >= VERBOSE_LEVEL)                                  \
+        {                                                                                \
+            fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,       \
+                    __LINE__, __VA_ARGS__);                                              \
+        }
+#endif
+
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \

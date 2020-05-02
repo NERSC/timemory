@@ -58,7 +58,9 @@ struct plus
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
+
+    template <typename U>
+    using base_t = typename U::base_type;
 
     TIMEMORY_DELETED_OBJECT(plus)
 
@@ -69,8 +71,7 @@ struct plus
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        using namespace tim::stl;
-        obj.base_type::plus(rhs);
+        sfinae(obj, 0, 0, rhs);
         obj = std::max(obj, rhs);
     }
 
@@ -81,14 +82,33 @@ struct plus
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        using namespace tim::stl;
-        obj.base_type::plus(rhs);
+        sfinae(obj, 0, 0, rhs);
         obj += rhs;
     }
 
     template <typename Vt, typename Up = Tp,
               enable_if_t<!(has_data<Up>::value), char> = 0>
     plus(type&, const Vt&)
+    {}
+
+private:
+    template <typename Up>
+    auto sfinae(Up& obj, int, int, const Up& rhs)
+        -> decltype(static_cast<base_t<Up>&>(obj).plus(crtp::base{},
+                                                       static_cast<base_t<Up>&>(rhs)),
+                    void())
+    {
+        static_cast<base_t<Up>&>(obj).plus(crtp::base{}, static_cast<base_t<Up>&>(rhs));
+    }
+
+    template <typename U>
+    auto sfinae(U& obj, int, long, const U& rhs) -> decltype(obj.plus(rhs), void())
+    {
+        obj.plus(rhs);
+    }
+
+    template <typename U>
+    auto sfinae(U&, long, long, const U&)
     {}
 };
 //
@@ -106,7 +126,9 @@ struct minus
 {
     using type       = Tp;
     using value_type = typename type::value_type;
-    using base_type  = typename type::base_type;
+
+    template <typename U>
+    using base_t = typename U::base_type;
 
     TIMEMORY_DELETED_OBJECT(minus)
 
@@ -116,15 +138,34 @@ struct minus
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        using namespace tim::stl;
         // ensures update to laps
-        obj.base_type::minus(rhs);
+        sfinae(obj, 0, 0, rhs);
         obj -= rhs;
     }
 
     template <typename Vt, typename Up = Tp,
               enable_if_t<!(has_data<Up>::value), char> = 0>
     minus(type&, const Vt&)
+    {}
+
+private:
+    template <typename Up>
+    auto sfinae(Up& obj, int, int, const Up& rhs)
+        -> decltype(static_cast<base_t<Up>&>(obj).minus(crtp::base{},
+                                                        static_cast<base_t<Up>&>(rhs)),
+                    void())
+    {
+        static_cast<base_t<Up>&>(obj).minus(crtp::base{}, static_cast<base_t<Up>&>(rhs));
+    }
+
+    template <typename U>
+    auto sfinae(U& obj, int, long, const U& rhs) -> decltype(obj.minus(rhs), void())
+    {
+        obj.minus(rhs);
+    }
+
+    template <typename U>
+    auto sfinae(U&, long, long, const U&)
     {}
 };
 //
