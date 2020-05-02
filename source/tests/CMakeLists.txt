@@ -30,6 +30,12 @@ endif()
 
 # add_library(no-store-merge INTERFACE)
 # add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
+add_library(test-opt-flags INTERFACE)
+string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
+target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
+if(NOT TIMEMORY_USE_ARCH)
+  add_target_flag_if_avail(test-opt-flags "-march=native")
+endif()
 
 set(HYBRID_COMPONENTS )
 
@@ -156,7 +162,7 @@ if(TIMEMORY_USE_PAPI)
         SOURCES         papi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options
                         timemory-develop-options timemory-plotting timemory-analysis-tools
-                        timemory-arch timemory-roofline-options
+                        timemory-arch timemory-roofline-options test-opt-flags
                         ${_LIBRARY})
 endif()
 
