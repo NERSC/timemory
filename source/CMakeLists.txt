@@ -302,9 +302,6 @@ endif()
 #
 add_subdirectory(tools)
 
-add_interface_library(timemory-mpip-library)
-add_interface_library(timemory-ompt-library)
-
 set(_OMPT_LIB)
 if(TARGET timemory-ompt-static)
     set(_OMPT_LIB timemory-ompt-static)
@@ -341,7 +338,7 @@ list(REMOVE_DUPLICATES TIMEMORY_COMPILED_LIBRARIES)
 
 # C/C++ compiled libraries
 install(
-    TARGETS ${TIMEMORY_COMPILED_LIBRARIES}
+    TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_TOOL_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
 

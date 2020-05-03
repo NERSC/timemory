@@ -64,6 +64,11 @@ add_interface_library(timemory-roofline-options)
 add_interface_library(timemory-dyninst)
 add_interface_library(timemory-kokkos)
 
+add_interface_library(timemory-mpip-library)
+add_interface_library(timemory-ompt-library)
+
+target_link_libraries(timemory-mpip-library INTERFACE timemory-mpi timemory-gotcha)
+
 set(_DMP_LIBRARIES)
 
 if(TIMEMORY_USE_MPI)
