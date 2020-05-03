@@ -1041,10 +1041,10 @@ process_file_for_instrumentation(const std::string& file_name)
 
     std::string ext_str = (binary_rewrite) ? "\\.(C|S)$" : "\\.(c|C|S)$";
     std::regex  ext_regex(ext_str);
-    std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$");
-    std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
+    std::regex  sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$");
+    std::regex  userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
                              "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)");
-    std::regex corelib_regex("^lib(rt-|m-|dl-|m-|util-|gcc|c-|stdc++|c++|python)");
+    std::regex  corelib_regex("^lib(rt-|m-|dl-|m-|util-|gcc|c-|stdc++|c++|python)");
     // these are all due to TAU
     std::regex prefix_regex("^(Tau|Profiler|Rts|Papi|Py|Comp_xl\\.cpp|Comp_gnu\\.cpp|"
                             "UserEvent\\.cpp|FunctionInfo\\.cpp|PthreadLayer\\.cpp|"

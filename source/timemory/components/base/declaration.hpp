@@ -190,8 +190,8 @@ public:
     void start();    /// start measurement
     void stop();     /// stop measurement
 
-    auto start(const crtp::base&) { this->start(); }
-    auto stop(const crtp::base&) { this->stop(); }
+    auto start(crtp::base) { this->start(); }
+    auto stop(crtp::base) { this->stop(); }
 
     // void mark_begin() {}  // mark a begining point in the execution
     // void mark_end() {}    // mark a ending point in the execution
@@ -302,8 +302,8 @@ protected:
     }
 
 public:
-    auto plus(crtp::base&&, const base_type& rhs) { this->plus(rhs); }
-    auto minus(crtp::base&&, const base_type& rhs) { this->minus(rhs); }
+    auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }
+    auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
 
 protected:
     //----------------------------------------------------------------------------------//

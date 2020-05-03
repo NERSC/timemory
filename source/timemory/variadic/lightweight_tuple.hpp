@@ -23,8 +23,7 @@
 // SOFTWARE.
 //
 
-/** \file timemory/variadic/component_tuple.hpp
- * \headerfile variadic/component_tuple.hpp "timemory/variadic/component_tuple.hpp"
+/** \file timemory/variadic/lightweight_tuple.hpp
  * This is the C++ class that bundles together components and enables
  * operation on the components as a single entity
  *
@@ -62,20 +61,14 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class component_tuple : public stack_bundle<available_tuple<concat<Types...>>>
+class lightweight_tuple : public stack_bundle<available_tuple<std::tuple<Types...>>>
 {
     // manager is friend so can use above
     friend class manager;
 
-    template <typename TupleC, typename ListC>
-    friend class component_hybrid;
-
-    template <typename... Tp>
-    friend class auto_tuple;
-
 public:
-    using bundle_type         = stack_bundle<available_tuple<concat<Types...>>>;
-    using this_type           = component_tuple<Types...>;
+    using bundle_type         = stack_bundle<available_tuple<std::tuple<Types...>>>;
+    using this_type           = lightweight_tuple<Types...>;
     using captured_location_t = source_location::captured;
 
     using data_type         = typename bundle_type::data_type;
@@ -98,23 +91,22 @@ public:
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 
     // used by gotcha
-    using component_type   = component_tuple<Types...>;
-    using auto_type        = auto_tuple<Types...>;
-    using type             = convert_t<type_tuple, component_tuple<>>;
+    using component_type   = lightweight_tuple<Types...>;
+    using type             = convert_t<type_tuple, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
     // used by component hybrid
-    static constexpr bool is_component_list   = false;
-    static constexpr bool is_component_tuple  = true;
-    static constexpr bool is_component_hybrid = false;
-    static constexpr bool is_component_type   = true;
-    static constexpr bool is_auto_list        = false;
-    static constexpr bool is_auto_tuple       = false;
-    static constexpr bool is_auto_hybrid      = false;
-    static constexpr bool is_auto_type        = false;
-    static constexpr bool is_component        = false;
-    static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
-    static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
+    static constexpr bool is_component_list    = false;
+    static constexpr bool is_lightweight_tuple = true;
+    static constexpr bool is_component_hybrid  = false;
+    static constexpr bool is_component_type    = true;
+    static constexpr bool is_auto_list         = false;
+    static constexpr bool is_auto_tuple        = false;
+    static constexpr bool is_auto_hybrid       = false;
+    static constexpr bool is_auto_type         = false;
+    static constexpr bool is_component         = false;
+    static constexpr bool has_gotcha_v         = bundle_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v    = bundle_type::has_user_bundle_v;
 
 public:
     //
@@ -144,43 +136,33 @@ public:
     }
 
 public:
-    component_tuple();
+    lightweight_tuple();
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, variadic::config<T...>,
-                             const Func& = get_initializer());
+    explicit lightweight_tuple(const string_t& key, variadic::config<T...> = {},
+                               const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, variadic::config<T...>,
-                             const Func& = get_initializer());
+    explicit lightweight_tuple(const captured_location_t& loc,
+                               variadic::config<T...> = {},
+                               const Func&            = get_initializer());
 
-    template <typename Func = initializer_type>
-    explicit component_tuple(const string_t& key, const bool& store = true,
-                             scope::config _scope = scope::get_default(),
-                             const Func&          = get_initializer());
+    template <typename... T, typename Func = initializer_type>
+    explicit lightweight_tuple(size_t _hash, variadic::config<T...> = {},
+                               const Func& = get_initializer());
 
-    template <typename Func = initializer_type>
-    explicit component_tuple(const captured_location_t& loc, const bool& store = true,
-                             scope::config _scope = scope::get_default(),
-                             const Func&          = get_initializer());
-
-    template <typename Func = initializer_type>
-    explicit component_tuple(size_t _hash, const bool& store = true,
-                             scope::config _scope = scope::get_default(),
-                             const Func&          = get_initializer());
-
-    ~component_tuple();
+    ~lightweight_tuple();
 
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_tuple(const component_tuple&) = default;
-    component_tuple(component_tuple&&)      = default;
+    lightweight_tuple(const lightweight_tuple&) = default;
+    lightweight_tuple(lightweight_tuple&&)      = default;
 
-    component_tuple& operator=(const component_tuple& rhs) = default;
-    component_tuple& operator=(component_tuple&&) = default;
+    lightweight_tuple& operator=(const lightweight_tuple& rhs) = default;
+    lightweight_tuple& operator=(lightweight_tuple&&) = default;
 
-    component_tuple clone(bool store, scope::config _scope = scope::get_default());
+    lightweight_tuple clone(bool store, scope::config _scope = scope::get_default());
 
 public:
     //----------------------------------------------------------------------------------//
@@ -213,12 +195,6 @@ public:
     auto             get_labeled(Args&&...) const;
     data_type&       data();
     const data_type& data() const;
-
-    // lightweight variants which exclude push/pop and assemble/derive
-    template <typename... Args>
-    void start(mpl::lightweight, Args&&...);
-    template <typename... Args>
-    void stop(mpl::lightweight, Args&&...);
 
     using bundle_type::hash;
     using bundle_type::key;
@@ -570,8 +546,8 @@ protected:
 
 template <typename... Types>
 auto
-get(const component_tuple<Types...>& _obj)
-    -> decltype(std::declval<component_tuple<Types...>>().get())
+get(const lightweight_tuple<Types...>& _obj)
+    -> decltype(std::declval<lightweight_tuple<Types...>>().get())
 {
     return _obj.get();
 }
@@ -580,8 +556,8 @@ get(const component_tuple<Types...>& _obj)
 
 template <typename... Types>
 auto
-get_labeled(const component_tuple<Types...>& _obj)
-    -> decltype(std::declval<component_tuple<Types...>>().get_labeled())
+get_labeled(const lightweight_tuple<Types...>& _obj)
+    -> decltype(std::declval<lightweight_tuple<Types...>>().get_labeled())
 {
     return _obj.get_labeled();
 }
@@ -596,7 +572,7 @@ get_labeled(const component_tuple<Types...>& _obj)
 //
 //--------------------------------------------------------------------------------------//
 
-// #include "timemory/variadic/bits/component_tuple.hpp"
+// #include "timemory/variadic/bits/lightweight_tuple.hpp"
 
 //======================================================================================//
 //
@@ -608,7 +584,7 @@ namespace std
 
 template <std::size_t N, typename... Types>
 typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(::tim::component_tuple<Types...>& obj)
+get(::tim::lightweight_tuple<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -617,7 +593,7 @@ get(::tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const ::tim::component_tuple<Types...>& obj)
+get(const ::tim::lightweight_tuple<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -626,10 +602,10 @@ get(const ::tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 auto
-get(::tim::component_tuple<Types...>&& obj)
-    -> decltype(get<N>(std::forward<::tim::component_tuple<Types...>>(obj).data()))
+get(::tim::lightweight_tuple<Types...>&& obj)
+    -> decltype(get<N>(std::forward<::tim::lightweight_tuple<Types...>>(obj).data()))
 {
-    using obj_type = ::tim::component_tuple<Types...>;
+    using obj_type = ::tim::lightweight_tuple<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
 

@@ -125,7 +125,7 @@
  * \brief Specialization of the property specialization
  */
 
-#if !defined(TIMEMORY_PROPERTY_SPECIALIZATION)
+#if !defined(TIMEMORY_PROPERTY_SPECIALIZATION) && !defined(TIMEMORY_DISABLE_PROPERTIES)
 #    define TIMEMORY_PROPERTY_SPECIALIZATION(TYPE, ENUM, ID, ...)                        \
         namespace tim                                                                    \
         {                                                                                \
@@ -153,6 +153,8 @@
         };                                                                               \
         }                                                                                \
         }
+#elif !defined(TIMEMORY_PROPERTY_SPECIALIZATION) && defined(TIMEMORY_DISABLE_PROPERTIES)
+#    define TIMEMORY_PROPERTY_SPECIALIZATION(...)
 #endif
 
 //======================================================================================//

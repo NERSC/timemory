@@ -214,21 +214,36 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-#if !defined(_WINDOWS)
+    TIMEMORY_WEAK_PREFIX
+    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
     void timemory_register_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
+    void timemory_deregister_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+
+    TIMEMORY_WEAK_PREFIX
+    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
     void timemory_register_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
-    void timemory_deregister_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
     void timemory_deregister_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
+                                              const char*  runtime_version)
+        TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
 
-    void timemory_register_mpip() {}
-    void timemory_register_ompt() {}
-    void timemory_deregister_mpip() {}
-    void timemory_deregister_ompt() {}
-#endif
+    void                      timemory_register_mpip() {}
+    void                      timemory_register_ompt() {}
+    void                      timemory_deregister_mpip() {}
+    void                      timemory_deregister_ompt() {}
+    void                      timemory_mpip_library_ctor() {}
+    void                      timemory_ompt_library_ctor() {}
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
+    {
+        return nullptr;
+    }
     //
     //----------------------------------------------------------------------------------//
     //
@@ -270,9 +285,9 @@ extern "C"
         if(tim::settings::verbose() > 2 || tim::settings::debug())
             PRINT_HERE("%s", name);
 
-        size_t                    id         = tim::add_hash_id(name);
-        int64_t                   ntotal     = _trace_map[id].size();
-        int64_t                   offset     = ntotal - 1;
+        size_t  id     = tim::add_hash_id(name);
+        int64_t ntotal = _trace_map[id].size();
+        int64_t offset = ntotal - 1;
 
         if(tim::settings::verbose() > 2)
             printf("ending trace for %llu [offset = %lli]...\n", (long long unsigned) id,

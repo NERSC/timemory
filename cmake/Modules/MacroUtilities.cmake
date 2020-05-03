@@ -552,7 +552,9 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
 
     # options
     set(_options    USE_INTERFACE
-                    INSTALL_SOURCE)
+                    INSTALL_SOURCE
+                    FORCE_SHARED
+                    FORCE_STATIC)
     # single-value
     set(_onevalue   NAME
                     TARGET
@@ -585,12 +587,12 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
 
     set(_LIB_TYPES)
-    if(_BUILD_SHARED_CXX)
+    if(_BUILD_SHARED_CXX OR COMP_FORCE_SHARED)
         list(APPEND _LIB_TYPES shared)
         set(shared_OPTIONS PIC TYPE SHARED)
     endif()
 
-    if(_BUILD_STATIC_CXX)
+    if(_BUILD_STATIC_CXX OR COMP_FORCE_STATIC)
         list(APPEND _LIB_TYPES static)
         set(static_OPTIONS TYPE STATIC)
     endif()
@@ -624,9 +626,8 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
 
         target_link_libraries(${TARGET_NAME} PUBLIC
-            timemory-headers
-            timemory-vector
             timemory-external-${LINK}
+            timemory-vector
             ${DEPENDS}
             ${PROPERTY_DEPENDS}
             ${COMP_PUBLIC_LINK})
@@ -635,6 +636,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory-compile-options
             timemory-develop-options
             timemory-default-visibility
+            timemory-headers
             ${_ANALYSIS_TOOLS}
             ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})

@@ -135,10 +135,10 @@ if(_BUILD_SHARED_CXX)
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
     target_link_libraries(timemory-cxx-shared PUBLIC
-        timemory-headers
-        timemory-vector
         timemory-external-shared
+        timemory-vector
         timemory-extern
+        timemory-headers
         ${TIMEMORY_SHARED_GLOBAL_LIBRARIES}
         ${TIMEMORY_SHARED_EXTERN_LIBRARIES}
         ${TIMEMORY_SHARED_COMPONENT_LIBRARIES}
@@ -179,9 +179,10 @@ if(_BUILD_STATIC_CXX)
         COMPILE_DEFINITIONS ${_USE_EXTERN})
 
     target_link_libraries(timemory-cxx-static PUBLIC
-        timemory-headers
-        timemory-vector
         timemory-external-static
+        timemory-vector
+        timemory-extern
+        timemory-headers
         ${TIMEMORY_STATIC_GLOBAL_LIBRARIES}
         ${TIMEMORY_STATIC_EXTERN_LIBRARIES}
         ${TIMEMORY_STATIC_COMPONENT_LIBRARIES}
@@ -235,8 +236,7 @@ if(TIMEMORY_BUILD_C)
             OUTPUT_DIR          ${PROJECT_BINARY_DIR}
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-            LINK_LIBRARIES      timemory-headers
-                                PRIVATE
+            LINK_LIBRARIES      PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
                                     timemory-cxx-shared
@@ -260,8 +260,7 @@ if(TIMEMORY_BUILD_C)
             OUTPUT_DIR          ${PROJECT_BINARY_DIR}
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-            LINK_LIBRARIES      timemory-headers
-                                PRIVATE
+            LINK_LIBRARIES      PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
                                     timemory-cxx-static

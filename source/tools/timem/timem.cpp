@@ -23,56 +23,13 @@
 // SOFTWARE.
 
 #include "timem.hpp"
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-sampler(int signum)
-{
-    if(signum == TIMEM_SIGNAL)
-    {
-        get_measure()->sample();
-        if((debug() && verbose() > 1) || (verbose() > 2))
-            std::cerr << "[SAMPLE][" << getpid() << "]> " << *get_measure() << std::endl;
-        else if(debug())
-            fprintf(stderr, "[%i]> sampling...\n", getpid());
-    }
-    else
-    {
-        perror("timem sampler caught signal that was not TIMEM_SIGNAL...");
-        signal(signum, SIG_DFL);
-        raise(signum);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-sampler(int signum, siginfo_t*, void*)
-{
-    if(signum == TIMEM_SIGNAL)
-    {
-        get_measure()->sample();
-        if((debug() && verbose() > 1) || (verbose() > 2))
-            std::cerr << "[SAMPLE][" << getpid() << "]> " << *get_measure() << std::endl;
-        else if(debug())
-            fprintf(stderr, "[%i]> sampling...\n", getpid());
-    }
-    else
-    {
-        perror("timem sampler caught signal that was not TIMEM_SIGNAL...");
-        signal(signum, SIG_DFL);
-        raise(signum);
-    }
-}
+#include "timemory/utility/argparse.hpp"
 
 //--------------------------------------------------------------------------------------//
 
 void
-parent_process(pid_t pid, int status)
+parent_process(pid_t pid, int ret)
 {
-    int ret = diagnose_status(status);
-
     if((debug() && verbose() > 1) || verbose() > 2)
         std::cerr << "[AFTER STOP][" << pid << "]> " << *get_measure() << std::endl;
 
@@ -136,12 +93,12 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 
     // launches the command with the shell, this is the default because it enables aliases
     auto launch_using_shell = [&]() {
-        auto        flags_str  = tim::get_env<std::string>("TIMEM_USE_SHELL_FLAGS", "-i");
-        auto        flags_vec  = tim::delimit(flags_str, " ");
-        int         ret        = -1;
-        uint64_t    argc_shell = 4 + flags_vec.size();
-        char**      argv_shell_list = new char*[argc];
-        std::string _shell          = tim::get_env<std::string>("SHELL", getusershell());
+        std::string _shell          = get_config().shell;
+        auto        flags_str       = get_config().shell_flags;
+        auto        flags_vec       = tim::delimit(flags_str, " ");
+        int         ret             = -1;
+        uint64_t    argc_shell      = 4 + flags_vec.size();
+        char**      argv_shell_list = new char*[argc_shell + 1];
 
         if(debug() || verbose() > 0)
             fprintf(stderr, "using shell: %s\n", _shell.c_str());
@@ -256,6 +213,80 @@ main(int argc, char** argv)
     tim::settings::width()       = 12;
     tim::settings::precision()   = 6;
 
+    tim::argparse::argument_parser parser(argv[0]);
+
+    parser.enable_help();
+    parser.add_argument()
+        .names({ "-v", "--verbose" })
+        .description("Verbose output")
+        .max_count(1);
+    parser.add_argument().names({ "--debug" }).description("Debug output").count(0);
+    parser
+        .add_argument({ "-s", "--shell" }, "Enable launching command via a shell command "
+                                           "(if no arguments, $SHELL is used)")
+        .max_count(1);
+    parser
+        .add_argument({ "--shell-flags" },
+                      "Set the shell flags to use (pass as single "
+                      "string as leading dashes can confuse parser) [default: -i]")
+        .count(1);
+    parser
+        .add_argument({ "-d", "--sample-delay" },
+                      "Set the delay before the sampler starts (seconds)")
+        .count(1);
+    parser
+        .add_argument({ "-f", "--sample-freq" },
+                      "Set the frequency of the sampler (1/seconds)")
+        .count(1);
+
+    auto _args = parser.parse_known_args(argc, argv);
+    auto _aerr = std::get<0>(_args);
+    auto _argc = std::get<1>(_args);
+    auto _argv = std::get<2>(_args);
+
+    if(_aerr)
+    {
+        std::cerr << _aerr << std::endl;
+        parser.print_help("-- <CMD> <ARGS>");
+        return EXIT_FAILURE;
+    }
+
+    if(parser.exists("help"))
+    {
+        parser.print_help("-- <CMD> <ARGS>");
+        return EXIT_FAILURE;
+    }
+
+    // make sure config is instantiated
+    auto& _config = get_config();
+
+    if(parser.exists("verbose"))
+    {
+        if(parser.get_count("verbose") == 0)
+            verbose() = 1;
+        else
+            verbose() = parser.get<int>("verbose");
+    }
+
+    if(parser.exists("debug"))
+        debug() = true;
+
+    if(parser.exists("shell"))
+    {
+        use_shell() = true;
+        if(parser.get_count("shell") > 0)
+            _config.shell = parser.get<std::string>("shell");
+    }
+
+    if(parser.exists("sample-delay"))
+        _config.sample_delay = parser.get<double>("sample-delay");
+
+    if(parser.exists("sample-freq"))
+        _config.sample_freq = parser.get<double>("sample-freq");
+
+    if(parser.exists("shell-flags"))
+        _config.shell_flags = parser.get<std::string>("shell-flags");
+
     // parse for settings configurations
     if(argc > 1)
         tim::timemory_init(argc, argv);
@@ -276,16 +307,12 @@ main(int argc, char** argv)
 
     if(argc > 1)
     {
-        command() = std::string(const_cast<const char*>(argv[1]));
+        command() = std::string(const_cast<const char*>(_argv[1]));
     }
     else
     {
-        command()              = std::string(const_cast<const char*>(argv[0]));
+        command()              = std::string(const_cast<const char*>(_argv[0]));
         tim::get_rusage_type() = RUSAGE_CHILDREN;
-        get_measure()          = new comp_tuple_t(compose_prefix());
-        get_measure()->start();
-        get_measure()->stop();
-        std::cerr << "\n" << *get_measure() << std::flush;
         exit(EXIT_SUCCESS);
     }
 
@@ -300,10 +327,10 @@ main(int argc, char** argv)
         worker_pid()                  = pid;
         tim::process::get_target_id() = pid;
         tim::settings::papi_attach()  = true;
-        get_measure()                 = new comp_tuple_t(compose_prefix());
+        get_sampler()                 = new sampler_t(compose_prefix(), { TIMEM_SIGNAL });
     }
 
-    uint64_t nargs = static_cast<uint64_t>(argc);
+    uint64_t nargs = static_cast<uint64_t>(_argc);
     if(pid == -1)  // pid == -1 means error occured
     {
         puts("failure forking, error occured!");
@@ -311,98 +338,44 @@ main(int argc, char** argv)
     }
     else if(pid == 0)  // pid == 0 means child process created
     {
-        child_process(nargs, argv);
+        child_process(nargs, _argv);
     }
     else  // means parent process
     {
-        // struct sigaction& sa = timem_signal_action();
-        struct sigaction timem_sa;
-        struct sigaction orig_sa;
-
-        // Install timer_handler as the signal handler for TIMEM_SIGNAL.
-
-        memset(&timem_sa, 0, sizeof(timem_sa));
-        // sigfillset(&timem_sa.sa_mask);
-        // sigdelset(&timem_sa.sa_mask, TIMEM_SIGNAL);
-
-        timem_sa.sa_handler   = &sampler;
-        timem_sa.sa_sigaction = &sampler;
-        timem_sa.sa_flags     = SA_RESTART | SA_SIGINFO;
-
-        sigaction(TIMEM_SIGNAL, &timem_sa, &orig_sa);
-
-        // itimerval& _timer = timem_itimer();
-        struct itimerval _timer;
-
         /// \param TIMEM_SAMPLE_DELAY
         /// \brief Environment variable, expressed in seconds, that sets the length
         /// of time the timem executable waits before starting sampling of the relevant
         /// measurements (components that read from child process status files)
         ///
-        double fdelay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 0.001);
+        double fdelay = get_config().sample_delay;
 
         /// \param TIMEM_SAMPLE_FREQ
         /// \brief Environment variable, expressed in 1/seconds, that sets the frequency
         /// that the timem executable samples the relevant measurements (components
         /// that read from child process status files)
         ///
-        double frate = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 2.0);
+        double frate = get_config().sample_freq;
 
-        double ffreq = 1.0 / frate;
+        sampler_t::set_delay(fdelay);
+        sampler_t::set_rate(frate);
 
-        int delay_sec  = (fdelay * 1.0e6) / 1000000.;
-        int delay_usec = int(fdelay * 1.0e6) % 1000000;
-
-        int freq_sec  = (ffreq * 1.0e6) / 1000000.;
-        int freq_usec = int(ffreq * 1.0e6) % 1000000;
-
-        if(debug() || verbose() > 0)
-        {
-            fprintf(stderr, "timem sampler delay     : %i sec + %i usec\n", delay_sec,
-                    delay_usec);
-            fprintf(stderr, "timem sampler frequency : %i sec + %i usec\n", freq_sec,
-                    freq_usec);
-        }
-
-        // Configure the timer to expire after designated delay...
-        _timer.it_value.tv_sec  = delay_sec;
-        _timer.it_value.tv_usec = delay_usec;
-
-        // ... and every designated interval after that
-        _timer.it_interval.tv_sec  = freq_sec;
-        _timer.it_interval.tv_usec = freq_usec;
-
-        get_measure()->start();
-
-        // start the interval timer
-        int itimer_stat = setitimer(TIMEM_ITIMER, &_timer, nullptr);
-
-        if(debug())
-            fprintf(stderr, "Sample configuration return value: %i\n", itimer_stat);
+        sampler_t::configure(TIMEM_SIGNAL);
 
         // pause until first interrupt delivered
         pause();
 
-        // loop while the errno is not EINTR (interrupt) and status designates
-        // it was stopped because of TIMEM_SIGNAL
-        int status = 0;
-        int errval = 0;
-        do
-        {
-            status = 0;
-            errval = waitpid_eintr(status);
-        } while(errval == EINTR && diagnose_status(status, debug()) == TIMEM_SIGNAL);
+        auto status = sampler_t::wait(verbose(), debug());
 
         if((debug() && verbose() > 1) || verbose() > 2)
             std::cerr << "[BEFORE STOP][" << pid << "]> " << *get_measure() << std::endl;
 
-        get_measure()->stop();
-        signal(TIMEM_SIGNAL, SIG_IGN);
+        get_sampler()->stop();
+        sampler_t::ignore();
 
         parent_process(pid, status);
     }
 
-    delete get_measure();
+    delete get_sampler();
 }
 
 //--------------------------------------------------------------------------------------//

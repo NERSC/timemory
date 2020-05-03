@@ -50,7 +50,10 @@ template <typename Tp>
 template <typename Up, enable_if_t<(trait::is_available<Up>::value), char>>
 init_storage<Tp>::init_storage()
 {
+#if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
+#else
     base::storage::template base_instance<type, value_type>();
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -67,6 +70,9 @@ template <typename U, typename V, enable_if_t<(implements_storage<U, V>::value),
 typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
+#if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
+    return get_type{ nullptr, false, false, false };
+#else
     static thread_local auto _instance = []() {
         if(!trait::runtime_enabled<Tp>::get())
             return get_type{ nullptr, false, false, false };
@@ -78,6 +84,7 @@ init_storage<Tp>::get()
         return get_type{ this_inst, this_glob, this_work, this_data };
     }();
     return _instance;
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -87,6 +94,9 @@ template <typename U, typename V, enable_if_t<!(implements_storage<U, V>::value)
 typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
+#if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
+    return get_type{ nullptr, false, false, false };
+#else
     static thread_local auto _instance = []() {
         if(!trait::runtime_enabled<Tp>::get())
             return get_type{ nullptr, false, false, false };
@@ -95,6 +105,7 @@ init_storage<Tp>::get()
         return get_type{ this_inst, false, false, false };
     }();
     return _instance;
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -106,8 +117,11 @@ init_storage<Tp>::init()
     if(!trait::runtime_enabled<Tp>::get())
         return;
 
+#if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
+#else
     static thread_local auto _init = this_type::get();
     consume_parameters(_init);
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//

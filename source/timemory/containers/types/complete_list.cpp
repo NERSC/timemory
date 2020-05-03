@@ -26,6 +26,8 @@
 //
 #include "timemory/components.hpp"
 //
+#include "timemory/variadic/lightweight_tuple.hpp"
+//
 #include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"

@@ -38,6 +38,8 @@
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
 //
+#include "timemory/variadic/lightweight_tuple.hpp"
+//
 #include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"

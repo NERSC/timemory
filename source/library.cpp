@@ -99,7 +99,8 @@ get_components_stack()
 inline std::string&
 get_default_components()
 {
-    static thread_local std::string _instance = "wall_clock";
+    static thread_local std::string _instance =
+        tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "wall_clock");
     return _instance;
 }
 
@@ -126,26 +127,6 @@ get_current_components()
 
 extern "C"
 {
-#if !defined(_WINDOWS)
-    TIMEMORY_WEAK_PREFIX
-    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
-        TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
-        TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
-                                              const char*  runtime_version)
-        TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-
-    void                      timemory_mpip_library_ctor() {}
-    void                      timemory_ompt_library_ctor() {}
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
-    {
-        return nullptr;
-    }
-#endif
-
     //----------------------------------------------------------------------------------//
     //  get a unique id
     //
@@ -278,7 +259,9 @@ extern "C"
 
     void timemory_set_default(const char* _component_string)
     {
-        get_default_components()         = std::string(_component_string);
+        get_default_components() = std::string(_component_string);
+        tim::set_env("TIMEMORY_GLOBAL_COMPONENTS", _component_string, 0);
+        tim::set_env("TIMEMORY_COMPONENTS", _component_string, 0);
         static thread_local auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
     }

@@ -41,6 +41,8 @@
 #include "timemory/storage/declaration.hpp"
 #include "timemory/utility/serializer.hpp"
 
+#include <cassert>
+
 //======================================================================================//
 //
 namespace tim
@@ -88,6 +90,7 @@ void
 base<Tp, Value>::add_sample(Vp&& _obj)
 {
     auto _storage = static_cast<storage_type*>(get_storage());
+    assert(_storage != nullptr);
     if(_storage)
         _storage->add_sample(std::forward<Vp>(_obj));
 }
@@ -128,6 +131,7 @@ base<Tp, Value>::insert_node(scope::config _scope, int64_t _hash)
         is_on_stack      = true;
         is_flat          = _scope.is_flat();
         auto  _storage   = static_cast<storage_type*>(get_storage());
+        assert(_storage != nullptr);
         auto  _beg_depth = _storage->depth();
         Type* obj        = static_cast<Type*>(this);
         graph_itr        = _storage->insert(_scope, *obj, _hash);
@@ -154,6 +158,7 @@ base<Tp, Value>::pop_node()
         Type& rhs     = static_cast<Type&>(*this);
         depth_change  = false;
         auto _storage = static_cast<storage_type*>(get_storage());
+        assert(_storage != nullptr);
 
         if(storage_type::is_finalizing())
         {

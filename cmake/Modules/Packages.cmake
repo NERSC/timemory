@@ -286,7 +286,9 @@ endfunction()
 #----------------------------------------------------------------------------------------#
 
 target_include_directories(timemory-headers INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
+
+target_include_directories(timemory-headers SYSTEM INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 if(TIMEMORY_LINK_RT)
@@ -334,8 +336,7 @@ checkout_git_submodule(RECURSIVE
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/cereal)
 
 target_include_directories(timemory-cereal SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/cereal/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/cereal/include>)
 
 # timemory-headers always provides timemory-cereal
 target_link_libraries(timemory-headers INTERFACE timemory-cereal)
@@ -667,8 +668,7 @@ if(TIMEMORY_USE_PYTHON)
         target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
         target_include_directories(timemory-python SYSTEM INTERFACE
             ${PYTHON_INCLUDE_DIRS}
-            $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+            $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
         target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
     elseif(pybind11_FOUND)
         target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
@@ -987,8 +987,7 @@ if(caliper_FOUND)
     if(TIMEMORY_BUILD_CALIPER)
         target_include_directories(timemory-caliper SYSTEM INTERFACE
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/caliper/include>
-            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/caliper/include>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/caliper/include>)
         target_link_libraries(timemory-caliper INTERFACE caliper)
         if(WITH_CUPTI)
             target_link_libraries(timemory-caliper INTERFACE timemory-cupti)
