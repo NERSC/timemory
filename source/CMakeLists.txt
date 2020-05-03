@@ -158,6 +158,10 @@ if(_BUILD_SHARED_CXX)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
     endif()
 
+    target_include_directories(timemory-cxx-shared PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
+
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         target_compile_definitions(timemory-cxx-shared PRIVATE DEBUG)
     endif()
@@ -199,6 +203,10 @@ if(_BUILD_STATIC_CXX)
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_C)
     endif()
+
+    target_include_directories(timemory-cxx-static PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         target_compile_definitions(timemory-cxx-static PRIVATE DEBUG)
@@ -273,7 +281,7 @@ if(TIMEMORY_BUILD_C)
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
 
-        target_include_directories(timemory-c-shared PUBLIC
+        target_include_directories(timemory-c-static PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
     endif()
