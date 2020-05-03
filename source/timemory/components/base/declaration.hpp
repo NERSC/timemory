@@ -40,6 +40,9 @@
 
 namespace tim
 {
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace component
 {
 //
@@ -187,6 +190,9 @@ public:
     void start();    /// start measurement
     void stop();     /// stop measurement
 
+    auto start(const crtp::base&) { this->start(); }
+    auto stop(const crtp::base&) { this->stop(); }
+
     // void mark_begin() {}  // mark a begining point in the execution
     // void mark_end() {}    // mark a ending point in the execution
     // void store() {}       // store a value
@@ -294,6 +300,10 @@ protected:
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
+
+public:
+    auto plus(crtp::base&&, const base_type& rhs) { this->plus(rhs); }
+    auto minus(crtp::base&&, const base_type& rhs) { this->minus(rhs); }
 
 protected:
     //----------------------------------------------------------------------------------//
@@ -449,6 +459,9 @@ public:
     void start();
     void stop();
 
+    auto start(crtp::base) { this->start(); }
+    auto stop(crtp::base) { this->stop(); }
+
     void set_started();
     void set_stopped();
 
@@ -482,6 +495,10 @@ protected:
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
     }
+
+public:
+    auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }
+    auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
 
 protected:
     bool is_running   = false;

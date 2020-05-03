@@ -27,11 +27,15 @@
 #include <algorithm>
 #include <cctype>
 #include <cstring>
+#include <deque>
 #include <iomanip>
 #include <iostream>
+#include <list>
 #include <locale>
 #include <map>
 #include <numeric>
+#include <regex>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -46,31 +50,58 @@ namespace tim
 {
 namespace argparse
 {
+namespace helpers
+{
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename... Args>
 static inline void
 consume_parameters(Args&&...)
 {}
-
-namespace helpers
-{
+//
+//--------------------------------------------------------------------------------------//
+//
 static inline bool
 not_is_space(int ch)
 {
     return !std::isspace(ch);
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
+static inline uint64_t
+lcount(const std::string& s, bool (*f)(int) = not_is_space)
+{
+    uint64_t c = 0;
+    for(size_t i = 0; i < s.length(); ++i, ++c)
+    {
+        if(f(s.at(i)))
+            break;
+    }
+    return c;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 static inline std::string
 ltrim(std::string s, bool (*f)(int) = not_is_space)
 {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), f));
     return s;
 }
+//
+//--------------------------------------------------------------------------------------//
+//
 static inline std::string
 rtrim(std::string s, bool (*f)(int) = not_is_space)
 {
     s.erase(std::find_if(s.rbegin(), s.rend(), f).base(), s.end());
     return s;
 }
+//
+//--------------------------------------------------------------------------------------//
+//
 static inline std::string
 trim(std::string s, bool (*f)(int) = not_is_space)
 {
@@ -78,7 +109,21 @@ trim(std::string s, bool (*f)(int) = not_is_space)
     rtrim(s, f);
     return s;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
+static inline char*
+strdup(const char* s)
+{
+    auto slen   = strlen(s);
+    auto result = new char[slen];
+    if(result)
+        memcpy(result, s, slen + 1);
+    return result;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename InputIt>
 static inline std::string
 join(InputIt begin, InputIt end, const std::string& separator = " ")
@@ -95,18 +140,35 @@ join(InputIt begin, InputIt end, const std::string& separator = " ")
     }
     return ss.str();
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 static inline bool
 is_numeric(const std::string& arg)
 {
-    return (arg.find_first_not_of("0123456789.e+-*/") == std::string::npos);
+    auto _nidx = arg.find_first_of("0123456789");
+    auto _oidx = arg.find_first_not_of("0123456789.Ee+-*/");
+
+    // must have number somewhere
+    if(_nidx == std::string::npos)
+        return false;
+
+    // if something other than number or scientific notation
+    if(_oidx != std::string::npos)
+        return false;
+
+    // numbers + possible scientific notation
+    return true;
+
     /*std::stringstream ss;
     ss << arg;
     float              f;
     ss >> std::noskipws >> f;
     return ss.eof() && !ss.fail();*/
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 static inline int
 find_equiv(const std::string& s)
 {
@@ -130,7 +192,9 @@ find_equiv(const std::string& s)
     }
     return -1;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 static inline size_t
 find_punct(const std::string& s)
 {
@@ -144,25 +208,40 @@ find_punct(const std::string& s)
     }
     return i;
 }
-
-namespace is_vector_impl
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace is_container_impl
 {
 template <typename T>
-struct is_vector : std::false_type
+struct is_container : std::false_type
 {};
 template <typename... Args>
-struct is_vector<std::vector<Args...>> : std::true_type
+struct is_container<std::vector<Args...>> : std::true_type
 {};
-}  // namespace is_vector_impl
-
-// type trait to utilize the implementation type traits as well as decay the
-// type
+template <typename... Args>
+struct is_container<std::set<Args...>> : std::true_type
+{};
+template <typename... Args>
+struct is_container<std::deque<Args...>> : std::true_type
+{};
+template <typename... Args>
+struct is_container<std::list<Args...>> : std::true_type
+{};
+}  // namespace is_container_impl
+//
+//--------------------------------------------------------------------------------------//
+//
+// type trait to utilize the implementation type traits as well as decay the type
 template <typename T>
-struct is_vector
+struct is_container
 {
     static constexpr bool const value =
-        is_vector_impl::is_vector<typename std::decay<T>::type>::value;
+        is_container_impl::is_container<typename std::decay<T>::type>::value;
 };
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace helpers
 
 //
@@ -196,6 +275,10 @@ struct argument_parser
         bool        m_error = false;
         std::string m_what  = {};
     };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    using result_type = arg_result;
     //
     //----------------------------------------------------------------------------------//
     //
@@ -294,7 +377,7 @@ struct argument_parser
         bool found() const { return m_found; }
 
         template <typename T>
-        std::enable_if_t<helpers::is_vector<T>::value, T> get()
+        std::enable_if_t<(helpers::is_container<T>::value), T> get()
         {
             T                      t = T{};
             typename T::value_type vt;
@@ -302,19 +385,42 @@ struct argument_parser
             {
                 std::istringstream in(s);
                 in >> vt;
-                t.push_back(vt);
+                t.insert(t.end(), vt);
             }
             return t;
         }
 
         template <typename T>
-        std::enable_if_t<!helpers::is_vector<T>::value, T> get()
+        std::enable_if_t<
+            (!helpers::is_container<T>::value && !std::is_same<T, bool>::value), T>
+        get()
         {
             auto               inp = get<std::string>();
             std::istringstream iss(inp);
             T                  t = T{};
             iss >> t >> std::ws;
             return t;
+        }
+
+        template <typename T>
+        std::enable_if_t<(std::is_same<T, bool>::value), T> get()
+        {
+            // std::cout << *this << std::endl;
+            auto inp = get<std::string>();
+            if(inp.empty() && found())
+                return true;
+
+            namespace regex_const       = std::regex_constants;
+            const auto regex_constants  = regex_const::ECMAScript | regex_const::icase;
+            const std::string y_pattern = "^(on|true|yes|y|t|[1-9]+)$";
+            const std::string n_pattern = "^(off|false|no|n|f|0)$";
+            auto is_y = std::regex_match(inp, std::regex(y_pattern, regex_constants));
+            auto is_n = std::regex_match(inp, std::regex(n_pattern, regex_constants));
+            if(is_y)
+                return true;
+            if(is_n)
+                return false;
+            return found();
         }
 
         size_t size() const { return m_values.size(); }
@@ -345,6 +451,22 @@ struct argument_parser
             return arg_result();
         }
 
+        friend std::ostream& operator<<(std::ostream& os, const argument& arg)
+        {
+            std::stringstream ss;
+            ss << "names: ";
+            for(auto itr : arg.m_names)
+                ss << itr << " ";
+            ss << ", index: " << arg.m_index << ", count: " << arg.m_count
+               << ", max count: " << arg.m_max_count << ", found: " << std::boolalpha
+               << arg.m_found << ", required: " << std::boolalpha << arg.m_required
+               << ", position: " << arg.m_position << ", values: ";
+            for(auto itr : arg.m_values)
+                ss << itr << " ";
+            os << ss.str();
+            return os;
+        }
+
         friend struct argument_parser;
         int                      m_position  = Position::IGNORE;
         int                      m_count     = Count::ANY;
@@ -357,8 +479,7 @@ struct argument_parser
         void*                    m_default   = nullptr;
         callback_t               m_callback  = [](void*) {};
         std::set<std::string>    m_choices   = {};
-
-        std::vector<std::string> m_values{};
+        std::vector<std::string> m_values    = {};
     };
     //
     //----------------------------------------------------------------------------------//
@@ -388,10 +509,10 @@ struct argument_parser
     //
     void print_help(const std::string& _extra = "")
     {
-        std::cout << "Usage: " << m_bin;
+        std::cerr << "Usage: " << m_bin;
         if(m_positional_arguments.empty())
         {
-            std::cout << " [options...]"
+            std::cerr << " [options...]"
                       << " " << _extra << std::endl;
         }
         else
@@ -402,8 +523,8 @@ struct argument_parser
                 if(v.first != argument::Position::LAST)
                 {
                     for(; current < v.first; ++current)
-                        std::cout << " [" << current << "]";
-                    std::cout
+                        std::cerr << " [" << current << "]";
+                    std::cerr
                         << " ["
                         << helpers::ltrim(
                                m_arguments[static_cast<size_t>(v.second)].m_names[0],
@@ -412,7 +533,7 @@ struct argument_parser
                 }
                 else
                 {
-                    std::cout
+                    std::cerr
                         << " ... ["
                         << helpers::ltrim(
                                m_arguments[static_cast<size_t>(v.second)].m_names[0],
@@ -422,10 +543,10 @@ struct argument_parser
             }
             if(m_positional_arguments.find(argument::Position::LAST) ==
                m_positional_arguments.end())
-                std::cout << " [options...]";
-            std::cout << " " << _extra << std::endl;
+                std::cerr << " [options...]";
+            std::cerr << " " << _extra << std::endl;
         }
-        std::cout << "\nOptions:" << std::endl;
+        std::cerr << "\nOptions:" << std::endl;
         for(auto& a : m_arguments)
         {
             std::string name = a.m_names[0];
@@ -442,47 +563,126 @@ struct argument_parser
                     ss << " | " << *itr;
                 ss << " ] ";
             }
-            std::cout << "    " << std::setw(m_width) << std::left << ss.str();
+            std::cerr << "    " << std::setw(m_width) << std::left << ss.str();
 
-            std::cout << " " << std::setw(m_width) << a.m_desc;
+            std::cerr << " " << std::setw(m_width) << a.m_desc;
             if(a.m_required)
-                std::cout << " (Required)";
-            std::cout << std::endl;
+                std::cerr << " (Required)";
+            std::cerr << std::endl;
         }
-        std::cout << '\n';
+        std::cerr << '\n';
     }
     //
     //----------------------------------------------------------------------------------//
     //
-    arg_result parse(int argc, char** argv)
+    using known_args_t = std::tuple<arg_result, int, char**>;
+    known_args_t parse_known_args(int argc, char** argv, const std::string& _delim = "--",
+                                  int verbose_level = 0)
+    {
+        std::vector<std::string> _args;
+
+        int    _cmdc = argc;
+        char** _cmdv = argv;
+
+        auto copy_str = [](char*& _dst, const char* _src) {
+            _dst = helpers::strdup(_src);
+        };
+
+        if(argc > 0)
+            _args.push_back(std::string((const char*) argv[0]));
+
+        for(int i = 1; i < argc; ++i)
+        {
+            std::string _arg = argv[i];
+            if(_arg == _delim)
+            {
+                _cmdc        = argc - i;
+                _cmdv        = new char*[_cmdc + 1];
+                _cmdv[_cmdc] = nullptr;
+                copy_str(_cmdv[0], argv[0]);
+                int k = 1;
+                for(int j = i + 1; j < argc; ++j, ++k)
+                    copy_str(_cmdv[k], argv[j]);
+                break;
+            }
+            else
+            {
+                _args.push_back(std::string((const char*) argv[i]));
+            }
+        }
+
+        auto cmd_string = [](int _ac, char** _av) {
+            std::stringstream ss;
+            for(int i = 0; i < _ac; ++i)
+                ss << _av[i] << " ";
+            return ss.str();
+        };
+
+        if((_cmdc > 0 && verbose_level > 0) || verbose_level > 1)
+            std::cerr << "\n";
+
+        if(verbose_level > 1)
+        {
+            std::cerr << "[original]> " << cmd_string(argc, argv) << std::endl;
+            std::cerr << "[cfg-args]> ";
+            for(auto& itr : _args)
+                std::cerr << itr << " ";
+            std::cerr << std::endl;
+        }
+
+        if(_cmdc > 0 && verbose_level > 0)
+            std::cerr << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
+
+        return known_args_t{ parse(_args, verbose_level), _cmdc, _cmdv };
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    arg_result parse(int argc, char** argv, int verbose_level = 0)
     {
         std::vector<std::string> _args;
         for(int i = 0; i < argc; ++i)
             _args.push_back(std::string((const char*) argv[i]));
-        return parse(_args);
+        return parse(_args, verbose_level);
     }
     //
     //----------------------------------------------------------------------------------//
     //
-    arg_result parse(const std::vector<std::string>& _args)
+    arg_result parse(const std::vector<std::string>& _args, int verbose_level = 0)
     {
+        if(verbose_level > 0)
+        {
+            std::cerr << "[argparse::parse]> parsing '";
+            for(const auto& itr : _args)
+                std::cerr << itr << " ";
+            std::cerr << '\n';
+        }
+
         arg_result err;
         int        argc = _args.size();
+        // the set of options which use a single leading dash but are longer than
+        // one character, e.g. -LS ...
+        std::set<std::string> long_short_opts;
         if(_args.size() > 1)
         {
+            auto is_leading_dash = [](int c) -> bool {
+                return c != static_cast<int>('-');
+            };
             // build name map
             for(auto& a : m_arguments)
             {
                 for(auto& n : a.m_names)
                 {
-                    std::string name = helpers::ltrim(
-                        n, [](int c) -> bool { return c != static_cast<int>('-'); });
+                    auto        nleading_dash = helpers::lcount(n, is_leading_dash);
+                    std::string name          = helpers::ltrim(n, is_leading_dash);
                     if(m_name_map.find(name) != m_name_map.end())
                         return arg_result("Duplicate of argument name: " + n);
                     m_name_map[name] = a.m_index;
+                    if(nleading_dash == 1 && name.length() > 1)
+                        long_short_opts.insert(name);
                 }
                 if(a.m_position >= 0 || a.m_position == argument::Position::LAST)
-                    m_positional_arguments[a.m_position] = a.m_index;
+                    m_positional_arguments.at(a.m_position) = a.m_index;
             }
 
             m_bin = _args.at(0);
@@ -509,39 +709,29 @@ struct argument_parser
                         return err;
                     continue;
                 }
-                if(arg_len >= 2 && !helpers::is_numeric(current_arg))
+
+                // count number of leading dashes
+                auto nleading_dash = helpers::lcount(current_arg, is_leading_dash);
+                // ignores the case if the arg is just a '-'
+                // look for -a (short) or --arg (long) args
+                bool is_arg =
+                    (nleading_dash > 0 && arg_len > 1 && arg_len != nleading_dash)
+                        ? true
+                        : false;
+
+                if(is_arg && !helpers::is_numeric(current_arg))
                 {
-                    // ignores the case if the arg is just a -
-                    // look for -a (short) or --arg (long) args
-                    if(current_arg[0] == '-')
-                    {
-                        err = end_argument();
-                        if(err)
-                            return err;
-                        // look for --arg (long) args
-                        if(current_arg[1] == '-')
-                        {
-                            err = begin_argument(current_arg.substr(2), true, argv_index);
-                            if(err)
-                                return err;
-                        }
-                        else
-                        {  // short args
-                            err =
-                                begin_argument(current_arg.substr(1), false, argv_index);
-                            if(err)
-                                return err;
-                        }
-                    }
-                    else
-                    {
-                        // argument value
-                        err = add_value(current_arg, argv_index);
-                        if(err)
-                            return err;
-                    }
+                    err = end_argument();
+                    if(err)
+                        return err;
+
+                    auto name   = current_arg.substr(nleading_dash);
+                    auto islong = (nleading_dash > 1 || long_short_opts.count(name) > 0);
+                    err         = begin_argument(name, islong, argv_index);
+                    if(err)
+                        return err;
                 }
-                else
+                else if(current_arg.length() > 0)
                 {
                     // argument value
                     err = add_value(current_arg, argv_index);
@@ -700,7 +890,7 @@ private:
         {
             arg_result err;
             size_t     c = static_cast<size_t>(m_current);
-            consume_parameters(c);
+            helpers::consume_parameters(c);
             argument& a = m_arguments[static_cast<size_t>(m_current)];
 
             err = a.check(value);
@@ -764,7 +954,7 @@ private:
     std::vector<argument>      m_arguments            = {};
     std::map<int, int>         m_positional_arguments = {};
     std::map<std::string, int> m_name_map             = {};
-};
+};  // namespace argparse
 //
 //--------------------------------------------------------------------------------------//
 //

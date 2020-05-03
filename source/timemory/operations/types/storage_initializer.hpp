@@ -52,6 +52,22 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
+auto
+invoke_preinit(int) -> decltype(std::declval<T>().preinit(), void())
+{
+    T::preinit();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+auto
+invoke_preinit(long)
+{}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
 storage_initializer
 storage_initializer::get()
 {
@@ -61,6 +77,8 @@ storage_initializer::get()
 
     if(!trait::runtime_enabled<T>::get())
         return storage_initializer{};
+
+    invoke_preinit<T>(0);
 
     using storage_type = storage<T, typename T::value_type>;
 

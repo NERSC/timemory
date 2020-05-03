@@ -234,6 +234,9 @@ extern "C"
     //
     void timemory_push_trace(const char* name)
     {
+        if(!tim::settings::enabled())
+            return;
+
         if(tim::settings::verbose() > 2 || tim::settings::debug())
             PRINT_HERE("%s", name);
 
@@ -260,10 +263,13 @@ extern "C"
     //
     void timemory_pop_trace(const char* name)
     {
+        static thread_local auto& _trace_map = get_trace_map();
+        if(!tim::settings::enabled() && _trace_map.empty())
+            return;
+
         if(tim::settings::verbose() > 2 || tim::settings::debug())
             PRINT_HERE("%s", name);
 
-        static thread_local auto& _trace_map = get_trace_map();
         size_t                    id         = tim::add_hash_id(name);
         int64_t                   ntotal     = _trace_map[id].size();
         int64_t                   offset     = ntotal - 1;

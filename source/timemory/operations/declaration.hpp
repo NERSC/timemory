@@ -469,14 +469,12 @@ public:
 template <typename Tp>
 struct init_storage
 {
-    using type         = Tp;
-    using value_type   = typename type::value_type;
-    using base_type    = typename type::base_type;
-    using string_t     = std::string;
-    using storage_type = storage<type, value_type>;
-    using this_type    = init_storage<Tp>;
-    using pointer_t    = tim::base::storage*;
-    using get_type     = std::tuple<pointer_t, bool, bool, bool>;
+    using type       = Tp;
+    using value_type = typename type::value_type;
+    using string_t   = std::string;
+    using this_type  = init_storage<Tp>;
+    using pointer_t  = tim::base::storage*;
+    using get_type   = std::tuple<pointer_t, bool, bool, bool>;
 
     template <typename Up = Tp, enable_if_t<(trait::is_available<Up>::value), char> = 0>
     init_storage();
@@ -484,10 +482,12 @@ struct init_storage
     template <typename Up = Tp, enable_if_t<!(trait::is_available<Up>::value), char> = 0>
     init_storage();
 
-    template <typename U = base_type, enable_if_t<(U::implements_storage_v), int> = 0>
+    template <typename U = Tp, typename V = typename U::value_type,
+              enable_if_t<(implements_storage<U, V>::value), int> = 0>
     static get_type get();
 
-    template <typename U = base_type, enable_if_t<!(U::implements_storage_v), int> = 0>
+    template <typename U = Tp, typename V = typename U::value_type,
+              enable_if_t<!(implements_storage<U, V>::value), int> = 0>
     static get_type get();
 
     static void init();

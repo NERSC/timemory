@@ -40,8 +40,15 @@ using section_map_t   = std::unordered_map<uint64_t, section_entry_t>;
 
 extern "C"
 {
-    extern void timemory_mpip_library_ctor();
-    extern void timemory_ompt_library_ctor();
+    TIMEMORY_WEAK_PREFIX
+    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
+
+    void timemory_mpip_library_ctor() {}
+    void timemory_ompt_library_ctor() {}
 }
 
 //--------------------------------------------------------------------------------------//
@@ -146,6 +153,7 @@ extern "C" void
 kokkosp_init_library(const int loadSeq, const uint64_t interfaceVer,
                      const uint32_t devInfoCount, void* deviceInfo)
 {
+    timemory_mpip_library_ctor();
     timemory_ompt_library_ctor();
 
     printf("%s\n", spacer.c_str());

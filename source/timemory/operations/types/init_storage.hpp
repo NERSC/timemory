@@ -63,7 +63,7 @@ init_storage<Tp>::init_storage()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename U, enable_if_t<(U::implements_storage_v), int>>
+template <typename U, typename V, enable_if_t<(implements_storage<U, V>::value), int>>
 typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {
@@ -83,7 +83,7 @@ init_storage<Tp>::get()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename U, enable_if_t<!(U::implements_storage_v), int>>
+template <typename U, typename V, enable_if_t<!(implements_storage<U, V>::value), int>>
 typename init_storage<Tp>::get_type
 init_storage<Tp>::get()
 {

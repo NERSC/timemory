@@ -507,6 +507,7 @@ timemory_fork_callback(BPatch_thread* parent, BPatch_thread* child)
         auto* app = child->getProcess();
         if(app)
         {
+            verbprintf(4, "Stopping execution and detaching child fork...\n");
             app->stopExecution();
             app->detach(true);
             // app->terminateExecution();
@@ -518,7 +519,10 @@ timemory_fork_callback(BPatch_thread* parent, BPatch_thread* child)
     {
         auto app = parent->getProcess();
         if(app)
+        {
+            verbprintf(4, "Continuing execution on parent after fork callback...\n");
             app->continueExecution();
+        }
     }
 }
 //

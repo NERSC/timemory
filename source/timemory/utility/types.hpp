@@ -150,6 +150,20 @@ struct result;
 //
 //--------------------------------------------------------------------------------------//
 //
+namespace crtp
+{
+/// \class tim::crtp::base
+/// \brief a generic type for prioritizing a function call to the base class over
+/// derived functions, e.g. void start(crtp::base, Args&&... args) { start(args...); }
+struct base
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace crtp
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace scope
 {
 //

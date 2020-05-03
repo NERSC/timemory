@@ -231,7 +231,7 @@ get_env(const std::string& env_id, bool _default)
         else
         {
             const auto regex_constants = regex_const::ECMAScript | regex_const::icase;
-            const std::string pattern  = "^(off|false|no|n|f)$";
+            const std::string pattern  = "^(off|false|no|n|f|0)$";
             if(std::regex_match(var, std::regex(pattern, regex_constants)))
                 val = false;
         }
@@ -281,7 +281,7 @@ load_env(const std::string& env_id, bool _default)
     if(itr != _env_settings->end())
     {
         const auto        regex_constants = regex_const::ECMAScript | regex_const::icase;
-        const std::string pattern         = "^(on|true|yes|y|t)$";
+        const std::string pattern         = "^(on|true|yes|y|t|[1-9]+)$";
         return (std::regex_match(itr->second, std::regex(pattern, regex_constants)))
                    ? true
                    : false;
