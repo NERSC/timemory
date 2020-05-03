@@ -243,6 +243,11 @@ if(TIMEMORY_BUILD_C)
                                     timemory-external-shared
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
+                                  
+        target_include_directories(timemory-c-shared PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
+        
         if(WIN32)
             target_compile_definitions(timemory-c-shared
                 PRIVATE TIMEMORY_CDLL_EXPORT INTERFACE TIMEMORY_CDLL_IMPORT)
@@ -267,6 +272,10 @@ if(TIMEMORY_BUILD_C)
                                     timemory-external-static
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
+
+        target_include_directories(timemory-c-shared PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
     endif()
 
     if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
