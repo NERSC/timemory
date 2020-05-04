@@ -189,18 +189,7 @@ endif()
 #   Display message
 #
 list(SORT @PROJECT_NAME@_FOUND_COMPONENTS)
-set(_COMPONENT_LIST)
-foreach(_COMP ${@PROJECT_NAME@_FOUND_COMPONENTS})
-    TIMEMORY_GET_TARGET_NAME(_TARG ${_COMP})
-    if("${_TARG}" STREQUAL "" OR "${_TARG}" IN_LIST @PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES)
-        continue()
-    endif()
-    if(@PROJECT_NAME@_DEBUG)
-        message(STATUS "${_COMP} exists as ${_TARG}")
-    endif()
-    list(APPEND _COMPONENT_LIST ${_COMP})
-endforeach()
-
+set(_COMPONENT_LIST ${@PROJECT_NAME@_FOUND_COMPONENTS})
 string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")
 string(REPLACE "timemory-" "" _COMPONENT_LIST "${_COMPONENT_LIST}")
 message(STATUS

@@ -323,20 +323,20 @@ struct function_signature
         {
             if(m_info_end)
             {
-                ss << m_return << " " << m_name << "()/" << m_file << ":"
+                ss << m_return << " " << m_name << "()/"
                    << "[{" << m_row.first << "," << m_col.first << "}-{" << m_row.second
                    << "," << m_col.second << "}]";
             }
             else
             {
-                ss << m_return << " " << m_name << "()/" << m_file << ":"
+                ss << m_return << " " << m_name << "()"
                    << "[{" << m_row.first << "," << m_col.first << "}]";
             }
         }
-        else if(m_file.length() > 0)
-        {
-            ss << m_return << " " << m_name << "()/" << m_file << ":" << m_row.first;
-        }
+        // else if(m_file.length() > 0)
+        //{
+        // ss << m_return << " " << m_name << "()/" << m_file << ":" << m_row.first;
+        //}
         else
         {
             ss << m_return << " " << m_name << "()";
@@ -401,6 +401,37 @@ struct timemory_call_expr
 
 private:
     snippet_pointer_vec_t m_params;
+};
+//
+//======================================================================================//
+//
+struct timemory_snippet_vec
+{
+    using entry_type = std::vector<timemory_call_expr>;
+    using value_type = std::vector<call_expr_pointer_t>;
+
+    template <typename... Args>
+    void generate(procedure_t* func, Args&&... args)
+    {
+        auto _expr = timemory_call_expr(std::forward<Args>(args)...);
+        auto _call = _expr.get(func);
+        if(_call)
+        {
+            m_entries.push_back(_expr);
+            m_data.push_back(_call);
+            // m_data.push_back(entry_type{ _call, _expr });
+        }
+    }
+
+    void append(snippet_vec_t& _obj)
+    {
+        for(auto& itr : m_data)
+            _obj.push_back(itr.get());
+    }
+
+private:
+    entry_type m_entries;
+    value_type m_data;
 };
 //
 //======================================================================================//

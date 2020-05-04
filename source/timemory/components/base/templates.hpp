@@ -128,9 +128,9 @@ base<Tp, Value>::insert_node(scope::config _scope, int64_t _hash)
 {
     if(!is_on_stack)
     {
-        is_on_stack      = true;
-        is_flat          = _scope.is_flat();
-        auto  _storage   = static_cast<storage_type*>(get_storage());
+        is_on_stack   = true;
+        is_flat       = _scope.is_flat();
+        auto _storage = static_cast<storage_type*>(get_storage());
         assert(_storage != nullptr);
         auto  _beg_depth = _storage->depth();
         Type* obj        = static_cast<Type*>(this);

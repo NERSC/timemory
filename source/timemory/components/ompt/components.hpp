@@ -32,9 +32,10 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/macros.hpp"
 //
+#include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/types.hpp"
-
+//
 //======================================================================================//
 //
 namespace tim
@@ -143,6 +144,108 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Api>
+struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
+{
+    using api_type     = Api;
+    using this_type    = ompt_data_tracker<api_type>;
+    using value_type   = void;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
+
+    struct target_map_tag
+    {};
+    struct target_data_tag
+    {};
+    struct target_submit_tag
+    {};
+
+    using data_op_tracker_t     = ompt_data_op_tracker_t;
+    using data_map_tracker_t    = ompt_data_map_tracker_t;
+    using data_submit_tracker_t = ompt_data_submit_tracker_t;
+
+    static std::string label() { return "ompt_data_tracker"; }
+    static std::string description()
+    {
+        return std::string("OpenMP tools data tracker ") + demangle<api_type>();
+    }
+
+    static void global_init(storage_type*)
+    {
+        data_map_tracker_t::label()    = "ompt_target_map_data";
+        data_op_tracker_t::label()     = "ompt_target_op_data";
+        data_submit_tracker_t::label() = "ompt_target_submit_data";
+
+        data_map_tracker_t::description() =
+            "OpenMP tools: records the amount of data mapped to devices";
+        data_op_tracker_t::description() =
+            "OpenMP tools: tracks the amount of data operated on devices";
+        data_submit_tracker_t::description() =
+            "OpenMP tools: tracks the number of submissions to devices";
+    }
+
+    void start() {}
+    void stop() {}
+
+    void store(ompt_id_t target_id, ompt_id_t host_op_id, ompt_target_data_op_t optype,
+               void* host_addr, void* device_addr, size_t bytes)
+    {
+        using object_t = data_op_tracker_t;
+
+        object_t _obj;
+        operation::insert_node<object_t>(_obj, m_scope_config, m_prefix_hash);
+        operation::start<object_t> _start(_obj);
+        operation::store<object_t>(_obj, std::plus<size_t>{}, bytes);
+        operation::stop<object_t>     _stop(_obj);
+        operation::pop_node<object_t> _pop(_obj);
+
+        consume_parameters(target_id, host_op_id, optype, host_addr, device_addr);
+    }
+
+    void store(ompt_id_t target_id, unsigned int nitems, void** host_addr,
+               void** device_addr, size_t* bytes, unsigned int* mapping_flags)
+    {
+        using object_t = data_map_tracker_t;
+
+        object_t _obj;
+        operation::insert_node<object_t>(_obj, m_scope_config, m_prefix_hash);
+        operation::start<object_t> _start(_obj);
+        size_t                     _tot = 0;
+        for(unsigned int i = 0; i < nitems; ++i)
+            _tot += bytes[i];
+        operation::store<object_t>(_obj, std::plus<size_t>{}, _tot);
+        operation::stop<object_t>     _stop(_obj);
+        operation::pop_node<object_t> _pop(_obj);
+
+        consume_parameters(target_id, host_addr, device_addr, mapping_flags);
+    }
+
+    void store(ompt_id_t target_id, ompt_id_t host_op_id)
+    {
+        using object_t = data_submit_tracker_t;
+
+        object_t _obj;
+        operation::insert_node<object_t>(_obj, m_scope_config, m_prefix_hash);
+        operation::start<object_t> _start(_obj);
+        operation::store<object_t>(_obj, std::plus<size_t>{}, 1);
+        operation::stop<object_t>     _stop(_obj);
+        operation::pop_node<object_t> _pop(_obj);
+
+        consume_parameters(target_id, host_op_id);
+    }
+
+public:
+    void set_prefix(uint64_t _prefix_hash) { m_prefix_hash = _prefix_hash; }
+    void set_scope(scope::config _scope) { m_scope_config = _scope; }
+
+private:
+    uint64_t      m_prefix_hash  = 0;
+    scope::config m_scope_config = scope::get_default();
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+
 }  // namespace component
 }  // namespace tim
 //

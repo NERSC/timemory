@@ -525,6 +525,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(string_t, time_format);
     SETTING_PROPERTY(string_t, python_exe);
     SETTING_PROPERTY(strvector_t, command_line);
+    SETTING_PROPERTY(size_t, throttle_count);
+    SETTING_PROPERTY(size_t, throttle_value);
     // width/precision
     SETTING_PROPERTY(int16_t, precision);
     SETTING_PROPERTY(int16_t, width);

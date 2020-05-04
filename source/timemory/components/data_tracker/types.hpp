@@ -21,29 +21,42 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-//
 
-/** \file timemory/components/general.hpp
- * \headerfile timemory/components/general.hpp "timemory/components/general.hpp"
- * Defines some short general components
- *
+/**
+ * \file timemory/components/data_tracker/types.hpp
+ * \brief Declare the data_tracker component types
  */
 
 #pragma once
 
-#include <cassert>
-#include <cstdint>
+#include "timemory/components/macros.hpp"
+#include "timemory/data/handler.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
+//======================================================================================//
+//
+TIMEMORY_DECLARE_TEMPLATE_COMPONENT(data_tracker, typename InpT,
+                                    typename Tag     = api::native_tag,
+                                    typename Handler = data::handler<InpT, Tag>,
+                                    typename StoreT  = InpT)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              BASE HAS ACCUM
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace tim
 {
-namespace component
+namespace trait
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//          General Components with no specific category
-//
-//--------------------------------------------------------------------------------------//
-//
-}  // namespace component
+template <typename InpT, typename Tag, typename Handler, typename StoreT>
+struct base_has_accum<component::data_tracker<InpT, Tag, Handler, StoreT>> : false_type
+{};
+}  // namespace trait
 }  // namespace tim
+//
+//======================================================================================//

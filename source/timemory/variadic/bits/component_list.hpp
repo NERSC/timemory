@@ -421,7 +421,7 @@ template <typename... Types>
 void
 component_list<Types...>::set_prefix(const string_t& key) const
 {
-    apply_v::access<operation_t<operation::set_prefix>>(m_data, key);
+    apply_v::access<operation_t<operation::set_prefix>>(m_data, m_hash, key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -432,7 +432,7 @@ component_list<Types...>::set_prefix(size_t _hash) const
 {
     auto itr = get_hash_ids()->find(_hash);
     if(itr != get_hash_ids()->end())
-        apply_v::access<operation_t<operation::set_prefix>>(m_data, itr->second);
+        apply_v::access<operation_t<operation::set_prefix>>(m_data, _hash, itr->second);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -444,7 +444,7 @@ component_list<Types...>::set_prefix(T* obj) const
 {
     using _PrefixOp = operation::pointer_operator<T, operation::set_prefix<T>>;
     auto _key       = get_hash_ids()->find(m_hash)->second;
-    _PrefixOp(obj, _key);
+    _PrefixOp(obj, m_hash, _key);
 }
 
 //--------------------------------------------------------------------------------------//

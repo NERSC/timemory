@@ -12,13 +12,15 @@ endif()
 option(TIMEMORY_USE_TESTING_LINK_LIBRARY "Google-tests like to shared or static library" ON)
 mark_as_advanced(TIMEMORY_USE_TESTING_LINK_LIBRARY)
 
+if(TARGET timemory-cxx-shared)
+    set(_LIBRARY_TARGET timemory-cxx-shared)
+elseif(TARGET timemory-cxx-static)
+    set(_LIBRARY_TARGET timemory-cxx-static)
+endif()
+  
 set(_LIBRARY)
 if(TIMEMORY_USE_TESTING_LINK_LIBRARY)
-    if(TARGET timemory-cxx-shared)
-        set(_LIBRARY timemory-cxx-shared)
-    elseif(TARGET timemory-cxx-static)
-        set(_LIBRARY timemory-cxx-static)
-    endif()
+    set(_LIBRARY ${_LIBRARY_TARGET})
 endif()
 
 if(TIMEMORY_USE_OMPT)
@@ -68,6 +70,13 @@ if(TARGET custom-record-functions)
         DISCOVER_TESTS
         SOURCES         library_tests.cpp
         LINK_LIBRARIES  custom-record-functions)
+endif()
+
+if(_LIBRARY_TARGET)
+    add_timemory_google_test(throttle_tests
+        DISCOVER_TESTS
+        SOURCES         throttle_tests.cpp
+        LINK_LIBRARIES  ${_LIBRARY_TARGET})
 endif()
 
 add_timemory_google_test(argparse_tests

@@ -706,9 +706,9 @@ private:
               enable_if_t<!(std::is_same<Ret, void>::value), int>   = 0>
     static Ret invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Type    = Differentiator;
-        using Invoker = gotcha_invoker<Type, Ret>;
-        Type& _obj    = *_comp.template get<Type>();
+        using Tp      = Differentiator;
+        using Invoker = gotcha_invoker<Tp, Ret>;
+        Tp& _obj      = *_comp.template get<Tp>();
         return Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
     }
 
@@ -729,9 +729,9 @@ private:
               enable_if_t<(std::is_same<Ret, void>::value), int>    = 0>
     static void invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Type    = Differentiator;
-        using Invoker = gotcha_invoker<Type, Ret>;
-        Type& _obj    = *_comp.template get<Type>();
+        using Tp      = Differentiator;
+        using Invoker = gotcha_invoker<Tp, Ret>;
+        Tp& _obj      = *_comp.template get<Tp>();
         Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
     }
 

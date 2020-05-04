@@ -45,6 +45,12 @@ CEREAL_CLASS_VERSION(tim::env_settings, 0)
 CEREAL_CLASS_VERSION(tim::component::wall_clock, 0)
 CEREAL_CLASS_VERSION(tim::statistics<double>, 0)
 
+using string_t       = std::string;
+using overhead_map_t = std::unordered_map<size_t, std::pair<wall_clock, size_t>>;
+using throttle_set_t = std::set<size_t>;
+using traceset_t     = tim::component_tuple<user_trace_bundle>;
+using trace_map_t    = std::unordered_map<size_t, std::deque<traceset_t*>>;
+
 //======================================================================================//
 
 namespace
@@ -54,11 +60,32 @@ static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_AP
 static std::atomic<uint32_t> library_trace_count{ 0 };
 }  // namespace
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
-using string_t    = std::string;
-using traceset_t  = tim::component_tuple<user_trace_bundle>;
-using trace_map_t = std::unordered_map<size_t, std::deque<traceset_t*>>;
+static auto&
+get_overhead() TIMEMORY_VISIBILITY("default");
+static auto&
+get_throttle() TIMEMORY_VISIBILITY("default");
+static trace_map_t&
+get_trace_map() TIMEMORY_VISIBILITY("default");
+
+//--------------------------------------------------------------------------------------//
+
+static auto&
+get_overhead()
+{
+    static thread_local auto _instance = std::make_unique<overhead_map_t>();
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static auto&
+get_throttle()
+{
+    static thread_local auto _instance = std::make_unique<throttle_set_t>();
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -247,51 +274,77 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-    void timemory_push_trace(const char* name)
+    bool timemory_is_throttled(const char* name)
+    {
+        size_t _id = tim::get_hash_id(name);
+        return (get_throttle()->count(_id) > 0);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_add_hash_id(uint64_t id, const char* name)
+    {
+        if(tim::settings::debug())
+            fprintf(stderr, "[timemory-trace]> adding '%s' with hash %lu...\n", name,
+                    (unsigned long) id);
+        auto _id = tim::add_hash_id(name);
+        if(_id != id)
+            tim::add_hash_id(_id, id);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_add_hash_ids(uint64_t nentries, uint64_t* ids, const char** names)
+    {
+        for(uint64_t i = 0; i < nentries; ++i)
+            timemory_add_hash_id(ids[i], names[i]);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_push_trace_hash(uint64_t id)
     {
         if(!tim::settings::enabled())
             return;
 
-        if(tim::settings::verbose() > 2 || tim::settings::debug())
-            PRINT_HERE("%s", name);
+        if(get_throttle()->count(id) > 0)
+            return;
 
-        static thread_local auto& _trace_map = get_trace_map();
-        size_t                    id         = tim::add_hash_id(name);
+        auto& _trace_map = get_trace_map();
 
 #if defined(DEBUG)
         if(tim::settings::verbose() > 2)
         {
             int64_t n = _trace_map[id].size();
-            printf("beginning trace for '%s' (id = %llu, offset = %lli)...\n", name,
-                   (long long unsigned) id, (long long int) n);
+            printf("beginning trace for '%s' (id = %llu, offset = %lli)...\n",
+                   tim::get_hash_ids()->find(id)->second.c_str(), (long long unsigned) id,
+                   (long long int) n);
         }
 #endif
 
-        _trace_map[id].push_back(new traceset_t(name));
+        _trace_map[id].push_back(new traceset_t(id));
         _trace_map[id].back()->start();
-
-        if(tim::settings::verbose() > 3)
-            PRINT_HERE("%s", name);
+        (*get_overhead())[id].first.start();
     }
     //
     //----------------------------------------------------------------------------------//
     //
-    void timemory_pop_trace(const char* name)
+    void timemory_pop_trace_hash(uint64_t id)
     {
-        static thread_local auto& _trace_map = get_trace_map();
+        auto& _trace_map = get_trace_map();
         if(!tim::settings::enabled() && _trace_map.empty())
             return;
 
-        if(tim::settings::verbose() > 2 || tim::settings::debug())
-            PRINT_HERE("%s", name);
-
-        size_t  id     = tim::add_hash_id(name);
         int64_t ntotal = _trace_map[id].size();
         int64_t offset = ntotal - 1;
 
+        (*get_overhead())[id].first.stop();
+
+#if defined(DEBUG)
         if(tim::settings::verbose() > 2)
             printf("ending trace for %llu [offset = %lli]...\n", (long long unsigned) id,
                    (long long int) offset);
+#endif
 
         if(offset >= 0 && ntotal > 0)
         {
@@ -303,8 +356,69 @@ extern "C"
             _trace_map[id].pop_back();
         }
 
-        if(tim::settings::verbose() > 3)
-            PRINT_HERE("%s", name);
+        if(get_throttle()->count(id) > 0)
+            return;
+
+        auto _count = ++((*get_overhead())[id].second);
+
+        if(_count >= tim::settings::throttle_count())
+        {
+            auto _accum = (*get_overhead())[id].first.get_accum() / _count;
+            if(_accum < tim::settings::throttle_value())
+            {
+                if(tim::settings::debug() || tim::settings::verbose() > 0)
+                {
+                    auto name = tim::get_hash_ids()->find(id)->second;
+                    fprintf(
+                        stderr,
+                        "[timemory-trace]> Throttling all future calls to '%s' on rank = "
+                        "%i, pid = "
+                        "%i, thread = %i. avg runtime = %lu ns from %lu invocations... "
+                        "Consider eliminiating from instrumentation...\n",
+                        name.c_str(), tim::dmp::rank(), (int) tim::process::get_id(),
+                        (int) tim::threading::get_id(), (unsigned long) _accum,
+                        (unsigned long) _count);
+                }
+                get_throttle()->insert(id);
+            }
+            else
+            {
+                if(_count % tim::settings::throttle_count() == 0 &&
+                   _accum < (10 * tim::settings::throttle_value()) &&
+                   (tim::settings::debug() || tim::settings::verbose() > 0))
+                {
+                    auto name = tim::get_hash_ids()->find(id)->second;
+                    fprintf(
+                        stderr,
+                        "[timemory-trace]> Warning! function call '%s' within an order "
+                        "of magnitude of threshold for throttling value on rank = %i, "
+                        "pid = "
+                        "%i, thread = %i. avg runtime = %lu ns from %lu invocations... "
+                        "Consider eliminiating from instrumentation...\n",
+                        name.c_str(), tim::dmp::rank(), (int) tim::process::get_id(),
+                        (int) tim::threading::get_id(), (unsigned long) _accum,
+                        (unsigned long) _count);
+                }
+                // (*get_overhead())[id].first.reset();
+                // (*get_overhead())[id].second = 0;
+            }
+        }
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_push_trace(const char* name)
+    {
+        if(!tim::settings::enabled())
+            return;
+        timemory_push_trace_hash(tim::add_hash_id(name));
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_pop_trace(const char* name)
+    {
+        timemory_pop_trace_hash(tim::get_hash_id(name));
     }
     //
     //----------------------------------------------------------------------------------//
@@ -346,8 +460,11 @@ extern "C"
 
             tim::manager::use_exit_hook(false);
 
-            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-            tim::config::read_command_line(_init);
+            if(read_command_line)
+            {
+                auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+                tim::config::read_command_line(_init);
+            }
 
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
 
@@ -380,8 +497,12 @@ extern "C"
             PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
                        (int) tim::process::get_id(), (int) tim::threading::get_id(),
                        args);
-            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-            tim::config::read_command_line(_init);
+
+            if(read_command_line)
+            {
+                auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+                tim::config::read_command_line(_init);
+            }
 
             auto manager = tim::manager::instance();
             tim::consume_parameters(manager);

@@ -193,10 +193,6 @@ public:
     auto start(crtp::base) { this->start(); }
     auto stop(crtp::base) { this->stop(); }
 
-    // void mark_begin() {}  // mark a begining point in the execution
-    // void mark_end() {}    // mark a ending point in the execution
-    // void store() {}       // store a value
-
     void set_started();  // store that start has been called
     void set_stopped();  // store that stop has been called
 

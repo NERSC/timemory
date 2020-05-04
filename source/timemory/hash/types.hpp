@@ -70,6 +70,15 @@ get_hash_aliases();
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Tp>
+hash_result_type
+get_hash_id(Tp&& prefix)
+{
+    return std::hash<std::string>()(std::forward<Tp>(prefix));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_HASH_DLL
 hash_result_type
 add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix);

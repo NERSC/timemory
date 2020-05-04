@@ -29,7 +29,7 @@
 #include "timemory/components/craypat/components.hpp"
 #include "timemory/components/cuda/components.hpp"
 #include "timemory/components/cupti/components.hpp"
-#include "timemory/components/general.hpp"
+#include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/gotcha/components.hpp"
 #include "timemory/components/gperftools/components.hpp"
 #include "timemory/components/likwid/components.hpp"

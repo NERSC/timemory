@@ -475,7 +475,7 @@ template <typename... Types>
 void
 component_tuple<Types...>::set_prefix(const string_t& _key) const
 {
-    apply_v::access<operation_t<operation::set_prefix>>(m_data, _key);
+    apply_v::access<operation_t<operation::set_prefix>>(m_data, m_hash, _key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -486,7 +486,7 @@ component_tuple<Types...>::set_prefix(size_t _hash) const
 {
     auto itr = get_hash_ids()->find(_hash);
     if(itr != get_hash_ids()->end())
-        apply_v::access<operation_t<operation::set_prefix>>(m_data, itr->second);
+        apply_v::access<operation_t<operation::set_prefix>>(m_data, _hash, itr->second);
 }
 
 //--------------------------------------------------------------------------------------//

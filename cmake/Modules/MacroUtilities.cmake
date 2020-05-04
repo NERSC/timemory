@@ -138,13 +138,17 @@ FUNCTION(CREATE_EXECUTABLE)
 
     # parse args
     cmake_parse_arguments(EXE
-        "INSTALL"                    # options
+        "INSTALL;EXCLUDE_FROM_ALL"   # options
         "TARGET_NAME;"               # single value args
         "${multival_args}"           # multiple value args
         ${ARGN})
 
+    set(_EXCLUDE)
+    if(EXE_EXCLUDE_FROM_ALL)
+        set(_EXCLUDE EXCLUDE_FROM_ALL)
+    endif()
     # create library
-    add_executable(${EXE_TARGET_NAME} ${EXE_SOURCES} ${EXE_HEADERS})
+    add_executable(${EXE_TARGET_NAME} ${_EXCLUDE} ${EXE_SOURCES} ${EXE_HEADERS})
 
     # link library
     target_link_libraries(${EXE_TARGET_NAME} ${EXE_LINK_LIBRARIES})
@@ -171,8 +175,12 @@ ENDFUNCTION()
 # against the test.
 #
 FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
-    if(NOT TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_BUILD_TESTING)
+    if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
         return()
+    endif()
+    set(_OPTS )
+    if(NOT TIMEMORY_BUILD_TESTING)
+        set(_OPTS EXCLUDE_FROM_ALL)
     endif()
     include(GoogleTest)
     # list of arguments taking multiple values
@@ -187,7 +195,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
-    CREATE_EXECUTABLE(
+    CREATE_EXECUTABLE(${_OPTS}
         TARGET_NAME     ${TEST_NAME}
         OUTPUT_NAME     ${TEST_NAME}
         SOURCES         ${TEST_SOURCES}

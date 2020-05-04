@@ -98,6 +98,7 @@ struct no_store;
 #include "timemory/components/craypat/types.hpp"
 #include "timemory/components/cuda/types.hpp"
 #include "timemory/components/cupti/types.hpp"
+#include "timemory/components/data_tracker/types.hpp"
 #include "timemory/components/gotcha/types.hpp"
 #include "timemory/components/gperftools/types.hpp"
 #include "timemory/components/likwid/types.hpp"

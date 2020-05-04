@@ -253,6 +253,15 @@ struct TIMEMORY_SETTINGS_DLL settings
         bool, add_secondary, "TIMEMORY_ADD_SECONDARY",
         "Enable/disable components adding secondary (child) entries", true)
 
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(size_t, throttle_count, "TIMEMORY_THROTTLE_COUNT",
+                                    "Minimum number of laps before throttling", 100000)
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        size_t, throttle_value, "TIMEMORY_THROTTLE_VALUE",
+        "Average call time in nanoseconds when # laps > throttle_count that triggers "
+        "throttling",
+        10000)
+
     //==================================================================================//
     //
     //                          COMPONENTS SPECIFIC SETTINGS
@@ -778,6 +787,8 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TARGET_PID", target_pid)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_STACK_CLEARING", stack_clearing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_ADD_SECONDARY", add_secondary)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_THROTTLE_COUNT", throttle_count)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_THROTTLE_VALUE", throttle_value)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_MULTIPLEXING", papi_multiplexing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_FAIL_ON_ERROR", papi_fail_on_error)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_QUIET", papi_quiet)

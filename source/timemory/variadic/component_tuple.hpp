@@ -482,11 +482,11 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using print_t = typename bundle_type::print_t;
+        using printer_t = typename bundle_type::print_t;
         if(size() == 0 || m_hash == 0)
             return;
         std::stringstream ss_data;
-        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
         {
             update_width();

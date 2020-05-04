@@ -32,32 +32,66 @@
 #include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
 //
+#include "timemory/components/data_tracker/types.hpp"
 #include "timemory/components/ompt/backends.hpp"
 
 //======================================================================================//
 //
-// TIMEMORY_DECLARE_TEMPLATE_COMPONENT(ompt_handle, typename Api = api::native_tag)
+TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx,
+                                    typename Tag = api::native_tag)
+//
+TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
+//
+TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::native_tag>)
+//
+//======================================================================================//
+//
 namespace tim
 {
 namespace component
 {
 template <typename Api = api::native_tag>
 struct ompt_handle;
-using ompt_native_handle = ompt_handle<api::native_tag>;
+
+template <typename Api>
+struct ompt_data_tracker;
+
+struct ompt_target_data_op_tag
+{};
+struct ompt_target_data_map_tag
+{};
+struct ompt_target_data_submit_tag
+{};
+
+using ompt_native_handle         = ompt_handle<api::native_tag>;
+using ompt_native_data_tracker   = ompt_data_tracker<api::native_tag>;
+using ompt_data_op_tracker_t     = data_tracker<int64_t, ompt_target_data_op_tag>;
+using ompt_data_map_tracker_t    = data_tracker<int64_t, ompt_target_data_map_tag>;
+using ompt_data_submit_tracker_t = data_tracker<int64_t, ompt_target_data_submit_tag>;
+
 }  // namespace component
 }  // namespace tim
 //
-// TIMEMORY_COMPONENT_ALIAS(ompt_native_handle, ompt_handle<api::native_tag>)
-//
 //--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_USE_OMPT)
 //
 namespace tim
 {
 namespace trait
 {
+//
+//--------------------------------------------------------------------------------------//
+/// trait for configuring OMPT components
+///
+template <typename T>
+struct ompt_handle
+{
+    using type =
+        component_tuple<component::user_ompt_bundle, component::ompt_native_data_tracker>;
+};
+//
+#if !defined(TIMEMORY_USE_OMPT)
 //
 template <typename Api>
 struct is_available<component::ompt_handle<Api>> : false_type
@@ -67,10 +101,18 @@ template <>
 struct is_available<component::ompt_native_handle> : false_type
 {};
 //
-}  // namespace trait
-}  // namespace tim
+template <typename Api>
+struct is_available<component::ompt_data_tracker<Api>> : false_type
+{};
+//
+template <>
+struct is_available<component::ompt_native_data_tracker> : false_type
+{};
 //
 #endif
+//
+}  // namespace trait
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -80,7 +122,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<api::native_tag>, OMPT_HANDLE, "omp
 //======================================================================================//
 //
 #include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/utility.hpp"
 //
@@ -106,6 +147,10 @@ struct end_callback
 /// \class openmp::mode::measure_callback
 /// \brief This is a sampling callback
 struct measure_callback
+{};
+/// \class openmp::mode::measure_callback
+/// \brief This is a sampling callback
+struct store_callback
 {};
 /// \class openmp::mode::endpoint_callback
 /// \brief This is a callback whose first argument designates an endpoint
