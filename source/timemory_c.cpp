@@ -184,21 +184,21 @@ extern "C"
         if(_mode == 1 && (!_extra || strlen(_extra) == 0))
             return _func;
 
-        std::stringstream ss;
-
         auto to_string = [](const char* cstr) {
-            std::stringstream ss;
+            std::stringstream _ss;
             if(cstr)
             {
                 for(int i = 0; i < MAX_STR_LEN; ++i)
                 {
                     if(cstr[i] == '\0' || i + 1 == static_cast<int>(strlen(cstr)))
                         break;
-                    ss << cstr[i];
+                    _ss << cstr[i];
                 }
             }
-            return ss.str();
+            return _ss.str();
         };
+
+        std::stringstream ss;
 
         if(_mode == 1)
         {

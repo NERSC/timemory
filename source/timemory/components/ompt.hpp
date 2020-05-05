@@ -45,9 +45,10 @@
 //--------------------------------------------------------------------------------------//
 
 extern "C" int
-ompt_initialize(ompt_function_lookup_t lookup, ompt_data_t* tool_data)
+ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
+                ompt_data_t* tool_data)
 {
-    tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, tool_data);
+    tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, initial_device_num, tool_data);
     return 1;  // success
 }
 

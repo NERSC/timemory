@@ -356,7 +356,7 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using print_t         = typename bundle_type::print_t;
+        using printer_t       = typename bundle_type::print_t;
         using pointer_count_t = operation_t<operation::generic_counter>;
 
         uint64_t count = 0;
@@ -364,7 +364,7 @@ public:
         if(count < 1 || m_hash == 0)
             return;
         std::stringstream ss_data;
-        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(ss_data.str().length() > 0)
         {
             if(PrintPrefix)
