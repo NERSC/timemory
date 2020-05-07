@@ -124,7 +124,7 @@ get_tid()
 
 TEST_F(threading_tests, openmp)
 {
-    tim::trait::runtime_enabled<ompt_handle<tim::api::native_tag>>::set(false);
+    tim::trait::runtime_enabled<ompt_native_handle>::set(false);
     user_ompt_bundle::configure<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>();
 
     TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());
@@ -178,7 +178,7 @@ TEST_F(threading_tests, openmp)
 
 TEST_F(threading_tests, openmp_ompt)
 {
-    tim::trait::runtime_enabled<ompt_handle<tim::api::native_tag>>::set(true);
+    tim::trait::runtime_enabled<ompt_native_handle>::set(true);
     user_ompt_bundle::configure<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>();
 
     omp_set_num_threads(2);
@@ -220,7 +220,7 @@ TEST_F(threading_tests, openmp_ompt)
 
 TEST_F(threading_tests, openmp_task)
 {
-    tim::trait::runtime_enabled<ompt_handle<tim::api::native_tag>>::set(true);
+    tim::trait::runtime_enabled<ompt_native_handle>::set(true);
     user_ompt_bundle::configure<wall_clock, cpu_clock, cpu_util, thread_cpu_clock>();
 
     TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name());

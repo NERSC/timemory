@@ -94,7 +94,7 @@ using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
 
 //--------------------------------------------------------------------------------------//
 
-static inline ulong_t
+inline ulong_t
 get_thread_index()
 {
     return static_cast<ulong_t>(threading::get_id());
@@ -102,7 +102,7 @@ get_thread_index()
 
 //--------------------------------------------------------------------------------------//
 
-static inline uint64_t
+inline uint64_t
 get_papi_thread_num()
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -114,7 +114,7 @@ get_papi_thread_num()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 check_papi_thread()
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -127,7 +127,7 @@ check_papi_thread()
 
 //--------------------------------------------------------------------------------------//
 
-static inline auto
+inline auto
 get_tid()
 {
     return threading::get_tid();
@@ -135,7 +135,7 @@ get_tid()
 
 //--------------------------------------------------------------------------------------//
 
-static inline auto
+inline auto
 get_master_tid()
 {
     return threading::get_master_tid();
@@ -143,7 +143,7 @@ get_master_tid()
 
 //--------------------------------------------------------------------------------------//
 
-static inline auto
+inline auto
 is_master_thread()
 {
     return threading::is_master_thread();
@@ -151,7 +151,7 @@ is_master_thread()
 
 //--------------------------------------------------------------------------------------//
 
-static inline bool&
+inline bool&
 working()
 {
     static thread_local bool _instance = true;
@@ -160,7 +160,7 @@ working()
 
 //--------------------------------------------------------------------------------------//
 
-static inline bool
+inline bool
 check(int retval, const std::string& mesg, bool quiet = false)
 {
     bool success = (retval == PAPI_OK);
@@ -187,7 +187,7 @@ check(int retval, const std::string& mesg, bool quiet = false)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 set_debug(int level)
 {
     // set the current debug level for PAPI
@@ -201,7 +201,7 @@ set_debug(int level)
 
 //--------------------------------------------------------------------------------------//
 
-static inline string_t
+inline string_t
 as_string(int* events, long long* values, int num_events, const string_t& indent)
 {
     std::stringstream ss;
@@ -221,7 +221,7 @@ as_string(int* events, long long* values, int num_events, const string_t& indent
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 register_thread()
 {
     // inform PAPI of the existence of a new thread
@@ -237,7 +237,7 @@ register_thread()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 unregister_thread()
 {
     // inform PAPI that a previously registered thread is disappearing
@@ -252,7 +252,7 @@ unregister_thread()
 
 //--------------------------------------------------------------------------------------//
 
-static inline int
+inline int
 get_event_code(const std::string& event_code_str)
 {
 #if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
@@ -273,7 +273,7 @@ get_event_code(const std::string& event_code_str)
 
 //--------------------------------------------------------------------------------------//
 
-static inline std::string
+inline std::string
 get_event_code_name(int event_code)
 {
 #if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
@@ -292,7 +292,7 @@ get_event_code_name(int event_code)
 
 //--------------------------------------------------------------------------------------//
 
-static inline event_info_t
+inline event_info_t
 get_event_info(int evt_type)
 {
     PAPI_event_info_t evt_info;
@@ -307,7 +307,7 @@ get_event_info(int evt_type)
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp>
-static inline void
+inline void
 attach(int event_set, Tp pid_or_tid)
 {
     // inform PAPI that a previously registered thread is disappearing
@@ -322,7 +322,7 @@ attach(int event_set, Tp pid_or_tid)
 //--------------------------------------------------------------------------------------//
 namespace details
 {
-static inline void
+inline void
 init_threading()
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -349,7 +349,7 @@ init_threading()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 init_multiplexing()
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -380,7 +380,7 @@ init_multiplexing()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 init_library()
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -398,7 +398,7 @@ init_library()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 init()
 {
     // initialize the PAPI library
@@ -415,7 +415,7 @@ init()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 shutdown()
 {
     // finish using PAPI and free all related resources
@@ -434,7 +434,7 @@ shutdown()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 print_hw_info()
 {
     init();
@@ -473,7 +473,7 @@ print_hw_info()
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 enable_multiplexing(int event_set, int component = 0)
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -500,7 +500,7 @@ enable_multiplexing(int event_set, int component = 0)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 create_event_set(int* event_set, bool enable_multiplex)
 {
     // create a new empty PAPI event set
@@ -521,7 +521,7 @@ create_event_set(int* event_set, bool enable_multiplex)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 destroy_event_set(int event_set)
 {
     // remove all PAPI events from an event set
@@ -547,7 +547,7 @@ destroy_event_set(int event_set)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 start(int event_set)
 {
     // start counting hardware events in an event set
@@ -564,7 +564,7 @@ start(int event_set)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 stop(int event_set, long long* values)
 {
     // stop counting hardware events in an event set and return current events
@@ -581,7 +581,7 @@ stop(int event_set, long long* values)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 read(int event_set, long long* values)
 {
     // read hardware events from an event set with no reset
@@ -598,7 +598,7 @@ read(int event_set, long long* values)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 write(int event_set, long long* values)
 {
     // write counter values into counters
@@ -615,7 +615,7 @@ write(int event_set, long long* values)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 accum(int event_set, long long* values)
 {
     // accumulate and reset hardware events from an event set
@@ -632,7 +632,7 @@ accum(int event_set, long long* values)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 reset(int event_set)
 {
     // reset the hardware event counts in an event set
@@ -649,7 +649,7 @@ reset(int event_set)
 
 //--------------------------------------------------------------------------------------//
 
-static inline bool
+inline bool
 add_event(int event_set, int event)
 {
     // add single PAPI preset or native hardware event to an event set
@@ -670,7 +670,7 @@ add_event(int event_set, int event)
 
 //--------------------------------------------------------------------------------------//
 
-static inline bool
+inline bool
 remove_event(int event_set, int event)
 {
     // add single PAPI preset or native hardware event to an event set
@@ -690,7 +690,7 @@ remove_event(int event_set, int event)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 add_events(int event_set, int* events, int number)
 {
     // add array of PAPI preset or native hardware events to an event set
@@ -708,7 +708,7 @@ add_events(int event_set, int* events, int number)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 remove_events(int event_set, int* events, int number)
 {
     // add array of PAPI preset or native hardware events to an event set
@@ -725,7 +725,7 @@ remove_events(int event_set, int* events, int number)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 assign_event_set_component(int event_set, int cidx)
 {
     // assign a component index to an existing but empty eventset
@@ -742,7 +742,7 @@ assign_event_set_component(int event_set, int cidx)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 attach(int event_set, unsigned long tid)
 {
     // attach specified event set to a specific process or thread id
@@ -760,7 +760,7 @@ attach(int event_set, unsigned long tid)
 
 //--------------------------------------------------------------------------------------//
 
-static inline void
+inline void
 detach(int event_set)
 {
     // detach specified event set from a previously specified process or thread id
@@ -777,7 +777,7 @@ detach(int event_set)
 
 //--------------------------------------------------------------------------------------//
 
-static inline bool
+inline bool
 query_event(int event)
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -791,7 +791,7 @@ query_event(int event)
 //--------------------------------------------------------------------------------------//
 
 template <typename Func>
-static inline bool
+inline bool
 overflow(int evt_set, int evt_code, int threshold, int flags, Func&& handler)
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -805,7 +805,7 @@ overflow(int evt_set, int evt_code, int threshold, int flags, Func&& handler)
 
 //--------------------------------------------------------------------------------------//
 
-static inline hwcounter_info_t
+inline hwcounter_info_t
 available_events_info()
 {
     hwcounter_info_t evts{};

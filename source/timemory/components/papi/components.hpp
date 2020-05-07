@@ -278,6 +278,7 @@ struct papi_vector
             papi::destroy_event_set(_event_set());
             _event_set() = PAPI_NULL;
         }
+        papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//
@@ -1123,12 +1124,12 @@ public:
         if(initialize_papi())
         {
             value_type values;
-            tim::papi::stop(event_set(), values.data());
-            tim::papi::remove_events(event_set(), get_events().data(), num_events);
-            tim::papi::destroy_event_set(event_set());
+            papi::stop(event_set(), values.data());
+            papi::remove_events(event_set(), get_events().data(), num_events);
+            papi::destroy_event_set(event_set());
             event_set() = PAPI_NULL;
-            papi::unregister_thread();
         }
+        papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//

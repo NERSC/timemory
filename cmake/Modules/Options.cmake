@@ -37,11 +37,6 @@ if(WIN32)
     set(_BUILD_CALIPER OFF)
 endif()
 
-set(_BUILD_OMPT ON)
-if(DEFINED TIMEMORY_USE_OMPT)
-    set(_BUILD_OMPT ${TIMEMORY_USE_OMPT})
-endif()
-
 set(_NON_APPLE_UNIX OFF)
 if(UNIX AND NOT APPLE)
     set(_NON_APPLE_UNIX ON)
@@ -197,7 +192,7 @@ add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_OMPT
-    "Enable building OpenMP-Tools" ${_BUILD_OMPT})
+    "Enable building OpenMP-Tools from submodule" OFF)
 add_option(TIMEMORY_BUILD_DEVELOPER
     "Enable building with developer flags" OFF)
 add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
@@ -266,7 +261,7 @@ add_option(TIMEMORY_USE_ALLINEA_MAP
 add_option(TIMEMORY_USE_CRAYPAT
     "Enable CrayPAT support" ON)
 add_option(TIMEMORY_USE_OMPT
-    "Enable OpenMP tooling" OFF)
+    "Enable OpenMP tooling" ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_option(TIMEMORY_USE_XRAY
         "Enable XRay instrumentation" OFF)
@@ -276,11 +271,6 @@ if(_NON_APPLE_UNIX)
         "Enable LIKWID marker forwarding" ON)
     add_option(TIMEMORY_USE_GOTCHA
         "Enable GOTCHA" ON)
-endif()
-
-if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "AppleClang*")
-    set(TIMEMORY_USE_OMPT OFF)
-    set(TIMEMORY_BUILD_OMPT OFF)
 endif()
 
 # disable these for Debug builds

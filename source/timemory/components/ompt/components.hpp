@@ -31,6 +31,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/hash/types.hpp"
 //
 #include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/ompt/backends.hpp"
@@ -158,13 +159,7 @@ struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
 
-    using flush_tracker_t         = ompt_flush_tracker_t;
-    using cancel_tracker_t        = ompt_cancel_tracker_t;
-    using task_create_tracker_t   = ompt_task_create_tracker_t;
-    using task_schedule_tracker_t = ompt_task_schedule_tracker_t;
-    using data_op_tracker_t       = ompt_data_op_tracker_t;
-    using data_map_tracker_t      = ompt_data_map_tracker_t;
-    using data_submit_tracker_t   = ompt_data_submit_tracker_t;
+    using tracker_t = ompt_data_tracker_t;
 
     static std::string label() { return "ompt_data_tracker"; }
     static std::string description()
@@ -172,78 +167,21 @@ struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
         return std::string("OpenMP tools data tracker ") + demangle<api_type>();
     }
 
-    static void global_init(storage_type*)
-    {
-        flush_tracker_t::label()  = "ompt_flush";
-        cancel_tracker_t::label() = "ompt_cancel";
-
-        task_create_tracker_t::label()   = "ompt_task_create";
-        task_schedule_tracker_t::label() = "ompt_task_schedule";
-
-        data_map_tracker_t::label()    = "ompt_target_map_data";
-        data_op_tracker_t::label()     = "ompt_target_op_data";
-        data_submit_tracker_t::label() = "ompt_target_submit_data";
-
-        flush_tracker_t::description()  = "OpenMP tools: records number of flushes";
-        cancel_tracker_t::description() = "OpenMP tools: records number of cancellations";
-
-        task_create_tracker_t::description() =
-            "OpenMP tools: records number of task creations";
-        task_schedule_tracker_t::description() =
-            "OpenMP tools: records number of task schedules";
-
-        data_map_tracker_t::description() =
-            "OpenMP tools: records the amount of data mapped to devices";
-        data_op_tracker_t::description() =
-            "OpenMP tools: tracks the amount of data operated on devices";
-        data_submit_tracker_t::description() =
-            "OpenMP tools: tracks the number of submissions to devices";
-    }
+    static void global_init(storage_type*) { tracker_t::label() = "ompt_data_tracker"; }
 
     void start() {}
     void stop() {}
 
-    template <typename Tp, typename... Args>
-    void apply_store(Args&&... args)
+    template <typename... Args>
+    void store(Args&&...)
     {
-        Tp _obj;
-        operation::insert_node<Tp>(_obj, m_scope_config, m_prefix_hash);
-        operation::start<Tp> _start(_obj);
-        operation::store<Tp>(_obj, std::forward<Args>(args)...);
-        operation::stop<Tp>     _stop(_obj);
-        operation::pop_node<Tp> _pop(_obj);
-    }
-
-    void store(ompt_data_t*, const void*)
-    {
-        apply_store<flush_tracker_t>(std::plus<size_t>{}, 1);
-    }
-
-    void store(ompt_data_t*, int, const void*)
-    {
-        apply_store<cancel_tracker_t>(std::plus<size_t>{}, 1);
-    }
-
-    void store(ompt_data_t*, const ompt_frame_t*, ompt_data_t*, int, int, const void*)
-    {
-        apply_store<task_create_tracker_t>(std::plus<size_t>{}, 1);
-    }
-
-    void store(ompt_data_t*, ompt_task_status_t, ompt_data_t*)
-    {
-        apply_store<task_schedule_tracker_t>(std::plus<size_t>{}, 1);
-    }
-
-    void store(ompt_id_t target_id, ompt_id_t host_op_id)
-    {
-        apply_store<data_submit_tracker_t>(std::plus<size_t>{}, 1);
-        consume_parameters(target_id, host_op_id);
+        apply_store<tracker_t>(std::plus<size_t>{}, 1);
     }
 
     void store(ompt_id_t target_id, ompt_id_t host_op_id, ompt_target_data_op_t optype,
                void* host_addr, void* device_addr, size_t bytes)
     {
-        apply_store<data_submit_tracker_t>(std::plus<size_t>{}, bytes);
+        apply_store<tracker_t>(std::plus<size_t>{}, bytes);
         consume_parameters(target_id, host_op_id, optype, host_addr, device_addr);
     }
 
@@ -253,13 +191,32 @@ struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
         size_t _tot = 0;
         for(unsigned int i = 0; i < nitems; ++i)
             _tot += bytes[i];
-        apply_store<data_map_tracker_t>(std::plus<size_t>{}, _tot);
+        apply_store<tracker_t>(std::plus<size_t>{}, _tot);
         consume_parameters(target_id, host_addr, device_addr, mapping_flags);
+        // auto _prefix = tim::get_hash_identifier(m_prefix_hash);
     }
 
 public:
     void set_prefix(uint64_t _prefix_hash) { m_prefix_hash = _prefix_hash; }
     void set_scope(scope::config _scope) { m_scope_config = _scope; }
+
+private:
+    template <typename Tp, typename... Args>
+    void apply_store(Tp& _obj, Args&&... args)
+    {
+        operation::insert_node<Tp>(_obj, m_scope_config, m_prefix_hash);
+        operation::start<Tp> _start(_obj);
+        operation::store<Tp>(_obj, std::forward<Args>(args)...);
+        operation::stop<Tp>     _stop(_obj);
+        operation::pop_node<Tp> _pop(_obj);
+    }
+
+    template <typename Tp, typename... Args>
+    void apply_store(Args&&... args)
+    {
+        Tp _obj;
+        apply_store(_obj, std::forward<Args>(args)...);
+    }
 
 private:
     uint64_t      m_prefix_hash  = 0;

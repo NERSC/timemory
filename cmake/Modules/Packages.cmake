@@ -1092,7 +1092,6 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-#if(TIMEMORY_USE_OMPT AND CMAKE_CXX_COMPILER_IS_CLANG)
 if(TIMEMORY_USE_OMPT)
     if(TIMEMORY_BUILD_OMPT)
         set(OPENMP_STANDALONE_BUILD ON CACHE BOOL "Needed by ompt")
@@ -1110,21 +1109,6 @@ if(TIMEMORY_USE_OMPT)
         add_subdirectory(external/llvm-ompt)
         target_include_directories(timemory-ompt SYSTEM INTERFACE
             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
-    else()
-        find_path(OMPT_INCLUDE_DIR
-            NAMES ompt.h
-            PATH_SUFFIXES include)
-
-        include(FindPackageHandleStandardArgs)
-        find_package_handle_standard_args(OMPT DEFAULT_MSG
-            OMPT_INCLUDE_DIR)
-
-        if(OMPT_FOUND)
-            set(OMPT_INCLUDE_DIRS ${OMPT_INCLUDE_DIR})
-        else()
-            set(TIMEMORY_USE_OMPT OFF)
-            set(TIMEMORY_BUILD_OMPT OFF)
-        endif()
     endif()
 else()
     set(TIMEMORY_BUILD_OMPT OFF)
@@ -1138,15 +1122,8 @@ if(TIMEMORY_USE_OMPT AND TIMEMORY_BUILD_OMPT)
             list(APPEND OMPT_EXPORT_TARGETS ${_TARG})
         endif()
     endforeach()
-    if(NOT "${OMPT_EXPORT_TARGETS}" STREQUAL "")
-        target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
-    else()
-        set(TIMEMORY_BUILD_OMPT OFF)
-        set(TIMEMORY_USE_OMPT OFF)
-        inform_empty_interface(timemory-ompt "OpenMP")
-    endif()
-elseif(TIMEMORY_USE_OMPT AND OMPT_FOUND)
-    target_include_directories(timemory-ompt SYSTEM INTERFACE ${OMPT_INCLUDE_DIRS})
+    target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
+elseif(TIMEMORY_USE_OMPT)
     target_compile_definitions(timemory-ompt INTERFACE TIMEMORY_USE_OMPT)
 else()
     set(TIMEMORY_BUILD_OMPT OFF)

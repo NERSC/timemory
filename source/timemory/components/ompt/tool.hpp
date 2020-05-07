@@ -228,7 +228,7 @@ public:
 
     template <typename Tag, typename KeyT = uint64_t, typename MappedT = ompt_data_t*,
               typename MapT = uomap_t<KeyT, MappedT>>
-    static auto get_data()
+    static auto& get_data()
     {
         static thread_local MapT _instance;
         return _instance;
@@ -271,7 +271,6 @@ public:
     : m_key("ompt_parallel")
     , m_data({ nullptr, parallel_data })
     {
-        m_key = "ompt_parallel";
         consume_parameters(task_data, task_frame, requested_parallelism, flags, codeptr);
     }
 
@@ -612,10 +611,17 @@ struct callback_connector
     {
         if(!manager::instance() ||
            (manager::instance() && manager::instance()->is_finalizing()))
+        {
             trait::runtime_enabled<type>::set(false);
+            trait::runtime_enabled<handle_type>::set(false);
+            return false;
+        }
 
-        return (trait::runtime_enabled<type>::get() &&
-                trait::runtime_enabled<handle_type>::get());
+        DEBUG_PRINT_HERE("[timemory-ompt]> %s :: handle enabled = %s",
+                         demangle<type>().c_str(),
+                         (trait::runtime_enabled<handle_type>::get()) ? "y" : "n");
+
+        return (trait::runtime_enabled<handle_type>::get());
     }
 
     template <typename T, typename... Args,
@@ -827,9 +833,9 @@ configure(ompt_function_lookup_t lookup, int, ompt_data_t*)
     TIMEMORY_OMPT_LOOKUP(ompt_get_task_info_t, ompt_get_task_info);
     TIMEMORY_OMPT_LOOKUP(ompt_get_task_memory_t, ompt_get_task_memory);
     //
-    TIMEMORY_OMPT_LOOKUP(ompt_set_trace_ompt_t, ompt_set_trace_ompt);
-    TIMEMORY_OMPT_LOOKUP(ompt_start_trace_t, ompt_start_trace);
-    TIMEMORY_OMPT_LOOKUP(ompt_pause_trace_t, ompt_pause_trace);
+    // TIMEMORY_OMPT_LOOKUP(ompt_set_trace_ompt_t, ompt_set_trace_ompt);
+    // TIMEMORY_OMPT_LOOKUP(ompt_start_trace_t, ompt_start_trace);
+    // TIMEMORY_OMPT_LOOKUP(ompt_pause_trace_t, ompt_pause_trace);
     //
     TIMEMORY_OMPT_LOOKUP(ompt_enumerate_states_t, ompt_enumerate_states);
     TIMEMORY_OMPT_LOOKUP(ompt_enumerate_mutex_impls_t, ompt_enumerate_mutex_impls);

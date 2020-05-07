@@ -374,7 +374,7 @@ extern "C"
                         "[timemory-trace]> Throttling all future calls to '%s' on rank = "
                         "%i, pid = "
                         "%i, thread = %i. avg runtime = %lu ns from %lu invocations... "
-                        "Consider eliminiating from instrumentation...\n",
+                        "Consider eliminating from instrumentation...\n",
                         name.c_str(), tim::dmp::rank(), (int) tim::process::get_id(),
                         (int) tim::threading::get_id(), (unsigned long) _accum,
                         (unsigned long) _count);
@@ -385,7 +385,7 @@ extern "C"
             {
                 if(_count % tim::settings::throttle_count() == 0 &&
                    _accum < (10 * tim::settings::throttle_value()) &&
-                   (tim::settings::debug() || tim::settings::verbose() > 0))
+                   (tim::settings::debug() || tim::settings::verbose() > 1))
                 {
                     auto name = tim::get_hash_ids()->find(id)->second;
                     fprintf(
@@ -394,7 +394,7 @@ extern "C"
                         "of magnitude of threshold for throttling value on rank = %i, "
                         "pid = "
                         "%i, thread = %i. avg runtime = %lu ns from %lu invocations... "
-                        "Consider eliminiating from instrumentation...\n",
+                        "Consider eliminating from instrumentation...\n",
                         name.c_str(), tim::dmp::rank(), (int) tim::process::get_id(),
                         (int) tim::threading::get_id(), (unsigned long) _accum,
                         (unsigned long) _count);

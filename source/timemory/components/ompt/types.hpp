@@ -58,34 +58,14 @@ struct ompt_handle;
 template <typename Api>
 struct ompt_data_tracker;
 
-struct ompt_target_data_op_tag
-{};
-struct ompt_target_data_map_tag
-{};
-struct ompt_target_data_submit_tag
-{};
-struct ompt_flush_tag
-{};
-struct ompt_cancel_tag
-{};
-struct ompt_task_create_tag
-{};
-struct ompt_task_schedule_tag
+struct ompt_target_data_tag
 {};
 
 using ompt_native_handle       = ompt_handle<api::native_tag>;
 using ompt_native_data_tracker = ompt_data_tracker<api::native_tag>;
 //
-using ompt_flush_tracker_t  = data_tracker<int64_t, ompt_flush_tag>;
-using ompt_cancel_tracker_t = data_tracker<int64_t, ompt_cancel_tag>;
+using ompt_data_tracker_t = data_tracker<int64_t, ompt_target_data_tag>;
 //
-using ompt_task_create_tracker_t   = data_tracker<int64_t, ompt_task_create_tag>;
-using ompt_task_schedule_tracker_t = data_tracker<int64_t, ompt_task_schedule_tag>;
-//
-using ompt_data_op_tracker_t     = data_tracker<int64_t, ompt_target_data_op_tag>;
-using ompt_data_map_tracker_t    = data_tracker<int64_t, ompt_target_data_map_tag>;
-using ompt_data_submit_tracker_t = data_tracker<int64_t, ompt_target_data_submit_tag>;
-
 }  // namespace component
 }  // namespace tim
 //
@@ -210,6 +190,7 @@ user_context_callback(Handler& handle, mode::begin_callback, Args... args)
 {
     auto functor = [&args...](Tp* c) {
         c->construct(args...);
+        c->store(args...);
         c->start();
         c->audit(args...);
     };
@@ -250,6 +231,7 @@ user_context_callback(Handler&              handle, mode::endpoint_callback,
     {
         auto functor = [&endp, &args...](Tp* c) {
             c->construct(endp, args...);
+            c->store(endp, args...);
             c->start();
             c->audit(endp, args...);
         };
@@ -276,6 +258,7 @@ user_context_callback(Handler& handle, mode::endpoint_callback, Arg arg,
     {
         auto functor = [&arg, &endp, &args...](Tp* c) {
             c->construct(endp, args...);
+            c->store(endp, args...);
             c->start();
             c->audit(arg, endp, args...);
         };

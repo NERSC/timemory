@@ -314,7 +314,7 @@ struct function_signature
             m_file = m_file.substr(m_file.find_last_of('/') + 1);
     }
 
-    static const char* get(function_signature& sig) { return sig.get().c_str(); }
+    static auto get(function_signature& sig) { return sig.get(); }
 
     std::string get() const
     {
