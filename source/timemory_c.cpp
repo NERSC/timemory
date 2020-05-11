@@ -35,6 +35,7 @@
 #endif
 
 #include "timemory/compat/library.h"
+#include "timemory/containers/auto_timer.hpp"
 #include "timemory/timemory.hpp"
 
 #include <deque>
@@ -93,24 +94,23 @@ extern "C"
 #    undef PROCESS_SETTING
     }
 
-    //======================================================================================//
+    //==================================================================================//
 
     int cxx_timemory_enabled(void) { return (tim::settings::enabled()) ? 1 : 0; }
 
-    //======================================================================================//
+    //==================================================================================//
 
     void* cxx_timemory_create_auto_timer(const char* timer_tag)
     {
         if(!tim::settings::enabled())
             return nullptr;
-        using namespace tim::component;
         std::string key_tag(timer_tag);
         auto*       obj = new auto_timer_t(key_tag);
         obj->start();
         return (void*) obj;
     }
 
-    //======================================================================================//
+    //==================================================================================//
 
     void* cxx_timemory_create_auto_tuple(const char* timer_tag, int num_components,
                                          const int* components)
@@ -144,20 +144,20 @@ extern "C"
         return static_cast<void*>(obj);
     }
 
-    //======================================================================================//
+    //==================================================================================//
 
     void* cxx_timemory_delete_auto_timer(void* ctimer)
     {
         if(ctimer)
         {
-            auto_timer_t* obj = static_cast<auto_timer_t*>(ctimer);
+            auto* obj = static_cast<auto_timer_t*>(ctimer);
             obj->stop();
             delete obj;
         }
         return nullptr;
     }
 
-    //======================================================================================//
+    //==================================================================================//
 
     void* cxx_timemory_delete_auto_tuple(void* ctuple)
     {
@@ -170,7 +170,7 @@ extern "C"
         return nullptr;
     }
 
-    //======================================================================================//
+    //==================================================================================//
 
     const char* cxx_timemory_label(int _mode, int _line, const char* _func,
                                    const char* _file, const char* _extra)

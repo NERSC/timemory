@@ -498,7 +498,9 @@ extern "C"
         if(!lk)
             return;
         auto& region_map = get_region_map();
-        auto  idx        = timemory_get_begin_record(name);
+        lk.release();
+        auto idx = timemory_get_begin_record(name);
+        lk       = tim::trace::lock<tim::trace::library>();
         region_map[name].push(idx);
     }
 
@@ -516,7 +518,9 @@ extern "C"
         else
         {
             uint64_t idx = itr->second.top();
+            lk.release();
             timemory_end_record(idx);
+            lk = tim::trace::lock<tim::trace::library>();
             itr->second.pop();
         }
     }

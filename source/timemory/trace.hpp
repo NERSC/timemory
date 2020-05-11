@@ -73,6 +73,15 @@ struct lock
 
     bool& get_local() { return m_value; }
 
+    void release()
+    {
+        if(m_value)
+        {
+            get_global() = false;
+            m_value      = false;
+        }
+    }
+
 public:
     static bool& get_global()
     {

@@ -123,12 +123,16 @@ protected:
         cu_size_orig = get_cu_storage_size();
         cc_size_orig = get_cc_storage_size();
         pr_size_orig = get_pr_storage_size();
+        uc_size_orig = get_uc_storage_size();
+        sc_size_orig = get_sc_storage_size();
 
         printf("\n");
         printf("wc_size_orig = %lu\n", (long unsigned) wc_size_orig);
         printf("cu_size_orig = %lu\n", (long unsigned) cu_size_orig);
         printf("cc_size_orig = %lu\n", (long unsigned) cc_size_orig);
         printf("pr_size_orig = %lu\n", (long unsigned) pr_size_orig);
+        printf("uc_size_orig = %lu\n", (long unsigned) uc_size_orig);
+        printf("sc_size_orig = %lu\n", (long unsigned) sc_size_orig);
         printf("\n");
 
         ret = 0;
@@ -139,6 +143,8 @@ protected:
     uint64_t cu_size_orig;
     uint64_t cc_size_orig;
     uint64_t pr_size_orig;
+    uint64_t uc_size_orig;
+    uint64_t sc_size_orig;
     long     ret;
 };
 
@@ -312,17 +318,21 @@ TEST_F(library_tests, c_marker_macro)
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
     {
-        void* ptr =
+        void* a =
             TIMEMORY_C_BLANK_MARKER(TEST_NAME, WALL_CLOCK, CPU_CLOCK, CPU_UTIL, PEAK_RSS);
         ret += details::fibonacci(35);
-        FREE_TIMEMORY_C_MARKER(ptr);
+        void* b = TIMEMORY_C_BLANK_MARKER(TEST_NAME, WALL_CLOCK, CPU_CLOCK, CPU_UTIL);
+        ret += details::fibonacci(35);
+        FREE_TIMEMORY_C_MARKER(b);
+        ret += details::fibonacci(35);
+        FREE_TIMEMORY_C_MARKER(a);
     }
 
     printf("fibonacci(35) = %li\n\n", ret);
 
-    auto wc_n = wc_size_orig + 1;
-    auto cu_n = cu_size_orig + 1;
-    auto cc_n = cc_size_orig + 1;
+    auto wc_n = wc_size_orig + 2;
+    auto cu_n = cu_size_orig + 2;
+    auto cc_n = cc_size_orig + 2;
     auto pr_n = pr_size_orig + 1;
 
     ASSERT_EQ(get_wc_storage_size(), wc_n);
@@ -337,16 +347,14 @@ TEST_F(library_tests, c_auto_timer_macro)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
-    auto uc_size_orig = get_uc_storage_size();
-    auto sc_size_orig = get_sc_storage_size();
-
     {
         void* a = TIMEMORY_C_BLANK_AUTO_TIMER(TEST_NAME);
         ret += details::fibonacci(35);
         void* b = TIMEMORY_C_BLANK_AUTO_TIMER(TEST_NAME);
         ret += details::fibonacci(35);
-        FREE_TIMEMORY_C_AUTO_TIMER(b);
         FREE_TIMEMORY_C_AUTO_TIMER(a);
+        ret += details::fibonacci(35);
+        FREE_TIMEMORY_C_AUTO_TIMER(b);
     }
 
     printf("fibonacci(35) = %li\n\n", ret);
@@ -359,10 +367,19 @@ TEST_F(library_tests, c_auto_timer_macro)
     auto sc_n = sc_size_orig + 2;
 
     printf("\n");
-    printf("wc_size_now = %lu\n", (long unsigned) wc_n);
-    printf("cu_size_now = %lu\n", (long unsigned) cu_n);
-    printf("cc_size_now = %lu\n", (long unsigned) cc_n);
-    printf("pr_size_now = %lu\n", (long unsigned) pr_n);
+    printf("wc_size_req = %lu\n", (long unsigned) wc_n);
+    printf("cu_size_req = %lu\n", (long unsigned) cu_n);
+    printf("cc_size_req = %lu\n", (long unsigned) cc_n);
+    printf("pr_size_req = %lu\n", (long unsigned) pr_n);
+    printf("uc_size_req = %lu\n", (long unsigned) uc_n);
+    printf("sc_size_req = %lu\n", (long unsigned) sc_n);
+    printf("\n");
+    printf("wc_size_now = %lu\n", (long unsigned) get_wc_storage_size());
+    printf("cu_size_now = %lu\n", (long unsigned) get_cu_storage_size());
+    printf("cc_size_now = %lu\n", (long unsigned) get_cc_storage_size());
+    printf("pr_size_now = %lu\n", (long unsigned) get_pr_storage_size());
+    printf("uc_size_now = %lu\n", (long unsigned) get_uc_storage_size());
+    printf("sc_size_now = %lu\n", (long unsigned) get_sc_storage_size());
     printf("\n");
 
     ASSERT_EQ(get_wc_storage_size(), wc_n);
