@@ -537,7 +537,7 @@ extern "C"
     //
     void timemory_trace_finalize(void)
     {
-        if(get_library_state()[1] || library_trace_count.load() == 0)
+        if(library_trace_count.load() == 0)
             return;
 
         if(tim::settings::verbose() > 1 || tim::settings::debug())
@@ -549,15 +549,15 @@ extern "C"
 
         tim::auto_lock_t lk(tim::type_mutex<tim::api::native_tag>());
 
-        // tim::settings::enabled() = false;
-        get_library_state()[1] = true;
-
         if(_count > 0)
         {
             // have the manager finalize
             tim::manager::instance()->finalize();
             return;
         }
+
+        // tim::settings::enabled() = false;
+        get_library_state()[1] = true;
 
         tim::mpi::barrier();
 

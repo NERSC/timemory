@@ -862,19 +862,11 @@ main(int argc, char** argv)
                 continue;
             }
 
-            if(!instrument_entity(name.m_name))
+            if(!instrument_entity(name.m_name) && !instrument_entity(name.get()))
             {
                 if(usage_pass)
-                    verbprintf(1, "Skipping function [excluded]: %s\n",
-                               name.m_name.c_str());
-                continue;
-            }
-
-            if(!instrument_entity(name.get()))
-            {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function [excluded]: %s\n",
-                               name.get().c_str());
+                    verbprintf(1, "Skipping function [excluded]: %s / %s\n",
+                               name.m_name.c_str(), name.get().c_str());
                 continue;
             }
 
