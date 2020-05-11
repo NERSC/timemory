@@ -818,15 +818,7 @@ main(int argc, char** argv)
             else
                 itr->getModuleName(modname, MUTNAMELEN);
 
-            /*if(available_modules.count(modname) == 0)
-            {
-                if(usage_pass)
-                    verbprintf(1, "Skipping module not in original mutatee: '%s'\n",
-                               modname);
-                continue;
-            }*/
-
-            if(strstr(modname, "libdyninstAPI_RT"))
+            if(strstr(modname, "libdyninst") != nullptr)
                 continue;
 
             if(module_constraint(modname) || !process_file_for_instrumentation(modname))
@@ -837,14 +829,6 @@ main(int argc, char** argv)
             }
 
             itr->getName(fname, FUNCNAMELEN);
-
-            /*if(available_procedures.count(fname) == 0)
-            {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function not in original mutatee: '%s'\n",
-                               fname);
-                continue;
-            }*/
 
             if(!itr->isInstrumentable())
             {
@@ -972,7 +956,7 @@ main(int argc, char** argv)
     {
         char modname[1024];
         m->getName(modname, 1024);
-        if(strstr(modname, "libdyninstAPI_RT"))
+        if(strstr(modname, "libdyninst") != nullptr)
             continue;
 
         if(!m->getProcedures())
@@ -988,6 +972,17 @@ main(int argc, char** argv)
 
         instr_procedures(true, *p);
     }
+
+    //----------------------------------------------------------------------------------//
+    //
+    //  Dump the available instrumented modules/functions (re-dump available)
+    //
+    //----------------------------------------------------------------------------------//
+
+    dump_info("available_modules.txt", available_modules, 2);
+    dump_info("available_functions.txt", available_procedures, 2);
+    dump_info("instrumented_modules.txt", instrumented_modules, 1);
+    dump_info("instrumented_functions.txt", instrumented_procedures, 1);
 
     //----------------------------------------------------------------------------------//
     //
@@ -1033,7 +1028,7 @@ main(int argc, char** argv)
     {
         char modname[1024];
         m->getName(modname, 1024);
-        if(strstr(modname, "libdyninstAPI_RT"))
+        if(strstr(modname, "libdyninst") != nullptr)
             continue;
 
         if(!m->getProcedures())
@@ -1049,17 +1044,6 @@ main(int argc, char** argv)
     // finalize insertion
     if(binary_rewrite)
         addr_space->finalizeInsertionSet(false, nullptr);
-
-    //----------------------------------------------------------------------------------//
-    //
-    //  Dump the available instrumented modules/functions (re-dump available)
-    //
-    //----------------------------------------------------------------------------------//
-
-    dump_info("available_modules.txt", available_modules, 2);
-    dump_info("available_functions.txt", available_procedures, 2);
-    dump_info("instrumented_modules.txt", instrumented_modules, 1);
-    dump_info("instrumented_functions.txt", instrumented_procedures, 1);
 
     //----------------------------------------------------------------------------------//
     //
@@ -1241,7 +1225,7 @@ process_file_for_instrumentation(const std::string& file_name)
     // these are all due to TAU
     std::regex prefix_regex("^(Tau|Profiler|Rts|Papi|Py|Comp_xl\\.cpp|Comp_gnu\\.cpp|"
                             "UserEvent\\.cpp|FunctionInfo\\.cpp|PthreadLayer\\.cpp|"
-                            "Comp_intel[0-9]\\.cpp|Tracer\\.cpp)");
+                            "Comp_intel[0-9]\\.cpp|Tracer\\.cpp|cxx11|locale)");
 
     if(check_if_timemory_source_file(file_name))
     {
@@ -1335,11 +1319,12 @@ instrument_entity(const std::string& function_name)
         return true;
     }
 
-    std::regex exclude("(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
-                       "std::max|std::min|std::fill|std::forward|std::get|dyninst)");
-    std::regex leading("^(_init|_fini|__|_dl_|_start|_exit|frame_dummy|\\(\\(|\\(__|_"
-                       "GLOBAL|targ|PMPI_|new|delete|std::allocator|std::move|nvtx|gcov|"
-                       "main\\.cold\\.|TAU|tau|Tau|dyn|RT|_IO|dl|sys|pthread|posix)");
+    std::regex exclude(
+        "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
+        "std::max|std::min|std::fill|std::forward|std::get|dyninst|tm_clones)");
+    std::regex leading(
+        "^(_|frame_dummy|\\(|targ|PMPI_|new|delete|std::allocat|nvtx|gcov|main\\.cold\\.|"
+        "TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)");
     std::regex stlfunc("^std::");
     std::set<std::string> whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
 
