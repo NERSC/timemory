@@ -549,6 +549,9 @@ extern "C"
 
         tim::auto_lock_t lk(tim::type_mutex<tim::api::native_tag>());
 
+        // tim::settings::enabled() = false;
+        get_library_state()[1] = true;
+
         if(_count > 0)
         {
             // have the manager finalize

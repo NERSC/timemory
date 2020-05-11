@@ -212,8 +212,6 @@ extern "C"
     //  finalize the library
     void timemory_finalize_library(void)
     {
-        if(get_library_state()[1])
-            return;
         get_library_state()[1] = true;
 
         if(tim::settings::enabled() == false && get_record_map().empty())
