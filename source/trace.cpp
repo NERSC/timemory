@@ -487,9 +487,9 @@ extern "C"
             }
             else
             {
-                int   _argc = 1;
+                /*int   _argc = 1;
                 char* _argv = (char*) cmd;
-                timemory_init_library(_argc, &_argv);
+                timemory_init_library(_argc, &_argv);*/
             }
 
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
