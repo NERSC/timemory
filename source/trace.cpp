@@ -485,6 +485,12 @@ extern "C"
                 auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
                 tim::config::read_command_line(_init);
             }
+            else
+            {
+                int   _argc = 1;
+                char* _argv = (char*) cmd;
+                timemory_init_library(_argc, &_argv);
+            }
 
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
 
@@ -493,22 +499,6 @@ extern "C"
 
             // configure bundle
             user_trace_bundle::global_init(nullptr);
-
-            /*
-            if(read_command_line)
-            {
-                auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-                tim::config::read_command_line(_init);
-            }
-            else if(strlen(cmd) > 0)
-            {
-                PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
-                           (int) tim::process::get_id(), (int) tim::threading::get_id());
-                char* _cmd = new char[strlen(cmd) + 1];
-                strcpy(_cmd, cmd);
-                timemory_init_library(1, &_cmd);
-                delete[] _cmd;
-            }*/
 
             tim::settings::parse();
         }

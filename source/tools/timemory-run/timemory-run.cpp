@@ -735,7 +735,7 @@ main(int argc, char** argv)
     function_signature main_sign("int", "main", "");
 
     auto main_call_args = timemory_call_expr(main_sign.get());
-    auto init_call_args = timemory_call_expr(default_components, true, cmdv0);
+    auto init_call_args = timemory_call_expr(default_components, binary_rewrite, cmdv0);
     auto fini_call_args = timemory_call_expr();
     auto umpi_call_args = timemory_call_expr(use_mpi);
     auto mpip_call_args =
@@ -783,7 +783,8 @@ main(int argc, char** argv)
     if(use_mpi && umpi_call)
         init_names.push_back(umpi_call.get());
 
-    init_names.push_back(init_call.get());
+    if(init_call)
+        init_names.push_back(init_call.get());
 
     if(binary_rewrite)
     {
@@ -895,11 +896,11 @@ main(int argc, char** argv)
 
             if(usage_pass)
             {
-                verbprintf(0, "Instrumenting |> [ %s ]\n", name.m_name.c_str());
                 hash_ids.push_back({ std::hash<std::string>()(name.get()), name.get() });
                 continue;
             }
 
+            verbprintf(0, "Instrumenting |> [ %s ]\n", name.m_name.c_str());
             available_modules.insert(modname);
             available_procedures.insert(name.get());
             instrumented_modules.insert(modname);
@@ -1274,7 +1275,7 @@ process_file_for_instrumentation(const std::string& file_name)
         static std::set<std::string> already_reported;
         if(already_reported.count(file_name) == 0)
         {
-            verbprintf(1, "%s |> [ %s ]\n", __FUNCTION__, file_name.c_str());
+            verbprintf(2, "%s |> [ %s ]\n", __FUNCTION__, file_name.c_str());
             already_reported.insert(file_name);
         }
     }
