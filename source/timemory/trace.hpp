@@ -21,39 +21,72 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-//
 
-#include "timemory-run.hpp"
+/** \file "timemory/trace.hpp"
+ * Header file for library tracing operations
+ *
+ */
 
-#include <regex>
-#include <string>
+#pragma once
 
-bool
-timemory_source_file_constraint(const std::string& fname)
+//--------------------------------------------------------------------------------------//
+
+namespace tim
 {
-    // clang-format off
-    //
-    std::regex file_regex("(@EXCLUDE_SOURCE_FILES@)");
-    return std::regex_search(fname, file_regex);
-    //
-    // clang-format on
-}
-
-//======================================================================================//
-//
-static inline void
-consume()
+namespace trace
 {
-    consume_parameters(initialize_expr, bpatch, use_ompt, use_mpi, use_mpip,
-                       stl_func_instr, werror, loop_level_instr, error_print,
-                       binary_rewrite, debug_print, expect_error, is_static_exe,
-                       available_modules, available_procedures, instrumented_modules,
-                       instrumented_procedures);
-    if(false)
+//
+//--------------------------------------------------------------------------------------//
+//
+struct trace
+{};
+struct region
+{};
+struct library
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+struct lock
+{
+    lock()
+    : m_value(!get_global())
     {
-        timemory_thread_exit(nullptr, ExitedNormally);
-        timemory_fork_callback(nullptr, nullptr);
-        std::regex _rtmp("test", regex_opts);
-        consume_parameters(_rtmp);
+        if(m_value)
+            get_global() = true;
     }
-}
+
+    ~lock()
+    {
+        if(m_value)
+            get_global() = false;
+    }
+
+    lock(lock&&)  = default;
+    lock& operator=(lock&&) = default;
+
+    lock(const lock&) = delete;
+    lock& operator=(const lock&) = delete;
+
+    operator bool() const { return m_value; }
+
+    bool& get_local() { return m_value; }
+
+public:
+    static bool& get_global()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
+
+private:
+    bool m_value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace trace
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//

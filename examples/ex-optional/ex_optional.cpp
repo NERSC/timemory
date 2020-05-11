@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
@@ -113,7 +114,7 @@ int main(int argc, char** argv)
         auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
         write(itr, ret);
-        ret_sum += ret;
+        ret_sum += pow(ret, 2);
     }
 
     std::vector<long> ret_reduce;
@@ -191,4 +192,5 @@ void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
 #else
     std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
 #endif
+    for(auto& itr : recvbuf) itr = log(itr);
 }

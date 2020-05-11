@@ -88,12 +88,17 @@ extern "C"
     void     timemory_push_region(const char*) {}
     void     timemory_pop_region(const char*) {}
 
+    bool timemory_is_throttled(const char*) { return true; }
+    void timemory_add_hash_id(uint64_t, const char*) {}
+    void timemory_add_hash_ids(uint64_t, uint64_t*, const char**) {}
+
     // tracing API
     void timemory_push_trace(const char*) {}
     void timemory_pop_trace(const char*) {}
     void timemory_trace_init(const char*, bool, const char*) {}
     void timemory_trace_finalize(void) {}
-    void timemory_trace_set_mpi(bool) {}
+    void timemory_trace_set_env(const char*, const char*);
+    void timemory_trace_set_mpi(bool, bool) {}
 
     void     timemory_create_record_(const char*, uint64_t*, int, int*) {}
     void     timemory_delete_record_(uint64_t) {}

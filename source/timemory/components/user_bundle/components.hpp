@@ -58,22 +58,28 @@ static inline user_bundle_variables_t&
 get_user_bundle_variables()
 {
     static user_bundle_variables_t _instance = {
-        { component::global_bundle_idx, { "TIMEMORY_GLOBAL_COMPONENTS", {} } },
+        { component::global_bundle_idx,
+          { "TIMEMORY_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
         { component::tuple_bundle_idx,
-          { "TIMEMORY_TUPLE_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
+          { "TIMEMORY_TUPLE_COMPONENTS",
+            { "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS" } } },
         { component::list_bundle_idx, { "TIMEMORY_LIST_COMPONENTS", {} } },
         { component::ompt_bundle_idx,
           { "TIMEMORY_OMPT_COMPONENTS",
-            { "TIMEMORY_PROFILER_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
+            { "TIMEMORY_TRACE_COMPONENTS", "TIMEMORY_PROFILER_COMPONENTS",
+              "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
               "TIMEMORY_COMPONENT_LIST_INIT" } } },
         { component::mpip_bundle_idx,
           { "TIMEMORY_MPIP_COMPONENTS",
-            { "TIMEMORY_PROFILER_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
+            { "TIMEMORY_TRACE_COMPONENTS", "TIMEMORY_PROFILER_COMPONENTS",
+              "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
               "TIMEMORY_COMPONENT_LIST_INIT" } } },
         { component::trace_bundle_idx,
-          { "TIMEMORY_TRACE_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } },
+          { "TIMEMORY_TRACE_COMPONENTS",
+            { "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS" } } },
         { component::profiler_bundle_idx,
-          { "TIMEMORY_PROFILER_COMPONENTS", { "TIMEMORY_GLOBAL_COMPONENTS" } } }
+          { "TIMEMORY_PROFILER_COMPONENTS",
+            { "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS" } } }
     };
     return _instance;
 }

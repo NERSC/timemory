@@ -116,6 +116,8 @@ using basic_loop_t          = BPatch_basicBlockLoop;
 using basic_loop_vec_t      = BPatch_Vector<basic_loop_t*>;
 using flow_graph_t          = BPatch_flowGraph;
 using patch_t               = BPatch;
+using image_t               = BPatch_image;
+using point_t               = BPatch_point;
 
 static patch_t*      bpatch          = nullptr;
 static call_expr_t*  initialize_expr = nullptr;
@@ -138,6 +140,8 @@ static std::set<std::string> available_procedures;
 static std::set<std::string> instrumented_modules;
 static std::set<std::string> instrumented_procedures;
 
+static auto regex_opts =
+    std::regex_constants::ECMAScript | std::regex_constants::optimize;
 //
 //======================================================================================//
 
@@ -186,21 +190,20 @@ extern "C"
     bool instrument_entity(const string_t& function_name);
     int  module_constraint(char* fname);
     int  routine_constraint(const char* fname);
-    bool check_if_timemory_source_file(const string_t& fname);
+    bool timemory_source_file_constraint(const string_t& fname);
 }
 
 //======================================================================================//
 
 function_signature
-get_func_file_line_info(BPatch_image* mutateeImage, BPatch_function* f);
+get_func_file_line_info(image_t* mutateeImage, procedure_t* f);
 
 function_signature
-get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_function* f,
-                        BPatch_flowGraph*      cfGraph,
+get_loop_file_line_info(image_t* mutateeImage, procedure_t* f, BPatch_flowGraph* cfGraph,
                         BPatch_basicBlockLoop* loopToInstrument);
 
 void
-insert_instr(address_space_t* mutatee, BPatch_function* funcToInstr,
+insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
              call_expr_pointer_t traceFunc, BPatch_procedureLocation traceLoc,
              BPatch_flowGraph*      cfGraph          = nullptr,
              BPatch_basicBlockLoop* loopToInstrument = nullptr);
@@ -208,11 +211,11 @@ insert_instr(address_space_t* mutatee, BPatch_function* funcToInstr,
 void
 errorFunc(BPatchErrorLevel level, int num, const char** params);
 
-BPatch_function*
-find_function(BPatch_image* appImage, const char* functionName);
+procedure_t*
+find_function(image_t* appImage, const std::string& functionName);
 
 void
-check_cost(BPatch_snippet snippet);
+check_cost(snippet_t snippet);
 
 void
 error_func_real(BPatchErrorLevel level, int num, const char* const* params);
@@ -221,16 +224,21 @@ void
 error_func_fake(BPatchErrorLevel level, int num, const char* const* params);
 
 bool
-find_func_or_calls(std::vector<const char*> names, BPatch_Vector<BPatch_point*>& points,
-                   BPatch_image*            appImage,
+find_func_or_calls(std::vector<const char*> names, BPatch_Vector<point_t*>& points,
+                   image_t* appImage, BPatch_procedureLocation loc = BPatch_locEntry);
+
+bool
+find_func_or_calls(const char* name, BPatch_Vector<point_t*>& points, image_t* image,
                    BPatch_procedureLocation loc = BPatch_locEntry);
 
 bool
-find_func_or_calls(const char* name, BPatch_Vector<BPatch_point*>& points,
-                   BPatch_image* image, BPatch_procedureLocation loc = BPatch_locEntry);
+load_dependent_libraries(address_space_t* bedit, char* bindings);
 
 bool
-load_dependent_libraries(address_space_t* bedit, char* bindings);
+c_stdlib_module_constraint(const std::string& file);
+
+bool
+c_stdlib_function_constraint(const std::string& func);
 
 //======================================================================================//
 
@@ -378,7 +386,7 @@ get_snippets(Args&&... args)
 //
 struct timemory_call_expr
 {
-    using snippet_pointer_t = std::shared_ptr<BPatch_snippet>;
+    using snippet_pointer_t = std::shared_ptr<snippet_t>;
 
     template <typename... Args>
     timemory_call_expr(Args&&... args)

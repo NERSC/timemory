@@ -98,7 +98,8 @@ static constexpr int64_t PiB = 1024 * TiB;
 inline int64_t
 get_page_size()
 {
-    return sysconf(_SC_PAGESIZE);
+    static auto _pagesz = sysconf(_SC_PAGESIZE);
+    return _pagesz;
 }
 const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
@@ -107,7 +108,8 @@ const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 inline int64_t
 get_page_size()
 {
-    return getpagesize();
+    static auto _pagesz = getpagesize();
+    return _pagesz;
 }
 const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
@@ -116,9 +118,12 @@ const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 inline int64_t
 get_page_size()
 {
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-    return sysInfo.dwPageSize;
+    static auto _pagesz = []() {
+        SYSTEM_INFO sysInfo;
+        GetSystemInfo(&sysInfo);
+        return sysInfo.dwPageSize;
+    }();
+    return _pagesz;
 }
 const int64_t clocks_per_sec = CLOCKS_PER_SEC;
 

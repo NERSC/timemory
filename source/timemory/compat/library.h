@@ -196,7 +196,8 @@ extern "C"
         TIMEMORY_VISIBILITY("default");
 
 #if defined(TIMEMORY_MPI_GOTCHA)
-    TIMEMORY_DECL void timemory_trace_set_mpi(bool use) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_trace_set_mpi(bool use, bool attached)
+        TIMEMORY_VISIBILITY("default");
 #endif
 
 #if defined(__cplusplus)

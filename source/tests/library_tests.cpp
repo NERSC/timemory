@@ -307,7 +307,7 @@ TEST_F(library_tests, function_pointers)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(library_tests, auto_tuple)
+TEST_F(library_tests, c_marker_macro)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 
@@ -333,7 +333,7 @@ TEST_F(library_tests, auto_tuple)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(library_tests, auto_timers)
+TEST_F(library_tests, c_auto_timer_macro)
 {
     printf("TEST_NAME: %s\n", details::get_test_name().c_str());
 

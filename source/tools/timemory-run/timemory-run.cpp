@@ -47,7 +47,8 @@ main(int argc, char** argv)
     auto env_collect_paths = tim::get_env<std::string>("TIMEMORY_COLLECTION_PATH", "");
     prefix_collection_path(env_collect_paths, collection_paths);
 
-    bool             loadlib = false;
+    bool             is_attached = false;
+    bool             loadlib     = false;
     char             mutname[MUTNAMELEN];
     char             outfile[MUTNAMELEN];
     char             libname[FUNCNAMELEN];
@@ -179,8 +180,8 @@ main(int argc, char** argv)
         .names({ "-S", "--stdlib" })
         .description(
             "Enable instrumentation of C++ standard library functions. Use with caution! "
-            "May causes deadlocks because timemory uses the STL internally. Use the "
-            "'-E/--function-exclude' option to exclude any deadlocking functions")
+            "May causes deadlocks/segfaults because timemory uses the STL internally. "
+            "Use with '-E/--function-exclude' option as needed")
         .count(0);
     parser.add_argument()
         .names({ "-p", "--pid" })
@@ -214,7 +215,7 @@ main(int argc, char** argv)
         parser.add_argument()
             .names({ "-c", "--command" })
             .description("Input executable and arguments (if '-- <CMD>' not provided)")
-            .required(true);
+            .count(1);
     }
 
     std::string extra_help = "-- <CMD> <ARGS>";
@@ -346,9 +347,8 @@ main(int argc, char** argv)
     //  Helper function for adding regex expressions
     //
     auto add_regex = [](auto& regex_array, const std::string& regex_expr) {
-        auto regex_constants = std::regex_constants::ECMAScript;
         if(!regex_expr.empty())
-            regex_array.push_back(std::regex(regex_expr, regex_constants));
+            regex_array.push_back(std::regex(regex_expr, regex_opts));
     };
 
     add_regex(func_include, tim::get_env<std::string>("TIMEMORY_REGEX_INCLUDE", ""));
@@ -459,7 +459,7 @@ main(int argc, char** argv)
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");
-    BPatch_image*                    app_image     = addr_space->getImage();
+    image_t*                         app_image     = addr_space->getImage();
     BPatch_Vector<BPatch_module*>*   app_modules   = app_image->getModules();
     BPatch_Vector<BPatch_function*>* app_functions = app_image->getProcedures();
 
@@ -531,6 +531,8 @@ main(int argc, char** argv)
         app_binary = static_cast<BPatch_binaryEdit*>(addr_space);
     else
         app_thread = static_cast<BPatch_process*>(addr_space);
+
+    is_attached = (_pid >= 0 && app_thread);
 
     //----------------------------------------------------------------------------------//
     //
@@ -707,8 +709,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    BPatch_Vector<BPatch_point*>* main_entr_points = nullptr;
-    BPatch_Vector<BPatch_point*>* main_exit_points = nullptr;
+    BPatch_Vector<point_t*>* main_entr_points = nullptr;
+    BPatch_Vector<point_t*>* main_exit_points = nullptr;
 
     if(main_func)
     {
@@ -737,7 +739,7 @@ main(int argc, char** argv)
     auto main_call_args = timemory_call_expr(main_sign.get());
     auto init_call_args = timemory_call_expr(default_components, binary_rewrite, cmdv0);
     auto fini_call_args = timemory_call_expr();
-    auto umpi_call_args = timemory_call_expr(use_mpi);
+    auto umpi_call_args = timemory_call_expr(use_mpi, is_attached);
     auto mpip_call_args =
         timemory_call_expr("TIMEMORY_MPIP_COMPONENTS", default_components);
     auto ompt_call_args =
@@ -818,8 +820,8 @@ main(int argc, char** argv)
     //  with one operation and do not have to be calculated during runtime.
     //
     //----------------------------------------------------------------------------------//
-
-    auto instr_procedures = [&](bool usage_pass, const procedure_vec_t& procedures) {
+    std::vector<std::function<void()>> instr_procedure_functions;
+    auto instr_procedures = [&](const procedure_vec_t& procedures) {
         for(auto itr : procedures)
         {
             if(itr == main_func)
@@ -839,8 +841,7 @@ main(int argc, char** argv)
 
             if(module_constraint(modname) || !process_file_for_instrumentation(modname))
             {
-                if(usage_pass)
-                    verbprintf(1, "Skipping constrained module: '%s'\n", modname);
+                verbprintf(1, "Skipping constrained module: '%s'\n", modname);
                 continue;
             }
 
@@ -848,8 +849,7 @@ main(int argc, char** argv)
 
             if(!itr->isInstrumentable())
             {
-                if(usage_pass)
-                    verbprintf(1, "Skipping uninstrumentable function: %s\n", fname);
+                verbprintf(1, "Skipping uninstrumentable function: %s\n", fname);
                 continue;
             }
 
@@ -857,78 +857,65 @@ main(int argc, char** argv)
 
             if(name.get().empty())
             {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function [empty name]: %s\n", fname);
-                continue;
-            }
-
-            if(routine_constraint(fname))
-            {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function [constrained]: %s\n", fname);
+                verbprintf(1, "Skipping function [empty name]: %s\n", fname);
                 continue;
             }
 
             if(routine_constraint(name.m_name.c_str()))
             {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function [constrained]: %s\n",
-                               name.m_name.c_str());
+                verbprintf(1, "Skipping function [constrained]: %s\n",
+                           name.m_name.c_str());
                 continue;
             }
 
-            if(!instrument_entity(name.m_name) && !instrument_entity(name.get()))
+            if(!instrument_entity(name.m_name))
             {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function [excluded]: %s / %s\n",
-                               name.m_name.c_str(), name.get().c_str());
+                verbprintf(1, "Skipping function [excluded]: %s / %s\n",
+                           name.m_name.c_str(), name.get().c_str());
                 continue;
             }
 
             if(is_static_exe && has_debug_info && strcmp(fname, "_fini") != 0 &&
                strcmp(modname, "DEFAULT_MODULE") == 0)
             {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function [DEFAULT_MODULE]: %s\n", fname);
+                verbprintf(1, "Skipping function [DEFAULT_MODULE]: %s\n", fname);
                 continue;
             }
 
             if(instrumented_procedures.find(name.get()) != instrumented_procedures.end())
             {
-                if(usage_pass)
-                    verbprintf(1, "Skipping function [duplicate]: %s\n",
-                               name.get().c_str());
+                verbprintf(1, "Skipping function [duplicate]: %s\n", name.get().c_str());
                 continue;
             }
 
-            if(usage_pass)
-            {
-                hash_ids.push_back({ std::hash<std::string>()(name.get()), name.get() });
-                continue;
-            }
-
-            verbprintf(0, "Instrumenting |> [ %s ] -> [ %s ]\n", modname,
-                       name.m_name.c_str());
+            hash_ids.push_back({ std::hash<std::string>()(name.get()), name.get() });
             available_modules.insert(modname);
             available_procedures.insert(name.get());
             instrumented_modules.insert(modname);
             instrumented_procedures.insert(name.get());
 
-            auto _name       = name.get();
-            auto _hash       = std::hash<std::string>()(_name);
-            auto _trace_entr = (entr_hash) ? timemory_call_expr(_hash)
-                                           : timemory_call_expr(_name.c_str());
-            auto _trace_exit = (exit_hash) ? timemory_call_expr(_hash)
-                                           : timemory_call_expr(_name.c_str());
-            auto _entr = _trace_entr.get((entr_hash) ? entr_hash : entr_trace);
-            auto _exit = _trace_exit.get((exit_hash) ? exit_hash : exit_trace);
+            auto _f = [=]() {
+                verbprintf(0, "Instrumenting |> [ %s ] -> [ %s ]\n", modname,
+                           name.m_name.c_str());
+                auto _name       = name.get();
+                auto _hash       = std::hash<std::string>()(_name);
+                auto _trace_entr = (entr_hash) ? timemory_call_expr(_hash)
+                                               : timemory_call_expr(_name.c_str());
+                auto _trace_exit = (exit_hash) ? timemory_call_expr(_hash)
+                                               : timemory_call_expr(_name.c_str());
+                auto _entr = _trace_entr.get((entr_hash) ? entr_hash : entr_trace);
+                auto _exit = _trace_exit.get((exit_hash) ? exit_hash : exit_trace);
 
-            insert_instr(addr_space, itr, _entr, BPatch_entry, nullptr, nullptr);
-            insert_instr(addr_space, itr, _exit, BPatch_exit, nullptr, nullptr);
+                insert_instr(addr_space, itr, _entr, BPatch_entry, nullptr, nullptr);
+                insert_instr(addr_space, itr, _exit, BPatch_exit, nullptr, nullptr);
+            };
+
+            instr_procedure_functions.push_back(_f);
 
             if(loop_level_instr)
             {
-                verbprintf(0, "Instrumenting at the loop level: %s\n", fname);
+                verbprintf(0, "Instrumenting at the loop level: %s\n",
+                           name.m_name.c_str());
 
                 flow_graph_t*    flow = itr->getCFG();
                 basic_loop_vec_t basic_loop;
@@ -936,18 +923,25 @@ main(int argc, char** argv)
                     flow->getOuterLoops(basic_loop);
                 for(auto litr : basic_loop)
                 {
-                    auto lname  = get_loop_file_line_info(app_image, itr, flow, litr);
-                    auto _lname = lname.get();
-                    auto _lhash = std::hash<std::string>()(_lname);
-                    auto _ltrace_entr = (entr_hash) ? timemory_call_expr(_lhash)
-                                                    : timemory_call_expr(_lname.c_str());
-                    auto _ltrace_exit = (exit_hash) ? timemory_call_expr(_lhash)
-                                                    : timemory_call_expr(_lname.c_str());
-                    auto _lentr = _ltrace_entr.get((entr_hash) ? entr_hash : entr_trace);
-                    auto _lexit = _ltrace_exit.get((exit_hash) ? exit_hash : exit_trace);
+                    auto _lf = [=]() {
+                        auto lname  = get_loop_file_line_info(app_image, itr, flow, litr);
+                        auto _lname = lname.get();
+                        auto _lhash = std::hash<std::string>()(_lname);
+                        auto _ltrace_entr = (entr_hash)
+                                                ? timemory_call_expr(_lhash)
+                                                : timemory_call_expr(_lname.c_str());
+                        auto _ltrace_exit = (exit_hash)
+                                                ? timemory_call_expr(_lhash)
+                                                : timemory_call_expr(_lname.c_str());
+                        auto _lentr =
+                            _ltrace_entr.get((entr_hash) ? entr_hash : entr_trace);
+                        auto _lexit =
+                            _ltrace_exit.get((exit_hash) ? exit_hash : exit_trace);
 
-                    insert_instr(addr_space, itr, _lentr, BPatch_entry, flow, litr);
-                    insert_instr(addr_space, itr, _lexit, BPatch_exit, flow, litr);
+                        insert_instr(addr_space, itr, _lentr, BPatch_entry, flow, litr);
+                        insert_instr(addr_space, itr, _lexit, BPatch_exit, flow, litr);
+                    };
+                    instr_procedure_functions.push_back(_lf);
                 }
             }
         }
@@ -994,19 +988,8 @@ main(int argc, char** argv)
         if(!p)
             continue;
 
-        instr_procedures(true, *p);
+        instr_procedures(*p);
     }
-
-    //----------------------------------------------------------------------------------//
-    //
-    //  Dump the available instrumented modules/functions (re-dump available)
-    //
-    //----------------------------------------------------------------------------------//
-
-    dump_info("available_modules.txt", available_modules, 1);
-    dump_info("available_functions.txt", available_procedures, 1);
-    dump_info("instrumented_modules.txt", instrumented_modules, 0);
-    dump_info("instrumented_functions.txt", instrumented_procedures, 0);
 
     //----------------------------------------------------------------------------------//
     //
@@ -1047,27 +1030,27 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
+    if(!binary_rewrite)
+        addr_space->beginInsertionSet();
+
     verbprintf(2, "Beginning loop over modules [instrumentation pass]\n");
-    for(auto& m : modules)
-    {
-        char modname[1024];
-        m->getName(modname, 1024);
-        if(strstr(modname, "libdyninst") != nullptr)
-            continue;
-
-        if(!m->getProcedures())
-            continue;
-
-        BPatch_Vector<BPatch_function*>* p = m->getProcedures();
-        if(!p)
-            continue;
-
-        instr_procedures(false, *p);
-    }
+    for(auto& instr_procedure : instr_procedure_functions)
+        instr_procedure();
 
     // finalize insertion
-    if(binary_rewrite)
-        addr_space->finalizeInsertionSet(false, nullptr);
+    // if(binary_rewrite)
+    addr_space->finalizeInsertionSet(false, nullptr);
+
+    //----------------------------------------------------------------------------------//
+    //
+    //  Dump the available instrumented modules/functions (re-dump available)
+    //
+    //----------------------------------------------------------------------------------//
+
+    dump_info("available_modules.txt", available_modules, 1);
+    dump_info("available_functions.txt", available_procedures, 1);
+    dump_info("instrumented_modules.txt", instrumented_modules, 0);
+    dump_info("instrumented_functions.txt", instrumented_procedures, 0);
 
     //----------------------------------------------------------------------------------//
     //
@@ -1097,6 +1080,7 @@ main(int argc, char** argv)
         bpatch->setDelayedParsing(true);
         bpatch->setInstrStackFrames(false);
         bpatch->setLivenessAnalysis(false);
+        addr_space->beginInsertionSet();
 
         verbprintf(4, "Registering fork callbacks...\n");
         auto _prefork  = bpatch->registerPreForkCallback(&timemory_fork_callback);
@@ -1138,6 +1122,8 @@ main(int argc, char** argv)
             auto sign = app_thread->getExitSignal();
             fprintf(stderr, "\nApplication exited with signal: %i\n", int(sign));
         }
+
+        // addr_space->finalizeInsertionSet(false, nullptr);
 
         code = app_thread->getExitCode();
         consume_parameters(_prefork, _postfork);
@@ -1240,20 +1226,30 @@ process_file_for_instrumentation(const std::string& file_name)
         return true;
     }
 
-    std::string ext_str = (binary_rewrite) ? "\\.(C|S)$" : "\\.(c|C|S)$";
-    std::regex  ext_regex(ext_str);
-    std::regex  sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$");
-    std::regex  userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
-                             "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)");
-    std::regex  corelib_regex("^lib(rt-|m-|dl-|m-|util-|gcc|c-|stdc++|c++|python)");
+    std::string       ext_str = "\\.(C|S)$";
+    static std::regex ext_regex(ext_str, regex_opts);
+    static std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$", regex_opts);
+    static std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
+                                    "profiler|tcmalloc|dyninst|pfm|nvtx|upcxx|pthread)",
+                                    regex_opts);
+    static std::regex corelib_regex("^lib(rt-|dl-|util-|python)", regex_opts);
     // these are all due to TAU
-    std::regex prefix_regex("^(Tau|Profiler|Rts|Papi|Py|Comp_xl\\.cpp|Comp_gnu\\.cpp|"
-                            "UserEvent\\.cpp|FunctionInfo\\.cpp|PthreadLayer\\.cpp|"
-                            "Comp_intel[0-9]\\.cpp|Tracer\\.cpp|cxx11|locale)");
+    static std::regex prefix_regex(
+        "^(RT|Tau|Profiler|Rts|Papi|Py|Comp_xl\\.cpp|Comp_gnu\\.cpp|"
+        "UserEvent\\.cpp|FunctionInfo\\.cpp|PthreadLayer\\.cpp|"
+        "Comp_intel[0-9]\\.cpp|Tracer\\.cpp|cxx11|locale)",
+        regex_opts);
 
-    if(check_if_timemory_source_file(file_name))
+    if(timemory_source_file_constraint(file_name))
     {
         verbprintf(3, "Excluding instrumentation [timemory source] : '%s'...\n",
+                   file_name.c_str());
+        return false;
+    }
+
+    if(c_stdlib_module_constraint(file_name))
+    {
+        verbprintf(3, "Excluding instrumentation [c std library] : '%s'...\n",
                    file_name.c_str());
         return false;
     }
@@ -1343,13 +1339,19 @@ instrument_entity(const std::string& function_name)
         return true;
     }
 
-    std::regex exclude(
+    static std::regex exclude(
         "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
-        "std::max|std::min|std::fill|std::forward|std::get|dyninst|tm_clones)");
-    std::regex leading(
-        "^(_|frame_dummy|\\(|targ|PMPI_|PMPIX_|new|delete|std::allocat|"
-        "nvtx|gcov|main\\.cold\\.|TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)");
-    std::regex            stlfunc("^std::");
+        "dyninst|tm_clones)",
+        regex_opts);
+    static std::regex exclude_cxx(
+        "(std::max|std::min|std::fill|std::forward|std::get|std::"
+        "thread|std::hash|std::locale|std::_Sp_counted_base|std::use_facet)",
+        regex_opts);
+    static std::regex leading(
+        "^(_|frame_dummy|\\(|targ|new|delete|operator new|operator delete|std::allocat|"
+        "nvtx|gcov|main\\.cold\\.|TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)",
+        regex_opts);
+    static std::regex     stlfunc("^std::", regex_opts);
     std::set<std::string> whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
@@ -1358,10 +1360,24 @@ instrument_entity(const std::string& function_name)
         return false;
     }
 
+    if(c_stdlib_function_constraint(function_name))
+    {
+        verbprintf(3, "Excluding function [libc] : '%s'...\n", function_name.c_str());
+        return false;
+    }
+
     // don't instrument the functions when key is found anywhere in function name
     if(std::regex_search(function_name, exclude))
     {
         verbprintf(3, "Excluding function [critical, any match] : '%s'...\n",
+                   function_name.c_str());
+        return false;
+    }
+
+    // don't instrument the functions when key is found anywhere in function name
+    if(std::regex_search(function_name, exclude_cxx))
+    {
+        verbprintf(3, "Excluding function [critical_cxx, any match] : '%s'...\n",
                    function_name.c_str());
         return false;
     }
@@ -1401,7 +1417,7 @@ insert_instr(BPatch_addressSpace* mutatee, BPatch_function* funcToInstr,
     if(!module || !traceFunc)
         return;
 
-    BPatch_Vector<BPatch_point*>* _points = nullptr;
+    BPatch_Vector<point_t*>*      _points = nullptr;
     auto                          _trace  = traceFunc.get();
 
     if(cfGraph && loopToInstrument)
@@ -1421,15 +1437,14 @@ insert_instr(BPatch_addressSpace* mutatee, BPatch_function* funcToInstr,
     if(_points->empty())
         return;
 
-    /*
-    if(loop_level_instr)
+    /*if(loop_level_instr)
     {
         BPatch_flowGraph*                     flow = funcToInstr->getCFG();
         BPatch_Vector<BPatch_basicBlockLoop*> basicLoop;
         flow->getOuterLoops(basicLoop);
         for(auto litr = basicLoop.begin(); litr != basicLoop.end(); ++litr)
         {
-            BPatch_Vector<BPatch_point*>* _tmp;
+            BPatch_Vector<point_t*>* _tmp;
             if(traceLoc == BPatch_entry)
                 _tmp = cfGraph->findLoopInstPoints(BPatch_locLoopEntry, *litr);
             else if(traceLoc == BPatch_exit)
@@ -1439,8 +1454,7 @@ insert_instr(BPatch_addressSpace* mutatee, BPatch_function* funcToInstr,
             for(auto& itr : *_tmp)
                 _points->push_back(itr);
         }
-    }
-    */
+    }*/
 
     // verbprintf(0, "Instrumenting |> [ %s ]\n", name.m_name.c_str());
 
