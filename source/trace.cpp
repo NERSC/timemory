@@ -98,6 +98,11 @@ get_trace_map()
 
 //--------------------------------------------------------------------------------------//
 
+extern std::array<bool, 2>&
+get_library_state();
+
+//--------------------------------------------------------------------------------------//
+
 #if defined(TIMEMORY_MPI_GOTCHA)
 
 static int
@@ -304,6 +309,9 @@ extern "C"
     //
     void timemory_push_trace_hash(uint64_t id)
     {
+        if(!get_library_state()[0] || get_library_state()[1])
+            return;
+
         if(!tim::settings::enabled())
             return;
 
@@ -331,6 +339,9 @@ extern "C"
     //
     void timemory_pop_trace_hash(uint64_t id)
     {
+        if(!get_library_state()[0] || get_library_state()[1])
+            return;
+
         auto& _trace_map = get_trace_map();
         if(!tim::settings::enabled() && _trace_map.empty())
             return;
@@ -409,6 +420,9 @@ extern "C"
     //
     void timemory_push_trace(const char* name)
     {
+        if(!get_library_state()[0] || get_library_state()[1])
+            return;
+
         if(!tim::settings::enabled())
             return;
         timemory_push_trace_hash(tim::add_hash_id(name));
@@ -418,6 +432,9 @@ extern "C"
     //
     void timemory_pop_trace(const char* name)
     {
+        if(!get_library_state()[0] || get_library_state()[1])
+            return;
+
         timemory_pop_trace_hash(tim::get_hash_id(name));
     }
     //
@@ -440,6 +457,9 @@ extern "C"
     //
     void timemory_trace_init(const char* args, bool read_command_line, const char* cmd)
     {
+        if(get_library_state()[0])
+            return;
+
         if(use_mpi_gotcha && !mpi_gotcha_handle.get())
         {
             PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
@@ -513,7 +533,7 @@ extern "C"
     //
     void timemory_trace_finalize(void)
     {
-        if(library_trace_count.load() == 0)
+        if(get_library_state()[1] || library_trace_count.load() == 0)
             return;
 
         if(tim::settings::verbose() > 1 || tim::settings::debug())

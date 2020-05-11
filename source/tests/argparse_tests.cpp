@@ -159,11 +159,8 @@ parse(argparse_t& parser, Args&&... args)
         .count(1);
     parser.add_argument()
         .names({ "-S", "--stdlib" })
-        .description(
-            "Enable instrumentation of C++ standard library functions. Use with "
-            "caution! "
-            "May causes deadlocks because timemory uses the STL internally. Use the "
-            "'-E/--regex-exclude' option to exclude any deadlocking functions")
+        .description("Enable instrumentation of C++ standard library functions. Use with "
+                     "caution because timemory uses the STL internally!")
         .count(0);
     parser.add_argument()
         .names({ "-p", "--pid" })
@@ -259,6 +256,46 @@ TEST_F(argparse_tests, use_long_short_option)
     argparse_t parser(details::get_test_name());
     auto       ret = details::parse(parser, "-MI", "two", "char", "short", "option");
     auto       arg = parser.get<std::vector<std::string>>("MI");
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(arg.size(), 4);
+    EXPECT_TRUE(arg.at(0) == "two");
+    EXPECT_TRUE(arg.at(1) == "char");
+    EXPECT_TRUE(arg.at(2) == "short");
+    EXPECT_TRUE(arg.at(3) == "option");
+    EXPECT_FALSE(parser.exists("load"));
+    EXPECT_FALSE(parser.exists("p"));
+    EXPECT_FALSE(parser.exists("pid"));
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(argparse_tests, use_module_include_long_option)
+{
+    argparse_t parser(details::get_test_name());
+    auto       ret =
+        details::parse(parser, "--module-include", "two", "char", "short", "option");
+    auto arg = parser.get<std::vector<std::string>>("module-include");
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(arg.size(), 4);
+    EXPECT_TRUE(arg.at(0) == "two");
+    EXPECT_TRUE(arg.at(1) == "char");
+    EXPECT_TRUE(arg.at(2) == "short");
+    EXPECT_TRUE(arg.at(3) == "option");
+    EXPECT_FALSE(parser.exists("load"));
+    EXPECT_FALSE(parser.exists("p"));
+    EXPECT_FALSE(parser.exists("pid"));
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(argparse_tests, use_module_exclude_long_option)
+{
+    argparse_t parser(details::get_test_name());
+    auto       ret =
+        details::parse(parser, "--module-exclude", "two", "char", "short", "option");
+    auto arg = parser.get<std::vector<std::string>>("module-exclude");
 
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(arg.size(), 4);

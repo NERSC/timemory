@@ -120,6 +120,15 @@ get_current_components()
 }
 
 //--------------------------------------------------------------------------------------//
+
+std::array<bool, 2>&
+get_library_state()
+{
+    static auto _instance = std::array<bool, 2>({ false, false });
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
 //
 //      TiMemory symbols
 //
@@ -183,6 +192,10 @@ extern "C"
     //
     void timemory_init_library(int argc, char** argv)
     {
+        if(get_library_state()[0])
+            return;
+        get_library_state()[0] = true;
+
         if(tim::settings::verbose() > 0)
         {
             printf("%s\n", spacer.c_str());
@@ -199,6 +212,10 @@ extern "C"
     //  finalize the library
     void timemory_finalize_library(void)
     {
+        if(get_library_state()[1])
+            return;
+        get_library_state()[1] = true;
+
         if(tim::settings::enabled() == false && get_record_map().empty())
             return;
 

@@ -63,21 +63,36 @@ struct insert_node
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        sfinae(obj, 0, _scope, _hash);
+        sfinae(obj, 0, 0, 0, _scope, _hash);
     }
 
 private:
-    //  satisfies mpl condition and accepts arguments
+    //  typical resolution: component
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, Args&&... args)
+    auto sfinae(Up& obj, int, int, int, Args&&... args)
         -> decltype(obj.insert_node(std::forward<Args>(args)...), void())
     {
         obj.insert_node(std::forward<Args>(args)...);
     }
 
+    //  typical resolution: variadic bundle of components
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, int, long, Args&&... args)
+        -> decltype(obj.push(std::forward<Args>(args)...), void())
+    {
+        obj.push(std::forward<Args>(args)...);
+    }
+
+    //  typical resolution: variadic bundle of components
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, long, long, Args&&...) -> decltype(obj.push(), void())
+    {
+        obj.push();
+    }
+
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, Args&&...)
+    void sfinae(Up&, long, long, long, Args&&...)
     {}
 };
 //
@@ -98,28 +113,44 @@ struct pop_node
     template <typename... Args>
     explicit pop_node(type& obj, Args&&... args)
     {
-        sfinae(obj, 0, 0, std::forward<Args>(args)...);
+        sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
     }
 
 private:
-    //  satisfies mpl condition and accepts arguments
+    //  typical resolution: component
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, Args&&... args)
+    auto sfinae(Up& obj, int, int, int, int, Args&&... args)
         -> decltype(obj.pop_node(std::forward<Args>(args)...), void())
     {
         obj.pop_node(std::forward<Args>(args)...);
     }
 
-    //  satisfies mpl condition but does not accept arguments
+    //  typical resolution: component
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.pop_node(), void())
+    auto sfinae(Up& obj, int, int, int, long, Args&&...)
+        -> decltype(obj.pop_node(), void())
     {
         obj.pop_node();
     }
 
+    //  typical resolution: variadic bundle of components
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, int, long, long, Args&&... args)
+        -> decltype(obj.pop(std::forward<Args>(args)...), void())
+    {
+        obj.pop(std::forward<Args>(args)...);
+    }
+
+    //  typical resolution: variadic bundle of components
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, long, long, long, Args&&...) -> decltype(obj.pop(), void())
+    {
+        obj.pop();
+    }
+
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, Args&&...)
+    void sfinae(Up&, long, long, long, long, Args&&...)
     {}
 };
 //

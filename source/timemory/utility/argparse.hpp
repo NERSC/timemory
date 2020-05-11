@@ -305,7 +305,8 @@ struct argument_parser
 
         argument& names(std::vector<std::string> names)
         {
-            m_names.insert(m_names.end(), names.begin(), names.end());
+            for(auto itr : names)
+                m_names.push_back(itr);
             return *this;
         }
 
@@ -639,6 +640,14 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    template <typename... Args>
+    arg_result parse_args(Args&&... args)
+    {
+        return parse(std::forward<Args>(args)...);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     arg_result parse(int argc, char** argv, int verbose_level = 0)
     {
         std::vector<std::string> _args;
@@ -829,6 +838,11 @@ private:
         {
             int  equal_pos = helpers::find_equiv(arg);
             auto nmf       = m_name_map.find(arg_name);
+            if(nmf == m_name_map.end())
+            {
+                arg_name = arg.substr(0, equal_pos);
+                nmf      = m_name_map.find(arg_name);
+            }
             if(nmf == m_name_map.end())
             {
                 return arg_result("Unrecognized command line option '" + arg_name + "'");
