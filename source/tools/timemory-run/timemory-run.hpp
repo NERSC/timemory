@@ -201,8 +201,8 @@ get_loop_file_line_info(BPatch_image* mutateeImage, BPatch_function* f,
 
 void
 insert_instr(address_space_t* mutatee, BPatch_function* funcToInstr,
-             BPatch_function* traceFunc, BPatch_procedureLocation traceLoc,
-             function_signature& name, BPatch_flowGraph* cfGraph = nullptr,
+             call_expr_pointer_t traceFunc, BPatch_procedureLocation traceLoc,
+             BPatch_flowGraph*      cfGraph          = nullptr,
              BPatch_basicBlockLoop* loopToInstrument = nullptr);
 
 void

@@ -424,19 +424,12 @@ extern "C"
             PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s", tim::dmp::rank(),
                        (int) tim::process::get_id(), (int) tim::threading::get_id(),
                        name);
+
         if(!get_library_state()[0] || get_library_state()[1])
             return;
-        if(tim::settings::debug())
-            PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s", tim::dmp::rank(),
-                       (int) tim::process::get_id(), (int) tim::threading::get_id(),
-                       name);
 
         if(!tim::settings::enabled())
             return;
-        if(tim::settings::debug())
-            PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s", tim::dmp::rank(),
-                       (int) tim::process::get_id(), (int) tim::threading::get_id(),
-                       name);
 
         timemory_push_trace_hash(tim::add_hash_id(name));
     }
@@ -501,9 +494,27 @@ extern "C"
             else
             {
                 get_library_state()[0] = true;
-                /*int   _argc = 1;
-                char* _argv = (char*) cmd;
-                timemory_init_library(_argc, &_argv);*/
+                std::string exe_name   = cmd;
+                while(exe_name.find("\\") != std::string::npos)
+                    exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
+                while(exe_name.find("/") != std::string::npos)
+                    exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
+
+                static const std::vector<std::string> _exe_suffixes = { ".py", ".exe" };
+                for(const auto& ext : _exe_suffixes)
+                {
+                    if(exe_name.find(ext) != std::string::npos)
+                        exe_name.erase(exe_name.find(ext), ext.length() + 1);
+                }
+
+                exe_name = std::string("timemory-") + exe_name + "-output";
+                for(auto& itr : exe_name)
+                {
+                    if(itr == '_')
+                        itr = '-';
+                }
+
+                tim::settings::output_path() = exe_name;
             }
 
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);

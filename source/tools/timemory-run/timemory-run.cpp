@@ -454,14 +454,14 @@ main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    BPatch_process*    appThread = nullptr;
-    BPatch_binaryEdit* appBinary = nullptr;
+    BPatch_process*    app_thread = nullptr;
+    BPatch_binaryEdit* app_binary = nullptr;
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");
-    BPatch_image*                    appImage     = addr_space->getImage();
-    BPatch_Vector<BPatch_module*>*   appModules   = appImage->getModules();
-    BPatch_Vector<BPatch_function*>* appFunctions = appImage->getProcedures();
+    BPatch_image*                    app_image     = addr_space->getImage();
+    BPatch_Vector<BPatch_module*>*   app_modules   = app_image->getModules();
+    BPatch_Vector<BPatch_function*>* app_functions = app_image->getProcedures();
 
     BPatch_Vector<BPatch_module*>   modules;
     BPatch_Vector<BPatch_function*> functions;
@@ -472,10 +472,10 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    if(appModules)
+    if(app_modules)
     {
-        modules = *appModules;
-        for(auto itr : *appModules)
+        modules = *app_modules;
+        for(auto itr : *app_modules)
         {
             char modname[MUTNAMELEN];
             itr->getName(modname, MUTNAMELEN);
@@ -493,10 +493,10 @@ main(int argc, char** argv)
         }
     }
 
-    if(appFunctions)
+    if(app_functions)
     {
-        functions = *appFunctions;
-        for(auto itr : *appFunctions)
+        functions = *app_functions;
+        for(auto itr : *app_functions)
         {
             char modname[MUTNAMELEN];
             char fname[FUNCNAMELEN];
@@ -514,7 +514,7 @@ main(int argc, char** argv)
     }
 
     verbprintf(1, "Module size before loading instrumentation library: %lu\n",
-               (long unsigned) appModules->size());
+               (long unsigned) app_modules->size());
 
     dump_info("available_modules.txt", available_modules, 2);
     dump_info("available_functions.txt", available_procedures, 2);
@@ -528,9 +528,9 @@ main(int argc, char** argv)
     is_static_exe = addr_space->isStaticExecutable();
 
     if(binary_rewrite)
-        appBinary = static_cast<BPatch_binaryEdit*>(addr_space);
+        app_binary = static_cast<BPatch_binaryEdit*>(addr_space);
     else
-        appThread = static_cast<BPatch_process*>(addr_space);
+        app_thread = static_cast<BPatch_process*>(addr_space);
 
     //----------------------------------------------------------------------------------//
     //
@@ -571,8 +571,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    auto* _mutatee_init = find_function(appImage, "_init");
-    auto* _mutatee_fini = find_function(appImage, "_fini");
+    auto* _mutatee_init = find_function(app_image, "_init");
+    auto* _mutatee_fini = find_function(app_image, "_fini");
 
     //----------------------------------------------------------------------------------//
     //
@@ -597,25 +597,25 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    auto* main_func  = find_function(appImage, main_fname.c_str());
-    auto* entr_trace = find_function(appImage, instr_push_func.c_str());
-    auto* exit_trace = find_function(appImage, instr_pop_func.c_str());
-    auto* entr_hash  = find_function(appImage, instr_push_hash.c_str());
-    auto* exit_hash  = find_function(appImage, instr_pop_hash.c_str());
-    auto* init_func  = find_function(appImage, "timemory_trace_init");
-    auto* fini_func  = find_function(appImage, "timemory_trace_finalize");
-    auto* env_func   = find_function(appImage, "timemory_trace_set_env");
-    auto* mpi_func   = find_function(appImage, "timemory_trace_set_mpi");
-    auto* hash_func  = find_function(appImage, "timemory_add_hash_id");
+    auto* main_func  = find_function(app_image, main_fname.c_str());
+    auto* entr_trace = find_function(app_image, instr_push_func.c_str());
+    auto* exit_trace = find_function(app_image, instr_pop_func.c_str());
+    auto* entr_hash  = find_function(app_image, instr_push_hash.c_str());
+    auto* exit_hash  = find_function(app_image, instr_pop_hash.c_str());
+    auto* init_func  = find_function(app_image, "timemory_trace_init");
+    auto* fini_func  = find_function(app_image, "timemory_trace_finalize");
+    auto* env_func   = find_function(app_image, "timemory_trace_set_env");
+    auto* mpi_func   = find_function(app_image, "timemory_trace_set_mpi");
+    auto* hash_func  = find_function(app_image, "timemory_add_hash_id");
 
-    auto* mpip_beg_stub = find_function(appImage, "timemory_register_mpip");
-    auto* mpip_end_stub = find_function(appImage, "timemory_deregister_mpip");
-    auto* ompt_beg_stub = find_function(appImage, "timemory_register_ompt");
-    auto* ompt_end_stub = find_function(appImage, "timemory_deregister_ompt");
+    auto* mpip_beg_stub = find_function(app_image, "timemory_register_mpip");
+    auto* mpip_end_stub = find_function(app_image, "timemory_deregister_mpip");
+    auto* ompt_beg_stub = find_function(app_image, "timemory_register_ompt");
+    auto* ompt_end_stub = find_function(app_image, "timemory_deregister_ompt");
 
-    auto* exit_func = find_function(appImage, "exit");
+    auto* exit_func = find_function(app_image, "exit");
     if(!exit_func)
-        exit_func = find_function(appImage, "_exit");
+        exit_func = find_function(app_image, "_exit");
 
     verbprintf(0, "Instrumenting with '%s' and '%s'...\n", instr_push_func.c_str(),
                instr_pop_func.c_str());
@@ -791,6 +791,18 @@ main(int argc, char** argv)
         init_names.push_back(main_beg_call.get());
         fini_names.push_back(main_end_call.get());
     }
+    else if(app_thread)
+    {
+        insert_instr(addr_space, main_func, init_call, BPatch_entry, nullptr, nullptr);
+        if(!use_mpi)
+        {
+            insert_instr(addr_space, main_func, main_beg_call, BPatch_entry, nullptr,
+                         nullptr);
+            insert_instr(addr_space, main_func, main_end_call, BPatch_exit, nullptr,
+                         nullptr);
+        }
+        insert_instr(addr_space, main_func, fini_call, BPatch_exit, nullptr, nullptr);
+    }
 
     fini_names.push_back(fini_call.get());
 
@@ -810,6 +822,9 @@ main(int argc, char** argv)
     auto instr_procedures = [&](bool usage_pass, const procedure_vec_t& procedures) {
         for(auto itr : procedures)
         {
+            if(itr == main_func)
+                continue;
+
             char modname[MUTNAMELEN];
             char fname[FUNCNAMELEN];
 
@@ -838,7 +853,7 @@ main(int argc, char** argv)
                 continue;
             }
 
-            auto name = get_func_file_line_info(appImage, itr);
+            auto name = get_func_file_line_info(app_image, itr);
 
             if(name.get().empty())
             {
@@ -892,17 +907,24 @@ main(int argc, char** argv)
                 continue;
             }
 
-            verbprintf(0, "Instrumenting |> [ %s ]\n", name.m_name.c_str());
+            verbprintf(0, "Instrumenting |> [ %s ] -> [ %s ]\n", modname,
+                       name.m_name.c_str());
             available_modules.insert(modname);
             available_procedures.insert(name.get());
             instrumented_modules.insert(modname);
             instrumented_procedures.insert(name.get());
 
-            auto* _entr = (entr_hash) ? entr_hash : entr_trace;
-            auto* _exit = (exit_hash) ? exit_hash : exit_trace;
+            auto _name       = name.get();
+            auto _hash       = std::hash<std::string>()(_name);
+            auto _trace_entr = (entr_hash) ? timemory_call_expr(_hash)
+                                           : timemory_call_expr(_name.c_str());
+            auto _trace_exit = (exit_hash) ? timemory_call_expr(_hash)
+                                           : timemory_call_expr(_name.c_str());
+            auto _entr = _trace_entr.get((entr_hash) ? entr_hash : entr_trace);
+            auto _exit = _trace_exit.get((exit_hash) ? exit_hash : exit_trace);
 
-            insert_instr(addr_space, itr, _entr, BPatch_entry, name, nullptr, nullptr);
-            insert_instr(addr_space, itr, _exit, BPatch_exit, name, nullptr, nullptr);
+            insert_instr(addr_space, itr, _entr, BPatch_entry, nullptr, nullptr);
+            insert_instr(addr_space, itr, _exit, BPatch_exit, nullptr, nullptr);
 
             if(loop_level_instr)
             {
@@ -914,9 +936,18 @@ main(int argc, char** argv)
                     flow->getOuterLoops(basic_loop);
                 for(auto litr : basic_loop)
                 {
-                    auto lname = get_loop_file_line_info(appImage, itr, flow, litr);
-                    insert_instr(addr_space, itr, _entr, BPatch_entry, lname, flow, litr);
-                    insert_instr(addr_space, itr, _exit, BPatch_exit, lname, flow, litr);
+                    auto lname  = get_loop_file_line_info(app_image, itr, flow, litr);
+                    auto _lname = lname.get();
+                    auto _lhash = std::hash<std::string>()(_lname);
+                    auto _ltrace_entr = (entr_hash) ? timemory_call_expr(_lhash)
+                                                    : timemory_call_expr(_lname.c_str());
+                    auto _ltrace_exit = (exit_hash) ? timemory_call_expr(_lhash)
+                                                    : timemory_call_expr(_lname.c_str());
+                    auto _lentr = _ltrace_entr.get((entr_hash) ? entr_hash : entr_trace);
+                    auto _lexit = _ltrace_exit.get((exit_hash) ? exit_hash : exit_trace);
+
+                    insert_instr(addr_space, itr, _lentr, BPatch_entry, flow, litr);
+                    insert_instr(addr_space, itr, _lexit, BPatch_exit, flow, litr);
                 }
             }
         }
@@ -1004,10 +1035,10 @@ main(int argc, char** argv)
         addr_space->insertSnippet(BPatch_sequence(fini_names), *main_exit_points,
                                   BPatch_callAfter, BPatch_firstSnippet);
     }
-    else if(appThread)
+    else if(app_thread)
     {
         for(auto itr : init_names)
-            appThread->oneTimeCode(*itr);
+            app_thread->oneTimeCode(*itr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -1051,7 +1082,7 @@ main(int argc, char** argv)
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
 
-        bool success = appBinary->writeFile(outfile);
+        bool success = app_binary->writeFile(outfile);
         code         = (success) ? EXIT_SUCCESS : EXIT_FAILURE;
         if(success)
             printf("\nThe instrumented executable image is stored in '%s/%s'\n", cwd,
@@ -1072,18 +1103,18 @@ main(int argc, char** argv)
         auto _postfork = bpatch->registerPostForkCallback(&timemory_fork_callback);
 
         auto _wait_exec = [&]() {
-            while(!appThread->isTerminated())
+            while(!app_thread->isTerminated())
             {
                 verbprintf(3, "Continuing execution...\n");
-                appThread->continueExecution();
+                app_thread->continueExecution();
                 verbprintf(4, "Process is not terminated...\n");
                 // std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 bpatch->waitForStatusChange();
                 verbprintf(4, "Process status change...\n");
-                if(appThread->isStopped())
+                if(app_thread->isStopped())
                 {
                     verbprintf(4, "Process is stopped, continuing execution...\n");
-                    if(!appThread->continueExecution())
+                    if(!app_thread->continueExecution())
                     {
                         fprintf(stderr, "continueExecution failed\n");
                         exit(EXIT_FAILURE);
@@ -1095,20 +1126,20 @@ main(int argc, char** argv)
         verbprintf(4, "Entering wait for status change mode...\n");
         _wait_exec();
 
-        if(appThread->terminationStatus() == ExitedNormally)
+        if(app_thread->terminationStatus() == ExitedNormally)
         {
-            if(appThread->isTerminated())
+            if(app_thread->isTerminated())
                 printf("\nEnd of timemory-run\n");
             else
                 _wait_exec();
         }
-        else if(appThread->terminationStatus() == ExitedViaSignal)
+        else if(app_thread->terminationStatus() == ExitedViaSignal)
         {
-            auto sign = appThread->getExitSignal();
+            auto sign = app_thread->getExitSignal();
             fprintf(stderr, "\nApplication exited with signal: %i\n", int(sign));
         }
 
-        code = appThread->getExitCode();
+        code = app_thread->getExitCode();
         consume_parameters(_prefork, _postfork);
     }
 
@@ -1316,9 +1347,9 @@ instrument_entity(const std::string& function_name)
         "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
         "std::max|std::min|std::fill|std::forward|std::get|dyninst|tm_clones)");
     std::regex leading(
-        "^(_|frame_dummy|\\(|targ|PMPI_|new|delete|std::allocat|nvtx|gcov|main\\.cold\\.|"
-        "TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)");
-    std::regex stlfunc("^std::");
+        "^(_|frame_dummy|\\(|targ|PMPI_|PMPIX_|new|delete|std::allocat|"
+        "nvtx|gcov|main\\.cold\\.|TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)");
+    std::regex            stlfunc("^std::");
     std::set<std::string> whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
@@ -1363,20 +1394,15 @@ instrument_entity(const std::string& function_name)
 //
 void
 insert_instr(BPatch_addressSpace* mutatee, BPatch_function* funcToInstr,
-             BPatch_function* traceFunc, BPatch_procedureLocation traceLoc,
-             function_signature& name, BPatch_flowGraph* cfGraph,
-             BPatch_basicBlockLoop* loopToInstrument)
+             call_expr_pointer_t traceFunc, BPatch_procedureLocation traceLoc,
+             BPatch_flowGraph* cfGraph, BPatch_basicBlockLoop* loopToInstrument)
 {
     BPatch_module* module = funcToInstr->getModule();
-    if(!module)
+    if(!module || !traceFunc)
         return;
 
-    std::string _name = name.get();
-
     BPatch_Vector<BPatch_point*>* _points = nullptr;
-
-    auto _trace_args = timemory_call_expr(_name);
-    auto _trace      = _trace_args.get(traceFunc);
+    auto                          _trace  = traceFunc.get();
 
     if(cfGraph && loopToInstrument)
     {
