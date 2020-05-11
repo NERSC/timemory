@@ -980,10 +980,10 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    dump_info("available_modules.txt", available_modules, 2);
-    dump_info("available_functions.txt", available_procedures, 2);
-    dump_info("instrumented_modules.txt", instrumented_modules, 1);
-    dump_info("instrumented_functions.txt", instrumented_procedures, 1);
+    dump_info("available_modules.txt", available_modules, 1);
+    dump_info("available_functions.txt", available_procedures, 1);
+    dump_info("instrumented_modules.txt", instrumented_modules, 0);
+    dump_info("instrumented_functions.txt", instrumented_procedures, 0);
 
     //----------------------------------------------------------------------------------//
     //

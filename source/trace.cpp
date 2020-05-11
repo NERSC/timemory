@@ -320,15 +320,15 @@ extern "C"
 
         auto& _trace_map = get_trace_map();
 
-#if defined(DEBUG)
-        if(tim::settings::verbose() > 2)
+        // #if defined(DEBUG)
+        if(tim::settings::verbose() > 2 || tim::settings::debug())
         {
             int64_t n = _trace_map[id].size();
             printf("beginning trace for '%s' (id = %llu, offset = %lli)...\n",
                    tim::get_hash_ids()->find(id)->second.c_str(), (long long unsigned) id,
                    (long long int) n);
         }
-#endif
+        // #endif
 
         _trace_map[id].push_back(new traceset_t(id));
         _trace_map[id].back()->start();
@@ -420,6 +420,8 @@ extern "C"
     //
     void timemory_push_trace(const char* name)
     {
+        PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s", tim::dmp::rank(),
+                   (int) tim::process::get_id(), (int) tim::threading::get_id(), name);
         if(!get_library_state()[0] || get_library_state()[1])
             return;
 
