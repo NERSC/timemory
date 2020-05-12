@@ -57,7 +57,7 @@
 #include <cstring>
 #include <unistd.h>
 
-#define MUTNAMELEN 64
+#define MUTNAMELEN 512
 #define FUNCNAMELEN 32 * 1024
 #define NO_ERROR -1
 #define TIMEMORY_BIN_DIR "bin"
@@ -118,6 +118,9 @@ using flow_graph_t          = BPatch_flowGraph;
 using patch_t               = BPatch;
 using image_t               = BPatch_image;
 using point_t               = BPatch_point;
+using module_t              = BPatch_module;
+using procedure_loc_t       = BPatch_procedureLocation;
+using error_level_t         = BPatchErrorLevel;
 
 static patch_t*      bpatch          = nullptr;
 static call_expr_t*  initialize_expr = nullptr;
@@ -196,20 +199,19 @@ extern "C"
 //======================================================================================//
 
 function_signature
-get_func_file_line_info(image_t* mutateeImage, procedure_t* f);
+get_func_file_line_info(module_t* mutatee_module, procedure_t* f);
 
 function_signature
-get_loop_file_line_info(image_t* mutateeImage, procedure_t* f, BPatch_flowGraph* cfGraph,
-                        BPatch_basicBlockLoop* loopToInstrument);
+get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* cfGraph,
+                        basic_loop_t* loopToInstrument);
 
 void
 insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
-             call_expr_pointer_t traceFunc, BPatch_procedureLocation traceLoc,
-             BPatch_flowGraph*      cfGraph          = nullptr,
-             BPatch_basicBlockLoop* loopToInstrument = nullptr);
+             call_expr_pointer_t traceFunc, procedure_loc_t traceLoc,
+             flow_graph_t* cfGraph = nullptr, basic_loop_t* loopToInstrument = nullptr);
 
 void
-errorFunc(BPatchErrorLevel level, int num, const char** params);
+errorFunc(error_level_t level, int num, const char** params);
 
 procedure_t*
 find_function(image_t* appImage, const std::string& functionName);
@@ -218,18 +220,18 @@ void
 check_cost(snippet_t snippet);
 
 void
-error_func_real(BPatchErrorLevel level, int num, const char* const* params);
+error_func_real(error_level_t level, int num, const char* const* params);
 
 void
-error_func_fake(BPatchErrorLevel level, int num, const char* const* params);
+error_func_fake(error_level_t level, int num, const char* const* params);
 
 bool
 find_func_or_calls(std::vector<const char*> names, BPatch_Vector<point_t*>& points,
-                   image_t* appImage, BPatch_procedureLocation loc = BPatch_locEntry);
+                   image_t* appImage, procedure_loc_t loc = BPatch_locEntry);
 
 bool
 find_func_or_calls(const char* name, BPatch_Vector<point_t*>& points, image_t* image,
-                   BPatch_procedureLocation loc = BPatch_locEntry);
+                   procedure_loc_t loc = BPatch_locEntry);
 
 bool
 load_dependent_libraries(address_space_t* bedit, char* bindings);

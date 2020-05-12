@@ -459,12 +459,12 @@ main(int argc, char** argv)
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");
-    image_t*                         app_image     = addr_space->getImage();
-    BPatch_Vector<BPatch_module*>*   app_modules   = app_image->getModules();
-    BPatch_Vector<BPatch_function*>* app_functions = app_image->getProcedures();
+    image_t*                       app_image     = addr_space->getImage();
+    BPatch_Vector<BPatch_module*>* app_modules   = app_image->getModules();
+    BPatch_Vector<procedure_t*>*   app_functions = app_image->getProcedures();
 
-    BPatch_Vector<BPatch_module*>   modules;
-    BPatch_Vector<BPatch_function*> functions;
+    BPatch_Vector<BPatch_module*> modules;
+    BPatch_Vector<procedure_t*>   functions;
 
     //----------------------------------------------------------------------------------//
     //
@@ -853,7 +853,7 @@ main(int argc, char** argv)
                 continue;
             }
 
-            auto name = get_func_file_line_info(app_image, itr);
+            auto name = get_func_file_line_info(mod, itr);
 
             if(name.get().empty())
             {
@@ -924,9 +924,9 @@ main(int argc, char** argv)
                 for(auto litr : basic_loop)
                 {
                     auto _lf = [=]() {
-                        auto lname  = get_loop_file_line_info(app_image, itr, flow, litr);
-                        auto _lname = lname.get();
-                        auto _lhash = std::hash<std::string>()(_lname);
+                        auto lname        = get_loop_file_line_info(mod, itr, flow, litr);
+                        auto _lname       = lname.get();
+                        auto _lhash       = std::hash<std::string>()(_lname);
                         auto _ltrace_entr = (entr_hash)
                                                 ? timemory_call_expr(_lhash)
                                                 : timemory_call_expr(_lname.c_str());
@@ -984,7 +984,7 @@ main(int argc, char** argv)
         }
 
         verbprintf(0, "Parsing module: %s\n", modname);
-        BPatch_Vector<BPatch_function*>* p = m->getProcedures();
+        BPatch_Vector<procedure_t*>* p = m->getProcedures();
         if(!p)
             continue;
 
@@ -1409,16 +1409,16 @@ instrument_entity(const std::string& function_name)
 // insert_instr -- generic insert instrumentation function
 //
 void
-insert_instr(BPatch_addressSpace* mutatee, BPatch_function* funcToInstr,
-             call_expr_pointer_t traceFunc, BPatch_procedureLocation traceLoc,
-             BPatch_flowGraph* cfGraph, BPatch_basicBlockLoop* loopToInstrument)
+insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
+             call_expr_pointer_t traceFunc, procedure_loc_t traceLoc,
+             flow_graph_t* cfGraph, basic_loop_t* loopToInstrument)
 {
     BPatch_module* module = funcToInstr->getModule();
     if(!module || !traceFunc)
         return;
 
-    BPatch_Vector<point_t*>*      _points = nullptr;
-    auto                          _trace  = traceFunc.get();
+    BPatch_Vector<point_t*>* _points = nullptr;
+    auto                     _trace  = traceFunc.get();
 
     if(cfGraph && loopToInstrument)
     {
@@ -1439,8 +1439,8 @@ insert_instr(BPatch_addressSpace* mutatee, BPatch_function* funcToInstr,
 
     /*if(loop_level_instr)
     {
-        BPatch_flowGraph*                     flow = funcToInstr->getCFG();
-        BPatch_Vector<BPatch_basicBlockLoop*> basicLoop;
+        flow_graph_t*                     flow = funcToInstr->getCFG();
+        BPatch_Vector<basic_loop_t*> basicLoop;
         flow->getOuterLoops(basicLoop);
         for(auto litr = basicLoop.begin(); litr != basicLoop.end(); ++litr)
         {

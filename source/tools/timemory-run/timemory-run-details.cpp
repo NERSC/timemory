@@ -40,8 +40,8 @@ are_file_include_exclude_lists_empty()
 //  the instrumented loop and formats it properly.
 //
 function_signature
-get_loop_file_line_info(image_t* mutateeImage, procedure_t* f, BPatch_flowGraph* cfGraph,
-                        BPatch_basicBlockLoop* loopToInstrument)
+get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* cfGraph,
+                        basic_loop_t* loopToInstrument)
 {
     if(!cfGraph || !loopToInstrument || !f)
         return function_signature("", "", "");
@@ -79,7 +79,7 @@ get_loop_file_line_info(image_t* mutateeImage, procedure_t* f, BPatch_flowGraph*
     BPatch_Vector<BPatch_statement> lines;
     BPatch_Vector<BPatch_statement> linesEnd;
 
-    bool info1 = mutateeImage->getSourceLines(baseAddr, lines);
+    bool info1 = mutatee_module->getSourceLines(baseAddr, lines);
 
     if(info1)
     {
@@ -98,7 +98,7 @@ get_loop_file_line_info(image_t* mutateeImage, procedure_t* f, BPatch_flowGraph*
         // next instruction outside of the loop. We then bump back a line. This is not a
         // perfect solution, but we will work with the Dyninst team to find something
         // better.
-        bool info2 = mutateeImage->getSourceLines((unsigned long) lastAddr, linesEnd);
+        bool info2 = mutatee_module->getSourceLines((unsigned long) lastAddr, linesEnd);
         verbprintf(0, "size of linesEnd = %lu\n", (unsigned long) linesEnd.size());
 
         if(info2)
@@ -130,7 +130,7 @@ get_loop_file_line_info(image_t* mutateeImage, procedure_t* f, BPatch_flowGraph*
 //  We create a new name that embeds the file and line information in the name
 //
 function_signature
-get_func_file_line_info(image_t* mutatee_addr_space, procedure_t* f)
+get_func_file_line_info(module_t* mutatee_module, procedure_t* f)
 {
     bool          info1, info2;
     unsigned long baseAddr, lastAddr;
@@ -154,7 +154,7 @@ get_func_file_line_info(image_t* mutatee_addr_space, procedure_t* f)
     else
         typeName = "void";
 
-    info1 = mutatee_addr_space->getSourceLines((unsigned long) baseAddr, lines);
+    info1 = mutatee_module->getSourceLines((unsigned long) baseAddr, lines);
 
     if(info1)
     {
@@ -167,7 +167,7 @@ get_func_file_line_info(image_t* mutatee_addr_space, procedure_t* f)
 
         if(col1 < 0)
             col1 = 0;
-        info2 = mutatee_addr_space->getSourceLines((unsigned long) (lastAddr - 1), lines);
+        info2 = mutatee_module->getSourceLines((unsigned long) (lastAddr - 1), lines);
         if(info2)
         {
             row2 = lines[1].lineNumber();
@@ -197,7 +197,7 @@ get_func_file_line_info(image_t* mutatee_addr_space, procedure_t* f)
 //  Error callback routine.
 //
 void
-errorFunc(BPatchErrorLevel level, int num, const char** params)
+errorFunc(error_level_t level, int num, const char** params)
 {
     char line[256];
 
@@ -243,8 +243,8 @@ find_function(image_t* app_image, const std::string& func)
 void
 check_cost(snippet_t snippet)
 {
-    float          cost;
-    snippet_t      copy;
+    float     cost;
+    snippet_t copy;
 
     // test copy constructor too.
     copy = snippet;
@@ -260,7 +260,7 @@ check_cost(snippet_t snippet)
 //======================================================================================//
 //
 void
-error_func_real(BPatchErrorLevel level, int num, const char* const* params)
+error_func_real(error_level_t level, int num, const char* const* params)
 {
     if(num == 0)
     {
@@ -297,7 +297,7 @@ error_func_real(BPatchErrorLevel level, int num, const char* const* params)
 //  We've a null error function when we don't want to display an error
 //
 void
-error_func_fake(BPatchErrorLevel level, int num, const char* const* params)
+error_func_fake(error_level_t level, int num, const char* const* params)
 {
     consume_parameters(level, num, params);
     // It does nothing.
@@ -307,7 +307,7 @@ error_func_fake(BPatchErrorLevel level, int num, const char* const* params)
 //
 bool
 find_func_or_calls(std::vector<const char*> names, BPatch_Vector<point_t*>& points,
-                   image_t* app_image, BPatch_procedureLocation loc)
+                   image_t* app_image, procedure_loc_t loc)
 {
     using function_t     = procedure_t;
     using function_vec_t = BPatch_Vector<function_t*>;
@@ -367,7 +367,7 @@ find_func_or_calls(std::vector<const char*> names, BPatch_Vector<point_t*>& poin
 //
 bool
 find_func_or_calls(const char* name, BPatch_Vector<point_t*>& points, image_t* image,
-                   BPatch_procedureLocation loc)
+                   procedure_loc_t loc)
 {
     std::vector<const char*> v;
     v.push_back(name);
