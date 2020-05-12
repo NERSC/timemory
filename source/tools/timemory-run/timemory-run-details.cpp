@@ -46,9 +46,11 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
     if(!cfGraph || !loopToInstrument || !f)
         return function_signature("", "", "");
 
-    char         fname[1024];
-    const char*  typeName = nullptr;
-    BPatch_type* returnType;
+    char        fname[MUTNAMELEN];
+    char        mname[MUTNAMELEN];
+    const char* typeName = nullptr;
+
+    mutatee_module->getName(mname, MUTNAMELEN);
 
     BPatch_Vector<point_t*>* loopStartInst =
         cfGraph->findLoopInstPoints(BPatch_locLoopStartIter, loopToInstrument);
@@ -65,9 +67,9 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
                (unsigned long) loopExitInst->size(), (unsigned long) baseAddr,
                (unsigned long) lastAddr);
 
-    f->getName(fname, 1024);
+    f->getName(fname, MUTNAMELEN);
 
-    returnType = f->getReturnType();
+    auto* returnType = f->getReturnType();
 
     if(returnType)
     {
@@ -76,14 +78,29 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
     else
         typeName = "void";
 
+    auto                  params = f->getParams();
+    std::vector<string_t> _params;
+    if(params)
+    {
+        for(auto itr : *params)
+        {
+            string_t _name = itr->getType()->getName();
+            if(_name.empty())
+                _name = itr->getName();
+            _params.push_back(_name);
+        }
+    }
+
     BPatch_Vector<BPatch_statement> lines;
     BPatch_Vector<BPatch_statement> linesEnd;
 
     bool info1 = mutatee_module->getSourceLines(baseAddr, lines);
 
+    string_t filename = mname;
+
     if(info1)
     {
-        auto filename = lines[0].fileName();
+        // filename = lines[0].fileName();
         auto row1     = lines[0].lineNumber();
         auto col1     = lines[0].lineOffset();
         if(col1 < 0)
@@ -110,18 +127,18 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
             if(row2 < row1)
                 row1 = row2; /* Fix for wrong line numbers*/
 
-            return function_signature(typeName, fname, filename, { row1, row2 },
+            return function_signature(typeName, fname, filename, _params, { row1, row2 },
                                       { col1, col2 }, true, info1, info2);
         }
         else
         {
-            return function_signature(typeName, fname, filename, { row1, 0 }, { col1, 0 },
-                                      true, info1, info2);
+            return function_signature(typeName, fname, filename, _params, { row1, 0 },
+                                      { col1, 0 }, true, info1, info2);
         }
     }
     else
     {
-        return function_signature(typeName, fname, "");
+        return function_signature(typeName, fname, filename, _params);
     }
 }
 
@@ -134,18 +151,20 @@ get_func_file_line_info(module_t* mutatee_module, procedure_t* f)
 {
     bool          info1, info2;
     unsigned long baseAddr, lastAddr;
-    char          fname[1024];
-    const char*   filename;
+    char          fname[MUTNAMELEN];
+    char          mname[MUTNAMELEN];
     int           row1, col1, row2, col2;
-    BPatch_type*  returnType;
-    const char*   typeName;
+    string_t      filename;
+    string_t      typeName;
+
+    mutatee_module->getName(mname, MUTNAMELEN);
 
     baseAddr = (unsigned long) (f->getBaseAddr());
     f->getAddressRange(baseAddr, lastAddr);
     BPatch_Vector<BPatch_statement> lines;
-    f->getName(fname, 1024);
+    f->getName(fname, MUTNAMELEN);
 
-    returnType = f->getReturnType();
+    auto* returnType = f->getReturnType();
 
     if(returnType)
     {
@@ -154,16 +173,28 @@ get_func_file_line_info(module_t* mutatee_module, procedure_t* f)
     else
         typeName = "void";
 
+    auto                  params = f->getParams();
+    std::vector<string_t> _params;
+    if(params)
+    {
+        for(auto itr : *params)
+        {
+            string_t _name = itr->getType()->getName();
+            if(_name.empty())
+                _name = itr->getName();
+            _params.push_back(_name);
+        }
+    }
+
     info1 = mutatee_module->getSourceLines((unsigned long) baseAddr, lines);
+
+    filename = mname;
 
     if(info1)
     {
-        filename = lines[0].fileName();
-        row1     = lines[0].lineNumber();
-        col1     = lines[0].lineOffset();
-        std::string file(filename);
-        if(file.find('/') != std::string::npos)
-            file = file.substr(file.find_last_of('/') + 1);
+        // filename = lines[0].fileName();
+        row1 = lines[0].lineNumber();
+        col1 = lines[0].lineOffset();
 
         if(col1 < 0)
             col1 = 0;
@@ -176,19 +207,19 @@ get_func_file_line_info(module_t* mutatee_module, procedure_t* f)
                 col2 = 0;
             if(row2 < row1)
                 row1 = row2;
-            return function_signature(typeName, fname, filename, { row1, 0 }, { 0, 0 },
-                                      false, info1, info2);
+            return function_signature(typeName, fname, filename, _params, { row1, 0 },
+                                      { 0, 0 }, false, info1, info2);
         }
         else
         {
-            return function_signature(typeName, fname, filename, { row1, 0 }, { 0, 0 },
-                                      false, info1, info2);
+            return function_signature(typeName, fname, filename, _params, { row1, 0 },
+                                      { 0, 0 }, false, info1, info2);
         }
     }
     else
     {
-        return function_signature(typeName, fname, "", { 0, 0 }, { 0, 0 }, false, false,
-                                  false);
+        return function_signature(typeName, fname, filename, _params, { 0, 0 }, { 0, 0 },
+                                  false, false, false);
     }
 }
 

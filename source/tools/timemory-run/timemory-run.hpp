@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "timemory-run-fork.hpp"
+
 #include "timemory/backends/process.hpp"
 #include "timemory/environment.hpp"
 #include "timemory/mpl/apply.hpp"
@@ -57,7 +59,7 @@
 #include <cstring>
 #include <unistd.h>
 
-#define MUTNAMELEN 512
+#define MUTNAMELEN 1024
 #define FUNCNAMELEN 32 * 1024
 #define NO_ERROR -1
 #define TIMEMORY_BIN_DIR "bin"
@@ -95,6 +97,10 @@ static bool        use_mpi            = false;
 static bool        use_mpip           = false;
 static bool        use_ompt           = false;
 static bool        is_static_exe      = false;
+static bool        use_return_info    = false;
+static bool        use_args_info      = false;
+static bool        use_file_info      = false;
+static bool        use_line_info      = false;
 static std::string main_fname         = "main";
 static std::string argv0              = "";
 static std::string cmdv0              = "";
@@ -121,6 +127,7 @@ using point_t               = BPatch_point;
 using module_t              = BPatch_module;
 using procedure_loc_t       = BPatch_procedureLocation;
 using error_level_t         = BPatchErrorLevel;
+using local_var_t           = BPatch_localVar;
 
 static patch_t*      bpatch          = nullptr;
 static call_expr_t*  initialize_expr = nullptr;
@@ -305,6 +312,7 @@ struct function_signature
     location_t       m_col       = { 0, 0 };
     string_t         m_return    = "void";
     string_t         m_name      = "";
+    string_t         m_params    = "()";
     string_t         m_file      = "";
     mutable string_t m_signature = "";
 
@@ -317,11 +325,26 @@ struct function_signature
     , m_row(_row)
     , m_col(_col)
     , m_return(_ret)
-    , m_name(_name)
+    , m_name(tim::demangle(_name))
     , m_file(_file)
     {
         if(m_file.find('/') != std::string::npos)
             m_file = m_file.substr(m_file.find_last_of('/') + 1);
+    }
+
+    function_signature(string_t _ret, string_t _name, string_t _file,
+                       std::vector<string_t> _params, location_t _row = { 0, 0 },
+                       location_t _col = { 0, 0 }, bool _loop = false,
+                       bool _info_beg = false, bool _info_end = false)
+    : function_signature(_ret, _name, _file, _row, _col, _loop, _info_beg, _info_end)
+    {
+        std::stringstream ss;
+        ss << "(";
+        for(auto& itr : _params)
+            ss << itr << ", ";
+        m_params = ss.str();
+        m_params = m_params.substr(0, m_params.length() - 2);
+        m_params += ")";
     }
 
     static auto get(function_signature& sig) { return sig.get(); }
@@ -329,28 +352,32 @@ struct function_signature
     std::string get() const
     {
         std::stringstream ss;
+        if(use_return_info)
+            ss << m_return << " ";
+        ss << m_name;
+        if(use_args_info)
+            ss << m_params;
         if(m_loop && m_info_beg)
         {
             if(m_info_end)
             {
-                ss << m_return << " " << m_name << "()/"
+                ss << "/"
                    << "[{" << m_row.first << "," << m_col.first << "}-{" << m_row.second
                    << "," << m_col.second << "}]";
             }
             else
             {
-                ss << m_return << " " << m_name << "()"
-                   << "[{" << m_row.first << "," << m_col.first << "}]";
+                ss << "[{" << m_row.first << "," << m_col.first << "}]";
             }
         }
-        // else if(m_file.length() > 0)
-        //{
-        // ss << m_return << " " << m_name << "()/" << m_file << ":" << m_row.first;
-        //}
         else
         {
-            ss << m_return << " " << m_name << "()";
+            if(use_file_info && m_file.length() > 0)
+                ss << "/" << m_file;
+            if(use_line_info && m_row.first > 0)
+                ss << ":" << m_row.first;
         }
+
         m_signature = ss.str();
         return m_signature;
     }

@@ -206,6 +206,8 @@ main(int argc, char** argv)
                       "Enable MPI support (requires timemory built w/ MPI and GOTCHA "
                       "support)")
         .count(0);
+    parser.add_argument({ "--label" }, "Labeling info for functions")
+        .choices({ "file", "line", "return", "args" });
     parser.add_argument({ "--mpip" }, "Enable MPI profiling via GOTCHA").count(0);
     parser.add_argument({ "--ompt" }, "Enable OpenMP profiling via OMPT").count(0);
     parser.add_argument({ "--load" }, "Extra libraries to load");
@@ -338,6 +340,27 @@ main(int argc, char** argv)
         for(auto itr : _load)
             extra_libs.insert(itr);
     }
+
+    if(parser.exists("label"))
+    {
+        using argtype = std::vector<std::string>;
+        auto _labels  = parser.get<argtype>("label");
+        for(auto itr : _labels)
+        {
+            if(std::regex_match(itr, std::regex("file", std::regex_constants::icase)))
+                use_file_info = true;
+            else if(std::regex_match(itr,
+                                     std::regex("return", std::regex_constants::icase)))
+                use_return_info = true;
+            else if(std::regex_match(itr,
+                                     std::regex("args", std::regex_constants::icase)))
+                use_args_info = true;
+            else if(std::regex_match(itr,
+                                     std::regex("line", std::regex_constants::icase)))
+                use_line_info = true;
+        }
+    }
+
     //----------------------------------------------------------------------------------//
     //
     //                              REGEX OPTIONS
@@ -734,7 +757,10 @@ main(int argc, char** argv)
     if(binary_rewrite)
         addr_space->beginInsertionSet();
 
-    function_signature main_sign("int", "main", "");
+    // function_signature main_sign("int", "main", "", { "int", "char**" });
+    auto main_sign = get_func_file_line_info(main_func->getModule(), main_func);
+    if(main_sign.m_params == "()")
+        main_sign.m_params = "(int argc, char** argv)";
 
     auto main_call_args = timemory_call_expr(main_sign.get());
     auto init_call_args = timemory_call_expr(default_components, binary_rewrite, cmdv0);
@@ -1065,11 +1091,54 @@ main(int argc, char** argv)
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
 
+        auto outf = std::string(outfile);
+        if(outf.find('/') != std::string::npos)
+        {
+            auto outdir = outf.substr(0, outf.find_last_of('/') - 1);
+            tim::makedir(outdir);
+        }
+
         bool success = app_binary->writeFile(outfile);
         code         = (success) ? EXIT_SUCCESS : EXIT_FAILURE;
         if(success)
             printf("\nThe instrumented executable image is stored in '%s/%s'\n", cwd,
                    outfile);
+
+#if defined(TIMEMORY_USE_LDD)
+        printf("getting trace for %s\n", cmdv0.c_str());
+        int                      counter = 0;
+        std::vector<std::string> linked_libraries;
+
+        tim::set_env("LD_TRACE_LOADED_OBJECTS", "1", 1);
+        TIMEMORY_PIPE* ldd = timemory_popen(cmdv0.c_str());
+        tim::set_env("LD_TRACE_LOADED_OBJECTS", "0", 1);
+
+        while(ldd)
+        {
+            char buffer[4096];
+            // auto ret = fscanf(fd, "%s", buffer);
+            auto ret = fgets(buffer, 4096, ldd->read_fd);
+            if(ret == nullptr || strlen(buffer) == 0)
+            {
+                if(counter++ > 50)
+                    break;
+                continue;
+            }
+            auto line = std::string(buffer);
+            auto loc  = std::string::npos;
+            while((loc = line.find_first_of("\n\t")) != std::string::npos)
+                line.erase(loc, 1);
+            auto delim = tim::delimit(line, " \n\t=>");
+            for(auto itr : delim)
+            {
+                if(itr.find('/') == 0)
+                    linked_libraries.push_back(itr);
+            }
+        }
+        timemory_pclose(ldd);
+        for(auto itr : linked_libraries)
+            printf("\tLIBRARY: %s\n", itr.c_str());
+#endif
     }
     else
     {

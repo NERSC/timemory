@@ -41,8 +41,9 @@ if(TIMEMORY_USE_DYNINST)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp.in
         ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp @ONLY)
 
-    add_executable(timemory-run timemory-run.cpp timemory-run-details.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp)
+    add_executable(timemory-run timemory-run.cpp timemory-run-details.cpp timemory-run-fork.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp
+        timemory-run.hpp timemory-run-fork.hpp)
 
     target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
@@ -58,6 +59,16 @@ if(TIMEMORY_USE_DYNINST)
         INSTALL_RPATH_USE_LINK_PATH ON)
 
     install(TARGETS timemory-run DESTINATION bin)
+
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-instr.sh
+        ${PROJECT_BINARY_DIR}/timemory-instr COPYONLY)
+
+    install(FILES ${PROJECT_BINARY_DIR}/timemory-instr
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+        PERMISSIONS
+        OWNER_EXECUTE OWNER_READ OWNER_WRITE
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ)
 
     file(GLOB COLLECTION_FILES "${CMAKE_CURRENT_LIST_DIR}/collections/*")
     foreach(_FILE ${COLLECTION_FILES})

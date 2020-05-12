@@ -43,7 +43,7 @@ template <typename Tp> using vector_t = std::vector<Tp>;
 
 namespace impl
 {
-static long fibonacci(long n);
+long fibonacci(long n);
 }
 long fibonacci(long n);
 void status();
@@ -113,7 +113,6 @@ int main(int argc, char** argv)
     {
         auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
-        write(itr, ret);
         ret_sum += pow(ret, 2);
     }
 
@@ -160,7 +159,9 @@ long impl::fibonacci(long n)
 long fibonacci(long n)
 {
     TIMEMORY_BASIC_MARKER(auto_hybrid_t, "(", n, ")");
-    return impl::fibonacci(n);
+    auto ret = impl::fibonacci(n);
+    write(n, ret);
+    return ret;
 }
 
 void write(long nfib, long answer)
