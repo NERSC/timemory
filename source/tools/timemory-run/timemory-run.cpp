@@ -757,10 +757,13 @@ main(int argc, char** argv)
     if(binary_rewrite)
         addr_space->beginInsertionSet();
 
-    // function_signature main_sign("int", "main", "", { "int", "char**" });
-    auto main_sign = get_func_file_line_info(main_func->getModule(), main_func);
-    if(main_sign.m_params == "()")
-        main_sign.m_params = "(int argc, char** argv)";
+    function_signature main_sign("int", "main", "", { "int", "char**" });
+    if(main_func)
+    {
+        main_sign = get_func_file_line_info(main_func->getModule(), main_func);
+        if(main_sign.m_params == "()")
+            main_sign.m_params = "(int argc, char** argv)";
+    }
 
     auto main_call_args = timemory_call_expr(main_sign.get());
     auto init_call_args = timemory_call_expr(default_components, binary_rewrite, cmdv0);
