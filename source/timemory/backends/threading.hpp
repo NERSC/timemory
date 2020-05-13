@@ -162,33 +162,33 @@ struct affinity
 
     static functor_t& get_algorithm()
     {
-        static functor_t _compact_instance = [](int64_t tid) {
-            static std::atomic<int64_t> _counter(0);
-            static thread_local int64_t _this_count = _counter++;
-            auto                        proc_itr    = get_affinity_map().find(tid);
-            if(proc_itr == get_affinity_map().end())
-                get_affinity_map()[tid] = _this_count;
-            return get_affinity_map()[tid];
-        };
+        static functor_t _instance = [](int64_t tid) {
+            static functor_t _compact_instance = [](int64_t tid) -> int64_t {
+                static std::atomic<int64_t> _counter(0);
+                static thread_local int64_t _this_count = _counter++;
+                auto                        proc_itr    = get_affinity_map().find(tid);
+                if(proc_itr == get_affinity_map().end())
+                    get_affinity_map()[tid] = _this_count;
+                return get_affinity_map()[tid];
+            };
 
-        static functor_t _scatter_instance = [](int64_t tid) {
-            static std::atomic<int64_t> _counter(0);
-            static thread_local int64_t _this_count = _counter++;
-            auto _val     = (_this_count * hw_physicalcpu()) % hw_concurrency();
-            auto proc_itr = get_affinity_map().find(tid);
-            if(proc_itr == get_affinity_map().end())
-                get_affinity_map()[tid] = _val;
-            return get_affinity_map()[tid];
-        };
+            static functor_t _scatter_instance = [](int64_t tid) -> int64_t {
+                static std::atomic<int64_t> _counter(0);
+                static thread_local int64_t _this_count = _counter++;
+                auto _val     = (_this_count * hw_physicalcpu()) % hw_concurrency();
+                auto proc_itr = get_affinity_map().find(tid);
+                if(proc_itr == get_affinity_map().end())
+                    get_affinity_map()[tid] = _val;
+                return get_affinity_map()[tid];
+            };
 
-        static functor_t _explicit_instance = [](int64_t tid) -> int64_t {
-            auto proc_itr = get_affinity_map().find(tid);
-            if(proc_itr != get_affinity_map().end())
-                return proc_itr->second;
-            return -1;
-        };
+            static functor_t _explicit_instance = [](int64_t tid) -> int64_t {
+                auto proc_itr = get_affinity_map().find(tid);
+                if(proc_itr != get_affinity_map().end())
+                    return proc_itr->second;
+                return -1;
+            };
 
-        static functor_t _instance = [&](int64_t tid) {
             switch(get_mode())
             {
                 case COMPACT: return _compact_instance(tid); break;

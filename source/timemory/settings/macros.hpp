@@ -86,8 +86,10 @@
         static TYPE generate__##FUNC()                                                   \
         {                                                                                \
             auto _parse = []() { FUNC() = tim::get_env<TYPE>(ENV_VAR, FUNC()); };        \
-            get_parse_callbacks().insert({ ENV_VAR, _parse });                           \
-            get_setting_descriptions().insert({ ENV_VAR, DESC });                        \
+            get_setting_descriptions().insert(                                           \
+                std::pair<std::string, std::string>{ ENV_VAR, DESC });                   \
+            get_parse_callbacks().insert(                                                \
+                std::pair<std::string, setting_callback_t>{ ENV_VAR, _parse });          \
             return get_env<TYPE>(ENV_VAR, INIT);                                         \
         }
 #endif
@@ -103,8 +105,10 @@
         TYPE generate__##FUNC()                                                          \
         {                                                                                \
             auto _parse = []() { FUNC() = tim::get_env<TYPE>(ENV_VAR, FUNC()); };        \
-            get_setting_descriptions().insert({ ENV_VAR, DESC });                        \
-            get_parse_callbacks().insert({ ENV_VAR, _parse });                           \
+            get_setting_descriptions().insert(                                           \
+                std::pair<std::string, std::string>{ ENV_VAR, DESC });                   \
+            get_parse_callbacks().insert(                                                \
+                std::pair<std::string, setting_callback_t>{ ENV_VAR, _parse });          \
             return get_env<TYPE>(ENV_VAR, INIT);                                         \
         }                                                                                \
         TYPE m__##FUNC = generate__##FUNC();
@@ -120,13 +124,15 @@
     private:                                                                             \
         TYPE& generate__##FUNC()                                                         \
         {                                                                                \
-            auto _parse = [&]() {                                                        \
+            auto _parse = []() {                                                         \
                 auto ret = tim::get_env<TYPE>(ENV_VAR, GETTER());                        \
                 GETTER() = ret;                                                          \
                 SETTER(ret);                                                             \
             };                                                                           \
-            get_setting_descriptions().insert({ ENV_VAR, DESC });                        \
-            get_parse_callbacks().insert({ ENV_VAR, _parse });                           \
+            get_setting_descriptions().insert(                                           \
+                std::pair<std::string, std::string>{ ENV_VAR, DESC });                   \
+            get_parse_callbacks().insert(                                                \
+                std::pair<std::string, setting_callback_t>{ ENV_VAR, _parse });          \
             return GETTER();                                                             \
         }                                                                                \
         TYPE* m__##FUNC = &(generate__##FUNC());

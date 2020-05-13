@@ -312,6 +312,8 @@ struct config : public data_type
         return *this;
     }
 
+    using data_type::set;
+
     template <typename T, std::enable_if_t<(std::is_same<T, tree>::value ||
                                             std::is_same<T, flat>::value ||
                                             std::is_same<T, timeline>::value),
@@ -415,25 +417,28 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 inline const config
-operator+(config _lhs, tree _rhs)
+operator+(config _lhs, tree)
 {
-    return (_lhs += _rhs);
+    _lhs.set(tree::value, true);
+    return _lhs;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 inline const config
-operator+(config _lhs, flat _rhs)
+operator+(config _lhs, flat)
 {
-    return (_lhs += _rhs);
+    _lhs.set(flat::value, true);
+    return _lhs;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 inline const config
-operator+(config _lhs, timeline _rhs)
+operator+(config _lhs, timeline)
 {
-    return (_lhs += _rhs);
+    _lhs.set(timeline::value, true);
+    return _lhs;
 }
 //
 //--------------------------------------------------------------------------------------//
