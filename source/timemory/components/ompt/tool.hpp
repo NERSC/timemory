@@ -252,14 +252,14 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_thread_t thread_type, ompt_data_t* thread_data)
     : m_key(ompt_thread_type_labels[thread_type])
-    , m_data({ thread_data, nullptr })
+    , m_data({ { thread_data, nullptr } })
     {}
 
     //----------------------------------------------------------------------------------//
     // callback thread end
     //----------------------------------------------------------------------------------//
     context_handler(ompt_data_t* thread_data)
-    : m_data({ thread_data, nullptr })
+    : m_data({ { thread_data, nullptr } })
     {}
 
     //----------------------------------------------------------------------------------//
@@ -269,7 +269,7 @@ public:
                     ompt_data_t* parallel_data, unsigned int requested_parallelism,
                     int flags, const void* codeptr)
     : m_key("ompt_parallel")
-    , m_data({ nullptr, parallel_data })
+    , m_data({ { nullptr, parallel_data } })
     {
         consume_parameters(task_data, task_frame, requested_parallelism, flags, codeptr);
     }
@@ -280,7 +280,7 @@ public:
     context_handler(ompt_data_t* parallel_data, ompt_data_t* task_data, int flags,
                     const void* codeptr)
     : m_key("ompt_parallel")
-    , m_data({ nullptr, parallel_data })
+    , m_data({ { nullptr, parallel_data } })
     {
         consume_parameters(task_data, flags, codeptr);
     }
@@ -291,7 +291,7 @@ public:
     context_handler(ompt_scope_endpoint_t endpoint, ompt_data_t* parallel_data,
                     ompt_data_t* task_data, const void* codeptr)
     : m_key("ompt_master")
-    , m_data({ task_data, nullptr })
+    , m_data({ { task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, codeptr);
     }
@@ -303,7 +303,7 @@ public:
                     ompt_data_t* task_data, unsigned int team_size,
                     unsigned int thread_num)
     : m_key("ompt_implicit_task")
-    , m_data({ task_data, nullptr })
+    , m_data({ { task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, team_size, thread_num);
     }
@@ -315,7 +315,7 @@ public:
                     ompt_data_t* parallel_data, ompt_data_t* task_data,
                     const void* codeptr)
     : m_key(ompt_sync_region_type_labels[kind])
-    , m_data({ task_data, nullptr })
+    , m_data({ { task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, codeptr);
     }
@@ -326,7 +326,7 @@ public:
     context_handler(ompt_mutex_t kind, unsigned int hint, unsigned int impl,
                     ompt_wait_id_t wait_id, const void* codeptr)
     : m_key(ompt_mutex_type_labels[kind])
-    , m_data({ construct_data(), nullptr })
+    , m_data({ { construct_data(), nullptr } })
     {
         get_data<mutex_tag>().insert({ wait_id, m_data[0] });
         consume_parameters(hint, impl, wait_id, codeptr);
@@ -338,7 +338,7 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_mutex_t kind, ompt_wait_id_t wait_id, const void* codeptr)
     : m_key(ompt_mutex_type_labels[kind])
-    , m_data({ get_data<mutex_tag>()[wait_id], nullptr })
+    , m_data({ { get_data<mutex_tag>()[wait_id], nullptr } })
     {
         consume_parameters(wait_id, codeptr);
     }
@@ -359,7 +359,7 @@ public:
                     ompt_data_t* new_task_data, int flags, int has_dependences,
                     const void* codeptr)
     : m_key("ompt_task_create")
-    , m_data({ task_data, nullptr })
+    , m_data({ { task_data, nullptr } })
     {
         consume_parameters(task_frame, new_task_data, flags, has_dependences, codeptr);
     }
@@ -370,7 +370,7 @@ public:
     context_handler(ompt_data_t* prior_task_data, ompt_task_status_t prior_task_status,
                     ompt_data_t* next_task_data)
     : m_key("ompt_task_schedule")
-    , m_data({ nullptr, next_task_data })
+    , m_data({ { nullptr, next_task_data } })
     {
         consume_parameters(prior_task_data, prior_task_status, next_task_data);
     }
@@ -381,7 +381,7 @@ public:
     context_handler(ompt_data_t* parallel_data, ompt_data_t* task_data,
                     ompt_dispatch_t kind, ompt_data_t instance)
     : m_key(ompt_dispatch_type_labels[kind])
-    , m_data({ task_data, nullptr })
+    , m_data({ { task_data, nullptr } })
     {
         consume_parameters(parallel_data, task_data, kind, instance);
     }
@@ -393,7 +393,7 @@ public:
                     ompt_data_t* parallel_data, ompt_data_t* task_data, uint64_t count,
                     const void* codeptr)
     : m_key(ompt_work_labels[wstype])
-    , m_data({ task_data, nullptr })
+    , m_data({ { task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, count, codeptr);
     }
@@ -403,7 +403,7 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_data_t* thread_data, const void* codeptr)
     : m_key("ompt_flush")
-    , m_data({ thread_data, nullptr })
+    , m_data({ { thread_data, nullptr } })
     {
         consume_parameters(thread_data, codeptr);
     }
@@ -413,7 +413,7 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_data_t* thread_data, int flags, const void* codeptr)
     : m_key("ompt_cancel")
-    , m_data({ thread_data, nullptr })
+    , m_data({ { thread_data, nullptr } })
     {
         consume_parameters(thread_data, flags, codeptr);
     }
@@ -425,7 +425,7 @@ public:
                     ompt_data_t* task_data, ompt_id_t target_id, const void* codeptr)
     : m_key(
           apply<std::string>::join("_", ompt_target_type_labels[kind], "dev", device_num))
-    , m_data({ task_data, nullptr })
+    , m_data({ { task_data, nullptr } })
     {
         consume_parameters(kind, endpoint, target_id, codeptr);
     }
@@ -439,7 +439,7 @@ public:
                     const void* codeptr)
     : m_key(apply<std::string>::join("_", ompt_target_data_op_labels[optype], "src",
                                      src_device_num, "dest", dest_device_num))
-    , m_data({ construct_data(true), nullptr })
+    , m_data({ { construct_data(true), nullptr } })
     {
         consume_parameters(target_id, host_op_id, src_addr, dest_addr, bytes, codeptr);
     }
@@ -450,7 +450,7 @@ public:
     context_handler(ompt_id_t target_id, ompt_id_t host_op_id,
                     unsigned int requested_num_teams)
     : m_key("ompt_target_submit")
-    , m_data({ nullptr, nullptr })
+    , m_data({ { nullptr, nullptr } })
     {
         consume_parameters(target_id, host_op_id, requested_num_teams);
     }
@@ -461,7 +461,7 @@ public:
     context_handler(ompt_id_t target_id, unsigned int nitems, void** host_addr,
                     void** device_addr, size_t* bytes, unsigned int* mapping_flags)
     : m_key(apply<std::string>::join("_", "ompt_target_mapping", target_id))
-    , m_data({ nullptr, nullptr })
+    , m_data({ { nullptr, nullptr } })
     {
         consume_parameters(nitems, host_addr, device_addr, bytes, mapping_flags);
     }
@@ -472,7 +472,7 @@ public:
     context_handler(uint64_t device_num, const char* type, ompt_device_t* device,
                     ompt_function_lookup_t lookup, const char* documentation)
     : m_key(apply<std::string>::join("_", "ompt_device", device_num, type))
-    , m_data({ construct_data(), nullptr })
+    , m_data({ { construct_data(), nullptr } })
     {
         get_data<device_state_tag>().insert({ device_num, m_data[0] });
         consume_parameters(device, lookup, documentation);
@@ -482,7 +482,7 @@ public:
     // callback target device finalize
     //----------------------------------------------------------------------------------//
     context_handler(uint64_t device_num)
-    : m_data({ get_data<device_state_tag>()[device_num], nullptr })
+    : m_data({ { get_data<device_state_tag>()[device_num], nullptr } })
     , m_cleanup([=]() {
         auto& itr = get_data<device_state_tag>()[device_num];
         delete itr;
@@ -497,7 +497,7 @@ public:
                     void* vma_in_file, size_t bytes, void* host_addr, void* device_addr,
                     uint64_t module_id)
     : m_key(apply<std::string>::join("_", "ompt_target_load", device_num, filename))
-    , m_data({ construct_data(), nullptr })
+    , m_data({ { construct_data(), nullptr } })
     {
         get_data<device_load_tag, uint64_t, data_map_t>()[device_num].insert(
             { module_id, m_data[0] });
@@ -508,8 +508,8 @@ public:
     // callback target device unload
     //----------------------------------------------------------------------------------//
     context_handler(uint64_t device_num, uint64_t module_id)
-    : m_data({ get_data<device_load_tag, uint64_t, data_map_t>()[device_num][module_id],
-               nullptr })
+    : m_data({ { get_data<device_load_tag, uint64_t, data_map_t>()[device_num][module_id],
+                 nullptr } })
     , m_cleanup([=]() {
         auto& itr =
             get_data<device_load_tag, uint64_t, data_map_t>()[device_num][module_id];

@@ -6,8 +6,8 @@ PyCTest driver for TiMemory
 """
 
 import os
+import re
 import sys
-import shutil
 import platform
 import traceback
 import warnings
@@ -42,7 +42,8 @@ def configure():
     parser = helpers.ArgumentParser(project_name="TiMemory",
                                     source_dir=os.getcwd(),
                                     binary_dir=os.path.join(
-                                        os.getcwd(), "build-timemory", platform.system()),
+                                        os.getcwd(), "build-timemory",
+                                        platform.system()),
                                     build_type="Release",
                                     vcs_type="git",
                                     use_launchers=False)
@@ -52,7 +53,8 @@ def configure():
     parser.add_argument("--profile", help="Run gperf profiler",
                         default=None, type=str, choices=("cpu", "heap"))
     parser.add_argument("--sanitizer", help="Type of sanitizer",
-                        default=None, type=str, choices=("leak", "memory", "address", "thread"))
+                        default=None, type=str,
+                        choices=("leak", "memory", "address", "thread"))
     parser.add_argument("--coverage", help="TIMEMORY_USE_COVERAGE=ON",
                         default=False, action='store_true')
     parser.add_argument("--static-analysis", help="TIMEMORY_USE_CLANG_TIDY=ON",
@@ -106,11 +108,13 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--timing", help="TIMEMORY_USE_COMPILE_TIMING=ON",
                         default=False, action='store_true')
-    parser.add_argument("--build-libs", help="Build library type(s)", default=("shared"),
-                        nargs='*', type=str, choices=("static", "shared"))
+    parser.add_argument("--build-libs", help="Build library type(s)",
+                        default=("shared"), nargs='*', type=str,
+                        choices=("static", "shared"))
     parser.add_argument("--tls-model", help="Thread-local static model",
                         default=('global-dynamic'), type=str,
-                        choices=('global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'))
+                        choices=('global-dynamic', 'local-dynamic',
+                                 'initial-exec', 'local-exec'))
     parser.add_argument("--cxx-standard", help="C++ standard", type=str,
                         default="17", choices=("14", "17", "20"))
     parser.add_argument("--generate", help="Generate the tests only",
@@ -177,7 +181,8 @@ def run_pyctest():
         cn = compiler_version.split()[0]
         cv = re.search(r'(\b)\d.\d.\d', compiler_version)
         compiler_version = '{}-{}'.format(cn, cv)
-    except:
+    except Exception as e:
+        print("Exception! {}".format(e))
         cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
         cmd.SetOutputStripTrailingWhitespace(True)
         cmd.Execute()
@@ -243,8 +248,10 @@ def run_pyctest():
         build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
 
     if args.tools:
-        build_opts["TIMEMORY_BUILD_MPIP"] = "ON" if (
+        build_opts["TIMEMORY_BUILD_MPIP_LIBRARY"] = "ON" if (
             args.mpi and args.mpip) else "OFF"
+        build_opts["TIMEMORY_BUILD_OMPT_LIBRARY"] = "ON" if (
+            args.ompt) else "OFF"
         build_opts["TIMEMORY_BUILD_KOKKOS_TOOLS"] = "ON" if args.kokkos else "OFF"
         build_opts["TIMEMORY_BUILD_DYNINST_TOOLS"] = "ON" if args.dyninst else "OFF"
 

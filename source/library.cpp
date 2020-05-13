@@ -125,7 +125,7 @@ get_current_components()
 std::array<bool, 2>&
 get_library_state()
 {
-    static auto _instance = std::array<bool, 2>({ false, false });
+    static auto _instance = std::array<bool, 2>({ { false, false } });
     return _instance;
 }
 

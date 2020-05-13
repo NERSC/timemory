@@ -101,8 +101,8 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
     if(info1)
     {
         // filename = lines[0].fileName();
-        auto row1     = lines[0].lineNumber();
-        auto col1     = lines[0].lineOffset();
+        auto row1 = lines[0].lineNumber();
+        auto col1 = lines[0].lineOffset();
         if(col1 < 0)
             col1 = 0;
 
