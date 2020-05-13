@@ -196,7 +196,6 @@ def run_pyctest():
         platform.uname()[0],
         helpers.GetSystemVersionInfo(),
         platform.uname()[4],
-        os.path.basename(os.environ["CXX"]),
         compiler_version)
     pyct.BUILD_NAME = '-'.join(pyct.BUILD_NAME.split())
 
