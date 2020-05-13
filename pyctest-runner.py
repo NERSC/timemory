@@ -180,7 +180,7 @@ def run_pyctest():
     try:
         cn = compiler_version.split()[0]
         cv = re.search(r'(\b)\d.\d.\d', compiler_version)
-        compiler_version = '{}-{}'.format(cn, cv)
+        compiler_version = '{}-{}'.format(cn, cv.group()[0])
     except Exception as e:
         print("Exception! {}".format(e))
         cmd = pyct.command([os.environ["CXX"], "-dumpversion"])
