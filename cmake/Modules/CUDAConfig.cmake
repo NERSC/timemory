@@ -81,8 +81,9 @@ if("CUDA" IN_LIST LANGUAGES)
     endif()
 
     if(NOT WIN32)
+        get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
         target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
+            $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${_COMPILER_DIR}>)
     endif()
 
     target_include_directories(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
