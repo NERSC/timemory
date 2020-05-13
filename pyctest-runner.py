@@ -191,7 +191,7 @@ def run_pyctest():
     #--------------------------------------------------------------------------#
     # Set the build name
     #
-    pyct.BUILD_NAME = "{} {} {} {} {} {}".format(
+    pyct.BUILD_NAME = "{} {} {} {} {}".format(
         get_branch(pyct.SOURCE_DIRECTORY),
         platform.uname()[0],
         helpers.GetSystemVersionInfo(),
