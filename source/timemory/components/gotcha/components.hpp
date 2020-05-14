@@ -97,8 +97,12 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
                                                     Differentiator, void>::type;
 
     static std::string label() { return "gotcha"; }
-    static std::string description() { return "GOTCHA wrapper"; }
-    static value_type  record() { return; }
+    static std::string description()
+    {
+        return "Generates GOTCHA wrappers which can be used to wrap or replace "
+               "dynamically linked function calls";
+    }
+    static value_type record() { return; }
 
     //----------------------------------------------------------------------------------//
 
@@ -1017,7 +1021,10 @@ struct malloc_gotcha : base<malloc_gotcha, double>
 
     // required static functions
     static std::string label() { return "malloc_gotcha"; }
-    static std::string description() { return "GOTCHA wrapper for memory allocation"; }
+    static std::string description()
+    {
+        return "GOTCHA wrapper for memory allocation functions";
+    }
     static std::string display_unit() { return "MB"; }
     static int64_t     unit() { return units::megabyte; }
     static value_type  record() { return value_type{ 0.0 }; }

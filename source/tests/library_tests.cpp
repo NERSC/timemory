@@ -420,6 +420,78 @@ TEST_F(library_tests, region)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(library_tests, add)
+{
+    timemory_push_components("wall_clock, cpu_util");
+
+    {
+        uint64_t idx = 0;
+        timemory_begin_record(TEST_NAME, &idx);
+        ret += details::fibonacci(35);
+        timemory_end_record(idx);
+    }
+
+    timemory_add_components("cpu_clock");
+
+    {
+        uint64_t idx = 0;
+        timemory_begin_record(TEST_NAME, &idx);
+        ret += details::fibonacci(35);
+        timemory_end_record(idx);
+    }
+
+    timemory_pop_components();
+
+    printf("fibonacci(35) = %li\n\n", ret);
+
+    auto wc_n = wc_size_orig + 1;
+    auto cu_n = cu_size_orig + 1;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 0;
+
+    ASSERT_EQ(get_wc_storage_size(), wc_n);
+    ASSERT_EQ(get_cu_storage_size(), cu_n);
+    ASSERT_EQ(get_cc_storage_size(), cc_n);
+    ASSERT_EQ(get_pr_storage_size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(library_tests, remove)
+{
+    std::array<uint64_t, 2> idx;
+    idx.fill(0);
+
+    timemory_push_components("wall_clock, cpu_util, cpu_clock");
+
+    timemory_begin_record(TEST_NAME, &idx[0]);
+    ret += details::fibonacci(35);
+
+    timemory_remove_components("cpu_clock");
+
+    timemory_begin_record(TEST_NAME, &idx[1]);
+    ret += details::fibonacci(35);
+
+    timemory_end_record(idx[0]);
+    timemory_end_record(idx[1]);
+
+    timemory_pop_components();
+
+    printf("fibonacci(35) = %li\n\n", ret);
+
+    auto wc_n = wc_size_orig + 2;
+    auto cu_n = cu_size_orig + 2;
+    auto cc_n = cc_size_orig + 1;
+    auto pr_n = pr_size_orig + 0;
+
+    ASSERT_EQ(get_wc_storage_size(), wc_n);
+    ASSERT_EQ(get_cu_storage_size(), cu_n);
+    ASSERT_EQ(get_cc_storage_size(), cc_n);
+    ASSERT_EQ(get_pr_storage_size(), pr_n);
+}
+
+//--------------------------------------------------------------------------------------//
+
 #include "timemory/environment.hpp"
 
 //--------------------------------------------------------------------------------------//

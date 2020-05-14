@@ -373,8 +373,8 @@ public:
 
     static std::string description()
     {
-        return "GPU Roofline " + get_type_string() + " " +
-               std::string((event_mode() == MODE::COUNTERS) ? "Counters" : "Activity");
+        return "Model used to provide performance relative to the peak possible "
+               "performance on a GPU architecture.";
     }
 
     static std::string display_unit()

@@ -25,10 +25,19 @@
 
 #include "timemory-run.hpp"
 
-static std::set<std::string>                         extra_libs = {};
-static std::vector<std::pair<uint64_t, std::string>> hash_ids;
-static std::string                                   instr_push_hash = "";
-static std::string                                   instr_pop_hash  = "";
+static strset_t                                   extra_libs = {};
+static std::vector<std::pair<uint64_t, string_t>> hash_ids;
+static string_t                                   instr_push_hash = "";
+static string_t                                   instr_pop_hash  = "";
+static std::map<string_t, bool>                   use_stubs;
+static std::map<string_t, procedure_t*>           beg_stubs;
+static std::map<string_t, procedure_t*>           end_stubs;
+static strvec_t                                   init_stub_names;
+static strvec_t                                   fini_stub_names;
+static strset_t                                   used_stub_names;
+static std::map<string_t, call_expr_pointer_t>    beg_expr;
+static std::map<string_t, call_expr_pointer_t>    end_expr;
+static const auto                                 npos_v = string_t::npos;
 
 //======================================================================================//
 //
@@ -40,11 +49,11 @@ int
 main(int argc, char** argv)
 {
 #if defined(DYNINST_API_RT)
-    tim::set_env<std::string>("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
+    tim::set_env<string_t>("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
 #endif
 
     argv0                  = argv[0];
-    auto env_collect_paths = tim::get_env<std::string>("TIMEMORY_COLLECTION_PATH", "");
+    auto env_collect_paths = tim::get_env<string_t>("TIMEMORY_COLLECTION_PATH", "");
     prefix_collection_path(env_collect_paths, collection_paths);
 
     bool             is_attached = false;
@@ -56,13 +65,13 @@ main(int argc, char** argv)
     char             staticlibname[FUNCNAMELEN];
     address_space_t* addr_space = nullptr;
     bpatch                      = new BPatch;
-    std::string        inputlib = "";
+    string_t           inputlib = "";
     tim::process::id_t _pid     = -1;
 
     // bpatch->setTrampRecursive(true);
     bpatch->setBaseTrampDeletion(false);
     // bpatch->setMergeTramp(true);
-    bpatch->setTypeChecking(false);
+    bpatch->setTypeChecking(true);
     bpatch->setSaveFPR(true);
     bpatch->setDelayedParsing(false);
 
@@ -81,7 +90,7 @@ main(int argc, char** argv)
 
     for(int i = 1; i < argc; ++i)
     {
-        std::string _arg = argv[i];
+        string_t _arg = argv[i];
         if(_arg.length() == 2 && _arg == "--")
         {
             _argc        = i;
@@ -103,7 +112,7 @@ main(int argc, char** argv)
     }
 
     auto cmd_string = [](int _ac, char** _av) {
-        std::stringstream ss;
+        stringstream_t ss;
         for(int i = 0; i < _ac; ++i)
             ss << _av[i] << " ";
         return ss.str();
@@ -210,7 +219,15 @@ main(int argc, char** argv)
         .choices({ "file", "line", "return", "args" });
     parser.add_argument({ "--mpip" }, "Enable MPI profiling via GOTCHA").count(0);
     parser.add_argument({ "--ompt" }, "Enable OpenMP profiling via OMPT").count(0);
-    parser.add_argument({ "--load" }, "Extra libraries to load");
+    parser.add_argument({ "--load" },
+                        "Supplemental instrumentation library names w/o extension (e.g. "
+                        "'libinstr' for 'libinstr.so' or 'libinstr.a')");
+    parser.add_argument(
+        { "--init-functions" },
+        "Initialization function(s) for supplemental instrumentation libraries");
+    parser.add_argument(
+        { "--fini-functions" },
+        "Finalization function(s) for supplemental instrumentation libraries");
 
     if(_cmdc == 0)
     {
@@ -220,8 +237,8 @@ main(int argc, char** argv)
             .count(1);
     }
 
-    std::string extra_help = "-- <CMD> <ARGS>";
-    auto        err        = parser.parse(_argc, _argv);
+    string_t extra_help = "-- <CMD> <ARGS>";
+    auto     err        = parser.parse(_argc, _argv);
     if(err)
     {
         std::cerr << err << std::endl;
@@ -250,15 +267,14 @@ main(int argc, char** argv)
         verbose_level = 256;
 
     if(parser.exists("m"))
-        main_fname = parser.get<std::string>("m");
+        main_fname = parser.get<string_t>("m");
 
     if(parser.exists("l"))
         loop_level_instr = true;
 
     if(_cmdc == 0 && parser.exists("c"))
     {
-        using argtype = std::vector<std::string>;
-        auto keys     = parser.get<argtype>("c");
+        auto keys = parser.get<strvec_t>("c");
         if(keys.empty())
         {
             parser.print_help(extra_help);
@@ -276,7 +292,7 @@ main(int argc, char** argv)
     if(parser.exists("o"))
     {
         binary_rewrite = true;
-        auto key       = parser.get<std::string>("o");
+        auto key       = parser.get<string_t>("o");
         strcpy(outfile, key.c_str());
     }
 
@@ -293,18 +309,21 @@ main(int argc, char** argv)
         use_mpi = true;
 
     if(parser.exists("mpip"))
-        use_mpip = true;
+        use_stubs["mpip"] = true;
+    else
+        use_stubs["mpip"] = false;
 
     if(parser.exists("ompt"))
-        use_ompt = true;
+        use_stubs["ompt"] = true;
+    else
+        use_stubs["ompt"] = false;
 
     if(parser.exists("p"))
         _pid = parser.get<int>("p");
 
     if(parser.exists("d"))
     {
-        using argtype      = std::vector<std::string>;
-        auto _components   = parser.get<argtype>("d");
+        auto _components   = parser.get<strvec_t>("d");
         default_components = "";
         for(size_t i = 0; i < _components.size(); ++i)
         {
@@ -321,7 +340,7 @@ main(int argc, char** argv)
 
     if(parser.exists("M"))
     {
-        auto _mode = parser.get<std::string>("M");
+        auto _mode = parser.get<string_t>("M");
         if(_mode == "trace" || _mode == "region")
         {
             instr_push_func = "timemory_push_" + _mode;
@@ -332,19 +351,18 @@ main(int argc, char** argv)
     }
 
     if(parser.exists("prefer"))
-        prefer_library = parser.get<std::string>("prefer");
+        prefer_library = parser.get<string_t>("prefer");
 
     if(parser.exists("load"))
     {
-        auto _load = parser.get<std::vector<std::string>>("load");
+        auto _load = parser.get<strvec_t>("load");
         for(auto itr : _load)
             extra_libs.insert(itr);
     }
 
     if(parser.exists("label"))
     {
-        using argtype = std::vector<std::string>;
-        auto _labels  = parser.get<argtype>("label");
+        auto _labels = parser.get<strvec_t>("label");
         for(auto itr : _labels)
         {
             if(std::regex_match(itr, std::regex("file", std::regex_constants::icase)))
@@ -361,6 +379,9 @@ main(int argc, char** argv)
         }
     }
 
+    init_stub_names = parser.get<strvec_t>("init-functions");
+    fini_stub_names = parser.get<strvec_t>("fini-functions");
+
     //----------------------------------------------------------------------------------//
     //
     //                              REGEX OPTIONS
@@ -369,40 +390,38 @@ main(int argc, char** argv)
     //
     //  Helper function for adding regex expressions
     //
-    auto add_regex = [](auto& regex_array, const std::string& regex_expr) {
+    auto add_regex = [](auto& regex_array, const string_t& regex_expr) {
         if(!regex_expr.empty())
             regex_array.push_back(std::regex(regex_expr, regex_opts));
     };
 
-    add_regex(func_include, tim::get_env<std::string>("TIMEMORY_REGEX_INCLUDE", ""));
-    add_regex(func_exclude, tim::get_env<std::string>("TIMEMORY_REGEX_EXCLUDE", ""));
-
-    using regex_arg_t = std::vector<std::string>;
+    add_regex(func_include, tim::get_env<string_t>("TIMEMORY_REGEX_INCLUDE", ""));
+    add_regex(func_exclude, tim::get_env<string_t>("TIMEMORY_REGEX_EXCLUDE", ""));
 
     if(parser.exists("R"))
     {
-        auto keys = parser.get<regex_arg_t>("R");
+        auto keys = parser.get<strvec_t>("R");
         for(const auto& itr : keys)
             add_regex(func_include, itr);
     }
 
     if(parser.exists("E"))
     {
-        auto keys = parser.get<regex_arg_t>("E");
+        auto keys = parser.get<strvec_t>("E");
         for(const auto& itr : keys)
             add_regex(func_exclude, itr);
     }
 
     if(parser.exists("MI"))
     {
-        auto keys = parser.get<regex_arg_t>("MI");
+        auto keys = parser.get<strvec_t>("MI");
         for(const auto& itr : keys)
             add_regex(file_include, itr);
     }
 
     if(parser.exists("ME"))
     {
-        auto keys = parser.get<regex_arg_t>("ME");
+        auto keys = parser.get<strvec_t>("ME");
         for(const auto& itr : keys)
             add_regex(file_exclude, itr);
     }
@@ -415,14 +434,14 @@ main(int argc, char** argv)
     //
     if(parser.exists("P"))
     {
-        auto tmp = parser.get<std::vector<std::string>>("P");
+        auto tmp = parser.get<strvec_t>("P");
         for(auto itr : tmp)
             prefix_collection_path(itr, collection_paths);
     }
 
     if(parser.exists("C"))
     {
-        auto tmp = parser.get<std::vector<std::string>>("C");
+        auto tmp = parser.get<strvec_t>("C");
         for(auto itr : tmp)
         {
             if(itr.find('!') == 0)
@@ -438,11 +457,20 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    char* bindings = (char*) malloc(1024);
-    verbprintf(0, "mutatee name = %s\n", mutname);
+    if(_cmdc == 0)
+    {
+        parser.print_help(extra_help);
+        fprintf(stderr, "\nError! No command for dynamic instrumentation. Use "
+                        "\n\ttimemory-run <OPTIONS> -- <COMMAND> <ARGS>\nE.g. "
+                        "\n\ttimemory-run -o foo.inst -- ./foo\nwill output an "
+                        "instrumented version of 'foo' executable to 'foo.inst'\n");
+        return EXIT_FAILURE;
+    }
+
+    verbprintf(0, "instrumentation target: %s\n", mutname);
 
     // did we load a library?  if not, load the default
-    auto generate_libname = [](char* _targ, std::string _base, std::string _ext) {
+    auto generate_libname = [](char* _targ, string_t _base, string_t _ext) {
         sprintf(_targ, "%s%s", _base.c_str(), _ext.c_str());
     };
 
@@ -453,9 +481,6 @@ main(int argc, char** argv)
         generate_libname(staticlibname, inputlib, ".a");
         loadlib = true;
     }
-
-    if(_cmdc == 0)
-        return EXIT_FAILURE;
 
     // Register a callback function that prints any error messages
     bpatch->registerErrorCallback(error_func_real);
@@ -482,12 +507,11 @@ main(int argc, char** argv)
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");
-    image_t*                       app_image     = addr_space->getImage();
-    BPatch_Vector<BPatch_module*>* app_modules   = app_image->getModules();
-    BPatch_Vector<procedure_t*>*   app_functions = app_image->getProcedures();
-
-    BPatch_Vector<BPatch_module*> modules;
-    BPatch_Vector<procedure_t*>   functions;
+    image_t*                     app_image     = addr_space->getImage();
+    BPatch_Vector<module_t*>*    app_modules   = app_image->getModules();
+    BPatch_Vector<procedure_t*>* app_functions = app_image->getProcedures();
+    BPatch_Vector<module_t*>     modules;
+    BPatch_Vector<procedure_t*>  functions;
 
     //----------------------------------------------------------------------------------//
     //
@@ -500,18 +524,11 @@ main(int argc, char** argv)
         modules = *app_modules;
         for(auto itr : *app_modules)
         {
-            char modname[MUTNAMELEN];
-            itr->getName(modname, MUTNAMELEN);
-            available_modules.insert(modname);
             auto procedures = itr->getProcedures();
             if(procedures)
             {
                 for(auto pitr : *procedures)
-                {
-                    char fname[FUNCNAMELEN];
-                    pitr->getName(fname, FUNCNAMELEN);
-                    available_procedures.insert(fname);
-                }
+                    available_module_functions.insert(module_function(itr, pitr));
             }
         }
     }
@@ -521,26 +538,16 @@ main(int argc, char** argv)
         functions = *app_functions;
         for(auto itr : *app_functions)
         {
-            char modname[MUTNAMELEN];
-            char fname[FUNCNAMELEN];
-
-            itr->getModuleName(modname, MUTNAMELEN);
-            BPatch_module* mod = itr->getModule();
+            module_t* mod = itr->getModule();
             if(mod)
-                mod->getName(modname, MUTNAMELEN);
-            else
-                itr->getModuleName(modname, MUTNAMELEN);
-            itr->getName(fname, FUNCNAMELEN);
-            available_modules.insert(modname);
-            available_procedures.insert(fname);
+                available_module_functions.insert(module_function(mod, itr));
         }
     }
 
     verbprintf(1, "Module size before loading instrumentation library: %lu\n",
                (long unsigned) app_modules->size());
 
-    dump_info("available_modules.txt", available_modules, 2);
-    dump_info("available_functions.txt", available_procedures, 2);
+    dump_info("available_module_functions.txt", available_module_functions, 1);
 
     //----------------------------------------------------------------------------------//
     //
@@ -563,7 +570,7 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    auto load_library = [addr_space](std::string _libname) {
+    auto load_library = [addr_space](string_t _libname) {
         verbprintf(0, "loading library: '%s'...\n", _libname.c_str());
         bool result = addr_space->loadLibrary(_libname.c_str());
         verbprintf(1, "loadLibrary(%s) result = %d\n", _libname.c_str(), result);
@@ -578,9 +585,8 @@ main(int argc, char** argv)
         }
     };
 
-    auto get_library_ext = [=](std::string lname) {
-        if(lname.find(".so") != std::string::npos ||
-           lname.find(".a") == lname.length() - 2)
+    auto get_library_ext = [=](string_t lname) {
+        if(lname.find(".so") != string_t::npos || lname.find(".a") == lname.length() - 2)
             return lname;
         if(!prefer_library.empty())
             return (lname +
@@ -607,10 +613,10 @@ main(int argc, char** argv)
 
     load_library(get_library_ext(libname));
 
-    if(use_mpip && !is_static_exe)
+    if(use_stubs["mpip"] && !is_static_exe)
         load_library("libtimemory-mpip.so");
 
-    if(use_ompt)
+    if(use_stubs["ompt"])
         load_library(get_library_ext("libtimemory-ompt"));
 
     for(auto itr : extra_libs)
@@ -632,18 +638,122 @@ main(int argc, char** argv)
     auto* env_func   = find_function(app_image, "timemory_trace_set_env");
     auto* mpi_func   = find_function(app_image, "timemory_trace_set_mpi");
     auto* hash_func  = find_function(app_image, "timemory_add_hash_id");
-
-    auto* mpip_beg_stub = find_function(app_image, "timemory_register_mpip");
-    auto* mpip_end_stub = find_function(app_image, "timemory_deregister_mpip");
-    auto* ompt_beg_stub = find_function(app_image, "timemory_register_ompt");
-    auto* ompt_end_stub = find_function(app_image, "timemory_deregister_ompt");
-
-    auto* exit_func = find_function(app_image, "exit");
-    if(!exit_func)
-        exit_func = find_function(app_image, "_exit");
+    auto* exit_func  = find_function(app_image, "exit", { "_exit" });
 
     verbprintf(0, "Instrumenting with '%s' and '%s'...\n", instr_push_func.c_str(),
                instr_pop_func.c_str());
+
+    //----------------------------------------------------------------------------------//
+    //
+    //  Handle supplemental instrumentation library functions
+    //
+    //----------------------------------------------------------------------------------//
+
+    auto add_instr_library = [&](const string_t& _name, const string_t& _beg,
+                                 const string_t& _end) {
+        verbprintf(3,
+                   "Attempting to find instrumentation for '%s' via '%s' and '%s'...\n",
+                   _name.c_str(), _beg.c_str(), _end.c_str());
+        if(_beg.empty() || _end.empty())
+            return false;
+        auto* _beg_func = find_function(app_image, _beg);
+        auto* _end_func = find_function(app_image, _end);
+        if(_beg_func && _end_func)
+        {
+            use_stubs[_name] = true;
+            beg_stubs[_name] = _beg_func;
+            end_stubs[_name] = _end_func;
+            used_stub_names.insert(_beg);
+            used_stub_names.insert(_end);
+            verbprintf(0, "Instrumenting '%s' via '%s' and '%s'...\n", _name.c_str(),
+                       _beg.c_str(), _end.c_str());
+            return true;
+        }
+        return false;
+    };
+
+    if(use_stubs["mpip"])
+        add_instr_library("mpip", "timemory_register_mpip", "timemory_deregister_mpip");
+    if(use_stubs["ompt"])
+        add_instr_library("ompt", "timemory_register_ompt", "timemory_deregister_ompt");
+
+    for(const auto& itr : extra_libs)
+    {
+        string_t _name = itr;
+        size_t   _pos  = _name.find_last_of('/');
+        if(_pos != npos_v)
+            _name = _name.substr(_pos + 1);
+        _pos = _name.find('.');
+        if(_pos != npos_v)
+            _name = _name.substr(0, _pos);
+        _pos = _name.find("libtimemory-");
+        if(_pos != npos_v)
+            _name = _name.erase(_pos, std::string("libtimemory-").length());
+        _pos = _name.find("lib");
+        if(_pos == 0)
+            _name = _name.substr(_pos + std::string("lib").length());
+        while((_pos = _name.find("-")) != npos_v)
+            _name.replace(_pos, 1, "_");
+
+        verbprintf(2,
+                   "Supplemental instrumentation library '%s' is named '%s' after "
+                   "removing everything before last '/', everything after first '.', and "
+                   "'libtimemory-'...\n",
+                   itr.c_str(), _name.c_str());
+
+        use_stubs[_name] = false;
+
+        string_t best_init_name = "";
+        for(const auto& itr : init_stub_names)
+        {
+            if(itr.find(_name) != npos_v && used_stub_names.count(itr) == 0)
+            {
+                verbprintf(
+                    3, "Found possible match for '%s' instrumentation init: '%s'...\n",
+                    _name.c_str(), itr.c_str());
+                best_init_name = itr;
+                break;
+            }
+        }
+
+        string_t base_fini_name = "";
+        for(const auto& itr : fini_stub_names)
+        {
+            if(itr.find(_name) != npos_v && used_stub_names.count(itr) == 0)
+            {
+                verbprintf(
+                    3, "Found possible match for '%s' instrumentation fini: '%s'...\n",
+                    _name.c_str(), itr.c_str());
+                base_fini_name = itr;
+                break;
+            }
+        }
+
+        if(add_instr_library(_name, best_init_name, base_fini_name))
+            continue;
+
+        // check user-specified signatures first
+        for(const auto& bitr : init_stub_names)
+        {
+            if(used_stub_names.find(bitr) != used_stub_names.end())
+                continue;
+            for(const auto& fitr : fini_stub_names)
+            {
+                if(used_stub_names.find(fitr) != used_stub_names.end())
+                    continue;
+                if(add_instr_library(_name, bitr, fitr))
+                    goto found_instr_functions;  // exit loop after match
+            }
+        }
+
+        // check standard function signature if no user-specified matches
+        if(add_instr_library(_name, TIMEMORY_JOIN("", "timemory_register_" + _name),
+                             TIMEMORY_JOIN("", "timemory_deregister_" + _name)))
+            continue;
+
+    found_instr_functions:
+        continue;
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -667,7 +777,7 @@ main(int argc, char** argv)
         }
     }
 
-    using pair_t = std::pair<procedure_t*, std::string>;
+    using pair_t = std::pair<procedure_t*, string_t>;
 
     for(auto itr :
         { pair_t(main_func, main_fname), pair_t(entr_trace, instr_push_func),
@@ -679,7 +789,7 @@ main(int argc, char** argv)
             continue;
         if(!itr.first)
         {
-            std::stringstream ss;
+            stringstream_t ss;
             ss << "Error! Couldn't find '" << itr.second.c_str() << "' function";
             fprintf(stderr, "[timemory-run]> %s\n", ss.str().c_str());
             throw std::runtime_error(ss.str());
@@ -692,13 +802,13 @@ main(int argc, char** argv)
                                  "with MPI and GOTCHA support");
     }
 
-    if(use_mpip && !(mpip_beg_stub || mpip_end_stub))
+    if(use_stubs["mpip"] && !(beg_stubs["mpip"] || end_stubs["mpip"]))
     {
         throw std::runtime_error("MPIP support was requested but could not find "
                                  "timemory_{register,deregister}_mpip functions");
     }
 
-    if(use_ompt && !(ompt_beg_stub || ompt_end_stub))
+    if(use_stubs["ompt"] && !(beg_stubs["ompt"] || end_stubs["ompt"]))
     {
         throw std::runtime_error("OMPT support was requested but could not find "
                                  "timemory_{register,deregister}_ompt functions");
@@ -709,7 +819,7 @@ main(int argc, char** argv)
         // is not defined in the DEFAULT_MODULE
         if(_func && !_has_debug_info)
         {
-            BPatch_module* _module = _func->getModule();
+            module_t* _module = _func->getModule();
             if(_module)
             {
                 char moduleName[MUTNAMELEN];
@@ -777,18 +887,23 @@ main(int argc, char** argv)
 
     auto init_call = init_call_args.get(init_func);
     auto fini_call = fini_call_args.get(fini_func);
+    auto exit_call = fini_call_args.get(exit_func);
     auto umpi_call = umpi_call_args.get(mpi_func);
 
     auto main_beg_call = main_call_args.get(entr_trace);
     auto main_end_call = main_call_args.get(exit_trace);
 
     auto mpip_env_call = mpip_call_args.get(env_func);
-    auto mpip_beg_call = none_call_args.get(mpip_beg_stub);
-    auto mpip_end_call = none_call_args.get(mpip_end_stub);
-
     auto ompt_env_call = ompt_call_args.get(env_func);
-    auto ompt_beg_call = none_call_args.get(ompt_beg_stub);
-    auto ompt_end_call = none_call_args.get(ompt_end_stub);
+
+    for(const auto& itr : use_stubs)
+    {
+        if(beg_stubs[itr.first] && end_stubs[itr.first])
+        {
+            beg_expr[itr.first] = none_call_args.get(beg_stubs[itr.first]);
+            end_expr[itr.first] = none_call_args.get(end_stubs[itr.first]);
+        }
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -796,20 +911,23 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    if(use_mpip)
-        verbprintf(0, "+ Adding mpip instrumentation...\n");
-    if(use_ompt)
-        verbprintf(0, "+ Adding ompt instrumentation...\n");
-
-    if(use_mpip && mpip_env_call)
+    if(use_stubs["mpip"] && mpip_env_call)
         init_names.push_back(mpip_env_call.get());
-    if(use_ompt && ompt_env_call)
+    if(use_stubs["ompt"] && ompt_env_call)
         init_names.push_back(ompt_env_call.get());
 
-    if(use_mpip && mpip_beg_call)
-        init_names.push_back(mpip_beg_call.get());
-    if(use_ompt && ompt_beg_call)
-        init_names.push_back(ompt_beg_call.get());
+    for(const auto& itr : beg_expr)
+    {
+        if(itr.second)
+        {
+            verbprintf(0, "+ Adding %s instrumentation...\n", itr.first.c_str());
+            init_names.push_back(itr.second.get());
+        }
+        else
+        {
+            verbprintf(0, "- Skipping %s instrumentation...\n", itr.first.c_str());
+        }
+    }
 
     if(use_mpi && umpi_call)
         init_names.push_back(umpi_call.get());
@@ -835,12 +953,17 @@ main(int argc, char** argv)
         insert_instr(addr_space, main_func, fini_call, BPatch_exit, nullptr, nullptr);
     }
 
-    fini_names.push_back(fini_call.get());
+    if(fini_call)
+        fini_names.push_back(fini_call.get());
 
-    if(use_mpip && mpip_end_call)
-        fini_names.push_back(mpip_end_call.get());
-    if(use_ompt && ompt_end_call)
-        fini_names.push_back(ompt_end_call.get());
+    for(const auto& itr : end_expr)
+    {
+        if(itr.second)
+            fini_names.push_back(itr.second.get());
+    }
+
+    if(exit_func && exit_call)
+        insert_instr(addr_space, exit_func, exit_call, BPatch_entry, nullptr, nullptr);
 
     //----------------------------------------------------------------------------------//
     //
@@ -859,7 +982,7 @@ main(int argc, char** argv)
             char modname[MUTNAMELEN];
             char fname[FUNCNAMELEN];
 
-            BPatch_module* mod = itr->getModule();
+            module_t* mod = itr->getModule();
             if(mod)
                 mod->getName(modname, MUTNAMELEN);
             else
@@ -911,23 +1034,15 @@ main(int argc, char** argv)
                 continue;
             }
 
-            if(instrumented_procedures.find(name.get()) != instrumented_procedures.end())
-            {
-                verbprintf(1, "Skipping function [duplicate]: %s\n", name.get().c_str());
-                continue;
-            }
-
-            hash_ids.push_back({ std::hash<std::string>()(name.get()), name.get() });
-            available_modules.insert(modname);
-            available_procedures.insert(name.get());
-            instrumented_modules.insert(modname);
-            instrumented_procedures.insert(name.get());
+            hash_ids.push_back({ std::hash<string_t>()(name.get()), name.get() });
+            available_module_functions.insert(module_function(mod, itr));
+            instrumented_module_functions.insert(module_function(mod, itr));
 
             auto _f = [=]() {
                 verbprintf(0, "Instrumenting |> [ %s ] -> [ %s ]\n", modname,
                            name.m_name.c_str());
                 auto _name       = name.get();
-                auto _hash       = std::hash<std::string>()(_name);
+                auto _hash       = std::hash<string_t>()(_name);
                 auto _trace_entr = (entr_hash) ? timemory_call_expr(_hash)
                                                : timemory_call_expr(_name.c_str());
                 auto _trace_exit = (exit_hash) ? timemory_call_expr(_hash)
@@ -955,7 +1070,7 @@ main(int argc, char** argv)
                     auto _lf = [=]() {
                         auto lname        = get_loop_file_line_info(mod, itr, flow, litr);
                         auto _lname       = lname.get();
-                        auto _lhash       = std::hash<std::string>()(_lname);
+                        auto _lhash       = std::hash<string_t>()(_lname);
                         auto _ltrace_entr = (entr_hash)
                                                 ? timemory_call_expr(_lhash)
                                                 : timemory_call_expr(_lname.c_str());
@@ -984,7 +1099,9 @@ main(int argc, char** argv)
 
     if(is_static_exe && false)
     {
-        bool loadResult = load_dependent_libraries(addr_space, bindings);
+        char* bindings   = new char[MUTNAMELEN];
+        bool  loadResult = load_dependent_libraries(addr_space, bindings);
+        delete[] bindings;
         if(!loadResult)
         {
             fprintf(stderr, "Failed to load dependent libraries\n");
@@ -1076,10 +1193,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    dump_info("available_modules.txt", available_modules, 1);
-    dump_info("available_functions.txt", available_procedures, 1);
-    dump_info("instrumented_modules.txt", instrumented_modules, 0);
-    dump_info("instrumented_functions.txt", instrumented_procedures, 0);
+    dump_info("available_module_functions.txt", available_module_functions, 0);
+    dump_info("instrumented_module_functions.txt", instrumented_module_functions, 0);
 
     //----------------------------------------------------------------------------------//
     //
@@ -1094,8 +1209,8 @@ main(int argc, char** argv)
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
 
-        auto outf = std::string(outfile);
-        if(outf.find('/') != std::string::npos)
+        auto outf = string_t(outfile);
+        if(outf.find('/') != string_t::npos)
         {
             auto outdir = outf.substr(0, outf.find_last_of('/') - 1);
             tim::makedir(outdir);
@@ -1107,41 +1222,23 @@ main(int argc, char** argv)
             printf("\nThe instrumented executable image is stored in '%s/%s'\n", cwd,
                    outfile);
 
-#if defined(TIMEMORY_USE_LDD)
-        printf("getting trace for %s\n", cmdv0.c_str());
-        int                      counter = 0;
-        std::vector<std::string> linked_libraries;
+        printf("[timemory-run]> Getting linked libraries for %s...\n", cmdv0.c_str());
+        printf("[timemory-run]> Consider instrumenting the relevant libraries...\n\n");
 
         tim::set_env("LD_TRACE_LOADED_OBJECTS", "1", 1);
         TIMEMORY_PIPE* ldd = timemory_popen(cmdv0.c_str());
         tim::set_env("LD_TRACE_LOADED_OBJECTS", "0", 1);
 
-        while(ldd)
-        {
-            char buffer[4096];
-            // auto ret = fscanf(fd, "%s", buffer);
-            auto ret = fgets(buffer, 4096, ldd->read_fd);
-            if(ret == nullptr || strlen(buffer) == 0)
-            {
-                if(counter++ > 50)
-                    break;
-                continue;
-            }
-            auto line = std::string(buffer);
-            auto loc  = std::string::npos;
-            while((loc = line.find_first_of("\n\t")) != std::string::npos)
-                line.erase(loc, 1);
-            auto delim = tim::delimit(line, " \n\t=>");
-            for(auto itr : delim)
-            {
-                if(itr.find('/') == 0)
-                    linked_libraries.push_back(itr);
-            }
-        }
-        timemory_pclose(ldd);
+        strvec_t linked_libraries = read_timemory_fork(ldd);
+
+        auto err = timemory_pclose(ldd);
+        if(err != 0)
+            perror("Error in timemory_fork");
+
         for(auto itr : linked_libraries)
-            printf("\tLIBRARY: %s\n", itr.c_str());
-#endif
+            printf("\t%s\n", itr.c_str());
+
+        printf("\n");
     }
     else
     {
@@ -1215,10 +1312,10 @@ main(int argc, char** argv)
 //======================================================================================//
 //
 void
-read_collection(const std::string& fname, std::set<std::string>& collection_set)
+read_collection(const string_t& fname, strset_t& collection_set)
 {
-    std::string           searched_paths;
-    std::set<std::string> prefixes = { ".", get_absolute_path(argv0.c_str()) };
+    string_t searched_paths;
+    strset_t prefixes = { ".", get_absolute_path(argv0.c_str()) };
     for(const auto& pitr : prefixes)
     {
         for(auto itr : collection_paths)
@@ -1241,7 +1338,7 @@ read_collection(const std::string& fname, std::set<std::string>& collection_set)
             if(ifs)
             {
                 verbprintf(0, ">    reading collection file @ %s...", fpath.c_str());
-                std::string tmp;
+                string_t tmp;
                 while(!ifs.eof())
                 {
                     ifs >> tmp;
@@ -1253,7 +1350,7 @@ read_collection(const std::string& fname, std::set<std::string>& collection_set)
         }
     }
     searched_paths = searched_paths.substr(0, searched_paths.length() - 2);
-    std::stringstream ss;
+    stringstream_t ss;
     ss << "Unable to find \"" << fname << "\". Searched paths: " << searched_paths;
     if(werror)
         throw std::runtime_error(ss.str());
@@ -1264,7 +1361,7 @@ read_collection(const std::string& fname, std::set<std::string>& collection_set)
 //======================================================================================//
 
 bool
-process_file_for_instrumentation(const std::string& file_name)
+process_file_for_instrumentation(const string_t& file_name)
 {
     auto is_include = [&](bool _if_empty) {
         if(file_include.empty())
@@ -1298,7 +1395,7 @@ process_file_for_instrumentation(const std::string& file_name)
         return true;
     }
 
-    std::string       ext_str = "\\.(C|S)$";
+    string_t          ext_str = "\\.(C|S)$";
     static std::regex ext_regex(ext_str, regex_opts);
     static std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$", regex_opts);
     static std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
@@ -1363,7 +1460,7 @@ process_file_for_instrumentation(const std::string& file_name)
     bool use = is_include(true) && !is_exclude();
     if(use)
     {
-        static std::set<std::string> already_reported;
+        static strset_t already_reported;
         if(already_reported.count(file_name) == 0)
         {
             verbprintf(2, "%s |> [ %s ]\n", __FUNCTION__, file_name.c_str());
@@ -1376,7 +1473,7 @@ process_file_for_instrumentation(const std::string& file_name)
 //======================================================================================//
 
 bool
-instrument_entity(const std::string& function_name)
+instrument_entity(const string_t& function_name)
 {
     auto is_include = [&](bool _if_empty) {
         if(func_include.empty())
@@ -1423,8 +1520,8 @@ instrument_entity(const std::string& function_name)
         "^(_|frame_dummy|\\(|targ|new|delete|operator new|operator delete|std::allocat|"
         "nvtx|gcov|main\\.cold\\.|TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)",
         regex_opts);
-    static std::regex     stlfunc("^std::", regex_opts);
-    std::set<std::string> whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
+    static std::regex stlfunc("^std::", regex_opts);
+    strset_t          whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
     {
@@ -1485,7 +1582,7 @@ insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
              call_expr_pointer_t traceFunc, procedure_loc_t traceLoc,
              flow_graph_t* cfGraph, basic_loop_t* loopToInstrument)
 {
-    BPatch_module* module = funcToInstr->getModule();
+    module_t* module = funcToInstr->getModule();
     if(!module || !traceFunc)
         return;
 
@@ -1551,9 +1648,9 @@ module_constraint(char* fname)
     // fname is the name of module/file
     int len = strlen(fname);
 
-    std::string _fname = fname;
-    if(_fname.find("timemory") != std::string::npos ||
-       _fname.find("tim::") != std::string::npos)
+    string_t _fname = fname;
+    if(_fname.find("timemory") != string_t::npos ||
+       _fname.find("tim::") != string_t::npos)
         return true;
 
     if((strcmp(fname, "DEFAULT_MODULE") == 0) || (strcmp(fname, "LIBRARY_MODULE") == 0) ||
@@ -1573,7 +1670,7 @@ module_constraint(char* fname)
         return false;
     }
 
-    if(process_file_for_instrumentation(std::string(fname)))
+    if(process_file_for_instrumentation(string_t(fname)))
         return false;
 
     // do not instrument
@@ -1586,9 +1683,9 @@ module_constraint(char* fname)
 int
 routine_constraint(const char* fname)
 {
-    std::string _fname = fname;
-    if(_fname.find("timemory") != std::string::npos ||
-       _fname.find("tim::") != std::string::npos)
+    string_t _fname = fname;
+    if(_fname.find("timemory") != string_t::npos ||
+       _fname.find("tim::") != string_t::npos)
         return true;
 
     if((strncmp(fname, "tim", 3) == 0) || (strstr(fname, "FunctionInfo") != 0) ||
@@ -1607,7 +1704,7 @@ routine_constraint(const char* fname)
     else
     {
         // Should the routine fname be instrumented?
-        if(instrument_entity(std::string(fname)))
+        if(instrument_entity(string_t(fname)))
         {
             // Yes it should be instrumented. Return false
             return false;
@@ -1673,6 +1770,4 @@ static inline void
 consume()
 {
     consume_parameters(initialize_expr, error_print, debug_print, expect_error);
-    if(false)
-        timemory_thread_exit(nullptr, ExitedNormally);
 }

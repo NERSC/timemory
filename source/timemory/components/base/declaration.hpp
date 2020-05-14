@@ -143,6 +143,8 @@ private:
     friend struct operation::serialization<Tp>;
     friend struct operation::finalize::get<Tp, true>;
     friend struct operation::finalize::get<Tp, false>;
+    friend struct operation::finalize::print<Tp, true>;
+    friend struct operation::finalize::print<Tp, false>;
 
     template <typename Ret, typename Lhs, typename Rhs>
     friend struct operation::compose;

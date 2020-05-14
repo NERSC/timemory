@@ -259,7 +259,7 @@ struct dummy
 
 ```
 
-## timemory Preload Interface
+## Library Interface
 
 ### Preload Declaration
 
@@ -282,7 +282,7 @@ Create a separate file, such as `performance.cpp`, to your project with the foll
 
 ```cpp
 #include <cstdint>
-#include "commonDefines.h"
+#include "performance.hpp"
 
 extern "C"
 {

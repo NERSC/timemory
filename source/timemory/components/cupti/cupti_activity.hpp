@@ -73,7 +73,10 @@ struct cupti_activity : public base<cupti_activity, uint64_t>
     using kernel_names_t    = std::unordered_set<std::string>;
 
     static std::string label() { return "cupti_activity"; }
-    static std::string description() { return "CUpti Activity API"; }
+    static std::string description()
+    {
+        return "Wall-clock execution timing for the CUDA API";
+    }
 
     //----------------------------------------------------------------------------------//
 

@@ -41,22 +41,30 @@ if(TIMEMORY_USE_DYNINST)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp.in
         ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp @ONLY)
 
-    add_executable(timemory-run timemory-run.cpp timemory-run-details.cpp timemory-run-fork.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp
-        timemory-run.hpp timemory-run-fork.hpp)
+    add_library(timemory-run-interface INTERFACE)
 
-    target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+    add_target_flag_if_avail(timemory-run-interface "-Wno-unused-function")
 
-    target_link_libraries(timemory-run PRIVATE
+    target_link_libraries(timemory-run-interface INTERFACE
         timemory-headers
         timemory-dyninst
         timemory-arch
         timemory-compile-options
-        timemory-roofline-options
-    )
+        timemory-roofline-options)
 
-    set_target_properties(timemory-run PROPERTIES
-        INSTALL_RPATH_USE_LINK_PATH ON)
+    add_executable(timemory-run
+        ${CMAKE_CURRENT_LIST_DIR}/timemory-run.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/timemory-run.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/timemory-run-fork.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/timemory-run-fork.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/timemory-run-details.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/generated/timemory-run-regex.cpp)
+
+    target_include_directories(timemory-run PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+    target_link_libraries(timemory-run PRIVATE timemory-run-interface)
+
+    set_target_properties(timemory-run PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 
     install(TARGETS timemory-run DESTINATION bin)
 

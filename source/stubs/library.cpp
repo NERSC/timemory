@@ -72,6 +72,8 @@ extern "C"
     void     timemory_pause(void) {}
     void     timemory_resume(void) {}
     void     timemory_set_default(const char*) {}
+    void     timemory_add_components(const char*) {}
+    void     timemory_remove_components(const char*) {}
     void     timemory_push_components(const char*) {}
     void     timemory_push_components_enum(int, ...) {}
     void     timemory_pop_components(void) {}

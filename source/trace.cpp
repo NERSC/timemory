@@ -136,8 +136,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
-        timemory_push_trace("int main()");
-        timemory_push_region("int main()");
+        timemory_push_trace("MPI_Init(int*, char**)");
+        // timemory_push_region("MPI_Init(int*, char**)");
         return ret;
     }
 
@@ -148,8 +148,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
-        timemory_push_trace("int main()");
-        timemory_push_region("int main()");
+        timemory_push_trace("MPI_Init_thread(int*, char**, int, int*)");
+        // timemory_push_region("MPI_Init_thread(int*, char**, int, int*)");
         return ret;
     }
 
@@ -158,8 +158,10 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     {
         if(mpi_is_attached)
         {
-            timemory_pop_region("int main()");
-            timemory_pop_trace("int main()");
+            // timemory_pop_region("MPI_Init_thread(int*, char**, int, int*)");
+            timemory_pop_trace("MPI_Init_thread(int*, char**, int, int*)");
+            // timemory_pop_region("MPI_Init(int*, char**)");
+            timemory_pop_trace("MPI_Init(int*, char**)");
             timemory_trace_finalize();
         }
         auto ret                 = MPI_Finalize();
@@ -558,10 +560,13 @@ extern "C"
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
 
             // reset traces just in case
-            user_trace_bundle::reset();
+            // user_trace_bundle::reset();
 
             // configure bundle
-            user_trace_bundle::global_init(nullptr);
+            // user_trace_bundle::global_init(nullptr);
+            tim::env::configure<user_trace_bundle>("TIMEMORY_TRACE_COMPONENTS", args);
+            // tim::manager::get_storage<user_trace_bundle>::initialize();
+            // user_trace_bundle::get_storage()->data_init();
 
             tim::settings::parse();
         }

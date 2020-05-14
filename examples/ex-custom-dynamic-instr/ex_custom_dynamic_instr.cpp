@@ -21,30 +21,35 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
-#pragma once
-
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/rusage/extern/base.hpp"
-#include "timemory/components/rusage/extern/operations.hpp"
-#include "timemory/components/rusage/extern/storage.hpp"
-
-//======================================================================================//
 //
-namespace tim
+
+#include "timemory/library.h"
+#include "timemory/timemory.hpp"
+
+using namespace tim::component;
+//
+//--------------------------------------------------------------------------------------//
+//
+extern "C" void
+timemory_register_ex_custom_dynamic_instr()
 {
-namespace component
-{
+    PRINT_HERE("%s", "");
+    // insert monotonic clock component into structure
+    // used by timemory-run in --mode=trace
+    user_trace_bundle::global_init(nullptr);
+    user_trace_bundle::configure<monotonic_clock>();
+    // tim::configure<user_trace_bundle>("monotonic_clock");
+
+    // insert monotonic clock component into structure
+    // used by timemory-run in --mode=region
+    timemory_add_components("monotonic_clock");
+}
 //
-TIMEMORY_EXTERN_TEMPLATE(struct base<data_rss>)
+//--------------------------------------------------------------------------------------//
 //
-}  // namespace component
-}  // namespace tim
+extern "C" void
+timemory_deregister_ex_custom_dynamic_instr()
+{}
 //
-TIMEMORY_EXTERN_OPERATIONS(component::data_rss, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::data_rss, data_rss)
-//
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 //

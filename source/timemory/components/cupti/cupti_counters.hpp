@@ -177,7 +177,7 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
     static int64_t unit() { return 1; }
     // leave these empty
     static string_t label() { return "cupti_counters"; }
-    static string_t description() { return "CUpti Callback API for hardware counters"; }
+    static string_t description() { return "Hardware counters for the CUDA API"; }
     static string_t display_unit() { return ""; }
 
     static value_type record()

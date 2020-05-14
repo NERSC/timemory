@@ -1,7 +1,36 @@
+// MIT License
+//
+// Copyright (c) 2020, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+
 #include "timemory-run-fork.hpp"
 
-#ifndef OPEN_MAX
-#    define OPEN_MAX 256
+#if !defined(OPEN_MAX)
+#    define OPEN_MAX 1024
+#endif
+
+#if !defined(NGROUPS_MAX)
+#    define NGROUPS_MAX 16
 #endif
 
 static int   orig_ngroups = -1;
@@ -13,7 +42,9 @@ extern "C"
 {
     extern char** environ;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 void
 timemory_drop_privileges(int permanent)
 {
@@ -22,19 +53,19 @@ timemory_drop_privileges(int permanent)
 
     if(!permanent)
     {
-        /* Save information about the privileges that are being dropped so that they
-         * can be restored later.
-         */
+        // Save information about the privileges that are being dropped so that they
+        // can be restored later.
+        //
         orig_gid     = oldgid;
         orig_uid     = olduid;
         orig_ngroups = getgroups(NGROUPS_MAX, orig_groups);
     }
 
-    /* If root privileges are to be dropped, be sure to pare down the ancillary
-     * groups for the process before doing anything else because the setgroups(  )
-     * system call requires root privileges.  Drop ancillary groups regardless of
-     * whether privileges are being dropped temporarily or permanently.
-     */
+    // If root privileges are to be dropped, be sure to pare down the ancillary
+    // groups for the process before doing anything else because the setgroups(  )
+    // system call requires root privileges.  Drop ancillary groups regardless of
+    // whether privileges are being dropped temporarily or permanently.
+    //
     if(!olduid)
         setgroups(1, &newgid);
 
@@ -66,7 +97,7 @@ timemory_drop_privileges(int permanent)
 #endif
     }
 
-    /* verify that the changes were successful */
+    // verify that the changes were successful
     if(permanent)
     {
         if(newgid != oldgid && (setegid(oldgid) != -1 || getegid() != newgid))
@@ -82,7 +113,9 @@ timemory_drop_privileges(int permanent)
             abort();
     }
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 void
 timemory_restore_privileges(void)
 {
@@ -95,41 +128,52 @@ timemory_restore_privileges(void)
     if(!orig_uid)
         setgroups(orig_ngroups, orig_groups);
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 static int
 open_devnull(int fd)
 {
     FILE* f = 0;
-
-    if(!fd)
-        f = freopen(_PATH_DEVNULL, "rb", stdin);
-    else if(fd == 1)
-        f = freopen(_PATH_DEVNULL, "wb", stdout);
-    else if(fd == 2)
-        f = freopen(_PATH_DEVNULL, "wb", stderr);
+    switch(fd)
+    {
+        case 0: f = freopen("/dev/null", "rb", stdin); break;
+        case 1: f = freopen("/dev/null", "wb", stdout); break;
+        case 2: f = freopen("/dev/null", "wb", stderr); break;
+        default: break;
+    }
     return (f && fileno(f) == fd);
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 void
 timemory_sanitize_files(void)
 {
-    int         fd, fds;
+    int         fds;
     struct stat st;
 
-    /* Make sure all open descriptors other than the standard ones are closed */
+    // Make sure all open descriptors other than the standard ones are closed
     if((fds = getdtablesize()) == -1)
         fds = OPEN_MAX;
-    for(fd = 3; fd < fds; fd++)
-        close(fd);
 
-    /* Verify that the standard descriptors are open.  If they're not, attempt to
-     * open them using /dev/null.  If any are unsuccessful, abort.
-     */
-    for(fd = 0; fd < 3; fd++)
+    // closing these files results in the inability to read the pipe from the parent
+    // for(int fd = 3; fd < fds; ++fd)
+    //    close(fd);
+
+    // Verify that the standard descriptors are open.  If they're not, attempt to
+    // open them using /dev/null.  If any are unsuccessful, abort.
+    for(int fd = 0; fd < 3; ++fd)
+    {
         if(fstat(fd, &st) == -1 && (errno != EBADF || !open_devnull(fd)))
+        {
             abort();
+        }
+    }
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 pid_t
 timemory_fork(void)
 {
@@ -138,25 +182,25 @@ timemory_fork(void)
     if((childpid = fork()) == -1)
         return -1;
 
-    /* Reseed PRNGs in both the parent and the child */
-    /* See Chapter 11 for examples */
-
-    /* If this is the parent process, there's nothing more to do */
+    // If this is the parent process, there's nothing more to do
     if(childpid != 0)
         return childpid;
 
-    /* This is the child process */
-    timemory_sanitize_files();   /* Close all open files.  See Recipe 1.1 */
-    timemory_drop_privileges(1); /* Permanently drop privileges.  See Recipe 1.3 */
+    // This is the child process
+    timemory_sanitize_files();    // Close all open files.
+    timemory_drop_privileges(1);  // Permanently drop privileges.
 
     return 0;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_PIPE*
 timemory_popen(const char* path, char** argv, char** envp)
 {
-    int            stdin_pipe[2], stdout_pipe[2];
-    TIMEMORY_PIPE* p;
+    int            stdin_pipe[2]  = { 0, 0 };
+    int            stdout_pipe[2] = { 0, 0 };
+    TIMEMORY_PIPE* p              = nullptr;
 
     static char** _argv = []() {
         static auto _tmp = new char*[1];
@@ -169,22 +213,27 @@ timemory_popen(const char* path, char** argv, char** envp)
     if(argv == nullptr)
         argv = _argv;
 
-    if(!(p = (TIMEMORY_PIPE*) malloc(sizeof(TIMEMORY_PIPE))))
-        return 0;
-    p->read_fd = p->write_fd = 0;
-    p->child_pid             = -1;
+    p = new TIMEMORY_PIPE;
+
+    if(!p)
+        return nullptr;
+
+    p->read_fd   = nullptr;
+    p->write_fd  = nullptr;
+    p->child_pid = -1;
 
     if(pipe(stdin_pipe) == -1)
     {
-        free(p);
-        return 0;
+        delete p;
+        return nullptr;
     }
+
     if(pipe(stdout_pipe) == -1)
     {
         close(stdin_pipe[1]);
         close(stdin_pipe[0]);
-        free(p);
-        return 0;
+        delete p;
+        return nullptr;
     }
 
     if(!(p->read_fd = fdopen(stdout_pipe[0], "r")))
@@ -193,17 +242,18 @@ timemory_popen(const char* path, char** argv, char** envp)
         close(stdout_pipe[0]);
         close(stdin_pipe[1]);
         close(stdin_pipe[0]);
-        free(p);
-        return 0;
+        delete p;
+        return nullptr;
     }
+
     if(!(p->write_fd = fdopen(stdin_pipe[1], "w")))
     {
         fclose(p->read_fd);
         close(stdout_pipe[1]);
         close(stdin_pipe[1]);
         close(stdin_pipe[0]);
-        free(p);
-        return 0;
+        delete p;
+        return nullptr;
     }
 
     if((p->child_pid = timemory_fork()) == -1)
@@ -212,13 +262,13 @@ timemory_popen(const char* path, char** argv, char** envp)
         fclose(p->read_fd);
         close(stdout_pipe[1]);
         close(stdin_pipe[0]);
-        free(p);
-        return 0;
+        delete p;
+        return nullptr;
     }
 
     if(!p->child_pid)
     {
-        /* this is the child process */
+        // this is the child process
         close(stdout_pipe[0]);
         close(stdin_pipe[1]);
         if(stdin_pipe[0] != 0)
@@ -237,9 +287,12 @@ timemory_popen(const char* path, char** argv, char** envp)
 
     close(stdout_pipe[1]);
     close(stdin_pipe[0]);
+
     return p;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+//
 int
 timemory_pclose(TIMEMORY_PIPE* p)
 {
@@ -257,9 +310,12 @@ timemory_pclose(TIMEMORY_PIPE* p)
         fclose(p->read_fd);
     if(p->write_fd)
         fclose(p->write_fd);
-    free(p);
+    delete p;
     if(pid != -1 && WIFEXITED(status))
         return WEXITSTATUS(status);
     else
         return (pid == -1 ? -1 : 0);
 }
+//
+//--------------------------------------------------------------------------------------//
+//

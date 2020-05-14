@@ -68,13 +68,38 @@
 #    define PATH_MAX std::numeric_limits<int>::max();
 #endif
 
-using string_t = std::string;
-
 struct function_signature;
+struct module_function;
 
-using exec_callback_t = BPatchExecCallback;
-using exit_callback_t = BPatchExitCallback;
-using fork_callback_t = BPatchForkCallback;
+using string_t              = std::string;
+using stringstream_t        = std::stringstream;
+using strvec_t              = std::vector<string_t>;
+using strset_t              = std::set<string_t>;
+using regexvec_t            = std::vector<std::regex>;
+using fmodset_t             = std::set<module_function>;
+using exec_callback_t       = BPatchExecCallback;
+using exit_callback_t       = BPatchExitCallback;
+using fork_callback_t       = BPatchForkCallback;
+using patch_t               = BPatch;
+using image_t               = BPatch_image;
+using module_t              = BPatch_module;
+using procedure_t           = BPatch_function;
+using snippet_t             = BPatch_snippet;
+using call_expr_t           = BPatch_funcCallExpr;
+using address_space_t       = BPatch_addressSpace;
+using flow_graph_t          = BPatch_flowGraph;
+using basic_loop_t          = BPatch_basicBlockLoop;
+using procedure_loc_t       = BPatch_procedureLocation;
+using point_t               = BPatch_point;
+using local_var_t           = BPatch_localVar;
+using const_expr_t          = BPatch_constExpr;
+using error_level_t         = BPatchErrorLevel;
+using snippet_pointer_t     = std::shared_ptr<snippet_t>;
+using call_expr_pointer_t   = std::shared_ptr<call_expr_t>;
+using snippet_vec_t         = BPatch_Vector<snippet_t*>;
+using procedure_vec_t       = BPatch_Vector<procedure_t*>;
+using basic_loop_vec_t      = BPatch_Vector<basic_loop_t*>;
+using snippet_pointer_vec_t = std::vector<snippet_pointer_t>;
 
 void
 timemory_prefork_callback(BPatch_thread* parent, BPatch_thread* child);
@@ -85,49 +110,27 @@ timemory_prefork_callback(BPatch_thread* parent, BPatch_thread* child);
 //
 //======================================================================================//
 
-static int         expect_error       = NO_ERROR;
-static int         debug_print        = 0;
-static int         binary_rewrite     = 0;  /* by default, it is turned off */
-static int         error_print        = 0;  // external "dyninst" tracing
-static int         verbose_level      = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
-static bool        loop_level_instr   = false;
-static bool        werror             = false;
-static bool        stl_func_instr     = false;
-static bool        use_mpi            = false;
-static bool        use_mpip           = false;
-static bool        use_ompt           = false;
-static bool        is_static_exe      = false;
-static bool        use_return_info    = false;
-static bool        use_args_info      = false;
-static bool        use_file_info      = false;
-static bool        use_line_info      = false;
-static std::string main_fname         = "main";
-static std::string argv0              = "";
-static std::string cmdv0              = "";
-static std::string default_components = "wall_clock";
-static std::string instr_push_func    = "timemory_push_trace";
-static std::string instr_pop_func     = "timemory_pop_trace";
-static std::string prefer_library     = "";
-
-using snippet_t             = BPatch_snippet;
-using snippet_vec_t         = BPatch_Vector<snippet_t*>;
-using snippet_pointer_t     = std::shared_ptr<snippet_t>;
-using snippet_pointer_vec_t = std::vector<snippet_pointer_t>;
-using procedure_t           = BPatch_function;
-using procedure_vec_t       = BPatch_Vector<procedure_t*>;
-using call_expr_t           = BPatch_funcCallExpr;
-using call_expr_pointer_t   = std::shared_ptr<BPatch_funcCallExpr>;
-using address_space_t       = BPatch_addressSpace;
-using basic_loop_t          = BPatch_basicBlockLoop;
-using basic_loop_vec_t      = BPatch_Vector<basic_loop_t*>;
-using flow_graph_t          = BPatch_flowGraph;
-using patch_t               = BPatch;
-using image_t               = BPatch_image;
-using point_t               = BPatch_point;
-using module_t              = BPatch_module;
-using procedure_loc_t       = BPatch_procedureLocation;
-using error_level_t         = BPatchErrorLevel;
-using local_var_t           = BPatch_localVar;
+static bool     binary_rewrite     = 0;
+static bool     loop_level_instr   = false;
+static bool     werror             = false;
+static bool     stl_func_instr     = false;
+static bool     use_mpi            = false;
+static bool     is_static_exe      = false;
+static bool     use_return_info    = false;
+static bool     use_args_info      = false;
+static bool     use_file_info      = false;
+static bool     use_line_info      = false;
+static int      expect_error       = NO_ERROR;
+static int      debug_print        = 0;
+static int      error_print        = 0;  // external "dyninst" tracing
+static int      verbose_level      = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
+static string_t main_fname         = "main";
+static string_t argv0              = "";
+static string_t cmdv0              = "";
+static string_t default_components = "wall_clock";
+static string_t instr_push_func    = "timemory_push_trace";
+static string_t instr_pop_func     = "timemory_pop_trace";
+static string_t prefer_library     = "";
 
 static patch_t*      bpatch          = nullptr;
 static call_expr_t*  initialize_expr = nullptr;
@@ -135,20 +138,17 @@ static call_expr_t*  terminate_expr  = nullptr;
 static snippet_vec_t init_names;
 static snippet_vec_t fini_names;
 
-static std::vector<std::regex>  func_include;
-static std::vector<std::regex>  func_exclude;
-static std::vector<std::regex>  file_include;
-static std::vector<std::regex>  file_exclude;
-static std::set<std::string>    collection_includes;
-static std::set<std::string>    collection_excludes;
-static std::vector<std::string> collection_paths = { "collections",
-                                                     "timemory/collections",
-                                                     "../share/timemory/collections" };
+static regexvec_t func_include;
+static regexvec_t func_exclude;
+static regexvec_t file_include;
+static regexvec_t file_exclude;
+static strset_t   collection_includes;
+static strset_t   collection_excludes;
+static strvec_t   collection_paths = { "collections", "timemory/collections",
+                                     "../share/timemory/collections" };
 
-static std::set<std::string> available_modules;
-static std::set<std::string> available_procedures;
-static std::set<std::string> instrumented_modules;
-static std::set<std::string> instrumented_procedures;
+static fmodset_t available_module_functions;
+static fmodset_t instrumented_module_functions;
 
 static auto regex_opts =
     std::regex_constants::ECMAScript | std::regex_constants::optimize;
@@ -174,28 +174,10 @@ consume_parameters(T&&...)
 
 //======================================================================================//
 
-static inline void
-dump_info(const std::string& _oname, const std::set<std::string> _data, int level)
-{
-    if(!debug_print && verbose_level > level)
-        return;
-
-    std::ofstream ofs(_oname);
-    if(ofs)
-    {
-        verbprintf(level, "Dumping '%s'...\n", _oname.c_str());
-        for(const auto& itr : _data)
-            ofs << itr << '\n';
-    }
-    ofs.close();
-}
-
-//======================================================================================//
-
 extern "C"
 {
     bool are_file_include_exclude_lists_empty();
-    void read_collection(const std::string& fname, std::set<std::string>& collection_set);
+    void read_collection(const string_t& fname, strset_t& collection_set);
     bool process_file_for_instrumentation(const string_t& file_name);
     bool instrument_entity(const string_t& function_name);
     int  module_constraint(char* fname);
@@ -221,7 +203,7 @@ void
 errorFunc(error_level_t level, int num, const char** params);
 
 procedure_t*
-find_function(image_t* appImage, const std::string& functionName);
+find_function(image_t* appImage, const string_t& functionName, strset_t = {});
 
 void
 check_cost(snippet_t snippet);
@@ -244,10 +226,10 @@ bool
 load_dependent_libraries(address_space_t* bedit, char* bindings);
 
 bool
-c_stdlib_module_constraint(const std::string& file);
+c_stdlib_module_constraint(const string_t& file);
 
 bool
-c_stdlib_function_constraint(const std::string& func);
+c_stdlib_function_constraint(const string_t& func);
 
 //======================================================================================//
 
@@ -316,6 +298,8 @@ struct function_signature
     string_t         m_file      = "";
     mutable string_t m_signature = "";
 
+    TIMEMORY_DEFAULT_OBJECT(function_signature)
+
     function_signature(string_t _ret, string_t _name, string_t _file,
                        location_t _row = { 0, 0 }, location_t _col = { 0, 0 },
                        bool _loop = false, bool _info_beg = false, bool _info_end = false)
@@ -328,7 +312,7 @@ struct function_signature
     , m_name(tim::demangle(_name))
     , m_file(_file)
     {
-        if(m_file.find('/') != std::string::npos)
+        if(m_file.find('/') != string_t::npos)
             m_file = m_file.substr(m_file.find_last_of('/') + 1);
     }
 
@@ -349,7 +333,7 @@ struct function_signature
 
     static auto get(function_signature& sig) { return sig.get(); }
 
-    std::string get() const
+    string_t get() const
     {
         std::stringstream ss;
         if(use_return_info)
@@ -385,19 +369,112 @@ struct function_signature
 //
 //======================================================================================//
 //
+struct module_function
+{
+    using width_t = std::array<size_t, 3>;
+
+    static auto& get_width()
+    {
+        static width_t _instance = []() {
+            width_t _tmp;
+            _tmp.fill(0);
+            return _tmp;
+        }();
+        return _instance;
+    }
+
+    static void reset_width() { get_width().fill(0); }
+
+    static void update_width(const module_function& rhs)
+    {
+        get_width()[0] = std::max<size_t>(get_width()[0], rhs.module.length());
+        get_width()[1] = std::max<size_t>(get_width()[1], rhs.function.length());
+        get_width()[2] = std::max<size_t>(get_width()[2], rhs.signature.get().length());
+    }
+
+    module_function(const string_t& _module, const string_t& _func,
+                    const function_signature& _sign)
+    : module(_module)
+    , function(_func)
+    , signature(_sign)
+    {}
+
+    module_function(module_t* mod, procedure_t* proc)
+    {
+        char modname[FUNCNAMELEN];
+        char fname[FUNCNAMELEN];
+
+        mod->getName(modname, FUNCNAMELEN);
+        proc->getName(fname, FUNCNAMELEN);
+
+        module    = modname;
+        function  = fname;
+        signature = get_func_file_line_info(mod, proc);
+    }
+
+    friend bool operator<(const module_function& lhs, const module_function& rhs)
+    {
+        return (lhs.module == rhs.module)
+                   ? ((lhs.function == rhs.function)
+                          ? (lhs.signature.get() < rhs.signature.get())
+                          : (lhs.function < rhs.function))
+                   : (lhs.module < rhs.module);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const module_function& rhs)
+    {
+        std::stringstream ss;
+        ss << std::setw(get_width()[0] + 8) << std::left << rhs.module << " "
+           << std::setw(get_width()[1] + 8) << std::left << rhs.function << " "
+           << std::setw(get_width()[2] + 8) << std::left << rhs.signature.get();
+        os << ss.str();
+        return os;
+    }
+
+    string_t           module   = "";
+    string_t           function = "";
+    function_signature signature;
+};
+//
+//======================================================================================//
+//
+static inline void
+dump_info(const string_t& _oname, const fmodset_t& _data, int level)
+{
+    if(!debug_print && verbose_level > level)
+        return;
+
+    module_function::reset_width();
+    for(const auto& itr : _data)
+        module_function::update_width(itr);
+
+    std::ofstream ofs(_oname);
+    if(ofs)
+    {
+        verbprintf(level, "Dumping '%s'...\n", _oname.c_str());
+        for(const auto& itr : _data)
+            ofs << itr << '\n';
+    }
+    ofs.close();
+
+    module_function::reset_width();
+}
+//
+//======================================================================================//
+//
 template <typename Tp>
 snippet_pointer_t
 get_snippet(Tp arg)
 {
-    return snippet_pointer_t(new BPatch_constExpr(arg));
+    return snippet_pointer_t(new const_expr_t(arg));
 }
 //
 //======================================================================================//
 //
 inline snippet_pointer_t
-get_snippet(std::string arg)
+get_snippet(string_t arg)
 {
-    return snippet_pointer_t(new BPatch_constExpr(arg.c_str()));
+    return snippet_pointer_t(new const_expr_t(arg.c_str()));
 }
 //
 //======================================================================================//
@@ -475,7 +552,7 @@ private:
 //
 static inline address_space_t*
 timemory_get_address_space(BPatch* bpatch, int _cmdc, char** _cmdv, bool _rewrite,
-                           int _pid = -1, std::string _name = "")
+                           int _pid = -1, string_t _name = "")
 {
     address_space_t* mutatee = nullptr;
 

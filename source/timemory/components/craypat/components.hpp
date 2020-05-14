@@ -127,8 +127,8 @@ struct craypat_counters : base<craypat_counters, std::vector<unsigned long>>
 
     static std::string description()
     {
-        return "Returns the names and current count value of any counter events that "
-               "have been set to count on the hardware category";
+        return "Names and value of any counter events that have been set to count on the "
+               "hardware category";
     }
 
     static void configure()
@@ -273,9 +273,8 @@ struct craypat_flush_buffer : base<craypat_flush_buffer, unsigned long>
     static std::string label() { return "craypat_flush_buffer"; }
     static std::string description()
     {
-        return "Writes all the recorded contents in the data buffer to the experiment "
-               "data file for the calling PE and calling thread. Returns the number of "
-               "bytes flushed";
+        return "Writes all the recorded contents in the data buffer. Returns the number "
+               "of bytes flushed";
     }
 
     static value_type record()

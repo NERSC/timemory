@@ -108,7 +108,7 @@ get_default_components()
 //--------------------------------------------------------------------------------------//
 // default components to record -- maybe should be empty?
 //
-inline const component_enum_t&
+inline component_enum_t&
 get_current_components()
 {
     auto& _stack = get_components_stack();
@@ -283,6 +283,26 @@ extern "C"
         tim::set_env("TIMEMORY_COMPONENTS", _component_string, 0);
         static thread_local auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_add_components(const char* _component_string)
+    {
+        auto  lk     = tim::trace::lock<tim::trace::library>();
+        auto& _stack = get_current_components();
+        for(auto itr : tim::enumerate_components(_component_string))
+            _stack.push_back(itr);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_remove_components(const char* _component_string)
+    {
+        auto  lk     = tim::trace::lock<tim::trace::library>();
+        auto& _stack = get_current_components();
+        for(auto itr : tim::enumerate_components(_component_string))
+            tim::consume_parameters(std::remove(_stack.begin(), _stack.end(), itr));
     }
 
     //----------------------------------------------------------------------------------//

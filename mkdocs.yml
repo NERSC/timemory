@@ -4,6 +4,18 @@ nav:
   - About: about.md
   - Features: features.md
   - Installation: installation.md
+  - Tools:
+      - timem: tools/timem.md
+      - timemory-avail: tools/timemory-avail.md
+      - timemory-run: tools/timemory-run.md
+      - timemory-mpip: tools/timemory-mpip.md
+      - timemory-ompt: tools/timemory-ompt.md
+  - API:
+      - Overview: getting_started/overview.md
+      - Project Integration: getting_started/integrating.md
+      - Basics: getting_started/basics.md
+      - Custom Components: getting_started/custom_components.md
+      - Roofline: getting_started/roofline.md
   - Components:
       - Overview: components/overview.md
       - Supported Components: components/supported.md
@@ -14,13 +26,7 @@ nav:
       - CUDA/CUPTI: components/cuda.md
       - Roofline: components/roofline.md
       - Bundling Components: components/bundling.md
-  - Getting Started:
-      - Overview: getting_started/overview.md
-      - Project Integration: getting_started/integrating.md
-      - Basics: getting_started/basics.md
-      - Custom Components: getting_started/custom_components.md
-      - Roofline: getting_started/roofline.md
-  - Overhead: overhead.md
+  # - Overhead: overhead.md
   - Doxygen: doxygen-docs/index.html
 
 #theme: readthedocs

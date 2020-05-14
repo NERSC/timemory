@@ -413,10 +413,12 @@
             extern template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;             \
             extern template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;         \
             extern template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;           \
-            extern template struct TIMEMORY_COMPONENT_DLL                                   \
-                finalize::print<COMPONENT_NAME, HAS_DATA>;                                  \
-            extern template struct TIMEMORY_COMPONENT_DLL                                   \
-                finalize::merge<COMPONENT_NAME, HAS_DATA>;                                  \
+            extern template struct TIMEMORY_COMPONENT_DLL finalize::print<                  \
+                COMPONENT_NAME,                                                             \
+                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;                  \
+            extern template struct TIMEMORY_COMPONENT_DLL finalize::merge<                  \
+                COMPONENT_NAME,                                                             \
+                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;                  \
             }                                                                               \
             }
 #    endif
@@ -443,10 +445,12 @@
             template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;                 \
             template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;             \
             template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;               \
-            template struct TIMEMORY_COMPONENT_DLL                                       \
-                finalize::print<COMPONENT_NAME, HAS_DATA>;                               \
-            template struct TIMEMORY_COMPONENT_DLL                                       \
-                finalize::merge<COMPONENT_NAME, HAS_DATA>;                               \
+            template struct TIMEMORY_COMPONENT_DLL finalize::print<                      \
+                COMPONENT_NAME,                                                          \
+                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;               \
+            template struct TIMEMORY_COMPONENT_DLL finalize::merge<                      \
+                COMPONENT_NAME,                                                          \
+                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;               \
             }                                                                            \
             }
 #    endif

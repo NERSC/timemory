@@ -54,8 +54,7 @@ namespace component
 {
 //--------------------------------------------------------------------------------------//
 // uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesnâ€™t work that way.
-// units are reported in number of clock ticks per second
+// Do not use a single CPU time as an amount of time; it doesn't work that way.
 //
 // this component extracts only the CPU time spent in kernel-mode
 struct system_clock : public base<system_clock>
@@ -65,7 +64,7 @@ struct system_clock : public base<system_clock>
     using base_type  = base<system_clock, value_type>;
 
     static std::string label() { return "sys"; }
-    static std::string description() { return "system time"; }
+    static std::string description() { return "CPU time spent in kernel-mode"; }
     static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -100,7 +99,7 @@ struct user_clock : public base<user_clock>
     using base_type  = base<user_clock, value_type>;
 
     static std::string label() { return "user"; }
-    static std::string description() { return "user time"; }
+    static std::string description() { return "CPU time spent in user-mode"; }
     static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -124,7 +123,7 @@ struct user_clock : public base<user_clock>
 
 //--------------------------------------------------------------------------------------//
 // uses clock() -- only relevant as a time when a different is computed
-// Do not use a single CPU time as an amount of time; it doesnâ€™t work that way.
+// Do not use a single CPU time as an amount of time; it doesn't work that way.
 // units are reported in number of clock ticks per second
 //
 // this component extracts only the CPU time spent in both user- and kernel- mode
@@ -135,9 +134,12 @@ struct cpu_clock : public base<cpu_clock>
     using base_type  = base<cpu_clock, value_type>;
 
     static std::string label() { return "cpu"; }
-    static std::string description() { return "cpu time"; }
-    static value_type  record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
-    double             get_display() const
+    static std::string description()
+    {
+        return "Total CPU time spent in both user- and kernel-mode";
+    }
+    static value_type record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
+    double            get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
@@ -167,8 +169,12 @@ struct monotonic_clock : public base<monotonic_clock>
     using base_type  = base<monotonic_clock, value_type>;
 
     static std::string label() { return "monotonic_clock"; }
-    static std::string description() { return "monotonic time"; }
-    static value_type  record()
+    static std::string description()
+    {
+        return "Wall-clock timer which will continue to increment even while the system "
+               "is asleep";
+    }
+    static value_type record()
     {
         return tim::get_clock_monotonic_now<int64_t, ratio_t>();
     }
@@ -203,8 +209,12 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     using base_type  = base<monotonic_raw_clock, value_type>;
 
     static std::string label() { return "monotonic_raw_clock"; }
-    static std::string description() { return "monotonic raw time"; }
-    static value_type  record()
+    static std::string description()
+    {
+        return "Wall-clock timer unaffected by frequency or time adjustments in system "
+               "time-of-day clock";
+    }
+    static value_type record()
     {
         return tim::get_clock_monotonic_raw_now<int64_t, ratio_t>();
     }
@@ -240,7 +250,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     using base_type  = base<thread_cpu_clock, value_type>;
 
     static std::string label() { return "thread_cpu"; }
-    static std::string description() { return "thread cpu time"; }
+    static std::string description() { return "CPU-clock timer for the calling thread"; }
     static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -273,9 +283,12 @@ struct process_cpu_clock : public base<process_cpu_clock>
     using base_type  = base<process_cpu_clock, value_type>;
 
     static std::string label() { return "process_cpu"; }
-    static std::string description() { return "process cpu time"; }
-    static value_type  record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
-    double             get_display() const
+    static std::string description()
+    {
+        return "CPU-clock timer for the calling process (all threads)";
+    }
+    static value_type record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
+    double            get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
@@ -311,8 +324,11 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     using this_type  = cpu_util;
 
     static std::string label() { return "cpu_util"; }
-    static std::string description() { return "cpu utilization"; }
-    static value_type  record()
+    static std::string description()
+    {
+        return "Percentage of CPU-clock time divided by wall-clock time";
+    }
+    static value_type record()
     {
         return value_type(cpu_clock::record(), wall_clock::record());
     }
@@ -419,8 +435,12 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     using this_type  = process_cpu_util;
 
     static std::string label() { return "proc_cpu_util"; }
-    static std::string description() { return "process cpu utilization"; }
-    static value_type  record()
+    static std::string description()
+    {
+        return "Percentage of CPU-clock time divided by wall-clock time for calling "
+               "process (all threads)";
+    }
+    static value_type record()
     {
         return value_type(process_cpu_clock::record(), wall_clock::record());
     }
@@ -507,8 +527,12 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     using this_type  = thread_cpu_util;
 
     static std::string label() { return "thread_cpu_util"; }
-    static std::string description() { return "thread cpu utilization"; }
-    static value_type  record()
+    static std::string description()
+    {
+        return "Percentage of CPU-clock time divided by wall-clock time for calling "
+               "thread";
+    }
+    static value_type record()
     {
         return value_type(thread_cpu_clock::record(), wall_clock::record());
     }

@@ -160,11 +160,15 @@ public:
     using get_func_t    = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
 
-    static string_t   label() { return "user_bundle"; }
-    static string_t   description() { return "user-defined bundle of tools"; }
+    static string_t label() { return "user_bundle"; }
+    static string_t description()
+    {
+        return "Generic bundle of components designed for runtime configuration by a "
+               "user via environment variables and/or direct insertion";
+    }
     static value_type record() {}
 
-    static void global_init(storage_type*);
+    static void global_init(storage_type*) TIMEMORY_VISIBILITY("default");
 
     using opaque_array_t = std::vector<opaque>;
     using typeid_set_t   = std::set<size_t>;
@@ -406,11 +410,7 @@ private:
     //----------------------------------------------------------------------------------//
     //  Persistent data
     //
-    static persistent_data& get_persistent_data()
-    {
-        static persistent_data _instance{};
-        return _instance;
-    }
+    static persistent_data& get_persistent_data() TIMEMORY_VISIBILITY("default");
 
 public:
     //----------------------------------------------------------------------------------//
@@ -436,6 +436,16 @@ void
 user_bundle<Idx, Tag>::global_init(storage_type*)
 {
     env::initialize_bundle<Idx, Tag>();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, typename Tag>
+typename user_bundle<Idx, Tag>::persistent_data&
+user_bundle<Idx, Tag>::get_persistent_data()
+{
+    static persistent_data _instance{};
+    return _instance;
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -8,9 +8,9 @@ NAME=$(basename ${BASH_SOURCE[0]})
 # the output directory
 : ${OUT:=${PWD}/instr}
 # the executable
-: ${EXE:="$(echo "$@" | sed 's/.* --/ --/g' | awk '{print $2}')"}
-# the timemory-r
-: ${CMD:="$(echo "$@" | sed 's/--.*//g' | sed \"s/.*${NAME}//g\")"}
+: ${EXE:=$(echo "$@" | sed 's/.* -- //g' | awk '{print $1}')}
+# the timemory-run command
+: ${CMD:=$(echo "$@" | sed 's/ -- .*//g' | awk '{$1=""}1' | awk '{$1=$1}1')}
 
 usage()
 {
@@ -50,6 +50,10 @@ do
     LIBS=$(ldd ${EXE} | grep "lib${i}" | awk '{print $(NF-1)'})
     for j in ${LIBS}
     do
+	if [ -z "$(nm ${j} | egrep '_init|_fini')" ]; then
+	    echo -e "\nWarning! Library '${j}' does not have '_init' or '_fini' symbols!\n"
+            continue
+	fi
         if [ ! -e "${j}" ]; then
             echo -e "\nWarning! Library '${j}' does not exist!\n"
             continue

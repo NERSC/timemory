@@ -249,20 +249,32 @@ errorFunc(error_level_t level, int num, const char** params)
 //  For compatibility purposes
 //
 procedure_t*
-find_function(image_t* app_image, const std::string& func)
+find_function(image_t* app_image, const std::string& _name, strset_t _extra)
 {
-    if(func.empty())
+    if(_name.empty())
         return nullptr;
 
-    // Extract the vector of functions
-    BPatch_Vector<procedure_t*> found_funcs;
-    auto ret = app_image->findFunction(func.c_str(), found_funcs, false, true, true);
-    if(ret == nullptr || found_funcs.empty())
+    auto _find = [app_image](const string_t& _f) -> procedure_t* {
+        // Extract the vector of functions
+        BPatch_Vector<procedure_t*> _found;
+        auto ret = app_image->findFunction(_f.c_str(), _found, false, true, true);
+        if(ret == nullptr || _found.empty())
+            return nullptr;
+        return _found.at(0);
+    };
+
+    procedure_t* _func = _find(_name);
+    auto         itr   = _extra.begin();
+    while(!_func && itr != _extra.end())
     {
-        verbprintf(0, "timemory-run: Unable to find function %s\n", func.c_str());
-        return nullptr;
+        _func = _find(*itr);
+        ++itr;
     }
-    return found_funcs[0];
+
+    if(!_func)
+        verbprintf(0, "timemory-run: Unable to find function %s\n", _name.c_str());
+
+    return _func;
 }
 
 //======================================================================================//
@@ -541,14 +553,8 @@ c_stdlib_function_constraint(const std::string& _func)
 static inline void
 consume()
 {
-    consume_parameters(initialize_expr, bpatch, use_ompt, use_mpi, use_mpip,
-                       stl_func_instr, werror, loop_level_instr, error_print,
-                       binary_rewrite, debug_print, expect_error, is_static_exe,
-                       available_modules, available_procedures, instrumented_modules,
-                       instrumented_procedures);
-    if(false)
-    {
-        timemory_thread_exit(nullptr, ExitedNormally);
-        timemory_fork_callback(nullptr, nullptr);
-    }
+    consume_parameters(initialize_expr, bpatch, use_mpi, stl_func_instr, werror,
+                       loop_level_instr, error_print, binary_rewrite, debug_print,
+                       expect_error, is_static_exe, available_module_functions,
+                       instrumented_module_functions);
 }

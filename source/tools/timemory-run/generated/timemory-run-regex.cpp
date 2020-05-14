@@ -44,16 +44,8 @@ timemory_source_file_constraint(const std::string& fname)
 static inline void
 consume()
 {
-    consume_parameters(initialize_expr, bpatch, use_ompt, use_mpi, use_mpip,
-                       stl_func_instr, werror, loop_level_instr, error_print,
-                       binary_rewrite, debug_print, expect_error, is_static_exe,
-                       available_modules, available_procedures, instrumented_modules,
-                       instrumented_procedures);
-    if(false)
-    {
-        timemory_thread_exit(nullptr, ExitedNormally);
-        timemory_fork_callback(nullptr, nullptr);
-        std::regex _rtmp("test", regex_opts);
-        consume_parameters(_rtmp);
-    }
+    consume_parameters(initialize_expr, bpatch, use_mpi, stl_func_instr, werror,
+                       loop_level_instr, error_print, binary_rewrite, debug_print,
+                       expect_error, is_static_exe, available_module_functions,
+                       instrumented_module_functions, regex_opts);
 }

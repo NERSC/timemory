@@ -365,9 +365,8 @@ struct cpu_roofline
 
     static std::string description()
     {
-        return "CPU Roofline " + get_type_string() + " " +
-               std::string((event_mode() == MODE::OP) ? "Counters"
-                                                      : "Arithmetic Intensity");
+        return "Model used to provide performance relative to the peak possible "
+               "performance on a CPU architecture.";
     }
 
     //----------------------------------------------------------------------------------//

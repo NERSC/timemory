@@ -58,8 +58,11 @@ struct wall_clock : public base<wall_clock, int64_t>
     using statistics_policy = policy::record_statistics<wall_clock>;
 
     static std::string label() { return "wall"; }
-    static std::string description() { return "wall time"; }
-    static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
+    static std::string description()
+    {
+        return "Real-clock timer (i.e. wall-clock timer)";
+    }
+    static value_type record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
     double get_display() const { return get(); }
     double get() const

@@ -38,4 +38,6 @@ add_subdirectory(ex-gpu-roofline)
 # Python related
 add_subdirectory(ex-python)
 
+# Dynamic instrumentation
+add_subdirectory(ex-custom-dynamic-instr)
 cmake_policy(POP)

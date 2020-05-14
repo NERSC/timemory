@@ -216,11 +216,24 @@ main(int argc, char** argv)
     tim::argparse::argument_parser parser(argv[0]);
 
     parser.enable_help();
+    parser.add_argument().names({ "--debug" }).description("Debug output").count(0);
     parser.add_argument()
         .names({ "-v", "--verbose" })
         .description("Verbose output")
         .max_count(1);
-    parser.add_argument().names({ "--debug" }).description("Debug output").count(0);
+    parser
+        .add_argument({ "-d", "--sample-delay" },
+                      "Set the delay before the sampler starts (seconds)")
+        .count(1);
+    parser
+        .add_argument({ "-f", "--sample-freq" },
+                      "Set the frequency of the sampler (1/seconds)")
+        .count(1);
+    if(tim::trait::is_available<papi_array_t>::value)
+    {
+        parser.add_argument({ "-e", "--events" },
+                            "Set the hardware counter events to record");
+    }
     parser
         .add_argument({ "-s", "--shell" }, "Enable launching command via a shell command "
                                            "(if no arguments, $SHELL is used)")
@@ -229,14 +242,6 @@ main(int argc, char** argv)
         .add_argument({ "--shell-flags" },
                       "Set the shell flags to use (pass as single "
                       "string as leading dashes can confuse parser) [default: -i]")
-        .count(1);
-    parser
-        .add_argument({ "-d", "--sample-delay" },
-                      "Set the delay before the sampler starts (seconds)")
-        .count(1);
-    parser
-        .add_argument({ "-f", "--sample-freq" },
-                      "Set the frequency of the sampler (1/seconds)")
         .count(1);
 
     auto _args = parser.parse_known_args(argc, argv);
@@ -251,7 +256,9 @@ main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if(parser.exists("help"))
+    if(parser.exists("help") || _argc == 1 ||
+       (_argc > 1 &&
+        (std::string(_argv[1]) == "-h" || std::string(_argv[1]) == "--help")))
     {
         parser.print_help("-- <CMD> <ARGS>");
         return EXIT_FAILURE;
@@ -287,6 +294,15 @@ main(int argc, char** argv)
     if(parser.exists("shell-flags"))
         _config.shell_flags = parser.get<std::string>("shell-flags");
 
+    if(parser.exists("events"))
+    {
+        auto              evts = parser.get<std::vector<std::string>>("shell-flags");
+        std::stringstream ss;
+        for(const auto& itr : evts)
+            ss << itr << ",";
+        tim::settings::papi_events() = ss.str().substr(0, ss.str().length() - 1);
+    }
+
     // parse for settings configurations
     if(argc > 1)
         tim::timemory_init(argc, argv);
@@ -307,7 +323,7 @@ main(int argc, char** argv)
 
     if(argc > 1)
     {
-        command() = std::string(const_cast<const char*>(_argv[1]));
+        command() = std::string(const_cast<const char*>(_argv[0]));
     }
     else
     {

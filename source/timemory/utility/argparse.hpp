@@ -587,7 +587,10 @@ struct argument_parser
         char** _cmdv  = argv;   // the argv after known args removed
 
         if(argc > 0)
+        {
+            m_bin = std::string((const char*) argv[0]);
             _args.push_back(std::string((const char*) argv[0]));
+        }
 
         for(int i = 1; i < argc; ++i)
         {

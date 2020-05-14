@@ -144,6 +144,10 @@ extern "C"
 
     TIMEMORY_DECL void timemory_set_default(const char* components)
         TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_add_components(const char* components)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_remove_components(const char* components)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_push_components(const char* components)
         TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_push_components_enum(int args, ...)

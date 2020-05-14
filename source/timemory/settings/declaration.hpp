@@ -254,7 +254,7 @@ struct TIMEMORY_SETTINGS_DLL settings
         "Enable/disable components adding secondary (child) entries", true)
 
     TIMEMORY_MEMBER_STATIC_ACCESSOR(size_t, throttle_count, "TIMEMORY_THROTTLE_COUNT",
-                                    "Minimum number of laps before throttling", 100000)
+                                    "Minimum number of laps before throttling", 10000)
 
     TIMEMORY_MEMBER_STATIC_ACCESSOR(
         size_t, throttle_value, "TIMEMORY_THROTTLE_VALUE",

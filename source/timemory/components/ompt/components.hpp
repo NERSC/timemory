@@ -70,7 +70,9 @@ struct ompt_handle
     static std::string label() { return "ompt_handle"; }
     static std::string description()
     {
-        return std::string("OpenMP toolset ") + demangle<api_type>();
+        return std::string(
+                   "Control switch for enabling/disabling OpenMP tools defined by the ") +
+               demangle<api_type>() + " tag";
     }
 
     static auto& get_initializer()
