@@ -66,7 +66,7 @@ namespace tim
 {
 #if defined(_UNIX)
 
-#    if !defined(_GNU_SOURCE)
+#    if !defined(_GNU_SOURCE) || !defined(RUSAGE_THREAD)
 #        define RUSAGE_THREAD RUSAGE_SELF
 #    endif
 
