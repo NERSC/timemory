@@ -50,7 +50,7 @@ using string_t       = std::string;
 using overhead_map_t = std::unordered_map<size_t, std::pair<wall_clock, size_t>>;
 using throttle_set_t = std::set<size_t>;
 using traceset_t     = tim::component_tuple<user_trace_bundle>;
-using trace_map_t    = std::unordered_map<size_t, std::deque<traceset_t*>>;
+using trace_map_t    = std::unordered_map<size_t, std::deque<traceset_t>>;
 
 //======================================================================================//
 
@@ -347,14 +347,16 @@ extern "C"
         if(tim::settings::debug())
         {
             int64_t n = _trace_map[id].size();
-            printf("beginning trace for '%s' (id = %llu, offset = %lli)...\n",
+            printf("beginning trace for '%s' (id = %llu, offset = %lli, rank = %i, pid = "
+                   "%i, thread = %i)...\n",
                    tim::get_hash_ids()->find(id)->second.c_str(), (long long unsigned) id,
-                   (long long int) n);
+                   (long long int) n, tim::dmp::rank(), (int) tim::process::get_id(),
+                   (int) tim::threading::get_id());
         }
         // #endif
 
-        _trace_map[id].push_back(new traceset_t(id));
-        _trace_map[id].back()->start();
+        _trace_map[id].emplace_back(traceset_t(id));
+        _trace_map[id].back().start();
         (*get_overhead())[id].first.start();
     }
     //
@@ -373,21 +375,20 @@ extern "C"
         int64_t ntotal = _trace_map[id].size();
         int64_t offset = ntotal - 1;
 
-        (*get_overhead())[id].first.stop();
-
 #if defined(DEBUG)
         if(tim::settings::debug())
-            printf("ending trace for %llu [offset = %lli]...\n", (long long unsigned) id,
-                   (long long int) offset);
+            printf("beginning trace for '%s' (id = %llu, offset = %lli, rank = %i, pid = "
+                   "%i, thread = %i)...\n",
+                   tim::get_hash_ids()->find(id)->second.c_str(), (long long unsigned) id,
+                   (long long int) offset, tim::dmp::rank(), (int) tim::process::get_id(),
+                   (int) tim::threading::get_id());
 #endif
+
+        (*get_overhead())[id].first.stop();
 
         if(offset >= 0 && ntotal > 0)
         {
-            if(_trace_map[id].back())
-            {
-                _trace_map[id].back()->stop();
-                delete _trace_map[id].back();
-            }
+            _trace_map[id].back().stop();
             _trace_map[id].pop_back();
         }
 
@@ -623,10 +624,7 @@ extern "C"
         for(auto& itr : get_trace_map())
         {
             for(auto& eitr : itr.second)
-            {
-                eitr->stop();
-                delete eitr;
-            }
+                eitr.stop();
             // delete all the records
             itr.second.clear();
         }

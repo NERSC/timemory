@@ -26,18 +26,7 @@
 
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
-#define TIMEMORY_DISABLE_PROPERTIES
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
-
-#include "timemory/components/rusage/types.hpp"
-
-#if defined(_MACOS)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
-#endif
-
-#undef TIMEMORY_DISABLE_PROPERTIES
 
 #include "timemory/sampling/sampler.hpp"
 #include "timemory/timemory.hpp"

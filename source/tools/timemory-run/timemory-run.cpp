@@ -628,20 +628,25 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    auto* main_func  = find_function(app_image, main_fname.c_str());
-    auto* entr_trace = find_function(app_image, instr_push_func.c_str());
-    auto* exit_trace = find_function(app_image, instr_pop_func.c_str());
-    auto* entr_hash  = find_function(app_image, instr_push_hash.c_str());
-    auto* exit_hash  = find_function(app_image, instr_pop_hash.c_str());
-    auto* init_func  = find_function(app_image, "timemory_trace_init");
-    auto* fini_func  = find_function(app_image, "timemory_trace_finalize");
-    auto* env_func   = find_function(app_image, "timemory_trace_set_env");
-    auto* mpi_func   = find_function(app_image, "timemory_trace_set_mpi");
-    auto* hash_func  = find_function(app_image, "timemory_add_hash_id");
-    auto* exit_func  = find_function(app_image, "exit", { "_exit" });
+    auto* main_func     = find_function(app_image, main_fname.c_str());
+    auto* entr_trace    = find_function(app_image, instr_push_func.c_str());
+    auto* exit_trace    = find_function(app_image, instr_pop_func.c_str());
+    auto* entr_hash     = find_function(app_image, instr_push_hash.c_str());
+    auto* exit_hash     = find_function(app_image, instr_pop_hash.c_str());
+    auto* init_func     = find_function(app_image, "timemory_trace_init");
+    auto* fini_func     = find_function(app_image, "timemory_trace_finalize");
+    auto* env_func      = find_function(app_image, "timemory_trace_set_env");
+    auto* mpi_func      = find_function(app_image, "timemory_trace_set_mpi");
+    auto* hash_func     = find_function(app_image, "timemory_add_hash_id");
+    auto* exit_func     = find_function(app_image, "exit", { "_exit" });
+    auto* mpi_init_func = find_function(app_image, "MPI_Init", { "MPI_Init_thread" });
+    auto* mpi_fini_func = find_function(app_image, "MPI_Finalize");
 
     verbprintf(0, "Instrumenting with '%s' and '%s'...\n", instr_push_func.c_str(),
                instr_pop_func.c_str());
+
+    if(mpi_init_func && mpi_fini_func)
+        use_mpi = true;
 
     //----------------------------------------------------------------------------------//
     //
@@ -796,7 +801,7 @@ main(int argc, char** argv)
         }
     }
 
-    if(use_mpi && !mpi_func)
+    if(use_mpi && !(mpi_func || (mpi_init_func && mpi_fini_func)))
     {
         throw std::runtime_error("MPI support was requested but timemory was not built "
                                  "with MPI and GOTCHA support");
@@ -937,8 +942,18 @@ main(int argc, char** argv)
 
     if(binary_rewrite)
     {
-        init_names.push_back(main_beg_call.get());
-        fini_names.push_back(main_end_call.get());
+        if(mpi_init_func && mpi_fini_func)
+        {
+            insert_instr(addr_space, mpi_init_func, init_call, BPatch_exit, nullptr,
+                         nullptr);
+            insert_instr(addr_space, mpi_fini_func, fini_call, BPatch_entry, nullptr,
+                         nullptr);
+        }
+        else
+        {
+            init_names.push_back(main_beg_call.get());
+            fini_names.push_back(main_end_call.get());
+        }
     }
     else if(app_thread)
     {
@@ -1510,7 +1525,7 @@ instrument_entity(const string_t& function_name)
 
     static std::regex exclude(
         "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
-        "dyninst|tm_clones)",
+        "dyninst|tm_clones|malloc$|calloc$|free$|realloc$|std::addressof)",
         regex_opts);
     static std::regex exclude_cxx(
         "(std::max|std::min|std::fill|std::forward|std::get|std::"

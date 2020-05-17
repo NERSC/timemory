@@ -134,6 +134,10 @@ endif()
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
 add_feature(BUILD_STATIC_LIBS "Build static libraries")
 
+# if(BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS)
+#    set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so .dylib)
+# endif()
+
 if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     if("${CMAKE_CXX_STANDARD}" LESS 14)
         unset(CMAKE_CXX_STANDARD CACHE)

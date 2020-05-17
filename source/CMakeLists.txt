@@ -245,9 +245,10 @@ if(TIMEMORY_BUILD_C)
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
             LINK_LIBRARIES      timemory-external-shared
-	                        PRIVATE
+                                PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
+                                    timemory-hidden-visibility
                                     timemory-cxx-shared
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
@@ -277,7 +278,8 @@ if(TIMEMORY_BUILD_C)
 	                        PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    timemory-external-static
+                                    timemory-hidden-visibility
+                                    timemory-cxx-static
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
 
