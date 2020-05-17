@@ -35,6 +35,7 @@ target_include_directories(libpytimemory SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
 
 target_link_libraries(libpytimemory PRIVATE
+    timemory-python
     timemory-headers
     timemory-cxx-shared
     timemory-compile-options

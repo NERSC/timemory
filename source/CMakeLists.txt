@@ -244,11 +244,11 @@ if(TIMEMORY_BUILD_C)
             OUTPUT_DIR          ${PROJECT_BINARY_DIR}
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-            LINK_LIBRARIES      PRIVATE
+            LINK_LIBRARIES      timemory-external-shared
+	                        PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
                                     timemory-cxx-shared
-                                    timemory-external-shared
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
                                   
@@ -273,10 +273,10 @@ if(TIMEMORY_BUILD_C)
             OUTPUT_DIR          ${PROJECT_BINARY_DIR}
             SOURCES             ${C_LIBRARY_SOURCES}
             C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-            LINK_LIBRARIES      PRIVATE
+            LINK_LIBRARIES      timemory-external-static
+	                        PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    timemory-cxx-static
                                     timemory-external-static
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})

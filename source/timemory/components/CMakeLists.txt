@@ -28,6 +28,7 @@ build_intermediate_library(
     FOLDER              components
     HEADERS             ${CMAKE_CURRENT_SOURCE_DIR}/factory.hpp
     SOURCES             ${CMAKE_CURRENT_SOURCE_DIR}/factory.cpp
+    DEPENDS             timemory-external
     PROPERTY_DEPENDS    GLOBAL COMPONENT)
 
 # should always be last component

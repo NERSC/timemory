@@ -6,8 +6,8 @@ include(FindPackageHandleStandardArgs)
 #------------------------------------------------------------------------------#
 
 set(_ITTNOTIFY_PATH_HINTS)
-foreach(_YEAR 2019 2018 2017)
-    foreach(_SIGNATURE VTUNE_AMPLIFIER VTUNE_AMPLIFIER_XE)
+foreach(_YEAR 2022 2021 2020 2019 2018 2017)
+    foreach(_SIGNATURE VTUNE_AMPLIFIER VTUNE_AMPLIFIER_XE VTUNE_PROFILER)
         set(_VAR ${_SIGNATURE}_${_YEAR}_DIR)
         if(NOT "$ENV{${_VAR}}" STREQUAL "")
             list(APPEND _ITTNOTIFY_PATH_HINTS "$ENV{${_VAR}}")

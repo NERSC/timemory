@@ -195,6 +195,25 @@ function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
     add_disabled_interface(${_TARGET})
 endfunction()
 
+function(ADD_RPATH)
+    set(_DIRS)
+    foreach(_ARG ${ARGN})
+	if(EXISTS "${_ARG}" AND IS_DIRECTORY "${_ARG}" AND NOT "${CMAKE_INSTALL_RPATH}" MATCHES "${_ARG}")
+	    list(APPEND _DIRS "${_ARG}")
+	endif()
+        get_filename_component(_DIR "${_ARG}" DIRECTORY)
+	if(EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}" AND NOT "${CMAKE_INSTALL_RPATH}" MATCHES "${_DIR}")
+	    list(APPEND _DIRS "${_DIR}")
+	endif()
+    endforeach()
+    if(_DIRS)
+        list(REMOVE_DUPLICATES _DIRS)
+        string(REPLACE ";" ":" _RPATH "${_DIRS}")
+        # message(STATUS "\n\tRPATH additions: ${_RPATH}\n")
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${_RPATH}" PARENT_SCOPE)
+    endif()
+endfunction()
+
 #----------------------------------------------------------------------------------------#
 #
 #                           generate composite interface
@@ -236,7 +255,7 @@ endfunction()
 function(find_package_interface)
     set(_option_args)
     set(_single_args NAME INTERFACE DESCRIPTION)
-    set(_multiv_args FIND_ARGS COMPILE_DEFINITIONS COMPILE_OPTIONS LINK_LIBRARIES)
+    set(_multiv_args FIND_ARGS INCLUDE_DIRS COMPILE_DEFINITIONS COMPILE_OPTIONS LINK_LIBRARIES)
 
     cmake_parse_arguments(PACKAGE
         "${_option_args}" "${_single_args}" "${_multiv_args}" ${ARGN})
@@ -252,7 +271,7 @@ function(find_package_interface)
     if(NOT TARGET ${PACKAGE_INTERFACE})
         add_library(${PACKAGE_INTERFACE} INTERFACE)
     endif()
-
+    
     if("${PACKAGE_DESCRIPTION}" STREQUAL "")
         set(PACKAGE_DESCRIPTION "${PACKAGE_INTERFACE}")
     endif()
@@ -263,11 +282,11 @@ function(find_package_interface)
     if(${PACKAGE_NAME}_FOUND)
         # include the directories
         target_include_directories(${PACKAGE_INTERFACE} SYSTEM INTERFACE
-            ${${PACKAGE_NAME}_INCLUDE_DIRS})
+            ${PACKAGE_INCLUDE_DIRS} ${${PACKAGE_NAME}_INCLUDE_DIRS})
 
         # link libraries
         target_link_libraries(${PACKAGE_INTERFACE} INTERFACE
-            ${${PACKAGE_NAME}_LIBRARIES} ${PACKAGE_LINK_LIBRARIES})
+            ${PACKAGE_LINK_LIBRARIES} ${${PACKAGE_NAME}_LIBRARIES})
 
         # add any compile definitions
         foreach(_DEF ${PACKAGE_COMPILE_DEFINITIONS})
@@ -440,6 +459,7 @@ if(MPI_FOUND)
         set(_TYPE )
         if(MPI_${_LANG}_LIBRARIES)
             target_link_libraries(timemory-mpi INTERFACE ${MPI_${_LANG}_LIBRARIES})
+	    # add_rpath(${MPI_${_LANG}_LIBRARIES})
         endif()
 
         # compile flags
@@ -520,6 +540,7 @@ endif()
 
 if(UPCXX_FOUND)
 
+    add_rpath(${UPCXX_LIBRARIES})
     target_link_libraries(timemory-upcxx INTERFACE ${UPCXX_LIBRARIES})
     target_compile_options(timemory-upcxx INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_OPTIONS}>)
     target_compile_features(timemory-upcxx INTERFACE cxx_std_${UPCXX_CXX_STANDARD})
@@ -696,6 +717,7 @@ endif()
 find_package(PAPI QUIET ${TIMEMORY_FIND_REQUIREMENT})
 
 if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
+    add_rpath(${PAPI_LIBRARY})
     target_link_libraries(timemory-papi INTERFACE papi-shared)
     target_link_libraries(timemory-papi-static INTERFACE papi-static)
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES papi-shared papi-static)
@@ -790,6 +812,7 @@ if(CUPTI_FOUND)
         INTERFACE_INSTALL_RPATH                 ""
         INTERFACE_INSTALL_RPATH_USE_LINK_PATH   ${HAS_CUDA_DRIVER_LIBRARY})
 
+    add_rpath(${CUPTI_LIBRARIES})
 else()
     set(TIMEMORY_USE_CUPTI OFF)
     inform_empty_interface(timemory-cupti "CUPTI")
@@ -808,6 +831,7 @@ if(TIMEMORY_USE_NVTX)
 endif()
 
 if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
+    add_rpath(${NVTX_LIBRARIES})
     target_link_libraries(timemory-nvtx INTERFACE ${NVTX_LIBRARIES})
     target_include_directories(timemory-nvtx SYSTEM INTERFACE ${NVTX_INCLUDE_DIRS})
     target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)
@@ -897,6 +921,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools
+	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     ${_DEFINITIONS}
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "gperftools with user defined components"
@@ -905,6 +930,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-all-gperftools
+	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "tcmalloc_and_profiler (preference for shared)"
@@ -913,6 +939,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-cpu
+	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_PROFILER
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "CPU profiler"
@@ -921,6 +948,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-heap
+	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_TCMALLOC
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "heap profiler and heap checker"
@@ -929,10 +957,16 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-tcmalloc-minimal
+	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "threading-optimized malloc replacement"
         FIND_ARGS               QUIET COMPONENTS tcmalloc_minimal)
 
+    target_include_directories(timemory-gperftools SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
+    target_include_directories(timemory-gperftools-static SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
+    
+    add_rpath(${gperftools_LIBRARIES} ${gperftools_ROOT_DIR}/lib ${gperftools_ROOT_DIR}/lib64)
+    
     if(TIMEMORY_USE_GPERFTOOLS_STATIC)
         # set local overloads
         set(gperftools_PREFER_SHARED OFF)
@@ -1080,6 +1114,7 @@ if(LIKWID_FOUND)
     target_link_libraries(timemory-likwid INTERFACE ${LIKWID_LIBRARIES})
     target_include_directories(timemory-likwid SYSTEM INTERFACE ${LIKWID_INCLUDE_DIRS})
     target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID)
+    add_rpath(${LIKWID_LIBRARIES})
 else()
     set(TIMEMORY_USE_LIKWID OFF)
     inform_empty_interface(timemory-likwid "LIKWID")
@@ -1146,6 +1181,7 @@ if(ittnotify_FOUND)
     target_link_libraries(timemory-vtune INTERFACE ${ITTNOTIFY_LIBRARIES})
     target_include_directories(timemory-vtune SYSTEM INTERFACE ${ITTNOTIFY_INCLUDE_DIRS})
     target_compile_definitions(timemory-vtune INTERFACE TIMEMORY_USE_VTUNE)
+    add_rpath(${ITTNOTIFY_LIBRARIES})
 else()
     set(TIMEMORY_USE_VTUNE OFF)
     inform_empty_interface(timemory-vtune "VTune (ittnotify)")
@@ -1166,6 +1202,7 @@ if(TAU_FOUND)
     target_link_libraries(timemory-tau INTERFACE ${TAU_LIBRARIES})
     target_include_directories(timemory-tau SYSTEM INTERFACE ${TAU_INCLUDE_DIRS})
     target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
+    add_rpath(${TAU_LIBRARIES})
 else()
     set(TIMEMORY_USE_TAU OFF)
     inform_empty_interface(timemory-tau "TAU")
@@ -1234,6 +1271,14 @@ if(Dyninst_FOUND AND Boost_FOUND)
         PATHS ${Dyninst_DIR}
         PATH_SUFFIXES lib)
 
+    find_path(TBB_INCLUDE_DIR
+        NAMES tbb/tbb.h
+	PATH_SUFFIXES include)
+
+    if(TBB_INCLUDE_DIR)
+        set(TBB_INCLUDE_DIRS ${TBB_INCLUDE_DIR})
+    endif()
+    
     if(DYNINST_HEADER_DIR)
         target_include_directories(timemory-dyninst SYSTEM INTERFACE ${DYNINST_HEADER_DIR})
     endif()
@@ -1242,6 +1287,13 @@ if(Dyninst_FOUND AND Boost_FOUND)
         target_compile_definitions(timemory-dyninst INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
     endif()
 
+    get_filename_component(Boost_RPATH_DIR "${Boost_DIR}" DIRECTORY)
+    get_filename_component(Boost_RPATH_DIR "${Boost_RPATH_DIR}" DIRECTORY)
+    if(EXISTS "${Boost_RPATH_DIR}" AND IS_DIRECTORY "${Boost_RPATH_DIR}")
+        # message(STATUS "\n\tRPATH: ${Boost_RPATH_DIR}\n")
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${Boost_RPATH_DIR}")
+    endif()
+    add_rpath(${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
     target_link_libraries(timemory-dyninst INTERFACE
         ${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
     foreach(_TARG Dyninst::dyninst Boost::headers Boost::atomic Boost::system Boost::thread Boost::date_time)
@@ -1251,7 +1303,8 @@ if(Dyninst_FOUND AND Boost_FOUND)
     endforeach()
     target_include_directories(timemory-dyninst SYSTEM INTERFACE
         ${DYNINST_INCLUDE_DIRS} ${DYNINST_INCLUDE_DIR}
-        ${Dyninst_INCLUDE_DIRS} ${Dyninst_INCLUDE_DIR})
+        ${Dyninst_INCLUDE_DIRS} ${Dyninst_INCLUDE_DIR}
+	${TBB_INCLUDE_DIRS})
     target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
@@ -1270,6 +1323,7 @@ if(TIMEMORY_USE_ALLINEA_MAP)
 endif()
 
 if(AllineaMAP_FOUND)
+    add_rpath(${AllineaMAP_LIBRARIES})
     target_link_libraries(timemory-allinea-map INTERFACE ${AllineaMAP_LIBRARIES})
     target_include_directories(timemory-allinea-map SYSTEM INTERFACE ${AllineaMAP_INCLUDE_DIRS})
     target_compile_definitions(timemory-allinea-map INTERFACE TIMEMORY_USE_ALLINEA_MAP)
@@ -1290,6 +1344,7 @@ if(TIMEMORY_USE_CRAYPAT)
 endif()
 
 if(CrayPAT_FOUND)
+    add_rpath(${CrayPAT_LIBRARIES})
     target_link_libraries(timemory-craypat INTERFACE ${CrayPAT_LIBRARIES})
     target_link_directories(timemory-craypat INTERFACE ${CrayPAT_LIBRARY_DIRS})
     target_include_directories(timemory-craypat SYSTEM INTERFACE ${CrayPAT_INCLUDE_DIRS})
@@ -1310,3 +1365,5 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 include(UserPackages)
+
+add_feature(CMAKE_INSTALL_RPATH "Installation RPATH")
