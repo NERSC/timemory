@@ -190,7 +190,7 @@ storage<Type, false>::instance_count()
 //
 template <typename Type>
 storage<Type, true>::storage()
-: base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
+: base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
     if(settings::debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -452,10 +452,9 @@ typename storage<Type, true>::iterator
 storage<Type, true>::pop()
 {
     auto itr = _data().pop_graph();
-    // if data has popped all the way up to the zeroth (relative) depth
-    // then worker threads should insert a new dummy at the current
-    // master thread id and depth. Be aware, this changes 'm_current' inside
-    // the data graph
+    // if data has popped all the way up to the zeroth (relative) depth then worker
+    // threads should insert a new dummy at the current master thread id and depth.
+    // Be aware, this changes 'm_current' inside the data graph
     //
     if(_data().at_sea_level())
         _data().add_dummy();
@@ -793,7 +792,7 @@ storage<Type, true>::get_shared_manager()
             trait::runtime_enabled<Type>::set(false);
         };
 
-        m_manager->add_finalizer(Type::get_label(), std::move(_cleanup),
+        m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
                                  std::move(_finalize), _is_master);
     }
 }
@@ -807,7 +806,7 @@ storage<Type, true>::get_shared_manager()
 //
 template <typename Type>
 storage<Type, false>::storage()
-: base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
+: base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
     if(settings::debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -986,7 +985,7 @@ storage<Type, false>::get_shared_manager()
             trait::runtime_enabled<Type>::set(false);
         };
 
-        m_manager->add_finalizer(Type::get_label(), std::move(_cleanup),
+        m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
                                  std::move(_finalize), _is_master);
     }
 }

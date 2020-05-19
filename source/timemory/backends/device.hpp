@@ -327,6 +327,7 @@ launch(params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
         std::forward<ArgsT>(_args)...);
     TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
+    // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args...);
     throw std::runtime_error(
         "Launch specified on GPU but not compiled with GPU support!");
@@ -350,6 +351,7 @@ launch(const Intp& _nsize, params<DeviceT>& _p, FuncT&& _func, ArgsT&&... _args)
         std::forward<ArgsT>(_args)...);
     TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
+    // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args..., _nsize);
     throw std::runtime_error(
         "Launch specified on GPU but not compiled with GPU support!");
@@ -375,6 +377,7 @@ launch(const Intp& _nsize, StreamT _stream, params<DeviceT>& _p, FuncT&& _func,
         std::forward<ArgsT>(_args)...);
     TIMEMORY_CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
 #else
+    // static_assert(false, "Checking");
     consume_parameters(_p, _func, _args..., _nsize, _stream);
     throw std::runtime_error(
         "Launch specified on GPU but not compiled with GPU support!");

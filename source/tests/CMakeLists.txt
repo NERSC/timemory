@@ -324,9 +324,9 @@ elseif(TARGET timemory-ompt-static)
     set(_OMPT_TARGET timemory-ompt-static)
 endif()
 
-if(_OMPT_TARGET)
+if(_OMPT_TARGET AND _OPENMP)
     add_timemory_google_test(ompt_handle_tests
         DISCOVER_TESTS
         SOURCES         ompt_handle_tests.cpp
-        LINK_LIBRARIES  ${_OMPT_TARGET})
+        LINK_LIBRARIES  ${_OMPT_TARGET} ${_OPENMP})
 endif()

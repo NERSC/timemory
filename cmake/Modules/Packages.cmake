@@ -198,11 +198,11 @@ endfunction()
 function(ADD_RPATH)
     set(_DIRS)
     foreach(_ARG ${ARGN})
-	if(EXISTS "${_ARG}" AND IS_DIRECTORY "${_ARG}" AND NOT "${CMAKE_INSTALL_RPATH}" MATCHES "${_ARG}")
+	if(EXISTS "${_ARG}" AND IS_DIRECTORY "${_ARG}")
 	    list(APPEND _DIRS "${_ARG}")
 	endif()
         get_filename_component(_DIR "${_ARG}" DIRECTORY)
-	if(EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}" AND NOT "${CMAKE_INSTALL_RPATH}" MATCHES "${_DIR}")
+	if(EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}")
 	    list(APPEND _DIRS "${_DIR}")
 	endif()
     endforeach()
@@ -319,7 +319,7 @@ if(TIMEMORY_LINK_RT)
     target_link_libraries(timemory-headers INTERFACE rt)
 endif()
 # include threading because of rooflines
-target_link_libraries(timemory-headers INTERFACE timemory-threading)
+target_link_libraries(timemory-headers INTERFACE timemory-threading timemory-mpi)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -473,7 +473,7 @@ if(MPI_FOUND)
         endforeach()
         unset(_FLAGS)
 
-        option(TIMEMORY_USE_MPI_LINK_FLAGS "Use MPI link flags" ON)
+        option(TIMEMORY_USE_MPI_LINK_FLAGS "Use MPI link flags" OFF)
         mark_as_advanced(TIMEMORY_USE_MPI_LINK_FLAGS)
         # compile flags
         if(TIMEMORY_USE_MPI_LINK_FLAGS)
@@ -812,7 +812,8 @@ if(CUPTI_FOUND)
         INTERFACE_INSTALL_RPATH                 ""
         INTERFACE_INSTALL_RPATH_USE_LINK_PATH   ${HAS_CUDA_DRIVER_LIBRARY})
 
-    add_rpath(${CUPTI_LIBRARIES})
+    add_rpath(${CUPTI_cupti_LIBRARY} ${CUPTI_nvperf_host_LIBRARY}
+        ${CUPTI_nvperf_target_LIBRARY})
 else()
     set(TIMEMORY_USE_CUPTI OFF)
     inform_empty_interface(timemory-cupti "CUPTI")
@@ -921,7 +922,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools
-	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
+        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     ${_DEFINITIONS}
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "gperftools with user defined components"
@@ -930,7 +931,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-all-gperftools
-	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
+        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "tcmalloc_and_profiler (preference for shared)"
@@ -939,7 +940,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-cpu
-	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
+        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_PROFILER
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "CPU profiler"
@@ -948,7 +949,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-gperftools-heap
-	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
+        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_TCMALLOC
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "heap profiler and heap checker"
@@ -957,7 +958,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     find_package_interface(
         NAME                    gperftools
         INTERFACE               timemory-tcmalloc-minimal
-	INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
+        INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "threading-optimized malloc replacement"
         FIND_ARGS               QUIET COMPONENTS tcmalloc_minimal)

@@ -138,7 +138,7 @@ manager::~manager()
 #    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_last && settings::banner())
     {
-        printf("\n\n#=--------------------- tim::manager destroyed "
+        printf("\n\n#---------------------- tim::manager destroyed "
                "[rank=%i][id=%i][pid=%i] "
                "----------------------#\n",
                m_rank, m_instance_count, process::get_id());
@@ -204,6 +204,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::finalize()
 {
     m_is_finalizing = true;
+    m_rank          = dmp::rank();
     if(f_debug())
         PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
                    (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());

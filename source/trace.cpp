@@ -114,9 +114,15 @@ static bool mpi_is_attached = false;
 static int
 timemory_trace_mpi_finalize(MPI_Comm, int, void*, void*)
 {
+    if(tim::settings::debug() || tim::settings::verbose() > 1)
+        PRINT_HERE("%s", "comm keyval finalization started");
     timemory_trace_finalize();
+    if(tim::settings::debug() || tim::settings::verbose() > 1)
+        PRINT_HERE("%s", "comm keyval finalization complete");
     return MPI_SUCCESS;
 }
+
+//--------------------------------------------------------------------------------------//
 
 struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 {
@@ -132,7 +138,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     // MPI_Init
     int operator()(int* argc, char*** argv)
     {
-        auto ret = MPI_Init(argc, argv);
+        auto ret                 = MPI_Init(argc, argv);
+        tim::mpi::is_finalized() = false;
         set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
@@ -144,7 +151,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     // MPI_Init_thread
     int operator()(int* argc, char*** argv, int req, int* prov)
     {
-        auto ret = MPI_Init_thread(argc, argv, req, prov);
+        auto ret                 = MPI_Init_thread(argc, argv, req, prov);
+        tim::mpi::is_finalized() = false;
         set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
@@ -164,6 +172,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
             timemory_pop_trace("MPI_Init(int*, char**)");
             timemory_trace_finalize();
         }
+        if(tim::settings::debug())
+            PRINT_HERE("%s", "finalizing MPI");
         auto ret                 = MPI_Finalize();
         tim::mpi::is_finalized() = true;
         return ret;
@@ -202,8 +212,8 @@ setup_mpi_gotcha()
     mpi_trace_gotcha_t::get_initializer() = []() {
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 0, MPI_Init);
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 1, MPI_Init_thread);
-        if(mpi_is_attached)
-            TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 2, MPI_Finalize);
+        // if(mpi_is_attached)
+        TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 2, MPI_Finalize);
     };
     return true;
 }
@@ -215,6 +225,8 @@ using mpi_trace_bundle_t = tim::auto_tuple<mpi_trace_gotcha_t>;
 //--------------------------------------------------------------------------------------//
 
 #else
+
+//--------------------------------------------------------------------------------------//
 
 struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 {
@@ -240,13 +252,19 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     }
 };
 
+//--------------------------------------------------------------------------------------//
+
 using mpi_trace_bundle_t = tim::auto_tuple<>;
+
+//--------------------------------------------------------------------------------------//
 
 bool
 setup_mpi_gotcha()
 {
     return false;
 }
+
+//--------------------------------------------------------------------------------------//
 
 #endif
 
@@ -582,10 +600,9 @@ extern "C"
                 auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
                 tim::config::read_command_line(_init);
             }
-
-            auto manager = tim::manager::instance();
-            tim::consume_parameters(manager);
         }
+        auto manager = tim::manager::instance();
+        tim::consume_parameters(manager);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -603,14 +620,14 @@ extern "C"
         // do the finalization
         auto _count = --library_trace_count;
 
-        tim::auto_lock_t lock(tim::type_mutex<tim::api::native_tag>());
-
         if(_count > 0)
         {
             // have the manager finalize
             tim::manager::instance()->finalize();
             return;
         }
+
+        tim::auto_lock_t lock(tim::type_mutex<tim::api::native_tag>());
 
         // tim::settings::enabled() = false;
         get_library_state()[1] = true;

@@ -635,7 +635,9 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
 
         target_link_libraries(${TARGET_NAME} PUBLIC
             timemory-external-${LINK}
+            timemory-headers
             timemory-vector
+            timemory-mpi
             ${DEPENDS}
             ${PROPERTY_DEPENDS}
             ${COMP_PUBLIC_LINK})
@@ -644,7 +646,6 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory-compile-options
             timemory-develop-options
             timemory-default-visibility
-            timemory-headers
             ${_ANALYSIS_TOOLS}
             ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})

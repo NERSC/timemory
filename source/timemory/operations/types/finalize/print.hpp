@@ -283,8 +283,7 @@ print<Tp, true>::write_stream(stream_type& stream, result_type& result_array)
                     // if one level down, this is an exclusive value
                     if(eitr_depth == itr_depth + 1)
                     {
-                        // if first exclusive value encountered: assign; else:
-                        // combine
+                        // if first exclusive value encountered: assign; else: combine
                         if(nexclusive == 0)
                             exclusive_values = eitr_obj.get();
                         else

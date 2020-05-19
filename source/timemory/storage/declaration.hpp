@@ -632,10 +632,9 @@ template <typename Archive>
 void
 storage<Type, true>::do_serialize(Archive& ar)
 {
-    auto _label = m_label;
     if(m_is_master)
         merge();
-    ar(cereal::make_nvp(_label, *this));
+    ar(cereal::make_nvp(Type::label(), *this));
 }
 //
 //--------------------------------------------------------------------------------------//

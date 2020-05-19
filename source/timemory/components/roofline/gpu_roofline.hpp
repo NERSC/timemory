@@ -28,6 +28,7 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/settings/declaration.hpp"
 
+#include "timemory/components/cupti/components.hpp"
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
 
@@ -74,6 +75,8 @@ struct gpu_roofline
     using label_type    = std::vector<std::string>;
     using count_type    = wall_clock;
     using types_tuple   = std::tuple<Types...>;
+
+    friend struct operation::record<this_type>;
 
     using ert_data_t     = ert::exec_data<count_type>;
     using ert_data_ptr_t = std::shared_ptr<ert_data_t>;

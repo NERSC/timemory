@@ -119,6 +119,12 @@ timemory_get_property_depends(TIMEMORY_STATIC_USER_BUNDLE_LIBRARIES STATIC USER_
 timemory_get_property_depends(TIMEMORY_SHARED_FACTORY_LIBRARIES SHARED FACTORY)
 timemory_get_property_depends(TIMEMORY_STATIC_FACTORY_LIBRARIES STATIC FACTORY)
 
+if(CMAKE_CUDA_COMPILER)
+    set_source_files_properties(${cxx_sources} PROPERTIES
+        LANGUAGE CUDA
+        LINKER_LANGUAGE CUDA)
+endif()
+
 if(_BUILD_SHARED_CXX)
     build_library(
         PIC
@@ -148,7 +154,7 @@ if(_BUILD_SHARED_CXX)
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
         timemory-develop-options
-        timemory-hidden-visibility
+        # timemory-hidden-visibility
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
@@ -196,7 +202,7 @@ if(_BUILD_STATIC_CXX)
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
         timemory-develop-options
-        timemory-hidden-visibility
+        # timemory-hidden-visibility
         ${_ANALYSIS_TOOLS}
         ${_ARCH_LIBRARY})
 
@@ -248,7 +254,7 @@ if(TIMEMORY_BUILD_C)
                                 PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    timemory-hidden-visibility
+                                    # timemory-hidden-visibility
                                     timemory-cxx-shared
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
@@ -278,7 +284,7 @@ if(TIMEMORY_BUILD_C)
 	                        PRIVATE
                                     timemory-compile-options
                                     timemory-develop-options
-                                    timemory-hidden-visibility
+                                    # timemory-hidden-visibility
                                     timemory-cxx-static
                                     ${_ANALYSIS_TOOLS}
                                     ${_ARCH_LIBRARY})
