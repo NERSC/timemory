@@ -235,15 +235,24 @@ struct TIMEMORY_SETTINGS_DLL settings
         bool, dart_label, "TIMEMORY_DART_LABEL",
         "Echo the category instead of the label (see also: TIMEMORY_DART_OUTPUT)", true)
 
+    /// max number of times a worker thread bookmarks call-graph position of master thread
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        size_t, max_thread_bookmarks, "TIMEMORY_MAX_THREAD_BOOKMARKS",
+        "Maximum number of times a worker thread bookmarks the call-graph location w.r.t."
+        " the master thread. Higher values tend to increase the finalization merge time",
+        50)
+
     /// enable thread affinity
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY",
                                     "Enable pinning threads to CPUs (Linux-only)", false)
+
     /// target pid
     TIMEMORY_MEMBER_STATIC_REFERENCE(
         process::id_t, target_pid, "TIMEMORY_TARGET_PID",
         "Process ID for the components which require this",
         ([]() -> process::id_t& { return process::get_target_id(); }),
         ([](process::id_t v) { process::get_target_id() = v; }))
+
     /// configure component storage stack clearing
     TIMEMORY_MEMBER_STATIC_ACCESSOR(
         bool, stack_clearing, "TIMEMORY_STACK_CLEARING",
@@ -784,6 +793,7 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_COUNT", dart_count)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_LABEL", dart_label)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_CPU_AFFINITY", cpu_affinity)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MAX_THREAD_BOOKMARKS", max_thread_bookmarks)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TARGET_PID", target_pid)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_STACK_CLEARING", stack_clearing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_ADD_SECONDARY", add_secondary)

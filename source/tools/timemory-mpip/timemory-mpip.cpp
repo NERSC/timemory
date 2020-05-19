@@ -40,7 +40,20 @@ uint64_t global_id  = 0;
 
 extern "C"
 {
-    void timemory_mpip_library_ctor() {}
+    void timemory_mpip_library_ctor()
+    {
+        auto mpip   = tim::get_env<std::string>("TIMEMORY_MPIP_COMPONENTS", "");
+        auto over   = (mpip.empty()) ? 1 : 0;
+        auto trace  = tim::get_env<std::string>("TIMEMORY_TRACE_COMPONENTS", "");
+        auto region = tim::get_env<std::string>("TIMEMORY_COMPONENTS", "");
+        auto glob   = tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "");
+        if(!trace.empty())
+            tim::set_env("TIMEMORY_MPIP_COMPONENTS", trace, over);
+        else if(!region.empty())
+            tim::set_env("TIMEMORY_MPIP_COMPONENTS", region, over);
+        else if(!glob.empty())
+            tim::set_env("TIMEMORY_MPIP_COMPONENTS", glob, over);
+    }
 
     uint64_t timemory_start_mpip()
     {

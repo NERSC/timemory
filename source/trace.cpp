@@ -143,8 +143,11 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
-        timemory_push_trace("MPI_Init(int*, char**)");
-        // timemory_push_region("MPI_Init(int*, char**)");
+        auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
+        if(mode == "trace")
+            timemory_push_trace("MPI_Init(int*, char**)");
+        else if(mode == "region")
+            timemory_push_region("MPI_Init(int*, char**)");
         return ret;
     }
 
@@ -156,8 +159,11 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
         set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
-        timemory_push_trace("MPI_Init_thread(int*, char**, int, int*)");
-        // timemory_push_region("MPI_Init_thread(int*, char**, int, int*)");
+        auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
+        if(mode == "trace")
+            timemory_push_trace("MPI_Init_thread(int*, char**, int, int*)");
+        else if(mode == "region")
+            timemory_push_region("MPI_Init_thread(int*, char**, int, int*)");
         return ret;
     }
 
@@ -166,10 +172,18 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     {
         if(mpi_is_attached)
         {
-            // timemory_pop_region("MPI_Init_thread(int*, char**, int, int*)");
-            timemory_pop_trace("MPI_Init_thread(int*, char**, int, int*)");
-            // timemory_pop_region("MPI_Init(int*, char**)");
-            timemory_pop_trace("MPI_Init(int*, char**)");
+            auto mode =
+                tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
+            if(mode == "trace")
+            {
+                timemory_pop_trace("MPI_Init(int*, char**)");
+                timemory_pop_trace("MPI_Init_thread(int*, char**, int, int*)");
+            }
+            else
+            {
+                timemory_pop_region("MPI_Init(int*, char**)");
+                timemory_pop_region("MPI_Init_thread(int*, char**, int, int*)");
+            }
             timemory_trace_finalize();
         }
         if(tim::settings::debug())
@@ -212,8 +226,8 @@ setup_mpi_gotcha()
     mpi_trace_gotcha_t::get_initializer() = []() {
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 0, MPI_Init);
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 1, MPI_Init_thread);
-        // if(mpi_is_attached)
-        TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 2, MPI_Finalize);
+        if(mpi_is_attached)
+            TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 2, MPI_Finalize);
     };
     return true;
 }
@@ -272,6 +286,7 @@ setup_mpi_gotcha()
 
 static bool                                mpi_gotcha_configured = setup_mpi_gotcha();
 static std::shared_ptr<mpi_trace_bundle_t> mpi_gotcha_handle{ nullptr };
+static std::map<size_t, string_t>          master_hash_ids;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -334,6 +349,14 @@ extern "C"
         auto _id = tim::add_hash_id(name);
         if(_id != id)
             tim::add_hash_id(_id, id);
+
+        // master thread adds the ids
+        if(tim::threading::get_id() == 0)
+        {
+            master_hash_ids[id] = name;
+            if(_id != id)
+                master_hash_ids[_id] = name;
+        }
     }
     //
     //----------------------------------------------------------------------------------//
@@ -342,6 +365,21 @@ extern "C"
     {
         for(uint64_t i = 0; i < nentries; ++i)
             timemory_add_hash_id(ids[i], names[i]);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_copy_hash_ids()
+    {
+        auto                     lk = tim::trace::lock<tim::trace::library>();
+        static thread_local bool once_per_thread = false;
+        if(!once_per_thread && tim::threading::get_id() > 0)
+        {
+            once_per_thread  = true;
+            auto _master_ids = master_hash_ids;
+            for(auto itr : _master_ids)
+                timemory_add_hash_id(itr.first, itr.second.c_str());
+        }
     }
     //
     //----------------------------------------------------------------------------------//
@@ -361,17 +399,21 @@ extern "C"
 
         auto& _trace_map = get_trace_map();
 
-        // #if defined(DEBUG)
+        if(_trace_map.empty())
+            timemory_copy_hash_ids();
+
         if(tim::settings::debug())
         {
             int64_t n = _trace_map[id].size();
-            printf("beginning trace for '%s' (id = %llu, offset = %lli, rank = %i, pid = "
-                   "%i, thread = %i)...\n",
-                   tim::get_hash_ids()->find(id)->second.c_str(), (long long unsigned) id,
-                   (long long int) n, tim::dmp::rank(), (int) tim::process::get_id(),
-                   (int) tim::threading::get_id());
+            auto     itr  = tim::get_hash_ids()->find(id);
+            string_t name = (itr != tim::get_hash_ids()->end()) ? itr->second : "unknown";
+            fprintf(stderr,
+                    "beginning trace for '%s' (id = %llu, offset = %lli, rank = %i, pid "
+                    "= %i, thread = %i)...\n",
+                    name.c_str(), (long long unsigned) id, (long long int) n,
+                    tim::dmp::rank(), (int) tim::process::get_id(),
+                    (int) tim::threading::get_id());
         }
-        // #endif
 
         _trace_map[id].emplace_back(traceset_t(id));
         _trace_map[id].back().start();
@@ -393,14 +435,17 @@ extern "C"
         int64_t ntotal = _trace_map[id].size();
         int64_t offset = ntotal - 1;
 
-#if defined(DEBUG)
         if(tim::settings::debug())
-            printf("beginning trace for '%s' (id = %llu, offset = %lli, rank = %i, pid = "
-                   "%i, thread = %i)...\n",
-                   tim::get_hash_ids()->find(id)->second.c_str(), (long long unsigned) id,
-                   (long long int) offset, tim::dmp::rank(), (int) tim::process::get_id(),
-                   (int) tim::threading::get_id());
-#endif
+        {
+            auto     itr  = tim::get_hash_ids()->find(id);
+            string_t name = (itr != tim::get_hash_ids()->end()) ? itr->second : "unknown";
+            fprintf(stderr,
+                    "ending trace for '%s' (id = %llu, offset = %lli, rank = %i, pid = "
+                    "%i, thread = %i)...\n",
+                    name.c_str(), (long long unsigned) id, (long long int) offset,
+                    tim::dmp::rank(), (int) tim::process::get_id(),
+                    (int) tim::threading::get_id());
+        }
 
         (*get_overhead())[id].first.stop();
 
@@ -415,7 +460,7 @@ extern "C"
 
         auto _count = ++((*get_overhead())[id].second);
 
-        if(_count >= tim::settings::throttle_count())
+        if(_count % tim::settings::throttle_count() == 0)
         {
             auto _accum = (*get_overhead())[id].first.get_accum() / _count;
             if(_accum < tim::settings::throttle_value())
@@ -437,8 +482,7 @@ extern "C"
             }
             else
             {
-                if(_count % tim::settings::throttle_count() == 0 &&
-                   _accum < (10 * tim::settings::throttle_value()) &&
+                if(_accum < (10 * tim::settings::throttle_value()) &&
                    (tim::settings::debug() || tim::settings::verbose() > 1))
                 {
                     auto name = tim::get_hash_ids()->find(id)->second;
@@ -453,9 +497,9 @@ extern "C"
                         (int) tim::threading::get_id(), (unsigned long) _accum,
                         (unsigned long) _count);
                 }
-                // (*get_overhead())[id].first.reset();
-                // (*get_overhead())[id].second = 0;
             }
+            (*get_overhead())[id].first.reset();
+            (*get_overhead())[id].second = 0;
         }
     }
     //
@@ -521,6 +565,9 @@ extern "C"
         auto lk = tim::trace::lock<tim::trace::library>();
         if(get_library_state()[0])
             return;
+
+        timemory_mpip_library_ctor();
+        timemory_ompt_library_ctor();
 
         if(use_mpi_gotcha && !mpi_gotcha_handle.get())
         {

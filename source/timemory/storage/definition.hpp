@@ -456,7 +456,7 @@ storage<Type, true>::pop()
     // threads should insert a new dummy at the current master thread id and depth.
     // Be aware, this changes 'm_current' inside the data graph
     //
-    if(_data().at_sea_level())
+    if(_data().at_sea_level() && _data().dummy_count() < settings::max_thread_bookmarks())
         _data().add_dummy();
     return itr;
 }

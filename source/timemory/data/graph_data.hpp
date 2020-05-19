@@ -117,6 +117,8 @@ public:
             m_master = _master;
     }
 
+    inline auto dummy_count() { return m_dummies.size(); }
+
     inline void add_dummy()
     {
         if(!m_master)

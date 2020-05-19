@@ -874,34 +874,40 @@ configure(ompt_function_lookup_t lookup, int, ompt_data_t*)
         switch(ret)
         {
             case ompt_set_error:
-                printf("[timemory]> WARNING: OMPT Callback for event '%s' registered "
-                       "with return value '%s'\n",
-                       name, "ompt_set_error");
+                fprintf(stderr,
+                        "[timemory]> WARNING: OMPT Callback for event '%s' count not "
+                        "be registered: '%s'\n",
+                        name, "ompt_set_error");
                 break;
             case ompt_set_never:
-                printf("[timemory]> WARNING: OMPT Callback for event '%s' could not "
-                       "be registered\n",
-                       name);
+                fprintf(stderr,
+                        "[timemory]> WARNING: OMPT Callback for event '%s' could not "
+                        "be registered: '%s'\n",
+                        name, "ompt_set_never");
                 break;
             case ompt_set_impossible:
-                printf("[timemory]> WARNING: OMPT Callback for event '%s' registered "
-                       "with return value '%s'\n",
-                       name, "ompt_set_impossible");
+                fprintf(stderr,
+                        "[timemory]> WARNING: OMPT Callback for event '%s' could not "
+                        "be registered: '%s'\n",
+                        name, "ompt_set_impossible");
                 break;
             case ompt_set_sometimes:
-                printf("[timemory]> OMPT Callback for event '%s' registered with "
-                       "return value '%s'\n",
-                       name, "ompt_set_sometimes");
+                fprintf(stderr,
+                        "[timemory]> OMPT Callback for event '%s' registered with "
+                        "return value: '%s'\n",
+                        name, "ompt_set_sometimes");
                 break;
             case ompt_set_sometimes_paired:
-                printf("[timemory]> OMPT Callback for event '%s' registered with "
-                       "return value '%s'\n",
-                       name, "ompt_set_sometimes_paired");
+                fprintf(stderr,
+                        "[timemory]> OMPT Callback for event '%s' registered with "
+                        "return value: '%s'\n",
+                        name, "ompt_set_sometimes_paired");
                 break;
             case ompt_set_always:
-                printf("[timemory]> OMPT Callback for event '%s' registered with "
-                       "return value '%s'\n",
-                       name, "ompt_set_always");
+                fprintf(stderr,
+                        "[timemory]> OMPT Callback for event '%s' registered with "
+                        "return value: '%s'\n",
+                        name, "ompt_set_always");
                 break;
         }
         return ret;

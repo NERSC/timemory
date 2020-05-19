@@ -128,8 +128,6 @@ static string_t main_fname         = "main";
 static string_t argv0              = "";
 static string_t cmdv0              = "";
 static string_t default_components = "wall_clock";
-static string_t instr_push_func    = "timemory_push_trace";
-static string_t instr_pop_func     = "timemory_pop_trace";
 static string_t prefer_library     = "";
 
 static patch_t*      bpatch          = nullptr;

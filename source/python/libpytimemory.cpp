@@ -547,6 +547,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(uint64_t, dart_count);
     SETTING_PROPERTY(bool, dart_label);
     // parallelism
+    SETTING_PROPERTY(size_t, max_thread_bookmarks);
     SETTING_PROPERTY(bool, cpu_affinity);
     SETTING_PROPERTY(bool, mpi_init);
     SETTING_PROPERTY(bool, mpi_finalize);

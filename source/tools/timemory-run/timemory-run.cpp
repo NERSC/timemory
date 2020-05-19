@@ -27,8 +27,6 @@
 
 static strset_t                                   extra_libs = {};
 static std::vector<std::pair<uint64_t, string_t>> hash_ids;
-static string_t                                   instr_push_hash = "";
-static string_t                                   instr_pop_hash  = "";
 static std::map<string_t, bool>                   use_stubs;
 static std::map<string_t, procedure_t*>           beg_stubs;
 static std::map<string_t, procedure_t*>           end_stubs;
@@ -37,7 +35,12 @@ static strvec_t                                   fini_stub_names;
 static strset_t                                   used_stub_names;
 static std::map<string_t, call_expr_pointer_t>    beg_expr;
 static std::map<string_t, call_expr_pointer_t>    end_expr;
-static const auto                                 npos_v = string_t::npos;
+static const auto                                 npos_v          = string_t::npos;
+static string_t                                   instr_mode      = "trace";
+static string_t                                   instr_push_func = "timemory_push_trace";
+static string_t                                   instr_pop_func  = "timemory_pop_trace";
+static string_t instr_push_hash = "timemory_push_trace_hash";
+static string_t instr_pop_hash  = "timemory_pop_trace_hash";
 
 //======================================================================================//
 //
@@ -340,14 +343,11 @@ main(int argc, char** argv)
 
     if(parser.exists("M"))
     {
-        auto _mode = parser.get<string_t>("M");
-        if(_mode == "trace" || _mode == "region")
-        {
-            instr_push_func = "timemory_push_" + _mode;
-            instr_push_hash = "timemory_push_" + _mode + "_hash";
-            instr_pop_func  = "timemory_pop_" + _mode;
-            instr_pop_hash  = "timemory_pop_" + _mode + "_hash";
-        }
+        instr_mode      = parser.get<string_t>("M");
+        instr_push_func = "timemory_push_" + instr_mode;
+        instr_push_hash = "timemory_push_" + instr_mode + "_hash";
+        instr_pop_func  = "timemory_pop_" + instr_mode;
+        instr_pop_hash  = "timemory_pop_" + instr_mode + "_hash";
     }
 
     if(parser.exists("prefer"))
@@ -884,6 +884,7 @@ main(int argc, char** argv)
     auto init_call_args = timemory_call_expr(default_components, binary_rewrite, cmdv0);
     auto fini_call_args = timemory_call_expr();
     auto umpi_call_args = timemory_call_expr(use_mpi, is_attached);
+    auto mode_call_args = timemory_call_expr("TIMEMORY_INSTRUMENTATION_MODE", instr_mode);
     auto mpip_call_args =
         timemory_call_expr("TIMEMORY_MPIP_COMPONENTS", default_components);
     auto ompt_call_args =
@@ -898,6 +899,7 @@ main(int argc, char** argv)
     auto main_beg_call = main_call_args.get(entr_trace);
     auto main_end_call = main_call_args.get(exit_trace);
 
+    auto mode_env_call = mode_call_args.get(env_func);
     auto mpip_env_call = mpip_call_args.get(env_func);
     auto ompt_env_call = ompt_call_args.get(env_func);
 
@@ -916,6 +918,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
+    if(mode_env_call)
+        init_names.push_back(mode_env_call.get());
     if(use_stubs["mpip"] && mpip_env_call)
         init_names.push_back(mpip_env_call.get());
     if(use_stubs["ompt"] && ompt_env_call)
