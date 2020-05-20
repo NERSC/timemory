@@ -404,7 +404,7 @@ extern "C"
 
         if(tim::settings::debug())
         {
-            int64_t n = _trace_map[id].size();
+            int64_t  n    = _trace_map[id].size();
             auto     itr  = tim::get_hash_ids()->find(id);
             string_t name = (itr != tim::get_hash_ids()->end()) ? itr->second : "unknown";
             fprintf(stderr,
