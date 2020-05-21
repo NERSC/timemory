@@ -31,6 +31,8 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
     cmake_policy(SET CMP0079 NEW)
+endif()
+if(NOT CMAKE_VERSION VERSION_LESS 3.14)
     cmake_policy(SET CMP0082 NEW)
 endif()
 # set these as the defaults
