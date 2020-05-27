@@ -133,10 +133,15 @@ main(int argc, char** argv)
     if(_cmdc > 0)
         cmdv0 = _cmdv[0];
 
-    // now can loop through the options.  If the first character is '-', then we know we
-    // have an option.  Check to see if it is one of our options and process it.  If it is
-    // unrecognized, then set the errflag to report an error.  When we come to a non '-'
-    // charcter, then we must be at the application name.
+    std::stringstream jump_description;
+    jump_description
+        << "Instrument with function pointers in TIMEMORY_JUMP_LIBRARY (default: "
+        << tim::get_env<string_t>("TIMEMORY_JUMP_LIBRARY", "jump/libtimemory.so") << ")";
+
+    // now can loop through the options.  If the first character is '-', then we know
+    // we have an option.  Check to see if it is one of our options and process it. If
+    // it is unrecognized, then set the errflag to report an error.  When we come to a
+    // non '-' charcter, then we must be at the application name.
     tim::argparse::argument_parser parser("timemory-run");
 
     parser.enable_help();
@@ -182,7 +187,7 @@ main(int argc, char** argv)
         .description("Additional path(s) to folders containing collection files");
     parser.add_argument()
         .names({ "-j", "--jump" })
-        .description("Instrument with jump pointers for LD_PRELOAD")
+        .description(jump_description.str())
         .count(0);
     parser.add_argument()
         .names({ "-s", "--stubs" })
@@ -305,12 +310,10 @@ main(int argc, char** argv)
 
     if(!parser.exists("L"))
         inputlib = "libtimemory";
-
-    if(parser.exists("j") && !parser.exists("s") && !parser.exists("L"))
-        inputlib += "jump";
-
     if(parser.exists("s") && !parser.exists("L"))
-        inputlib += "stubs";
+        inputlib += "-stubs";
+    else if(parser.exists("j") && !parser.exists("L"))
+        inputlib += "-jump";
 
     if(parser.exists("S"))
         stl_func_instr = true;
