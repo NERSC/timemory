@@ -21,7 +21,24 @@ foreach(LIB_TYPE shared static)
 
     target_compile_definitions(timemory-stubs-${LIB_TYPE} PUBLIC TIMEMORY_USE_EXTERN)
 
+    target_link_libraries(timemory-stubs-${LIB_TYPE} PRIVATE
+        timemory-headers
+        timemory-compile-options
+        timemory-environment-${LIB_TYPE})
+
     install(TARGETS timemory-stubs-${LIB_TYPE}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/stubs)
+
+    # build tree
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink stubs/libtimemory.so libtimemory-stubs.so
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+    # install tree
+    install(CODE "
+EXECUTE_PROCESS(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink timemory/stubs/libtimemory.so libtimemory-stubs.so
+    WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+    ")
 
 endforeach()
