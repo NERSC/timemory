@@ -22,18 +22,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/variadic/bits/lightweight_tuple.hpp
- * Implementation for various functions
+/** \file timemory/variadic/lightweight_tuple.cpp
+ * \brief Implementation for various lightweight_tuple member functions
  *
  */
 
-#pragma once
-
+#include "timemory/variadic/lightweight_tuple.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/variadic/lightweight_tuple.hpp"
 #include "timemory/variadic/types.hpp"
 
 //======================================================================================//

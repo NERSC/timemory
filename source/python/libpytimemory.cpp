@@ -520,6 +520,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, flat_profile);
     SETTING_PROPERTY(bool, timeline_profile);
     SETTING_PROPERTY(bool, collapse_threads);
+    SETTING_PROPERTY(bool, collapse_processes);
     SETTING_PROPERTY(bool, destructor_report);
     SETTING_PROPERTY(uint16_t, max_depth);
     SETTING_PROPERTY(string_t, time_format);
@@ -553,8 +554,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     SETTING_PROPERTY(bool, mpi_finalize);
     SETTING_PROPERTY(bool, mpi_thread);
     SETTING_PROPERTY(string_t, mpi_thread_type);
-    SETTING_PROPERTY(bool, mpi_output_per_rank);
-    SETTING_PROPERTY(bool, mpi_output_per_node);
     SETTING_PROPERTY(bool, upcxx_init);
     SETTING_PROPERTY(bool, upcxx_finalize);
     SETTING_PROPERTY(int32_t, node_count);

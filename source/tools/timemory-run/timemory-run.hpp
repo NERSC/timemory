@@ -71,6 +71,9 @@
 struct function_signature;
 struct module_function;
 
+template <typename Tp>
+using bpvector_t = BPatch_Vector<Tp>;
+
 using string_t              = std::string;
 using stringstream_t        = std::stringstream;
 using strvec_t              = std::vector<string_t>;
@@ -81,6 +84,9 @@ using exec_callback_t       = BPatchExecCallback;
 using exit_callback_t       = BPatchExitCallback;
 using fork_callback_t       = BPatchForkCallback;
 using patch_t               = BPatch;
+using process_t             = BPatch_process;
+using thread_t              = BPatch_thread;
+using binary_edit_t         = BPatch_binaryEdit;
 using image_t               = BPatch_image;
 using module_t              = BPatch_module;
 using procedure_t           = BPatch_function;
@@ -94,61 +100,69 @@ using point_t               = BPatch_point;
 using local_var_t           = BPatch_localVar;
 using const_expr_t          = BPatch_constExpr;
 using error_level_t         = BPatchErrorLevel;
+using patch_pointer_t       = std::shared_ptr<patch_t>;
 using snippet_pointer_t     = std::shared_ptr<snippet_t>;
 using call_expr_pointer_t   = std::shared_ptr<call_expr_t>;
-using snippet_vec_t         = BPatch_Vector<snippet_t*>;
-using procedure_vec_t       = BPatch_Vector<procedure_t*>;
-using basic_loop_vec_t      = BPatch_Vector<basic_loop_t*>;
+using snippet_vec_t         = bpvector_t<snippet_t*>;
+using procedure_vec_t       = bpvector_t<procedure_t*>;
+using basic_loop_vec_t      = bpvector_t<basic_loop_t*>;
 using snippet_pointer_vec_t = std::vector<snippet_pointer_t>;
 
 void
-timemory_prefork_callback(BPatch_thread* parent, BPatch_thread* child);
+timemory_prefork_callback(thread_t* parent, thread_t* child);
 
 //======================================================================================//
 //
 //                                  Global Variables
 //
 //======================================================================================//
-
-static bool     binary_rewrite     = 0;
-static bool     loop_level_instr   = false;
-static bool     werror             = false;
-static bool     stl_func_instr     = false;
-static bool     use_mpi            = false;
-static bool     is_static_exe      = false;
-static bool     use_return_info    = false;
-static bool     use_args_info      = false;
-static bool     use_file_info      = false;
-static bool     use_line_info      = false;
-static int      expect_error       = NO_ERROR;
-static int      debug_print        = 0;
-static int      error_print        = 0;  // external "dyninst" tracing
-static int      verbose_level      = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
+//
+//  boolean settings
+//
+static bool binary_rewrite   = 0;
+static bool loop_level_instr = false;
+static bool werror           = false;
+static bool stl_func_instr   = false;
+static bool use_mpi          = false;
+static bool is_static_exe    = false;
+static bool use_return_info  = false;
+static bool use_args_info    = false;
+static bool use_file_info    = false;
+static bool use_line_info    = false;
+//
+//  integral settings
+//
+static int expect_error  = NO_ERROR;
+static int debug_print   = 0;
+static int error_print   = 0;  // external "dyninst" tracing
+static int verbose_level = tim::get_env<int>("TIMEMORY_RUN_VERBOSE", 0);
+//
+//  string settings
+//
 static string_t main_fname         = "main";
 static string_t argv0              = "";
 static string_t cmdv0              = "";
 static string_t default_components = "wall_clock";
 static string_t prefer_library     = "";
-
-static patch_t*      bpatch          = nullptr;
-static call_expr_t*  initialize_expr = nullptr;
-static call_expr_t*  terminate_expr  = nullptr;
-static snippet_vec_t init_names;
-static snippet_vec_t fini_names;
-
-static regexvec_t func_include;
-static regexvec_t func_exclude;
-static regexvec_t file_include;
-static regexvec_t file_exclude;
-static strset_t   collection_includes;
-static strset_t   collection_excludes;
-static strvec_t   collection_paths = { "collections", "timemory/collections",
+//
+//  global variables
+//
+static patch_pointer_t bpatch;
+static call_expr_t*    initialize_expr = nullptr;
+static call_expr_t*    terminate_expr  = nullptr;
+static snippet_vec_t   init_names;
+static snippet_vec_t   fini_names;
+static fmodset_t       available_module_functions;
+static fmodset_t       instrumented_module_functions;
+static regexvec_t      func_include;
+static regexvec_t      func_exclude;
+static regexvec_t      file_include;
+static regexvec_t      file_exclude;
+static strset_t        collection_includes;
+static strset_t        collection_excludes;
+static strvec_t        collection_paths = { "collections", "timemory/collections",
                                      "../share/timemory/collections" };
-
-static fmodset_t available_module_functions;
-static fmodset_t instrumented_module_functions;
-
-static auto regex_opts =
+static auto            regex_opts =
     std::regex_constants::ECMAScript | std::regex_constants::optimize;
 //
 //======================================================================================//
@@ -213,11 +227,11 @@ void
 error_func_fake(error_level_t level, int num, const char* const* params);
 
 bool
-find_func_or_calls(std::vector<const char*> names, BPatch_Vector<point_t*>& points,
+find_func_or_calls(std::vector<const char*> names, bpvector_t<point_t*>& points,
                    image_t* appImage, procedure_loc_t loc = BPatch_locEntry);
 
 bool
-find_func_or_calls(const char* name, BPatch_Vector<point_t*>& points, image_t* image,
+find_func_or_calls(const char* name, bpvector_t<point_t*>& points, image_t* image,
                    procedure_loc_t loc = BPatch_locEntry);
 
 bool
@@ -549,7 +563,7 @@ private:
 //======================================================================================//
 //
 static inline address_space_t*
-timemory_get_address_space(BPatch* bpatch, int _cmdc, char** _cmdv, bool _rewrite,
+timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool _rewrite,
                            int _pid = -1, string_t _name = "")
 {
     address_space_t* mutatee = nullptr;
@@ -601,7 +615,7 @@ timemory_get_address_space(BPatch* bpatch, int _cmdc, char** _cmdv, bool _rewrit
 //======================================================================================//
 //
 static void
-timemory_thread_exit(BPatch_thread* thread, BPatch_exitType exit_type)
+timemory_thread_exit(thread_t* thread, BPatch_exitType exit_type)
 {
     if(!thread)
         return;
@@ -643,7 +657,7 @@ timemory_thread_exit(BPatch_thread* thread, BPatch_exitType exit_type)
 //======================================================================================//
 //
 static void
-timemory_fork_callback(BPatch_thread* parent, BPatch_thread* child)
+timemory_fork_callback(thread_t* parent, thread_t* child)
 {
     if(child)
     {

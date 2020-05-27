@@ -51,6 +51,14 @@ namespace tim
 //
 using default_record_statistics_type = TIMEMORY_DEFAULT_STATISTICS_TYPE;
 //
+//--------------------------------------------------------------------------------------//
+//
+template <typename TupleT, typename ListT>
+class component_hybrid;
+
+template <typename TupleT, typename ListT>
+class auto_hybrid;
+//
 //======================================================================================//
 // type-traits for customization
 //
@@ -408,7 +416,7 @@ template <template <typename...> class InTuple, typename... In,
           template <typename...> class OutTuple, typename... Out>
 struct convert<InTuple<In...>, OutTuple<Out...>>
 {
-    using type = OutTuple<In...>;
+    using type = OutTuple<Out..., In...>;
 
     using input_type  = InTuple<In...>;
     using output_type = OutTuple<Out...>;
@@ -421,6 +429,30 @@ struct convert<InTuple<In...>, OutTuple<Out...>>
                 static_cast<Out>(std::get<index_of<In, input_type>::value>(_in)));
         return _out;
     }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename...> class LhsInT, typename... LhsIn,
+          template <typename...> class RhsInT, typename... RhsIn,
+          template <typename...> class LhsOutT, typename... LhsOut,
+          template <typename...> class RhsOutT, typename... RhsOut>
+struct convert<component_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>,
+               auto_hybrid<LhsOutT<LhsOut...>, RhsOutT<RhsOut...>>>
+{
+    using type = auto_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename...> class LhsInT, typename... LhsIn,
+          template <typename...> class RhsInT, typename... RhsIn,
+          template <typename...> class LhsOutT, typename... LhsOut,
+          template <typename...> class RhsOutT, typename... RhsOut>
+struct convert<auto_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>,
+               component_hybrid<LhsOutT<LhsOut...>, RhsOutT<RhsOut...>>>
+{
+    using type = component_hybrid<LhsInT<LhsIn...>, RhsInT<RhsIn...>>;
 };
 
 //--------------------------------------------------------------------------------------//

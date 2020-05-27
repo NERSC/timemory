@@ -641,5 +641,3 @@ using component_hybrid_t = typename component_hybrid<T...>::type;
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
-
-// #include "timemory/variadic/bits/component_hybrid.hpp"

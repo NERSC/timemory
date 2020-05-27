@@ -31,11 +31,9 @@
 
 //======================================================================================//
 //
-#include "timemory/operations/macros.hpp"
-//
-#include "timemory/operations/types.hpp"
-//
 #include "timemory/operations/declaration.hpp"
+#include "timemory/operations/macros.hpp"
+#include "timemory/operations/types.hpp"
 //
 //======================================================================================//
 
@@ -80,7 +78,9 @@ get<Type, true>::get(storage_type& data, result_type& ret)
 {
     bool _thread_scope_only = trait::thread_scope_only<Type>::value;
     bool _use_tid_prefix    = (!settings::collapse_threads() || _thread_scope_only);
+    bool _use_pid_prefix    = (!settings::collapse_processes());
     auto _num_thr_count     = manager::get_thread_count();
+    auto _num_pid_count     = dmp::size();
 
     data.m_node_init = dmp::is_initialized();
     data.m_node_rank = dmp::rank();
@@ -111,16 +111,45 @@ get<Type, true>::get(storage_type& data, result_type& ret)
     //
     //------------------------------------------------------------------------------//
     auto _get_node_prefix = [&](const graph_node& itr) {
-        if(!data.m_node_init)
+        if(!data.m_node_init || !_use_pid_prefix)
             return _get_thread_prefix(itr);
+
+        auto _nc  = settings::node_count();  // node-count
+        auto _idx = data.m_node_rank;
+
+        std::vector<int32_t>        _ivals;
+        std::pair<int32_t, int32_t> _range = { -1, -1 };
+        if(_nc > 0)
+        {
+            _ivals.push_back(0);
+            auto _ni = (_num_pid_count / _nc) + 1;
+            auto _n  = 0;
+            for(int32_t i = 0; i < _nc; ++i, _n += _ni)
+                _ivals.push_back(_n);
+            for(auto vitr : _ivals)
+            {
+                if(vitr < _idx)
+                    _range.first = vitr;
+                if(vitr + _ni < _idx)
+                    _range.second = vitr + _ni;
+            }
+        }
 
         // prefix spacing
         static uint16_t width = 1;
-        if(data.m_node_size > 9)
-            width = std::max(width, (uint16_t)(log10(data.m_node_size) + 1));
+        if(_num_pid_count > 9)
+            width = std::max(width, (uint16_t)(log10(_num_pid_count) + 1));
         std::stringstream ss;
         ss.fill('0');
-        ss << "|" << std::setw(width) << data.m_node_rank << _get_thread_prefix(itr);
+        if(_range.first >= 0 && _range.second >= 0)
+        {
+            ss << "|" << std::setw(width) << _range.first << ":" << std::setw(width)
+               << _range.second << _get_thread_prefix(itr);
+        }
+        else
+        {
+            ss << "|" << std::setw(width) << _idx << _get_thread_prefix(itr);
+        }
         return ss.str();
     };
 

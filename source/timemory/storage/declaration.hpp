@@ -308,24 +308,23 @@ class storage<Type, true> : public base::storage
 {
 public:
     //----------------------------------------------------------------------------------//
-    //  forward decl of some internal types
     //
-    using result_node = node::result<Type>;
-    using graph_node  = node::graph<Type>;
+    static constexpr bool has_data_v = true;
 
-    friend struct node::result<Type>;
-    friend struct node::graph<Type>;
+    template <typename KeyT, typename MappedT>
+    using uomap_t = std::unordered_map<KeyT, MappedT>;
 
-    using strvector_t  = std::vector<string_t>;
-    using uintvector_t = std::vector<uint64_t>;
-    using EmptyT       = std::tuple<>;
-
-public:
+    using result_node    = node::result<Type>;
+    using graph_node     = node::graph<Type>;
+    using strvector_t    = std::vector<string_t>;
+    using uintvector_t   = std::vector<uint64_t>;
+    using EmptyT         = std::tuple<>;
     using base_type      = base::storage;
     using component_type = Type;
-    using this_type      = storage<Type, true>;
+    using this_type      = storage<Type, has_data_v>;
     using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
     using singleton_t    = singleton<this_type, smart_pointer>;
+    using singleton_type = singleton_t;
     using pointer        = typename singleton_t::pointer;
     using auto_lock_t    = typename singleton_t::auto_lock_t;
     using node_type      = typename node::data<Type>::node_type;
@@ -333,17 +332,30 @@ public:
     using result_type    = typename node::data<Type>::result_type;
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
-    using printer_t      = operation::finalize::print<Type, true>;
+    using printer_t      = operation::finalize::print<Type, has_data_v>;
     using sample_array_t = std::vector<Type>;
+    using graph_node_t   = graph_node;
+    using graph_data_t   = graph_data<graph_node_t>;
+    using graph_t        = typename graph_data_t::graph_t;
+    using graph_type     = graph_t;
+    using iterator       = typename graph_type::iterator;
+    using const_iterator = typename graph_type::const_iterator;
 
-    friend struct impl::storage_deleter<this_type>;
-    friend struct operation::finalize::get<Type, true>;
-    friend struct operation::finalize::mpi_get<Type, true>;
-    friend struct operation::finalize::upc_get<Type, true>;
-    friend struct operation::finalize::dmp_get<Type, true>;
-    friend struct operation::finalize::print<Type, true>;
-    friend struct operation::finalize::merge<Type, true>;
+    template <typename Vp>
+    using secondary_data_t       = std::tuple<iterator, const std::string&, Vp>;
+    using iterator_hash_submap_t = uomap_t<int64_t, iterator>;
+    using iterator_hash_map_t    = uomap_t<int64_t, iterator_hash_submap_t>;
+
     friend class tim::manager;
+    friend struct node::result<Type>;
+    friend struct node::graph<Type>;
+    friend struct impl::storage_deleter<this_type>;
+    friend struct operation::finalize::get<Type, has_data_v>;
+    friend struct operation::finalize::mpi_get<Type, has_data_v>;
+    friend struct operation::finalize::upc_get<Type, has_data_v>;
+    friend struct operation::finalize::dmp_get<Type, has_data_v>;
+    friend struct operation::finalize::print<Type, has_data_v>;
+    friend struct operation::finalize::merge<Type, has_data_v>;
 
 public:
     // static functions
@@ -361,18 +373,6 @@ private:
     static std::atomic<int64_t>& instance_count();
 
 public:
-    using graph_node_t   = graph_node;
-    using graph_data_t   = graph_data<graph_node_t>;
-    using graph_t        = typename graph_data_t::graph_t;
-    using iterator       = typename graph_t::iterator;
-    using const_iterator = typename graph_t::const_iterator;
-    template <typename Vp>
-    using secondary_data_t = std::tuple<iterator, const std::string&, Vp>;
-    template <typename KeyT, typename MappedT>
-    using uomap_t                = std::unordered_map<KeyT, MappedT>;
-    using iterator_hash_submap_t = uomap_t<int64_t, iterator>;
-    using iterator_hash_map_t    = uomap_t<int64_t, iterator_hash_submap_t>;
-
 public:
     storage();
     ~storage();
@@ -668,32 +668,41 @@ class storage<Type, false> : public base::storage
 public:
     //----------------------------------------------------------------------------------//
     //
-    using base_type      = base::storage;
-    using component_type = Type;
-    using this_type      = storage<Type, false>;
-    using string_t       = std::string;
-    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
-    using singleton_t    = singleton<this_type, smart_pointer>;
-    using pointer        = typename singleton_t::pointer;
-    using auto_lock_t    = typename singleton_t::auto_lock_t;
-    using printer_t      = operation::finalize::print<Type, false>;
-
-    friend class tim::manager;
-    friend struct impl::storage_deleter<this_type>;
-    friend struct operation::finalize::print<Type, false>;
-    friend struct operation::finalize::merge<Type, false>;
+    static constexpr bool has_data_v = false;
 
     using result_node    = std::tuple<>;
-    using graph_t        = std::tuple<>;
     using graph_node     = std::tuple<>;
+    using graph_t        = std::tuple<>;
+    using graph_type     = graph_t;
     using dmp_result_t   = std::vector<std::tuple<>>;
     using result_array_t = std::vector<std::tuple<>>;
     using uintvector_t   = std::vector<uint64_t>;
+    using base_type      = base::storage;
+    using component_type = Type;
+    using this_type      = storage<Type, has_data_v>;
+    using string_t       = std::string;
+    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
+    using singleton_t    = singleton<this_type, smart_pointer>;
+    using singleton_type = singleton_t;
+    using pointer        = typename singleton_t::pointer;
+    using auto_lock_t    = typename singleton_t::auto_lock_t;
+    using printer_t      = operation::finalize::print<Type, has_data_v>;
 
-public:
     using iterator       = void*;
     using const_iterator = const void*;
 
+    friend class tim::manager;
+    friend struct node::result<Type>;
+    friend struct node::graph<Type>;
+    friend struct impl::storage_deleter<this_type>;
+    friend struct operation::finalize::get<Type, has_data_v>;
+    friend struct operation::finalize::mpi_get<Type, has_data_v>;
+    friend struct operation::finalize::upc_get<Type, has_data_v>;
+    friend struct operation::finalize::dmp_get<Type, has_data_v>;
+    friend struct operation::finalize::print<Type, has_data_v>;
+    friend struct operation::finalize::merge<Type, has_data_v>;
+
+public:
     static pointer instance();
     static pointer master_instance();
     static pointer noninit_instance();

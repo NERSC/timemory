@@ -420,7 +420,7 @@ protected:
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-using timem_tuple_t = convert_t<available_tuple<type_list<Types...>>, timem_tuple<>>;
+using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>;
 //
 //--------------------------------------------------------------------------------------//
 //

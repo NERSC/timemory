@@ -23,17 +23,10 @@
 // SOFTWARE.
 //
 
-/** \file timemory/variadic/auto_tuple.hpp
- * \headerfile timemory/variadic/auto_tuple.hpp "timemory/variadic/auto_tuple.hpp"
+/** \file "timemory/variadic/auto_bundle.hpp"
  * Automatic starting and stopping of components. Accept unlimited number of
  * parameters. The constructor starts the components, the destructor stops the
  * components
- *
- * Usage with macros (recommended):
- *    \param TIMEMORY_AUTO_TUPLE()
- *    \param TIMEMORY_BASIC_AUTO_TUPLE()
- *    \param auto t = TIMEMORY_AUTO_TUPLE_OBJ()
- *    \param auto t = TIMEMORY_BASIC_AUTO_TUPLE_OBJ()
  */
 
 #pragma once
@@ -45,7 +38,7 @@
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
-#include "timemory/variadic/component_tuple.hpp"
+#include "timemory/variadic/component_bundle.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -53,29 +46,32 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
-class auto_tuple
+template <typename Tag, typename... Types>
+class auto_bundle
 {
 public:
-    using this_type           = auto_tuple<Types...>;
-    using base_type           = component_tuple<Types...>;
+    using this_type           = auto_bundle<Tag, Types...>;
+    using base_type           = component_bundle<Tag, Types...>;
     using auto_type           = this_type;
     using component_type      = typename base_type::component_type;
     using type_tuple          = typename component_type::type_tuple;
     using data_type           = typename component_type::data_type;
     using sample_type         = typename component_type::sample_type;
-    using type                = convert_t<typename component_type::type, auto_tuple<>>;
+    using bundle_type         = typename component_type::bundle_type;
     using string_t            = std::string;
     using initializer_type    = std::function<void(this_type&)>;
     using captured_location_t = typename component_type::captured_location_t;
+    using type = convert_t<typename component_type::type, auto_bundle<Tag>>;
 
     // used by component hybrid and gotcha
+    static constexpr bool is_component_bundle = false;
     static constexpr bool is_component_list   = false;
     static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = false;
     static constexpr bool is_component_type   = false;
+    static constexpr bool is_auto_bundle      = true;
     static constexpr bool is_auto_list        = false;
-    static constexpr bool is_auto_tuple       = true;
+    static constexpr bool is_auto_tuple       = false;
     static constexpr bool is_auto_hybrid      = false;
     static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
@@ -123,47 +119,47 @@ public:
 
 public:
     template <typename... T, typename Init = initializer_type>
-    explicit auto_tuple(const string_t&, variadic::config<T...>,
-                        const Init& = this_type::get_initializer());
+    explicit auto_bundle(const string_t&, variadic::config<T...>,
+                         const Init& = this_type::get_initializer());
 
     template <typename... T, typename Init = initializer_type>
-    explicit auto_tuple(const captured_location_t&, variadic::config<T...>,
-                        const Init& = this_type::get_initializer());
+    explicit auto_bundle(const captured_location_t&, variadic::config<T...>,
+                         const Init& = this_type::get_initializer());
 
     template <typename Init = initializer_type>
-    explicit auto_tuple(const string_t&, scope::config = scope::get_default(),
-                        bool report_at_exit = settings::destructor_report(),
-                        const Init&         = this_type::get_initializer());
+    explicit auto_bundle(const string_t&, scope::config = scope::get_default(),
+                         bool report_at_exit = settings::destructor_report(),
+                         const Init&         = this_type::get_initializer());
 
     template <typename Init = initializer_type>
-    explicit auto_tuple(const captured_location_t&, scope::config = scope::get_default(),
-                        bool report_at_exit = settings::destructor_report(),
-                        const Init&         = this_type::get_initializer());
+    explicit auto_bundle(const captured_location_t&, scope::config = scope::get_default(),
+                         bool report_at_exit = settings::destructor_report(),
+                         const Init&         = this_type::get_initializer());
 
     template <typename Init = initializer_type>
-    explicit auto_tuple(size_t, scope::config = scope::get_default(),
-                        bool report_at_exit = settings::destructor_report(),
-                        const Init&         = this_type::get_initializer());
+    explicit auto_bundle(size_t, scope::config = scope::get_default(),
+                         bool report_at_exit = settings::destructor_report(),
+                         const Init&         = this_type::get_initializer());
 
-    explicit auto_tuple(component_type& tmp, scope::config = scope::get_default(),
-                        bool            report_at_exit = settings::destructor_report());
-
-    template <typename Init, typename Arg, typename... Args>
-    auto_tuple(const string_t&, bool store, scope::config _scope, const Init&, Arg&&,
-               Args&&...);
+    explicit auto_bundle(component_type& tmp, scope::config = scope::get_default(),
+                         bool            report_at_exit = settings::destructor_report());
 
     template <typename Init, typename Arg, typename... Args>
-    auto_tuple(const captured_location_t&, bool store, scope::config _scope, const Init&,
-               Arg&&, Args&&...);
+    auto_bundle(const string_t&, bool store, scope::config _scope, const Init&, Arg&&,
+                Args&&...);
 
     template <typename Init, typename Arg, typename... Args>
-    auto_tuple(size_t, bool store, scope::config _scope, const Init&, Arg&&, Args&&...);
+    auto_bundle(const captured_location_t&, bool store, scope::config _scope, const Init&,
+                Arg&&, Args&&...);
 
-    ~auto_tuple();
+    template <typename Init, typename Arg, typename... Args>
+    auto_bundle(size_t, bool store, scope::config _scope, const Init&, Arg&&, Args&&...);
+
+    ~auto_bundle();
 
     // copy and move
-    auto_tuple(const this_type&) = default;
-    auto_tuple(this_type&&)      = default;
+    auto_bundle(const this_type&) = default;
+    auto_bundle(this_type&&)      = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) = default;
 
@@ -177,7 +173,7 @@ public:
     operator component_type&() { return m_temporary; }
     operator const component_type&() const { return m_temporary; }
 
-    // partial interface to underlying component_tuple
+    // partial interface to underlying component_bundle
     void push()
     {
         if(m_enabled)
@@ -278,6 +274,18 @@ public:
     void             rekey(const string_t& _key) { m_temporary.rekey(_key); }
 
 public:
+    template <typename Tp, typename... Args>
+    auto init(Args&&... args)
+    {
+        m_temporary.template init<Tp>(std::forward<Args>(args)...);
+    }
+
+    template <typename... Tp, typename... Args>
+    auto initialize(Args&&... args)
+    {
+        m_temporary.template initialize<Tp...>(std::forward<Args>(args)...);
+    }
+
     template <typename Tp>
     decltype(auto) get()
     {
@@ -301,14 +309,14 @@ public:
 
 protected:
     template <typename Func>
-    void init(Func&& _init)
+    void internal_init(Func&& _init)
     {
         if(m_enabled)
             _init(*this);
     }
 
     template <typename Func, typename Arg, typename... Args>
-    void init(Func&& _init, Arg&& _arg, Args&&... _args)
+    void internal_init(Func&& _init, Arg&& _arg, Args&&... _args)
     {
         if(m_enabled)
         {
@@ -333,10 +341,11 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename... T, typename Init>
-auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...> config,
-                                 const Init& init_func)
+auto_bundle<Tag, Types...>::auto_bundle(const string_t&        key,
+                                        variadic::config<T...> config,
+                                        const Init&            init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(get_config<variadic::exit_report>(config))
 , m_temporary(
@@ -347,7 +356,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...> con
 {
     if(m_enabled)
     {
-        init(init_func);
+        internal_init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>(config))
         {
             m_temporary.start();
@@ -357,10 +366,11 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...> con
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename... T, typename Init>
-auto_tuple<Types...>::auto_tuple(const captured_location_t& loc,
-                                 variadic::config<T...> config, const Init& init_func)
+auto_bundle<Tag, Types...>::auto_bundle(const captured_location_t& loc,
+                                        variadic::config<T...>     config,
+                                        const Init&                init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(get_config<variadic::exit_report>(config))
 , m_temporary(
@@ -371,17 +381,17 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc,
 {
     if(m_enabled)
     {
-        init(init_func);
+        internal_init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename Init>
-auto_tuple<Types...>::auto_tuple(const string_t& key, scope::config _scope,
-                                 bool report_at_exit, const Init& init_func)
+auto_bundle<Tag, Types...>::auto_bundle(const string_t& key, scope::config _scope,
+                                        bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
 , m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
@@ -390,17 +400,18 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, scope::config _scope,
 {
     if(m_enabled)
     {
-        init(init_func);
+        internal_init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename Init>
-auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, scope::config _scope,
-                                 bool report_at_exit, const Init& init_func)
+auto_bundle<Tag, Types...>::auto_bundle(const captured_location_t& loc,
+                                        scope::config _scope, bool report_at_exit,
+                                        const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
 , m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
@@ -409,17 +420,17 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, scope::config _
 {
     if(m_enabled)
     {
-        init(init_func);
+        internal_init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename Init>
-auto_tuple<Types...>::auto_tuple(size_t hash, scope::config _scope, bool report_at_exit,
-                                 const Init& init_func)
+auto_bundle<Tag, Types...>::auto_bundle(size_t hash, scope::config _scope,
+                                        bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
 , m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
@@ -428,16 +439,16 @@ auto_tuple<Types...>::auto_tuple(size_t hash, scope::config _scope, bool report_
 {
     if(m_enabled)
     {
-        init(init_func);
+        internal_init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
-auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::config _scope,
-                                 bool report_at_exit)
+template <typename Tag, typename... Types>
+auto_bundle<Tag, Types...>::auto_bundle(component_type& tmp, scope::config _scope,
+                                        bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
 , m_temporary(component_type(tmp.clone(true, _scope)))
@@ -451,10 +462,11 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::config _scope,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename Init, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, scope::config _scope,
-                                 const Init& init_func, Arg&& arg, Args&&... args)
+auto_bundle<Tag, Types...>::auto_bundle(const string_t& key, bool store,
+                                        scope::config _scope, const Init& init_func,
+                                        Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
 , m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
@@ -463,18 +475,18 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, scope::config 
 {
     if(m_enabled)
     {
-        init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
+        internal_init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename Init, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store,
-                                 scope::config _scope, const Init& init_func, Arg&& arg,
-                                 Args&&... args)
+auto_bundle<Tag, Types...>::auto_bundle(const captured_location_t& loc, bool store,
+                                        scope::config _scope, const Init& init_func,
+                                        Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
 , m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
@@ -483,17 +495,17 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store,
 {
     if(m_enabled)
     {
-        init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
+        internal_init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 template <typename Init, typename Arg, typename... Args>
-auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::config _scope,
-                                 const Init& init_func, Arg&& arg, Args&&... args)
+auto_bundle<Tag, Types...>::auto_bundle(size_t hash, bool store, scope::config _scope,
+                                        const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
 , m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
@@ -502,15 +514,15 @@ auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::config _scope,
 {
     if(m_enabled)
     {
-        init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
+        internal_init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
-auto_tuple<Types...>::~auto_tuple()
+template <typename Tag, typename... Types>
+auto_bundle<Tag, Types...>::~auto_bundle()
 {
     IF_CONSTEXPR(!get_config<variadic::explicit_stop>())
     {
@@ -538,18 +550,18 @@ auto_tuple<Types...>::~auto_tuple()
 
 //======================================================================================//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 auto
-get(const auto_tuple<Types...>& _obj)
+get(const auto_bundle<Tag, Types...>& _obj)
 {
     return get(_obj.get_component());
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
+template <typename Tag, typename... Types>
 auto
-get_labeled(const auto_tuple<Types...>& _obj)
+get_labeled(const auto_bundle<Tag, Types...>& _obj)
 {
     return get_labeled(_obj.get_component());
 }
@@ -562,21 +574,21 @@ get_labeled(const auto_tuple<Types...>& _obj)
 //
 // variadic versions
 //
-#if !defined(TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE)
-#    define TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE(tag, ...)                                 \
-        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                   \
+#if !defined(TIMEMORY_VARIADIC_BLANK_AUTO_BUNDLE)
+#    define TIMEMORY_VARIADIC_BLANK_AUTO_BUNDLE(tag, ...)                                \
+        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_bundle<__VA_ARGS__>;                  \
         TIMEMORY_BLANK_MARKER(_TIM_TYPEDEF(__LINE__), tag);
 #endif
 
-#if !defined(TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE)
-#    define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                 \
-        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                   \
+#if !defined(TIMEMORY_VARIADIC_BASIC_AUTO_BUNDLE)
+#    define TIMEMORY_VARIADIC_BASIC_AUTO_BUNDLE(tag, ...)                                \
+        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_bundle<__VA_ARGS__>;                  \
         TIMEMORY_BASIC_MARKER(_TIM_TYPEDEF(__LINE__), tag);
 #endif
 
-#if !defined(TIMEMORY_VARIADIC_AUTO_TUPLE)
-#    define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                       \
-        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                   \
+#if !defined(TIMEMORY_VARIADIC_AUTO_BUNDLE)
+#    define TIMEMORY_VARIADIC_AUTO_BUNDLE(tag, ...)                                      \
+        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_bundle<__VA_ARGS__>;                  \
         TIMEMORY_MARKER(_TIM_TYPEDEF(__LINE__), tag);
 #endif
 
@@ -591,30 +603,30 @@ namespace std
 //
 //--------------------------------------------------------------------------------------//
 //
-template <std::size_t N, typename... Types>
+template <std::size_t N, typename Tag, typename... Types>
 typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(tim::auto_tuple<Types...>& obj)
+get(tim::auto_bundle<Tag, Types...>& obj)
 {
     return get<N>(obj.data());
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <std::size_t N, typename... Types>
+template <std::size_t N, typename Tag, typename... Types>
 const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const tim::auto_tuple<Types...>& obj)
+get(const tim::auto_bundle<Tag, Types...>& obj)
 {
     return get<N>(obj.data());
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <std::size_t N, typename... Types>
+template <std::size_t N, typename Tag, typename... Types>
 auto
-get(tim::auto_tuple<Types...>&& obj)
-    -> decltype(get<N>(std::forward<tim::auto_tuple<Types...>>(obj).data()))
+get(tim::auto_bundle<Tag, Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::auto_bundle<Tag, Types...>>(obj).data()))
 {
-    using obj_type = tim::auto_tuple<Types...>;
+    using obj_type = tim::auto_bundle<Tag, Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
 //

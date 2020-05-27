@@ -758,6 +758,12 @@ storage<Type, true>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        m_manager = tim::manager::instance();
+        if(!m_manager)
+            return;
+        if(m_manager->is_finalizing())
+            return;
+
         auto _label = Type::label();
         for(auto& itr : _label)
             itr = toupper(itr);
@@ -766,7 +772,6 @@ storage<Type, true>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        m_manager         = tim::manager::instance();
         bool   _is_master = singleton_t::is_master(this);
         auto   _cleanup   = [&]() {};
         func_t _finalize  = [&]() {
@@ -951,6 +956,12 @@ storage<Type, false>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        m_manager = tim::manager::instance();
+        if(!m_manager)
+            return;
+        if(m_manager->is_finalizing())
+            return;
+
         auto _label = Type::label();
         for(auto& itr : _label)
             itr = toupper(itr);
@@ -959,7 +970,6 @@ storage<Type, false>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        m_manager         = tim::manager::instance();
         bool   _is_master = singleton_t::is_master(this);
         auto   _cleanup   = [&]() {};
         func_t _finalize  = [&]() {

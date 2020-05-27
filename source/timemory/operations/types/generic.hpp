@@ -54,7 +54,7 @@ namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename Op>
+template <typename Tp, typename Op, typename Tag>
 struct generic_operator
 {
     using type       = Tp;
@@ -75,28 +75,64 @@ struct generic_operator
     //
     //----------------------------------------------------------------------------------//
 
-    template <typename Up, typename... Args,
-              enable_if_t<(trait::is_available<Up>::value && std::is_pointer<Up>::value),
-                          int> = 0>
+    template <typename Up, typename... Args, typename Rp = type,
+              enable_if_t<(trait::is_available<Rp>::value), int> = 0,
+              enable_if_t<(std::is_pointer<Up>::value), int>     = 0>
     explicit generic_operator(Up& obj, Args&&... args)
     {
         check<Up>();
         if(obj)
-        {
-            Op tmp(*obj, std::forward<Args>(args)...);
-            consume_parameters(tmp);
-        }
+            sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 
-    template <typename Up, typename... Args,
-              enable_if_t<(trait::is_available<Up>::value && std::is_pointer<Up>::value),
-                          int> = 0>
+    template <typename Up, typename... Args, typename Rp = type,
+              enable_if_t<(trait::is_available<Rp>::value), int> = 0,
+              enable_if_t<(std::is_pointer<Up>::value), int>     = 0>
     explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
     {
         check<Up>();
         if(obj && rhs)
-            Op(*obj, *rhs, std::forward<Args>(args)...);
+            sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
     }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename Up, typename... Args>
+    auto pointer_sfinae(Up& obj, int, int, Args&&... args)
+        -> decltype(Op(*obj, std::forward<Args>(args)...), void())
+    {
+        Op(*obj, std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    auto pointer_sfinae(Up& obj, int, long, Args&&...) -> decltype(Op{ *obj }, void())
+    {
+        Op{ *obj };
+    }
+
+    template <typename Up, typename... Args>
+    void pointer_sfinae(Up&, long, long, Args&&...)
+    {}
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename Up, typename... Args>
+    auto pointer_sfinae(Up& obj, Up& rhs, int, int, Args&&... args)
+        -> decltype(Op(*obj, *rhs, std::forward<Args>(args)...), void())
+    {
+        Op(*obj, *rhs, std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    auto pointer_sfinae(Up& obj, Up& rhs, int, long, Args&&...)
+        -> decltype(Op(*obj, *rhs), void())
+    {
+        Op(*obj, *rhs);
+    }
+
+    template <typename Up, typename... Args>
+    void pointer_sfinae(Up&, Up&, long, long, Args&&...)
+    {}
 
     //----------------------------------------------------------------------------------//
     //
@@ -104,24 +140,79 @@ struct generic_operator
     //
     //----------------------------------------------------------------------------------//
 
-    template <typename Up, typename... Args,
-              enable_if_t<(trait::is_available<Up>::value && !std::is_pointer<Up>::value),
-                          int> = 0>
+    template <typename Up, typename... Args, typename Rp = Tp,
+              enable_if_t<(trait::is_available<Rp>::value), int> = 0,
+              enable_if_t<!(std::is_pointer<Up>::value), int>    = 0>
     explicit generic_operator(Up& obj, Args&&... args)
     {
         check<Up>();
-        Op tmp(obj, std::forward<Args>(args)...);
-        consume_parameters(tmp);
+        sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
 
-    template <typename Up, typename... Args,
-              enable_if_t<(trait::is_available<Up>::value && !std::is_pointer<Up>::value),
-                          int> = 0>
+    template <typename Up, typename... Args, typename Rp = Tp,
+              enable_if_t<(trait::is_available<Rp>::value), int> = 0,
+              enable_if_t<!(std::is_pointer<Up>::value), int>    = 0>
     explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
     {
         check<Up>();
+        sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, int, Args&&... args)
+        -> decltype(Op(obj, std::forward<Args>(args)...), void())
+    {
+        Op(obj, std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(Op{ obj }, void())
+    {
+        Op{ obj };
+    }
+
+    template <typename Up, typename... Args,
+              enable_if_t<(std::is_pointer<Up>::value), int> = 0>
+    void sfinae(Up& obj, long, long, Args&&... args)
+    {
+        // some operations want a raw pointer, e.g. generic_deleter
+        pointer_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args,
+              enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
+    void sfinae(Up& obj, long, long, Args&&... args)
+    {}
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, Up& rhs, int, int, Args&&... args)
+        -> decltype(Op(obj, rhs, std::forward<Args>(args)...), void())
+    {
         Op(obj, rhs, std::forward<Args>(args)...);
     }
+
+    template <typename Up, typename... Args>
+    auto sfinae(Up& obj, Up& rhs, int, long, Args&&...) -> decltype(Op(obj, rhs), void())
+    {
+        Op(obj, rhs);
+    }
+
+    template <typename Up, typename... Args,
+              enable_if_t<(std::is_pointer<Up>::value), int> = 0>
+    void sfinae(Up& obj, Up& rhs, long, long, Args&&... args)
+    {
+        // some operations want a raw pointer, e.g. generic_deleter
+        pointer_sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
+    }
+
+    template <typename Up, typename... Args,
+              enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
+    void sfinae(Up& obj, Up& rhs, long, long, Args&&... args)
+    {}
 
     //----------------------------------------------------------------------------------//
     //
@@ -130,12 +221,10 @@ struct generic_operator
     //----------------------------------------------------------------------------------//
 
     // if the type is not available, never do anything
-    template <typename Up, typename... Args,
-              enable_if_t<!(trait::is_available<Up>::value), int> = 0>
+    template <typename Up, typename... Args, typename Rp = Tp,
+              enable_if_t<!(trait::is_available<Rp>::value), int> = 0>
     generic_operator(Up&, Args&&...)
-    {
-        check<Up>();
-    }
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -155,14 +244,15 @@ struct generic_deleter
     template <typename Up, enable_if_t<(std::is_pointer<Up>::value), int> = 0>
     explicit generic_deleter(Up& obj)
     {
-        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
-        delete static_cast<type*&>(obj);
+        DEBUG_PRINT_HERE("%s %s", "deleting", demangle<Tp>().c_str());
+        delete obj;
+        obj = nullptr;
     }
 
     template <typename Up, enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
     explicit generic_deleter(Up&)
     {
-        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
+        // static_assert(std::is_same<decay_t<Up>, type>::value, "Error! Up != type");
     }
 };
 //
@@ -183,14 +273,14 @@ struct generic_counter
     template <typename Up, enable_if_t<(std::is_pointer<Up>::value), int> = 0>
     explicit generic_counter(const Up& obj, uint64_t& count)
     {
-        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
+        // static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get() && obj) ? 1 : 0;
     }
 
     template <typename Up, enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
     explicit generic_counter(const Up&, uint64_t& count)
     {
-        static_assert(std::is_same<Up, type>::value, "Error! Up != type");
+        // static_assert(std::is_same<Up, type>::value, "Error! Up != type");
         count += (trait::runtime_enabled<type>::get()) ? 1 : 0;
     }
 };

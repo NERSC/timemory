@@ -52,9 +52,9 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
 
     mutatee_module->getName(mname, MUTNAMELEN);
 
-    BPatch_Vector<point_t*>* loopStartInst =
+    bpvector_t<point_t*>* loopStartInst =
         cfGraph->findLoopInstPoints(BPatch_locLoopStartIter, loopToInstrument);
-    BPatch_Vector<point_t*>* loopExitInst =
+    bpvector_t<point_t*>* loopExitInst =
         cfGraph->findLoopInstPoints(BPatch_locLoopEndIter, loopToInstrument);
 
     if(!loopStartInst || !loopExitInst)
@@ -91,8 +91,8 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
         }
     }
 
-    BPatch_Vector<BPatch_statement> lines;
-    BPatch_Vector<BPatch_statement> linesEnd;
+    bpvector_t<BPatch_statement> lines;
+    bpvector_t<BPatch_statement> linesEnd;
 
     bool info1 = mutatee_module->getSourceLines(baseAddr, lines);
 
@@ -161,7 +161,7 @@ get_func_file_line_info(module_t* mutatee_module, procedure_t* f)
 
     baseAddr = (unsigned long) (f->getBaseAddr());
     f->getAddressRange(baseAddr, lastAddr);
-    BPatch_Vector<BPatch_statement> lines;
+    bpvector_t<BPatch_statement> lines;
     f->getName(fname, MUTNAMELEN);
 
     auto* returnType = f->getReturnType();
@@ -256,7 +256,7 @@ find_function(image_t* app_image, const std::string& _name, strset_t _extra)
 
     auto _find = [app_image](const string_t& _f) -> procedure_t* {
         // Extract the vector of functions
-        BPatch_Vector<procedure_t*> _found;
+        bpvector_t<procedure_t*> _found;
         auto ret = app_image->findFunction(_f.c_str(), _found, false, true, true);
         if(ret == nullptr || _found.empty())
             return nullptr;
@@ -349,12 +349,12 @@ error_func_fake(error_level_t level, int num, const char* const* params)
 //======================================================================================//
 //
 bool
-find_func_or_calls(std::vector<const char*> names, BPatch_Vector<point_t*>& points,
+find_func_or_calls(std::vector<const char*> names, bpvector_t<point_t*>& points,
                    image_t* app_image, procedure_loc_t loc)
 {
     using function_t     = procedure_t;
-    using function_vec_t = BPatch_Vector<function_t*>;
-    using point_vec_t    = BPatch_Vector<point_t*>;
+    using function_vec_t = bpvector_t<function_t*>;
+    using point_vec_t    = bpvector_t<point_t*>;
 
     function_t* func = nullptr;
     for(auto nitr = names.begin(); nitr != names.end(); ++nitr)
@@ -409,7 +409,7 @@ find_func_or_calls(std::vector<const char*> names, BPatch_Vector<point_t*>& poin
 //======================================================================================//
 //
 bool
-find_func_or_calls(const char* name, BPatch_Vector<point_t*>& points, image_t* image,
+find_func_or_calls(const char* name, bpvector_t<point_t*>& points, image_t* image,
                    procedure_loc_t loc)
 {
     std::vector<const char*> v;

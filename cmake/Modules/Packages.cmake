@@ -178,41 +178,6 @@ endif()
 # not exported
 add_library(timemory-google-test INTERFACE)
 
-#----------------------------------------------------------------------------------------#
-#
-#                           handle empty interface
-#
-#----------------------------------------------------------------------------------------#
-
-function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
-    if(NOT TARGET ${_TARGET})
-        message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
-    endif()
-    if(NOT ${_TARGET} IN_LIST TIMEMORY_EMPTY_INTERFACE_LIBRARIES)
-        message(STATUS  "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
-        set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
-    endif()
-    add_disabled_interface(${_TARGET})
-endfunction()
-
-function(ADD_RPATH)
-    set(_DIRS)
-    foreach(_ARG ${ARGN})
-	if(EXISTS "${_ARG}" AND IS_DIRECTORY "${_ARG}")
-	    list(APPEND _DIRS "${_ARG}")
-	endif()
-        get_filename_component(_DIR "${_ARG}" DIRECTORY)
-	if(EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}")
-	    list(APPEND _DIRS "${_DIR}")
-	endif()
-    endforeach()
-    if(_DIRS)
-        list(REMOVE_DUPLICATES _DIRS)
-        string(REPLACE ";" ":" _RPATH "${_DIRS}")
-        # message(STATUS "\n\tRPATH additions: ${_RPATH}\n")
-        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${_RPATH}" PARENT_SCOPE)
-    endif()
-endfunction()
 
 #----------------------------------------------------------------------------------------#
 #

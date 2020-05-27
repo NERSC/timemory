@@ -22,7 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/library.h"
+#include <cstdint>
+#include <cstring>
+#include <limits>
+
+struct timemory_settings
+{};
 
 #define RETURN_MAX(TYPE) return std::numeric_limits<TYPE>::max()
 
