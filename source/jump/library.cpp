@@ -34,12 +34,8 @@
 #include <memory>
 #include <string>
 
-//--------------------------------------------------------------------------------------//
-//
-//      timemory stubs
-//
-//--------------------------------------------------------------------------------------//
 
+// Macro for obtaining jump pointer function association
 #define DLSYM_JUMP_FUNCTION(VARNAME, HANDLE, FUNCNAME)                                   \
     if(HANDLE)                                                                           \
     {                                                                                    \
@@ -57,6 +53,8 @@
 
 //--------------------------------------------------------------------------------------//
 
+
+// This class contains jump pointers for timemory's dyninst functions
 class jump
 {
 public:
@@ -79,6 +77,7 @@ public:
     jump(std::string&& libpath)
     {
         PRINT_HERE("%s", "");
+
         auto libhandle = dlopen(libpath.c_str(), RTLD_LAZY);
 
         if(!libhandle)
@@ -88,122 +87,43 @@ public:
 
         /* Initialize all pointers */
         DLSYM_JUMP_FUNCTION(timemory_push_components_jump, libhandle,
-                            "timemory_push_components")
+                            "timemory_push_components");
+
         DLSYM_JUMP_FUNCTION(timemory_pop_components_jump, libhandle,
-                            "timemory_pop_components")
+                            "timemory_pop_components");
 
-        /*
-        *(void**) (&timemory_push_components_jump) =
-            dlsym(libhandle, "timemory_push_components");
+        DLSYM_JUMP_FUNCTION(timemory_push_region_jump, libhandle,
+                            "timemory_push_region");
 
-        if(!timemory_push_components_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_push_components_jump = nullptr;
-        }
+        DLSYM_JUMP_FUNCTION(timemory_pop_region_jump, libhandle,
+                            "timemory_pop_region");
 
-        *(void**) (&timemory_pop_components_jump) =
-            dlsym(libhandle, "timemory_pop_components");
-        */
+        DLSYM_JUMP_FUNCTION(timemory_add_hash_id_jump, libhandle,
+                            "timemory_add_hash_id");
 
-        if(!timemory_pop_components_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_pop_components_jump = nullptr;
-        }
+        DLSYM_JUMP_FUNCTION(timemory_push_trace_jump, libhandle,
+                            "timemory_push_trace");
 
-        *(void**) (&timemory_push_region_jump) = dlsym(libhandle, "timemory_push_region");
+        DLSYM_JUMP_FUNCTION(timemory_pop_trace_jump, libhandle,
+                            "timemory_pop_trace");
 
-        if(!timemory_push_region_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_push_region_jump = nullptr;
-        }
+        DLSYM_JUMP_FUNCTION(timemory_push_trace_hash_jump, libhandle,
+                            "timemory_push_trace_hash");
 
-        *(void**) (&timemory_pop_region_jump) = dlsym(libhandle, "timemory_pop_region");
+        DLSYM_JUMP_FUNCTION(timemory_pop_trace_hash_jump, libhandle,
+                            "timemory_pop_trace_hash");
 
-        if(!timemory_pop_region_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_pop_region_jump = nullptr;
-        }
+        DLSYM_JUMP_FUNCTION(timemory_trace_init_jump, libhandle,
+                            "timemory_trace_init");
 
-        *(void**) (&timemory_add_hash_id_jump) = dlsym(libhandle, "timemory_add_hash_id");
+        DLSYM_JUMP_FUNCTION(timemory_trace_finalize_jump, libhandle,
+                            "timemory_trace_finalize");
 
-        if(!timemory_add_hash_id_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_add_hash_id_jump = nullptr;
-        }
+        DLSYM_JUMP_FUNCTION(timemory_trace_set_env_jump, libhandle,
+                            "timemory_trace_set_env");
 
-        *(void**) (&timemory_push_trace_jump) = dlsym(libhandle, "timemory_push_trace");
-
-        if(!timemory_push_trace_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_push_trace_jump = nullptr;
-        }
-
-        *(void**) (&timemory_pop_trace_jump) = dlsym(libhandle, "timemory_pop_trace");
-
-        if(!timemory_pop_trace_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_pop_trace_jump = nullptr;
-        }
-
-        *(void**) (&timemory_push_trace_hash_jump) =
-            dlsym(libhandle, "timemory_push_trace_hash");
-
-        if(!timemory_push_trace_hash_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_push_trace_hash_jump = nullptr;
-        }
-
-        *(void**) (&timemory_pop_trace_hash_jump) =
-            dlsym(libhandle, "timemory_pop_trace_hash");
-
-        if(!timemory_pop_trace_hash_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_pop_trace_hash_jump = nullptr;
-        }
-
-        *(void**) (&timemory_trace_init_jump) = dlsym(libhandle, "timemory_trace_init");
-
-        if(!timemory_trace_init_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_trace_init_jump = nullptr;
-        }
-
-        *(void**) (&timemory_trace_finalize_jump) =
-            dlsym(libhandle, "timemory_trace_finalize");
-
-        if(!timemory_trace_finalize_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_trace_finalize_jump = nullptr;
-        }
-
-        *(void**) (&timemory_trace_set_env_jump) =
-            dlsym(libhandle, "timemory_trace_set_env");
-
-        if(!timemory_trace_set_env_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_trace_set_env_jump = nullptr;
-        }
-
-        *(void**) (&timemory_trace_set_mpi_jump) =
-            dlsym(libhandle, "timemory_trace_set_mpi");
-
-        if(!timemory_trace_set_mpi_jump)
-        {
-            fprintf(stderr, "%s\n", dlerror());
-            timemory_trace_set_mpi_jump = nullptr;
-        }
+        DLSYM_JUMP_FUNCTION(timemory_trace_set_mpi_jump, libhandle,
+                            "timemory_trace_set_mpi");
 
         dlclose(libhandle);
     }
@@ -232,7 +152,10 @@ extern "C"
         (*get_jump()->timemory_push_components_jump)(name);
     }
 
-    void timemory_pop_components(void) { (*get_jump()->timemory_pop_components_jump)(); }
+    void timemory_pop_components(void)
+    {
+        (*get_jump()->timemory_pop_components_jump)();
+    }
 
     void timemory_push_region(const char* name)
     {
@@ -274,7 +197,10 @@ extern "C"
         (*get_jump()->timemory_trace_init_jump)(a, b, c);
     }
 
-    void timemory_trace_finalize(void) { (*get_jump()->timemory_trace_finalize_jump)(); }
+    void timemory_trace_finalize(void)
+    {
+        (*get_jump()->timemory_trace_finalize_jump)();
+    }
 
     void timemory_trace_set_env(const char* a, const char* b)
     {
