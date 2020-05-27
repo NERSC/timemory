@@ -59,17 +59,16 @@ main(int argc, char** argv)
     auto env_collect_paths = tim::get_env<string_t>("TIMEMORY_COLLECTION_PATH", "");
     prefix_collection_path(env_collect_paths, collection_paths);
 
-    bool             is_attached = false;
-    bool             loadlib     = false;
-    char             mutname[MUTNAMELEN];
-    char             outfile[MUTNAMELEN];
-    char             libname[FUNCNAMELEN];
-    char             sharedlibname[FUNCNAMELEN];
-    char             staticlibname[FUNCNAMELEN];
-    address_space_t* addr_space = nullptr;
-    bpatch                      = new BPatch;
-    string_t           inputlib = "";
-    tim::process::id_t _pid     = -1;
+    bpatch                              = std::make_shared<patch_t>();
+    bool                  is_attached   = false;
+    address_space_t*      addr_space    = nullptr;
+    string_t              mutname       = "";
+    string_t              outfile       = "";
+    std::vector<string_t> inputlib      = { "" };
+    std::vector<string_t> libname       = {};
+    std::vector<string_t> sharedlibname = {};
+    std::vector<string_t> staticlibname = {};
+    tim::process::id_t    _pid          = -1;
 
     // bpatch->setTrampRecursive(true);
     bpatch->setBaseTrampDeletion(false);
@@ -105,7 +104,7 @@ main(int argc, char** argv)
             {
                 copy_str(_cmdv[k], argv[j]);
             }
-            strcpy(mutname, _cmdv[0]);
+            mutname = _cmdv[0];
             break;
         }
         else
@@ -283,9 +282,9 @@ main(int argc, char** argv)
             parser.print_help(extra_help);
             return EXIT_FAILURE;
         }
-        strcpy(mutname, keys.at(0).c_str());
-        _cmdc = keys.size();
-        _cmdv = new char*[_cmdc];
+        mutname = keys.at(0);
+        _cmdc   = keys.size();
+        _cmdv   = new char*[_cmdc];
         for(int i = 0; i < _cmdc; ++i)
         {
             copy_str(_cmdv[i], keys.at(i).c_str());
@@ -295,15 +294,26 @@ main(int argc, char** argv)
     if(parser.exists("o"))
     {
         binary_rewrite = true;
-        auto key       = parser.get<string_t>("o");
-        strcpy(outfile, key.c_str());
+        outfile        = parser.get<string_t>("o");
     }
 
     if(parser.exists("s") && !parser.exists("L"))
-        inputlib += "stubs/";
+    {
+        inputlib.push_back("timemory/");
+        for(auto& itr : inputlib)
+            itr += "stubs/";
+    }
 
     if(!parser.exists("L"))
-        inputlib += "libtimemory";
+    {
+        for(auto& itr : inputlib)
+            itr += "libtimemory";
+    }
+    else
+    {
+        for(auto& itr : inputlib)
+            itr += parser.get<string_t>("L");
+    }
 
     if(parser.exists("S"))
         stl_func_instr = true;
@@ -467,20 +477,19 @@ main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    verbprintf(0, "instrumentation target: %s\n", mutname);
+    verbprintf(0, "instrumentation target: %s\n", mutname.c_str());
 
     // did we load a library?  if not, load the default
-    auto generate_libname = [](char* _targ, string_t _base, string_t _ext) {
-        sprintf(_targ, "%s%s", _base.c_str(), _ext.c_str());
+    auto generate_libnames = [](auto& _targ, const auto& _base,
+                                const std::set<string_t>& _ext) {
+        for(const auto& bitr : _base)
+            for(const auto& eitr : _ext)
+                _targ.push_back(bitr + eitr);
     };
 
-    if(!loadlib)
-    {
-        generate_libname(libname, inputlib, "");
-        generate_libname(sharedlibname, inputlib, ".so");
-        generate_libname(staticlibname, inputlib, ".a");
-        loadlib = true;
-    }
+    generate_libnames(libname, inputlib, { "" });
+    generate_libnames(sharedlibname, inputlib, { ".so" });
+    generate_libnames(staticlibname, inputlib, { ".a" });
 
     // Register a callback function that prints any error messages
     bpatch->registerErrorCallback(error_func_real);
@@ -502,16 +511,16 @@ main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    BPatch_process*    app_thread = nullptr;
-    BPatch_binaryEdit* app_binary = nullptr;
+    process_t*     app_thread = nullptr;
+    binary_edit_t* app_binary = nullptr;
 
     // get image
     verbprintf(1, "Getting the address space image, modules, and procedures...\n");
-    image_t*                     app_image     = addr_space->getImage();
-    BPatch_Vector<module_t*>*    app_modules   = app_image->getModules();
-    BPatch_Vector<procedure_t*>* app_functions = app_image->getProcedures();
-    BPatch_Vector<module_t*>     modules;
-    BPatch_Vector<procedure_t*>  functions;
+    image_t*                  app_image     = addr_space->getImage();
+    bpvector_t<module_t*>*    app_modules   = app_image->getModules();
+    bpvector_t<procedure_t*>* app_functions = app_image->getProcedures();
+    bpvector_t<module_t*>     modules;
+    bpvector_t<procedure_t*>  functions;
 
     //----------------------------------------------------------------------------------//
     //
@@ -570,29 +579,46 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    auto load_library = [addr_space](string_t _libname) {
-        verbprintf(0, "loading library: '%s'...\n", _libname.c_str());
-        bool result = addr_space->loadLibrary(_libname.c_str());
-        verbprintf(1, "loadLibrary(%s) result = %d\n", _libname.c_str(), result);
+    auto load_library = [addr_space](const std::vector<string_t>& _libnames) {
+        bool result = false;
+        // track the tried library names
+        string_t _tried_libs;
+        for(const auto& _libname : _libnames)
+        {
+            verbprintf(0, "loading library: '%s'...\n", _libname.c_str());
+            result = addr_space->loadLibrary(_libname.c_str());
+            verbprintf(1, "loadLibrary(%s) result = %s\n", _libname.c_str(),
+                       (result) ? "success" : "failure");
+            if(result)
+                break;
+            _tried_libs += string_t("|") + _libname;
+        }
         if(!result)
         {
             fprintf(stderr,
                     "Error: 'loadLibrary(%s)' failed.\nPlease ensure that the "
-                    "library's directory is in your LD_LIBRARY_PATH environment variable "
-                    "or the full path is provided\n",
-                    _libname.c_str());
+                    "library directory is in LD_LIBRARY_PATH environment variable "
+                    "or absolute path is provided\n",
+                    _tried_libs.substr(1).c_str());
             exit(EXIT_FAILURE);
         }
     };
 
-    auto get_library_ext = [=](string_t lname) {
-        if(lname.find(".so") != string_t::npos || lname.find(".a") == lname.length() - 2)
-            return lname;
-        if(!prefer_library.empty())
-            return (lname +
-                    ((prefer_library == "static" || is_static_exe) ? ".a" : ".so"));
-        else
-            return (lname + ((is_static_exe) ? ".a" : ".so"));
+    auto get_library_ext = [=](const std::vector<string_t>& linput) {
+        auto lnames           = linput;
+        auto _get_library_ext = [](string_t lname) {
+            if(lname.find(".so") != string_t::npos ||
+               lname.find(".a") == lname.length() - 2)
+                return lname;
+            if(!prefer_library.empty())
+                return (lname +
+                        ((prefer_library == "static" || is_static_exe) ? ".a" : ".so"));
+            else
+                return (lname + ((is_static_exe) ? ".a" : ".so"));
+        };
+        for(auto& lname : lnames)
+            lname = _get_library_ext(lname);
+        return lnames;
     };
 
     //----------------------------------------------------------------------------------//
@@ -614,13 +640,13 @@ main(int argc, char** argv)
     load_library(get_library_ext(libname));
 
     if(use_stubs["mpip"] && !is_static_exe)
-        load_library("libtimemory-mpip.so");
+        load_library({ "libtimemory-mpip.so" });
 
     if(use_stubs["ompt"])
-        load_library(get_library_ext("libtimemory-ompt"));
+        load_library(get_library_ext({ "libtimemory-ompt" }));
 
     for(auto itr : extra_libs)
-        load_library(get_library_ext(itr));
+        load_library(get_library_ext({ itr }));
 
     //----------------------------------------------------------------------------------//
     //
@@ -847,8 +873,8 @@ main(int argc, char** argv)
     //
     //----------------------------------------------------------------------------------//
 
-    BPatch_Vector<point_t*>* main_entr_points = nullptr;
-    BPatch_Vector<point_t*>* main_exit_points = nullptr;
+    bpvector_t<point_t*>* main_entr_points = nullptr;
+    bpvector_t<point_t*>* main_exit_points = nullptr;
 
     if(main_func)
     {
@@ -1149,7 +1175,7 @@ main(int argc, char** argv)
         }
 
         verbprintf(0, "Parsing module: %s\n", modname);
-        BPatch_Vector<procedure_t*>* p = m->getProcedures();
+        bpvector_t<procedure_t*>* p = m->getProcedures();
         if(!p)
             continue;
 
@@ -1228,18 +1254,18 @@ main(int argc, char** argv)
         auto ret = getcwd(cwd, FUNCNAMELEN);
         consume_parameters(ret);
 
-        auto outf = string_t(outfile);
+        auto outf = outfile;
         if(outf.find('/') != string_t::npos)
         {
             auto outdir = outf.substr(0, outf.find_last_of('/') - 1);
             tim::makedir(outdir);
         }
 
-        bool success = app_binary->writeFile(outfile);
+        bool success = app_binary->writeFile(outfile.c_str());
         code         = (success) ? EXIT_SUCCESS : EXIT_FAILURE;
         if(success)
             printf("\nThe instrumented executable image is stored in '%s/%s'\n", cwd,
-                   outfile);
+                   outfile.c_str());
 
         printf("[timemory-run]> Getting linked libraries for %s...\n", cmdv0.c_str());
         printf("[timemory-run]> Consider instrumenting the relevant libraries...\n\n");
@@ -1324,7 +1350,6 @@ main(int argc, char** argv)
     for(int i = 0; i < _cmdc; ++i)
         delete[] _cmdv[i];
     delete[] _cmdv;
-    delete bpatch;
     return code;
 }
 //
@@ -1605,8 +1630,8 @@ insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
     if(!module || !traceFunc)
         return;
 
-    BPatch_Vector<point_t*>* _points = nullptr;
-    auto                     _trace  = traceFunc.get();
+    bpvector_t<point_t*>* _points = nullptr;
+    auto                  _trace  = traceFunc.get();
 
     if(cfGraph && loopToInstrument)
     {
@@ -1628,11 +1653,11 @@ insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
     /*if(loop_level_instr)
     {
         flow_graph_t*                     flow = funcToInstr->getCFG();
-        BPatch_Vector<basic_loop_t*> basicLoop;
+        bpvector_t<basic_loop_t*> basicLoop;
         flow->getOuterLoops(basicLoop);
         for(auto litr = basicLoop.begin(); litr != basicLoop.end(); ++litr)
         {
-            BPatch_Vector<point_t*>* _tmp;
+            bpvector_t<point_t*>* _tmp;
             if(traceLoc == BPatch_entry)
                 _tmp = cfGraph->findLoopInstPoints(BPatch_locLoopEntry, *litr);
             else if(traceLoc == BPatch_exit)

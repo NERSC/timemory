@@ -68,6 +68,9 @@ namespace tim
 template <typename... Types>
 class lightweight_tuple;
 
+template <typename ApiT, typename... Types>
+class component_bundle;
+
 template <typename... Types>
 class component_tuple;
 
@@ -76,6 +79,9 @@ class component_list;
 
 template <typename TupleT, typename ListT>
 class component_hybrid;
+
+template <typename ApiT, typename... Types>
+class auto_bundle;
 
 template <typename... Types>
 class auto_tuple;

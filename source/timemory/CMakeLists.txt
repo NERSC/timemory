@@ -11,6 +11,7 @@ add_subdirectory(manager)
 add_subdirectory(config)
 add_subdirectory(operations)
 add_subdirectory(backends)
+add_subdirectory(variadic)
 
 add_subdirectory(components)
 
@@ -24,4 +25,4 @@ add_subdirectory(ert)
 # add_subdirectory(general)
 # add_subdirectory(mpl)
 # add_subdirectory(utility)
-# add_subdirectory(variadic)
+

@@ -84,6 +84,11 @@ add_timemory_google_test(argparse_tests
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-analysis-tools)
 
+add_timemory_google_test(component_bundle_tests
+    SOURCES         component_bundle_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools)
+
 add_timemory_google_test(flat_tests
     DISCOVER_TESTS
     SOURCES         flat_tests.cpp

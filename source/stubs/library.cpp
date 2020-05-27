@@ -22,7 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/library.h"
+#include <cstdint>
+#include <cstring>
+#include <limits>
+
+struct timemory_settings
+{};
 
 #define RETURN_MAX(TYPE) return std::numeric_limits<TYPE>::max()
 
@@ -101,7 +106,7 @@ extern "C"
     void timemory_pop_trace_hash(uint64_t) {}
     void timemory_trace_init(const char*, bool, const char*) {}
     void timemory_trace_finalize(void) {}
-    void timemory_trace_set_env(const char*, const char*);
+    void timemory_trace_set_env(const char*, const char*) {}
     void timemory_trace_set_mpi(bool, bool) {}
 
     void     timemory_create_record_(const char*, uint64_t*, int, int*) {}

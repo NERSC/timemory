@@ -116,15 +116,6 @@ namespace tim
 {
 namespace component
 {
-struct mpi_noop : base<mpi_noop, void>
-{
-    using value_type = void;
-    using this_type  = mpi_noop;
-    using base_type  = base<this_type, value_type>;
-
-    void start() {}
-    void stop() {}
-};
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -133,10 +124,19 @@ struct mpi_comm_data : base<mpi_comm_data, void>
     using value_type = void;
     using this_type  = mpi_comm_data;
     using base_type  = base<this_type, value_type>;
-    using tracker_t  = tim::auto_tuple<mpi_noop, mpi_data_tracker_t>;
+    using tracker_t  = tim::auto_bundle<tim::api::native_tag, mpi_data_tracker_t*>;
     using data_type  = float;
 
     TIMEMORY_DEFAULT_OBJECT(mpi_comm_data)
+
+    static void global_init(storage_type*)
+    {
+        auto _data = tim::get_env("TIMEMORY_MPIP_COMM_DATA", true);
+        if(_data)
+            tracker_t::get_initializer() = [](tracker_t& cb) {
+                cb.initialize<mpi_data_tracker_t>();
+            };
+    }
 
     void start() {}
     void stop() {}
@@ -144,7 +144,9 @@ struct mpi_comm_data : base<mpi_comm_data, void>
     void add(const std::string& _name, data_type value)
     {
         tracker_t _t(_name);
+        _t.start();
         _t.store(std::plus<data_type>{}, value);
+        _t.stop();
     }
 
     // MPI_Send

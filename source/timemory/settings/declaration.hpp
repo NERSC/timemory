@@ -146,6 +146,10 @@ struct TIMEMORY_SETTINGS_DLL settings
         ([](bool v) { scope::get_fields()[scope::timeline::value] = v; }))
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS",
                                     "Enable/disable combining thread-specific data", true)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_processes,
+                                    "TIMEMORY_COLLAPSE_PROCESSES",
+                                    "Enable/disable combining process-specific data",
+                                    false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                                     "Set the maximum depth of label hierarchy reporting",
                                     std::numeric_limits<uint16_t>::max())
@@ -306,17 +310,6 @@ struct TIMEMORY_SETTINGS_DLL settings
                                     "'funneled', or 'multiple' (see also: "
                                     "TIMEMORY_MPI_INIT and TIMEMORY_MPI_THREAD)",
                                     "")
-
-    /// output MPI data per rank
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_output_per_rank,
-                                    "TIMEMORY_MPI_OUTPUT_PER_RANK",
-                                    "Generate MPI output per-rank (skip aggregation)",
-                                    false)
-
-    /// output MPI data per node
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_output_per_node,
-                                    "TIMEMORY_MPI_OUTPUT_PER_NODE",
-                                    "Aggregate MPI output per-node", false)
 
     //----------------------------------------------------------------------------------//
     //      UPC++
@@ -764,6 +757,7 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_FLAT_PROFILE", flat_profile)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TIMELINE_PROFILE", timeline_profile)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_COLLAPSE_THREADS", collapse_threads)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_COLLAPSE_PROCESSES", collapse_processes)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MAX_DEPTH", max_depth)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TIME_FORMAT", time_format)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PRECISION", precision)
@@ -782,8 +776,6 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_FINALIZE", mpi_finalize)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD", mpi_thread)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD_TYPE", mpi_thread_type)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_OUTPUT_PER_RANK", mpi_output_per_rank)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_OUTPUT_PER_NODE", mpi_output_per_node)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PATH", output_path)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PREFIX", output_prefix)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_INPUT_PATH", input_path)

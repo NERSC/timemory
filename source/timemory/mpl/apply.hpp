@@ -629,11 +629,23 @@ struct apply<void>
     //
     //----------------------------------------------------------------------------------//
 
+    template <typename Tp, typename Value>
+    static inline auto set_value_fold(Tp&& _t, int, Value&& _v) noexcept
+        -> decltype(std::forward<Tp>(_t) = std::forward<Value>(_v), void())
+    {
+        std::forward<Tp>(_t) = std::forward<Value>(_v);
+    }
+
+    template <typename Tp, typename Value>
+    static inline void set_value_fold(Tp&&, long, Value&&) noexcept
+    {}
+
     template <typename Tuple, typename Value, size_t... Idx>
     static inline void set_value_fold(Tuple&& _t, Value&& _v,
                                       index_sequence<Idx...>) noexcept
     {
-        TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_t) = std::forward<Value>(_v));
+        TIMEMORY_FOLD_EXPRESSION(
+            set_value_fold(std::get<Idx>(_t), 0, std::forward<Value>(_v)));
     }
 
     //----------------------------------------------------------------------------------//

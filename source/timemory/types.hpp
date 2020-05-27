@@ -180,7 +180,7 @@ using complete_auto_tuple_t      = auto_tuple<TIMEMORY_COMPONENT_TYPES>;
 //
 //--------------------------------------------------------------------------------------//
 //
-using available_types_t = convert_t<available_tuple<complete_types_t>, type_list<>>;
+using available_types_t = convert_t<available_t<complete_types_t>, type_list<>>;
 //
 //--------------------------------------------------------------------------------------//
 //

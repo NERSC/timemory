@@ -175,9 +175,9 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <typename... Types>
-    struct get_storage : public filtered_get_storage<implemented<Types...>>
+    struct get_storage : public filtered_get_storage<implemented_t<Types...>>
     {
-        using base_type = filtered_get_storage<implemented<Types...>>;
+        using base_type = filtered_get_storage<implemented_t<Types...>>;
         using base_type::clear;
         using base_type::initialize;
         using base_type::print;
@@ -189,9 +189,9 @@ public:
     //
     template <template <typename...> class Tuple, typename... Types>
     struct get_storage<Tuple<Types...>>
-    : public filtered_get_storage<implemented<Types...>>
+    : public filtered_get_storage<implemented_t<Types...>>
     {
-        using base_type = filtered_get_storage<implemented<Types...>>;
+        using base_type = filtered_get_storage<implemented_t<Types...>>;
         using base_type::clear;
         using base_type::initialize;
         using base_type::print;

@@ -128,171 +128,171 @@ public:
 
 public:
     // public member functions
-    component_type&       get_component() { return m_temporary_object; }
-    const component_type& get_component() const { return m_temporary_object; }
+    component_type&       get_component() { return m_temporary; }
+    const component_type& get_component() const { return m_temporary; }
 
-    operator component_type&() { return m_temporary_object; }
-    operator const component_type&() const { return m_temporary_object; }
+    operator component_type&() { return m_temporary; }
+    operator const component_type&() const { return m_temporary; }
 
     // partial interface to underlying component_hybrid
     void push()
     {
         if(m_enabled)
-            m_temporary_object.push();
+            m_temporary.push();
     }
     void pop()
     {
         if(m_enabled)
-            m_temporary_object.pop();
+            m_temporary.pop();
     }
     template <typename... Args>
     void measure(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.measure(std::forward<Args>(args)...);
+            m_temporary.measure(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void sample(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.sample(std::forward<Args>(args)...);
+            m_temporary.sample(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void start(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.start(std::forward<Args>(args)...);
+            m_temporary.start(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void stop(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.stop(std::forward<Args>(args)...);
+            m_temporary.stop(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void assemble(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.assemble(std::forward<Args>(args)...);
+            m_temporary.assemble(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void derive(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.derive(std::forward<Args>(args)...);
+            m_temporary.derive(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void mark_begin(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_begin(std::forward<Args>(args)...);
+            m_temporary.mark_begin(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void mark_end(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_end(std::forward<Args>(args)...);
+            m_temporary.mark_end(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void store(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.store(std::forward<Args>(args)...);
+            m_temporary.store(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void audit(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.audit(std::forward<Args>(args)...);
+            m_temporary.audit(std::forward<Args>(args)...);
     }
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
         if(m_enabled)
-            m_temporary_object.template invoke<OpT>(std::forward<Args>(_args)...);
+            m_temporary.template invoke<OpT>(std::forward<Args>(_args)...);
     }
     template <typename... Args>
     auto get(Args&&... args) const
     {
-        return m_temporary_object.get(std::forward<Args>(args)...);
+        return m_temporary.get(std::forward<Args>(args)...);
     }
     template <typename... Args>
     auto get_labeled(Args&&... args) const
     {
-        return m_temporary_object.get_labeled(std::forward<Args>(args)...);
+        return m_temporary.get_labeled(std::forward<Args>(args)...);
     }
 
     bool enabled() const { return m_enabled; }
     void report_at_exit(bool val) { m_report_at_exit = val; }
     bool report_at_exit() const { return m_report_at_exit; }
 
-    bool      store() const { return m_temporary_object.store(); }
-    data_type data() const { return m_temporary_object.data(); }
-    int64_t   laps() const { return m_temporary_object.laps(); }
-    string_t  key() const { return m_temporary_object.key(); }
-    uint64_t  hash() const { return m_temporary_object.hash(); }
-    void      rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    bool      store() const { return m_temporary.store(); }
+    data_type data() const { return m_temporary.data(); }
+    int64_t   laps() const { return m_temporary.laps(); }
+    string_t  key() const { return m_temporary.key(); }
+    uint64_t  hash() const { return m_temporary.hash(); }
+    void      rekey(const string_t& _key) { m_temporary.rekey(_key); }
 
 public:
-    tuple_type&       get_tuple() { return m_temporary_object.get_tuple(); }
-    const tuple_type& get_tuple() const { return m_temporary_object.get_tuple(); }
-    list_type&        get_list() { return m_temporary_object.get_list(); }
-    const list_type&  get_list() const { return m_temporary_object.get_list(); }
+    tuple_type&       get_tuple() { return m_temporary.get_tuple(); }
+    const tuple_type& get_tuple() const { return m_temporary.get_tuple(); }
+    list_type&        get_list() { return m_temporary.get_list(); }
+    const list_type&  get_list() const { return m_temporary.get_list(); }
 
-    tuple_type&       get_first() { return m_temporary_object.get_tuple(); }
-    const tuple_type& get_first() const { return m_temporary_object.get_tuple(); }
-    list_type&        get_second() { return m_temporary_object.get_list(); }
-    const list_type&  get_second() const { return m_temporary_object.get_list(); }
+    tuple_type&       get_first() { return m_temporary.get_tuple(); }
+    const tuple_type& get_first() const { return m_temporary.get_tuple(); }
+    list_type&        get_second() { return m_temporary.get_list(); }
+    const list_type&  get_second() const { return m_temporary.get_list(); }
 
-    tuple_type&       get_lhs() { return m_temporary_object.get_tuple(); }
-    const tuple_type& get_lhs() const { return m_temporary_object.get_tuple(); }
-    list_type&        get_rhs() { return m_temporary_object.get_list(); }
-    const list_type&  get_rhs() const { return m_temporary_object.get_list(); }
+    tuple_type&       get_lhs() { return m_temporary.get_tuple(); }
+    const tuple_type& get_lhs() const { return m_temporary.get_tuple(); }
+    list_type&        get_rhs() { return m_temporary.get_list(); }
+    const list_type&  get_rhs() const { return m_temporary.get_list(); }
 
     template <typename Tp>
     decltype(auto) get()
     {
-        return m_temporary_object.template get<Tp>();
+        return m_temporary.template get<Tp>();
     }
 
     template <typename Tp>
     decltype(auto) get() const
     {
-        return m_temporary_object.template get<Tp>();
+        return m_temporary.template get<Tp>();
     }
 
     template <typename T>
     auto get_component()
         -> decltype(std::declval<component_type>().template get_component<T>())
     {
-        return m_temporary_object.template get_component<T>();
+        return m_temporary.template get_component<T>();
     }
 
-    void get(void*& ptr, size_t _hash) { m_temporary_object.get(ptr, _hash); }
+    void get(void*& ptr, size_t _hash) { m_temporary.get(ptr, _hash); }
 
     template <typename Tp, typename... Args>
     void init(Args&&... _args)
     {
-        m_temporary_object.template init<Tp>(std::forward<Args>(_args)...);
+        m_temporary.template init<Tp>(std::forward<Args>(_args)...);
     }
 
     template <typename... Tp, typename... Args>
     void initialize(Args&&... _args)
     {
-        m_temporary_object.template initialize<Tp...>(std::forward<Args>(_args)...);
+        m_temporary.template initialize<Tp...>(std::forward<Args>(_args)...);
     }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        os << obj.m_temporary_object;
+        os << obj.m_temporary;
         return os;
     }
 
 private:
     bool            m_enabled        = true;
     bool            m_report_at_exit = false;
-    component_type  m_temporary_object;
+    component_type  m_temporary;
     component_type* m_reference_object = nullptr;
 };
 
@@ -305,14 +305,14 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(const string_t& object_tag,
                                               const FuncT& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(object_tag, m_enabled, _scope)
+                        : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
     {
         _func(*this);
-        m_temporary_object.start();
+        m_temporary.start();
     }
 }
 
@@ -325,14 +325,14 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(const captured_location_t& object_
                                               const FuncT& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(object_loc, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(object_loc, m_enabled, _scope)
+                        : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
     {
         _func(*this);
-        m_temporary_object.start();
+        m_temporary.start();
     }
 }
 
@@ -344,14 +344,13 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(size_t _hash, scope::config _scope
                                               bool report_at_exit, const FuncT& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(m_enabled ? component_type(_hash, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(_hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 {
     if(m_enabled)
     {
         _func(*this);
-        m_temporary_object.start();
+        m_temporary.start();
     }
 }
 
@@ -362,12 +361,12 @@ auto_hybrid<CompTuple, CompList>::auto_hybrid(component_type& tmp, scope::config
                                               bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, _scope))
+, m_temporary(tmp.clone(true, _scope))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
     {
-        m_temporary_object.start();
+        m_temporary.start();
     }
 }
 
@@ -379,20 +378,20 @@ auto_hybrid<CompTuple, CompList>::~auto_hybrid()
     if(m_enabled)
     {
         // stop the timer
-        m_temporary_object.stop();
+        m_temporary.stop();
 
         // report timer at exit
         if(m_report_at_exit)
         {
             std::stringstream ss;
-            ss << m_temporary_object;
+            ss << m_temporary;
             if(ss.str().length() > 0)
                 std::cout << ss.str() << std::endl;
         }
 
         if(m_reference_object)
         {
-            *m_reference_object += m_temporary_object;
+            *m_reference_object += m_temporary;
         }
     }
 }

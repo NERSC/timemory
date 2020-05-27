@@ -22,8 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+/** \file timemory/variadic/component_hybrid.cpp
+ * \brief Implementation for various component_hybrid member functions
+ *
+ */
 
+#include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
 

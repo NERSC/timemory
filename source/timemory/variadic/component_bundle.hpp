@@ -23,7 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file timemory/variadic/lightweight_tuple.hpp
+/** \file timemory/variadic/component_bundle.hpp
+ * \headerfile variadic/component_bundle.hpp "timemory/variadic/component_bundle.hpp"
  * This is the C++ class that bundles together components and enables
  * operation on the components as a single entity
  *
@@ -60,15 +61,18 @@ namespace tim
 //======================================================================================//
 // variadic list of components
 //
-template <typename... Types>
-class lightweight_tuple : public stack_bundle<available_t<std::tuple<Types...>>>
+template <typename Tag, typename... Types>
+class component_bundle : public api_bundle<Tag, implemented_t<Types...>>
 {
     // manager is friend so can use above
     friend class manager;
 
+    template <typename TagT, typename... Tp>
+    friend class auto_bundle;
+
 public:
-    using bundle_type         = stack_bundle<available_t<std::tuple<Types...>>>;
-    using this_type           = lightweight_tuple<Types...>;
+    using bundle_type         = api_bundle<Tag, implemented_t<Types...>>;
+    using this_type           = component_bundle<Tag, Types...>;
     using captured_location_t = source_location::captured;
 
     using data_type         = typename bundle_type::data_type;
@@ -91,22 +95,25 @@ public:
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 
     // used by gotcha
-    using component_type   = lightweight_tuple<Types...>;
-    using type             = convert_t<type_tuple, lightweight_tuple<>>;
+    using component_type   = component_bundle<Tag, Types...>;
+    using auto_type        = auto_bundle<Tag, Types...>;
+    using type             = convert_t<type_tuple, component_bundle<Tag>>;
     using initializer_type = std::function<void(this_type&)>;
 
     // used by component hybrid
-    static constexpr bool is_component_list    = false;
-    static constexpr bool is_lightweight_tuple = true;
-    static constexpr bool is_component_hybrid  = false;
-    static constexpr bool is_component_type    = true;
-    static constexpr bool is_auto_list         = false;
-    static constexpr bool is_auto_tuple        = false;
-    static constexpr bool is_auto_hybrid       = false;
-    static constexpr bool is_auto_type         = false;
-    static constexpr bool is_component         = false;
-    static constexpr bool has_gotcha_v         = bundle_type::has_gotcha_v;
-    static constexpr bool has_user_bundle_v    = bundle_type::has_user_bundle_v;
+    static constexpr bool is_component_bundle = true;
+    static constexpr bool is_component_list   = false;
+    static constexpr bool is_component_tuple  = false;
+    static constexpr bool is_component_hybrid = false;
+    static constexpr bool is_component_type   = true;
+    static constexpr bool is_auto_bundle      = false;
+    static constexpr bool is_auto_list        = false;
+    static constexpr bool is_auto_tuple       = false;
+    static constexpr bool is_auto_hybrid      = false;
+    static constexpr bool is_auto_type        = false;
+    static constexpr bool is_component        = false;
+    static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
 
 public:
     //
@@ -114,7 +121,32 @@ public:
     //
     static initializer_type& get_initializer()
     {
-        static initializer_type _instance = [](this_type&) {};
+        static initializer_type _instance = [](this_type& cl) {
+            static auto env_enum = []() {
+                auto _tag = demangle<Tag>();
+                for(auto itr : { string_t("tim::"), string_t("::") })
+                {
+                    auto _pos = _tag.find(itr);
+                    do
+                    {
+                        if(_pos != std::string::npos)
+                            _tag = _tag.erase(_pos, itr.length());
+                        _pos = _tag.find(itr);
+                    } while(_pos != std::string::npos);
+                }
+                for(auto& itr : _tag)
+                    itr = toupper(itr);
+                auto env_var = string_t("TIMEMORY_") + _tag + "_COMPONENTS";
+                if(settings::debug() || settings::verbose() > 0)
+                    PRINT_HERE("%s is using environment variable: '%s'",
+                               demangle<this_type>().c_str(), env_var.c_str());
+
+                // get environment variable
+                return enumerate_components(
+                    tim::delimit(tim::get_env<string_t>(env_var, "")));
+            }();
+            ::tim::initialize(cl, env_enum);
+        };
         return _instance;
     }
 
@@ -136,39 +168,49 @@ public:
     }
 
 public:
-    lightweight_tuple();
+    component_bundle();
 
     template <typename... T, typename Func = initializer_type>
-    explicit lightweight_tuple(const string_t& key, variadic::config<T...> = {},
-                               const Func& = get_initializer());
+    explicit component_bundle(const string_t& key, variadic::config<T...>,
+                              const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit lightweight_tuple(const captured_location_t& loc,
-                               variadic::config<T...> = {},
-                               const Func&            = get_initializer());
+    explicit component_bundle(const captured_location_t& loc, variadic::config<T...>,
+                              const Func& = get_initializer());
 
-    template <typename... T, typename Func = initializer_type>
-    explicit lightweight_tuple(size_t _hash, variadic::config<T...> = {},
-                               const Func& = get_initializer());
+    template <typename Func = initializer_type>
+    explicit component_bundle(const string_t& key, const bool& store = true,
+                              scope::config _scope = scope::get_default(),
+                              const Func&          = get_initializer());
 
-    ~lightweight_tuple();
+    template <typename Func = initializer_type>
+    explicit component_bundle(const captured_location_t& loc, const bool& store = true,
+                              scope::config _scope = scope::get_default(),
+                              const Func&          = get_initializer());
+
+    template <typename Func = initializer_type>
+    explicit component_bundle(size_t _hash, const bool& store = true,
+                              scope::config _scope = scope::get_default(),
+                              const Func&          = get_initializer());
+
+    ~component_bundle();
 
     //------------------------------------------------------------------------//
-    //      Copy construct and assignment
+    //      Copy/move construct and assignment
     //------------------------------------------------------------------------//
-    lightweight_tuple(const lightweight_tuple&) = default;
-    lightweight_tuple(lightweight_tuple&&)      = default;
+    component_bundle(const component_bundle& rhs);
+    component_bundle(component_bundle&&) = default;
 
-    lightweight_tuple& operator=(const lightweight_tuple& rhs) = default;
-    lightweight_tuple& operator=(lightweight_tuple&&) = default;
+    component_bundle& operator=(const component_bundle& rhs);
+    component_bundle& operator=(component_bundle&&) = default;
 
-    lightweight_tuple clone(bool store, scope::config _scope = scope::get_default());
+    component_bundle clone(bool store, scope::config _scope = scope::get_default());
 
 public:
     //----------------------------------------------------------------------------------//
     // public static functions
     //
-    static constexpr std::size_t size() { return std::tuple_size<type_tuple>::value; }
+    static constexpr std::size_t size() { return std::tuple_size<data_type>::value; }
     static void                  print_storage();
     static void                  init_storage();
 
@@ -195,6 +237,12 @@ public:
     auto             get_labeled(Args&&...) const;
     data_type&       data();
     const data_type& data() const;
+
+    // lightweight variants which exclude push/pop and assemble/derive
+    template <typename... Args>
+    void start(mpl::lightweight, Args&&...);
+    template <typename... Args>
+    void stop(mpl::lightweight, Args&&...);
 
     using bundle_type::hash;
     using bundle_type::key;
@@ -298,7 +346,21 @@ public:
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<!(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
+    T* get()
+    {
+        return &(std::get<index_of<T*, data_type>::value>(m_data));
+    }
+
+    template <typename T, enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
+    const T* get() const
+    {
+        return &(std::get<index_of<T*, data_type>::value>(m_data));
+    }
+
+    template <typename T, enable_if_t<!(is_one_of<T, data_type>::value ||
+                                        is_one_of<T*, data_type>::value),
+                                      int> = 0>
     T* get() const
     {
         void*       ptr   = nullptr;
@@ -327,11 +389,62 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    ///  initialize a type that is in variadic list AND is available
+    ///
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args,
+              enable_if_t<(trait::is_available<T>::value == true &&
+                           is_one_of<T*, data_type>::value == true &&
+                           is_one_of<T, data_type>::value == false),
+                          char> = 0>
+    void init(Args&&... _args)
+    {
+        T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
+        if(!_obj)
+        {
+            if(settings::debug())
+            {
+                printf("[component_list::init]> initializing type '%s'...\n",
+                       demangle(typeid(T).name()).c_str());
+            }
+            _obj = new T(std::forward<Args>(_args)...);
+            set_prefix(_obj);
+        }
+        else
+        {
+            static std::atomic<int> _count(0);
+            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
+            {
+                std::string _id = demangle(typeid(T).name());
+                printf("[component_list::init]> skipping re-initialization of type"
+                       " \"%s\"...\n",
+                       _id.c_str());
+            }
+        }
+    }
 
-    template <
-        typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && has_user_bundle_v),
-                    int> = 0>
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args,
+              enable_if_t<(trait::is_available<T>::value == true &&
+                           is_one_of<T*, data_type>::value == false &&
+                           is_one_of<T, data_type>::value == true),
+                          char> = 0>
+    void init(Args&&... _args)
+    {
+        T& _obj = std::get<index_of<T, data_type>::value>(m_data);
+        operation::construct<T>(_obj, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename T, typename... Args,
+              enable_if_t<(trait::is_available<T>::value == true &&
+                           is_one_of<T, data_type>::value == false &&
+                           is_one_of<T*, data_type>::value == false &&
+                           has_user_bundle_v == true),
+                          int> = 0>
     void init(Args&&...)
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
@@ -342,27 +455,22 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <
-        typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && !has_user_bundle_v),
-                    int> = 0>
+    template <typename T, typename... Args,
+              enable_if_t<(trait::is_available<T>::value == false ||
+                           (is_one_of<T*, data_type>::value == false &&
+                            is_one_of<T, data_type>::value == false &&
+                            has_user_bundle_v == false)),
+                          int> = 0>
     void init(Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
-    void initialize()
+    template <typename... T, typename... Args>
+    void initialize(Args&&... args)
     {
-        this->init<T>();
-    }
-
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) > 0), int> = 0>
-    void initialize()
-    {
-        this->init<T>();
-        this->initialize<Tail...>();
+        TIMEMORY_FOLD_EXPRESSION(this->init<T>(std::forward<Args>(args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -377,7 +485,17 @@ public:
     }
 
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == false), int> = 0>
+              enable_if_t<(is_one_of<T*, data_type>::value == true), int> = 0>
+    void type_apply(Func&& _func, Args&&... _args)
+    {
+        auto&& _obj = get<T*>();
+        ((_obj).*(_func))(std::forward<Args>(_args)...);
+    }
+
+    template <typename T, typename Func, typename... Args,
+              enable_if_t<(is_one_of<T, data_type>::value == false &&
+                           is_one_of<T*, data_type>::value == false),
+                          int> = 0>
     void type_apply(Func&&, Args&&...)
     {}
 
@@ -458,11 +576,11 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using print_t = typename bundle_type::print_t;
+        using printer_t = typename bundle_type::print_t;
         if(size() == 0 || m_hash == 0)
             return;
         std::stringstream ss_data;
-        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
         {
             update_width();
@@ -528,9 +646,12 @@ protected:
     // protected member functions
     data_type&       get_data();
     const data_type& get_data() const;
-    void             set_prefix(const string_t&) const;
-    void             set_prefix(size_t) const;
     void             set_scope(scope::config);
+
+    template <typename T>
+    void set_prefix(T* obj) const;
+    void set_prefix(const string_t&) const;
+    void set_prefix(size_t) const;
 
 protected:
     // objects
@@ -546,8 +667,8 @@ protected:
 
 template <typename... Types>
 auto
-get(const lightweight_tuple<Types...>& _obj)
-    -> decltype(std::declval<lightweight_tuple<Types...>>().get())
+get(const component_bundle<Types...>& _obj)
+    -> decltype(std::declval<component_bundle<Types...>>().get())
 {
     return _obj.get();
 }
@@ -556,8 +677,8 @@ get(const lightweight_tuple<Types...>& _obj)
 
 template <typename... Types>
 auto
-get_labeled(const lightweight_tuple<Types...>& _obj)
-    -> decltype(std::declval<lightweight_tuple<Types...>>().get_labeled())
+get_labeled(const component_bundle<Types...>& _obj)
+    -> decltype(std::declval<component_bundle<Types...>>().get_labeled())
 {
     return _obj.get_labeled();
 }
@@ -574,30 +695,30 @@ namespace std
 {
 //--------------------------------------------------------------------------------------//
 
-template <std::size_t N, typename... Types>
+template <std::size_t N, typename Tag, typename... Types>
 typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(::tim::lightweight_tuple<Types...>& obj)
+get(::tim::component_bundle<Tag, Types...>& obj)
 {
     return get<N>(obj.data());
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <std::size_t N, typename... Types>
+template <std::size_t N, typename Tag, typename... Types>
 const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const ::tim::lightweight_tuple<Types...>& obj)
+get(const ::tim::component_bundle<Tag, Types...>& obj)
 {
     return get<N>(obj.data());
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <std::size_t N, typename... Types>
+template <std::size_t N, typename Tag, typename... Types>
 auto
-get(::tim::lightweight_tuple<Types...>&& obj)
-    -> decltype(get<N>(std::forward<::tim::lightweight_tuple<Types...>>(obj).data()))
+get(::tim::component_bundle<Tag, Types...>&& obj)
+    -> decltype(get<N>(std::forward<::tim::component_bundle<Tag, Types...>>(obj).data()))
 {
-    using obj_type = ::tim::lightweight_tuple<Types...>;
+    using obj_type = ::tim::component_bundle<Tag, Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
 
