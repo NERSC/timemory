@@ -18,7 +18,7 @@ foreach(LIB_TYPE shared static)
         NO_CACHE_LIST
         ${LIB_PARAMS}
         TARGET_NAME         timemory-stubs-${LIB_TYPE}
-        OUTPUT_NAME         timemory
+        OUTPUT_NAME         timemorystubs
         LANGUAGE            CXX
         LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}/stubs

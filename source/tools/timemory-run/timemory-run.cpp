@@ -181,6 +181,10 @@ main(int argc, char** argv)
         .names({ "-P", "--collection-path" })
         .description("Additional path(s) to folders containing collection files");
     parser.add_argument()
+        .names({ "-j", "--jump" })
+        .description("Instrument with jump pointers for LD_PRELOAD")
+        .count(0);
+    parser.add_argument()
         .names({ "-s", "--stubs" })
         .description("Instrument with library stubs for LD_PRELOAD")
         .count(0);
@@ -299,11 +303,14 @@ main(int argc, char** argv)
         strcpy(outfile, key.c_str());
     }
 
-    if(parser.exists("s") && !parser.exists("L"))
-        inputlib += "stubs/";
-
     if(!parser.exists("L"))
-        inputlib += "libtimemory";
+        inputlib = "libtimemory";
+
+    if(parser.exists("j") && !parser.exists("s") && !parser.exists("L"))
+        inputlib += "jump";
+
+    if(parser.exists("s") && !parser.exists("L"))
+        inputlib += "stubs";
 
     if(parser.exists("S"))
         stl_func_instr = true;
