@@ -16,6 +16,7 @@ function(DEFINE_DEFAULT_OPTION VAR VAL)
     else()
         set(${VAR} ${VAL} PARENT_SCOPE)
     endif()
+    set_property(GLOBAL APPEND PROPERTY DEFAULT_OPTION_VARIABLES ${VAR})
 endfunction()
 
 set(_FEATURE )
@@ -356,3 +357,11 @@ endmacro()
 
 option(TIMEMORY_SOURCE_GROUP "Enable source_group" OFF)
 mark_as_advanced(TIMEMORY_SOURCE_GROUP)
+
+# these variables conflict with variables in examples, leading to things like: -lON flags
+get_property(DEFAULT_OPTION_VARIABLES GLOBAL PROPERTY DEFAULT_OPTION_VARIABLES)
+foreach(_VAR ${DEFAULT_OPTION_VARIABLES})
+    # message(STATUS "Reseting: ${_VAR} :: ${${_VAR}}")
+    unset(${_VAR})
+    # message(STATUS "Result: ${_VAR} :: ${${_VAR}}")
+endforeach()
