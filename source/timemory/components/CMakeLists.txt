@@ -19,6 +19,12 @@ add_subdirectory(timing)
 add_subdirectory(trip_count)
 add_subdirectory(vtune)
 
+if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/factory.cpp PROPERTIES
+        LANGUAGE CUDA
+        LINKER_LANGUAGE CUDA)
+endif()
+
 # factory generation
 build_intermediate_library(
     USE_INTERFACE
