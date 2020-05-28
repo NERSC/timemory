@@ -773,13 +773,13 @@ storage<Type, true>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         bool   _is_master = singleton_t::is_master(this);
-        auto   _debug_v   = settings::debug();
-        auto   _verb_v    = settings::verbose();
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto   _cleanup   = [=]() {};
+        func_t _finalize  = [=]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
+                auto _debug_v = settings::debug();
+                auto _verb_v  = settings::verbose();
                 if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
@@ -973,13 +973,13 @@ storage<Type, false>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         bool   _is_master = singleton_t::is_master(this);
-        auto   _debug_v   = settings::debug();
-        auto   _verb_v    = settings::verbose();
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto   _cleanup   = [=]() {};
+        func_t _finalize  = [=]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
+                auto _debug_v = settings::debug();
+                auto _verb_v  = settings::verbose();
                 if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
