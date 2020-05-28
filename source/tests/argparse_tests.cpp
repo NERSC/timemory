@@ -538,9 +538,9 @@ TEST_F(argparse_tests, parse_known_options)
 {
     argparse_t parser(details::get_test_name());
     auto       orig           = details::parse_function();
-    details::parse_function() = [](argparse_t& parser, int& _ac, char**& _av) {
+    details::parse_function() = [](argparse_t& _parser, int& _ac, char**& _av) {
         argerror_t err;
-        std::tie(err, _ac, _av) = parser.parse_known_args(_ac, _av, "--", 2);
+        std::tie(err, _ac, _av) = _parser.parse_known_args(_ac, _av, "--", 2);
         return err;
     };
     auto ret = details::parse(parser, "-sS", "-l", "T", "-R", "combined", "short", "and",
@@ -583,9 +583,9 @@ TEST_F(argparse_tests, parse_known_options_without_options)
 {
     argparse_t parser(details::get_test_name());
     auto       orig           = details::parse_function();
-    details::parse_function() = [](argparse_t& parser, int& _ac, char**& _av) {
+    details::parse_function() = [](argparse_t& _parser, int& _ac, char**& _av) {
         argerror_t err;
-        std::tie(err, _ac, _av) = parser.parse_known_args(_ac, _av, "--", 2);
+        std::tie(err, _ac, _av) = _parser.parse_known_args(_ac, _av, "--", 2);
         return err;
     };
     auto ret = details::parse(parser, "10", "20");

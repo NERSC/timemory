@@ -71,7 +71,7 @@ extern "C"
 
     uint64_t timemory_get_unique_id(void) { RETURN_MAX(uint64_t); }
     void     timemory_create_record(const char*, uint64_t*, int, int*) {}
-    void     timemory_delete_record(uint64_t id) {}
+    void     timemory_delete_record(uint64_t) {}
     void     timemory_init_library(int, char**) {}
     void     timemory_finalize_library(void) {}
     void     timemory_pause(void) {}
@@ -91,7 +91,7 @@ extern "C"
         RETURN_MAX(uint64_t);
     }
     uint64_t timemory_get_begin_record_enum(const char*, ...) { RETURN_MAX(uint64_t); }
-    void     timemory_end_record(uint64_t id) {}
+    void     timemory_end_record(uint64_t) {}
     void     timemory_push_region(const char*) {}
     void     timemory_pop_region(const char*) {}
 

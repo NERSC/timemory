@@ -171,6 +171,54 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
+merge<Type, true>::merge(result_type& dst, const result_type& src)
+{
+    using result_node = typename result_type::value_type;
+
+    //--------------------------------------------------------------------------//
+    //
+    auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
+        return (_lhs.hash() == _rhs.hash() && _lhs.prefix() == _rhs.prefix() &&
+                _lhs.depth() == _rhs.depth() &&
+                _lhs.rolling_hash() == _rhs.rolling_hash());
+    };
+
+    //--------------------------------------------------------------------------//
+    //
+    auto _exists = [&](const result_node& _lhs) {
+        for(auto itr = dst.begin(); itr != dst.end(); ++itr)
+        {
+            if(_equiv(_lhs, *itr))
+                return itr;
+        }
+        return dst.end();
+    };
+
+    //--------------------------------------------------------------------------//
+    //  collapse duplicates
+    //
+    for(auto& itr : src)
+    {
+        auto citr = _exists(itr);
+        if(citr == dst.end())
+        {
+            // auto val  = itr;
+            // val.tid() = std::numeric_limits<uint16_t>::max();
+            // dst.emplace_back(val);
+            dst.emplace_back(itr);
+        }
+        else
+        {
+            citr->data() += itr.data();
+            citr->data().plus(itr.data());
+            citr->stats() += itr.stats();
+        }
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
 merge<Type, false>::merge(storage_type& lhs, storage_type& rhs)
 {
     rhs.stack_clear();

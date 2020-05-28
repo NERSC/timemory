@@ -773,22 +773,24 @@ storage<Type, true>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto   _debug_v   = settings::debug();
+        auto   _verb_v    = settings::verbose();
+        auto   _cleanup   = [=]() {};
+        func_t _finalize  = [=]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                if(settings::debug() || settings::verbose() > 1)
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 _instance->reset(this);
-                if(settings::debug() || settings::verbose() > 1)
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->smart_instance().reset()");
                 _instance->smart_instance().reset();
                 if(_is_master)
                 {
-                    if(settings::debug() || settings::verbose() > 1)
+                    if(_debug_v || _verb_v > 1)
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                    "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();
@@ -971,22 +973,24 @@ storage<Type, false>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto   _debug_v   = settings::debug();
+        auto   _verb_v    = settings::verbose();
+        auto   _cleanup   = [=]() {};
+        func_t _finalize  = [=]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                if(settings::debug() || settings::verbose() > 1)
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 _instance->reset(this);
-                if(settings::debug() || settings::verbose() > 1)
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->smart_instance().reset()");
                 _instance->smart_instance().reset();
                 if(_is_master)
                 {
-                    if(settings::debug() || settings::verbose() > 1)
+                    if(_debug_v || _verb_v > 1)
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                    "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();

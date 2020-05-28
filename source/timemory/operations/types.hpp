@@ -432,8 +432,10 @@ struct merge<Type, true>
     using storage_type             = impl::storage<Type, has_data>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
+    using result_type              = typename storage_type::result_array_t;
 
     merge(storage_type& lhs, storage_type& rhs);
+    merge(result_type& lhs, const result_type& rhs);
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -445,8 +447,10 @@ struct merge<Type, false>
     using storage_type             = impl::storage<Type, has_data>;
     using singleton_t              = typename storage_type::singleton_type;
     using graph_t                  = typename storage_type::graph_type;
+    using result_type              = typename storage_type::result_array_t;
 
     merge(storage_type& lhs, storage_type& rhs);
+    merge(result_type&, const result_type&) {}
 };
 //
 //--------------------------------------------------------------------------------------//

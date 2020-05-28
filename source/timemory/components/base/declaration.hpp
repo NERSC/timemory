@@ -143,6 +143,8 @@ private:
     friend struct operation::serialization<Tp>;
     friend struct operation::finalize::get<Tp, true>;
     friend struct operation::finalize::get<Tp, false>;
+    friend struct operation::finalize::merge<Tp, true>;
+    friend struct operation::finalize::merge<Tp, false>;
     friend struct operation::finalize::print<Tp, true>;
     friend struct operation::finalize::print<Tp, false>;
 

@@ -25,7 +25,6 @@
 #pragma once
 
 #include "timemory/environment/declaration.hpp"
-//
-#include "timemory/environment/extern.hpp"
-//
 #include "timemory/environment/definition.hpp"
+#include "timemory/environment/macros.hpp"
+#include "timemory/environment/types.hpp"

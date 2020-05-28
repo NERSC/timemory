@@ -194,7 +194,8 @@ main(int argc, char** argv)
         .count(0);
     parser.add_argument()
         .names({ "-L", "--library" })
-        .description("Libraries with instrumentation routines (default: \"libtimemory\")");
+        .description(
+            "Libraries with instrumentation routines (default: \"libtimemory\")");
     parser.add_argument()
         .names({ "-S", "--stdlib" })
         .description(
@@ -309,7 +310,7 @@ main(int argc, char** argv)
     {
         for(auto& itr : inputlib)
             itr += "libtimemory";
-      
+
         if(parser.exists("s"))
         {
             for(auto& itr : inputlib)

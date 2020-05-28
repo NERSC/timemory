@@ -120,7 +120,8 @@ endif()
 #
 add_interface_library(timemory-develop-options)
 if(TIMEMORY_BUILD_DEVELOPER)
-    add_target_flag_if_avail(timemory-develop-options "-Wshadow" "-Wextra" "-Wpedantic")
+    add_target_flag_if_avail(timemory-develop-options
+        "-Wshadow" "-Wextra" "-Wpedantic" "-Werror")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -170,59 +171,28 @@ include(ArchConfig)
 #----------------------------------------------------------------------------------------#
 # sanitizer
 #
-set(SANITIZER_TYPES address memory thread leak)
-
-set(asan_key "address")
-set(msan_key "memory")
-set(tsan_key "thread")
-set(lsan_key "leak")
-
-set(address_lib asan)
-set(memory_lib msan)
-set(thread_lib tsan)
-set(leak_lib lsan)
-
-find_library(SANITIZER_asan_LIBRARY NAMES asan PATH_SUFFIXES lib lib64 lib32)
-find_library(SANITIZER_msan_LIBRARY NAMES msan PATH_SUFFIXES lib lib64 lib32)
-find_library(SANITIZER_tsan_LIBRARY NAMES tsan PATH_SUFFIXES lib lib64 lib32)
-find_library(SANITIZER_lsan_LIBRARY NAMES lsan PATH_SUFFIXES lib lib64 lib32)
-
-string(TOLOWER "${SANITIZER_TYPE}" SANITIZER_TYPE)
-list(REMOVE_ITEM SANITIZER_TYPES ${SANITIZER_TYPE})
-set(SANITIZER_TYPES ${SANITIZER_TYPE} ${SANITIZER_TYPES})
+set(SANITIZER_TYPES address memory thread leak undefined unreachable null bounds alignment)
+set_property(CACHE SANITIZER_TYPE PROPERTY STRINGS "${SANITIZER_TYPES}")
 
 foreach(_TYPE ${SANITIZER_TYPES})
     add_interface_library(timemory-${_TYPE}-sanitizer)
-    add_target_flag(timemory-${_TYPE}-sanitizer "-fsanitize=${_TYPE}")
-    set_property(TARGET timemory-${_TYPE}-sanitizer PROPERTY
-        INTERFACE_LINK_OPTIONS "-fno-omit-frame-pointer" "-fsanitize=${_TYPE}")
-    if(SANITIZER_${_TYPE}_LIBRARY)
-        target_link_libraries(timemory-${_TYPE}-sanitizer INTERFACE ${SANITIZER_${_TYPE}_LIBRARY})
-    endif()
+    set(_FLAGS "-fno-optimize-sibling-calls" "-fno-omit-frame-pointer"
+        "-fno-inline-functions" "-fsanitize=${_TYPE}")
+    add_target_flag(timemory-${_TYPE}-sanitizer ${_FLAGS})
+    set_property(TARGET timemory-${_TYPE}-sanitizer PROPERTY INTERFACE_LINK_OPTIONS ${_FLAGS})
 endforeach()
 
 add_interface_library(timemory-sanitizer)
 if(TIMEMORY_USE_SANITIZER)
-    foreach(_TYPE ${c} ${SANITIZER_TYPES})
-        set(_LIB ${${_TYPE}_lib})
-        if((c_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} OR
-                cxx_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE}) AND
-                SANITIZER_${_LIB}_LIBRARY)
-            add_target_flag_if_avail(timemory-sanitizer "-fno-omit-frame-pointer")
-            target_compile_definitions(timemory-sanitizer INTERFACE TIMEMORY_USE_SANITIZER)
+    foreach(_TYPE ${SANITIZER_TYPE})
+        if(TARGET timemory-${_TYPE}-sanitizer)
             target_link_libraries(timemory-sanitizer INTERFACE timemory-${_TYPE}-sanitizer)
-            break()
         else()
-            message(STATUS "${_TYPE} sanitizer not found. library: ${SANITIZER_${_LIB}_LIBRARY}...")
+            message(FATAL_ERROR "Error! Target 'timemory-${_TYPE}-sanitizer' does not exist!")
         endif()
     endforeach()
-
-    if(NOT TARGET timemory-sanitizer)
-        message(WARNING "TIMEMORY_USE_SANITIZER not found. Tried: ${SANITIZER_TYPES}")
-        unset(SANITIZER_TYPE CACHE)
-        set(TIMEMORY_USE_SANITIZER OFF)
-    endif()
 else()
+    set(TIMEMORY_USE_SANITIZER OFF)
     inform_empty_interface(timemory-sanitizer "${SANITIZER_TYPE} sanitizer")
 endif()
 

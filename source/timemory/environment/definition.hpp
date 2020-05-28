@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/environment/declaration.hpp"
+#include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -49,8 +50,7 @@ namespace regex_const = std::regex_constants;
 //
 //--------------------------------------------------------------------------------------//
 //
-#if !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)) ||       \
-    defined(TIMEMORY_ENVIRONMENT_SOURCE)
+#if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -311,7 +311,7 @@ env_settings::instance()
 //
 //--------------------------------------------------------------------------------------//
 //
-#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_ENVIRONMENT_SOURCE)
+#endif  // !defined(TIMEMORY_USE_EXTERN) && defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
 //

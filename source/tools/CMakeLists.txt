@@ -52,29 +52,35 @@ endif()
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-avail tool
 #
+message(STATUS "Adding source/tools/timemory-avail...")
 add_subdirectory(timemory-avail)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
+message(STATUS "Adding source/tools/timem...")
 add_subdirectory(timem)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-run
 #
+message(STATUS "Adding source/tools/timemory-run...")
 add_subdirectory(timemory-run)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-mpip library
 #
+message(STATUS "Adding source/tools/timemory-mpip...")
 add_subdirectory(timemory-mpip)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-ompt library
 #
+message(STATUS "Adding source/tools/timemory-ompt...")
 add_subdirectory(timemory-ompt)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-connector libraries for kokkos
 #
+message(STATUS "Adding source/tools/kokkos-connector...")
 add_subdirectory(kokkos-connector)

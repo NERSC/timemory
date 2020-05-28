@@ -39,10 +39,10 @@
 #if defined(TIMEMORY_ENVIRONMENT_SOURCE)
 #    define TIMEMORY_ENVIRONMENT_LINKAGE(...) __VA_ARGS__
 #else
-#    if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
-#        define TIMEMORY_ENVIRONMENT_LINKAGE(...) inline __VA_ARGS__
-#    else
+#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 #        define TIMEMORY_ENVIRONMENT_LINKAGE(...) extern __VA_ARGS__
+#    else
+#        define TIMEMORY_ENVIRONMENT_LINKAGE(...) inline __VA_ARGS__
 #    endif
 #endif
 //
@@ -59,23 +59,20 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_ENVIRONMENT_EXTERN_TEMPLATE)
-#    if defined(TIMEMORY_USE_EXTERN)
-#        if defined(TIMEMORY_ENVIRONMENT_SOURCE)
-#            define TIMEMORY_ENVIRONMENT_EXTERN_TEMPLATE(TYPE)                           \
-                namespace tim                                                            \
-                {                                                                        \
-                template TYPE get_env<TYPE>(const std::string&, TYPE);                   \
-                template void set_env<TYPE>(const std::string&, const TYPE&, int);       \
-                }
-#        else
-#            define TIMEMORY_ENVIRONMENT_EXTERN_TEMPLATE(TYPE)                           \
-                namespace tim                                                            \
-                {                                                                        \
-                extern template TYPE get_env<TYPE>(const std::string&, TYPE);            \
-                extern template void set_env<TYPE>(const std::string&, const TYPE&,      \
-                                                   int);                                 \
-                }
-#        endif
+#    if defined(TIMEMORY_ENVIRONMENT_SOURCE)
+#        define TIMEMORY_ENVIRONMENT_EXTERN_TEMPLATE(TYPE)                               \
+            namespace tim                                                                \
+            {                                                                            \
+            template TYPE get_env<TYPE>(const std::string&, TYPE);                       \
+            template void set_env<TYPE>(const std::string&, const TYPE&, int);           \
+            }
+#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
+#        define TIMEMORY_ENVIRONMENT_EXTERN_TEMPLATE(TYPE)                               \
+            namespace tim                                                                \
+            {                                                                            \
+            extern template TYPE get_env<TYPE>(const std::string&, TYPE);                \
+            extern template void set_env<TYPE>(const std::string&, const TYPE&, int);    \
+            }
 #    endif
 #else
 #    define TIMEMORY_ENVIRONMENT_EXTERN_TEMPLATE(...)

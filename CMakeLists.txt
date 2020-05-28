@@ -211,16 +211,21 @@ unset(_TLS_OPTIONS)
 #   rest of configuration
 #----------------------------------------------------------------------------------------#
 
-include(ClangFormat)
-include(Compilers)
-include(BuildSettings)
-include(Packages)
 include(CMakeParseArguments)
+message(STATUS "Adding clang-format...")
+include(ClangFormat)
+message(STATUS "Configuring compilers...")
+include(Compilers)
+message(STATUS "Configuring build settings...")
+include(BuildSettings)
+message(STATUS "Configuring external packages and interface libraries...")
+include(Packages)
 
 #----------------------------------------------------------------------------------------#
 #   timemory exports
 #----------------------------------------------------------------------------------------#
 
+message(STATUS "Exporting interface libraries...")
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
@@ -259,9 +264,11 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     _timemory_activate_clang_tidy()
 endif()
 
+message(STATUS "Adding source...")
 add_subdirectory(source)
 
 # Install the export set for use with the install-tree
+message(STATUS "Exporting library dependencies...")
 install(EXPORT ${PROJECT_NAME}-library-depends
     DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
     NAMESPACE ${PROJECT_NAME}::)
@@ -271,6 +278,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
+    message(STATUS "Adding examples...")
     set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 endif()
@@ -284,12 +292,15 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     include(Documentation)
 
     if(TIMEMORY_BUILD_DOCS)
+        message(STATUS "Adding documentation...")
         # SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
         # SET(CMAKE_INSTALL_MESSAGE LAZY)
     endif()
 
     print_features()
+
 endif()
 
+message(STATUS "Generating Makefile...")
 include(GenerateMakefile)
