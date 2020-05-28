@@ -34,7 +34,6 @@
 #include <memory>
 #include <string>
 
-
 // Macro for obtaining jump pointer function association
 #define DLSYM_JUMP_FUNCTION(VARNAME, HANDLE, FUNCNAME)                                   \
     if(HANDLE)                                                                           \
@@ -52,7 +51,6 @@
     }
 
 //--------------------------------------------------------------------------------------//
-
 
 // This class contains jump pointers for timemory's dyninst functions
 class jump
@@ -76,7 +74,8 @@ public:
 
     jump(std::string&& libpath)
     {
-        PRINT_HERE("%s", "");
+        if(tim::get_env("TIMEMORY_DEBUG", false))
+            PRINT_HERE("%s", "");
 
         auto libhandle = dlopen(libpath.c_str(), RTLD_LAZY);
 
@@ -92,20 +91,15 @@ public:
         DLSYM_JUMP_FUNCTION(timemory_pop_components_jump, libhandle,
                             "timemory_pop_components");
 
-        DLSYM_JUMP_FUNCTION(timemory_push_region_jump, libhandle,
-                            "timemory_push_region");
+        DLSYM_JUMP_FUNCTION(timemory_push_region_jump, libhandle, "timemory_push_region");
 
-        DLSYM_JUMP_FUNCTION(timemory_pop_region_jump, libhandle,
-                            "timemory_pop_region");
+        DLSYM_JUMP_FUNCTION(timemory_pop_region_jump, libhandle, "timemory_pop_region");
 
-        DLSYM_JUMP_FUNCTION(timemory_add_hash_id_jump, libhandle,
-                            "timemory_add_hash_id");
+        DLSYM_JUMP_FUNCTION(timemory_add_hash_id_jump, libhandle, "timemory_add_hash_id");
 
-        DLSYM_JUMP_FUNCTION(timemory_push_trace_jump, libhandle,
-                            "timemory_push_trace");
+        DLSYM_JUMP_FUNCTION(timemory_push_trace_jump, libhandle, "timemory_push_trace");
 
-        DLSYM_JUMP_FUNCTION(timemory_pop_trace_jump, libhandle,
-                            "timemory_pop_trace");
+        DLSYM_JUMP_FUNCTION(timemory_pop_trace_jump, libhandle, "timemory_pop_trace");
 
         DLSYM_JUMP_FUNCTION(timemory_push_trace_hash_jump, libhandle,
                             "timemory_push_trace_hash");
@@ -113,8 +107,7 @@ public:
         DLSYM_JUMP_FUNCTION(timemory_pop_trace_hash_jump, libhandle,
                             "timemory_pop_trace_hash");
 
-        DLSYM_JUMP_FUNCTION(timemory_trace_init_jump, libhandle,
-                            "timemory_trace_init");
+        DLSYM_JUMP_FUNCTION(timemory_trace_init_jump, libhandle, "timemory_trace_init");
 
         DLSYM_JUMP_FUNCTION(timemory_trace_finalize_jump, libhandle,
                             "timemory_trace_finalize");
@@ -134,7 +127,6 @@ public:
 std::unique_ptr<jump>&
 get_jump()
 {
-    PRINT_HERE("%s", "");
     static std::unique_ptr<jump> obj = std::make_unique<jump>(
         tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.so"));
     return obj;
@@ -152,10 +144,7 @@ extern "C"
         (*get_jump()->timemory_push_components_jump)(name);
     }
 
-    void timemory_pop_components(void)
-    {
-        (*get_jump()->timemory_pop_components_jump)();
-    }
+    void timemory_pop_components(void) { (*get_jump()->timemory_pop_components_jump)(); }
 
     void timemory_push_region(const char* name)
     {
@@ -197,10 +186,7 @@ extern "C"
         (*get_jump()->timemory_trace_init_jump)(a, b, c);
     }
 
-    void timemory_trace_finalize(void)
-    {
-        (*get_jump()->timemory_trace_finalize_jump)();
-    }
+    void timemory_trace_finalize(void) { (*get_jump()->timemory_trace_finalize_jump)(); }
 
     void timemory_trace_set_env(const char* a, const char* b)
     {

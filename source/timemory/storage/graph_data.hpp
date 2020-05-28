@@ -22,13 +22,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \headerfile "timemory/storage/graph_data.hpp"
+ * \brief tim::graph instance + current node + head note + sea-level. Sea-level is
+ * defined as the node depth after a fork from another graph instance and is only
+ * relevant for worker-threads)
+ *
+ */
+
 #pragma once
 
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/threading.hpp"
-#include "timemory/data/graph.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/storage/graph.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -103,6 +110,7 @@ public:
 
     inline void clear()
     {
+        m_graph.erase_children(m_head);
         m_graph.clear();
         m_has_head  = false;
         m_depth     = 0;

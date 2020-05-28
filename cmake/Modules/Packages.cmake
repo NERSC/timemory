@@ -372,7 +372,7 @@ if(NOT WIN32)
 endif()
 
 find_library(PTHREADS_LIBRARY pthread)
-find_package(Threads QUIET ${TIMEMORY_FIND_REQUIREMENT})
+find_package(Threads ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 
 if(Threads_FOUND)
     target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
@@ -500,7 +500,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_UPCXX)
-    find_package(UPCXX QUIET ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(UPCXX ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(UPCXX_FOUND)
@@ -679,7 +679,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-find_package(PAPI QUIET ${TIMEMORY_FIND_REQUIREMENT})
+find_package(PAPI ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 
 if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
     add_rpath(${PAPI_LIBRARY})
@@ -703,7 +703,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    find_library(GCOV_LIBRARY gcov QUIET)
+    find_library(GCOV_LIBRARY gcov ${TIMEMORY_FIND_QUIETLY})
 
     add_target_flag_if_avail(timemory-coverage "-fprofile-arcs" "-ftest-coverage")
     add_target_flag(timemory-coverage "-O0" "-g" "--coverage")
@@ -793,7 +793,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_NVTX)
-    find_package(NVTX QUIET ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(NVTX ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
@@ -900,7 +900,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "tcmalloc_and_profiler (preference for shared)"
-        FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
+        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc_and_profiler)
 
     find_package_interface(
         NAME                    gperftools
@@ -909,7 +909,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_PROFILER
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "CPU profiler"
-        FIND_ARGS               QUIET COMPONENTS profiler)
+        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS profiler)
 
     find_package_interface(
         NAME                    gperftools
@@ -918,7 +918,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
         COMPILE_DEFINITIONS     TIMEMORY_USE_GPERFTOOLS_TCMALLOC
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "heap profiler and heap checker"
-        FIND_ARGS               QUIET COMPONENTS tcmalloc)
+        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc)
 
     find_package_interface(
         NAME                    gperftools
@@ -926,7 +926,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
         INCLUDE_DIRS            ${gperftools_INCLUDE_DIRS}
         LINK_LIBRARIES          timemory-gperftools-compile-options
         DESCRIPTION             "threading-optimized malloc replacement"
-        FIND_ARGS               QUIET COMPONENTS tcmalloc_minimal)
+        FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc_minimal)
 
     target_include_directories(timemory-gperftools SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
     target_include_directories(timemory-gperftools-static SYSTEM INTERFACE ${gperftools_INCLUDE_DIRS})
@@ -943,7 +943,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
             INTERFACE               timemory-gperftools-static
             LINK_LIBRARIES          timemory-gperftools-compile-options
             DESCRIPTION             "tcmalloc_and_profiler (preference for static)"
-            FIND_ARGS               QUIET COMPONENTS tcmalloc_and_profiler)
+            FIND_ARGS               ${TIMEMORY_FIND_QUIETLY} COMPONENTS tcmalloc_and_profiler)
 
         # remove local overloads
         unset(gperftools_PREFER_SHARED)
@@ -983,7 +983,7 @@ if(TIMEMORY_BUILD_CALIPER)
     set(caliper_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/caliper)
 else()
     if(TIMEMORY_USE_CALIPER)
-        find_package(caliper QUIET ${TIMEMORY_FIND_REQUIREMENT})
+        find_package(caliper ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
     endif()
 endif()
 
@@ -1034,7 +1034,7 @@ if(UNIX AND NOT APPLE)
         endforeach()
         set(gotcha_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/gotcha)
     elseif(TIMEMORY_USE_GOTCHA)
-        find_package(gotcha QUIET ${TIMEMORY_FIND_REQUIREMENT})
+        find_package(gotcha ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
         set(TIMEMORY_BUILD_GOTCHA OFF)
     else()
         set(gotcha_FOUND OFF)
@@ -1161,7 +1161,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_TAU)
-    find_package(TAU QUIET ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(TAU ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
 if(TAU_FOUND)
@@ -1215,11 +1215,14 @@ generate_composite_interface(timemory-roofline
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_DYNINST)
-    find_package(Dyninst QUIET ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(Dyninst ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
     set(_BOOST_COMPONENTS atomic system thread date_time)
-    set(TIMEMORY_BOOST_COMPONENTS "${_BOOST_COMPONENTS}" CACHE STRING "Boost components used by Dyninst in timemory")
+    set(TIMEMORY_BOOST_COMPONENTS "${_BOOST_COMPONENTS}" CACHE STRING
+        "Boost components used by Dyninst in timemory")
     if(Dyninst_FOUND)
-        find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT} COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
+        set(Boost_NO_BOOST_CMAKE ON)
+        find_package(Boost ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT}
+            COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
     endif()
 endif()
 
@@ -1250,19 +1253,23 @@ if(Dyninst_FOUND AND Boost_FOUND)
     endif()
 
     if(DYNINST_API_RT)
-        target_compile_definitions(timemory-dyninst INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
+        target_compile_definitions(timemory-dyninst INTERFACE
+            DYNINST_API_RT="${DYNINST_API_RT}")
     endif()
 
-    get_filename_component(Boost_RPATH_DIR "${Boost_DIR}" DIRECTORY)
-    get_filename_component(Boost_RPATH_DIR "${Boost_RPATH_DIR}" DIRECTORY)
-    if(EXISTS "${Boost_RPATH_DIR}" AND IS_DIRECTORY "${Boost_RPATH_DIR}")
-        # message(STATUS "\n\tRPATH: ${Boost_RPATH_DIR}\n")
-        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${Boost_RPATH_DIR}")
+    if(Boost_DIR)
+        get_filename_component(Boost_RPATH_DIR "${Boost_DIR}" DIRECTORY)
+        get_filename_component(Boost_RPATH_DIR "${Boost_RPATH_DIR}" DIRECTORY)
+        if(EXISTS "${Boost_RPATH_DIR}" AND IS_DIRECTORY "${Boost_RPATH_DIR}")
+            set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${Boost_RPATH_DIR}")
+        endif()
     endif()
+
     add_rpath(${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
     target_link_libraries(timemory-dyninst INTERFACE
         ${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
-    foreach(_TARG Dyninst::dyninst Boost::headers Boost::atomic Boost::system Boost::thread Boost::date_time)
+    foreach(_TARG Dyninst::dyninst Boost::headers Boost::atomic
+            Boost::system Boost::thread Boost::date_time)
         if(TARGET ${_TARG})
             target_link_libraries(timemory-dyninst INTERFACE ${_TARG})
         endif()
@@ -1270,7 +1277,7 @@ if(Dyninst_FOUND AND Boost_FOUND)
     target_include_directories(timemory-dyninst SYSTEM INTERFACE
         ${DYNINST_INCLUDE_DIRS} ${DYNINST_INCLUDE_DIR}
         ${Dyninst_INCLUDE_DIRS} ${Dyninst_INCLUDE_DIR}
-	${TBB_INCLUDE_DIRS})
+        ${TBB_INCLUDE_DIRS}     ${Boost_INCLUDE_DIRS})
     target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 else()
     set(TIMEMORY_USE_DYNINST OFF)

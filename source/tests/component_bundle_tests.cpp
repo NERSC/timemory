@@ -172,10 +172,15 @@ TEST_F(component_bundle_tests, variadic)
 
     std::cout << "\nbundle        : " << tim::demangle<bundle_t>() << "\n";
     std::cout << "\n";
+    long nfib = 30;
+    long ival = 200;
+    long nitr = 1000;
+    for(long i = 0; i < nitr; ++i)
     {
         bundle_t bundle(details::get_test_name());
-        auto     ret = details::fibonacci(41);
-        printf("\nfibonacci(41) = %li\n\n", (long int) ret);
+        auto     ret = details::fibonacci(nfib);
+        if(i % ival == (ival - 1))
+            printf("\nfibonacci(%li) = %li\n\n", (long int) nfib, (long int) ret);
     }
 
     wsize = tim::storage<wall_clock>::instance()->size() - wsize;

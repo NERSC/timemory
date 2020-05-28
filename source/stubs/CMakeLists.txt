@@ -19,12 +19,16 @@ foreach(LIB_TYPE shared static)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}/stubs
         SOURCES             ${CMAKE_CURRENT_LIST_DIR}/library.cpp)
 
-    target_compile_definitions(timemory-stubs-${LIB_TYPE} PUBLIC TIMEMORY_USE_EXTERN)
+    target_compile_definitions(timemory-stubs-${LIB_TYPE} INTERFACE TIMEMORY_USE_EXTERN)
 
     target_link_libraries(timemory-stubs-${LIB_TYPE} PRIVATE
         timemory-headers
-        timemory-compile-options
-        timemory-environment-${LIB_TYPE})
+        timemory-compile-options)
+
+    if(TARGET timemory-environment-${LIB_TYPE})
+        target_link_libraries(timemory-stubs-${LIB_TYPE} PRIVATE
+            timemory-environment-${LIB_TYPE})
+    endif()
 
     install(TARGETS timemory-stubs-${LIB_TYPE}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/stubs)

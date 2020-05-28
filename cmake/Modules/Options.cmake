@@ -7,39 +7,53 @@ include_guard(DIRECTORY)
 #
 ##########################################################################################
 
-
 include(MacroUtilities)
 include(CheckLanguage)
 
+function(DEFINE_DEFAULT_OPTION VAR VAL)
+    if(TIMEMORY_REQUIRE_PACKAGES)
+        set(${VAR} OFF PARENT_SCOPE)
+    else()
+        set(${VAR} ${VAL} PARENT_SCOPE)
+    endif()
+    set_property(GLOBAL APPEND PROPERTY DEFAULT_OPTION_VARIABLES ${VAR})
+endfunction()
+
 set(_FEATURE )
+set(_USE_PAPI OFF)
+set(_USE_COVERAGE OFF)
+set(_BUILD_OPT OFF)
+set(_BUILD_CALIPER ON)
+set(_NON_APPLE_UNIX OFF)
+set(_DEFAULT_BUILD_SHARED ON)
+set(_DEFAULT_BUILD_STATIC ON)
+
+set(SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
+set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
+set(TIMEMORY_gperftools_COMPONENTS_OPTIONS
+    "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug")
+set_property(CACHE TIMEMORY_gperftools_COMPONENTS PROPERTY STRINGS
+    "${TIMEMORY_gperftools_COMPONENTS_OPTIONS}")
+
 if(NOT ${PROJECT_NAME}_MASTER_PROJECT)
     set(_FEATURE NO_FEATURE)
 endif()
 
-set(SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
-set(_USE_PAPI OFF)
 if(UNIX AND NOT APPLE)
+    set(_NON_APPLE_UNIX ON)
     set(_USE_PAPI ON)
 endif()
 
-set(_BUILD_OPT OFF)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(_BUILD_OPT ON)
 endif()
 
-set(_USE_COVERAGE OFF)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(_USE_COVERAGE ON)
 endif()
 
-set(_BUILD_CALIPER ON)
 if(WIN32)
     set(_BUILD_CALIPER OFF)
-endif()
-
-set(_NON_APPLE_UNIX OFF)
-if(UNIX AND NOT APPLE)
-    set(_NON_APPLE_UNIX ON)
 endif()
 
 # Check if CUDA can be enabled
@@ -55,9 +69,6 @@ if(NOT DEFINED TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUDA)
 else()
     set(_USE_CUDA OFF)
 endif()
-
-set(_DEFAULT_BUILD_SHARED ON)
-set(_DEFAULT_BUILD_STATIC ON)
 
 # if already defined, set default for shared to OFF
 if(DEFINED BUILD_STATIC_LIBS AND BUILD_STATIC_LIBS)
@@ -83,14 +94,6 @@ if(SKBUILD)
     set(_DEFAULT_BUILD_STATIC OFF)
 endif()
 
-set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
-
-set(TIMEMORY_gperftools_COMPONENTS_OPTIONS
-    "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug")
-
-set_property(CACHE TIMEMORY_gperftools_COMPONENTS PROPERTY STRINGS
-    "${TIMEMORY_gperftools_COMPONENTS_OPTIONS}")
-
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
 
 # CMake options
@@ -99,12 +102,15 @@ add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
-add_feature(CMAKE_C_FLAGS_${_CONFIG} "C compiler build type flags")
-add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
+add_feature(CMAKE_C_FLAGS "C build flags")
+add_feature(CMAKE_CXX_FLAGS "C++ build flags")
+add_feature(CMAKE_CUDA_FLAGS "CUDA build flags")
+add_feature(CMAKE_C_FLAGS_${_CONFIG} "C optimization type build flags")
+add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ optimization type build flags")
+add_feature(CMAKE_CUDA_FLAGS_${_CONFIG} "CUDA optimization type build flags")
 
-set(BUILD_SHARED_LIBS ${_DEFAULT_BUILD_SHARED} CACHE BOOL "Build shared libraries")
-set(BUILD_STATIC_LIBS ${_DEFAULT_BUILD_STATIC} CACHE BOOL "Build static libraries")
-
+add_option(BUILD_SHARED_LIBS "Build shared libraries" ${_DEFAULT_BUILD_SHARED})
+add_option(BUILD_STATIC_LIBS "Build static libraries" ${_DEFAULT_BUILD_STATIC})
 add_option(TIMEMORY_SKIP_BUILD "Disable building any libraries" OFF)
 
 if(TIMEMORY_SKIP_BUILD)
@@ -130,9 +136,6 @@ if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS AND NOT TIMEMORY_SKIP_BUILD)
     message(STATUS "")
     message(FATAL_ERROR "Confusing settings")
 endif()
-
-add_feature(BUILD_SHARED_LIBS "Build shared libraries")
-add_feature(BUILD_STATIC_LIBS "Build static libraries")
 
 # if(BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS)
 #    set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so .dylib)
@@ -161,15 +164,15 @@ if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
 
     # extensions
     add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)" OFF)
-    add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)" OFF)
-    add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++11)" OFF)
+    add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)" OFF)
+    add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)" OFF)
 else()
     add_feature(CMAKE_C_STANDARD_REQUIRED "Require C language standard")
     add_feature(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard")
     add_feature(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard")
     add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)")
-    add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)")
-    add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++11)")
+    add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)")
+    add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)")
 endif()
 
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
@@ -210,72 +213,91 @@ if(_NON_APPLE_UNIX)
         "Enable building GOTCHA (set to OFF for external)" ON)
 endif()
 
+if(TIMEMORY_BUILD_QUIET)
+    set(TIMEMORY_FIND_QUIETLY QUIET)
+endif()
+
 if(TIMEMORY_REQUIRE_PACKAGES)
     set(TIMEMORY_FIND_REQUIREMENT REQUIRED)
 endif()
 
 # Features
-
 if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
     add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
+    add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA compiler flags")
 endif()
+
+define_default_option(_MPI ON)
+define_default_option(_UPCXX ON)
+define_default_option(_TAU ON)
+define_default_option(_PAPI ${_USE_PAPI})
+define_default_option(_GPERFTOOLS ON)
+define_default_option(_VTUNE ON)
+define_default_option(_CUDA ${_USE_CUDA})
+define_default_option(_CALIPER ${_BUILD_CALIPER})
+define_default_option(_PYTHON ${TIMEMORY_BUILD_PYTHON})
+define_default_option(_DYNINST ON)
+define_default_option(_ALLINEA_MAP ON)
+define_default_option(_CRAYPAT ON)
+define_default_option(_OMPT ON)
+define_default_option(_LIKWID ${_NON_APPLE_UNIX})
+define_default_option(_GOTCHA ${_NON_APPLE_UNIX})
 
 # timemory options
 add_option(TIMEMORY_USE_STATISTICS
     "Enable statistics by default" ON)
 add_option(TIMEMORY_USE_MPI
-    "Enable MPI usage" ON)
+    "Enable MPI usage" ${_MPI})
 add_option(TIMEMORY_USE_UPCXX
-    "Enable UPCXX usage (MPI support takes precedence)" ON)
+    "Enable UPCXX usage (MPI support takes precedence)" ${_UPCXX})
 add_option(TIMEMORY_USE_SANITIZER
     "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
 add_option(TIMEMORY_USE_TAU
-    "Enable TAU marking API" ON)
+    "Enable TAU marking API" ${_TAU})
 add_option(TIMEMORY_USE_PAPI
-    "Enable PAPI" ${_USE_PAPI})
+    "Enable PAPI" ${_PAPI})
 add_option(TIMEMORY_USE_CLANG_TIDY
     "Enable running clang-tidy" OFF)
 add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE})
 add_option(TIMEMORY_USE_GPERFTOOLS
-    "Enable gperftools" ON)
+    "Enable gperftools" ${_GPERFTOOLS})
 add_option(TIMEMORY_USE_GPERFTOOLS_STATIC
     "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 add_option(TIMEMORY_USE_ARCH
     "Enable architecture flags" OFF)
 add_option(TIMEMORY_USE_VTUNE
-    "Enable VTune marking API" ON)
+    "Enable VTune marking API" ${_VTUNE})
 add_option(TIMEMORY_USE_CUDA
-    "Enable CUDA option for GPU measurements" ${_USE_CUDA})
+    "Enable CUDA option for GPU measurements" ${_CUDA})
 add_option(TIMEMORY_USE_NVTX
-    "Enable NVTX marking API" ${_USE_CUDA})
+    "Enable NVTX marking API" ${_CUDA})
 add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
+    "Enable CUPTI profiling for NVIDIA GPUs" ${_CUDA})
 add_option(TIMEMORY_USE_CALIPER
-    "Enable Caliper" ${_BUILD_CALIPER})
+    "Enable Caliper" ${_CALIPER})
 add_option(TIMEMORY_USE_PYTHON
-    "Enable Python" ${TIMEMORY_BUILD_PYTHON})
+    "Enable Python" ${_PYTHON})
 add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
-    "Enable dynamic instrumentation" ON)
+    "Enable dynamic instrumentation" ${_DYNINST})
 add_option(TIMEMORY_USE_ALLINEA_MAP
-    "Enable control for AllineaMAP sampler" ON)
+    "Enable control for AllineaMAP sampler" ${_ALLINEA_MAP})
 add_option(TIMEMORY_USE_CRAYPAT
-    "Enable CrayPAT support" ON)
+    "Enable CrayPAT support" ${_CRAYPAT})
 add_option(TIMEMORY_USE_OMPT
-    "Enable OpenMP tooling" ON)
+    "Enable OpenMP tooling" ${_OMPT})
+add_option(TIMEMORY_USE_LIKWID
+    "Enable LIKWID marker forwarding" ${_LIKWID})
+add_option(TIMEMORY_USE_GOTCHA
+    "Enable GOTCHA" ${_GOTCHA})
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_option(TIMEMORY_USE_XRAY
         "Enable XRay instrumentation" OFF)
 endif()
-if(_NON_APPLE_UNIX)
-    add_option(TIMEMORY_USE_LIKWID
-        "Enable LIKWID marker forwarding" ON)
-    add_option(TIMEMORY_USE_GOTCHA
-        "Enable GOTCHA" ON)
-endif()
+
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -335,3 +357,11 @@ endmacro()
 
 option(TIMEMORY_SOURCE_GROUP "Enable source_group" OFF)
 mark_as_advanced(TIMEMORY_SOURCE_GROUP)
+
+# these variables conflict with variables in examples, leading to things like: -lON flags
+get_property(DEFAULT_OPTION_VARIABLES GLOBAL PROPERTY DEFAULT_OPTION_VARIABLES)
+foreach(_VAR ${DEFAULT_OPTION_VARIABLES})
+    # message(STATUS "Reseting: ${_VAR} :: ${${_VAR}}")
+    unset(${_VAR})
+    # message(STATUS "Result: ${_VAR} :: ${${_VAR}}")
+endforeach()

@@ -183,7 +183,7 @@ struct generic_operator
 
     template <typename Up, typename... Args,
               enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
-    void sfinae(Up& obj, long, long, Args&&... args)
+    void sfinae(Up&, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -211,7 +211,7 @@ struct generic_operator
 
     template <typename Up, typename... Args,
               enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
-    void sfinae(Up& obj, Up& rhs, long, long, Args&&... args)
+    void sfinae(Up&, Up&, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//

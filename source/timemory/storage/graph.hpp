@@ -22,9 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file data/graph.hpp
- * \headerfile data/graph.hpp "timemory/data/graph.hpp"
- * Arbitrary Graph / Tree (i.e. binary-tree but not binary)
+/** \headerfile "timemory/storage/graph.hpp"
+ * \brief Arbitrary Graph / Tree (i.e. binary-tree but not binary)
+ *
  */
 
 #pragma once
@@ -81,8 +81,6 @@ public:
     tgraph_node<T>* prev_sibling = nullptr;
     tgraph_node<T>* next_sibling = nullptr;
     T               data         = T{};
-
-    static size_t data_size() { return (5 * sizeof(tgraph_node<T>*)) + sizeof(T); }
 
     //----------------------------------------------------------------------------------//
     //
@@ -163,10 +161,10 @@ public:
         typedef graph_allocator<U> other;
     };
 
-    using base_type::construct;
-    using base_type::destroy;
-    /*
-    void construct(Tp* const p, const Tp& val) const { new((void*) p) Tp(val); }
+    // using base_type::construct;
+    // using base_type::destroy;
+
+    void construct(Tp* const p, const Tp& val) const { ::new((void*) p) Tp(val); }
 
     template <typename... ArgsT>
     void construct(Tp* const p, ArgsT&&... args) const
@@ -175,7 +173,6 @@ public:
     }
 
     void destroy(Tp* const p) const { p->~Tp(); }
-    */
 
     Tp* allocate(const size_t n) const
     {
@@ -284,10 +281,6 @@ public:
     }
 
 private:
-    template <typename... ArgsT>
-    void _consume(ArgsT&&...)
-    {}
-
     void add_pages(int npages = 1) const
     {
         auto  nbytes = npages * units::get_page_size();
@@ -888,22 +881,22 @@ template <typename T, typename AllocatorT>
 void
 graph<T, AllocatorT>::m_head_initialize()
 {
-    head = m_alloc.allocate(1, 0);  // MSVC does not have default second argument
-    feet = m_alloc.allocate(1, 0);
+    head = m_alloc.allocate(1, nullptr);  // MSVC does not have default second argument
+    feet = m_alloc.allocate(1, nullptr);
     m_alloc.construct(head, std::move(tgraph_node<T>()));
     m_alloc.construct(feet, std::move(tgraph_node<T>()));
 
-    head->parent       = 0;
-    head->first_child  = 0;
-    head->last_child   = 0;
-    head->prev_sibling = 0;     // head;
-    head->next_sibling = feet;  // head;
+    head->parent       = nullptr;
+    head->first_child  = nullptr;
+    head->last_child   = nullptr;
+    head->prev_sibling = nullptr;  // head;
+    head->next_sibling = feet;     // head;
 
-    feet->parent       = 0;
-    feet->first_child  = 0;
-    feet->last_child   = 0;
+    feet->parent       = nullptr;
+    feet->first_child  = nullptr;
+    feet->last_child   = nullptr;
     feet->prev_sibling = head;
-    feet->next_sibling = 0;
+    feet->next_sibling = nullptr;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -989,21 +982,22 @@ void
 graph<T, AllocatorT>::erase_children(const iterator_base& it)
 {
     //	std::cout << "erase_children " << it.node << std::endl;
-    if(it.node == 0)
+    if(it.node == nullptr)
         return;
 
     graph_node* cur = it.node->first_child;
 
-    while(cur != 0)
+    while(cur != nullptr)
     {
-        graph_node* prev = 0;
+        graph_node* prev = nullptr;
         cur              = cur->next_sibling;
         erase_children(pre_order_iterator(prev));
-        // m_alloc.destroy(prev);
+        if(prev)
+            m_alloc.destroy(prev);
         m_alloc.deallocate(prev, 1);
     }
-    it.node->first_child = 0;
-    it.node->last_child  = 0;
+    it.node->first_child = nullptr;
+    it.node->last_child  = nullptr;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1019,7 +1013,7 @@ graph<T, AllocatorT>::erase(iter it)
     ret.skip_children();
     ++ret;
     erase_children(it);
-    if(cur->prev_sibling == 0)
+    if(cur->prev_sibling == nullptr)
     {
         cur->parent->first_child = cur->next_sibling;
     }
@@ -1027,7 +1021,7 @@ graph<T, AllocatorT>::erase(iter it)
     {
         cur->prev_sibling->next_sibling = cur->next_sibling;
     }
-    if(cur->next_sibling == 0)
+    if(cur->next_sibling == nullptr)
     {
         cur->parent->last_child = cur->prev_sibling;
     }
@@ -1036,7 +1030,6 @@ graph<T, AllocatorT>::erase(iter it)
         cur->next_sibling->prev_sibling = cur->prev_sibling;
     }
 
-    //	kp::destructor(&cur->data);
     m_alloc.destroy(cur);
     m_alloc.deallocate(cur, 1);
     return ret;
@@ -1066,8 +1059,8 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
 graph<T, AllocatorT>::begin(const iterator_base& pos)
 {
-    assert(pos.node != 0);
-    if(pos.node->first_child == 0)
+    assert(pos.node != nullptr);
+    if(pos.node->first_child == nullptr)
     {
         return end(pos);
     }
@@ -1092,7 +1085,7 @@ template <typename iter>
 iter
 graph<T, AllocatorT>::parent(iter position)
 {
-    assert(position.node != 0);
+    assert(position.node != nullptr);
     return iter(position.node->parent);
 }
 
@@ -1103,7 +1096,7 @@ template <typename iter>
 iter
 graph<T, AllocatorT>::previous_sibling(iter position)
 {
-    assert(position.node != 0);
+    assert(position.node != nullptr);
     iter ret(position);
     ret.node = position.node->prev_sibling;
     return ret;
@@ -1116,7 +1109,7 @@ template <typename iter>
 iter
 graph<T, AllocatorT>::next_sibling(iter position)
 {
-    assert(position.node != 0);
+    assert(position.node != nullptr);
     iter ret(position);
     ret.node = position.node->next_sibling;
     return ret;
@@ -1133,14 +1126,13 @@ graph<T, AllocatorT>::append_child(iter position)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, 0);
-    m_alloc.construct(tmp, tgraph_node<T>());
-    //	kp::constructor(&tmp->data);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
+    m_alloc.construct(tmp, std::move(tgraph_node<T>{}));
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent = position.node;
-    if(position.node->last_child != 0)
+    if(position.node->last_child != nullptr)
     {
         position.node->last_child->next_sibling = tmp;
     }
@@ -1150,7 +1142,7 @@ graph<T, AllocatorT>::append_child(iter position)
     }
     tmp->prev_sibling         = position.node->last_child;
     position.node->last_child = tmp;
-    tmp->next_sibling         = 0;
+    tmp->next_sibling         = nullptr;
     return tmp;
 }
 
@@ -1165,14 +1157,13 @@ graph<T, AllocatorT>::prepend_child(iter position)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, 0);
-    m_alloc.construct(tmp, tgraph_node<T>());
-    //	kp::constructor(&tmp->data);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
+    m_alloc.construct(tmp, std::move(tgraph_node<T>{}));
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent = position.node;
-    if(position.node->first_child != 0)
+    if(position.node->first_child != nullptr)
     {
         position.node->first_child->prev_sibling = tmp;
     }
@@ -1182,7 +1173,7 @@ graph<T, AllocatorT>::prepend_child(iter position)
     }
     tmp->next_sibling         = position.node->first_child;
     position.node->prev_child = tmp;
-    tmp->prev_sibling         = 0;
+    tmp->prev_sibling         = nullptr;
     return tmp;
 }
 
@@ -1201,14 +1192,13 @@ graph<T, AllocatorT>::append_child(iter position, const T& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, 0);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
     m_alloc.construct(tmp, x);
-    //	kp::constructor(&tmp->data, x);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent = position.node;
-    if(position.node->last_child != 0)
+    if(position.node->last_child != nullptr)
     {
         position.node->last_child->next_sibling = tmp;
     }
@@ -1218,7 +1208,7 @@ graph<T, AllocatorT>::append_child(iter position, const T& x)
     }
     tmp->prev_sibling         = position.node->last_child;
     position.node->last_child = tmp;
-    tmp->next_sibling         = 0;
+    tmp->next_sibling         = nullptr;
     return tmp;
 }
 
@@ -1233,15 +1223,16 @@ graph<T, AllocatorT>::append_child(iter position, T&& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, 0);
-    m_alloc.construct(tmp);  // Here is where the move semantics kick in
-    std::swap(tmp->data, x);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
+    m_alloc.construct(tmp, std::forward<T>(x));
+    // m_alloc.construct(tmp);  // Here is where the move semantics kick in
+    // std::swap(tmp->data, x);
 
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent = position.node;
-    if(position.node->last_child != 0)
+    if(position.node->last_child != nullptr)
     {
         position.node->last_child->next_sibling = tmp;
     }
@@ -1251,7 +1242,7 @@ graph<T, AllocatorT>::append_child(iter position, T&& x)
     }
     tmp->prev_sibling         = position.node->last_child;
     position.node->last_child = tmp;
-    tmp->next_sibling         = 0;
+    tmp->next_sibling         = nullptr;
     return tmp;
 }
 
@@ -1266,14 +1257,13 @@ graph<T, AllocatorT>::prepend_child(iter position, const T& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, 0);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
     m_alloc.construct(tmp, x);
-    //	kp::constructor(&tmp->data, x);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent = position.node;
-    if(position.node->first_child != 0)
+    if(position.node->first_child != nullptr)
     {
         position.node->first_child->prev_sibling = tmp;
     }
@@ -1283,7 +1273,7 @@ graph<T, AllocatorT>::prepend_child(iter position, const T& x)
     }
     tmp->next_sibling          = position.node->first_child;
     position.node->first_child = tmp;
-    tmp->prev_sibling          = 0;
+    tmp->prev_sibling          = nullptr;
     return tmp;
 }
 
@@ -1298,17 +1288,17 @@ graph<T, AllocatorT>::prepend_child(iter position, T&& x)
     assert(position.node != feet);
     assert(position.node);
 
-    graph_node* tmp = m_alloc.allocate(1, 0);
-    m_alloc.construct(tmp);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
+    m_alloc.construct(tmp, std::forward<T>(x));
     // std::swap(tmp->data, std::forward<T>(x));
-    auto _x = std::move(x);
-    std::swap(tmp->data, _x);
+    // auto _x = std::move(x);
+    // std::swap(tmp->data, _x);
 
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent = position.node;
-    if(position.node->first_child != 0)
+    if(position.node->first_child != nullptr)
     {
         position.node->first_child->prev_sibling = tmp;
     }
@@ -1318,7 +1308,7 @@ graph<T, AllocatorT>::prepend_child(iter position, T&& x)
     }
     tmp->next_sibling          = position.node->first_child;
     position.node->first_child = tmp;
-    tmp->prev_sibling          = 0;
+    tmp->prev_sibling          = nullptr;
     return tmp;
 }
 
@@ -1426,25 +1416,24 @@ template <class iter>
 iter
 graph<T, AllocatorT>::insert(iter position, const T& x)
 {
-    if(position.node == 0)
+    if(position.node == nullptr)
     {
         position.node = feet;  // Backward compatibility: when calling insert on
                                // a null node, insert before the feet.
     }
     assert(position.node != head);  // Cannot insert before head.
 
-    graph_node* tmp = m_alloc.allocate(1, 0);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
     m_alloc.construct(tmp, x);
-    //	kp::constructor(&tmp->data, x);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent                 = position.node->parent;
     tmp->next_sibling           = position.node;
     tmp->prev_sibling           = position.node->prev_sibling;
     position.node->prev_sibling = tmp;
 
-    if(tmp->prev_sibling == 0)
+    if(tmp->prev_sibling == nullptr)
     {
         if(tmp->parent)  // when inserting nodes at the head, there is no parent
             tmp->parent->first_child = tmp;
@@ -1461,23 +1450,23 @@ template <class iter>
 iter
 graph<T, AllocatorT>::insert(iter position, T&& x)
 {
-    if(position.node == 0)
+    if(position.node == nullptr)
     {
         position.node = feet;  // Backward compatibility: when calling insert on
                                // a null node, insert before the feet.
     }
-    graph_node* tmp = m_alloc.allocate(1, 0);
-    m_alloc.construct(tmp);
-    std::swap(tmp->data, x);  // Move semantics
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
+    m_alloc.construct(tmp, std::forward<T>(x));
+    // std::swap(tmp->data, x);  // Move semantics
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent                 = position.node->parent;
     tmp->next_sibling           = position.node;
     tmp->prev_sibling           = position.node->prev_sibling;
     position.node->prev_sibling = tmp;
 
-    if(tmp->prev_sibling == 0)
+    if(tmp->prev_sibling == nullptr)
     {
         if(tmp->parent)  // when inserting nodes at the head, there is no parent
             tmp->parent->first_child = tmp;
@@ -1493,14 +1482,13 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
 graph<T, AllocatorT>::insert(sibling_iterator position, const T& x)
 {
-    graph_node* tmp = m_alloc.allocate(1, 0);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
     m_alloc.construct(tmp, x);
-    //	kp::constructor(&tmp->data, x);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->next_sibling = position.node;
-    if(position.node == 0)
+    if(position.node == nullptr)
     {  // iterator points to end of a subgraph
         tmp->parent             = position.m_parent;
         tmp->prev_sibling       = position.range_last();
@@ -1513,7 +1501,7 @@ graph<T, AllocatorT>::insert(sibling_iterator position, const T& x)
         position.node->prev_sibling = tmp;
     }
 
-    if(tmp->prev_sibling == 0)
+    if(tmp->prev_sibling == nullptr)
     {
         if(tmp->parent)  // when inserting nodes at the head, there is no parent
             tmp->parent->first_child = tmp;
@@ -1530,18 +1518,17 @@ template <class iter>
 iter
 graph<T, AllocatorT>::insert_after(iter position, const T& x)
 {
-    graph_node* tmp = m_alloc.allocate(1, 0);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
     m_alloc.construct(tmp, x);
-    //	kp::constructor(&tmp->data, x);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent                 = position.node->parent;
     tmp->prev_sibling           = position.node;
     tmp->next_sibling           = position.node->next_sibling;
     position.node->next_sibling = tmp;
 
-    if(tmp->next_sibling == 0)
+    if(tmp->next_sibling == nullptr)
     {
         if(tmp->parent)  // when inserting nodes at the head, there is no parent
             tmp->parent->last_child = tmp;
@@ -1560,19 +1547,18 @@ template <class iter>
 iter
 graph<T, AllocatorT>::insert_after(iter position, T&& x)
 {
-    graph_node* tmp = m_alloc.allocate(1, 0);
-    m_alloc.construct(tmp);
-    std::swap(tmp->data, x);  // move semantics
-                              //	kp::constructor(&tmp->data, x);
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
+    m_alloc.construct(tmp, std::forward<T>(x));
+    // std::swap(tmp->data, x);  // move semantics
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
 
     tmp->parent                 = position.node->parent;
     tmp->prev_sibling           = position.node;
     tmp->next_sibling           = position.node->next_sibling;
     position.node->next_sibling = tmp;
 
-    if(tmp->next_sibling == 0)
+    if(tmp->next_sibling == nullptr)
     {
         if(tmp->parent)  // when inserting nodes at the head, there is no parent
             tmp->parent->last_child = tmp;
@@ -1632,9 +1618,9 @@ graph<T, AllocatorT>::replace(iter position, const T& x)
 {
     //	kp::destructor(&position.node->data);
     //	kp::constructor(&position.node->data, x);
-    position.node->data = x;
-    //	m_alloc.destroy(position.node);
-    //	m_alloc.construct(position.node, x);
+    //  position.node->data = x;
+    m_alloc.destroy(position.node);
+    m_alloc.construct(position.node, x);
     return position;
 }
 
@@ -1654,14 +1640,13 @@ graph<T, AllocatorT>::replace(iter position, const iterator_base& from)
     //	std::cout << "warning!" << position.node << std::endl;
     erase_children(position);
     //	std::cout << "no warning!" << std::endl;
-    graph_node* tmp = m_alloc.allocate(1, 0);
+    graph_node* tmp = m_alloc.allocate(1, nullptr);
     m_alloc.construct(tmp, (*from));
-    //	kp::constructor(&tmp->data, (*from));
-    tmp->first_child = 0;
-    tmp->last_child  = 0;
-    if(current_to->prev_sibling == 0)
+    tmp->first_child = nullptr;
+    tmp->last_child  = nullptr;
+    if(current_to->prev_sibling == nullptr)
     {
-        if(current_to->parent != 0)
+        if(current_to->parent != nullptr)
             current_to->parent->first_child = tmp;
     }
     else
@@ -1669,9 +1654,9 @@ graph<T, AllocatorT>::replace(iter position, const iterator_base& from)
         current_to->prev_sibling->next_sibling = tmp;
     }
     tmp->prev_sibling = current_to->prev_sibling;
-    if(current_to->next_sibling == 0)
+    if(current_to->next_sibling == nullptr)
     {
-        if(current_to->parent != 0)
+        if(current_to->parent != nullptr)
             current_to->parent->last_child = tmp;
     }
     else
@@ -1680,7 +1665,6 @@ graph<T, AllocatorT>::replace(iter position, const iterator_base& from)
     }
     tmp->next_sibling = current_to->next_sibling;
     tmp->parent       = current_to->parent;
-    //	kp::destructor(&current_to->data);
     m_alloc.destroy(current_to);
     m_alloc.deallocate(current_to, 1);
     current_to = tmp;
@@ -1692,19 +1676,19 @@ graph<T, AllocatorT>::replace(iter position, const iterator_base& from)
     // copy all children
     do
     {
-        assert(current_from != 0);
-        if(current_from->first_child != 0)
+        assert(current_from != nullptr);
+        if(current_from->first_child != nullptr)
         {
             current_from = current_from->first_child;
             toit         = append_child(toit, current_from->data);
         }
         else
         {
-            while(current_from->next_sibling == 0 && current_from != start_from)
+            while(current_from->next_sibling == nullptr && current_from != start_from)
             {
                 current_from = current_from->parent;
                 toit         = parent(toit);
-                assert(current_from != 0);
+                assert(current_from != nullptr);
             }
             current_from = current_from->next_sibling;
             if(current_from != last && current_from)
@@ -1774,7 +1758,7 @@ template <typename iter>
 iter
 graph<T, AllocatorT>::flatten(iter position)
 {
-    if(position.node->first_child == 0)
+    if(position.node->first_child == nullptr)
         return position;
 
     graph_node* tmp = position.node->first_child;
@@ -1794,8 +1778,8 @@ graph<T, AllocatorT>::flatten(iter position)
     }
     position.node->next_sibling               = position.node->first_child;
     position.node->next_sibling->prev_sibling = position.node;
-    position.node->first_child                = 0;
-    position.node->last_child                 = 0;
+    position.node->first_child                = nullptr;
+    position.node->last_child                 = nullptr;
 
     return position;
 }
@@ -1821,7 +1805,7 @@ graph<T, AllocatorT>::reparent(iter position, sibling_iterator _begin,
         last = last->next_sibling;
     }
     // move subgraph
-    if(first->prev_sibling == 0)
+    if(first->prev_sibling == nullptr)
     {
         first->parent->first_child = last->next_sibling;
     }
@@ -1829,7 +1813,7 @@ graph<T, AllocatorT>::reparent(iter position, sibling_iterator _begin,
     {
         first->prev_sibling->next_sibling = last->next_sibling;
     }
-    if(last->next_sibling == 0)
+    if(last->next_sibling == nullptr)
     {
         last->parent->last_child = first->prev_sibling;
     }
@@ -1837,11 +1821,11 @@ graph<T, AllocatorT>::reparent(iter position, sibling_iterator _begin,
     {
         last->next_sibling->prev_sibling = first->prev_sibling;
     }
-    if(position.node->first_child == 0)
+    if(position.node->first_child == nullptr)
     {
         position.node->first_child = first;
         position.node->last_child  = last;
-        first->prev_sibling        = 0;
+        first->prev_sibling        = nullptr;
     }
     else
     {
@@ -1849,7 +1833,7 @@ graph<T, AllocatorT>::reparent(iter position, sibling_iterator _begin,
         first->prev_sibling                     = position.node->last_child;
         position.node->last_child               = last;
     }
-    last->next_sibling = 0;
+    last->next_sibling = nullptr;
 
     graph_node* pos = first;
     for(;;)
@@ -1870,7 +1854,7 @@ template <typename iter>
 iter
 graph<T, AllocatorT>::reparent(iter position, iter from)
 {
-    if(from.node->first_child == 0)
+    if(from.node->first_child == nullptr)
         return position;
     return reparent(position, from.node->first_child, end(from));
 }
@@ -1882,7 +1866,7 @@ template <typename iter>
 iter
 graph<T, AllocatorT>::wrap(iter position, const T& x)
 {
-    assert(position.node != 0);
+    assert(position.node != nullptr);
     sibling_iterator fr = position, to = position;
     ++to;
     iter ret = insert(position, x);
@@ -1897,7 +1881,7 @@ template <typename iter>
 iter
 graph<T, AllocatorT>::wrap(iter from, iter to, const T& x)
 {
-    assert(from.node != 0);
+    assert(from.node != nullptr);
     iter ret = insert(from, x);
     reparent(ret, from, to);
     return ret;
@@ -1922,17 +1906,17 @@ graph<T, AllocatorT>::move_after(iter target, iter source)
             return source;
 
     // take src out of the graph
-    if(src->prev_sibling != 0)
+    if(src->prev_sibling != nullptr)
         src->prev_sibling->next_sibling = src->next_sibling;
     else
         src->parent->first_child = src->next_sibling;
-    if(src->next_sibling != 0)
+    if(src->next_sibling != nullptr)
         src->next_sibling->prev_sibling = src->prev_sibling;
     else
         src->parent->last_child = src->prev_sibling;
 
     // connect it to the new point
-    if(dst->next_sibling != 0)
+    if(dst->next_sibling != nullptr)
         dst->next_sibling->prev_sibling = src;
     else
         dst->parent->last_child = src;
@@ -1962,17 +1946,17 @@ graph<T, AllocatorT>::move_before(iter target, iter source)
             return source;
 
     // take src out of the graph
-    if(src->prev_sibling != 0)
+    if(src->prev_sibling != nullptr)
         src->prev_sibling->next_sibling = src->next_sibling;
     else
         src->parent->first_child = src->next_sibling;
-    if(src->next_sibling != 0)
+    if(src->next_sibling != nullptr)
         src->next_sibling->prev_sibling = src->prev_sibling;
     else
         src->parent->last_child = src->prev_sibling;
 
     // connect it to the new point
-    if(dst->prev_sibling != 0)
+    if(dst->prev_sibling != nullptr)
         dst->prev_sibling->next_sibling = src;
     else
         dst->parent->first_child = src;
@@ -2011,21 +1995,21 @@ graph<T, AllocatorT>::move_ontop(iter target, iter source)
     erase(target);
 
     // take src out of the graph
-    if(src->prev_sibling != 0)
+    if(src->prev_sibling != nullptr)
         src->prev_sibling->next_sibling = src->next_sibling;
     else
         src->parent->first_child = src->next_sibling;
-    if(src->next_sibling != 0)
+    if(src->next_sibling != nullptr)
         src->next_sibling->prev_sibling = src->prev_sibling;
     else
         src->parent->last_child = src->prev_sibling;
 
     // connect it to the new point
-    if(b_prev_sibling != 0)
+    if(b_prev_sibling != nullptr)
         b_prev_sibling->next_sibling = src;
     else
         b_parent->first_child = src;
-    if(b_next_sibling != 0)
+    if(b_next_sibling != nullptr)
         b_next_sibling->prev_sibling = src;
     else
         b_parent->last_child = src;
@@ -2046,13 +2030,13 @@ graph<T, AllocatorT>::move_out(iterator source)
     // Move source node into the 'ret' graph.
     ret.head->next_sibling = source.node;
     ret.feet->prev_sibling = source.node;
-    source.node->parent    = 0;
+    source.node->parent    = nullptr;
 
     // Close the links in the current graph.
-    if(source.node->prev_sibling != 0)
+    if(source.node->prev_sibling != nullptr)
         source.node->prev_sibling->next_sibling = source.node->next_sibling;
 
-    if(source.node->next_sibling != 0)
+    if(source.node->next_sibling != nullptr)
         source.node->next_sibling->prev_sibling = source.node->prev_sibling;
 
     // Fix source prev/next links.
@@ -2115,19 +2099,19 @@ graph<T, AllocatorT>::move_in_as_nth_child(iter loc, size_t n, graph& other)
 
     if(n == 0)
     {
-        if(loc.node->first_child == 0)
+        if(loc.node->first_child == nullptr)
         {
             loc.node->first_child          = other_first_head;
             loc.node->last_child           = other_last_head;
-            other_last_head->next_sibling  = 0;
-            other_first_head->prev_sibling = 0;
+            other_last_head->next_sibling  = nullptr;
+            other_first_head->prev_sibling = nullptr;
         }
         else
         {
             loc.node->first_child->prev_sibling = other_last_head;
             other_last_head->next_sibling       = loc.node->first_child;
             loc.node->first_child               = other_first_head;
-            other_first_head->prev_sibling      = 0;
+            other_first_head->prev_sibling      = nullptr;
         }
     }
     else
@@ -2136,7 +2120,7 @@ graph<T, AllocatorT>::move_in_as_nth_child(iter loc, size_t n, graph& other)
         graph_node* walk = loc.node->first_child;
         while(true)
         {
-            if(walk == 0)
+            if(walk == nullptr)
                 throw std::range_error(
                     "graph: move_in_as_nth_child position out of range");
             if(n == 0)
@@ -2144,7 +2128,7 @@ graph<T, AllocatorT>::move_in_as_nth_child(iter loc, size_t n, graph& other)
             --n;
             walk = walk->next_sibling;
         }
-        if(walk->next_sibling == 0)
+        if(walk->next_sibling == nullptr)
             loc.node->last_child = other_last_head;
         else
             walk->next_sibling->prev_sibling = other_last_head;
@@ -2182,7 +2166,7 @@ graph<T, AllocatorT>::merge(const sibling_iterator& to1, const sibling_iterator&
     {
         sibling_iterator    fnd;
         auto                nsiblings = number_of_siblings(to1);
-        decltype(nsiblings) count     = 0;
+        decltype(nsiblings) count     = nullptr;
         for(sibling_iterator itr = to1; itr != to2; ++itr, ++count)
         {
             if(itr && from1 && *itr == *from1)
@@ -2336,9 +2320,9 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
     typename std::multiset<graph_node*, compare_nodes<StrictWeakOrdering>>::iterator
         nit = _nodes.begin(),
         eit = _nodes.end();
-    if(prev == 0)
+    if(prev == nullptr)
     {
-        if((*nit)->parent != 0)  // to catch "sorting the head" situations, when
+        if((*nit)->parent != nullptr)  // to catch "sorting the head" situations, when
                                  // there is no parent
             (*nit)->parent->first_child = (*nit);
     }
@@ -2361,9 +2345,9 @@ graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
     // eit points to the last node in the sorted range.
     (*eit)->next_sibling = next;
     (*eit)->prev_sibling = prev;  // missed in the loop above
-    if(next == 0)
+    if(next == nullptr)
     {
-        if((*eit)->parent != 0)  // to catch "sorting the head" situations, when
+        if((*eit)->parent != nullptr)  // to catch "sorting the head" situations, when
                                  // there is no parent
             (*eit)->parent->last_child = (*eit);
     }
@@ -2464,9 +2448,9 @@ int
 graph<T, AllocatorT>::depth(const iterator_base& it)
 {
     graph_node* pos = it.node;
-    assert(pos != 0);
+    assert(pos != nullptr);
     int ret = 0;
-    while(pos->parent != 0)
+    while(pos->parent != nullptr)
     {
         pos = pos->parent;
         ++ret;
@@ -2481,9 +2465,9 @@ int
 graph<T, AllocatorT>::depth(const iterator_base& it, const iterator_base& root)
 {
     graph_node* pos = it.node;
-    assert(pos != 0);
+    assert(pos != nullptr);
     int ret = 0;
-    while(pos->parent != 0 && pos != root.node)
+    while(pos->parent != nullptr && pos != root.node)
     {
         pos = pos->parent;
         ++ret;
@@ -2512,26 +2496,26 @@ graph<T, AllocatorT>::max_depth(const iterator_base& pos) const
 {
     graph_node* tmp = pos.node;
 
-    if(tmp == 0 || tmp == head || tmp == feet)
+    if(tmp == nullptr || tmp == head || tmp == feet)
         return -1;
 
     int curdepth = 0, maxdepth = 0;
     while(true)
     {  // try to walk the bottom of the graph
-        while(tmp->first_child == 0)
+        while(tmp->first_child == nullptr)
         {
             if(tmp == pos.node)
                 return maxdepth;
-            if(tmp->next_sibling == 0)
+            if(tmp->next_sibling == nullptr)
             {
                 // try to walk up and then right again
                 do
                 {
                     tmp = tmp->parent;
-                    if(tmp == 0)
+                    if(tmp == nullptr)
                         return maxdepth;
                     --curdepth;
-                } while(tmp->next_sibling == 0);
+                } while(tmp->next_sibling == nullptr);
             }
             if(tmp == pos.node)
                 return maxdepth;
@@ -2550,7 +2534,7 @@ unsigned int
 graph<T, AllocatorT>::number_of_children(const iterator_base& it)
 {
     graph_node* pos = it.node->first_child;
-    if(pos == 0)
+    if(pos == nullptr)
         return 0;
 
     unsigned int ret = 1;
@@ -2662,7 +2646,7 @@ template <typename T, typename AllocatorT>
 bool
 graph<T, AllocatorT>::is_valid(const iterator_base& it) const
 {
-    if(it.node == 0 || it.node == feet || it.node == head)
+    if(it.node == nullptr || it.node == feet || it.node == head)
         return false;
     else
         return true;
@@ -2674,7 +2658,7 @@ template <typename T, typename AllocatorT>
 bool
 graph<T, AllocatorT>::is_head(const iterator_base& it)
 {
-    if(it.node->parent == 0)
+    if(it.node->parent == nullptr)
         return true;
     return false;
 }
@@ -2742,7 +2726,7 @@ graph<T, AllocatorT>::child(const iterator_base& it, unsigned int num)
     graph_node* tmp = it.node->first_child;
     while(num--)
     {
-        assert(tmp != 0);
+        assert(tmp != nullptr);
         tmp = tmp->next_sibling;
     }
     return tmp;
@@ -2837,7 +2821,7 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
 graph<T, AllocatorT>::iterator_base::begin() const
 {
-    if(node->first_child == 0)
+    if(node->first_child == nullptr)
         return end();
 
     sibling_iterator ret(node->first_child);
@@ -2881,7 +2865,7 @@ unsigned int
 graph<T, AllocatorT>::iterator_base::number_of_children() const
 {
     graph_node* pos = node->first_child;
-    if(pos == 0)
+    if(pos == nullptr)
         return 0;
 
     unsigned int ret = 1;
@@ -2922,9 +2906,9 @@ graph<T, AllocatorT>::pre_order_iterator::pre_order_iterator(
     const sibling_iterator& other)
 : iterator_base(other.node)
 {
-    if(this->node == 0)
+    if(this->node == nullptr)
     {
-        if(other.range_last() != 0)
+        if(other.range_last() != nullptr)
             this->node = other.range_last();
         else
             this->node = other.m_parent;
@@ -2939,18 +2923,18 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::pre_order_iterator&
 graph<T, AllocatorT>::pre_order_iterator::operator++()
 {
-    assert(this->node != 0);
-    if(!this->m_skip_current_children && this->node->first_child != 0)
+    assert(this->node != nullptr);
+    if(!this->m_skip_current_children && this->node->first_child != nullptr)
     {
         this->node = this->node->first_child;
     }
     else
     {
         this->m_skip_current_children = false;
-        while(this->node->next_sibling == 0)
+        while(this->node->next_sibling == nullptr)
         {
             this->node = this->node->parent;
-            if(this->node == 0)
+            if(this->node == nullptr)
                 return *this;
         }
         this->node = this->node->next_sibling;
@@ -2964,7 +2948,7 @@ template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::pre_order_iterator&
 graph<T, AllocatorT>::pre_order_iterator::operator--()
 {
-    assert(this->node != 0);
+    assert(this->node != nullptr);
     if(this->node->prev_sibling)
     {
         this->node = this->node->prev_sibling;
@@ -2974,7 +2958,7 @@ graph<T, AllocatorT>::pre_order_iterator::operator--()
     else
     {
         this->node = this->node->parent;
-        if(this->node == 0)
+        if(this->node == nullptr)
             return *this;
     }
     return *this;
@@ -3078,10 +3062,10 @@ template <typename T, typename AllocatorT>
 void
 graph<T, AllocatorT>::sibling_iterator::m_set_parent()
 {
-    m_parent = 0;
-    if(this->node == 0)
+    m_parent = nullptr;
+    if(this->node == nullptr)
         return;
-    if(this->node->parent != 0)
+    if(this->node->parent != nullptr)
         m_parent = this->node->parent;
 }
 

@@ -762,7 +762,7 @@ private:
         func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
         auto& _global_suppress = gotcha_suppression::get();
-        if(!_data.ready || _global_suppress)
+        if(!_data.ready || _global_suppress || !settings::enabled())
         {
             if(settings::debug())
             {
@@ -770,8 +770,9 @@ private:
                 static thread_local int64_t _tid = _tcount++;
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
-                   << std::boolalpha << !_data.ready << ") or is globally suppressed ("
-                   << _global_suppress << ")...\n";
+                   << std::boolalpha << !_data.ready << "), is globally suppressed ("
+                   << _global_suppress << "), or timemory is disabled ("
+                   << settings::enabled() << "...\n";
                 std::cout << ss.str() << std::flush;
             }
             return (_orig) ? (*_orig)(_args...) : Ret{};
@@ -849,7 +850,7 @@ private:
         auto _orig = (void (*)(Args...)) gotcha_get_wrappee(_data.wrappee);
 
         auto& _global_suppress = gotcha_suppression::get();
-        if(!_data.ready || _global_suppress)
+        if(!_data.ready || _global_suppress || !settings::enabled())
         {
             if(settings::debug())
             {
@@ -858,7 +859,8 @@ private:
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
                    << std::boolalpha << !_data.ready << ") or is globally suppressed ("
-                   << _global_suppress << ")...\n";
+                   << _global_suppress << "), or timemory is disabled ("
+                   << settings::enabled() << "...\n";
                 std::cout << ss.str() << std::flush;
             }
             if(_orig)
@@ -938,7 +940,7 @@ private:
         using wrap_type = tim::component_tuple<operator_type>;
 
         auto _orig = (func_t) gotcha_get_wrappee(_data.wrappee);
-        if(!_data.ready)
+        if(!_data.ready || !settings::enabled())
             return (*_orig)(_args...);
 
         _data.ready = false;
@@ -965,7 +967,7 @@ private:
         auto _orig      = (func_t) gotcha_get_wrappee(_data.wrappee);
         using wrap_type = tim::component_tuple<operator_type>;
 
-        if(!_data.ready)
+        if(!_data.ready || !settings::enabled())
             (*_orig)(_args...);
         else
         {

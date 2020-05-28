@@ -182,7 +182,7 @@ class cupti_tests : public ::testing::Test
 TEST_F(cupti_tests, activity)
 {
     using tuple_t            = tim::component_tuple_t<wall_clock, cupti_activity>;
-    tim::settings::verbose() = 4;
+    tim::settings::verbose() = 2;
     tim::settings::debug()   = true;
 
     tuple_t timer(details::get_test_name(), true);

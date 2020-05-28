@@ -128,11 +128,14 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 {
     static void set_attr()
     {
-        auto lk       = tim::trace::lock<tim::trace::library>();
-        int  comm_key = 0;
+        auto lk                  = tim::trace::lock<tim::trace::library>();
+        auto _state              = tim::settings::enabled();
+        tim::settings::enabled() = false;
+        int comm_key             = 0;
         MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_trace_mpi_finalize, &comm_key,
                                NULL);
         MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
+        tim::settings::enabled() = _state;
     }
 
     // MPI_Init

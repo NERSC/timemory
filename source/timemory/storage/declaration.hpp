@@ -36,13 +36,13 @@
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/threading.hpp"
-#include "timemory/data/graph.hpp"
-#include "timemory/data/graph_data.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/storage/graph.hpp"
+#include "timemory/storage/graph_data.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -291,14 +291,6 @@ namespace impl
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename StorageType, typename Type, typename HashMap, typename GraphData>
-typename StorageType::iterator
-insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
-                 uint64_t);
-//
-//--------------------------------------------------------------------------------------//
-//
 //                              impl::storage<Tp, true>
 //
 //--------------------------------------------------------------------------------------//
@@ -437,6 +429,8 @@ protected:
     iterator insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
     iterator insert_timeline(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
     iterator insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
+    iterator insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+                              bool has_head);
 
     void     merge();
     void     merge(this_type* itr);
@@ -545,10 +539,8 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
-    bool _has_head = _data().has_head();
-    return insert_hierarchy<this_type, Type>(hash_id, obj, hash_depth, m_node_ids,
-                                             m_graph_data_instance, _has_head,
-                                             m_is_master, m_thread_idx);
+    bool has_head = _data().has_head();
+    return insert_hierarchy(hash_id, obj, hash_depth, has_head);
 }
 
 //----------------------------------------------------------------------------------//
@@ -595,6 +587,93 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
     m_node_ids[hash_depth][hash_id] = itr;
     return itr;
 }
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, true>::iterator
+storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
+                                      uint64_t hash_depth, bool has_head)
+{
+    using id_hash_map_t = typename iterator_hash_map_t::mapped_type;
+
+    auto& m_data = m_graph_data_instance;
+    auto  tid    = m_thread_idx;
+
+    // if first instance
+    if(!has_head || (m_is_master && m_node_ids.size() == 0))
+    {
+        graph_node_t node(hash_id, obj, hash_depth, tid);
+        auto         itr                = m_data->append_child(node);
+        m_node_ids[hash_depth][hash_id] = itr;
+        return itr;
+    }
+
+    // lambda for updating settings
+    auto _update = [&](iterator itr) {
+        m_data->depth() = itr->depth();
+        return (m_data->current() = itr);
+    };
+
+    if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
+       m_node_ids[hash_depth].find(hash_id)->second->depth() == m_data->depth())
+    {
+        return _update(m_node_ids[hash_depth].find(hash_id)->second);
+    }
+
+    using sibling_itr = typename graph_t::sibling_iterator;
+    graph_node_t node(hash_id, obj, m_data->depth(), tid);
+
+    // lambda for inserting child
+    auto _insert_child = [&]() {
+        node.depth() = hash_depth;
+        auto itr     = m_data->append_child(node);
+        auto ditr    = m_node_ids.find(hash_depth);
+        if(ditr == m_node_ids.end())
+            m_node_ids.insert({ hash_depth, id_hash_map_t{} });
+        auto hitr = m_node_ids.at(hash_depth).find(hash_id);
+        if(hitr == m_node_ids.at(hash_depth).end())
+            m_node_ids.at(hash_depth).insert({ hash_id, iterator{} });
+        m_node_ids.at(hash_depth).at(hash_id) = itr;
+        return itr;
+    };
+
+    auto current = m_data->current();
+    if(!m_data->graph().is_valid(current))
+        _insert_child();
+
+    // check children first because in general, child match is ideal
+    auto fchild = graph_t::child(current, 0);
+    if(m_data->graph().is_valid(fchild))
+    {
+        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
+        {
+            if((hash_id) == itr->id())
+                return _update(itr);
+        }
+    }
+
+    // occasionally, we end up here because of some of the threading stuff that
+    // has to do with the head node. Protected against mis-matches in hierarchy
+    // because the actual hash includes the depth so "example" at depth 2
+    // has a different hash than "example" at depth 3.
+    if((hash_id) == current->id())
+        return current;
+
+    // check siblings
+    for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+    {
+        // skip if current
+        if(itr == current)
+            continue;
+        // check hash id's
+        if((hash_id) == itr->id())
+            return _update(itr);
+    }
+
+    return _insert_child();
+}
+
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -926,93 +1005,6 @@ struct storage_deleter : public std::default_delete<StorageType>
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename StorageType, typename Type, typename HashMap, typename GraphData>
-typename StorageType::iterator
-insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
-                 uint64_t tid)
-{
-    using graph_t       = typename StorageType::graph_t;
-    using graph_node_t  = typename StorageType::graph_node_t;
-    using iterator      = typename StorageType::iterator;
-    using id_hash_map_t = typename HashMap::mapped_type;
-
-    // if first instance
-    if(!_has_head || (_is_master && m_node_ids.size() == 0))
-    {
-        graph_node_t node(hash_id, obj, hash_depth, tid);
-        auto         itr                = m_data->append_child(node);
-        m_node_ids[hash_depth][hash_id] = itr;
-        return itr;
-    }
-
-    // lambda for updating settings
-    auto _update = [&](iterator itr) {
-        m_data->depth() = itr->depth();
-        return (m_data->current() = itr);
-    };
-
-    if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-       m_node_ids[hash_depth].find(hash_id)->second->depth() == m_data->depth())
-    {
-        return _update(m_node_ids[hash_depth].find(hash_id)->second);
-    }
-
-    using sibling_itr = typename graph_t::sibling_iterator;
-    graph_node_t node(hash_id, obj, m_data->depth(), tid);
-
-    // lambda for inserting child
-    auto _insert_child = [&]() {
-        node.depth() = hash_depth;
-        auto itr     = m_data->append_child(node);
-        auto ditr    = m_node_ids.find(hash_depth);
-        if(ditr == m_node_ids.end())
-            m_node_ids.insert({ hash_depth, id_hash_map_t{} });
-        auto hitr = m_node_ids.at(hash_depth).find(hash_id);
-        if(hitr == m_node_ids.at(hash_depth).end())
-            m_node_ids.at(hash_depth).insert({ hash_id, iterator{} });
-        m_node_ids.at(hash_depth).at(hash_id) = itr;
-        return itr;
-    };
-
-    auto current = m_data->current();
-    if(!m_data->graph().is_valid(current))
-        _insert_child();
-
-    // check children first because in general, child match is ideal
-    auto fchild = graph_t::child(current, 0);
-    if(m_data->graph().is_valid(fchild))
-    {
-        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-        {
-            if((hash_id) == itr->id())
-                return _update(itr);
-        }
-    }
-
-    // occasionally, we end up here because of some of the threading stuff that
-    // has to do with the head node. Protected against mis-matches in hierarchy
-    // because the actual hash includes the depth so "example" at depth 2
-    // has a different hash than "example" at depth 3.
-    if((hash_id) == current->id())
-        return current;
-
-    // check siblings
-    for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-    {
-        // skip if current
-        if(itr == current)
-            continue;
-        // check hash id's
-        if((hash_id) == itr->id())
-            return _update(itr);
-    }
-
-    return _insert_child();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace impl
 //
 //--------------------------------------------------------------------------------------//
@@ -1022,16 +1014,24 @@ inline base::storage*
 base::storage::base_instance()
 {
     using storage_type = tim::storage<Tp, Vp>;
-    if(trait::runtime_enabled<Tp>::get())
+
+    // thread-local variable
+    static thread_local base::storage* _ret = nullptr;
+
+    // return nullptr is disabled
+    if(!trait::runtime_enabled<Tp>::get())
+        return nullptr;
+
+    // if nullptr, try to get instance
+    if(_ret == nullptr)
     {
-        static thread_local auto _instance = []() {
-            auto _tmp = storage_type::instance();
-            // _tmp->initialize();
-            return _tmp;
-        }();
-        return static_cast<base::storage*>(_instance);
+        // thread will copy the hash-table so use a lock here
+        auto_lock_t lk(type_mutex<base::storage>());
+        _ret = static_cast<base::storage*>(storage_type::instance());
     }
-    return nullptr;
+
+    // return pointer
+    return _ret;
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -114,24 +114,62 @@ get<Type, true>::get(storage_type& data, result_type& ret)
         if(!data.m_node_init || !_use_pid_prefix)
             return _get_thread_prefix(itr);
 
-        auto _nc  = settings::node_count();  // node-count
-        auto _idx = data.m_node_rank;
+        auto _nc    = settings::node_count();  // node-count
+        auto _idx   = data.m_node_rank;
+        auto _range = std::make_pair(-1, -1);
 
-        std::vector<int32_t>        _ivals;
-        std::pair<int32_t, int32_t> _range = { -1, -1 };
         if(_nc > 0)
         {
-            _ivals.push_back(0);
-            auto _ni = (_num_pid_count / _nc) + 1;
-            auto _n  = 0;
-            for(int32_t i = 0; i < _nc; ++i, _n += _ni)
-                _ivals.push_back(_n);
-            for(auto vitr : _ivals)
+            // calculate some size parameters and generate map of the pids to node ids
+            int32_t nmod  = _num_pid_count % _nc;
+            int32_t bins  = _num_pid_count / _nc + ((nmod == 0) ? 0 : 1);
+            int32_t bsize = _num_pid_count / bins;
+            int32_t ncnt  = 0;  // current count
+            int32_t midx  = 0;  // current bin map index
+            std::map<int32_t, std::set<int32_t>> binmap;
+            for(int32_t i = 0; i < _num_pid_count; ++i)
             {
-                if(vitr < _idx)
-                    _range.first = vitr;
-                if(vitr + _ni < _idx)
-                    _range.second = vitr + _ni;
+                binmap[midx].insert(i);
+                // check to see if we reached the bin size
+                if(++ncnt == bsize)
+                {
+                    // set counter to zero and advance the node
+                    ncnt = 0;
+                    ++midx;
+                }
+            }
+
+            // loop over the bins
+            for(const auto& bitr : binmap)
+            {
+                // if rank is found in a bin, assing range to first and last entry
+                if(bitr.second.find(_idx) != bitr.second.end())
+                {
+                    auto vitr    = bitr.second.begin();
+                    _range.first = *vitr;
+                    vitr         = bitr.second.end();
+                    --vitr;
+                    _range.second = *vitr;
+                }
+            }
+
+            if(settings::debug())
+            {
+                std::stringstream ss;
+                for(const auto& bitr : binmap)
+                {
+                    ss << ", [" << bitr.first << "] ";
+                    std::stringstream bss;
+                    for(const auto& nitr : bitr.second)
+                        bss << ", " << nitr;
+                    ss << bss.str().substr(2);
+                }
+                std::string _msg = "Intervals: ";
+                _msg += ss.str().substr(2);
+                PRINT_HERE("[%s][pid=%i][tid=%i]> %s. range = { %i, %i }",
+                           demangle<get<Type, true>>().c_str(), (int) process::get_id(),
+                           (int) threading::get_id(), _msg.c_str(), (int) _range.first,
+                           (int) _range.second);
             }
         }
 
@@ -221,44 +259,7 @@ get<Type, true>::get(storage_type& data, result_type& ret)
             return _list;
 
         result_type _combined;
-
-        //--------------------------------------------------------------------------//
-        //
-        auto _equiv = [&](const result_node& _lhs, const result_node& _rhs) {
-            return (_lhs.hash() == _rhs.hash() && _lhs.prefix() == _rhs.prefix() &&
-                    _lhs.depth() == _rhs.depth() &&
-                    _lhs.rolling_hash() == _rhs.rolling_hash());
-        };
-
-        //--------------------------------------------------------------------------//
-        //
-        auto _exists = [&](const result_node& _lhs) {
-            for(auto itr = _combined.begin(); itr != _combined.end(); ++itr)
-            {
-                if(_equiv(_lhs, *itr))
-                    return itr;
-            }
-            return _combined.end();
-        };
-
-        //--------------------------------------------------------------------------//
-        //  collapse duplicates
-        //
-        for(auto& itr : _list)
-        {
-            auto citr = _exists(itr);
-            if(citr == _combined.end())
-            {
-                itr.tid() = std::numeric_limits<uint16_t>::max();
-                _combined.emplace_back(itr);
-            }
-            else
-            {
-                citr->data() += itr.data();
-                citr->data().plus(itr.data());
-                citr->stats() += itr.stats();
-            }
-        }
+        operation::finalize::merge<Type, true>(_combined, _list);
         return _combined;
     };
 

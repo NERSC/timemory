@@ -1,22 +1,18 @@
 
-#----------------------------------------------------------------------------------------#
-#
-#                       JUMP LIBRARY
-#
-#----------------------------------------------------------------------------------------#
-
-add_subdirectory(jump)
-
-#----------------------------------------------------------------------------------------#
-#
-#                       STUBS LIBRARY
-#
-#----------------------------------------------------------------------------------------#
-
-add_subdirectory(stubs)
-
 include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME library)
+
+#----------------------------------------------------------------------------------------#
+#
+#                       JUMP AND STUBS LIBRARIES
+#
+#----------------------------------------------------------------------------------------#
+
+message(STATUS "Adding source/jump...")
+add_subdirectory(jump)
+
+message(STATUS "Adding source/stubs...")
+add_subdirectory(stubs)
 
 #----------------------------------------------------------------------------------------#
 # Locate sources and headers for this project
@@ -104,7 +100,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-
+message(STATUS "Adding source/timemory...")
 add_subdirectory(timemory)
 
 
@@ -316,6 +312,7 @@ endif()
 #
 # timem wrapper tool, mpip, etc.
 #
+message(STATUS "Adding source/tools...")
 add_subdirectory(tools)
 
 set(_OMPT_LIB)
@@ -392,6 +389,7 @@ export(TARGETS  ${LIBRARIES}
 #
 # Python bindings
 #
+message(STATUS "Adding source/python...")
 add_subdirectory(python)
 
 #
@@ -424,6 +422,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+message(STATUS "Configuring packaging...")
 include(PackageConfigure)
 
 #----------------------------------------------------------------------------------------#
@@ -432,6 +431,7 @@ include(PackageConfigure)
 #
 #----------------------------------------------------------------------------------------#
 
+message(STATUS "Adding source/tests...")
 add_subdirectory(tests)
 
 set(TIMEMORY_MAKEFILE_COMPILED_LIBRARIES
