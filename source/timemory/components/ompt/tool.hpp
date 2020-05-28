@@ -338,9 +338,19 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_mutex_t kind, ompt_wait_id_t wait_id, const void* codeptr)
     : m_key(ompt_mutex_type_labels[kind])
-    , m_data({ { get_data<mutex_tag>()[wait_id], nullptr } })
+    , m_data({ { nullptr, nullptr } })
     {
-        consume_parameters(wait_id, codeptr);
+        if(get_data<mutex_tag>().find(wait_id) != get_data<mutex_tag>().end())
+        {
+            m_data[0] = get_data<mutex_tag>()[wait_id];
+            m_cleanup = [=]() {
+                auto& itr = get_data<mutex_tag>()[wait_id];
+                delete itr;
+                itr = nullptr;
+                get_data<mutex_tag>().erase(wait_id);
+            };
+        }
+        consume_parameters(codeptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -487,6 +497,7 @@ public:
         auto& itr = get_data<device_state_tag>()[device_num];
         delete itr;
         itr = nullptr;
+        get_data<device_state_tag>().erase(device_num);
     })
     {}
 
@@ -515,6 +526,7 @@ public:
             get_data<device_load_tag, uint64_t, data_map_t>()[device_num][module_id];
         delete itr;
         itr = nullptr;
+        get_data<device_load_tag, uint64_t, data_map_t>()[device_num].erase(module_id);
     })
     {}
 
