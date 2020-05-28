@@ -404,7 +404,7 @@ public:
         {
             if(settings::debug())
             {
-                printf("[component_list::init]> initializing type '%s'...\n",
+                printf("[component_bundle::init]> initializing type '%s'...\n",
                        demangle(typeid(T).name()).c_str());
             }
             _obj = new T(std::forward<Args>(_args)...);
@@ -416,7 +416,7 @@ public:
             if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = demangle(typeid(T).name());
-                printf("[component_list::init]> skipping re-initialization of type"
+                printf("[component_bundle::init]> skipping re-initialization of type"
                        " \"%s\"...\n",
                        _id.c_str());
             }

@@ -227,7 +227,7 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
                 demangle<upc_get<Type, true>>().c_str(), (int) process::get_id(),
                 upc_rank, init_size, upc_size, (int) binmap.size());
 
-        assert(binmap.size() <= settings::node_count());
+        assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
 
         // the collapsed data
         auto _collapsed = distrib_type(binmap.size());

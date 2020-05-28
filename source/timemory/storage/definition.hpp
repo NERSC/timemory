@@ -369,7 +369,8 @@ storage<Type, true>::data() const
 {
     if(!is_finalizing())
     {
-        static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
+        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
         consume_parameters(_init);
     }
     return _data();
@@ -383,7 +384,8 @@ storage<Type, true>::graph() const
 {
     if(!is_finalizing())
     {
-        static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
+        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
         consume_parameters(_init);
     }
     return _data().graph();
@@ -397,7 +399,8 @@ storage<Type, true>::depth() const
 {
     if(!is_finalizing())
     {
-        static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
+        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
         consume_parameters(_init);
     }
     return (is_finalizing()) ? 0 : _data().depth();
