@@ -447,7 +447,11 @@ private:
     void internal_print();
 
     graph_data_t&       _data();
-    const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
+    const graph_data_t& _data() const
+    {
+        using type_t = decay_t<remove_pointer_t<decltype(this)>>;
+        return const_cast<type_t*>(this)->_data();
+    }
 
 private:
     uint64_t                   m_timeline_counter    = 1;
