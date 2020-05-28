@@ -243,6 +243,8 @@ public:
     {};
     struct mutex_tag
     {};
+    struct nest_lock_tag
+    {};
 
     using data_map_t = uomap_t<uint64_t, ompt_data_t*>;
 
@@ -291,7 +293,8 @@ public:
     context_handler(ompt_scope_endpoint_t endpoint, ompt_data_t* parallel_data,
                     ompt_data_t* task_data, const void* codeptr)
     : m_key("ompt_master")
-    , m_data({ { task_data, nullptr } })
+    , m_data(
+          { { (endpoint == ompt_scope_begin) ? construct_data() : task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, codeptr);
     }
@@ -303,7 +306,8 @@ public:
                     ompt_data_t* task_data, unsigned int team_size,
                     unsigned int thread_num)
     : m_key("ompt_implicit_task")
-    , m_data({ { task_data, nullptr } })
+    , m_data(
+          { { (endpoint == ompt_scope_begin) ? construct_data() : task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, team_size, thread_num);
     }
@@ -315,7 +319,8 @@ public:
                     ompt_data_t* parallel_data, ompt_data_t* task_data,
                     const void* codeptr)
     : m_key(ompt_sync_region_type_labels[kind])
-    , m_data({ { task_data, nullptr } })
+    , m_data(
+          { { (endpoint == ompt_scope_begin) ? construct_data() : task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, codeptr);
     }
@@ -358,7 +363,26 @@ public:
     //----------------------------------------------------------------------------------//
     context_handler(ompt_scope_endpoint_t endpoint, ompt_wait_id_t wait_id,
                     const void* codeptr)
+    : m_key("ompt_nested_lock")
+    , m_data({ { nullptr, nullptr } })
     {
+        if(endpoint == ompt_scope_end &&
+           get_data<nest_lock_tag>().find(wait_id) != get_data<nest_lock_tag>().end())
+        {
+            m_data[0] = get_data<nest_lock_tag>()[wait_id];
+            m_cleanup = [=]() {
+                auto& itr = get_data<nest_lock_tag>()[wait_id];
+                delete itr;
+                itr = nullptr;
+                get_data<nest_lock_tag>().erase(wait_id);
+            };
+        }
+        else if(endpoint == ompt_scope_begin)
+        {
+            m_data[0]                          = construct_data();
+            get_data<nest_lock_tag>()[wait_id] = m_data[0];
+        }
+
         consume_parameters(endpoint, wait_id, codeptr);
     }
 
@@ -403,7 +427,8 @@ public:
                     ompt_data_t* parallel_data, ompt_data_t* task_data, uint64_t count,
                     const void* codeptr)
     : m_key(ompt_work_labels[wstype])
-    , m_data({ { task_data, nullptr } })
+    , m_data(
+          { { (endpoint == ompt_scope_begin) ? construct_data() : task_data, nullptr } })
     {
         consume_parameters(endpoint, parallel_data, task_data, count, codeptr);
     }
@@ -435,7 +460,8 @@ public:
                     ompt_data_t* task_data, ompt_id_t target_id, const void* codeptr)
     : m_key(
           apply<std::string>::join("_", ompt_target_type_labels[kind], "dev", device_num))
-    , m_data({ { task_data, nullptr } })
+    , m_data(
+          { { (endpoint == ompt_scope_begin) ? construct_data() : task_data, nullptr } })
     {
         consume_parameters(kind, endpoint, target_id, codeptr);
     }
@@ -1101,13 +1127,13 @@ configure(ompt_function_lookup_t lookup, int, ompt_data_t*)
     timemory_ompt_register_callback(ompt_callback_sync_region,
                                     TIMEMORY_OMPT_CBDECL(sync_region_cb_t::callback));
 
-    // using mutex_nest_lock_cb_t =
-    //    openmp::ompt_wrapper<toolset_type, connector_type,
-    //                         openmp::mode::endpoint_callback, ompt_scope_endpoint_t,
-    //                         ompt_wait_id_t, const void*>;
+    using mutex_nest_lock_cb_t =
+        openmp::ompt_wrapper<toolset_type, connector_type,
+                             openmp::mode::endpoint_callback, ompt_scope_endpoint_t,
+                             ompt_wait_id_t, const void*>;
 
-    // timemory_ompt_register_callback(ompt_callback_nest_lock,
-    //                                TIMEMORY_OMPT_CBDECL(mutex_nest_lock_cb_t::callback));
+    timemory_ompt_register_callback(ompt_callback_nest_lock,
+                                    TIMEMORY_OMPT_CBDECL(mutex_nest_lock_cb_t::callback));
 
     using mutex_acquire_cb_t =
         openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::begin_callback,
@@ -1116,8 +1142,8 @@ configure(ompt_function_lookup_t lookup, int, ompt_data_t*)
 
     timemory_ompt_register_callback(ompt_callback_mutex_acquire,
                                     TIMEMORY_OMPT_CBDECL(mutex_acquire_cb_t::callback));
-    timemory_ompt_register_callback(ompt_callback_reduction,
-                                    TIMEMORY_OMPT_CBDECL(sync_region_cb_t::callback));
+    // timemory_ompt_register_callback(ompt_callback_reduction,
+    //                                TIMEMORY_OMPT_CBDECL(sync_region_cb_t::callback));
 
     using mutex_cb_t =
         openmp::ompt_wrapper<toolset_type, connector_type, openmp::mode::end_callback,
