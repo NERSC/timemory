@@ -775,8 +775,8 @@ storage<Type, true>::get_shared_manager()
         bool   _is_master = singleton_t::is_master(this);
         auto   _debug_v   = settings::debug();
         auto   _verb_v    = settings::verbose();
-        auto   _cleanup   = [=]() {};
-        func_t _finalize  = [=]() {
+        auto   _cleanup   = [&]() {};
+        func_t _finalize  = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
@@ -975,8 +975,8 @@ storage<Type, false>::get_shared_manager()
         bool   _is_master = singleton_t::is_master(this);
         auto   _debug_v   = settings::debug();
         auto   _verb_v    = settings::verbose();
-        auto   _cleanup   = [=]() {};
-        func_t _finalize  = [=]() {
+        auto   _cleanup   = [&]() {};
+        func_t _finalize  = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
