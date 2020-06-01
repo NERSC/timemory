@@ -29,13 +29,10 @@
 
 #pragma once
 
-#include "timemory/storage/macros.hpp"
-#include "timemory/storage/node.hpp"
-#include "timemory/storage/types.hpp"
-//
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/hash/declaration.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -43,12 +40,13 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/storage/graph.hpp"
 #include "timemory/storage/graph_data.hpp"
+#include "timemory/storage/macros.hpp"
+#include "timemory/storage/node.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/types.hpp"
-//
-#include "timemory/hash/declaration.hpp"
 
 #include <atomic>
 #include <cstdint>

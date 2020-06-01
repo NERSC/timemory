@@ -246,56 +246,56 @@ define_default_option(_GOTCHA ${_NON_APPLE_UNIX})
 
 # timemory options
 add_option(TIMEMORY_USE_STATISTICS
-    "Enable statistics by default" ON)
+    "Enable statistics by default" ON CMAKE_DEFINE)
 add_option(TIMEMORY_USE_MPI
-    "Enable MPI usage" ${_MPI})
+    "Enable MPI usage" ${_MPI} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_UPCXX
-    "Enable UPCXX usage (MPI support takes precedence)" ${_UPCXX})
+    "Enable UPCXX usage (MPI support takes precedence)" ${_UPCXX} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_SANITIZER
     "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
 add_option(TIMEMORY_USE_TAU
-    "Enable TAU marking API" ${_TAU})
+    "Enable TAU marking API" ${_TAU} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PAPI
-    "Enable PAPI" ${_PAPI})
+    "Enable PAPI" ${_PAPI} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CLANG_TIDY
     "Enable running clang-tidy" OFF)
 add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE})
 add_option(TIMEMORY_USE_GPERFTOOLS
-    "Enable gperftools" ${_GPERFTOOLS})
+    "Enable gperftools" ${_GPERFTOOLS} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_GPERFTOOLS_STATIC
     "Enable gperftools static targets (enable if gperftools library are built with -fPIC)" OFF)
 add_option(TIMEMORY_USE_ARCH
-    "Enable architecture flags" OFF)
+    "Enable architecture flags" OFF CMAKE_DEFINE)
 add_option(TIMEMORY_USE_VTUNE
-    "Enable VTune marking API" ${_VTUNE})
+    "Enable VTune marking API" ${_VTUNE} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CUDA
-    "Enable CUDA option for GPU measurements" ${_CUDA})
+    "Enable CUDA option for GPU measurements" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_NVTX
-    "Enable NVTX marking API" ${_CUDA})
+    "Enable NVTX marking API" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CUPTI
-    "Enable CUPTI profiling for NVIDIA GPUs" ${_CUDA})
+    "Enable CUPTI profiling for NVIDIA GPUs" ${_CUDA} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CALIPER
-    "Enable Caliper" ${_CALIPER})
+    "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_PYTHON
-    "Enable Python" ${_PYTHON})
+    "Enable Python" ${_PYTHON} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_COMPILE_TIMING
     "Enable -ftime-report for compilation times" OFF)
 add_option(TIMEMORY_USE_DYNINST
     "Enable dynamic instrumentation" ${_DYNINST})
 add_option(TIMEMORY_USE_ALLINEA_MAP
-    "Enable control for AllineaMAP sampler" ${_ALLINEA_MAP})
+    "Enable control for AllineaMAP sampler" ${_ALLINEA_MAP} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_CRAYPAT
-    "Enable CrayPAT support" ${_CRAYPAT})
+    "Enable CrayPAT support" ${_CRAYPAT} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_OMPT
-    "Enable OpenMP tooling" ${_OMPT})
+    "Enable OpenMP tooling" ${_OMPT} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_LIKWID
-    "Enable LIKWID marker forwarding" ${_LIKWID})
+    "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_GOTCHA
-    "Enable GOTCHA" ${_GOTCHA})
+    "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_option(TIMEMORY_USE_XRAY
-        "Enable XRay instrumentation" OFF)
+        "Enable XRay instrumentation" OFF CMAKE_DEFINE)
 endif()
 
 

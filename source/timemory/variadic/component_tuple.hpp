@@ -32,15 +32,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <ios>
-#include <iostream>
-#include <string>
-
 #include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
 #include "timemory/general/source_location.hpp"
@@ -53,6 +44,15 @@
 #include "timemory/utility/serializer.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/types.hpp"
+
+#include <cstdint>
+#include <cstdio>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <string>
 
 //======================================================================================//
 
@@ -80,7 +80,7 @@ public:
 
     using data_type         = typename bundle_type::data_type;
     using impl_type         = typename bundle_type::impl_type;
-    using type_tuple        = typename bundle_type::type_tuple;
+    using tuple_type        = typename bundle_type::tuple_type;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
@@ -100,7 +100,7 @@ public:
     // used by gotcha
     using component_type   = component_tuple<Types...>;
     using auto_type        = auto_tuple<Types...>;
-    using type             = convert_t<type_tuple, component_tuple<>>;
+    using type             = convert_t<tuple_type, component_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
     // used by component hybrid
@@ -186,7 +186,7 @@ public:
     //----------------------------------------------------------------------------------//
     // public static functions
     //
-    static constexpr std::size_t size() { return std::tuple_size<type_tuple>::value; }
+    static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
     static void                  print_storage();
     static void                  init_storage();
 

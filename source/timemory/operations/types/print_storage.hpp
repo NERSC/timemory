@@ -85,5 +85,15 @@ struct print_storage
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Tp>
+struct print_storage<Tp*> : print_storage<Tp>
+{
+    print_storage()
+    : print_storage<Tp>()
+    {}
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace operation
 }  // namespace tim

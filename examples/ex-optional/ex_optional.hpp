@@ -40,10 +40,8 @@ using tim::component::peak_rss;
 using tim::component::wall_clock;
 
 // some using statements
-using tuple_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util, page_rss, peak_rss>;
-using list_t  = tim::auto_timer_list_t;
-
-using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
+using auto_hybrid_t =
+    tim::auto_bundle<TIMEMORY_API, wall_clock, cpu_clock, cpu_util, page_rss, peak_rss>;
 
 #else
 

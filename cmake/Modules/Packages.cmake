@@ -274,6 +274,9 @@ endfunction()
 #
 #----------------------------------------------------------------------------------------#
 
+# this target is always linked whenever timemory is used via cmake
+target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
+
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
 
@@ -480,7 +483,8 @@ if(MPI_FOUND)
         set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
     endif()
 
-    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" ON)
+    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" ON
+        CMAKE_DEFINE)
     if(NOT TIMEMORY_USE_MPI_INIT)
         target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
     endif()
@@ -589,6 +593,8 @@ if(TIMEMORY_USE_PYTHON)
         inform_empty_interface(timemory-plotting "Python plotting from C++")
     else()
         add_feature(PYTHON_EXECUTABLE "Python executable")
+        add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
+        set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
         target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING
             TIMEMORY_PYTHON_PLOTTER="${PYTHON_EXECUTABLE}")
         target_link_libraries(timemory-headers INTERFACE timemory-plotting)
@@ -1283,6 +1289,8 @@ else()
     set(TIMEMORY_USE_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
 endif()
+
+add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
 
 
 #----------------------------------------------------------------------------------------#

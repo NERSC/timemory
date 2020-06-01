@@ -24,6 +24,9 @@
 
 #pragma once
 
-#include "timemory/components/base/declaration.hpp"
-#include "timemory/components/base/definition.hpp"
-#include "timemory/components/base/types.hpp"
+/// \file timemory/defines.h
+/// \brief Provides the definitions for the installation if not using cmake
+
+#if !defined(TIMEMORY_SOURCE) && !defined(TIMEMORY_CMAKE)
+@timemory_CMAKE_DEFINES@
+#endif

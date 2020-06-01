@@ -42,37 +42,14 @@
 
 //======================================================================================//
 
-namespace tim
-{
-namespace component
-{
-struct exp_intercept : public base<exp_intercept, void>
-{
-    double operator()(double val)
-    {
-        puts("intercepting exp...");
-#if defined(VERBOSE)
-        if(tim::settings::verbose() > 0)
-            printf("\texecuting modified exp function : %20.3f...", val);
-#endif
-        return exp(val);
-    }
-};
-}  // namespace component
-}  // namespace tim
-
-//======================================================================================//
-
 using namespace tim;
 using namespace tim::component;
 
 constexpr size_t N     = 10;
 using general_bundle_t = user_bundle<0>;
-using exp_timer_t      = tim::component_tuple<>;
 using tool_tuple_t     = tim::component_tuple<general_bundle_t>;
 using put_gotcha_t     = tim::component::gotcha<N, tool_tuple_t, char>;
 using mpi_gotcha_t     = tim::component::gotcha<N, tool_tuple_t, double>;
-using exp_gotcha_t     = tim::component::gotcha<N, exp_timer_t, exp_intercept>;
 using fake_gotcha_t    = tim::component::gotcha<N, tim::component_tuple<>, float>;
 using gotcha_tuple_t   = tim::auto_tuple_t<tool_tuple_t, user_tuple_bundle>;
 
@@ -94,17 +71,12 @@ struct is_available<mpi_gotcha_t> : std::false_type
 void
 init()
 {
-    put_gotcha_t::get_initializer() = [=]() {
+    put_gotcha_t::get_initializer() = []() {
         put_gotcha_t::configure<0, int, const char*>("puts");
     };
 
-    exp_gotcha_t::get_initializer() = [=]() {
-        TIMEMORY_C_GOTCHA_TOOL(exp_gotcha_t, 0, exp, "math", 0);
-        // exp_gotcha_t::configure<0, double, double>("exp", 1, "math");
-    };
-
 #if defined(TIMEMORY_USE_MPI)
-    mpi_gotcha_t::get_initializer() = [=]() {
+    mpi_gotcha_t::get_initializer() = []() {
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Barrier);
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 1, MPI_Bcast);
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 2, MPI_Scan);
@@ -119,8 +91,6 @@ init()
 
     printf("put gotcha is available: %s\n",
            trait::as_string<trait::is_available<put_gotcha_t>>().c_str());
-    printf("exp gotcha is available: %s\n",
-           trait::as_string<trait::is_available<exp_gotcha_t>>().c_str());
     printf("mpi gotcha is available: %s\n",
            trait::as_string<trait::is_available<mpi_gotcha_t>>().c_str());
     printf("\n");
@@ -130,7 +100,6 @@ init()
     user_tuple_bundle::configure<fake_gotcha_t>();
     if(tim::get_env("MPI_INTERCEPT", true)) user_tuple_bundle::configure<mpi_gotcha_t>();
     if(tim::get_env("PUT_INTERCEPT", true)) user_tuple_bundle::configure<put_gotcha_t>();
-    if(tim::get_env("EXP_INTERCEPT", true)) user_tuple_bundle::configure<exp_gotcha_t>();
 }
 
 //======================================================================================//

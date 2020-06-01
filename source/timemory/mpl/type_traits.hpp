@@ -217,6 +217,13 @@ struct requires_json : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates the type is a timemory component
+///
+template <typename T>
+struct is_component : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// trait that designates the type is a gotcha... ONLY gotcha should set to TRUE!
 ///
 template <typename T>

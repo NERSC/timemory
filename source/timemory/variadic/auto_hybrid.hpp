@@ -32,15 +32,15 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
+
+#include <cstdint>
+#include <string>
 
 namespace tim
 {
@@ -58,11 +58,11 @@ public:
     using this_type           = auto_hybrid<CompTuple, CompList>;
     using base_type           = component_hybrid<CompTuple, CompList>;
     using auto_type           = this_type;
-    using tuple_type          = typename base_type::tuple_type;
-    using list_type           = typename base_type::list_type;
+    using tuple_t             = typename base_type::tuple_t;
+    using list_t              = typename base_type::list_t;
     using component_type      = typename base_type::component_type;
     using data_type           = typename component_type::data_type;
-    using type_tuple          = typename component_type::type_tuple;
+    using tuple_type          = typename component_type::tuple_type;
     using tuple_type_list     = typename component_type::tuple_type_list;
     using list_type_list      = typename component_type::list_type_list;
     using string_t            = std::string;
@@ -234,20 +234,20 @@ public:
     void      rekey(const string_t& _key) { m_temporary.rekey(_key); }
 
 public:
-    tuple_type&       get_tuple() { return m_temporary.get_tuple(); }
-    const tuple_type& get_tuple() const { return m_temporary.get_tuple(); }
-    list_type&        get_list() { return m_temporary.get_list(); }
-    const list_type&  get_list() const { return m_temporary.get_list(); }
+    tuple_t&       get_tuple() { return m_temporary.get_tuple(); }
+    const tuple_t& get_tuple() const { return m_temporary.get_tuple(); }
+    list_t&        get_list() { return m_temporary.get_list(); }
+    const list_t&  get_list() const { return m_temporary.get_list(); }
 
-    tuple_type&       get_first() { return m_temporary.get_tuple(); }
-    const tuple_type& get_first() const { return m_temporary.get_tuple(); }
-    list_type&        get_second() { return m_temporary.get_list(); }
-    const list_type&  get_second() const { return m_temporary.get_list(); }
+    tuple_t&       get_first() { return m_temporary.get_tuple(); }
+    const tuple_t& get_first() const { return m_temporary.get_tuple(); }
+    list_t&        get_second() { return m_temporary.get_list(); }
+    const list_t&  get_second() const { return m_temporary.get_list(); }
 
-    tuple_type&       get_lhs() { return m_temporary.get_tuple(); }
-    const tuple_type& get_lhs() const { return m_temporary.get_tuple(); }
-    list_type&        get_rhs() { return m_temporary.get_list(); }
-    const list_type&  get_rhs() const { return m_temporary.get_list(); }
+    tuple_t&       get_lhs() { return m_temporary.get_tuple(); }
+    const tuple_t& get_lhs() const { return m_temporary.get_tuple(); }
+    list_t&        get_rhs() { return m_temporary.get_list(); }
+    const list_t&  get_rhs() const { return m_temporary.get_list(); }
 
     template <typename Tp>
     decltype(auto) get()
@@ -431,11 +431,11 @@ public:
     using this_type       = typename real_type::base_type;
     using base_type       = typename real_type::base_type;
     using auto_type       = typename real_type::auto_type;
-    using tuple_type      = typename real_type::tuple_type;
-    using list_type       = typename real_type::list_type;
+    using tuple_t         = typename real_type::tuple_t;
+    using list_t          = typename real_type::list_t;
     using component_type  = typename real_type::component_type;
     using data_type       = typename real_type::data_type;
-    using type_tuple      = typename real_type::type_tuple;
+    using tuple_type      = typename real_type::tuple_type;
     using tuple_type_list = typename real_type::tuple_type_list;
     using list_type_list  = typename real_type::list_type_list;
 

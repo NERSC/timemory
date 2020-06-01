@@ -156,12 +156,12 @@ TEST_F(variadic_tests, variadic)
     using hybrid_t  = tim::concat<tim::auto_hybrid<tup_t, lst_t>, tup_add_t, lst_add_t>;
 
     auto hsize = hybrid_t::size();
-    auto tsize = hybrid_t::tuple_type::size();
-    auto lsize = hybrid_t::list_type::size();
+    auto tsize = hybrid_t::tuple_t::size();
+    auto lsize = hybrid_t::list_t::size();
 
     std::cout << "\nhybrid        : " << tim::demangle<hybrid_t>() << "\n";
-    std::cout << "\nhybrid tuple  : " << tim::demangle<typename hybrid_t::tuple_type>();
-    std::cout << "\nhybrid list   : " << tim::demangle<typename hybrid_t::list_type>();
+    std::cout << "\nhybrid tuple  : " << tim::demangle<typename hybrid_t::tuple_t>();
+    std::cout << "\nhybrid list   : " << tim::demangle<typename hybrid_t::list_t>();
     std::cout << "\n";
     {
         hybrid_t hybrid(details::get_test_name());
@@ -186,9 +186,9 @@ TEST_F(variadic_tests, concat)
     using join_t2 =
         typename tim::auto_tuple<lhs_t, tim::component_list<rhs_t, user_clock>>::type;
 
-    using comp_t0 = tim::remove_duplicates<join_t0>;
-    using comp_t1 = tim::remove_duplicates<join_t1>;
-    using comp_t2 = tim::remove_duplicates<join_t2>;
+    using comp_t0 = tim::remove_duplicates_t<join_t0>;
+    using comp_t1 = tim::remove_duplicates_t<join_t1>;
+    using comp_t2 = tim::remove_duplicates_t<join_t2>;
 
     using lhs_l = tim::convert_t<lhs_t, tim::component_list<>>;
     using rhs_l = tim::convert_t<rhs_t, tim::component_list<>>;
@@ -198,10 +198,10 @@ TEST_F(variadic_tests, concat)
     using dbeg_t2 = tim::auto_list<rhs_l, user_clock>;
     using dbeg_t3 = typename tim::auto_list<lhs_l, dbeg_t2>::data_type;
 
-    using data_t0 = tim::remove_duplicates<dbeg_t0>;
-    using data_t1 = tim::remove_duplicates<dbeg_t1>;
-    using data_t2 = tim::remove_duplicates<dbeg_t2>;
-    using data_t3 = tim::remove_duplicates<dbeg_t3>;
+    using data_t0 = tim::remove_duplicates_t<dbeg_t0>;
+    using data_t1 = tim::remove_duplicates_t<dbeg_t1>;
+    using data_t2 = tim::remove_duplicates_t<dbeg_t2>;
+    using data_t3 = tim::remove_duplicates_t<dbeg_t3>;
 
     std::cout << "\n" << std::flush;
 
@@ -259,9 +259,9 @@ TEST_F(variadic_tests, get)
     using join_t2 =
         typename tim::auto_tuple<lhs_t, tim::component_list<rhs_t, user_clock>>::type;
 
-    using comp_t0 = tim::remove_duplicates<join_t0>;
-    using comp_t1 = tim::remove_duplicates<join_t1>;
-    using comp_t2 = tim::remove_duplicates<join_t2>;
+    using comp_t0 = tim::remove_duplicates_t<join_t0>;
+    using comp_t1 = tim::remove_duplicates_t<join_t1>;
+    using comp_t2 = tim::remove_duplicates_t<join_t2>;
 
     using list_t0 = tim::component_list<lhs_l, rhs_l>;
     using list_t1 = tim::auto_list<lhs_l, rhs_l, user_clock>;

@@ -34,14 +34,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
-#include <fstream>
-#include <iomanip>
-#include <ios>
-#include <iostream>
-#include <string>
-
 #include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
 #include "timemory/general/source_location.hpp"
@@ -54,6 +46,14 @@
 #include "timemory/utility/serializer.hpp"
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/types.hpp"
+
+#include <cstdint>
+#include <cstdio>
+#include <fstream>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <string>
 
 //======================================================================================//
 
@@ -83,7 +83,7 @@ public:
 
     using data_type         = typename bundle_type::data_type;
     using impl_type         = typename bundle_type::impl_type;
-    using type_tuple        = typename bundle_type::type_tuple;
+    using tuple_type        = typename bundle_type::tuple_type;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
@@ -103,7 +103,7 @@ public:
     // used by gotcha
     using component_type   = component_list<Types...>;
     using auto_type        = auto_list<Types...>;
-    using type             = convert_t<type_tuple, component_list<>>;
+    using type             = convert_t<tuple_type, component_list<>>;
     using initializer_type = std::function<void(this_type&)>;
 
     // used by component hybrid

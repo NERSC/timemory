@@ -168,6 +168,8 @@ set(ARCH_INTERFACE_TARGET           timemory-arch)
 
 include(ArchConfig)
 
+add_cmake_defines(TIMEMORY_VEC VALUE)
+
 #----------------------------------------------------------------------------------------#
 # sanitizer
 #

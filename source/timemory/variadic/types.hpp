@@ -101,24 +101,30 @@ class auto_hybrid;
 //--------------------------------------------------------------------------------------//
 
 // these are variadic types used to bundle components together
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, auto_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, auto_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, auto_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, component_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, component_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, component_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, component_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, lightweight_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, std::tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, type_list, true_type, typename)
-TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, lightweight_tuple, true_type, typename)
 
 // there are timemory-specific variadic wrappers
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_hybrid, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, lightweight_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, type_list, false_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, std::tuple, false_type, typename)
 
 // tuple wrappers (stack-allocated components)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_stack_wrapper, auto_tuple, true_type, typename)
@@ -130,18 +136,61 @@ TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_heap_wrapper, auto_list, true_type, typename
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_heap_wrapper, component_list, true_type, typename)
 
 // hybrid wrappers (stack- and heap- allocated components)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, auto_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, component_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_hybrid_wrapper, component_hybrid, true_type, typename)
 
 // there are timemory-specific variadic wrappers
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_bundle, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_hybrid, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, lightweight_tuple, true_type, typename)
 
+// {auto,component}_bundle are empty if one template is supplied
+TIMEMORY_DEFINE_TEMPLATE_CONCEPT(is_empty, auto_bundle, true_type, typename)
+TIMEMORY_DEFINE_TEMPLATE_CONCEPT(is_empty, component_bundle, true_type, typename)
+
+//======================================================================================//
+
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(tuple_type, std::tuple, typename, std::tuple<T...>)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(auto_type, std::tuple, typename,
+                                      auto_bundle<api::native_tag, T...>)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(component_type, std::tuple, typename,
+                                      component_bundle<api::native_tag, T...>)
+
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(tuple_type, type_list, typename, std::tuple<T...>)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(auto_type, type_list, typename,
+                                      auto_bundle<api::native_tag, T...>)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(component_type, type_list, typename,
+                                      component_bundle<api::native_tag, T...>)
+
+//======================================================================================//
+
+namespace tim
+{
+namespace concepts
+{
+template <typename T, typename... Types>
+struct tuple_type<component_bundle<T, Types...>>
+{
+    using type = std::tuple<Types...>;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Types>
+struct tuple_type<auto_bundle<T, Types...>>
+{
+    using type = std::tuple<Types...>;
+};
+}  // namespace concepts
+}  // namespace tim
 //======================================================================================//
 
 namespace tim
@@ -548,8 +597,8 @@ struct concat<component_hybrid<Tup, Lst>, component_tuple<Rhs...>, Tail...>
     using type =
         typename concat<component_hybrid<typename concat<Tup, Rhs...>::type, Lst>,
                         Tail...>::type;
-    using tuple_type = typename type::tuple_type;
-    using list_type  = typename type::list_type;
+    using tuple_type = typename type::tuple_t;
+    using list_type  = typename type::list_t;
 };
 
 template <typename Tup, typename Lst, typename... Rhs, typename... Tail>
@@ -558,8 +607,8 @@ struct concat<component_hybrid<Tup, Lst>, component_list<Rhs...>, Tail...>
     using type =
         typename concat<component_hybrid<Tup, typename concat<Lst, Rhs...>::type>,
                         Tail...>::type;
-    using tuple_type = typename type::tuple_type;
-    using list_type  = typename type::list_type;
+    using tuple_type = typename type::tuple_t;
+    using list_type  = typename type::list_t;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -571,8 +620,8 @@ struct concat<auto_hybrid<Tup, Lst>, component_tuple<Rhs...>, Tail...>
 {
     using type = typename concat<auto_hybrid<typename concat<Tup, Rhs...>::type, Lst>,
                                  Tail...>::type;
-    using tuple_type = typename type::tuple_type;
-    using list_type  = typename type::list_type;
+    using tuple_type = typename type::tuple_t;
+    using list_type  = typename type::list_t;
 };
 
 template <typename Tup, typename Lst, typename... Rhs, typename... Tail>
@@ -580,8 +629,8 @@ struct concat<auto_hybrid<Tup, Lst>, component_list<Rhs...>, Tail...>
 {
     using type = typename concat<auto_hybrid<Tup, typename concat<Lst, Rhs...>::type>,
                                  Tail...>::type;
-    using tuple_type = typename type::tuple_type;
-    using list_type  = typename type::list_type;
+    using tuple_type = typename type::tuple_t;
+    using list_type  = typename type::list_t;
 };
 
 }  // namespace impl

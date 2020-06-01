@@ -60,6 +60,12 @@
         {                                                                                \
         struct NAME;                                                                     \
         }                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct is_component<component::NAME> : true_type                                 \
+        {};                                                                              \
+        }                                                                                \
         }
 #endif
 //

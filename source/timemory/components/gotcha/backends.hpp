@@ -325,7 +325,7 @@ struct gotcha_differentiator
     }
 
     template <typename Up>
-    static constexpr bool test_is_component(...)
+    static constexpr bool test_is_component(long)
     {
         return false;
     }

@@ -188,7 +188,8 @@ template <typename In, typename... InTail, typename... Out>
 struct remove_duplicates<type_list<In, InTail...>, type_list<Out...>>
 {
     using type = conditional_t<
-        !(is_one_of<In, type_list<Out...>>::value),
+        !(is_one_of<std::remove_pointer_t<In>,
+                    type_list<std::remove_pointer_t<Out>...>>::value),
         typename remove_duplicates<type_list<InTail...>, type_list<Out..., In>>::type,
         typename remove_duplicates<type_list<InTail...>, type_list<Out...>>::type>;
 };
@@ -342,10 +343,10 @@ using is_one_of_integral = typename impl::is_one_of_integral<Types>;
 //======================================================================================//
 
 template <typename T>
-using remove_duplicates = typename impl::unique<T, type_list<>>::type;
+using remove_duplicates_t = typename impl::unique<T, type_list<>>::type;
 
 template <typename T>
-using unique = typename impl::unique<T, type_list<>>::type;
+using unique_t = typename impl::unique<T, type_list<>>::type;
 
 //======================================================================================//
 //

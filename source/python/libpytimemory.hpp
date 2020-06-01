@@ -79,10 +79,11 @@ using namespace tim::component;
 using pybundle_t   = tim::component::user_global_bundle;
 using auto_timer_t = typename tim::auto_timer::type;
 using auto_usage_t =
-    tim::auto_tuple_t<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
-                      voluntary_context_switch, priority_context_switch>;
+    tim::auto_bundle_t<TIMEMORY_API, page_rss, peak_rss, num_minor_page_faults,
+                       num_major_page_faults, voluntary_context_switch,
+                       priority_context_switch>;
 using auto_list_t        = tim::available_auto_list_t;
-using component_bundle_t = tim::component_tuple<pybundle_t>;
+using component_bundle_t = tim::component_bundle<TIMEMORY_API, pybundle_t>;
 using tim_timer_t        = typename auto_timer_t::component_type;
 using rss_usage_t        = typename auto_usage_t::component_type;
 using component_list_t   = typename auto_list_t::component_type;
