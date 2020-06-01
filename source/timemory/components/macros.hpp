@@ -313,6 +313,19 @@
 
 //--------------------------------------------------------------------------------------//
 
+#if !defined(TIMEMORY_STORAGE_INITIALIZER)
+#    define TIMEMORY_STORAGE_INITIALIZER(TYPE, VAR)                                      \
+        namespace                                                                        \
+        {                                                                                \
+        using namespace tim::component;                                                  \
+        namespace component = tim::component;                                            \
+        tim::storage_initializer storage_initializer__##VAR =                            \
+            tim::storage_initializer::get<TYPE>();                                       \
+        }
+#endif
+
+//--------------------------------------------------------------------------------------//
+
 #if !defined(_WINDOWS)
 //
 //--------------------------------------------------------------------------------------//

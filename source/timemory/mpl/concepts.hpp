@@ -279,7 +279,7 @@ TIMEMORY_CONCEPT_ALIAS(is_empty_t, is_empty)
 TIMEMORY_CONCEPT_ALIAS(is_variadic_t, is_variadic)
 TIMEMORY_CONCEPT_ALIAS(is_wrapper_t, is_wrapper)
 TIMEMORY_CONCEPT_ALIAS(is_stack_wrapper_t, is_stack_wrapper)
-TIMEMORY_CONCEPT_ALIAS(is_heap_wrapper_t, is_heap_wrapper_t)
+TIMEMORY_CONCEPT_ALIAS(is_heap_wrapper_t, is_heap_wrapper)
 
 TIMEMORY_CONCEPT_ALIAS(tuple_type_t, tuple_type)
 TIMEMORY_CONCEPT_ALIAS(auto_type_t, auto_type)

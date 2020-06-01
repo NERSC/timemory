@@ -34,7 +34,6 @@
 using namespace tim::component;
 
 TIMEMORY_DECLARE_COMPONENT(mpi_comm_data)
-TIMEMORY_DECLARE_COMPONENT(mpi_noop)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -144,9 +143,7 @@ struct mpi_comm_data : base<mpi_comm_data, void>
     void add(const std::string& _name, data_type value)
     {
         tracker_t _t(_name);
-        _t.start();
         _t.store(std::plus<data_type>{}, value);
-        _t.stop();
     }
 
     // MPI_Send
@@ -276,4 +273,7 @@ struct mpi_comm_data : base<mpi_comm_data, void>
 }  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
+TIMEMORY_STORAGE_INITIALIZER(mpi_comm_data, mpi_comm_data)
+TIMEMORY_STORAGE_INITIALIZER(mpi_data_tracker_t, mpi_data_tracker_t)
 //
+//--------------------------------------------------------------------------------------//
