@@ -189,8 +189,9 @@ struct dummy
 //
 #    include "timemory/containers/auto_timer.hpp"        // 3.8
 #    include "timemory/containers/auto_user_bundle.hpp"  // 5.5
-#    include "timemory/variadic/auto_hybrid.hpp"         // 9.7
-#    include "timemory/variadic/auto_list.hpp"           // 5.6
+#    include "timemory/variadic/auto_bundle.hpp"
+#    include "timemory/variadic/auto_hybrid.hpp"  // 9.7
+#    include "timemory/variadic/auto_list.hpp"    // 5.6
 #    include "timemory/variadic/auto_tuple.hpp"
 //
 #    include "timemory/types.hpp"                  // 3.5

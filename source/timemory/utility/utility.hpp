@@ -74,13 +74,13 @@ using pid_t = int;
 #if !defined(DEFAULT_UMASK)
 #    define DEFAULT_UMASK 0777
 #endif
-
+/*
 #if(_POSIX_C_SOURCE >= 2) || defined(_BSD_SOURCE) || defined(_SVID_SOURCE)
 #    if !defined(TIMEMORY_USE_POPEN)
 #        define TIMEMORY_USE_POPEN
 #    endif
 #endif
-
+*/
 //--------------------------------------------------------------------------------------//
 
 // stringify some macro -- uses TIMEMORY_STRINGIZE2 which does the actual

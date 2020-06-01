@@ -25,7 +25,7 @@
 
 import os
 import sys
-from . import general
+from . import utils
 
 
 __all__ = ["execute"]
@@ -53,10 +53,10 @@ def execute(cmd, prefix="cpu.prof",
         _libpath = None
         for libname in ("profiler", "tcmalloc_and_profiler"):
             if _libpath is None:
-                _libpath = general.find_library_path(libname)
+                _libpath = utils.find_library_path(libname)
         if _libpath is None:
             raise RuntimeError("Preload failed. Cannot find libprofiler")
-        general.add_preload(_libpath)
+        utils.add_preload(_libpath)
 
     exe = os.path.basename(cmd[0])
     prefix += ".{}".format(exe)
@@ -71,7 +71,9 @@ def execute(cmd, prefix="cpu.prof",
 
     os.environ["CPUPROFILE"] = "{}".format(fname)
 
-    general.execute(cmd, "{}.log".format(fname))
+    print("exeuting: {}, exe: {}".format(cmd, exe))
+    utils.execute(cmd, "{}.log".format(fname))
 
-    general.post_process(exe, fname, image_type, echo_dart,
-                         libs, args, generate, dot_args)
+    utils.post_process(cmd[0], fname, image_type, echo_dart,
+                       libs, args, generate, dot_args)
+    

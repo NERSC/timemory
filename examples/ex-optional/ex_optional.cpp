@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
@@ -42,7 +43,7 @@ template <typename Tp> using vector_t = std::vector<Tp>;
 
 namespace impl
 {
-static long fibonacci(long n);
+long fibonacci(long n);
 }
 long fibonacci(long n);
 void status();
@@ -63,8 +64,8 @@ int main(int argc, char** argv)
 {
     // setenv when available
 #if(_POSIX_C_SOURCE >= 200112L) || defined(_BSD_SOURCE) || defined(_UNIX)
-    setenv("TIMEMORY_TIMING_UNITS", "ms", 0);
-    setenv("TIMEMORY_MEMORY_UNITS", "kb", 0);
+    setenv("TIMEMORY_TIMING_UNITS", "sec", 0);
+    setenv("TIMEMORY_MEMORY_UNITS", "mb", 0);
     setenv("TIMEMORY_TIMING_WIDTH", "14", 0);
     setenv("TIMEMORY_MEMORY_WIDTH", "12", 0);
     setenv("TIMEMORY_TIMING_PRECISION", "6", 0);
@@ -112,8 +113,7 @@ int main(int argc, char** argv)
     {
         auto itr = fibvalues.at(i);
         auto ret = fibonacci(itr);
-        write(itr, ret);
-        ret_sum += ret;
+        ret_sum += pow(ret, 2);
     }
 
     std::vector<long> ret_reduce;
@@ -159,7 +159,9 @@ long impl::fibonacci(long n)
 long fibonacci(long n)
 {
     TIMEMORY_BASIC_MARKER(auto_hybrid_t, "(", n, ")");
-    return impl::fibonacci(n);
+    auto ret = impl::fibonacci(n);
+    write(n, ret);
+    return ret;
 }
 
 void write(long nfib, long answer)
@@ -191,4 +193,5 @@ void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
 #else
     std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
 #endif
+    for(auto& itr : recvbuf) itr = log(itr);
 }

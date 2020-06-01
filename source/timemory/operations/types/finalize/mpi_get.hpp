@@ -127,6 +127,16 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
         return ret;
     };
 
+    //------------------------------------------------------------------------------//
+    //  Calculate the total number of measurement records
+    //
+    auto get_num_records = [&](const auto& _inp) {
+        int _sz = 0;
+        for(const auto& itr : _inp)
+            _sz += itr.size();
+        return _sz;
+    };
+
     results = distrib_type(mpi_size);
 
     auto ret     = data.get();
@@ -134,6 +144,9 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
 
     if(mpi_rank == 0)
     {
+        //
+        //  The root rank receives data from all non-root ranks and reports all data
+        //
         for(int i = 1; i < mpi_size; ++i)
         {
             std::string str;
@@ -148,6 +161,9 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
     }
     else
     {
+        //
+        //  The non-root rank sends its data to the root rank and only reports own data
+        //
         if(settings::debug())
             printf("[SEND: %i]> starting\n", mpi_rank);
         mpi::send(str_ret, 0, 0, comm);
@@ -155,6 +171,122 @@ mpi_get<Type, true>::mpi_get(storage_type& data, distrib_type& results)
             printf("[SEND: %i]> completed\n", mpi_rank);
         results = distrib_type(1, ret);
     }
+
+    // collapse into a single result
+    if(settings::collapse_processes() && mpi_rank == 0)
+    {
+        auto init_size = get_num_records(results);
+        if(settings::debug() || settings::verbose() > 3)
+        {
+            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks",
+                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                       mpi_rank, init_size, mpi_size);
+        }
+
+        auto _collapsed = distrib_type{};
+        // so we can pop off back
+        std::reverse(results.begin(), results.end());
+        while(!results.empty())
+        {
+            if(_collapsed.empty())
+                _collapsed.emplace_back(results.back());
+            else
+                operation::finalize::merge<Type, true>(_collapsed.front(),
+                                                       results.back());
+            results.pop_back();
+        }
+
+        // assign results to collapsed entry
+        results = _collapsed;
+
+        if(settings::debug() || settings::verbose() > 3)
+        {
+            auto fini_size = get_num_records(results);
+            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
+                       "from %i ranks",
+                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                       mpi_rank, init_size, fini_size, mpi_size);
+        }
+    }
+    else if(settings::node_count() > 0 && mpi_rank == 0)
+    {
+        // calculate some size parameters
+        int32_t nmod  = mpi_size % settings::node_count();
+        int32_t bins  = mpi_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
+        int32_t bsize = mpi_size / bins;
+
+        if(settings::debug() || settings::verbose() > 3)
+            PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, mpi_size = %i, bins = "
+                       "%i, bin size = %i",
+                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                       mpi_rank, settings::node_count(), mpi_size, bins, bsize);
+
+        // generate a map of the ranks to the node ids
+        int32_t                              ncnt = 0;  // current count
+        int32_t                              midx = 0;  // current bin map index
+        std::map<int32_t, std::set<int32_t>> binmap;
+        for(int32_t i = 0; i < mpi_size; ++i)
+        {
+            if(settings::debug())
+                PRINT_HERE("[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
+                           demangle<mpi_get<Type, true>>().c_str(),
+                           (int) process::get_id(), mpi_rank, i, midx);
+
+            binmap[midx].insert(i);
+            // check to see if we reached the bin size
+            if(++ncnt == bsize)
+            {
+                // set counter to zero and advance the node
+                ncnt = 0;
+                ++midx;
+            }
+        }
+
+        auto init_size = get_num_records(results);
+        if(settings::debug() || settings::verbose() > 3)
+            PRINT_HERE(
+                "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into %i bins",
+                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                mpi_rank, init_size, mpi_size, (int) binmap.size());
+
+        assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
+
+        // the collapsed data
+        auto _collapsed = distrib_type(binmap.size());
+        // loop over the node indexes
+        for(const auto& itr : binmap)
+        {
+            // target the node index
+            auto& _dst = _collapsed.at(itr.first);
+            for(const auto& bitr : itr.second)
+            {
+                // combine the node index entry with all of the ranks in that node
+                auto& _src = results.at(bitr);
+                operation::finalize::merge<Type, true>(_dst, _src);
+            }
+        }
+
+        // assign results to collapsed entry
+        results = _collapsed;
+
+        if(settings::debug() || settings::verbose() > 3)
+        {
+            auto fini_size = get_num_records(results);
+            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
+                       "and %i bins",
+                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                       mpi_rank, init_size, fini_size, (int) results.size());
+        }
+    }
+
+    if(settings::debug() || settings::verbose() > 1)
+    {
+        auto ret_size = get_num_records(results);
+        PRINT_HERE("[%s][pid=%i]> %i total records on rank %i of %i",
+                   demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                   ret_size, mpi_rank, mpi_size);
+    }
+
 #endif
 }
 //

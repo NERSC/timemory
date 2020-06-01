@@ -22,9 +22,7 @@ run-verbose apt-get install -y software-properties-common wget curl
 # test
 run-verbose add-apt-repository -u -y ppa:ubuntu-toolchain-r/test
 # cmake
-wget -O kitware-archive-latest.asc https://apt.kitware.com/keys/kitware-archive-latest.asc
-apt-key add kitware-archive-latest.asc
-rm -f kitware-archive-latest.asc
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | apt-key add -
 apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main"
 # llvm
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -

@@ -39,7 +39,7 @@ if(TIMEMORY_BUILD_MPIP_LIBRARY AND (NOT TARGET timemory-cxx-shared OR NOT TIMEMO
     set(TIMEMORY_BUILD_MPIP_LIBRARY OFF CACHE BOOL "Build the mpiP library" FORCE)
 endif()
 
-if(TIMEMORY_BUILD_OMPT_LIBRARY AND (NOT TARGET timemory-cxx-shared OR NOT TIMEMORY_USE_OMPT))
+if(TIMEMORY_BUILD_OMPT_LIBRARY AND NOT TIMEMORY_USE_OMPT)
     message(AUTHOR_WARNING "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
     set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
 endif()
@@ -52,29 +52,35 @@ endif()
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-avail tool
 #
+message(STATUS "Adding source/tools/timemory-avail...")
 add_subdirectory(timemory-avail)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
+message(STATUS "Adding source/tools/timem...")
 add_subdirectory(timem)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-run
 #
+message(STATUS "Adding source/tools/timemory-run...")
 add_subdirectory(timemory-run)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-mpip library
 #
+message(STATUS "Adding source/tools/timemory-mpip...")
 add_subdirectory(timemory-mpip)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-ompt library
 #
+message(STATUS "Adding source/tools/timemory-ompt...")
 add_subdirectory(timemory-ompt)
 
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-connector libraries for kokkos
 #
+message(STATUS "Adding source/tools/kokkos-connector...")
 add_subdirectory(kokkos-connector)

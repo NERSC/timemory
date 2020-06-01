@@ -66,6 +66,12 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
+class lightweight_tuple;
+
+template <typename ApiT, typename... Types>
+class component_bundle;
+
+template <typename... Types>
 class component_tuple;
 
 template <typename... Types>
@@ -73,6 +79,9 @@ class component_list;
 
 template <typename TupleT, typename ListT>
 class component_hybrid;
+
+template <typename ApiT, typename... Types>
+class auto_bundle;
 
 template <typename... Types>
 class auto_tuple;
@@ -100,6 +109,7 @@ TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, component_list, true_type, typenam
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, component_hybrid, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, std::tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, type_list, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_variadic, lightweight_tuple, true_type, typename)
 
 // there are timemory-specific variadic wrappers
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_tuple, true_type, typename)
@@ -108,10 +118,12 @@ TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, auto_hybrid, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, component_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_wrapper, lightweight_tuple, true_type, typename)
 
 // tuple wrappers (stack-allocated components)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_stack_wrapper, auto_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_stack_wrapper, component_tuple, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_stack_wrapper, lightweight_tuple, true_type, typename)
 
 // list wrappers (heap-allocated components)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_heap_wrapper, auto_list, true_type, typename)
@@ -128,6 +140,7 @@ TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_auto_wrapper, auto_hybrid, true_type, typena
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_tuple, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_list, true_type, typename)
 TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, component_hybrid, true_type, typename)
+TIMEMORY_DEFINE_VARIADIC_CONCEPT(is_comp_wrapper, lightweight_tuple, true_type, typename)
 
 //======================================================================================//
 

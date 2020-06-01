@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-''' @file gperf/__init__.py
+''' @file timemory/gperftools/__init__.py
 Plotting routines for gperf
 '''
 
@@ -46,13 +46,13 @@ __status__ = "Development"
 
 
 try:
-    from . import general
+    from .utils import *
+    from . import utils
     from . import cpu_profiler
     from . import heap_profiler
 
-    from .general import *
-
-    #__all__ = ['plot_roofline']
+    # __all__ = ['utils', 'cpu_profiler', 'heap_profiler']
+    
 except Exception as e:
     sys.stderr.write("{}\n".format(e))
-    warnings.warn("timemory.gperf is disabled")
+    warnings.warn("timemory.gperftools is disabled")

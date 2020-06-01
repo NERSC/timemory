@@ -10,5 +10,4 @@ build_intermediate_library(
     FOLDER              components
     HEADERS             ${header_files}
     SOURCES             ${source_files}
-    DEPENDS             timemory-headers
     PROPERTY_DEPENDS    GLOBAL)

@@ -152,6 +152,9 @@ struct result;
 //
 namespace crtp
 {
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \class tim::crtp::base
 /// \brief a generic type for prioritizing a function call to the base class over
 /// derived functions, e.g. void start(crtp::base, Args&&... args) { start(args...); }
@@ -161,6 +164,23 @@ struct base
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace crtp
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace mpl
+{
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class tim::mpl::lightweight
+/// \brief a generic type for indicating that function call or constructor should be
+/// as lightweight as possible.
+struct lightweight
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace mpl
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -292,6 +312,8 @@ struct config : public data_type
         return *this;
     }
 
+    using data_type::set;
+
     template <typename T, std::enable_if_t<(std::is_same<T, tree>::value ||
                                             std::is_same<T, flat>::value ||
                                             std::is_same<T, timeline>::value),
@@ -395,25 +417,28 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 inline const config
-operator+(config _lhs, tree _rhs)
+operator+(config _lhs, tree)
 {
-    return (_lhs += _rhs);
+    _lhs.set(tree::value, true);
+    return _lhs;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 inline const config
-operator+(config _lhs, flat _rhs)
+operator+(config _lhs, flat)
 {
-    return (_lhs += _rhs);
+    _lhs.set(flat::value, true);
+    return _lhs;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 inline const config
-operator+(config _lhs, timeline _rhs)
+operator+(config _lhs, timeline)
 {
-    return (_lhs += _rhs);
+    _lhs.set(timeline::value, true);
+    return _lhs;
 }
 //
 //--------------------------------------------------------------------------------------//

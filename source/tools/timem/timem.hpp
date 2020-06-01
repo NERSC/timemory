@@ -26,7 +26,9 @@
 
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
+#define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
+#include "timemory/sampling/sampler.hpp"
 #include "timemory/timemory.hpp"
 
 // C includes
@@ -59,14 +61,6 @@ extern "C"
 #include <iostream>
 #include <thread>
 #include <vector>
-
-//--------------------------------------------------------------------------------------//
-
-#if defined(__GNUC__) || defined(__clang__)
-#    define declare_attribute(attr) __attribute__((attr))
-#elif defined(_WIN32)
-#    define declare_attribute(attr) __declspec(attr)
-#endif
 
 template <typename Tp>
 using vector_t = std::vector<Tp>;
@@ -351,33 +345,10 @@ papi_array_t::get_display() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-class timem_tuple : public component_tuple<Types...>
+class timem_tuple : public lightweight_tuple<Types...>
 {
 public:
-    using base_type = component_tuple<Types...>;
-
-public:
-    explicit timem_tuple(const string_t& key)
-    : base_type(key, true, true)
-    , printed(false)
-    {}
-
-    ~timem_tuple()
-    {
-        if(!printed)
-        {
-            component_tuple<Types...>::stop();
-            std::cerr << *this << std::endl;
-        }
-    }
-
-    using base_type::get;
-    using base_type::get_labeled;
-    using base_type::m_data;
-    using base_type::record;
-    using base_type::reset;
-    using base_type::start;
-    using base_type::stop;
+    using base_type = lightweight_tuple<Types...>;
     using apply_v   = typename base_type::apply_v;
     using impl_type = typename base_type::impl_type;
 
@@ -394,11 +365,32 @@ public:
         using type = Tuple<operation::timem_sample<T, trait::sampler<T>::value>...>;
     };
 
+    template <typename T>
+    using opsample_t = typename opsample<T>::type;
+
+public:
+    timem_tuple()
+    : base_type()
+    {}
+
+    explicit timem_tuple(const string_t& key)
+    : base_type(key)
+    {}
+
+    ~timem_tuple() {}
+
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void start() { base_type::start(); }
+    void stop() { base_type::stop(); }
+    void reset() { base_type::reset(); }
+    auto get() { return base_type::get(); }
+    auto get_labeled() { return base_type::get_labeled(); }
     void sample()
     {
         base_type::sample();
-        using apply_sample_t = typename opsample<impl_type>::type;
-        apply<void>::access<apply_sample_t>(this->m_data);
+        apply<void>::access<opsample_t<impl_type>>(this->m_data);
     }
 
     //
@@ -406,7 +398,6 @@ public:
     //
     friend std::ostream& operator<<(std::ostream& os, const timem_tuple<Types...>& obj)
     {
-        obj.printed = true;
         std::stringstream ssp;
         std::stringstream ssd;
         auto&&            data  = obj.m_data;
@@ -422,8 +413,14 @@ public:
         return os;
     }
 
-    mutable bool printed = false;
+protected:
+    using base_type::m_data;
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+using timem_tuple_t = convert_t<available_t<type_list<Types...>>, timem_tuple<>>;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -433,49 +430,80 @@ public:
 //
 #if !defined(TIMEM_BUNDLER)
 #    define TIMEM_BUNDLER                                                                \
-        tim::timem_tuple<wall_clock, user_clock, system_clock, cpu_clock, cpu_util,      \
-                         peak_rss, page_rss, virtual_memory, num_major_page_faults,      \
-                         num_minor_page_faults, priority_context_switch,                 \
-                         voluntary_context_switch, read_bytes, written_bytes,            \
-                         papi_array_t>
+        tim::timem_tuple_t<wall_clock, user_clock, system_clock, cpu_clock, cpu_util,    \
+                           peak_rss, page_rss, virtual_memory, num_major_page_faults,    \
+                           num_minor_page_faults, priority_context_switch,               \
+                           voluntary_context_switch, read_bytes, written_bytes,          \
+                           papi_array_t>
 #endif
 
 using comp_tuple_t = TIMEM_BUNDLER;
+using sampler_t    = tim::sampling::sampler<TIMEM_BUNDLER, 1>;
 
 //--------------------------------------------------------------------------------------//
 
-inline comp_tuple_t*&
+inline sampler_t*&
+get_sampler()
+{
+    static sampler_t* _instance = nullptr;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline comp_tuple_t*
 get_measure()
 {
-    static comp_tuple_t* _instance = nullptr;
+    return get_sampler()->get_samplers().at(0)->get_last();
+}
+
+//--------------------------------------------------------------------------------------//
+
+struct timem_config
+{
+    bool        use_shell    = tim::get_env("TIMEM_USE_SHELL", false);
+    bool        debug        = tim::get_env("TIMEM_DEBUG", false);
+    int         verbose      = tim::get_env("TIMEM_VERBOSE", 0);
+    std::string shell        = tim::get_env<std::string>("SHELL", getusershell());
+    std::string shell_flags  = tim::get_env<std::string>("TIMEM_USE_SHELL_FLAGS", "-i");
+    double      sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 2.0);
+    double      sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 0.001);
+    pid_t       master_pid   = getpid();
+    pid_t       worker_pid   = getpid();
+    std::string command      = "";
+};
+
+//--------------------------------------------------------------------------------------//
+
+inline timem_config&
+get_config()
+{
+    static timem_config _instance;
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline bool
+inline bool&
 use_shell()
 {
-    static bool _instance = tim::get_env("TIMEM_USE_SHELL", false);
-    return _instance;
+    return get_config().use_shell;
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline bool
+inline bool&
 debug()
 {
-    static bool _instance = tim::get_env("TIMEM_DEBUG", false);
-    return _instance;
+    return get_config().debug;
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline int
+inline int&
 verbose()
 {
-    static int _instance = tim::get_env("TIMEM_VERBOSE", 0);
-    return _instance;
+    return get_config().verbose;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -483,8 +511,7 @@ verbose()
 inline std::string&
 command()
 {
-    static std::string _instance;
-    return _instance;
+    return get_config().command;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -492,8 +519,7 @@ command()
 inline pid_t&
 master_pid()
 {
-    static pid_t _instance = getpid();
-    return _instance;
+    return get_config().master_pid;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -501,26 +527,7 @@ master_pid()
 inline pid_t&
 worker_pid()
 {
-    static pid_t _instance = getpid();
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline struct sigaction&
-timem_signal_action()
-{
-    static struct sigaction _instance;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline struct itimerval&
-timem_itimer()
-{
-    static struct itimerval _instance;
-    return _instance;
+    return get_config().worker_pid;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -549,99 +556,6 @@ explain(int ret, const char* pathname, char** argv)
             std::cerr << argv[n++] << " ";
         std::cerr << std::endl;
     }
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline int
-diagnose_status(int status, bool log_msg = true)
-{
-    if(verbose() > 2 || debug())
-        fprintf(stderr, "[%i]> program (PID: %i) diagnosing status %i...\n",
-                (int) master_pid(), (int) worker_pid(), status);
-
-    if(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS)
-    {
-        if(verbose() > 2 || (debug() && verbose() > 0))
-            fprintf(stderr, "[%i]> program (PID: %i) terminated normally with %i\n",
-                    (int) master_pid(), (int) worker_pid(), WEXITSTATUS(status));
-        return 0;
-    }
-
-    int ret = WEXITSTATUS(status);
-
-    if(WIFSTOPPED(status))
-    {
-        if(log_msg)
-        {
-            int sig = WSTOPSIG(status);
-            fprintf(stderr, "[%i]> program (PID: %i) stopped with signal %i: %i\n",
-                    (int) master_pid(), (int) worker_pid(), sig, ret);
-        }
-    }
-    else if(WCOREDUMP(status))
-    {
-        if(log_msg)
-            fprintf(stderr,
-                    "[%i]> program (PID: %i)  terminated and produced a core dump: %i\n",
-                    (int) master_pid(), (int) worker_pid(), ret);
-    }
-    else if(WIFSIGNALED(status))
-    {
-        if(log_msg)
-            fprintf(stderr,
-                    "[%i]> program (PID: %i)  terminated because it received a signal "
-                    "(%i) that was not handled: %i\n",
-                    (int) master_pid(), (int) worker_pid(), WTERMSIG(status), ret);
-        ret = WTERMSIG(status);
-    }
-    else if(WIFEXITED(status) && WEXITSTATUS(status))
-    {
-        if(log_msg)
-        {
-            if(ret == 127)
-                fprintf(stderr, "[%i]> execv failed\n", (int) master_pid());
-            else
-                fprintf(
-                    stderr,
-                    "[%i]> program (PID: %i)  terminated with a non-zero status: %i\n",
-                    (int) master_pid(), (int) worker_pid(), ret);
-        }
-    }
-    else
-    {
-        if(log_msg)
-            fprintf(stderr, "[%i]> program (PID: %i)  terminated abnormally.\n",
-                    (int) master_pid(), (int) worker_pid());
-        ret = -1;
-    }
-
-    return ret;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline int
-waitpid_eintr(int& status)
-{
-    pid_t pid    = 0;
-    int   errval = 0;
-    while((pid = waitpid(WAIT_ANY, &status, 0)) == -1)
-    {
-        errval = errno;
-        if(errno != errval)
-            perror("Unexpected error in waitpid_eitr");
-
-        int ret = diagnose_status(status, debug());
-
-        if(debug())
-            fprintf(stderr, "[%i]> return code: %i\n", pid, ret);
-
-        if(errval == EINTR)
-            continue;
-        break;
-    }
-    return errval;
 }
 
 //--------------------------------------------------------------------------------------//

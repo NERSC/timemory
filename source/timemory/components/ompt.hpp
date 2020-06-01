@@ -40,32 +40,33 @@
 #    include "timemory/components/ompt/tool.hpp"
 #    include "timemory/components/ompt/types.hpp"
 //
-//#    include "timemory/extern.hpp"
-//
 //--------------------------------------------------------------------------------------//
 
 extern "C" int
-ompt_initialize(ompt_function_lookup_t lookup, ompt_data_t* tool_data)
+ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
+                ompt_data_t* tool_data)
 {
-    tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, tool_data);
+    printf("[timemory]> OpenMP-tools configuring for initial device %i\n\n",
+           initial_device_num);
+    tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, initial_device_num, tool_data);
     return 1;  // success
 }
 
 extern "C" void
 ompt_finalize(ompt_data_t* tool_data)
 {
-    printf("\n");
+    printf("\n[timemory]> OpenMP-tools finalized\n\n");
     tim::consume_parameters(tool_data);
 }
 
 extern "C" ompt_start_tool_result_t*
 ompt_start_tool(unsigned int omp_version, const char* runtime_version)
 {
-    printf("\n[timemory]> OpenMP version: %u, runtime version: %s\n\n", omp_version,
+    printf("\n[timemory]> OpenMP version: %u, runtime version: %s\n", omp_version,
            runtime_version);
     static auto data =
-        ompt_start_tool_result_t{ &ompt_initialize, &ompt_finalize, { 0 } };
-    return (ompt_start_tool_result_t*) &data;
+        new ompt_start_tool_result_t{ &ompt_initialize, &ompt_finalize, { 0 } };
+    return (ompt_start_tool_result_t*) data;
 }
 
 //--------------------------------------------------------------------------------------//

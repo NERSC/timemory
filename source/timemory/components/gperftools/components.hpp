@@ -54,8 +54,11 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "gperftools_cpu_profiler"; }
-    static std::string description() { return "gperftools cpu profiler"; }
-    static value_type  record() {}
+    static std::string description()
+    {
+        return "Control switch for gperftools CPU profiler";
+    }
+    static value_type record() {}
 
     static void thread_init(storage_type*) { gperf::cpu::register_thread(); }
 
@@ -125,8 +128,11 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "gperftools_heap_profiler"; }
-    static std::string description() { return "gperftools heap profiler"; }
-    static value_type  record() {}
+    static std::string description()
+    {
+        return "Control switch for the gperftools heap profiler";
+    }
+    static value_type record() {}
 
     static void global_finalize(storage_type*)
     {

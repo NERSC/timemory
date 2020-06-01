@@ -138,7 +138,7 @@ manager::~manager()
 #    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_last && settings::banner())
     {
-        printf("\n\n#=--------------------- tim::manager destroyed "
+        printf("\n\n#---------------------- tim::manager destroyed "
                "[rank=%i][id=%i][pid=%i] "
                "----------------------#\n",
                m_rank, m_instance_count, process::get_id());
@@ -204,6 +204,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::finalize()
 {
     m_is_finalizing = true;
+    m_rank          = std::max<int32_t>(m_rank, dmp::rank());
     if(f_debug())
         PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
                    (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
@@ -239,7 +240,7 @@ manager::finalize()
 
     m_is_finalizing = false;
 
-    if(m_instance_count == 0)
+    if(m_instance_count == 0 && m_rank == 0)
         write_metadata("manager::finalize");
 
     if(f_debug())
@@ -288,6 +289,7 @@ manager::update_metadata_prefix()
         return;
     auto _outp_prefix = _settings->get_output_prefix();
     m_metadata_prefix = _outp_prefix;
+    m_rank            = std::max<int32_t>(m_rank, dmp::rank());
 }
 //
 //----------------------------------------------------------------------------------//

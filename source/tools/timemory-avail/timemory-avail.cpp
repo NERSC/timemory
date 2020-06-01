@@ -54,6 +54,7 @@ char global_delim = '|';
 bool markdown     = false;
 bool alphabetical = false;
 bool all_info     = false;
+bool force_brief  = false;
 int  padding      = 4;
 
 //--------------------------------------------------------------------------------------//
@@ -90,8 +91,8 @@ struct get_availability
         }
 
         return info_type{ name, is_available,
-                          str_vec_t{ label, enum_type, id_type, ids_str, description,
-                                     data_type } };
+                          str_vec_t{ data_type, enum_type, id_type, ids_str, label,
+                                     description } };
     }
 
     explicit get_availability(info_type& _info) { _info = this_type::get_info(); }
@@ -277,6 +278,7 @@ main(int argc, char** argv)
         .count(0);
     parser.add_argument({ "-v", "--value" }, "Output the value type for the component")
         .count(0);
+    parser.add_argument({ "-b", "--brief" }, "Suppress availibility/value info").count(0);
     parser.add_argument({ "-S", "--settings" }, "Display the runtime settings").count(0);
     parser.add_argument({ "-C", "--components" }, "Only display the components data")
         .count(0);
@@ -313,9 +315,8 @@ main(int argc, char** argv)
     if(parser.exists("enum"))
         options[ENUM] = !options[ENUM];
 
-    std::cout << "parser.exists(enum) = " << std::boolalpha << parser.exists("enum")
-              << '\n';
-    std::cout << "parser.exists(e) = " << std::boolalpha << parser.exists("e") << '\n';
+    if(parser.exists("brief"))
+        force_brief = true;
 
     if(parser.exists("language-types"))
         options[LANG] = !options[LANG];
@@ -381,7 +382,7 @@ main(int argc, char** argv)
         write_settings_info(*os, { options[VAL], options[LANG], options[DESC] });
 
     if(include_hw_counters)
-        write_hw_counter_info(*os, { true, true, true, options[DESC] });
+        write_hw_counter_info(*os, { true, !force_brief, !options[DESC], options[DESC] });
 
     return 0;
 }
@@ -439,7 +440,7 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     using width_bool = std::array<bool, N + 2>;
 
     width_type _widths = width_type{ 40, 12, 20, 20, 20, 40, 20, 40 };
-    width_bool _wusing = width_bool{ true, true };
+    width_bool _wusing = width_bool{ true, !force_brief };
     for(size_t i = 0; i < options.size(); ++i)
         _wusing[i + 2] = options[i];
 
@@ -509,7 +510,8 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
 
     os << global_delim << ' ';
     write_entry(os, "COMPONENT", _widths.at(0) - 2, true, false);
-    write_entry(os, "AVAILABLE", _widths.at(1), true, false);
+    if(!force_brief)
+        write_entry(os, "AVAILABLE", _widths.at(1), true, false);
     for(size_t i = 0; i < fields.size(); ++i)
     {
         if(!options[i])
@@ -523,7 +525,8 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     {
         os << global_delim;
         write_entry(os, std::get<0>(itr), _widths.at(0) - 1, false, true);
-        write_entry(os, std::get<1>(itr), _widths.at(1), true, false);
+        if(!force_brief)
+            write_entry(os, std::get<1>(itr), _widths.at(1), true, false);
         for(size_t i = 0; i < std::get<2>(itr).size(); ++i)
         {
             if(!options[i])
@@ -565,7 +568,7 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
     settings::serialize_settings(settings_archive);
 
     width_type _widths = { 0, 0, 0, 0, 0 };
-    width_bool _wusing = { true, true, opts[0], opts[1], opts[2] };
+    width_bool _wusing = { true, !force_brief, opts[0], opts[1], opts[2] };
     width_bool _mark   = { false, false, false, true, false };
 
     if(alphabetical)

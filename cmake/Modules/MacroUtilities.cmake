@@ -138,13 +138,17 @@ FUNCTION(CREATE_EXECUTABLE)
 
     # parse args
     cmake_parse_arguments(EXE
-        "INSTALL"                    # options
+        "INSTALL;EXCLUDE_FROM_ALL"   # options
         "TARGET_NAME;"               # single value args
         "${multival_args}"           # multiple value args
         ${ARGN})
 
+    set(_EXCLUDE)
+    if(EXE_EXCLUDE_FROM_ALL)
+        set(_EXCLUDE EXCLUDE_FROM_ALL)
+    endif()
     # create library
-    add_executable(${EXE_TARGET_NAME} ${EXE_SOURCES} ${EXE_HEADERS})
+    add_executable(${EXE_TARGET_NAME} ${_EXCLUDE} ${EXE_SOURCES} ${EXE_HEADERS})
 
     # link library
     target_link_libraries(${EXE_TARGET_NAME} ${EXE_LINK_LIBRARIES})
@@ -171,8 +175,12 @@ ENDFUNCTION()
 # against the test.
 #
 FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
-    if(NOT TIMEMORY_BUILD_GOOGLE_TEST AND NOT TIMEMORY_BUILD_TESTING)
+    if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
         return()
+    endif()
+    set(_OPTS )
+    if(NOT TIMEMORY_BUILD_TESTING)
+        set(_OPTS EXCLUDE_FROM_ALL)
     endif()
     include(GoogleTest)
     # list of arguments taking multiple values
@@ -187,7 +195,7 @@ FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
-    CREATE_EXECUTABLE(
+    CREATE_EXECUTABLE(${_OPTS}
         TARGET_NAME     ${TEST_NAME}
         OUTPUT_NAME     ${TEST_NAME}
         SOURCES         ${TEST_SOURCES}
@@ -362,6 +370,44 @@ MACRO(ADD_INTERFACE_LIBRARY _TARGET)
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
     add_enabled_interface(${_TARGET})
 ENDMACRO()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                           handle empty interface
+#
+#----------------------------------------------------------------------------------------#
+
+FUNCTION(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
+    if(NOT TARGET ${_TARGET})
+        message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
+    endif()
+    if(NOT ${_TARGET} IN_LIST TIMEMORY_EMPTY_INTERFACE_LIBRARIES)
+        message(STATUS
+            "[interface] ${_PACKAGE} not found/enabled. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+        set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
+    endif()
+    add_disabled_interface(${_TARGET})
+endfunction()
+
+function(ADD_RPATH)
+    set(_DIRS)
+    foreach(_ARG ${ARGN})
+    if(EXISTS "${_ARG}" AND IS_DIRECTORY "${_ARG}")
+        list(APPEND _DIRS "${_ARG}")
+    endif()
+        get_filename_component(_DIR "${_ARG}" DIRECTORY)
+    if(EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}")
+        list(APPEND _DIRS "${_DIR}")
+    endif()
+    endforeach()
+    if(_DIRS)
+        list(REMOVE_DUPLICATES _DIRS)
+        string(REPLACE ";" ":" _RPATH "${_DIRS}")
+        # message(STATUS "\n\tRPATH additions: ${_RPATH}\n")
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${_RPATH}" PARENT_SCOPE)
+    endif()
+ENDFUNCTION()
 
 
 #----------------------------------------------------------------------------------------#
@@ -552,7 +598,9 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
 
     # options
     set(_options    USE_INTERFACE
-                    INSTALL_SOURCE)
+                    INSTALL_SOURCE
+                    FORCE_SHARED
+                    FORCE_STATIC)
     # single-value
     set(_onevalue   NAME
                     TARGET
@@ -585,12 +633,12 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
 
     set(_LIB_TYPES)
-    if(_BUILD_SHARED_CXX)
+    if(_BUILD_SHARED_CXX OR COMP_FORCE_SHARED)
         list(APPEND _LIB_TYPES shared)
         set(shared_OPTIONS PIC TYPE SHARED)
     endif()
 
-    if(_BUILD_STATIC_CXX)
+    if(_BUILD_STATIC_CXX OR COMP_FORCE_STATIC)
         list(APPEND _LIB_TYPES static)
         set(static_OPTIONS TYPE STATIC)
     endif()
@@ -624,9 +672,10 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
 
         target_link_libraries(${TARGET_NAME} PUBLIC
+            timemory-external-${LINK}
             timemory-headers
             timemory-vector
-            timemory-external-${LINK}
+            timemory-mpi
             ${DEPENDS}
             ${PROPERTY_DEPENDS}
             ${COMP_PUBLIC_LINK})

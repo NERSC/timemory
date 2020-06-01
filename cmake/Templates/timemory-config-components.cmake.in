@@ -1,6 +1,22 @@
 # use IN_LIST so this is required
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
+set(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
+
+#----------------------------------------------------------------------------------------#
+#   function to get the component name from a short-hand expression
+#----------------------------------------------------------------------------------------#
+
+function(TIMEMORY_GET_TARGET_NAME _OUT _IN)
+    if(TARGET ${_IN})
+        set(${_OUT} ${_IN} PARENT_SCOPE)
+    elseif(TARGET @PROJECT_NAME@::@PROJECT_NAME@-${_IN})
+        set(${_OUT} @PROJECT_NAME@-${_IN} PARENT_SCOPE)
+    elseif(TARGET @PROJECT_NAME@-${_IN})
+        set(${_OUT} @PROJECT_NAME@-${_IN} PARENT_SCOPE)
+    endif()
+endfunction()
+
 #----------------------------------------------------------------------------------------#
 #   timemory component interface library
 #----------------------------------------------------------------------------------------#
@@ -26,7 +42,7 @@ set(_COMPONENT_LIST )
 # always add headers
 list(APPEND @PROJECT_NAME@_FIND_COMPONENTS headers)
 if(TIMEMORY_INSTALL_TREE)
-    target_link_libraries(${_INTERFACE_LIB} INTERFACE @PROJECT_NAME@::timemory-headers)
+    target_link_libraries(${_INTERFACE_LIB} INTERFACE @PROJECT_NAME@::@PROJECT_NAME@-headers)
 endif()
 
 # determine link type
@@ -59,20 +75,35 @@ endforeach()
 macro(@PROJECT_NAME@_LINK_TARGET_IF_EXISTS _TARGET)
 
     # namespaced name in install tree
+    TIMEMORY_GET_TARGET_NAME(_TARGET_REAL ${_TARGET})
+    if(NOT "${_TARGET_REAL}" STREQUAL "")
+        set(_TARGET ${_TARGET_REAL})
+    endif()
+      
     if(TIMEMORY_INSTALL_TREE)
         set(_TARGET_NAME @PROJECT_NAME@::${_TARGET})
     else()
         set(_TARGET_NAME ${_TARGET})
     endif()
 
+    if(DEFINED @PROJECT_NAME@_DEBUG)
+        message(STATUS "TARGET: ${_TARGET}")
+    endif()
+      
     if("${_TARGET}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR TARGET ${_TARGET_NAME})
 
         if(TARGET ${_TARGET_NAME})
-            # message(STATUS "Linking ${_TARGET_NAME} to ${_INTERFACE_LIB}")
-            target_link_libraries(${_INTERFACE_LIB} INTERFACE ${_TARGET_NAME})
-            list(APPEND @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+            if(NOT "${_TARGET_NAME}" IN_LIST @PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES)
+                if(DEFINED @PROJECT_NAME@_DEBUG)
+                    message(STATUS "Linking ${_TARGET_NAME} to ${_INTERFACE_LIB}")
+                endif()
+                target_link_libraries(${_INTERFACE_LIB} INTERFACE ${_TARGET_NAME})
+                list(APPEND @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+             endif()
         else()
-            # message(STATUS "${_TARGET_NAME} not found for ${_INTERFACE_LIB}")
+            if(DEFINED @PROJECT_NAME@_DEBUG)
+                message(STATUS "${_TARGET_NAME} not found for ${_INTERFACE_LIB}")
+            endif()
             list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
             list(APPEND _@PROJECT_NAME@_MISSING_COMPONENTS ${_TARGET})
         endif()
@@ -154,6 +185,9 @@ if(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES)
         ${@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES})
 endif()
 
+#
+#   Display message
+#
 list(SORT @PROJECT_NAME@_FOUND_COMPONENTS)
 set(_COMPONENT_LIST ${@PROJECT_NAME@_FOUND_COMPONENTS})
 string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")

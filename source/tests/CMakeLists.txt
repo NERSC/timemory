@@ -12,13 +12,15 @@ endif()
 option(TIMEMORY_USE_TESTING_LINK_LIBRARY "Google-tests like to shared or static library" ON)
 mark_as_advanced(TIMEMORY_USE_TESTING_LINK_LIBRARY)
 
+if(TARGET timemory-cxx-shared)
+    set(_LIBRARY_TARGET timemory-cxx-shared)
+elseif(TARGET timemory-cxx-static)
+    set(_LIBRARY_TARGET timemory-cxx-static)
+endif()
+  
 set(_LIBRARY)
 if(TIMEMORY_USE_TESTING_LINK_LIBRARY)
-    if(TARGET timemory-cxx-shared)
-        set(_LIBRARY timemory-cxx-shared)
-    elseif(TARGET timemory-cxx-static)
-        set(_LIBRARY timemory-cxx-static)
-    endif()
+    set(_LIBRARY ${_LIBRARY_TARGET})
 endif()
 
 if(TIMEMORY_USE_OMPT)
@@ -70,8 +72,20 @@ if(TARGET custom-record-functions)
         LINK_LIBRARIES  custom-record-functions)
 endif()
 
+if(_LIBRARY_TARGET)
+    add_timemory_google_test(throttle_tests
+        DISCOVER_TESTS
+        SOURCES         throttle_tests.cpp
+        LINK_LIBRARIES  ${_LIBRARY_TARGET})
+endif()
+
 add_timemory_google_test(argparse_tests
     SOURCES         argparse_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
+                    timemory-analysis-tools)
+
+add_timemory_google_test(component_bundle_tests
+    SOURCES         component_bundle_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-develop-options
                     timemory-analysis-tools)
 
@@ -315,9 +329,9 @@ elseif(TARGET timemory-ompt-static)
     set(_OMPT_TARGET timemory-ompt-static)
 endif()
 
-if(_OMPT_TARGET)
+if(_OMPT_TARGET AND _OPENMP)
     add_timemory_google_test(ompt_handle_tests
         DISCOVER_TESTS
         SOURCES         ompt_handle_tests.cpp
-        LINK_LIBRARIES  ${_OMPT_TARGET})
+        LINK_LIBRARIES  ${_OMPT_TARGET} ${_OPENMP})
 endif()

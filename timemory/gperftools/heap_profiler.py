@@ -25,5 +25,5 @@
 
 import os
 import sys
-from . import general
+from . import utils
 

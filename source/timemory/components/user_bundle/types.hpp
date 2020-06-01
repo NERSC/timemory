@@ -31,12 +31,12 @@
 
 #include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/components/ompt/types.hpp"
 #include "timemory/dll.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
-
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -50,8 +50,7 @@
 
 //======================================================================================//
 //
-TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx,
-                                    typename Tag = api::native_tag)
+TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx, typename Tag)
 //
 TIMEMORY_BUNDLE_INDEX(global_bundle_idx, 10000)
 //
@@ -59,7 +58,7 @@ TIMEMORY_BUNDLE_INDEX(tuple_bundle_idx, 11000)
 //
 TIMEMORY_BUNDLE_INDEX(list_bundle_idx, 11100)
 //
-TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
+// TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
 //
 TIMEMORY_BUNDLE_INDEX(mpip_bundle_idx, 11111)
 //
@@ -96,15 +95,6 @@ namespace tim
 {
 namespace trait
 {
-//
-//--------------------------------------------------------------------------------------//
-/// trait for configuring OMPT components
-///
-template <typename T>
-struct ompt_handle
-{
-    using type = component_tuple<component::user_ompt_bundle>;
-};
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -162,33 +162,42 @@ struct affinity
 
     static functor_t& get_algorithm()
     {
-        static functor_t _compact_instance = [](int64_t tid) {
-            static std::atomic<int64_t> _counter(0);
-            static thread_local int64_t _this_count = _counter++;
-            auto                        proc_itr    = get_affinity_map().find(tid);
-            if(proc_itr == get_affinity_map().end())
-                get_affinity_map()[tid] = _this_count;
-            return get_affinity_map()[tid];
-        };
-
-        static functor_t _scatter_instance = [](int64_t tid) {
-            static std::atomic<int64_t> _counter(0);
-            static thread_local int64_t _this_count = _counter++;
-            auto _val     = (_this_count * hw_physicalcpu()) % hw_concurrency();
-            auto proc_itr = get_affinity_map().find(tid);
-            if(proc_itr == get_affinity_map().end())
-                get_affinity_map()[tid] = _val;
-            return get_affinity_map()[tid];
-        };
-
-        static functor_t _explicit_instance = [](int64_t tid) -> int64_t {
-            auto proc_itr = get_affinity_map().find(tid);
-            if(proc_itr != get_affinity_map().end())
-                return proc_itr->second;
-            return -1;
-        };
-
-        static functor_t _instance = [&](int64_t tid) {
+        static functor_t _instance = [](int64_t tid) {
+            //
+            //  assigns the cpu affinity in a compact sequence
+            //
+            static functor_t _compact_instance = [](int64_t _tid) -> int64_t {
+                static std::atomic<int64_t> _counter(0);
+                static thread_local int64_t _this_count = _counter++;
+                auto                        proc_itr    = get_affinity_map().find(_tid);
+                if(proc_itr == get_affinity_map().end())
+                    get_affinity_map()[_tid] = _this_count;
+                return get_affinity_map()[_tid];
+            };
+            //
+            //  assigns the cpu affinity in a scattered sequence
+            //
+            static functor_t _scatter_instance = [](int64_t _tid) -> int64_t {
+                static std::atomic<int64_t> _counter(0);
+                static thread_local int64_t _this_count = _counter++;
+                auto _val     = (_this_count * hw_physicalcpu()) % hw_concurrency();
+                auto proc_itr = get_affinity_map().find(_tid);
+                if(proc_itr == get_affinity_map().end())
+                    get_affinity_map()[_tid] = _val;
+                return get_affinity_map()[_tid];
+            };
+            //
+            //  assigns the cpu affinity explicitly
+            //
+            static functor_t _explicit_instance = [](int64_t _tid) -> int64_t {
+                auto proc_itr = get_affinity_map().find(_tid);
+                if(proc_itr != get_affinity_map().end())
+                    return proc_itr->second;
+                return -1;
+            };
+            //
+            //  checks the configured mode and applies the appropriate algorithm
+            //
             switch(get_mode())
             {
                 case COMPACT: return _compact_instance(tid); break;
@@ -196,9 +205,12 @@ struct affinity
                 case SPREAD: return _scatter_instance(tid); break;
                 case EXPLICIT: return _explicit_instance(tid); break;
             };
+            //
+            // default to compact algorithm
+            //
             return _compact_instance(tid);
         };
-
+        //
         return _instance;
     }
 

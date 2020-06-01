@@ -190,7 +190,7 @@ storage<Type, false>::instance_count()
 //
 template <typename Type>
 storage<Type, true>::storage()
-: base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
+: base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
     if(settings::debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -369,7 +369,8 @@ storage<Type, true>::data() const
 {
     if(!is_finalizing())
     {
-        static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
+        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
         consume_parameters(_init);
     }
     return _data();
@@ -383,7 +384,8 @@ storage<Type, true>::graph() const
 {
     if(!is_finalizing())
     {
-        static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
+        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
         consume_parameters(_init);
     }
     return _data().graph();
@@ -397,7 +399,8 @@ storage<Type, true>::depth() const
 {
     if(!is_finalizing())
     {
-        static thread_local auto _init = const_cast<this_type*>(this)->data_init();
+        using type_t                   = decay_t<remove_pointer_t<decltype(this)>>;
+        static thread_local auto _init = const_cast<type_t*>(this)->data_init();
         consume_parameters(_init);
     }
     return (is_finalizing()) ? 0 : _data().depth();
@@ -452,12 +455,11 @@ typename storage<Type, true>::iterator
 storage<Type, true>::pop()
 {
     auto itr = _data().pop_graph();
-    // if data has popped all the way up to the zeroth (relative) depth
-    // then worker threads should insert a new dummy at the current
-    // master thread id and depth. Be aware, this changes 'm_current' inside
-    // the data graph
+    // if data has popped all the way up to the zeroth (relative) depth then worker
+    // threads should insert a new dummy at the current master thread id and depth.
+    // Be aware, this changes 'm_current' inside the data graph
     //
-    if(_data().at_sea_level())
+    if(_data().at_sea_level() && _data().dummy_count() < settings::max_thread_bookmarks())
         _data().add_dummy();
     return itr;
 }
@@ -759,6 +761,12 @@ storage<Type, true>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        m_manager = tim::manager::instance();
+        if(!m_manager)
+            return;
+        if(m_manager->is_finalizing())
+            return;
+
         auto _label = Type::label();
         for(auto& itr : _label)
             itr = toupper(itr);
@@ -767,24 +775,25 @@ storage<Type, true>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        m_manager         = tim::manager::instance();
         bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto   _cleanup   = [=]() {};
+        func_t _finalize  = [=]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                if(settings::debug() || settings::verbose() > 1)
+                auto _debug_v = settings::debug();
+                auto _verb_v  = settings::verbose();
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 _instance->reset(this);
-                if(settings::debug() || settings::verbose() > 1)
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->smart_instance().reset()");
                 _instance->smart_instance().reset();
                 if(_is_master)
                 {
-                    if(settings::debug() || settings::verbose() > 1)
+                    if(_debug_v || _verb_v > 1)
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                    "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();
@@ -793,7 +802,7 @@ storage<Type, true>::get_shared_manager()
             trait::runtime_enabled<Type>::set(false);
         };
 
-        m_manager->add_finalizer(Type::get_label(), std::move(_cleanup),
+        m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
                                  std::move(_finalize), _is_master);
     }
 }
@@ -807,7 +816,7 @@ storage<Type, true>::get_shared_manager()
 //
 template <typename Type>
 storage<Type, false>::storage()
-: base_type(singleton_t::is_master_thread(), instance_count()++, Type::get_label())
+: base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
     if(settings::debug())
         printf("[%s]> constructing @ %i...\n", m_label.c_str(), __LINE__);
@@ -952,6 +961,12 @@ storage<Type, false>::get_shared_manager()
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
+        m_manager = tim::manager::instance();
+        if(!m_manager)
+            return;
+        if(m_manager->is_finalizing())
+            return;
+
         auto _label = Type::label();
         for(auto& itr : _label)
             itr = toupper(itr);
@@ -960,24 +975,25 @@ storage<Type, false>::get_shared_manager()
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
-        m_manager         = tim::manager::instance();
         bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [&]() {};
-        func_t _finalize  = [&]() {
+        auto   _cleanup   = [=]() {};
+        func_t _finalize  = [=]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                if(settings::debug() || settings::verbose() > 1)
+                auto _debug_v = settings::debug();
+                auto _verb_v  = settings::verbose();
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->reset(this)");
                 _instance->reset(this);
-                if(settings::debug() || settings::verbose() > 1)
+                if(_debug_v || _verb_v > 1)
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling _instance->smart_instance().reset()");
                 _instance->smart_instance().reset();
                 if(_is_master)
                 {
-                    if(settings::debug() || settings::verbose() > 1)
+                    if(_debug_v || _verb_v > 1)
                         PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                    "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();
@@ -986,7 +1002,7 @@ storage<Type, false>::get_shared_manager()
             trait::runtime_enabled<Type>::set(false);
         };
 
-        m_manager->add_finalizer(Type::get_label(), std::move(_cleanup),
+        m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
                                  std::move(_finalize), _is_master);
     }
 }

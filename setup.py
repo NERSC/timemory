@@ -15,6 +15,10 @@ from skbuild.setuptools_wrap import create_skbuild_argparser
 from skbuild.command.install import install as skinstall
 from distutils.command.install import install
 
+# some Cray systems default to static libraries and the build
+# will fail because BUILD_SHARED_LIBS will get set to off
+if os.environ.get("CRAYPE_VERSION") is not None:
+    os.environ["CRAYPE_LINK_TYPE"] = "dynamic"
 
 cmake_args = ['-DPYTHON_EXECUTABLE={}'.format(sys.executable),
               '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON']

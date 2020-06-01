@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/trace.hpp"
 #include "timemory/compat/library.h"
 #include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
@@ -45,6 +46,12 @@ CEREAL_CLASS_VERSION(tim::env_settings, 0)
 CEREAL_CLASS_VERSION(tim::component::wall_clock, 0)
 CEREAL_CLASS_VERSION(tim::statistics<double>, 0)
 
+using string_t       = std::string;
+using overhead_map_t = std::unordered_map<size_t, std::pair<wall_clock, size_t>>;
+using throttle_set_t = std::set<size_t>;
+using traceset_t     = tim::component_tuple<user_trace_bundle>;
+using trace_map_t    = std::unordered_map<size_t, std::deque<traceset_t>>;
+
 //======================================================================================//
 
 namespace
@@ -54,11 +61,32 @@ static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_AP
 static std::atomic<uint32_t> library_trace_count{ 0 };
 }  // namespace
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
-using string_t    = std::string;
-using traceset_t  = tim::component_tuple<user_trace_bundle>;
-using trace_map_t = std::unordered_map<size_t, std::deque<traceset_t*>>;
+static auto&
+get_overhead() TIMEMORY_VISIBILITY("default");
+static auto&
+get_throttle() TIMEMORY_VISIBILITY("default");
+static trace_map_t&
+get_trace_map() TIMEMORY_VISIBILITY("default");
+
+//--------------------------------------------------------------------------------------//
+
+static auto&
+get_overhead()
+{
+    static thread_local auto _instance = std::make_unique<overhead_map_t>();
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static auto&
+get_throttle()
+{
+    static thread_local auto _instance = std::make_unique<throttle_set_t>();
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -71,51 +99,100 @@ get_trace_map()
 
 //--------------------------------------------------------------------------------------//
 
+extern std::array<bool, 2>&
+get_library_state();
+
+//--------------------------------------------------------------------------------------//
+
+static bool use_mpi_gotcha  = false;
+static bool mpi_is_attached = false;
+
+//--------------------------------------------------------------------------------------//
+
 #if defined(TIMEMORY_MPI_GOTCHA)
 
 static int
 timemory_trace_mpi_finalize(MPI_Comm, int, void*, void*)
 {
+    if(tim::settings::debug() || tim::settings::verbose() > 1)
+        PRINT_HERE("%s", "comm keyval finalization started");
     timemory_trace_finalize();
+    if(tim::settings::debug() || tim::settings::verbose() > 1)
+        PRINT_HERE("%s", "comm keyval finalization complete");
     return MPI_SUCCESS;
 }
+
+//--------------------------------------------------------------------------------------//
 
 struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 {
     static void set_attr()
     {
-        int comm_key = 0;
+        auto lk                  = tim::trace::lock<tim::trace::library>();
+        auto _state              = tim::settings::enabled();
+        tim::settings::enabled() = false;
+        int comm_key             = 0;
         MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_trace_mpi_finalize, &comm_key,
                                NULL);
         MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
+        tim::settings::enabled() = _state;
     }
 
     // MPI_Init
     int operator()(int* argc, char*** argv)
     {
-        auto ret = MPI_Init(argc, argv);
+        auto ret                 = MPI_Init(argc, argv);
+        tim::mpi::is_finalized() = false;
+        set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
-        set_attr();
+        auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
+        if(mode == "trace")
+            timemory_push_trace("MPI_Init(int*, char**)");
+        else if(mode == "region")
+            timemory_push_region("MPI_Init(int*, char**)");
         return ret;
     }
 
     // MPI_Init_thread
     int operator()(int* argc, char*** argv, int req, int* prov)
     {
-        auto ret = MPI_Init_thread(argc, argv, req, prov);
+        auto ret                 = MPI_Init_thread(argc, argv, req, prov);
+        tim::mpi::is_finalized() = false;
+        set_attr();
         timemory_trace_init(get_trace_components().c_str(), read_command_line(),
                             get_command().c_str());
-        set_attr();
+        auto mode = tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
+        if(mode == "trace")
+            timemory_push_trace("MPI_Init_thread(int*, char**, int, int*)");
+        else if(mode == "region")
+            timemory_push_region("MPI_Init_thread(int*, char**, int, int*)");
         return ret;
     }
 
     // MPI_Finalize
     int operator()()
     {
-        timemory_trace_finalize();
+        if(mpi_is_attached)
+        {
+            auto mode =
+                tim::get_env<std::string>("TIMEMORY_INSTRUMENTATION_MODE", "trace");
+            if(mode == "trace")
+            {
+                timemory_pop_trace("MPI_Init(int*, char**)");
+                timemory_pop_trace("MPI_Init_thread(int*, char**, int, int*)");
+            }
+            else
+            {
+                timemory_pop_region("MPI_Init(int*, char**)");
+                timemory_pop_region("MPI_Init_thread(int*, char**, int, int*)");
+            }
+            timemory_trace_finalize();
+        }
+        if(tim::settings::debug())
+            PRINT_HERE("%s", "finalizing MPI");
+        auto ret                 = MPI_Finalize();
         tim::mpi::is_finalized() = true;
-        auto ret                 = PMPI_Finalize();
         return ret;
     }
 
@@ -152,7 +229,8 @@ setup_mpi_gotcha()
     mpi_trace_gotcha_t::get_initializer() = []() {
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 0, MPI_Init);
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 1, MPI_Init_thread);
-        // TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 2, MPI_Finalize);
+        if(mpi_is_attached)
+            TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 2, MPI_Finalize);
     };
     return true;
 }
@@ -165,8 +243,12 @@ using mpi_trace_bundle_t = tim::auto_tuple<mpi_trace_gotcha_t>;
 
 #else
 
+//--------------------------------------------------------------------------------------//
+
 struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 {
+    static void set_attr() {}
+
     static std::string& get_trace_components()
     {
         static auto _instance =
@@ -187,7 +269,11 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     }
 };
 
+//--------------------------------------------------------------------------------------//
+
 using mpi_trace_bundle_t = tim::auto_tuple<>;
+
+//--------------------------------------------------------------------------------------//
 
 bool
 setup_mpi_gotcha()
@@ -195,13 +281,15 @@ setup_mpi_gotcha()
     return false;
 }
 
+//--------------------------------------------------------------------------------------//
+
 #endif
 
 //--------------------------------------------------------------------------------------//
 
-static bool                                use_mpi_gotcha        = false;
 static bool                                mpi_gotcha_configured = setup_mpi_gotcha();
 static std::shared_ptr<mpi_trace_bundle_t> mpi_gotcha_handle{ nullptr };
+static std::map<size_t, string_t>          master_hash_ids;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -214,89 +302,254 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
-#if !defined(_WINDOWS)
+    TIMEMORY_WEAK_PREFIX
+    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
     void timemory_register_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
+    void timemory_deregister_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+
+    TIMEMORY_WEAK_PREFIX
+    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
     void timemory_register_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
     TIMEMORY_WEAK_PREFIX
-    void timemory_deregister_mpip() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
     void timemory_deregister_ompt() TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
+    TIMEMORY_WEAK_PREFIX
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
+                                              const char*  runtime_version)
+        TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
 
-    void timemory_register_mpip() {}
-    void timemory_register_ompt() {}
-    void timemory_deregister_mpip() {}
-    void timemory_deregister_ompt() {}
-#endif
+    void                      timemory_register_mpip() {}
+    void                      timemory_register_ompt() {}
+    void                      timemory_deregister_mpip() {}
+    void                      timemory_deregister_ompt() {}
+    void                      timemory_mpip_library_ctor() {}
+    void                      timemory_ompt_library_ctor() {}
+    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
+    {
+        return nullptr;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    bool timemory_is_throttled(const char* name)
+    {
+        size_t _id = tim::get_hash_id(name);
+        return (get_throttle()->count(_id) > 0);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_add_hash_id(uint64_t id, const char* name)
+    {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(tim::settings::debug())
+            fprintf(stderr, "[timemory-trace]> adding '%s' with hash %lu...\n", name,
+                    (unsigned long) id);
+        auto _id = tim::add_hash_id(name);
+        if(_id != id)
+            tim::add_hash_id(_id, id);
+
+        // master thread adds the ids
+        if(tim::threading::get_id() == 0)
+        {
+            master_hash_ids[id] = name;
+            if(_id != id)
+                master_hash_ids[_id] = name;
+        }
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_add_hash_ids(uint64_t nentries, uint64_t* ids, const char** names)
+    {
+        for(uint64_t i = 0; i < nentries; ++i)
+            timemory_add_hash_id(ids[i], names[i]);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_copy_hash_ids()
+    {
+        auto                     lk = tim::trace::lock<tim::trace::library>();
+        static thread_local bool once_per_thread = false;
+        if(!once_per_thread && tim::threading::get_id() > 0)
+        {
+            once_per_thread  = true;
+            auto _master_ids = master_hash_ids;
+            for(auto itr : _master_ids)
+                timemory_add_hash_id(itr.first, itr.second.c_str());
+        }
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_push_trace_hash(uint64_t id)
+    {
+        auto lk = tim::trace::lock<tim::trace::library>();
+
+        if(!lk)
+            return;
+
+        if(!get_library_state()[0] || get_library_state()[1] || !tim::settings::enabled())
+            return;
+
+        if(get_throttle()->count(id) > 0)
+            return;
+
+        auto& _trace_map = get_trace_map();
+
+        if(_trace_map.empty())
+            timemory_copy_hash_ids();
+
+        if(tim::settings::debug())
+        {
+            int64_t  n    = _trace_map[id].size();
+            auto     itr  = tim::get_hash_ids()->find(id);
+            string_t name = (itr != tim::get_hash_ids()->end()) ? itr->second : "unknown";
+            fprintf(stderr,
+                    "beginning trace for '%s' (id = %llu, offset = %lli, rank = %i, pid "
+                    "= %i, thread = %i)...\n",
+                    name.c_str(), (long long unsigned) id, (long long int) n,
+                    tim::dmp::rank(), (int) tim::process::get_id(),
+                    (int) tim::threading::get_id());
+        }
+
+        _trace_map[id].emplace_back(traceset_t(id));
+        _trace_map[id].back().start();
+        (*get_overhead())[id].first.start();
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void timemory_pop_trace_hash(uint64_t id)
+    {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!get_library_state()[0] || get_library_state()[1])
+            return;
+
+        auto& _trace_map = get_trace_map();
+        if(!tim::settings::enabled() && _trace_map.empty())
+            return;
+
+        int64_t ntotal = _trace_map[id].size();
+        int64_t offset = ntotal - 1;
+
+        if(tim::settings::debug())
+        {
+            auto     itr  = tim::get_hash_ids()->find(id);
+            string_t name = (itr != tim::get_hash_ids()->end()) ? itr->second : "unknown";
+            fprintf(stderr,
+                    "ending trace for '%s' (id = %llu, offset = %lli, rank = %i, pid = "
+                    "%i, thread = %i)...\n",
+                    name.c_str(), (long long unsigned) id, (long long int) offset,
+                    tim::dmp::rank(), (int) tim::process::get_id(),
+                    (int) tim::threading::get_id());
+        }
+
+        (*get_overhead())[id].first.stop();
+
+        if(offset >= 0 && ntotal > 0)
+        {
+            _trace_map[id].back().stop();
+            _trace_map[id].pop_back();
+        }
+
+        if(get_throttle()->count(id) > 0)
+            return;
+
+        auto _count = ++((*get_overhead())[id].second);
+
+        if(_count % tim::settings::throttle_count() == 0)
+        {
+            auto _accum = (*get_overhead())[id].first.get_accum() / _count;
+            if(_accum < tim::settings::throttle_value())
+            {
+                if(tim::settings::debug() || tim::settings::verbose() > 0)
+                {
+                    auto name = tim::get_hash_ids()->find(id)->second;
+                    fprintf(
+                        stderr,
+                        "[timemory-trace]> Throttling all future calls to '%s' on rank = "
+                        "%i, pid = "
+                        "%i, thread = %i. avg runtime = %lu ns from %lu invocations... "
+                        "Consider eliminating from instrumentation...\n",
+                        name.c_str(), tim::dmp::rank(), (int) tim::process::get_id(),
+                        (int) tim::threading::get_id(), (unsigned long) _accum,
+                        (unsigned long) _count);
+                }
+                get_throttle()->insert(id);
+            }
+            else
+            {
+                if(_accum < (10 * tim::settings::throttle_value()) &&
+                   (tim::settings::debug() || tim::settings::verbose() > 1))
+                {
+                    auto name = tim::get_hash_ids()->find(id)->second;
+                    fprintf(
+                        stderr,
+                        "[timemory-trace]> Warning! function call '%s' within an order "
+                        "of magnitude of threshold for throttling value on rank = %i, "
+                        "pid = "
+                        "%i, thread = %i. avg runtime = %lu ns from %lu invocations... "
+                        "Consider eliminating from instrumentation...\n",
+                        name.c_str(), tim::dmp::rank(), (int) tim::process::get_id(),
+                        (int) tim::threading::get_id(), (unsigned long) _accum,
+                        (unsigned long) _count);
+                }
+            }
+            (*get_overhead())[id].first.reset();
+            (*get_overhead())[id].second = 0;
+        }
+    }
     //
     //----------------------------------------------------------------------------------//
     //
     void timemory_push_trace(const char* name)
     {
-        if(!tim::settings::enabled())
-            return;
-
-        if(tim::settings::verbose() > 2 || tim::settings::debug())
-            PRINT_HERE("%s", name);
-
-        static thread_local auto& _trace_map = get_trace_map();
-        size_t                    id         = tim::add_hash_id(name);
-
-#if defined(DEBUG)
-        if(tim::settings::verbose() > 2)
+        uint64_t _hash = std::numeric_limits<uint64_t>::max();
         {
-            int64_t n = _trace_map[id].size();
-            printf("beginning trace for '%s' (id = %llu, offset = %lli)...\n", name,
-                   (long long unsigned) id, (long long int) n);
+            auto lk = tim::trace::lock<tim::trace::library>();
+            if(tim::settings::debug())
+                PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s",
+                           tim::dmp::rank(), (int) tim::process::get_id(),
+                           (int) tim::threading::get_id(), name);
+
+            if(!get_library_state()[0] || get_library_state()[1] ||
+               !tim::settings::enabled())
+                return;
+
+            _hash = tim::add_hash_id(name);
         }
-#endif
-
-        _trace_map[id].push_back(new traceset_t(name));
-        _trace_map[id].back()->start();
-
-        if(tim::settings::verbose() > 3)
-            PRINT_HERE("%s", name);
+        timemory_push_trace_hash(_hash);
     }
     //
     //----------------------------------------------------------------------------------//
     //
     void timemory_pop_trace(const char* name)
     {
-        static thread_local auto& _trace_map = get_trace_map();
-        if(!tim::settings::enabled() && _trace_map.empty())
-            return;
-
-        if(tim::settings::verbose() > 2 || tim::settings::debug())
-            PRINT_HERE("%s", name);
-
-        size_t                    id         = tim::add_hash_id(name);
-        int64_t                   ntotal     = _trace_map[id].size();
-        int64_t                   offset     = ntotal - 1;
-
-        if(tim::settings::verbose() > 2)
-            printf("ending trace for %llu [offset = %lli]...\n", (long long unsigned) id,
-                   (long long int) offset);
-
-        if(offset >= 0 && ntotal > 0)
+        uint64_t _hash = std::numeric_limits<uint64_t>::max();
         {
-            if(_trace_map[id].back())
-            {
-                _trace_map[id].back()->stop();
-                delete _trace_map[id].back();
-            }
-            _trace_map[id].pop_back();
+            auto lk = tim::trace::lock<tim::trace::library>();
+            if(!get_library_state()[0] || get_library_state()[1])
+                return;
+            _hash = tim::get_hash_id(name);
         }
-
-        if(tim::settings::verbose() > 3)
-            PRINT_HERE("%s", name);
+        timemory_pop_trace_hash(_hash);
     }
     //
     //----------------------------------------------------------------------------------//
     //
 #if defined(TIMEMORY_MPI_GOTCHA)
     //
-    void timemory_trace_set_mpi(bool use) { use_mpi_gotcha = use; }
+    void timemory_trace_set_mpi(bool use, bool attached)
+    {
+        use_mpi_gotcha  = use;
+        mpi_is_attached = attached;
+    }
     //
 #endif
     //
@@ -304,6 +557,7 @@ extern "C"
     //
     void timemory_trace_set_env(const char* env_var, const char* env_val)
     {
+        auto lk = tim::trace::lock<tim::trace::library>();
         tim::set_env<std::string>(env_var, env_val, 0);
     }
     //
@@ -311,6 +565,13 @@ extern "C"
     //
     void timemory_trace_init(const char* args, bool read_command_line, const char* cmd)
     {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(get_library_state()[0])
+            return;
+
+        timemory_mpip_library_ctor();
+        timemory_ompt_library_ctor();
+
         if(use_mpi_gotcha && !mpi_gotcha_handle.get())
         {
             PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
@@ -320,7 +581,10 @@ extern "C"
             mpi_trace_gotcha::get_trace_components() = args;
             mpi_trace_gotcha::read_command_line()    = read_command_line;
             mpi_trace_gotcha::get_command()          = cmd;
-            return;
+            if(mpi_is_attached)
+                mpi_trace_gotcha::set_attr();
+            else
+                return;
         }
 
         if(library_trace_count++ == 0)
@@ -331,32 +595,47 @@ extern "C"
 
             tim::manager::use_exit_hook(false);
 
-            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-            tim::config::read_command_line(_init);
-
-            tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
-
-            // reset traces just in case
-            user_trace_bundle::reset();
-
-            // configure bundle
-            user_trace_bundle::global_init(nullptr);
-
-            /*
             if(read_command_line)
             {
                 auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
                 tim::config::read_command_line(_init);
             }
-            else if(strlen(cmd) > 0)
+            else
             {
-                PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
-                           (int) tim::process::get_id(), (int) tim::threading::get_id());
-                char* _cmd = new char[strlen(cmd) + 1];
-                strcpy(_cmd, cmd);
-                timemory_init_library(1, &_cmd);
-                delete[] _cmd;
-            }*/
+                get_library_state()[0] = true;
+                std::string exe_name   = cmd;
+                while(exe_name.find("\\") != std::string::npos)
+                    exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
+                while(exe_name.find("/") != std::string::npos)
+                    exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
+
+                static const std::vector<std::string> _exe_suffixes = { ".py", ".exe" };
+                for(const auto& ext : _exe_suffixes)
+                {
+                    if(exe_name.find(ext) != std::string::npos)
+                        exe_name.erase(exe_name.find(ext), ext.length() + 1);
+                }
+
+                exe_name = std::string("timemory-") + exe_name + "-output";
+                for(auto& itr : exe_name)
+                {
+                    if(itr == '_')
+                        itr = '-';
+                }
+
+                tim::settings::output_path() = exe_name;
+            }
+
+            tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
+
+            // reset traces just in case
+            // user_trace_bundle::reset();
+
+            // configure bundle
+            // user_trace_bundle::global_init(nullptr);
+            tim::env::configure<user_trace_bundle>("TIMEMORY_TRACE_COMPONENTS", args);
+            // tim::manager::get_storage<user_trace_bundle>::initialize();
+            // user_trace_bundle::get_storage()->data_init();
 
             tim::settings::parse();
         }
@@ -365,18 +644,22 @@ extern "C"
             PRINT_HERE("rank = %i, pid = %i, thread = %i, args = %s", tim::dmp::rank(),
                        (int) tim::process::get_id(), (int) tim::threading::get_id(),
                        args);
-            auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
-            tim::config::read_command_line(_init);
 
-            auto manager = tim::manager::instance();
-            tim::consume_parameters(manager);
+            if(read_command_line)
+            {
+                auto _init = [](int _ac, char** _av) { timemory_init_library(_ac, _av); };
+                tim::config::read_command_line(_init);
+            }
         }
+        auto manager = tim::manager::instance();
+        tim::consume_parameters(manager);
     }
     //
     //----------------------------------------------------------------------------------//
     //
     void timemory_trace_finalize(void)
     {
+        auto lk = tim::trace::lock<tim::trace::library>();
         if(library_trace_count.load() == 0)
             return;
 
@@ -387,14 +670,17 @@ extern "C"
         // do the finalization
         auto _count = --library_trace_count;
 
-        tim::auto_lock_t lk(tim::type_mutex<tim::api::native_tag>());
-
         if(_count > 0)
         {
             // have the manager finalize
             tim::manager::instance()->finalize();
             return;
         }
+
+        tim::auto_lock_t lock(tim::type_mutex<tim::api::native_tag>());
+
+        // tim::settings::enabled() = false;
+        get_library_state()[1] = true;
 
         tim::mpi::barrier();
 
@@ -405,10 +691,7 @@ extern "C"
         for(auto& itr : get_trace_map())
         {
             for(auto& eitr : itr.second)
-            {
-                eitr->stop();
-                delete eitr;
-            }
+                eitr.stop();
             // delete all the records
             itr.second.clear();
         }

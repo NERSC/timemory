@@ -27,14 +27,22 @@
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
 //
+#include "timemory/variadic/auto_bundle.hpp"
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/bits/component_hybrid.hpp"
-#include "timemory/variadic/bits/component_list.hpp"
-#include "timemory/variadic/bits/component_tuple.hpp"
+#include "timemory/variadic/base_bundle.hpp"
+#include "timemory/variadic/component_bundle.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/functional.hpp"
-#include "timemory/variadic/generic_bundle.hpp"
+#include "timemory/variadic/lightweight_tuple.hpp"
+//
+//  Implementations
+//
+#include "timemory/variadic/component_bundle.cpp"
+#include "timemory/variadic/component_hybrid.cpp"
+#include "timemory/variadic/component_list.cpp"
+#include "timemory/variadic/component_tuple.cpp"
+#include "timemory/variadic/lightweight_tuple.cpp"

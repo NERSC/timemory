@@ -22,171 +22,133 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file bits/component_tuple.hpp
- * \headerfile bits/component_tuple.hpp "timemory/variadic/bits/component_tuple.hpp"
- * Implementation for various functions
+/** \file timemory/variadic/component_list.cpp
+ * \brief Implementation for various component_list member functions
  *
  */
 
-#pragma once
-
-#include "timemory/manager/declaration.hpp"
+#include "timemory/variadic/component_list.hpp"
+#include "timemory/hash/declaration.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/operations/types/set.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/variadic/generic_bundle.hpp"
-#include "timemory/variadic/types.hpp"
+#include "timemory/runtime/types.hpp"
 
 //======================================================================================//
 //
-//      tim::get functions
+//
+//
+//--------------------------------------------------------------------------------------//
 //
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-//
 template <typename... Types>
-component_tuple<Types...>::component_tuple()
+component_list<Types...>::component_list()
 {
     if(settings::enabled())
         init_storage();
+    apply_v::set_value(m_data, nullptr);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename... T, typename Func>
-component_tuple<Types...>::component_tuple(const string_t&        key,
-                                           variadic::config<T...> config,
-                                           const Func&            init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), store, config)
+template <typename FuncT>
+component_list<Types...>::component_list(const string_t& key, const bool& store,
+                                         scope::config _scope, const FuncT& _func)
+: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
 , m_data(data_type{})
 {
+    apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
+        init_storage();
+        _func(*this);
         set_prefix(key);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename... T, typename Func>
-component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           variadic::config<T...>     config,
-                                           const Func&                init_func)
-: bundle_type(loc.get_hash(), store, config)
+template <typename FuncT>
+component_list<Types...>::component_list(const captured_location_t& loc,
+                                         const bool& store, scope::config _scope,
+                                         const FuncT& _func)
+: bundle_type(loc.get_hash(), store, _scope)
 , m_data(data_type{})
 {
+    apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
-        set_prefix(key);
-        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-template <typename Func>
-component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
-                                           scope::config _scope, const Func& init_func)
-: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
-, m_data(data_type{})
-{
-    if(settings::enabled())
-    {
-        if(store)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
-        set_prefix(key);
-        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-template <typename Func>
-component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           const bool& store, scope::config _scope,
-                                           const Func& init_func)
-: bundle_type(loc.get_hash(), store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
-, m_data(data_type{})
-{
-    if(settings::enabled())
-    {
-        if(store)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
+        init_storage();
+        _func(*this);
         set_prefix(loc.get_id());
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-template <typename Func>
-component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
-                                           scope::config _scope, const Func& init_func)
-: bundle_type(hash, store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
+template <typename FuncT>
+component_list<Types...>::component_list(size_t _hash, const bool& store,
+                                         scope::config _scope, const FuncT& _func)
+: bundle_type(_hash, store, _scope)
 , m_data(data_type{})
 {
+    apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
     {
-        if(store)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
-        set_prefix(hash);
+        init_storage();
+        _func(*this);
+        set_prefix(_hash);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-component_tuple<Types...>::~component_tuple()
+component_list<Types...>::~component_list()
 {
-    // IF_CONSTEXPR(get_config<variadic::auto_stop>()) { stop(); }
     stop();
-    if(m_store)
-        pop();
+    DEBUG_PRINT_HERE("%s", "deleting components");
+    apply_v::access<operation_t<operation::generic_deleter>>(m_data);
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-component_tuple<Types...>
-component_tuple<Types...>::clone(bool _store, scope::config _scope)
+component_list<Types...>::component_list(const this_type& rhs)
+: bundle_type(rhs)
 {
-    component_tuple tmp(*this);
-    tmp.m_store = _store;
+    apply_v::set_value(m_data, nullptr);
+    apply_v::access2<operation_t<operation::copy>>(m_data, rhs.m_data);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+component_list<Types...>&
+component_list<Types...>::operator=(const this_type& rhs)
+{
+    if(this != &rhs)
+    {
+        bundle_type::operator=(rhs);
+        apply_v::access<operation_t<operation::generic_deleter>>(m_data);
+        apply_v::access<operation_t<operation::copy>>(m_data);
+    }
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+component_list<Types...>
+component_list<Types...>::clone(bool store, scope::config _scope)
+{
+    component_list tmp(*this);
+    tmp.m_store = store;
     tmp.m_scope = _scope;
     return tmp;
 }
@@ -196,11 +158,13 @@ component_tuple<Types...>::clone(bool _store, scope::config _scope)
 //
 template <typename... Types>
 void
-component_tuple<Types...>::push()
+component_list<Types...>::push()
 {
-    if(!m_is_pushed)
+    uint64_t count = 0;
+    apply_v::access<operation_t<operation::generic_counter>>(m_data, std::ref(count));
+    if(!m_is_pushed && count > 0)
     {
-        // reset the data
+        // reset data
         apply_v::access<operation_t<operation::reset>>(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
@@ -210,11 +174,11 @@ component_tuple<Types...>::push()
 }
 
 //--------------------------------------------------------------------------------------//
-// pop out of graph
+// pop out of grapsh
 //
 template <typename... Types>
 void
-component_tuple<Types...>::pop()
+component_list<Types...>::pop()
 {
     if(m_is_pushed)
     {
@@ -231,7 +195,7 @@ component_tuple<Types...>::pop()
 template <typename... Types>
 template <typename... Args>
 void
-component_tuple<Types...>::measure(Args&&... args)
+component_list<Types...>::measure(Args&&... args)
 {
     apply_v::access<operation_t<operation::measure>>(m_data, std::forward<Args>(args)...);
 }
@@ -242,9 +206,9 @@ component_tuple<Types...>::measure(Args&&... args)
 template <typename... Types>
 template <typename... Args>
 void
-component_tuple<Types...>::sample(Args&&... args)
+component_list<Types...>::sample(Args&&... args)
 {
-    sample_type _samples;
+    sample_type _samples{};
     apply_v::access2<operation_t<operation::sample>>(m_data, _samples,
                                                      std::forward<Args>(args)...);
 }
@@ -255,7 +219,7 @@ component_tuple<Types...>::sample(Args&&... args)
 template <typename... Types>
 template <typename... Args>
 void
-component_tuple<Types...>::start(Args&&... args)
+component_list<Types...>::start(Args&&... args)
 {
     using standard_start_t = operation_t<operation::standard_start>;
 
@@ -286,7 +250,7 @@ component_tuple<Types...>::start(Args&&... args)
 template <typename... Types>
 template <typename... Args>
 void
-component_tuple<Types...>::stop(Args&&... args)
+component_list<Types...>::stop(Args&&... args)
 {
     using standard_stop_t = operation_t<operation::standard_stop>;
 
@@ -320,8 +284,8 @@ component_tuple<Types...>::stop(Args&&... args)
 //
 template <typename... Types>
 template <typename... Args>
-component_tuple<Types...>&
-component_tuple<Types...>::record(Args&&... args)
+component_list<Types...>&
+component_list<Types...>::record(Args&&... args)
 {
     ++m_laps;
     apply_v::access<operation_t<operation::record>>(m_data, std::forward<Args>(args)...);
@@ -329,12 +293,12 @@ component_tuple<Types...>::record(Args&&... args)
 }
 
 //--------------------------------------------------------------------------------------//
-// reset data
+// reset to zero
 //
 template <typename... Types>
 template <typename... Args>
 void
-component_tuple<Types...>::reset(Args&&... args)
+component_list<Types...>::reset(Args&&... args)
 {
     apply_v::access<operation_t<operation::reset>>(m_data, std::forward<Args>(args)...);
     m_laps = 0;
@@ -346,7 +310,7 @@ component_tuple<Types...>::reset(Args&&... args)
 template <typename... Types>
 template <typename... Args>
 auto
-component_tuple<Types...>::get(Args&&... args) const
+component_list<Types...>::get(Args&&... args) const
 {
     using data_collect_type = get_data_type_t<type_tuple>;
     using data_value_type   = get_data_value_t<type_tuple>;
@@ -364,7 +328,7 @@ component_tuple<Types...>::get(Args&&... args) const
 template <typename... Types>
 template <typename... Args>
 auto
-component_tuple<Types...>::get_labeled(Args&&... args) const
+component_list<Types...>::get_labeled(Args&&... args) const
 {
     using data_collect_type = get_data_type_t<type_tuple>;
     using data_label_type   = get_data_label_t<type_tuple>;
@@ -380,8 +344,8 @@ component_tuple<Types...>::get_labeled(Args&&... args) const
 // this_type operators
 //
 template <typename... Types>
-component_tuple<Types...>&
-component_tuple<Types...>::operator-=(const this_type& rhs)
+component_list<Types...>&
+component_list<Types...>::operator-=(const this_type& rhs)
 {
     apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
@@ -391,8 +355,8 @@ component_tuple<Types...>::operator-=(const this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-component_tuple<Types...>&
-component_tuple<Types...>::operator-=(this_type& rhs)
+component_list<Types...>&
+component_list<Types...>::operator-=(this_type& rhs)
 {
     apply_v::access2<operation_t<operation::minus>>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
@@ -402,8 +366,8 @@ component_tuple<Types...>::operator-=(this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-component_tuple<Types...>&
-component_tuple<Types...>::operator+=(const this_type& rhs)
+component_list<Types...>&
+component_list<Types...>::operator+=(const this_type& rhs)
 {
     apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
@@ -413,8 +377,8 @@ component_tuple<Types...>::operator+=(const this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-component_tuple<Types...>&
-component_tuple<Types...>::operator+=(this_type& rhs)
+component_list<Types...>&
+component_list<Types...>::operator+=(this_type& rhs)
 {
     apply_v::access2<operation_t<operation::plus>>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
@@ -425,25 +389,16 @@ component_tuple<Types...>::operator+=(this_type& rhs)
 //
 template <typename... Types>
 void
-component_tuple<Types...>::print_storage()
+component_list<Types...>::print_storage()
 {
-    apply_v::type_access<operation::print_storage, data_type>();
+    apply_v::type_access<operation::print_storage, reference_type>();
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-typename component_tuple<Types...>::data_type&
-component_tuple<Types...>::data()
-{
-    return m_data;
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-const typename component_tuple<Types...>::data_type&
-component_tuple<Types...>::data() const
+typename component_list<Types...>::data_type&
+component_list<Types...>::data()
 {
     return m_data;
 }
@@ -451,28 +406,17 @@ component_tuple<Types...>::data() const
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-void
-component_tuple<Types...>::set_prefix(const string_t& _key) const
+const typename component_list<Types...>::data_type&
+component_list<Types...>::data() const
 {
-    apply_v::access<operation_t<operation::set_prefix>>(m_data, _key);
+    return m_data;
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 void
-component_tuple<Types...>::set_prefix(size_t _hash) const
-{
-    auto itr = get_hash_ids()->find(_hash);
-    if(itr != get_hash_ids()->end())
-        apply_v::access<operation_t<operation::set_prefix>>(m_data, itr->second);
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-void
-component_tuple<Types...>::set_scope(scope::config val)
+component_list<Types...>::set_scope(scope::config val)
 {
     m_scope = val;
     apply_v::access<operation_t<operation::set_scope>>(m_data, val);
@@ -481,11 +425,44 @@ component_tuple<Types...>::set_scope(scope::config val)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
+template <typename T>
 void
-component_tuple<Types...>::init_storage()
+component_list<Types...>::set_prefix(T* obj) const
+{
+    using PrefixOpT =
+        operation::generic_operator<T, operation::set_prefix<T>, TIMEMORY_API>;
+    auto _key = get_hash_ids()->find(m_hash)->second;
+    PrefixOpT(obj, m_hash, _key);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+void
+component_list<Types...>::set_prefix(const string_t& key) const
+{
+    apply_v::access<operation_t<operation::set_prefix>>(m_data, m_hash, key);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+void
+component_list<Types...>::set_prefix(size_t _hash) const
+{
+    auto itr = get_hash_ids()->find(_hash);
+    if(itr != get_hash_ids()->end())
+        apply_v::access<operation_t<operation::set_prefix>>(m_data, _hash, itr->second);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+void
+component_list<Types...>::init_storage()
 {
     static thread_local bool _once = []() {
-        apply_v::type_access<operation::init_storage, data_type>();
+        apply_v::type_access<operation::init_storage, reference_type>();
         return true;
     }();
     consume_parameters(_once);

@@ -22,9 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory/variadic/generic_bundle.hpp
- * \headerfile variadic/generic_bundle.hpp "timemory/variadic/generic_bundle.hpp"
- * This holds the bundle of data for a component_tuple or component_list
+/** \headerfile "timemory/variadic/base_bundle.hpp"
+ * This is the generic base class for a variadic bundle of components
  *
  */
 
@@ -61,18 +60,19 @@ struct pointer<T*> : pointer<T>
 
 //======================================================================================//
 //
-template <typename... Types>
-class generic_bundle
+/// \class base_bundle
+/// \brief This is the generic structure for a variadic bundle of components
+///
+template <typename Tag, typename... Types>
+class base_bundle
 {
 public:
+    using tag_type = Tag;
+
     template <typename... T>
     struct bundle;
     template <typename C, typename A, typename T>
     struct bundle_definitions;
-    template <typename... T>
-    struct generic_counter;
-    template <typename... T>
-    struct generic_deleter;
     template <template <typename> class Op, typename... T>
     struct generic_operation;
     template <template <typename> class Op, typename... T>
@@ -92,8 +92,12 @@ public:
         using print_t        = std::tuple<operation::print<T>...>;
     };
 
-    template <template <typename...> class TypeL, typename... T>
-    struct bundle<TypeL<T...>> : bundle<T...>
+    template <typename... T>
+    struct bundle<std::tuple<T...>> : bundle<T...>
+    {};
+
+    template <typename... T>
+    struct bundle<type_list<T...>> : bundle<T...>
     {};
 
     template <template <typename...> class CompL, template <typename...> class AutoL,
@@ -109,7 +113,7 @@ public:
     template <template <typename> class Op, typename... T>
     struct generic_operation
     {
-        using type = std::tuple<operation::generic_operator<T, Op<T>>...>;
+        using type = std::tuple<operation::generic_operator<T, Op<T>, tag_type>...>;
     };
 
     template <template <typename> class Op, typename... T>
@@ -128,38 +132,13 @@ public:
     struct custom_operation<Op, std::tuple<T...>> : custom_operation<Op, T...>
     {};
 
-    //----------------------------------------------------------------------------------//
-    //
-    template <typename... T>
-    struct generic_counter
-    {
-        using type = std::tuple<operation::generic_counter<T>...>;
-    };
-
-    template <typename... T>
-    struct generic_counter<std::tuple<T...>> : generic_counter<T...>
-    {};
-
-    //----------------------------------------------------------------------------------//
-    //
-    template <typename... T>
-    struct generic_deleter
-    {
-        using type = std::tuple<operation::generic_deleter<T>...>;
-    };
-
-    template <typename... T>
-    struct generic_deleter<std::tuple<T...>> : generic_deleter<T...>
-    {};
-
 public:
     using size_type   = int64_t;
     using string_t    = std::string;
     using string_hash = std::hash<string_t>;
 
-    using impl_type    = std::tuple<Types...>;
-    using type_bundler = bundle<impl_type>;
-    // using data_type      = typename type_bundler::data_type;
+    using impl_type      = std::tuple<Types...>;
+    using type_bundler   = bundle<impl_type>;
     using sample_type    = typename type_bundler::sample_type;
     using type_tuple     = typename type_bundler::type_tuple;
     using reference_type = typename type_bundler::reference_type;
@@ -180,12 +159,6 @@ public:
     template <template <typename> class Op, typename TupleT = type_tuple>
     using custom_operation_t = typename custom_operation<Op, TupleT>::type;
 
-    template <typename TupleT = type_tuple>
-    using deleter_t = typename generic_deleter<TupleT>::type;
-
-    template <typename TupleT = type_tuple>
-    using counter_t = typename generic_counter<TupleT>::type;
-
 public:
     using print_t = typename type_bundler::print_t;
 
@@ -200,8 +173,8 @@ private:
     }
 
 public:
-    explicit generic_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
-                            scope::config _scope = scope::get_default())
+    explicit base_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
+                         scope::config _scope = scope::get_default())
     : m_store(_store && settings::enabled())
     , m_is_pushed(false)
     , m_scope(_scope)
@@ -210,7 +183,7 @@ public:
     {}
 
     template <typename... T>
-    explicit generic_bundle(uint64_t hash, bool store, variadic::config<T...> config)
+    explicit base_bundle(uint64_t hash, bool store, variadic::config<T...> config)
     : m_store(store && settings::enabled())
     , m_is_pushed(false)
     , m_scope(get_config<variadic::tree_scope>(config),
@@ -220,11 +193,22 @@ public:
     , m_hash(hash)
     {}
 
-    ~generic_bundle()                     = default;
-    generic_bundle(const generic_bundle&) = default;
-    generic_bundle(generic_bundle&&)      = default;
-    generic_bundle& operator=(const generic_bundle&) = default;
-    generic_bundle& operator=(generic_bundle&&) = default;
+    template <typename... T>
+    explicit base_bundle(uint64_t hash, variadic::config<T...> config)
+    : m_store(settings::enabled())
+    , m_is_pushed(false)
+    , m_scope(get_config<variadic::tree_scope>(config),
+              get_config<variadic::flat_scope>(config),
+              get_config<variadic::timeline_scope>(config))
+    , m_laps(0)
+    , m_hash(hash)
+    {}
+
+    ~base_bundle()                  = default;
+    base_bundle(const base_bundle&) = default;
+    base_bundle(base_bundle&&)      = default;
+    base_bundle& operator=(const base_bundle&) = default;
+    base_bundle& operator=(base_bundle&&) = default;
 
     //----------------------------------------------------------------------------------//
     //
@@ -326,101 +310,159 @@ protected:
         return _instance;
     }
 };
-
+//
 //======================================================================================//
-
-template <typename... Types>
-class generic_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
+//
+template <typename Tag, typename... Types>
+class base_bundle<Tag, std::tuple<Types...>> : public base_bundle<Tag, Types...>
 {
+public:
     using data_type = std::tuple<Types...>;
 
     template <typename... Args>
-    generic_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    base_bundle(Args&&... args)
+    : base_bundle<Tag, Types...>(std::forward<Args>(args)...)
     {}
 };
 
-template <typename... Types>
-class generic_bundle<type_list<Types...>> : public generic_bundle<Types...>
+template <typename Tag, typename... Types>
+class base_bundle<Tag, type_list<Types...>> : public base_bundle<Tag, Types...>
 {
+public:
     using data_type = std::tuple<Types...>;
 
     template <typename... Args>
-    generic_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    base_bundle(Args&&... args)
+    : base_bundle<Tag, Types...>(std::forward<Args>(args)...)
     {}
 };
-
+//
 //======================================================================================//
 //
 template <typename... Types>
-struct stack_bundle : public generic_bundle<Types...>
+struct stack_bundle : public base_bundle<TIMEMORY_API, Types...>
 {
     using data_type = std::tuple<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
-struct stack_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
+struct stack_bundle<std::tuple<Types...>> : public base_bundle<TIMEMORY_API, Types...>
 {
     using data_type = std::tuple<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
-struct stack_bundle<type_list<Types...>> : public generic_bundle<Types...>
+struct stack_bundle<type_list<Types...>> : public base_bundle<TIMEMORY_API, Types...>
 {
     using data_type = std::tuple<Types...>;
 
     template <typename... Args>
     stack_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
-
+//
 //======================================================================================//
 //
 template <typename... Types>
-struct heap_bundle : public generic_bundle<Types...>
+struct heap_bundle : public base_bundle<TIMEMORY_API, Types...>
 {
     using data_type = std::tuple<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
-struct heap_bundle<std::tuple<Types...>> : public generic_bundle<Types...>
+struct heap_bundle<std::tuple<Types...>> : public base_bundle<TIMEMORY_API, Types...>
 {
     using data_type = std::tuple<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
 
 template <typename... Types>
-struct heap_bundle<type_list<Types...>> : public generic_bundle<Types...>
+struct heap_bundle<type_list<Types...>> : public base_bundle<TIMEMORY_API, Types...>
 {
     using data_type = std::tuple<Types*...>;
 
     template <typename... Args>
     heap_bundle(Args&&... args)
-    : generic_bundle<Types...>(std::forward<Args>(args)...)
+    : base_bundle<TIMEMORY_API, Types...>(std::forward<Args>(args)...)
     {}
 };
-
+//
 //======================================================================================//
+//
+template <typename ApiT, typename... Types>
+struct api_bundle
+: public conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                       base_bundle<ApiT, remove_pointer_t<Types>...>,
+                       base_bundle<ApiT, std::tuple<>>>
+{
+    using base_bundle_type = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                                           base_bundle<ApiT, remove_pointer_t<Types>...>,
+                                           base_bundle<ApiT, std::tuple<>>>;
+    using data_type        = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                                    std::tuple<Types...>, std::tuple<>>;
 
+    template <typename... Args>
+    api_bundle(Args&&... args)
+    : base_bundle_type(std::forward<Args>(args)...)
+    {}
+};
+
+template <typename ApiT, typename... Types>
+struct api_bundle<ApiT, std::tuple<Types...>>
+: public conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                       base_bundle<ApiT, remove_pointer_t<Types>...>,
+                       base_bundle<ApiT, std::tuple<>>>
+{
+    using base_bundle_type = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                                           base_bundle<ApiT, remove_pointer_t<Types>...>,
+                                           base_bundle<ApiT, std::tuple<>>>;
+    using data_type        = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                                    std::tuple<Types...>, std::tuple<>>;
+
+    template <typename... Args>
+    api_bundle(Args&&... args)
+    : base_bundle_type(std::forward<Args>(args)...)
+    {}
+};
+
+template <typename ApiT, typename... Types>
+struct api_bundle<ApiT, type_list<Types...>>
+: public conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                       base_bundle<ApiT, remove_pointer_t<Types>...>,
+                       base_bundle<ApiT, std::tuple<>>>
+{
+    using base_bundle_type = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                                           base_bundle<ApiT, remove_pointer_t<Types>...>,
+                                           base_bundle<ApiT, std::tuple<>>>;
+    using data_type        = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+                                    std::tuple<Types...>, std::tuple<>>;
+
+    template <typename... Args>
+    api_bundle(Args&&... args)
+    : base_bundle_type(std::forward<Args>(args)...)
+    {}
+};
+//
+//======================================================================================//
+//
 }  // namespace tim

@@ -144,6 +144,10 @@ extern "C"
 
     TIMEMORY_DECL void timemory_set_default(const char* components)
         TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_add_components(const char* components)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_remove_components(const char* components)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_push_components(const char* components)
         TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_push_components_enum(int args, ...)
@@ -173,6 +177,18 @@ extern "C"
     TIMEMORY_DECL void timemory_pop_region(const char* name)
         TIMEMORY_VISIBILITY("default");
 
+    TIMEMORY_DECL bool timemory_is_throttled(const char* name)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_add_hash_id(uint64_t id, const char* name)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_add_hash_ids(uint64_t nentries, uint64_t* ids,
+                                             const char** names)
+        TIMEMORY_VISIBILITY("default");
+
+    TIMEMORY_DECL void timemory_push_trace_hash(uint64_t id)
+        TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_pop_trace_hash(uint64_t id)
+        TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_push_trace(const char* name)
         TIMEMORY_VISIBILITY("default");
     TIMEMORY_DECL void timemory_pop_trace(const char* name)
@@ -184,7 +200,8 @@ extern "C"
         TIMEMORY_VISIBILITY("default");
 
 #if defined(TIMEMORY_MPI_GOTCHA)
-    TIMEMORY_DECL void timemory_trace_set_mpi(bool use) TIMEMORY_VISIBILITY("default");
+    TIMEMORY_DECL void timemory_trace_set_mpi(bool use, bool attached)
+        TIMEMORY_VISIBILITY("default");
 #endif
 
 #if defined(__cplusplus)

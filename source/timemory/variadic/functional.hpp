@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/settings/declaration.hpp"
+#include "timemory/variadic/auto_bundle.hpp"
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"

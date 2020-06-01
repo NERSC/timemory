@@ -305,7 +305,8 @@ struct argument_parser
 
         argument& names(std::vector<std::string> names)
         {
-            m_names.insert(m_names.end(), names.begin(), names.end());
+            for(auto itr : names)
+                m_names.push_back(itr);
             return *this;
         }
 
@@ -581,28 +582,29 @@ struct argument_parser
     {
         std::vector<std::string> _args;
 
-        int    _cmdc = argc;
-        char** _cmdv = argv;
-
-        auto copy_str = [](char*& _dst, const char* _src) {
-            _dst = helpers::strdup(_src);
-        };
+        bool   _found = false;  // track whether delimiter was found
+        int    _cmdc  = argc;   // the argc after known args removed
+        char** _cmdv  = argv;   // the argv after known args removed
 
         if(argc > 0)
+        {
+            m_bin = std::string((const char*) argv[0]);
             _args.push_back(std::string((const char*) argv[0]));
+        }
 
         for(int i = 1; i < argc; ++i)
         {
             std::string _arg = argv[i];
             if(_arg == _delim)
             {
+                _found       = true;
                 _cmdc        = argc - i;
                 _cmdv        = new char*[_cmdc + 1];
                 _cmdv[_cmdc] = nullptr;
-                copy_str(_cmdv[0], argv[0]);
-                int k = 1;
+                _cmdv[0]     = helpers::strdup(argv[0]);
+                int k        = 1;
                 for(int j = i + 1; j < argc; ++j, ++k)
-                    copy_str(_cmdv[k], argv[j]);
+                    _cmdv[k] = helpers::strdup(argv[j]);
                 break;
             }
             else
@@ -633,7 +635,18 @@ struct argument_parser
         if(_cmdc > 0 && verbose_level > 0)
             std::cerr << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
+        if(!_found)
+            return known_args_t{ arg_result(), _cmdc, _cmdv };
+
         return known_args_t{ parse(_args, verbose_level), _cmdc, _cmdv };
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename... Args>
+    arg_result parse_args(Args&&... args)
+    {
+        return parse(std::forward<Args>(args)...);
     }
     //
     //----------------------------------------------------------------------------------//
@@ -828,6 +841,11 @@ private:
         {
             int  equal_pos = helpers::find_equiv(arg);
             auto nmf       = m_name_map.find(arg_name);
+            if(nmf == m_name_map.end())
+            {
+                arg_name = arg.substr(0, equal_pos);
+                nmf      = m_name_map.find(arg_name);
+            }
             if(nmf == m_name_map.end())
             {
                 return arg_result("Unrecognized command line option '" + arg_name + "'");

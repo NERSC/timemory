@@ -26,6 +26,7 @@
 #include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/trace.hpp"
 //
 #include "timemory/config.hpp"
 
@@ -99,14 +100,15 @@ get_components_stack()
 inline std::string&
 get_default_components()
 {
-    static thread_local std::string _instance = "wall_clock";
+    static thread_local std::string _instance =
+        tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "wall_clock");
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 // default components to record -- maybe should be empty?
 //
-inline const component_enum_t&
+inline component_enum_t&
 get_current_components()
 {
     auto& _stack = get_components_stack();
@@ -119,6 +121,15 @@ get_current_components()
 }
 
 //--------------------------------------------------------------------------------------//
+
+std::array<bool, 2>&
+get_library_state()
+{
+    static auto _instance = std::array<bool, 2>({ { false, false } });
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
 //
 //      TiMemory symbols
 //
@@ -126,26 +137,6 @@ get_current_components()
 
 extern "C"
 {
-#if !defined(_WINDOWS)
-    TIMEMORY_WEAK_PREFIX
-    void timemory_mpip_library_ctor() TIMEMORY_WEAK_POSTFIX
-        TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    void timemory_ompt_library_ctor() TIMEMORY_WEAK_POSTFIX
-        TIMEMORY_VISIBILITY("default");
-    TIMEMORY_WEAK_PREFIX
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
-                                              const char*  runtime_version)
-        TIMEMORY_WEAK_POSTFIX TIMEMORY_VISIBILITY("default");
-
-    void                      timemory_mpip_library_ctor() {}
-    void                      timemory_ompt_library_ctor() {}
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*)
-    {
-        return nullptr;
-    }
-#endif
-
     //----------------------------------------------------------------------------------//
     //  get a unique id
     //
@@ -202,6 +193,11 @@ extern "C"
     //
     void timemory_init_library(int argc, char** argv)
     {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(get_library_state()[0])
+            return;
+        get_library_state()[0] = true;
+
         if(tim::settings::verbose() > 0)
         {
             printf("%s\n", spacer.c_str());
@@ -218,6 +214,9 @@ extern "C"
     //  finalize the library
     void timemory_finalize_library(void)
     {
+        auto lk                = tim::trace::lock<tim::trace::library>();
+        get_library_state()[1] = true;
+
         if(tim::settings::enabled() == false && get_record_map().empty())
             return;
 
@@ -278,15 +277,39 @@ extern "C"
 
     void timemory_set_default(const char* _component_string)
     {
-        get_default_components()         = std::string(_component_string);
+        auto lk                  = tim::trace::lock<tim::trace::library>();
+        get_default_components() = std::string(_component_string);
+        tim::set_env("TIMEMORY_GLOBAL_COMPONENTS", _component_string, 0);
+        tim::set_env("TIMEMORY_COMPONENTS", _component_string, 0);
         static thread_local auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
     }
 
     //----------------------------------------------------------------------------------//
 
+    void timemory_add_components(const char* _component_string)
+    {
+        auto  lk     = tim::trace::lock<tim::trace::library>();
+        auto& _stack = get_current_components();
+        for(auto itr : tim::enumerate_components(_component_string))
+            _stack.push_back(itr);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    void timemory_remove_components(const char* _component_string)
+    {
+        auto  lk     = tim::trace::lock<tim::trace::library>();
+        auto& _stack = get_current_components();
+        for(auto itr : tim::enumerate_components(_component_string))
+            tim::consume_parameters(std::remove(_stack.begin(), _stack.end(), itr));
+    }
+
+    //----------------------------------------------------------------------------------//
+
     void timemory_push_components(const char* _component_string)
     {
+        auto                      lk     = tim::trace::lock<tim::trace::library>();
         static thread_local auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
     }
@@ -295,6 +318,7 @@ extern "C"
 
     void timemory_push_components_enum(int types, ...)
     {
+        auto                      lk     = tim::trace::lock<tim::trace::library>();
         static thread_local auto& _stack = get_components_stack();
 
         component_enum_t comp({ types });
@@ -316,6 +340,7 @@ extern "C"
 
     void timemory_pop_components(void)
     {
+        auto                      lk     = tim::trace::lock<tim::trace::library>();
         static thread_local auto& _stack = get_components_stack();
         if(_stack.size() > 1)
             _stack.pop_back();
@@ -325,7 +350,8 @@ extern "C"
 
     void timemory_begin_record(const char* name, uint64_t* id)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
         {
             *id = std::numeric_limits<uint64_t>::max();
             return;
@@ -344,7 +370,8 @@ extern "C"
 
     void timemory_begin_record_types(const char* name, uint64_t* id, const char* ctypes)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
         {
             *id = std::numeric_limits<uint64_t>::max();
             return;
@@ -364,7 +391,8 @@ extern "C"
 
     void timemory_begin_record_enum(const char* name, uint64_t* id, ...)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
         {
             *id = std::numeric_limits<uint64_t>::max();
             return;
@@ -395,7 +423,8 @@ extern "C"
 
     uint64_t timemory_get_begin_record(const char* name)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
 
         uint64_t id   = 0;
@@ -415,7 +444,8 @@ extern "C"
 
     uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
 
         uint64_t id   = 0;
@@ -435,7 +465,8 @@ extern "C"
 
     uint64_t timemory_get_begin_record_enum(const char* name, ...)
     {
-        if(tim::settings::enabled() == false)
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
 
         uint64_t id = 0;
@@ -467,7 +498,8 @@ extern "C"
 
     void timemory_end_record(uint64_t id)
     {
-        if(id == std::numeric_limits<uint64_t>::max())
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk || id == std::numeric_limits<uint64_t>::max())
             return;
 
         timemory_delete_record(id);
@@ -482,8 +514,13 @@ extern "C"
 
     void timemory_push_region(const char* name)
     {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk)
+            return;
         auto& region_map = get_region_map();
-        auto  idx        = timemory_get_begin_record(name);
+        lk.release();
+        auto idx = timemory_get_begin_record(name);
+        lk       = tim::trace::lock<tim::trace::library>();
         region_map[name].push(idx);
     }
 
@@ -491,6 +528,9 @@ extern "C"
 
     void timemory_pop_region(const char* name)
     {
+        auto lk = tim::trace::lock<tim::trace::library>();
+        if(!lk)
+            return;
         auto& region_map = get_region_map();
         auto  itr        = region_map.find(name);
         if(itr == region_map.end() || (itr != region_map.end() && itr->second.empty()))
@@ -498,7 +538,9 @@ extern "C"
         else
         {
             uint64_t idx = itr->second.top();
+            lk.release();
             timemory_end_record(idx);
+            lk = tim::trace::lock<tim::trace::library>();
             itr->second.pop();
         }
     }

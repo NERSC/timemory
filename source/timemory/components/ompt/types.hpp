@@ -32,32 +32,61 @@
 #include "timemory/api.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
+#include "timemory/mpl/type_traits.hpp"
 //
+#include "timemory/components/data_tracker/types.hpp"
 #include "timemory/components/ompt/backends.hpp"
 
 //======================================================================================//
 //
-// TIMEMORY_DECLARE_TEMPLATE_COMPONENT(ompt_handle, typename Api = api::native_tag)
+TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx,
+                                    typename Tag = api::native_tag)
+//
+TIMEMORY_BUNDLE_INDEX(ompt_bundle_idx, 11110)
+//
+TIMEMORY_COMPONENT_ALIAS(user_ompt_bundle, user_bundle<ompt_bundle_idx, api::native_tag>)
+//
+//======================================================================================//
+//
 namespace tim
 {
 namespace component
 {
 template <typename Api = api::native_tag>
 struct ompt_handle;
-using ompt_native_handle = ompt_handle<api::native_tag>;
+
+template <typename Api>
+struct ompt_data_tracker;
+
+struct ompt_target_data_tag
+{};
+
+using ompt_native_handle       = ompt_handle<api::native_tag>;
+using ompt_native_data_tracker = ompt_data_tracker<api::native_tag>;
+//
+using ompt_data_tracker_t = data_tracker<int64_t, ompt_target_data_tag>;
+//
 }  // namespace component
 }  // namespace tim
 //
-// TIMEMORY_COMPONENT_ALIAS(ompt_native_handle, ompt_handle<api::native_tag>)
-//
 //--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_USE_OMPT)
 //
 namespace tim
 {
 namespace trait
 {
+//
+//--------------------------------------------------------------------------------------//
+/// trait for configuring OMPT components
+///
+template <typename T>
+struct ompt_handle
+{
+    using type =
+        component_tuple<component::user_ompt_bundle, component::ompt_native_data_tracker>;
+};
+//
+#if !defined(TIMEMORY_USE_OMPT)
 //
 template <typename Api>
 struct is_available<component::ompt_handle<Api>> : false_type
@@ -67,10 +96,18 @@ template <>
 struct is_available<component::ompt_native_handle> : false_type
 {};
 //
-}  // namespace trait
-}  // namespace tim
+template <typename Api>
+struct is_available<component::ompt_data_tracker<Api>> : false_type
+{};
+//
+template <>
+struct is_available<component::ompt_native_data_tracker> : false_type
+{};
 //
 #endif
+//
+}  // namespace trait
+}  // namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -80,7 +117,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<api::native_tag>, OMPT_HANDLE, "omp
 //======================================================================================//
 //
 #include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/utility.hpp"
 //
@@ -103,9 +139,9 @@ struct begin_callback
 /// \brief This is the end of a paired callback
 struct end_callback
 {};
-/// \class openmp::mode::measure_callback
-/// \brief This is a sampling callback
-struct measure_callback
+/// \class openmp::mode::store_callback
+/// \brief This is a callback that just stores some data
+struct store_callback
 {};
 /// \class openmp::mode::endpoint_callback
 /// \brief This is a callback whose first argument designates an endpoint
@@ -134,16 +170,108 @@ struct callback_connector;
 //--------------------------------------------------------------------------------------//
 //
 /// \fn openmp::user_context_callback
-/// \brief this is a dummy implementation which the user can use to customize the labeling
-/// or identifier. The \param id argument is the unique hash associated with
-/// callback, the \param key argument is the label passed to timemory. All remaining
-/// arguments should be specialized to the particular callback.
+/// \brief These functions can be specialized an overloaded for quick access
+/// to the the openmp callbacks. The first function (w/ string) is invoked by every
+/// openmp callback. The other versions (w/ mode) is invoked depending on how
+/// each callback is configured
 ///
 template <typename Handler, typename... Args>
 void
-user_context_callback(Handler& handle, size_t& id, std::string& key, Args... args)
+user_context_callback(Handler& handle, std::string& key, Args... args)
 {
-    consume_parameters(handle, id, key, args...);
+    consume_parameters(handle, key, args...);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Handler, typename... Args>
+void
+user_context_callback(Handler& handle, mode::begin_callback, Args... args)
+{
+    auto functor = [&args...](Tp* c) {
+        c->construct(args...);
+        c->store(args...);
+        c->start();
+        c->audit(args...);
+    };
+    handle.template construct<Tp>(functor);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Handler, typename... Args>
+void
+user_context_callback(Handler& handle, mode::end_callback, Args... args)
+{
+    auto functor = [&args...](Tp* c) {
+        c->audit(args...);
+        c->stop();
+    };
+    handle.template destroy<Tp>(functor);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Handler, typename... Args>
+void
+user_context_callback(Handler& handle, mode::store_callback, Args... args)
+{
+    Tp c(handle.key());
+    c.store(args...);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Handler, typename... Args>
+void
+user_context_callback(Handler&              handle, mode::endpoint_callback,
+                      ompt_scope_endpoint_t endp, Args... args)
+{
+    if(endp == ompt_scope_begin)
+    {
+        auto functor = [&endp, &args...](Tp* c) {
+            c->construct(endp, args...);
+            c->store(endp, args...);
+            c->start();
+            c->audit(endp, args...);
+        };
+        handle.template construct<Tp>(functor);
+    }
+    else if(endp == ompt_scope_end)
+    {
+        auto functor = [&endp, &args...](Tp* c) {
+            c->audit(endp, args...);
+            c->stop();
+        };
+        handle.template destroy<Tp>(functor);
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename Handler, typename Arg, typename... Args>
+void
+user_context_callback(Handler& handle, mode::endpoint_callback, Arg arg,
+                      ompt_scope_endpoint_t endp, Args... args)
+{
+    if(endp == ompt_scope_begin)
+    {
+        auto functor = [&arg, &endp, &args...](Tp* c) {
+            c->construct(endp, args...);
+            c->store(endp, args...);
+            c->start();
+            c->audit(arg, endp, args...);
+        };
+        handle.template construct<Tp>(functor);
+    }
+    else if(endp == ompt_scope_end)
+    {
+        auto functor = [&arg, &endp, &args...](Tp* c) {
+            c->audit(arg, endp, args...);
+            c->stop();
+        };
+        handle.template destroy<Tp>(functor);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -158,11 +286,16 @@ user_context_callback(Handler& handle, size_t& id, std::string& key, Args... arg
 template <typename Components, typename Connector, typename Mode, typename... Args>
 struct ompt_wrapper
 {
-    // using result_type    = ReturnType;
-    using args_type      = std::tuple<Args...>;
+    using args_type      = std::tuple<Mode, Args...>;
     using component_type = Components;
 
-    static void callback(Args... args) { Connector(Mode{}, args...); }
+    static void callback(Args... args)
+    {
+        constexpr auto can_ctor = std::is_constructible<Connector, Mode, Args...>::value;
+        static_assert(can_ctor,
+                      "Error! Cannot construct the connector with given arguments");
+        Connector(Mode{}, args...);
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -177,7 +310,8 @@ struct ompt_wrapper
 //--------------------------------------------------------------------------------------//
 
 extern "C" int
-ompt_initialize(ompt_function_lookup_t lookup, ompt_data_t* tool_data);
+ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
+                ompt_data_t* tool_data);
 
 extern "C" ompt_start_tool_result_t*
 ompt_start_tool(unsigned int omp_version, const char* runtime_version);

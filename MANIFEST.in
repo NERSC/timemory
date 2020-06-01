@@ -20,6 +20,7 @@ recursive-include source *
 recursive-include timemory *.py*
 recursive-include .licenses *
 recursive-include tests *
+recursive-include scripts *
 
 # global exclude
 

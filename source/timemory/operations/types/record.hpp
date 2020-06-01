@@ -73,7 +73,8 @@ private:
     template <typename Up, typename Vp, typename T, typename... Args,
               enable_if_t<(check_record_type<Up, Vp>::value), int> = 0>
     auto sfinae(T& obj, int, int, Args&&... args)
-        -> decltype((obj.value = obj.record(std::forward<Args>(args)...)), void())
+        -> decltype((std::declval<T&>().value = obj.record(std::forward<Args>(args)...)),
+                    void())
     {
         obj.value = obj.record(std::forward<Args>(args)...);
     }
@@ -82,7 +83,7 @@ private:
     template <typename Up, typename Vp, typename T, typename... Args,
               enable_if_t<(check_record_type<Up, Vp>::value), int> = 0>
     auto sfinae(T& obj, int, long, Args&&...)
-        -> decltype((obj.value = obj.record()), void())
+        -> decltype((std::declval<T&>().value = obj.record()), void())
     {
         obj.value = obj.record();
     }

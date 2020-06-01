@@ -76,6 +76,8 @@ struct cpu_roofline
     using storage_type = typename base_type::storage_type;
     using record_type  = std::function<value_type()>;
 
+    friend struct operation::record<this_type>;
+
     using unit_type         = typename trait::units<this_type>::type;
     using display_unit_type = typename trait::units<this_type>::display_type;
 
@@ -365,9 +367,8 @@ struct cpu_roofline
 
     static std::string description()
     {
-        return "CPU Roofline " + get_type_string() + " " +
-               std::string((event_mode() == MODE::OP) ? "Counters"
-                                                      : "Arithmetic Intensity");
+        return "Model used to provide performance relative to the peak possible "
+               "performance on a CPU architecture.";
     }
 
     //----------------------------------------------------------------------------------//
@@ -545,19 +546,36 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
+    //
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
+    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
     {
-        auto _disp = get_display();
+        auto _disp  = get_display();
+        auto labels = label_array();
+
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("labels", labels),
+           cereal::make_nvp("papi_vector", m_papi_vector));
+        ar(cereal::make_nvp("value", value));
+        ar(cereal::make_nvp("accum", accum));
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Archive>
+    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int) const
+    {
+        auto _disp  = get_display();
+        auto labels = label_array();
 
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
            cereal::make_nvp("display", _disp),
            cereal::make_nvp("mode", get_mode_string()),
-           cereal::make_nvp("type", get_type_string()));
+           cereal::make_nvp("type", get_type_string()),
+           cereal::make_nvp("labels", labels),
+           cereal::make_nvp("papi_vector", m_papi_vector));
 
-        auto labels = label_array();
-        auto data   = get();
+        auto data = get();
         ar.setNextName("repr_data");
         ar.startNode();
         auto litr = labels.begin();

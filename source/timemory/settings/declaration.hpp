@@ -146,6 +146,10 @@ struct TIMEMORY_SETTINGS_DLL settings
         ([](bool v) { scope::get_fields()[scope::timeline::value] = v; }))
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_threads, "TIMEMORY_COLLAPSE_THREADS",
                                     "Enable/disable combining thread-specific data", true)
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_processes,
+                                    "TIMEMORY_COLLAPSE_PROCESSES",
+                                    "Enable/disable combining process-specific data",
+                                    false)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                                     "Set the maximum depth of label hierarchy reporting",
                                     std::numeric_limits<uint16_t>::max())
@@ -235,15 +239,24 @@ struct TIMEMORY_SETTINGS_DLL settings
         bool, dart_label, "TIMEMORY_DART_LABEL",
         "Echo the category instead of the label (see also: TIMEMORY_DART_OUTPUT)", true)
 
+    /// max number of times a worker thread bookmarks call-graph position of master thread
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        size_t, max_thread_bookmarks, "TIMEMORY_MAX_THREAD_BOOKMARKS",
+        "Maximum number of times a worker thread bookmarks the call-graph location w.r.t."
+        " the master thread. Higher values tend to increase the finalization merge time",
+        50)
+
     /// enable thread affinity
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, cpu_affinity, "TIMEMORY_CPU_AFFINITY",
                                     "Enable pinning threads to CPUs (Linux-only)", false)
+
     /// target pid
     TIMEMORY_MEMBER_STATIC_REFERENCE(
         process::id_t, target_pid, "TIMEMORY_TARGET_PID",
         "Process ID for the components which require this",
         ([]() -> process::id_t& { return process::get_target_id(); }),
         ([](process::id_t v) { process::get_target_id() = v; }))
+
     /// configure component storage stack clearing
     TIMEMORY_MEMBER_STATIC_ACCESSOR(
         bool, stack_clearing, "TIMEMORY_STACK_CLEARING",
@@ -252,6 +265,15 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(
         bool, add_secondary, "TIMEMORY_ADD_SECONDARY",
         "Enable/disable components adding secondary (child) entries", true)
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(size_t, throttle_count, "TIMEMORY_THROTTLE_COUNT",
+                                    "Minimum number of laps before throttling", 10000)
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        size_t, throttle_value, "TIMEMORY_THROTTLE_VALUE",
+        "Average call time in nanoseconds when # laps > throttle_count that triggers "
+        "throttling",
+        10000)
 
     //==================================================================================//
     //
@@ -288,17 +310,6 @@ struct TIMEMORY_SETTINGS_DLL settings
                                     "'funneled', or 'multiple' (see also: "
                                     "TIMEMORY_MPI_INIT and TIMEMORY_MPI_THREAD)",
                                     "")
-
-    /// output MPI data per rank
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_output_per_rank,
-                                    "TIMEMORY_MPI_OUTPUT_PER_RANK",
-                                    "Generate MPI output per-rank (skip aggregation)",
-                                    false)
-
-    /// output MPI data per node
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, mpi_output_per_node,
-                                    "TIMEMORY_MPI_OUTPUT_PER_NODE",
-                                    "Aggregate MPI output per-node", false)
 
     //----------------------------------------------------------------------------------//
     //      UPC++
@@ -746,6 +757,7 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_FLAT_PROFILE", flat_profile)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TIMELINE_PROFILE", timeline_profile)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_COLLAPSE_THREADS", collapse_threads)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_COLLAPSE_PROCESSES", collapse_processes)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MAX_DEPTH", max_depth)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TIME_FORMAT", time_format)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PRECISION", precision)
@@ -764,8 +776,6 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_FINALIZE", mpi_finalize)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD", mpi_thread)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD_TYPE", mpi_thread_type)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_OUTPUT_PER_RANK", mpi_output_per_rank)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_OUTPUT_PER_NODE", mpi_output_per_node)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PATH", output_path)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PREFIX", output_prefix)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_INPUT_PATH", input_path)
@@ -775,9 +785,12 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_COUNT", dart_count)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_DART_LABEL", dart_label)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_CPU_AFFINITY", cpu_affinity)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MAX_THREAD_BOOKMARKS", max_thread_bookmarks)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TARGET_PID", target_pid)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_STACK_CLEARING", stack_clearing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_ADD_SECONDARY", add_secondary)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_THROTTLE_COUNT", throttle_count)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_THROTTLE_VALUE", throttle_value)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_MULTIPLEXING", papi_multiplexing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_FAIL_ON_ERROR", papi_fail_on_error)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_QUIET", papi_quiet)

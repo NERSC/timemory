@@ -1,9 +1,14 @@
 
-if(NOT TIMEMORY_BUILD_GTEST AND NOT TIMEMORY_BUILD_TESTING)
+if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
 	return()
 endif()
 
-add_library(extern-test-templates SHARED
+set(_EXCLUDE)
+if(NOT TIMEMORY_BUILD_TESTING)
+    set(_EXCLUDE EXCLUDE_FROM_ALL)
+endif()
+
+add_library(extern-test-templates ${_EXCLUDE} SHARED
     extern_templates.cpp)
 
 target_link_libraries(extern-test-templates PUBLIC
@@ -12,7 +17,7 @@ target_link_libraries(extern-test-templates PUBLIC
     timemory-arch
     timemory-vector)
 
-add_library(gotcha-tests-lib SHARED
+add_library(gotcha-tests-lib ${_EXCLUDE} SHARED
     gotcha_tests_lib.hpp
     gotcha_tests_lib.cpp)
   
@@ -29,12 +34,12 @@ if(NOT TIMEMORY_SKIP_BUILD AND TIMEMORY_BUILD_C)
         timemory-plotting timemory-analysis-tools)
 
     if(BUILD_SHARED_LIBS)
-        add_library(custom-record-functions SHARED
+        add_library(custom-record-functions ${_EXCLUDE} SHARED
     	    custom_record_functions.cpp)
         target_link_libraries(custom-record-functions
             timemory-cxx-shared timemory-c-shared ${_LINK})
     elseif(BUILD_STATIC_LIBS)
-        add_library(custom-record-functions STATIC
+        add_library(custom-record-functions ${_EXCLUDE} STATIC
             custom_record_functions.cpp)
         target_link_libraries(custom-record-functions PUBLIC
             timemory-cxx-static timemory-c-static ${_LINK})

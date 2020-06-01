@@ -52,8 +52,11 @@ struct tau_marker : public base<tau_marker, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "tau"; }
-    static std::string description() { return "TAU_start and TAU_stop instrumentation"; }
-    static value_type  record() {}
+    static std::string description()
+    {
+        return "Forwards markers to TAU instrumentation (via Tau_start and Tau_stop)";
+    }
+    static value_type record() {}
 
     static void global_init(storage_type*)
     {

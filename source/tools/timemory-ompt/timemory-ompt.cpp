@@ -55,7 +55,20 @@ extern "C"
 {
     ompt_start_tool_result_t* ompt_start_tool(unsigned int, const char*);
 
-    void timemory_ompt_library_ctor() {}
+    void timemory_ompt_library_ctor()
+    {
+        auto ompt   = tim::get_env<std::string>("TIMEMORY_OMPT_COMPONENTS", "");
+        auto over   = (ompt.empty()) ? 1 : 0;
+        auto trace  = tim::get_env<std::string>("TIMEMORY_TRACE_COMPONENTS", "");
+        auto region = tim::get_env<std::string>("TIMEMORY_COMPONENTS", "");
+        auto glob   = tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "");
+        if(!trace.empty())
+            tim::set_env("TIMEMORY_OMPT_COMPONENTS", trace, over);
+        else if(!region.empty())
+            tim::set_env("TIMEMORY_OMPT_COMPONENTS", region, over);
+        else if(!glob.empty())
+            tim::set_env("TIMEMORY_OMPT_COMPONENTS", glob, over);
+    }
 
     uint64_t timemory_start_ompt()
     {

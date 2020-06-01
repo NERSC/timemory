@@ -375,26 +375,6 @@ struct derive;
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename T, typename Op>
-struct pointer_operator;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename T>
-struct pointer_deleter;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename T>
-struct pointer_counter;
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename T, typename Op>
-struct generic_operator;
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename T>
 struct generic_deleter;
 //
@@ -402,6 +382,11 @@ struct generic_deleter;
 //
 template <typename T>
 struct generic_counter;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename Op, typename Tag = TIMEMORY_API>
+struct generic_operator;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -437,6 +422,36 @@ struct print;
 //
 template <typename Type, bool has_data>
 struct merge;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+struct merge<Type, true>
+{
+    static constexpr bool has_data = true;
+    using storage_type             = impl::storage<Type, has_data>;
+    using singleton_t              = typename storage_type::singleton_type;
+    using graph_t                  = typename storage_type::graph_type;
+    using result_type              = typename storage_type::result_array_t;
+
+    merge(storage_type& lhs, storage_type& rhs);
+    merge(result_type& lhs, const result_type& rhs);
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+struct merge<Type, false>
+{
+    static constexpr bool has_data = false;
+    using storage_type             = impl::storage<Type, has_data>;
+    using singleton_t              = typename storage_type::singleton_type;
+    using graph_t                  = typename storage_type::graph_type;
+    using result_type              = typename storage_type::result_array_t;
+
+    merge(storage_type& lhs, storage_type& rhs);
+    merge(result_type&, const result_type&) {}
+};
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -60,9 +60,13 @@ namespace component
 struct peak_rss : public base<peak_rss>
 {
     static std::string label() { return "peak_rss"; }
-    static std::string description() { return "max resident set size"; }
-    static value_type  record() { return get_peak_rss(); }
-    double             get() const
+    static std::string description()
+    {
+        return "Measures changes in the high-water mark for the amount of memory "
+               "allocated in RAM. May fluctuate if swap is enabled";
+    }
+    static value_type record() { return get_peak_rss(); }
+    double            get() const
     {
         auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
@@ -98,9 +102,13 @@ struct page_rss : public base<page_rss, int64_t>
     using base_type   = base<this_type, value_type>;
 
     static std::string label() { return "page_rss"; }
-    static std::string description() { return "resident set size of memory pages"; }
-    static value_type  record() { return get_page_rss(); }
-    double             get() const
+    static std::string description()
+    {
+        return "Amount of memory allocated in pages of memory. Unlike peak_rss, value "
+               "will fluctuate as memory is freed/allocated";
+    }
+    static value_type record() { return get_page_rss(); }
+    double            get() const
     {
         auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
@@ -138,7 +146,7 @@ struct stack_rss : public base<stack_rss>
 
     static int64_t     units() { return units::kilobyte; }
     static std::string label() { return "stack_rss"; }
-    static std::string description() { return "integral unshared stack size"; }
+    static std::string description() { return "Integral unshared stack size"; }
     static value_type  record() { return get_stack_rss(); }
     double             get() const
     {
@@ -176,7 +184,7 @@ struct data_rss : public base<data_rss>
 
     static int64_t     units() { return units::kilobyte; }
     static std::string label() { return "data_rss"; }
-    static std::string description() { return "integral unshared data size"; }
+    static std::string description() { return "Integral unshared data size"; }
     static value_type  record() { return get_data_rss(); }
     double             get() const
     {
@@ -216,7 +224,7 @@ struct num_swap : public base<num_swap>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "num_swap"; }
-    static std::string description() { return "swaps out of main memory"; }
+    static std::string description() { return "Number of swaps out of main memory"; }
     static value_type  record() { return get_num_swap(); }
     value_type         get() const
     {
@@ -253,9 +261,12 @@ struct num_io_in : public base<num_io_in>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "io_in"; }
-    static std::string description() { return "block input operations"; }
-    static value_type  record() { return get_num_io_in(); }
-    value_type         get() const
+    static std::string description()
+    {
+        return "Number of times the filesystem had to perform input";
+    }
+    static value_type record() { return get_num_io_in(); }
+    value_type        get() const
     {
         auto val = (is_transient) ? accum : value;
         return val;
@@ -290,9 +301,12 @@ struct num_io_out : public base<num_io_out>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "io_out"; }
-    static std::string description() { return "block output operations"; }
-    static value_type  record() { return get_num_io_out(); }
-    value_type         get() const
+    static std::string description()
+    {
+        return "Number of times the filesystem had to perform output";
+    }
+    static value_type record() { return get_num_io_out(); }
+    value_type        get() const
     {
         auto val = (is_transient) ? accum : value;
         return val;
@@ -328,9 +342,13 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "minor_page_flts"; }
-    static std::string description() { return "page reclaims"; }
-    static value_type  record() { return get_num_minor_page_faults(); }
-    value_type         get() const
+    static std::string description()
+    {
+        return "Number of page faults serviced without any I/O activity via 'reclaiming' "
+               "a page frame from the list of pages awaiting reallocation";
+    }
+    static value_type record() { return get_num_minor_page_faults(); }
+    value_type        get() const
     {
         auto val = (is_transient) ? accum : value;
         return val;
@@ -365,9 +383,12 @@ struct num_major_page_faults : public base<num_major_page_faults>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "major_page_flts"; }
-    static std::string description() { return "page faults"; }
-    static value_type  record() { return get_num_major_page_faults(); }
-    value_type         get() const
+    static std::string description()
+    {
+        return "Number of page faults serviced that required I/O activity";
+    }
+    static value_type record() { return get_num_major_page_faults(); }
+    value_type        get() const
     {
         auto val = (is_transient) ? accum : value;
         return val;
@@ -404,7 +425,7 @@ struct num_msg_sent : public base<num_msg_sent>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "num_msg_sent"; }
-    static std::string description() { return "messages sent"; }
+    static std::string description() { return "Number of IPC messages sent"; }
     static value_type  record() { return get_num_messages_sent(); }
     value_type         get() const
     {
@@ -443,7 +464,7 @@ struct num_msg_recv : public base<num_msg_recv>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "num_msg_recv"; }
-    static std::string description() { return "messages received"; }
+    static std::string description() { return "Number of IPC messages received"; }
     static value_type  record() { return get_num_messages_received(); }
     value_type         get() const
     {
@@ -481,7 +502,7 @@ struct num_signals : public base<num_signals>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "num_signals"; }
-    static std::string description() { return "signals delievered"; }
+    static std::string description() { return "Number of signals delivered"; }
     static value_type  record() { return get_num_signals(); }
     value_type         get_display() const
     {
@@ -520,9 +541,13 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "vol_cxt_swch"; }
-    static std::string description() { return "voluntary context switches"; }
-    static value_type  record() { return get_num_voluntary_context_switch(); }
-    value_type         get_display() const
+    static std::string description()
+    {
+        return "Number of context switches due to a process voluntarily giving up the "
+               "processor before its time slice was completed";
+    }
+    static value_type record() { return get_num_voluntary_context_switch(); }
+    value_type        get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return val;
@@ -547,9 +572,8 @@ using vol_cxt_switch = voluntary_context_switch;
 //--------------------------------------------------------------------------------------//
 /// \class priority_context_switch
 /// \brief
-/// the number of times a context switch resulted due to a process voluntarily giving up
-/// the processor before its time slice was completed (usually to await availability of a
-/// resource).
+/// the number of times a context switch resulted due to a higher priority process
+/// becoming runnable or because the current process exceeded its time slice
 //
 struct priority_context_switch : public base<priority_context_switch>
 {
@@ -561,9 +585,13 @@ struct priority_context_switch : public base<priority_context_switch>
     static const std::ios_base::fmtflags format_flags = {};
 
     static std::string label() { return "prio_cxt_swch"; }
-    static std::string description() { return "priority context switches"; }
-    static value_type  record() { return get_num_priority_context_switch(); }
-    value_type         get_display() const
+    static std::string description()
+    {
+        return "Number of context switch due to higher priority process becoming runnable"
+               " or because the current process exceeded its time slice)";
+    }
+    static value_type record() { return get_num_priority_context_switch(); }
+    value_type        get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return val;
@@ -599,7 +627,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
     using result_type = std::pair<double, double>;
 
     static std::string label() { return "read_bytes"; }
-    static std::string description() { return "physical I/O reads"; }
+    static std::string description() { return "Physical I/O reads"; }
 
     static std::pair<double, double> unit()
     {
@@ -779,7 +807,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
     using result_type = std::array<double, 2>;
 
     static std::string label() { return "written_bytes"; }
-    static std::string description() { return "physical I/O writes"; }
+    static std::string description() { return "Physical I/O writes"; }
 
     static result_type unit()
     {
@@ -960,7 +988,7 @@ struct virtual_memory : public base<virtual_memory>
     using base_type  = base<virtual_memory, value_type>;
 
     static std::string label() { return "virtual_memory"; }
-    static std::string description() { return "virtual memory usage"; }
+    static std::string description() { return "Records the change in virtual memory"; }
     static value_type  record() { return get_virt_mem(); }
     double             get() const
     {
@@ -995,8 +1023,11 @@ struct user_mode_time : public base<user_mode_time, int64_t>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "user_mode"; }
-    static std::string description() { return "Time spent executing in user mode"; }
-    static value_type  record() { return get_user_mode_time(); }
+    static std::string description()
+    {
+        return "CPU time spent executing in user mode (via rusage)";
+    }
+    static value_type record() { return get_user_mode_time(); }
 
     double get_display() const { return get(); }
     double get() const
@@ -1035,8 +1066,11 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "kernel_mode"; }
-    static std::string description() { return "Time spent executing in kernel mode"; }
-    static value_type  record() { return get_kernel_mode_time(); }
+    static std::string description()
+    {
+        return "CPU time spent executing in kernel mode (via rusage)";
+    }
+    static value_type record() { return get_kernel_mode_time(); }
 
     double get_display() const { return get(); }
     double get() const
@@ -1066,8 +1100,8 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
 //--------------------------------------------------------------------------------------//
 /// \class current_peak_rss
 /// \brief
-/// this struct extracts the high-water mark of the resident set size (RSS) at start
-/// and stop. RSS is current amount of memory in RAM.
+/// this struct extracts the absolute value of high-water mark of the resident set size
+/// (RSS) at start and stop points. RSS is current amount of memory in RAM.
 //
 struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64_t>>
 {
@@ -1077,8 +1111,11 @@ struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64
     using this_type         = current_peak_rss;
 
     static std::string label() { return "current_peak_rss"; }
-    static std::string description() { return "current resident set size"; }
-    static value_type  record() { return value_type{ get_peak_rss(), 0 }; }
+    static std::string description()
+    {
+        return "Absolute value of high-water mark of memory allocation in RAM";
+    }
+    static value_type record() { return value_type{ get_peak_rss(), 0 }; }
 
     void start()
     {

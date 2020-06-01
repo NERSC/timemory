@@ -100,8 +100,12 @@ struct cuda_event : public base<cuda_event, float>
     using marker_list_t = std::vector<marker>;
 
     static std::string label() { return "cuda_event"; }
-    static std::string description() { return "event time"; }
-    static value_type  record() { return 0.0f; }
+    static std::string description()
+    {
+        return "Records the time interval between two points in a CUDA stream. Less "
+               "accurate than 'cupti_activity' for kernel timing";
+    }
+    static value_type record() { return 0.0f; }
 
     static uint64_t& get_batched_marker_size()
     {
@@ -233,7 +237,10 @@ struct cuda_profiler
     using tracker_type = policy::instance_tracker<cuda_profiler>;
 
     static std::string label() { return "cuda_profiler"; }
-    static std::string description() { return "CUDA profiler controller"; }
+    static std::string description()
+    {
+        return "Control switch for a CUDA profiler running on the application";
+    }
 
     enum class mode : short
     {
@@ -317,8 +324,11 @@ struct nvtx_marker : public base<nvtx_marker, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "nvtx_marker"; }
-    static std::string description() { return "NVTX markers"; }
-    static value_type  record() {}
+    static std::string description()
+    {
+        return "Generates high-level region markers for CUDA profilers";
+    }
+    static value_type record() {}
 
     static bool& use_device_sync()
     {

@@ -5,20 +5,27 @@ project(timemory-Optional-Example LANGUAGES C CXX)
 find_package(timemory REQUIRED COMPONENTS compile-options analysis-tools
     OPTIONAL_COMPONENTS cxx shared)
 
+option(USE_OPENMP "Enable OpenMP in timemory example" ON)
+option(USE_MPI "Enable MPI in timemory example" ON)
+
 find_package(OpenMP QUIET)
-if(OpenMP_FOUND)
+find_package(MPI QUIET)
+
+if(OpenMP_FOUND AND USE_OPENMP)
     list(APPEND _OMP OpenMP::OpenMP_CXX)
 endif()
 
-find_package(MPI QUIET)
-if(TARGET timemory-mpi)
-    set(_MPI timemory-mpi)
-elseif(TARGET timemory::timemory-mpi)
-    set(_MPI timemory::timemory-mpi)
-endif()
-if(MPI_FOUND)
-    list(APPEND _MPI MPI::MPI_CXX)
-    target_compile_definitions(MPI::MPI_CXX INTERFACE TIMEMORY_USE_MPI)
+if(USE_MPI)
+    if(TARGET timemory-mpi)
+        set(_MPI timemory-mpi)
+    elseif(TARGET timemory::timemory-mpi)
+        set(_MPI timemory::timemory-mpi)
+    endif()
+
+    if(MPI_FOUND)
+        list(APPEND _MPI MPI::MPI_CXX)
+        target_compile_definitions(MPI::MPI_CXX INTERFACE TIMEMORY_USE_MPI)
+    endif()
 endif()
 
 file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)

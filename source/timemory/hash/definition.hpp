@@ -73,7 +73,7 @@ get_hash_aliases()
 TIMEMORY_HASH_LINKAGE(hash_result_type)
 add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
 {
-    hash_result_type _hash_id = std::hash<std::string>()(prefix.c_str());
+    hash_result_type _hash_id = get_hash_id(prefix);
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
         (*_hash_map)[_hash_id] = prefix;

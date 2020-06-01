@@ -41,7 +41,7 @@ _sitedir = os.path.realpath(os.path.join(os.getcwd(), "..", "site"))
 
 if not os.path.exists(_bindir):
     os.makedirs(_bindir)
-    
+
 os.chdir(_bindir)
 sp.run(["cmake",
         "-DTIMEMORY_BUILD_DOCS=ON", "-DENABLE_DOXYGEN_HTML_DOCS=ON",
@@ -51,8 +51,13 @@ sp.run(["cmake", "--build", os.getcwd(), "--target", "doc"])
 
 if os.path.exists(_doxdir):
     shutil.rmtree(_doxdir)
-    
+
 shutil.copytree(_doxbin, _doxdir)
+for t in ["timem", "timemory-run", "timemory-mpip", "timemory-ompt",
+          "timemory-avail"]:
+    shutil.copyfile(
+        os.path.join(_srcdir, "source", "tools", t, "README.md"),
+        os.path.join(_docdir, "getting_started", "{}.md".format(t)))
 
 install('mkdocs-cinder')
 # install('mkdocs-inspired')

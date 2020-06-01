@@ -278,6 +278,7 @@ struct papi_vector
             papi::destroy_event_set(_event_set());
             _event_set() = PAPI_NULL;
         }
+        papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//
@@ -404,24 +405,30 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // serialization
+    // load
     //
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
+    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+    {
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
+           cereal::make_nvp("events", events));
+    }
+
+    //----------------------------------------------------------------------------------//
+    // save
+    //
+    template <typename Archive>
+    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int) const
     {
         auto             sz = events.size();
         vector_t<double> _disp(sz, 0.0);
-        vector_t<double> _value(sz, 0.0);
-        vector_t<double> _accum(sz, 0.0);
         for(size_type i = 0; i < sz; ++i)
-        {
-            _disp[i]  = get_display(i);
-            _value[i] = value[i];
-            _accum[i] = accum[i];
-        }
+            _disp[i] = get_display(i);
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
+           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", value),
+           cereal::make_nvp("accum", accum), cereal::make_nvp("display", _disp),
+           cereal::make_nvp("events", events));
     }
 
     //----------------------------------------------------------------------------------//
@@ -600,6 +607,8 @@ struct papi_array
 
     template <typename Tp>
     using array_t = std::array<Tp, MaxNumEvents>;
+
+    friend struct operation::record<this_type>;
 
     //----------------------------------------------------------------------------------//
 
@@ -863,20 +872,26 @@ public:
     // serialization
     //
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
+    void CEREAL_LOAD_FUNCTION_NAME(Archive& ar, const unsigned int)
+    {
+        ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
+           cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
+           cereal::make_nvp("events", events));
+    }
+
+    //----------------------------------------------------------------------------------//
+    // serialization
+    //
+    template <typename Archive>
+    void CEREAL_SAVE_FUNCTION_NAME(Archive& ar, const unsigned int) const
     {
         array_t<double> _disp;
-        array_t<double> _value;
-        array_t<double> _accum;
         for(size_type i = 0; i < events.size(); ++i)
-        {
-            _disp[i]  = get_display(i);
-            _value[i] = value[i];
-            _accum[i] = accum[i];
-        }
+            _disp[i] = get_display(i);
         ar(cereal::make_nvp("is_transient", is_transient), cereal::make_nvp("laps", laps),
-           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", _value),
-           cereal::make_nvp("accum", _accum), cereal::make_nvp("display", _disp));
+           cereal::make_nvp("repr_data", _disp), cereal::make_nvp("value", value),
+           cereal::make_nvp("accum", accum), cereal::make_nvp("display", _disp),
+           cereal::make_nvp("events", events));
     }
 
     //----------------------------------------------------------------------------------//
@@ -1048,6 +1063,8 @@ struct papi_tuple
     template <typename Tp>
     using array_t = std::array<Tp, num_events>;
 
+    friend struct operation::record<this_type>;
+
 public:
     //==================================================================================//
     //
@@ -1123,12 +1140,12 @@ public:
         if(initialize_papi())
         {
             value_type values;
-            tim::papi::stop(event_set(), values.data());
-            tim::papi::remove_events(event_set(), get_events().data(), num_events);
-            tim::papi::destroy_event_set(event_set());
+            papi::stop(event_set(), values.data());
+            papi::remove_events(event_set(), get_events().data(), num_events);
+            papi::destroy_event_set(event_set());
             event_set() = PAPI_NULL;
-            papi::unregister_thread();
         }
+        papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//

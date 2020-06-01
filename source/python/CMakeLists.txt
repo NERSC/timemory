@@ -34,7 +34,8 @@ add_library(libpytimemory MODULE ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.cpp
 target_include_directories(libpytimemory SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
 
-target_link_libraries(libpytimemory PUBLIC
+target_link_libraries(libpytimemory PRIVATE
+    timemory-python
     timemory-headers
     timemory-cxx-shared
     timemory-compile-options
@@ -72,15 +73,20 @@ set(PYTHON_SUBMODULE_FILES
 foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
     set(BINARY_DIR ${CMAKE_BINARY_DIR}/timemory/${_SUBMODULE})
-
+    file(GLOB _FILES ${SOURCE_DIR}/*.py)
+    
     # copy over the python file
-    if(EXISTS ${SOURCE_DIR}/${_SUBMODULE}.py)
-        configure_file(${SOURCE_DIR}/${_SUBMODULE}.py
-            ${BINARY_DIR}/${_SUBMODULE}.py @ONLY)
-        install(FILES ${BINARY_DIR}/${_SUBMODULE}.py
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/${_SUBMODULE}/)
-    endif()
-
+    foreach(_FILE ${_FILES})
+        get_filename_component(_FILE "${_FILE}" NAME_WE)
+        if(EXISTS ${SOURCE_DIR}/${_FILE}.py)
+            configure_file(${SOURCE_DIR}/${_FILE}.py
+                ${BINARY_DIR}/${_FILE}.py @ONLY)
+            install(FILES ${BINARY_DIR}/${_FILE}.py
+                DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/${_SUBMODULE}/)
+            
+        endif()
+    endforeach()
+          
     # copy over the init file
     if(EXISTS ${SOURCE_DIR}/__init__.py)
         configure_file(${SOURCE_DIR}/__init__.py

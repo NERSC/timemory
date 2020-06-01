@@ -36,13 +36,13 @@
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/threading.hpp"
-#include "timemory/data/graph.hpp"
-#include "timemory/data/graph_data.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/storage/graph.hpp"
+#include "timemory/storage/graph_data.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -291,14 +291,6 @@ namespace impl
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename StorageType, typename Type, typename HashMap, typename GraphData>
-typename StorageType::iterator
-insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
-                 uint64_t);
-//
-//--------------------------------------------------------------------------------------//
-//
 //                              impl::storage<Tp, true>
 //
 //--------------------------------------------------------------------------------------//
@@ -308,24 +300,23 @@ class storage<Type, true> : public base::storage
 {
 public:
     //----------------------------------------------------------------------------------//
-    //  forward decl of some internal types
     //
-    using result_node = node::result<Type>;
-    using graph_node  = node::graph<Type>;
+    static constexpr bool has_data_v = true;
 
-    friend struct node::result<Type>;
-    friend struct node::graph<Type>;
+    template <typename KeyT, typename MappedT>
+    using uomap_t = std::unordered_map<KeyT, MappedT>;
 
-    using strvector_t  = std::vector<string_t>;
-    using uintvector_t = std::vector<uint64_t>;
-    using EmptyT       = std::tuple<>;
-
-public:
+    using result_node    = node::result<Type>;
+    using graph_node     = node::graph<Type>;
+    using strvector_t    = std::vector<string_t>;
+    using uintvector_t   = std::vector<uint64_t>;
+    using EmptyT         = std::tuple<>;
     using base_type      = base::storage;
     using component_type = Type;
-    using this_type      = storage<Type, true>;
+    using this_type      = storage<Type, has_data_v>;
     using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
     using singleton_t    = singleton<this_type, smart_pointer>;
+    using singleton_type = singleton_t;
     using pointer        = typename singleton_t::pointer;
     using auto_lock_t    = typename singleton_t::auto_lock_t;
     using node_type      = typename node::data<Type>::node_type;
@@ -333,17 +324,30 @@ public:
     using result_type    = typename node::data<Type>::result_type;
     using result_array_t = std::vector<result_node>;
     using dmp_result_t   = std::vector<result_array_t>;
-    using printer_t      = operation::finalize::print<Type, true>;
+    using printer_t      = operation::finalize::print<Type, has_data_v>;
     using sample_array_t = std::vector<Type>;
+    using graph_node_t   = graph_node;
+    using graph_data_t   = graph_data<graph_node_t>;
+    using graph_t        = typename graph_data_t::graph_t;
+    using graph_type     = graph_t;
+    using iterator       = typename graph_type::iterator;
+    using const_iterator = typename graph_type::const_iterator;
 
-    friend struct impl::storage_deleter<this_type>;
-    friend struct operation::finalize::get<Type, true>;
-    friend struct operation::finalize::mpi_get<Type, true>;
-    friend struct operation::finalize::upc_get<Type, true>;
-    friend struct operation::finalize::dmp_get<Type, true>;
-    friend struct operation::finalize::print<Type, true>;
-    friend struct operation::finalize::merge<Type, true>;
+    template <typename Vp>
+    using secondary_data_t       = std::tuple<iterator, const std::string&, Vp>;
+    using iterator_hash_submap_t = uomap_t<int64_t, iterator>;
+    using iterator_hash_map_t    = uomap_t<int64_t, iterator_hash_submap_t>;
+
     friend class tim::manager;
+    friend struct node::result<Type>;
+    friend struct node::graph<Type>;
+    friend struct impl::storage_deleter<this_type>;
+    friend struct operation::finalize::get<Type, has_data_v>;
+    friend struct operation::finalize::mpi_get<Type, has_data_v>;
+    friend struct operation::finalize::upc_get<Type, has_data_v>;
+    friend struct operation::finalize::dmp_get<Type, has_data_v>;
+    friend struct operation::finalize::print<Type, has_data_v>;
+    friend struct operation::finalize::merge<Type, has_data_v>;
 
 public:
     // static functions
@@ -361,18 +365,6 @@ private:
     static std::atomic<int64_t>& instance_count();
 
 public:
-    using graph_node_t   = graph_node;
-    using graph_data_t   = graph_data<graph_node_t>;
-    using graph_t        = typename graph_data_t::graph_t;
-    using iterator       = typename graph_t::iterator;
-    using const_iterator = typename graph_t::const_iterator;
-    template <typename Vp>
-    using secondary_data_t = std::tuple<iterator, const std::string&, Vp>;
-    template <typename KeyT, typename MappedT>
-    using uomap_t                = std::unordered_map<KeyT, MappedT>;
-    using iterator_hash_submap_t = uomap_t<int64_t, iterator>;
-    using iterator_hash_map_t    = uomap_t<int64_t, iterator_hash_submap_t>;
-
 public:
     storage();
     ~storage();
@@ -437,6 +429,8 @@ protected:
     iterator insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
     iterator insert_timeline(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
     iterator insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
+    iterator insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+                              bool has_head);
 
     void     merge();
     void     merge(this_type* itr);
@@ -453,7 +447,11 @@ private:
     void internal_print();
 
     graph_data_t&       _data();
-    const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
+    const graph_data_t& _data() const
+    {
+        using type_t = decay_t<remove_pointer_t<decltype(this)>>;
+        return const_cast<type_t*>(this)->_data();
+    }
 
 private:
     uint64_t                   m_timeline_counter    = 1;
@@ -545,10 +543,8 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
-    bool _has_head = _data().has_head();
-    return insert_hierarchy<this_type, Type>(hash_id, obj, hash_depth, m_node_ids,
-                                             m_graph_data_instance, _has_head,
-                                             m_is_master, m_thread_idx);
+    bool has_head = _data().has_head();
+    return insert_hierarchy(hash_id, obj, hash_depth, has_head);
 }
 
 //----------------------------------------------------------------------------------//
@@ -596,6 +592,93 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
     return itr;
 }
 //
+//----------------------------------------------------------------------------------//
+//
+template <typename Type>
+typename storage<Type, true>::iterator
+storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
+                                      uint64_t hash_depth, bool has_head)
+{
+    using id_hash_map_t = typename iterator_hash_map_t::mapped_type;
+
+    auto& m_data = m_graph_data_instance;
+    auto  tid    = m_thread_idx;
+
+    // if first instance
+    if(!has_head || (m_is_master && m_node_ids.size() == 0))
+    {
+        graph_node_t node(hash_id, obj, hash_depth, tid);
+        auto         itr                = m_data->append_child(node);
+        m_node_ids[hash_depth][hash_id] = itr;
+        return itr;
+    }
+
+    // lambda for updating settings
+    auto _update = [&](iterator itr) {
+        m_data->depth() = itr->depth();
+        return (m_data->current() = itr);
+    };
+
+    if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
+       m_node_ids[hash_depth].find(hash_id)->second->depth() == m_data->depth())
+    {
+        return _update(m_node_ids[hash_depth].find(hash_id)->second);
+    }
+
+    using sibling_itr = typename graph_t::sibling_iterator;
+    graph_node_t node(hash_id, obj, m_data->depth(), tid);
+
+    // lambda for inserting child
+    auto _insert_child = [&]() {
+        node.depth() = hash_depth;
+        auto itr     = m_data->append_child(node);
+        auto ditr    = m_node_ids.find(hash_depth);
+        if(ditr == m_node_ids.end())
+            m_node_ids.insert({ hash_depth, id_hash_map_t{} });
+        auto hitr = m_node_ids.at(hash_depth).find(hash_id);
+        if(hitr == m_node_ids.at(hash_depth).end())
+            m_node_ids.at(hash_depth).insert({ hash_id, iterator{} });
+        m_node_ids.at(hash_depth).at(hash_id) = itr;
+        return itr;
+    };
+
+    auto current = m_data->current();
+    if(!m_data->graph().is_valid(current))
+        _insert_child();
+
+    // check children first because in general, child match is ideal
+    auto fchild = graph_t::child(current, 0);
+    if(m_data->graph().is_valid(fchild))
+    {
+        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
+        {
+            if((hash_id) == itr->id())
+                return _update(itr);
+        }
+    }
+
+    // occasionally, we end up here because of some of the threading stuff that
+    // has to do with the head node. Protected against mis-matches in hierarchy
+    // because the actual hash includes the depth so "example" at depth 2
+    // has a different hash than "example" at depth 3.
+    if((hash_id) == current->id())
+        return current;
+
+    // check siblings
+    for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+    {
+        // skip if current
+        if(itr == current)
+            continue;
+        // check hash id's
+        if((hash_id) == itr->id())
+            return _update(itr);
+    }
+
+    return _insert_child();
+}
+
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
@@ -632,10 +715,9 @@ template <typename Archive>
 void
 storage<Type, true>::do_serialize(Archive& ar)
 {
-    auto _label = m_label;
     if(m_is_master)
         merge();
-    ar(cereal::make_nvp(_label, *this));
+    ar(cereal::make_nvp(Type::label(), *this));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -669,32 +751,41 @@ class storage<Type, false> : public base::storage
 public:
     //----------------------------------------------------------------------------------//
     //
-    using base_type      = base::storage;
-    using component_type = Type;
-    using this_type      = storage<Type, false>;
-    using string_t       = std::string;
-    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
-    using singleton_t    = singleton<this_type, smart_pointer>;
-    using pointer        = typename singleton_t::pointer;
-    using auto_lock_t    = typename singleton_t::auto_lock_t;
-    using printer_t      = operation::finalize::print<Type, false>;
-
-    friend class tim::manager;
-    friend struct impl::storage_deleter<this_type>;
-    friend struct operation::finalize::print<Type, false>;
-    friend struct operation::finalize::merge<Type, false>;
+    static constexpr bool has_data_v = false;
 
     using result_node    = std::tuple<>;
-    using graph_t        = std::tuple<>;
     using graph_node     = std::tuple<>;
+    using graph_t        = std::tuple<>;
+    using graph_type     = graph_t;
     using dmp_result_t   = std::vector<std::tuple<>>;
     using result_array_t = std::vector<std::tuple<>>;
     using uintvector_t   = std::vector<uint64_t>;
+    using base_type      = base::storage;
+    using component_type = Type;
+    using this_type      = storage<Type, has_data_v>;
+    using string_t       = std::string;
+    using smart_pointer  = std::unique_ptr<this_type, impl::storage_deleter<this_type>>;
+    using singleton_t    = singleton<this_type, smart_pointer>;
+    using singleton_type = singleton_t;
+    using pointer        = typename singleton_t::pointer;
+    using auto_lock_t    = typename singleton_t::auto_lock_t;
+    using printer_t      = operation::finalize::print<Type, has_data_v>;
 
-public:
     using iterator       = void*;
     using const_iterator = const void*;
 
+    friend class tim::manager;
+    friend struct node::result<Type>;
+    friend struct node::graph<Type>;
+    friend struct impl::storage_deleter<this_type>;
+    friend struct operation::finalize::get<Type, has_data_v>;
+    friend struct operation::finalize::mpi_get<Type, has_data_v>;
+    friend struct operation::finalize::upc_get<Type, has_data_v>;
+    friend struct operation::finalize::dmp_get<Type, has_data_v>;
+    friend struct operation::finalize::print<Type, has_data_v>;
+    friend struct operation::finalize::merge<Type, has_data_v>;
+
+public:
     static pointer instance();
     static pointer master_instance();
     static pointer noninit_instance();
@@ -918,93 +1009,6 @@ struct storage_deleter : public std::default_delete<StorageType>
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename StorageType, typename Type, typename HashMap, typename GraphData>
-typename StorageType::iterator
-insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                 HashMap& m_node_ids, GraphData*& m_data, bool _has_head, bool _is_master,
-                 uint64_t tid)
-{
-    using graph_t       = typename StorageType::graph_t;
-    using graph_node_t  = typename StorageType::graph_node_t;
-    using iterator      = typename StorageType::iterator;
-    using id_hash_map_t = typename HashMap::mapped_type;
-
-    // if first instance
-    if(!_has_head || (_is_master && m_node_ids.size() == 0))
-    {
-        graph_node_t node(hash_id, obj, hash_depth, tid);
-        auto         itr                = m_data->append_child(node);
-        m_node_ids[hash_depth][hash_id] = itr;
-        return itr;
-    }
-
-    // lambda for updating settings
-    auto _update = [&](iterator itr) {
-        m_data->depth() = itr->depth();
-        return (m_data->current() = itr);
-    };
-
-    if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-       m_node_ids[hash_depth].find(hash_id)->second->depth() == m_data->depth())
-    {
-        return _update(m_node_ids[hash_depth].find(hash_id)->second);
-    }
-
-    using sibling_itr = typename graph_t::sibling_iterator;
-    graph_node_t node(hash_id, obj, m_data->depth(), tid);
-
-    // lambda for inserting child
-    auto _insert_child = [&]() {
-        node.depth() = hash_depth;
-        auto itr     = m_data->append_child(node);
-        auto ditr    = m_node_ids.find(hash_depth);
-        if(ditr == m_node_ids.end())
-            m_node_ids.insert({ hash_depth, id_hash_map_t{} });
-        auto hitr = m_node_ids.at(hash_depth).find(hash_id);
-        if(hitr == m_node_ids.at(hash_depth).end())
-            m_node_ids.at(hash_depth).insert({ hash_id, iterator{} });
-        m_node_ids.at(hash_depth).at(hash_id) = itr;
-        return itr;
-    };
-
-    auto current = m_data->current();
-    if(!m_data->graph().is_valid(current))
-        _insert_child();
-
-    // check children first because in general, child match is ideal
-    auto fchild = graph_t::child(current, 0);
-    if(m_data->graph().is_valid(fchild))
-    {
-        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-        {
-            if((hash_id) == itr->id())
-                return _update(itr);
-        }
-    }
-
-    // occasionally, we end up here because of some of the threading stuff that
-    // has to do with the head node. Protected against mis-matches in hierarchy
-    // because the actual hash includes the depth so "example" at depth 2
-    // has a different hash than "example" at depth 3.
-    if((hash_id) == current->id())
-        return current;
-
-    // check siblings
-    for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-    {
-        // skip if current
-        if(itr == current)
-            continue;
-        // check hash id's
-        if((hash_id) == itr->id())
-            return _update(itr);
-    }
-
-    return _insert_child();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace impl
 //
 //--------------------------------------------------------------------------------------//
@@ -1014,16 +1018,24 @@ inline base::storage*
 base::storage::base_instance()
 {
     using storage_type = tim::storage<Tp, Vp>;
-    if(trait::runtime_enabled<Tp>::get())
+
+    // thread-local variable
+    static thread_local base::storage* _ret = nullptr;
+
+    // return nullptr is disabled
+    if(!trait::runtime_enabled<Tp>::get())
+        return nullptr;
+
+    // if nullptr, try to get instance
+    if(_ret == nullptr)
     {
-        static thread_local auto _instance = []() {
-            auto _tmp = storage_type::instance();
-            // _tmp->initialize();
-            return _tmp;
-        }();
-        return static_cast<base::storage*>(_instance);
+        // thread will copy the hash-table so use a lock here
+        auto_lock_t lk(type_mutex<base::storage>());
+        _ret = static_cast<base::storage*>(storage_type::instance());
     }
-    return nullptr;
+
+    // return pointer
+    return _ret;
 }
 //
 //--------------------------------------------------------------------------------------//

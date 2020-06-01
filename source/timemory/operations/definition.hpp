@@ -57,7 +57,6 @@
 #include "timemory/operations/types/math.hpp"
 #include "timemory/operations/types/measure.hpp"
 #include "timemory/operations/types/node.hpp"
-#include "timemory/operations/types/pointer.hpp"
 #include "timemory/operations/types/print.hpp"
 #include "timemory/operations/types/print_header.hpp"
 #include "timemory/operations/types/print_statistics.hpp"

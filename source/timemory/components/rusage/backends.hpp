@@ -30,16 +30,16 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
+#include "timemory/utility/macros.hpp"
+
 #include <cstdint>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
-#include <stdio.h>
 #include <string>
-
-#include "timemory/backends/process.hpp"
-#include "timemory/utility/macros.hpp"
 
 #if defined(_UNIX)
 #    include <sys/resource.h>
@@ -60,22 +60,22 @@
 #    error "Cannot define get_peak_rss() or get_page_rss() for an unknown OS."
 #endif
 
-//
-// RSS - Resident set size (physical memory use, not in swap)
-//
-
 //======================================================================================//
 //
 namespace tim
 {
 #if defined(_UNIX)
 
+#    if !defined(_GNU_SOURCE) || !defined(RUSAGE_THREAD)
+#        define RUSAGE_THREAD RUSAGE_SELF
+#    endif
+
 using rusage_type_t = decltype(RUSAGE_SELF);
 
 inline rusage_type_t&
 get_rusage_type()
 {
-    static auto instance = RUSAGE_SELF;
+    static auto instance = RUSAGE_THREAD;
     return instance;
 }
 

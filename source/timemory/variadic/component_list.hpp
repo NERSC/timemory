@@ -52,7 +52,7 @@
 #include "timemory/storage/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/variadic/generic_bundle.hpp"
+#include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/types.hpp"
 
 //======================================================================================//
@@ -63,7 +63,7 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class component_list : public heap_bundle<available_tuple<concat<Types...>>>
+class component_list : public heap_bundle<available_t<concat<Types...>>>
 {
     static const std::size_t num_elements = sizeof...(Types);
 
@@ -77,7 +77,7 @@ class component_list : public heap_bundle<available_tuple<concat<Types...>>>
     friend class auto_list;
 
 public:
-    using bundle_type         = heap_bundle<available_tuple<concat<Types...>>>;
+    using bundle_type         = heap_bundle<available_t<concat<Types...>>>;
     using this_type           = component_list<Types...>;
     using captured_location_t = source_location::captured;
 
@@ -356,7 +356,7 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using print_t         = typename bundle_type::print_t;
+        using printer_t       = typename bundle_type::print_t;
         using pointer_count_t = operation_t<operation::generic_counter>;
 
         uint64_t count = 0;
@@ -364,7 +364,7 @@ public:
         if(count < 1 || m_hash == 0)
             return;
         std::stringstream ss_data;
-        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(ss_data.str().length() > 0)
         {
             if(PrintPrefix)
@@ -590,11 +590,12 @@ protected:
     // protected member functions
     data_type&       get_data();
     const data_type& get_data() const;
-    void             set_prefix(const string_t&) const;
-    void             set_prefix(size_t) const;
+    void             set_scope(scope::config);
 
     template <typename T>
     void set_prefix(T* obj) const;
+    void set_prefix(const string_t&) const;
+    void set_prefix(size_t) const;
 
 protected:
     // objects
@@ -629,10 +630,6 @@ get_labeled(const component_list<Types...>& _obj)
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
-
-//--------------------------------------------------------------------------------------//
-
-// #include "timemory/variadic/bits/component_list.hpp"
 
 //======================================================================================//
 //

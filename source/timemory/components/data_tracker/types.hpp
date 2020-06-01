@@ -22,37 +22,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/**
+ * \file timemory/components/data_tracker/types.hpp
+ * \brief Declare the data_tracker component types
+ */
+
 #pragma once
 
-#include "timemory/manager/declaration.hpp"
-#include "timemory/mpl/filters.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/data/handler.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 
 //======================================================================================//
 //
-//      tim::get functions
+TIMEMORY_DECLARE_TEMPLATE_COMPONENT(data_tracker, typename InpT,
+                                    typename Tag     = api::native_tag,
+                                    typename Handler = data::handler<InpT, Tag>,
+                                    typename StoreT  = InpT)
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              BASE HAS ACCUM
+//
+//--------------------------------------------------------------------------------------//
 //
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-
-template <typename TupleT, typename ListT>
-auto
-get(const component_hybrid<TupleT, ListT>& _obj)
+namespace trait
 {
-    return _obj.get();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename TupleT, typename ListT>
-auto
-get_labeled(const component_hybrid<TupleT, ListT>& _obj)
-{
-    return _obj.get_labeled();
-}
-
-//--------------------------------------------------------------------------------------//
-
+template <typename InpT, typename Tag, typename Handler, typename StoreT>
+struct base_has_accum<component::data_tracker<InpT, Tag, Handler, StoreT>> : false_type
+{};
+}  // namespace trait
 }  // namespace tim
-
-//--------------------------------------------------------------------------------------//
+//
+//======================================================================================//

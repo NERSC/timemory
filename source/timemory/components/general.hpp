@@ -31,31 +31,11 @@
 
 #pragma once
 
-#include "timemory/components/base.hpp"
-#include "timemory/data/handler.hpp"
-#include "timemory/mpl/concepts.hpp"
-
 #include <cassert>
 #include <cstdint>
 
-//======================================================================================//
-
 namespace tim
 {
-namespace component
-{
-template <typename InpT, typename Tag = api::native_tag,
-          typename Handler = data::handler<InpT, Tag>, typename StoreT = InpT>
-struct data_tracker;
-}
-
-namespace trait
-{
-template <typename InpT, typename Tag, typename Handler, typename StoreT>
-struct base_has_accum<component::data_tracker<InpT, Tag, Handler, StoreT>> : false_type
-{};
-}  // namespace trait
-
 namespace component
 {
 //
@@ -65,139 +45,5 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class component::data_tracker
-/// \brief This component is provided to facilitate data tracking. The first
-/// template parameter is the type of data to be tracked, the second is a custom
-/// tag, the third is the implementation for how to track the data.
-/// Usage:
-///
-///         struct iteration_count_tag;
-///
-///         using tracker_type = data_tracker<uint64_t, iteration_count_tag>;
-///         using tuple_t = tim::auto_tuple<wall_clock, data_tracker<uint64_t>>;
-///
-///         double err             = std::numeric_limits<double>::max();
-///         const double tolerance = 1.0e-6;
-///
-///         tuple_t t("iteration_time");
-///
-///         while(err > tolerance)
-///         {
-///             t.store(std::plus<uint64_t>{}, 1);
-///             // ... do something ...
-///         }
-///
-template <typename InpT, typename Tag, typename Handler, typename StoreT>
-struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, StoreT>
-{
-    using value_type   = StoreT;
-    using this_type    = data_tracker<InpT, Tag, Handler, StoreT>;
-    using base_type    = base<this_type, value_type>;
-    using handler_type = Handler;
-
-    static std::string& label()
-    {
-        static std::string _instance = []() {
-            std::stringstream ss;
-            ss << demangle<Tag>() << "_" << demangle<InpT>();
-            return ss.str();
-        }();
-        return _instance;
-    }
-
-    static std::string& description()
-    {
-        static std::string _instance = []() {
-            std::stringstream ss;
-            ss << "Data tracker for data of type " << demangle<InpT>() << " for "
-               << demangle<Tag>();
-            return ss.str();
-        }();
-        return _instance;
-    }
-
-    void start() {}
-    void stop() {}
-
-    template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    void store(const T& val)
-    {
-        handler_type::store(*this, val / get_unit());
-    }
-
-    template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    void store(handler_type&&, const T& val)
-    {
-        handler_type::store(*this, val / get_unit());
-    }
-
-    template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    auto store(Func&& f, const T& val)
-        -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
-                    void())
-    {
-        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
-    }
-
-    template <typename Func, typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    auto store(handler_type&&, Func&& f, const T& val)
-        -> decltype(std::declval<handler_type>().store(*this, std::forward<Func>(f), val),
-                    void())
-    {
-        handler_type::store(*this, std::forward<Func>(f), val / get_unit());
-    }
-
-    template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    void mark_begin(const T& val)
-    {
-        handler_type::begin(*this, val / get_unit());
-    }
-
-    template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    void mark_end(const T& val)
-    {
-        handler_type::end(*this, val / get_unit());
-    }
-
-    template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    void mark_begin(handler_type&&, const T& val)
-    {
-        handler_type::begin(*this, val / get_unit());
-    }
-
-    template <typename T,
-              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
-    void mark_end(handler_type&&, const T& val)
-    {
-        handler_type::end(*this, val / get_unit());
-    }
-
-    auto get() const { return handler_type::get(*this); }
-    auto get_display() const { return handler_type::get_display(*this); }
-
-    void set_value(const value_type& v) { value = v; }
-
-    using base_type::get_unit;
-    using base_type::load;
-    using base_type::value;
-};
-
-//--------------------------------------------------------------------------------------//
-/// \typedef data_handler_t
-/// \brief an alias for getting the handle_type of a data tracker
-template <typename T>
-using data_handler_t = typename T::handler_type;
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace component
-
-//--------------------------------------------------------------------------------------//
 }  // namespace tim

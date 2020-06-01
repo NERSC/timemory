@@ -57,14 +57,7 @@ namespace component
 //
 template <typename Tp, typename Value>
 base<Tp, Value>::base()
-{
-    if(!storage_type::is_finalizing())
-    {
-        static thread_local auto _storage =
-            tim::base::storage::template base_instance<Tp, Value>();
-        consume_parameters(_storage);
-    }
-}
+{}
 //
 //--------------------------------------------------------------------------------------//
 //

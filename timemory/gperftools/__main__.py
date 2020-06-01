@@ -38,15 +38,16 @@ import warnings
 import traceback
 import multiprocessing as mp
 
-from . import general
 from . import cpu_profiler as _cpu
 from . import heap_profiler as _heap
+from . import utils as _utils
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-                        help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
+    
+    parser = argparse.ArgumentParser()
+    #parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+    #                    help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
     parser.add_argument("-e", "--echo-dart",
                         action='store_true', help="Echo dart measurement files")
     parser.add_argument("-E", "--exe",
@@ -76,16 +77,20 @@ def parse_args():
     parser.add_argument("-p", "--preload", help="Enable preloading gperftools library",
                         action='store_true')
     parser.add_argument("-i", "--input", help="Input file for existing tool data",
-                        type="str", default=None)
+                        type=str, default=None)
 
     args = parser.parse_args()
 
+    #if args.help:
+    #    parser.print_help()
+    #    sys.exit(1)
+        
     if args.output_prefix is None:
         args.output_prefix = "{}.prof".format(args.type.split('_')[0])
 
     _libs = copy.copy(args.libs)
     for lib in args.libs:
-        _libpath = general.find_library_path(lib)
+        _libpath = _utils.find_library_path(lib)
         if _libpath is not None:
             lib = "--add_lib={}".format(_libpath)
         else:
@@ -102,8 +107,8 @@ def post_process(args):
                 raise RuntimeError(
                     "No input file provided for post-processing")
 
-            general.post_process(args.exe, args.input, args.img_type, args.echo_data,
-                                 args.libs, args.args, args.generate, args.dot_args)
+            _utils.post_process(args.exe, args.input, args.img_type, args.echo_data,
+                                  args.libs, args.args, args.generate, args.dot_args)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -113,13 +118,9 @@ def post_process(args):
 
 
 def run(args, cmd):
-
+    
     try:
         if args.type == "cpu_profiler":
-            if args.input is None:
-                raise RuntimeError(
-                    "No input file provided for post-processing")
-
             _cpu.execute(cmd, args.output_prefix, args.frequency, args.malloc_stats,
                          args.realtime, args.preload, args.selected, args.img_type,
                          args.echo_dart, args.libs, args.args, args.generate, args.dot_args)
@@ -132,7 +133,7 @@ def run(args, cmd):
 
 
 if __name__ == "__main__":
-
+    
     try:
         # look for "--" and interpret anything after that
         # to be a command to execute
@@ -154,10 +155,9 @@ if __name__ == "__main__":
             else:
                 _argsets[_i].append(_arg)
 
+        print("CMD: {}, ARGS: {}".format(_cmd, _argv))
         sys.argv[1:] = _argv
-
         args = parse_args()
-
         if len(_cmd) == 0:
             post_process(args)
         else:
@@ -165,4 +165,5 @@ if __name__ == "__main__":
 
     except Exception as e:
         msg = "\nCommand line argument error:\n\t{}\n".format(e)
-        warnings.warn(msg)
+        sys.stderr.write("{}\n".format(msg))
+        warnings.warn("timemory.gperftools is disabled")

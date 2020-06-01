@@ -22,13 +22,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \headerfile "timemory/storage/graph_data.hpp"
+ * \brief tim::graph instance + current node + head note + sea-level. Sea-level is
+ * defined as the node depth after a fork from another graph instance and is only
+ * relevant for worker-threads)
+ *
+ */
+
 #pragma once
 
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/backends/threading.hpp"
-#include "timemory/data/graph.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/storage/graph.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -103,6 +110,7 @@ public:
 
     inline void clear()
     {
+        m_graph.erase_children(m_head);
         m_graph.clear();
         m_has_head  = false;
         m_depth     = 0;
@@ -116,6 +124,8 @@ public:
         if(_master != this)
             m_master = _master;
     }
+
+    inline auto dummy_count() { return m_dummies.size(); }
 
     inline void add_dummy()
     {
@@ -177,22 +187,19 @@ public:
 
     inline int64_t get_rolling_hash(iterator itr)
     {
+        int64_t _accum = 0;
         if(itr)
-            return 0;
-        auto _parent         = graph_t::parent(itr);
-        using hierarchy_type = std::vector<int64_t>;
-        auto _hierarchy      = hierarchy_type{};
+            return _accum;
+        _accum += itr->id();
+        auto _parent = graph_t::parent(itr);
         while(_parent)
         {
-            _hierarchy.push_back(_parent->id());
+            _accum += _parent->id();
             _parent = graph_t::parent(_parent);
             if(!_parent)
                 break;
         }
-        if(_hierarchy.size() > 1)
-            std::reverse(_hierarchy.begin(), _hierarchy.end());
-        _hierarchy.push_back(itr->id());
-        return std::accumulate(_hierarchy.begin(), _hierarchy.end(), 0);
+        return _accum;
     }
 
     inline iterator append_child(NodeT& node)
@@ -210,8 +217,6 @@ public:
     {
         return m_graph.append_child(_itr, node);
     }
-
-    bool is_dummy(iterator itr) const { return (m_dummies.find(itr) != m_dummies.end()); }
 
     bool at_sea_level() const { return (m_depth == m_sea_level); }
 

@@ -22,13 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/environment/types.hpp"
-#include "timemory/environment/declaration.hpp"
-#include "timemory/environment/definition.hpp"
 #include "timemory/environment/extern.hpp"
-//
-// clang-format on
-//======================================================================================//

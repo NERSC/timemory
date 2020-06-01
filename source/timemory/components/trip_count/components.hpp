@@ -51,7 +51,7 @@ struct trip_count : public base<trip_count>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "trip_count"; }
-    static std::string description() { return "trip counts"; }
+    static std::string description() { return "Counts number of invocations"; }
     static value_type  record() { return 1; }
 
     value_type get() const { return accum; }

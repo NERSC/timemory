@@ -54,8 +54,11 @@ struct vtune_event : public base<vtune_event, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "vtune_event"; }
-    static std::string description() { return "Create VTune events"; }
-    static value_type  record() {}
+    static std::string description()
+    {
+        return "Creates events for Intel profiler running on the application";
+    }
+    static value_type record() {}
 
     static void global_init(storage_type*) { ittnotify::pause(); }
     static void global_finalize(storage_type*) { ittnotify::pause(); }
@@ -109,8 +112,11 @@ struct vtune_frame : public base<vtune_frame, void>
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "vtune_frame"; }
-    static std::string description() { return "Create VTune frames"; }
-    static value_type  record() {}
+    static std::string description()
+    {
+        return "Creates frames for Intel profiler running on the application";
+    }
+    static value_type record() {}
 
     static void global_init(storage_type*) { ittnotify::pause(); }
     static void global_finalize(storage_type*) { ittnotify::pause(); }
@@ -164,8 +170,11 @@ struct vtune_profiler
     using tracker_type = policy::instance_tracker<vtune_profiler, false>;
 
     static std::string label() { return "vtune_profiler"; }
-    static std::string description() { return "Start/stop Intel profiling"; }
-    static value_type  record() {}
+    static std::string description()
+    {
+        return "Control switch for Intel profiler running on the application";
+    }
+    static value_type record() {}
 
     static void global_init(storage_type*) { ittnotify::pause(); }
     static void global_finalize(storage_type*) { ittnotify::pause(); }

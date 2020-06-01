@@ -97,8 +97,12 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
                                                     Differentiator, void>::type;
 
     static std::string label() { return "gotcha"; }
-    static std::string description() { return "GOTCHA wrapper"; }
-    static value_type  record() { return; }
+    static std::string description()
+    {
+        return "Generates GOTCHA wrappers which can be used to wrap or replace "
+               "dynamically linked function calls";
+    }
+    static value_type record() { return; }
 
     //----------------------------------------------------------------------------------//
 
@@ -706,9 +710,9 @@ private:
               enable_if_t<!(std::is_same<Ret, void>::value), int>   = 0>
     static Ret invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Type    = Differentiator;
-        using Invoker = gotcha_invoker<Type, Ret>;
-        Type& _obj    = *_comp.template get<Type>();
+        using Tp      = Differentiator;
+        using Invoker = gotcha_invoker<Tp, Ret>;
+        Tp& _obj      = *_comp.template get<Tp>();
         return Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
     }
 
@@ -729,9 +733,9 @@ private:
               enable_if_t<(std::is_same<Ret, void>::value), int>    = 0>
     static void invoke(Comp& _comp, Ret (*_func)(Args...), Args&&... _args)
     {
-        using Type    = Differentiator;
-        using Invoker = gotcha_invoker<Type, Ret>;
-        Type& _obj    = *_comp.template get<Type>();
+        using Tp      = Differentiator;
+        using Invoker = gotcha_invoker<Tp, Ret>;
+        Tp& _obj      = *_comp.template get<Tp>();
         Invoker::invoke(_obj, _func, std::forward<Args>(_args)...);
     }
 
@@ -758,7 +762,7 @@ private:
         func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
         auto& _global_suppress = gotcha_suppression::get();
-        if(!_data.ready || _global_suppress)
+        if(!_data.ready || _global_suppress || !settings::enabled())
         {
             if(settings::debug())
             {
@@ -766,8 +770,9 @@ private:
                 static thread_local int64_t _tid = _tcount++;
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
-                   << std::boolalpha << !_data.ready << ") or is globally suppressed ("
-                   << _global_suppress << ")...\n";
+                   << std::boolalpha << !_data.ready << "), is globally suppressed ("
+                   << _global_suppress << "), or timemory is disabled ("
+                   << settings::enabled() << "...\n";
                 std::cout << ss.str() << std::flush;
             }
             return (_orig) ? (*_orig)(_args...) : Ret{};
@@ -845,7 +850,7 @@ private:
         auto _orig = (void (*)(Args...)) gotcha_get_wrappee(_data.wrappee);
 
         auto& _global_suppress = gotcha_suppression::get();
-        if(!_data.ready || _global_suppress)
+        if(!_data.ready || _global_suppress || !settings::enabled())
         {
             if(settings::debug())
             {
@@ -854,7 +859,8 @@ private:
                 std::stringstream           ss;
                 ss << "[T" << _tid << "]> " << _data.tool_id << " is either not ready ("
                    << std::boolalpha << !_data.ready << ") or is globally suppressed ("
-                   << _global_suppress << ")...\n";
+                   << _global_suppress << "), or timemory is disabled ("
+                   << settings::enabled() << "...\n";
                 std::cout << ss.str() << std::flush;
             }
             if(_orig)
@@ -934,7 +940,7 @@ private:
         using wrap_type = tim::component_tuple<operator_type>;
 
         auto _orig = (func_t) gotcha_get_wrappee(_data.wrappee);
-        if(!_data.ready)
+        if(!_data.ready || !settings::enabled())
             return (*_orig)(_args...);
 
         _data.ready = false;
@@ -961,7 +967,7 @@ private:
         auto _orig      = (func_t) gotcha_get_wrappee(_data.wrappee);
         using wrap_type = tim::component_tuple<operator_type>;
 
-        if(!_data.ready)
+        if(!_data.ready || !settings::enabled())
             (*_orig)(_args...);
         else
         {
@@ -1017,7 +1023,10 @@ struct malloc_gotcha : base<malloc_gotcha, double>
 
     // required static functions
     static std::string label() { return "malloc_gotcha"; }
-    static std::string description() { return "GOTCHA wrapper for memory allocation"; }
+    static std::string description()
+    {
+        return "GOTCHA wrapper for memory allocation functions";
+    }
     static std::string display_unit() { return "MB"; }
     static int64_t     unit() { return units::megabyte; }
     static value_type  record() { return value_type{ 0.0 }; }

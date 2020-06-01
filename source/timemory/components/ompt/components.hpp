@@ -31,10 +31,17 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/hash/types.hpp"
 //
+#include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/types.hpp"
-
+//
+#include "timemory/operations/types/node.hpp"
+#include "timemory/operations/types/start.hpp"
+#include "timemory/operations/types/stop.hpp"
+#include "timemory/operations/types/store.hpp"
+//
 //======================================================================================//
 //
 namespace tim
@@ -63,7 +70,9 @@ struct ompt_handle
     static std::string label() { return "ompt_handle"; }
     static std::string description()
     {
-        return std::string("OpenMP toolset ") + demangle<api_type>();
+        return std::string(
+                   "Control switch for enabling/disabling OpenMP tools defined by the ") +
+               demangle<api_type>() + " tag";
     }
 
     static auto& get_initializer()
@@ -143,6 +152,82 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Api>
+struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
+{
+    using api_type     = Api;
+    using this_type    = ompt_data_tracker<api_type>;
+    using value_type   = void;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
+
+    using tracker_t = ompt_data_tracker_t;
+
+    static std::string label() { return "ompt_data_tracker"; }
+    static std::string description()
+    {
+        return std::string("OpenMP tools data tracker ") + demangle<api_type>();
+    }
+
+    static void global_init(storage_type*) { tracker_t::label() = "ompt_data_tracker"; }
+
+    void start() {}
+    void stop() {}
+
+    template <typename... Args>
+    void store(Args&&...)
+    {
+        apply_store<tracker_t>(std::plus<size_t>{}, 1);
+    }
+
+    void store(ompt_id_t target_id, ompt_id_t host_op_id, ompt_target_data_op_t optype,
+               void* host_addr, void* device_addr, size_t bytes)
+    {
+        apply_store<tracker_t>(std::plus<size_t>{}, bytes);
+        consume_parameters(target_id, host_op_id, optype, host_addr, device_addr);
+    }
+
+    void store(ompt_id_t target_id, unsigned int nitems, void** host_addr,
+               void** device_addr, size_t* bytes, unsigned int* mapping_flags)
+    {
+        size_t _tot = 0;
+        for(unsigned int i = 0; i < nitems; ++i)
+            _tot += bytes[i];
+        apply_store<tracker_t>(std::plus<size_t>{}, _tot);
+        consume_parameters(target_id, host_addr, device_addr, mapping_flags);
+        // auto _prefix = tim::get_hash_identifier(m_prefix_hash);
+    }
+
+public:
+    void set_prefix(uint64_t _prefix_hash) { m_prefix_hash = _prefix_hash; }
+    void set_scope(scope::config _scope) { m_scope_config = _scope; }
+
+private:
+    template <typename Tp, typename... Args>
+    void apply_store(Tp& _obj, Args&&... args)
+    {
+        operation::insert_node<Tp>(_obj, m_scope_config, m_prefix_hash);
+        operation::start<Tp> _start(_obj);
+        operation::store<Tp>(_obj, std::forward<Args>(args)...);
+        operation::stop<Tp>     _stop(_obj);
+        operation::pop_node<Tp> _pop(_obj);
+    }
+
+    template <typename Tp, typename... Args>
+    void apply_store(Args&&... args)
+    {
+        Tp _obj;
+        apply_store(_obj, std::forward<Args>(args)...);
+    }
+
+private:
+    uint64_t      m_prefix_hash  = 0;
+    scope::config m_scope_config = scope::get_default();
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+
 }  // namespace component
 }  // namespace tim
 //

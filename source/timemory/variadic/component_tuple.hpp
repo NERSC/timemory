@@ -51,7 +51,7 @@
 #include "timemory/storage/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
-#include "timemory/variadic/generic_bundle.hpp"
+#include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/types.hpp"
 
 //======================================================================================//
@@ -62,7 +62,7 @@ namespace tim
 // variadic list of components
 //
 template <typename... Types>
-class component_tuple : public stack_bundle<available_tuple<concat<Types...>>>
+class component_tuple : public stack_bundle<available_t<concat<Types...>>>
 {
     // manager is friend so can use above
     friend class manager;
@@ -74,7 +74,7 @@ class component_tuple : public stack_bundle<available_tuple<concat<Types...>>>
     friend class auto_tuple;
 
 public:
-    using bundle_type         = stack_bundle<available_tuple<concat<Types...>>>;
+    using bundle_type         = stack_bundle<available_t<concat<Types...>>>;
     using this_type           = component_tuple<Types...>;
     using captured_location_t = source_location::captured;
 
@@ -213,6 +213,12 @@ public:
     auto             get_labeled(Args&&...) const;
     data_type&       data();
     const data_type& data() const;
+
+    // lightweight variants which exclude push/pop and assemble/derive
+    template <typename... Args>
+    void start(mpl::lightweight, Args&&...);
+    template <typename... Args>
+    void stop(mpl::lightweight, Args&&...);
 
     using bundle_type::hash;
     using bundle_type::key;
@@ -476,11 +482,11 @@ public:
     template <bool PrintPrefix = true, bool PrintLaps = true>
     void print(std::ostream& os) const
     {
-        using print_t = typename bundle_type::print_t;
+        using printer_t = typename bundle_type::print_t;
         if(size() == 0 || m_hash == 0)
             return;
         std::stringstream ss_data;
-        apply_v::access_with_indices<print_t>(m_data, std::ref(ss_data), false);
+        apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         if(PrintPrefix)
         {
             update_width();
@@ -583,14 +589,6 @@ get_labeled(const component_tuple<Types...>& _obj)
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
-
-//--------------------------------------------------------------------------------------//
-//
-//          Member function definitions
-//
-//--------------------------------------------------------------------------------------//
-
-// #include "timemory/variadic/bits/component_tuple.hpp"
 
 //======================================================================================//
 //

@@ -171,132 +171,132 @@ public:
 
 public:
     // public member functions
-    component_type&       get_component() { return m_temporary_object; }
-    const component_type& get_component() const { return m_temporary_object; }
+    component_type&       get_component() { return m_temporary; }
+    const component_type& get_component() const { return m_temporary; }
 
-    operator component_type&() { return m_temporary_object; }
-    operator const component_type&() const { return m_temporary_object; }
+    operator component_type&() { return m_temporary; }
+    operator const component_type&() const { return m_temporary; }
 
     // partial interface to underlying component_tuple
     void push()
     {
         if(m_enabled)
-            m_temporary_object.push();
+            m_temporary.push();
     }
     void pop()
     {
         if(m_enabled)
-            m_temporary_object.pop();
+            m_temporary.pop();
     }
     template <typename... Args>
     void measure(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.measure(std::forward<Args>(args)...);
+            m_temporary.measure(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void sample(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.sample(std::forward<Args>(args)...);
+            m_temporary.sample(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void start(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.start(std::forward<Args>(args)...);
+            m_temporary.start(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void stop(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.stop(std::forward<Args>(args)...);
+            m_temporary.stop(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void assemble(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.assemble(std::forward<Args>(args)...);
+            m_temporary.assemble(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void derive(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.derive(std::forward<Args>(args)...);
+            m_temporary.derive(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void mark_begin(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_begin(std::forward<Args>(args)...);
+            m_temporary.mark_begin(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void mark_end(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.mark_end(std::forward<Args>(args)...);
+            m_temporary.mark_end(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void store(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.store(std::forward<Args>(args)...);
+            m_temporary.store(std::forward<Args>(args)...);
     }
     template <typename... Args>
     void audit(Args&&... args)
     {
         if(m_enabled)
-            m_temporary_object.audit(std::forward<Args>(args)...);
+            m_temporary.audit(std::forward<Args>(args)...);
     }
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
         if(m_enabled)
-            m_temporary_object.template invoke<OpT>(std::forward<Args>(_args)...);
+            m_temporary.template invoke<OpT>(std::forward<Args>(_args)...);
     }
     template <typename... Args>
     auto get(Args&&... args) const
     {
-        return m_temporary_object.get(std::forward<Args>(args)...);
+        return m_temporary.get(std::forward<Args>(args)...);
     }
     template <typename... Args>
     auto get_labeled(Args&&... args) const
     {
-        return m_temporary_object.get_labeled(std::forward<Args>(args)...);
+        return m_temporary.get_labeled(std::forward<Args>(args)...);
     }
 
     bool enabled() const { return m_enabled; }
     void report_at_exit(bool val) { m_report_at_exit = val; }
     bool report_at_exit() const { return m_report_at_exit; }
 
-    bool             store() const { return m_temporary_object.store(); }
-    data_type&       data() { return m_temporary_object.data(); }
-    const data_type& data() const { return m_temporary_object.data(); }
-    int64_t          laps() const { return m_temporary_object.laps(); }
-    string_t         key() const { return m_temporary_object.key(); }
-    uint64_t         hash() const { return m_temporary_object.hash(); }
-    void             rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    bool             store() const { return m_temporary.store(); }
+    data_type&       data() { return m_temporary.data(); }
+    const data_type& data() const { return m_temporary.data(); }
+    int64_t          laps() const { return m_temporary.laps(); }
+    string_t         key() const { return m_temporary.key(); }
+    uint64_t         hash() const { return m_temporary.hash(); }
+    void             rekey(const string_t& _key) { m_temporary.rekey(_key); }
 
 public:
     template <typename Tp>
     decltype(auto) get()
     {
-        return m_temporary_object.template get<Tp>();
+        return m_temporary.template get<Tp>();
     }
 
     template <typename Tp>
     decltype(auto) get() const
     {
-        return m_temporary_object.template get<Tp>();
+        return m_temporary.template get<Tp>();
     }
 
-    void get(void*& ptr, size_t hash) { m_temporary_object.get(ptr, hash); }
+    void get(void*& ptr, size_t hash) { m_temporary.get(ptr, hash); }
 
     template <typename T>
     auto get_component()
         -> decltype(std::declval<component_type>().template get_component<T>())
     {
-        return m_temporary_object.template get_component<T>();
+        return m_temporary.template get_component<T>();
     }
 
 protected:
@@ -313,22 +313,21 @@ protected:
         if(m_enabled)
         {
             _init(*this);
-            m_temporary_object.construct(std::forward<Arg>(_arg),
-                                         std::forward<Args>(_args)...);
+            m_temporary.construct(std::forward<Arg>(_arg), std::forward<Args>(_args)...);
         }
     }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        os << obj.m_temporary_object;
+        os << obj.m_temporary;
         return os;
     }
 
 protected:
     bool            m_enabled        = true;
     bool            m_report_at_exit = false;
-    component_type  m_temporary_object;
+    component_type  m_temporary;
     component_type* m_reference_object = nullptr;
 };
 
@@ -340,7 +339,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...> con
                                  const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(get_config<variadic::exit_report>(config))
-, m_temporary_object(
+, m_temporary(
       m_enabled ? component_type(key, m_enabled, get_config<variadic::flat_scope>(config))
                 : component_type{})
 , m_reference_object(nullptr)
@@ -351,7 +350,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...> con
         init(init_func);
         IF_CONSTEXPR(!get_config<variadic::explicit_start>(config))
         {
-            m_temporary_object.start();
+            m_temporary.start();
         }
     }
 }
@@ -364,7 +363,7 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc,
                                  variadic::config<T...> config, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(get_config<variadic::exit_report>(config))
-, m_temporary_object(
+, m_temporary(
       m_enabled ? component_type(loc, m_enabled, get_config<variadic::flat_scope>(config))
                 : component_type{})
 , m_reference_object(nullptr)
@@ -373,10 +372,7 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc,
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -388,18 +384,14 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, scope::config _scope,
                                  bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(key, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -411,18 +403,14 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, scope::config _
                                  bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(loc, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -434,18 +422,14 @@ auto_tuple<Types...>::auto_tuple(size_t hash, scope::config _scope, bool report_
                                  const Init& init_func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(hash, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -456,15 +440,12 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::config _scope,
                                  bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit || get_config<variadic::exit_report>())
-, m_temporary_object(component_type(tmp.clone(true, _scope)))
+, m_temporary(component_type(tmp.clone(true, _scope)))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
     {
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -476,18 +457,14 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, scope::config 
                                  const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(key, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -500,18 +477,14 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store,
                                  Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(loc, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -523,18 +496,14 @@ auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::config _scope,
                                  const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() || get_config<variadic::exit_report>())
-, m_temporary_object(m_enabled ? component_type(hash, m_enabled, _scope)
-                               : component_type{})
+, m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
-        IF_CONSTEXPR(!get_config<variadic::explicit_start>())
-        {
-            m_temporary_object.start();
-        }
+        IF_CONSTEXPR(!get_config<variadic::explicit_start>()) { m_temporary.start(); }
     }
 }
 
@@ -548,20 +517,20 @@ auto_tuple<Types...>::~auto_tuple()
         if(m_enabled)
         {
             // stop the timer
-            m_temporary_object.stop();
+            m_temporary.stop();
 
             // report timer at exit
             if(m_report_at_exit)
             {
                 std::stringstream ss;
-                ss << m_temporary_object;
+                ss << m_temporary;
                 if(ss.str().length() > 0)
                     std::cout << ss.str() << std::endl;
             }
 
             if(m_reference_object)
             {
-                *m_reference_object += m_temporary_object;
+                *m_reference_object += m_temporary;
             }
         }
     }
@@ -593,17 +562,23 @@ get_labeled(const auto_tuple<Types...>& _obj)
 //
 // variadic versions
 //
-#define TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE(tag, ...)                                     \
-    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
-    TIMEMORY_BLANK_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
+#if !defined(TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE)
+#    define TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE(tag, ...)                                 \
+        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                   \
+        TIMEMORY_BLANK_MARKER(_TIM_TYPEDEF(__LINE__), tag);
+#endif
 
-#define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
-    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
-    TIMEMORY_BASIC_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
+#if !defined(TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE)
+#    define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                 \
+        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                   \
+        TIMEMORY_BASIC_MARKER(_TIM_TYPEDEF(__LINE__), tag);
+#endif
 
-#define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
-    using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                       \
-    TIMEMORY_AUTO_TUPLE(_TIM_TYPEDEF(__LINE__), tag);
+#if !defined(TIMEMORY_VARIADIC_AUTO_TUPLE)
+#    define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                       \
+        using _TIM_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                   \
+        TIMEMORY_MARKER(_TIM_TYPEDEF(__LINE__), tag);
+#endif
 
 //======================================================================================//
 //
