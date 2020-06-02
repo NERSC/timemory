@@ -40,6 +40,7 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -53,44 +54,79 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
-//                          Array of PAPI counters
+//                          Common PAPI configuration
 //
 //--------------------------------------------------------------------------------------//
 //
-struct papi_vector
-: public base<papi_vector, std::vector<long long>>
-, private policy::instance_tracker<papi_vector>
+struct papi_common
 {
+public:
     template <typename Tp>
     using vector_t = std::vector<Tp>;
+
+    template <typename Tp, size_t N>
+    using array_t = std::array<Tp, N>;
 
     using size_type         = size_t;
     using event_list        = vector_t<int>;
     using value_type        = vector_t<long long>;
     using entry_type        = typename value_type::value_type;
-    using this_type         = papi_vector;
-    using base_type         = base<this_type, value_type>;
-    using storage_type      = typename base_type::storage_type;
     using get_initializer_t = std::function<event_list()>;
-    using tracker_type      = policy::instance_tracker<this_type>;
 
-    using tracker_type::m_thr;
+    //----------------------------------------------------------------------------------//
 
-    static const short precision = 3;
-    static const short width     = 8;
+    struct common_data
+    {
+        TIMEMORY_DEFAULT_OBJECT(common_data)
 
-    template <typename... T>
-    friend struct cpu_roofline;
+        bool          is_configured = false;
+        bool          is_fixed      = false;
+        int           event_set     = PAPI_NULL;
+        vector_t<int> events        = {};
+    };
 
-    template <typename... T>
-    friend struct gpu_roofline;
+    //----------------------------------------------------------------------------------//
+
+    template <typename Tp = void>
+    static common_data& data()
+    {
+        static thread_local common_data _instance{};
+        return _instance;
+    }
+
+    template <typename Tp = void>
+    static int& event_set()
+    {
+        return data<Tp>().event_set;
+    }
+
+    template <typename Tp = void>
+    static bool& is_configured()
+    {
+        return data<Tp>().is_configured;
+    }
+
+    template <typename Tp = void>
+    static bool& is_fixed()
+    {
+        return data<Tp>().is_fixed;
+    }
+
+    template <typename Tp = void>
+    static vector_t<int>& get_events()
+    {
+        auto& _ret = data<Tp>().events;
+        if(!is_fixed<Tp>() && _ret.empty())
+            _ret = get_initializer<Tp>()();
+        return _ret;
+    }
 
     //----------------------------------------------------------------------------------//
 
     static void overflow_handler(int evt_set, void* address, long long overflow_vector,
                                  void* context)
     {
-        fprintf(stderr, "[papi_vector%i]> Overflow at %p! bit=0x%llx \n", evt_set,
+        fprintf(stderr, "[papi_common%i]> Overflow at %p! bit=0x%llx \n", evt_set,
                 address, overflow_vector);
         consume_parameters(context);
     }
@@ -136,10 +172,7 @@ struct papi_vector
 
     //----------------------------------------------------------------------------------//
 
-    static int event_set() { return _event_set(); }
-
-    //----------------------------------------------------------------------------------//
-
+    template <typename Tp = void>
     static get_initializer_t& get_initializer()
     {
         static get_initializer_t _instance = []() {
@@ -148,12 +181,8 @@ struct papi_vector
 
             if(settings::verbose() > 1 || settings::debug())
             {
-                static std::atomic<int> _once(0);
-                if(_once++ == 0)
-                {
-                    printf("[papi_vector]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
-                           events_str.c_str());
-                }
+                printf("[papi_common]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
+                       events_str.c_str());
             }
 
             vector_t<string_t> events_str_list = delimit(events_str);
@@ -176,14 +205,14 @@ struct papi_vector
                     continue;
 
                 if(settings::debug())
-                    printf("[papi_vector]> Getting event code from '%s'...\n",
+                    printf("[papi_common]> Getting event code from '%s'...\n",
                            itr.c_str());
 
                 int evt_code = papi::get_event_code(itr);
                 if(evt_code == PAPI_NOT_INITED)  // defined as zero
                 {
                     std::stringstream ss;
-                    ss << "[papi_vector] Error creating event with ID: " << itr;
+                    ss << "[papi_common] Error creating event with ID: " << itr;
                     if(settings::papi_fail_on_error())
                         throw std::runtime_error(ss.str());
                     else
@@ -196,7 +225,7 @@ struct papi_vector
                     if(fitr == events_list.end())
                     {
                         if(settings::debug() || settings::verbose() > 1)
-                            printf("[papi_vector] Successfully created event '%s' with "
+                            printf("[papi_common] Successfully created event '%s' with "
                                    "code '%i'...\n",
                                    itr.c_str(), evt_code);
                         events_list.push_back(evt_code);
@@ -204,7 +233,7 @@ struct papi_vector
                     else
                     {
                         if(settings::debug() || settings::verbose() > 1)
-                            printf("[papi_vector] Event '%s' with code '%i' already "
+                            printf("[papi_common] Event '%s' with code '%i' already "
                                    "exists...\n",
                                    itr.c_str(), evt_code);
                     }
@@ -218,73 +247,121 @@ struct papi_vector
 
     //----------------------------------------------------------------------------------//
 
-    static event_list get_events()
+    template <typename Tp = void>
+    static void initialize()
     {
-        static event_list _instance = get_initializer()();
-        if(_instance.empty())
-            _instance = get_initializer()();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static void configure()
-    {
-        if(!is_configured() && initialize_papi())
+        if(!is_configured<Tp>() && initialize_papi())
         {
             if(settings::debug() || settings::verbose() > 1)
-                PRINT_HERE("%s", "configuring papi_vector");
+                PRINT_HERE("%s", "configuring papi");
 
-            auto events = get_events();
-            if(events.size() > 0)
+            auto& _event_set = event_set<Tp>();
+            auto& _events    = get_events<Tp>();
+            if(_events.size() > 0)
             {
-                papi::create_event_set(&_event_set(), settings::papi_multiplexing());
-                papi::add_events(_event_set(), events.data(), events.size());
+                papi::create_event_set(&_event_set, settings::papi_multiplexing());
+                papi::add_events(_event_set, _events.data(), _events.size());
                 if(settings::papi_overflow() > 0)
                 {
-                    for(auto itr : events)
-                        papi::overflow(_event_set(), itr, settings::papi_overflow(), 0,
+                    for(auto itr : _events)
+                        papi::overflow(_event_set, itr, settings::papi_overflow(), 0,
                                        &overflow_handler);
                 }
                 if(settings::papi_attach())
-                    papi::attach(_event_set(), process::get_target_id());
-                papi::start(_event_set());
-                is_configured() = true;
+                    papi::attach(_event_set, process::get_target_id());
+                papi::start(_event_set);
+                is_configured<Tp>() = papi::working();
             }
         }
     }
 
     //----------------------------------------------------------------------------------//
 
-    static void thread_init(storage_type*)
-    {
-        if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "thread initialization of papi_vector");
-        configure();
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static void thread_finalize(storage_type*)
+    template <typename Tp = void>
+    static void finalize()
     {
         if(!initialize_papi())
             return;
-        auto events = get_events();
-        if(events.size() > 0 && _event_set() != PAPI_NULL && _event_set() >= 0)
+        auto& _event_set = event_set<Tp>();
+        auto& _events    = get_events<Tp>();
+        if(_events.size() > 0 && _event_set != PAPI_NULL && _event_set >= 0)
         {
-            value_type values;
-            papi::stop(_event_set(), values.data());
-            // papi::remove_events(_event_set(), events.data(), events.size());
-            papi::destroy_event_set(_event_set());
-            _event_set() = PAPI_NULL;
+            value_type values(_events.size(), 0);
+            papi::stop(_event_set, values.data());
+            papi::remove_events(_event_set, _events.data(), _events.size());
+            papi::destroy_event_set(_event_set);
+            _event_set = PAPI_NULL;
+            _events.clear();
         }
         papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//
 
-    explicit papi_vector()
+public:
+    papi_common()
     : events(get_events())
+    {}
+
+    papi_common(std::initializer_list<int>&& _events)
+    : events(std::forward<std::initializer_list<int>>(_events))
+    {}
+
+protected:
+    event_list events{};
+
+protected:
+    static std::shared_ptr<vector_t<int>> private_events()
+    {
+        static auto _instance = std::make_shared<vector_t<int>>();
+        return _instance;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+//                          Array of PAPI counters
+//
+//--------------------------------------------------------------------------------------//
+//
+struct papi_vector
+: public base<papi_vector, std::vector<long long>>
+, private policy::instance_tracker<papi_vector>
+, public papi_common
+{
+    template <typename Tp>
+    using vector_t = std::vector<Tp>;
+
+    using size_type         = size_t;
+    using event_list        = vector_t<int>;
+    using value_type        = vector_t<long long>;
+    using entry_type        = typename value_type::value_type;
+    using this_type         = papi_vector;
+    using base_type         = base<this_type, value_type>;
+    using storage_type      = typename base_type::storage_type;
+    using get_initializer_t = std::function<event_list()>;
+    using tracker_type      = policy::instance_tracker<this_type>;
+
+    using tracker_type::m_thr;
+
+    static const short precision = 3;
+    static const short width     = 8;
+
+    template <typename... T>
+    friend struct cpu_roofline;
+
+    template <typename... T>
+    friend struct gpu_roofline;
+
+    //----------------------------------------------------------------------------------//
+
+    static void configure() { papi_common::initialize(); }
+    static void thread_init(storage_type*) { papi_common::initialize(); }
+    static void thread_finalize(storage_type*) { papi_common::finalize(); }
+
+    //----------------------------------------------------------------------------------//
+
+    explicit papi_vector()
     {
         value.resize(events.size(), 0);
         accum.resize(events.size(), 0);
@@ -307,8 +384,8 @@ struct papi_vector
     value_type record()
     {
         value_type read_value(events.size(), 0);
-        if(initialize_papi() && _event_set() != PAPI_NULL)
-            papi::read(_event_set(), read_value.data());
+        if(initialize_papi() && event_set() != PAPI_NULL)
+            papi::read(event_set(), read_value.data());
         return read_value;
     }
 
@@ -332,9 +409,7 @@ struct papi_vector
     {
         if(tracker_type::get_thread_started() == 0)
         {
-            configure();
-            // if(_event_set() != PAPI_NULL)
-            //    papi::reset(_event_set());
+            papi_common::initialize();
             events = get_events();
         }
 
@@ -379,7 +454,7 @@ struct papi_vector
 
 protected:
     // data types
-    event_list events;
+    using papi_common::events;
 
 public:
     //==================================================================================//
@@ -390,7 +465,7 @@ public:
 
     static std::string label()
     {
-        return "papi_vector" + std::to_string((_event_set() < 0) ? 0 : _event_set());
+        return "papi_vector" + std::to_string((event_set() < 0) ? 0 : event_set());
     }
 
     static std::string description()
@@ -562,29 +637,6 @@ public:
         os << ss_value.str() << ss_extra.str();
         return os;
     }
-
-private:
-    //----------------------------------------------------------------------------------//
-
-    static int& _event_set()
-    {
-        static thread_local int _instance = PAPI_NULL;
-        return _instance;
-    }
-
-    static bool& is_configured()
-    {
-        static thread_local bool _instance = false;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static std::shared_ptr<vector_t<int>> private_events()
-    {
-        static auto _instance = std::make_shared<vector_t<int>>();
-        return _instance;
-    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -592,6 +644,7 @@ private:
 template <size_t MaxNumEvents>
 struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>>
+, public papi_common
 {
     using size_type         = size_t;
     using event_list        = std::vector<int>;
@@ -612,138 +665,13 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static bool initialize_papi()
-    {
-        static thread_local bool _initalized = false;
-        static thread_local bool _working    = false;
-        if(!_initalized)
-        {
-            papi::init();
-            papi::register_thread();
-            _initalized = true;
-            _working    = papi::working();
-            if(!_working)
-            {
-                std::cerr << "Warning! PAPI failed to initialized!\n";
-                std::cerr << "The following PAPI events will not be reported: \n";
-                for(const auto& itr : get_events())
-                    std::cerr << "    " << papi::get_event_info(itr).short_descr << "\n";
-                std::cerr << std::flush;
-            }
-        }
-        return _working;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static int event_set() { return _event_set(); }
-
-    //----------------------------------------------------------------------------------//
-
-    static get_initializer_t& get_initializer()
-    {
-        static get_initializer_t _instance = []() {
-            papi::init();
-            auto events_str = settings::papi_events();
-
-            if(settings::verbose() > 1 || settings::debug())
-            {
-                static std::atomic<int> _once(0);
-                if(_once++ == 0)
-                {
-                    printf("[papi_array]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
-                           events_str.c_str());
-                }
-            }
-
-            std::vector<string_t> events_str_list = delimit(events_str);
-            std::vector<int>      events_list;
-            for(const auto& itr : events_str_list)
-            {
-                if(itr.length() == 0)
-                    continue;
-
-                if(settings::debug())
-                    printf("[papi_array]> Getting event code from '%s'...\n",
-                           itr.c_str());
-
-                int evt_code = papi::get_event_code(itr);
-                if(evt_code == PAPI_NOT_INITED)  // defined as zero
-                {
-                    std::stringstream ss;
-                    ss << "[papi_array] Error creating event with ID: " << itr;
-                    if(settings::papi_fail_on_error())
-                        throw std::runtime_error(ss.str());
-                    else
-                        fprintf(stderr, "%s\n", ss.str().c_str());
-                }
-                else
-                {
-                    if(settings::debug())
-                        printf("[papi_array] Successfully created event '%s' with code "
-                               "'%i'...\n",
-                               itr.c_str(), evt_code);
-                    events_list.push_back(evt_code);
-                }
-            }
-            return events_list;
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static event_list get_events()
-    {
-        static event_list _instance = get_initializer()();
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static void configure()
-    {
-        if(!is_configured() && initialize_papi())
-        {
-            auto events = get_events();
-            if(events.size() > 0)
-            {
-                papi::create_event_set(&_event_set(), settings::papi_multiplexing());
-                papi::add_events(_event_set(), events.data(), events.size());
-                if(settings::papi_attach())
-                    papi::attach(_event_set(), process::get_target_id());
-                papi::start(_event_set());
-                is_configured() = true;
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static void thread_init(storage_type*) { configure(); }
-
-    //----------------------------------------------------------------------------------//
-
-    static void thread_finalize(storage_type*)
-    {
-        if(!initialize_papi())
-            return;
-        auto events = get_events();
-        if(events.size() > 0 && _event_set() != PAPI_NULL && _event_set() >= 0)
-        {
-            value_type values;
-            papi::stop(_event_set(), values.data());
-            // papi::remove_events(_event_set(), events.data(), events.size());
-            papi::destroy_event_set(_event_set());
-            _event_set() = PAPI_NULL;
-        }
-        papi::unregister_thread();
-    }
+    static void configure() { papi_common::initialize(); }
+    static void thread_init(storage_type*) { papi_common::initialize(); }
+    static void thread_finalize(storage_type*) { papi_common::finalize(); }
 
     //----------------------------------------------------------------------------------//
 
     explicit papi_array()
-    : events(get_events())
     {
         apply<void>::set_value(value, 0);
         apply<void>::set_value(accum, 0);
@@ -757,9 +685,6 @@ struct papi_array
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) = default;
 
-    // data types
-    event_list events;
-
     //----------------------------------------------------------------------------------//
 
     size_t size() { return events.size(); }
@@ -770,8 +695,8 @@ struct papi_array
     {
         value_type read_value;
         apply<void>::set_value(read_value, 0);
-        if(initialize_papi() && _event_set() != PAPI_NULL)
-            papi::read(_event_set(), read_value.data());
+        if(initialize_papi() && event_set() != PAPI_NULL)
+            papi::read(event_set(), read_value.data());
         return read_value;
     }
 
@@ -801,10 +726,8 @@ struct papi_array
 
     void stop()
     {
-        auto tmp = record();
-        for(size_type i = 0; i < events.size(); ++i)
-            accum[i] += (tmp[i] - value[i]);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 
@@ -843,6 +766,7 @@ protected:
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
+    using papi_common::events;
 
     friend struct base<this_type, value_type>;
 
@@ -858,8 +782,9 @@ public:
 
     static std::string label()
     {
-        return "papi_array" + std::to_string((_event_set() < 0) ? 0 : _event_set());
+        return "papi_array" + std::to_string((event_set() < 0) ? 0 : event_set());
     }
+
     static std::string description() { return "Fixed-size array of PAPI HW counters"; }
 
     entry_type get_display(int evt_type) const
@@ -1025,21 +950,6 @@ public:
         os << ss_value.str() << ss_extra.str();
         return os;
     }
-
-private:
-    //----------------------------------------------------------------------------------//
-
-    static int& _event_set()
-    {
-        static thread_local int _instance = PAPI_NULL;
-        return _instance;
-    }
-
-    static bool& is_configured()
-    {
-        static thread_local bool _instance = false;
-        return _instance;
-    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -1051,6 +961,7 @@ private:
 template <int... EventTypes>
 struct papi_tuple
 : public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>>
+, public papi_common
 {
     using size_type    = std::size_t;
     using value_type   = std::array<long long, sizeof...(EventTypes)>;
@@ -1066,108 +977,29 @@ struct papi_tuple
     friend struct operation::record<this_type>;
 
 public:
-    //==================================================================================//
-    //
-    //      static data
-    //
-    //==================================================================================//
-
-    static bool initialize_papi()
-    {
-        static thread_local bool _initalized = false;
-        static thread_local bool _working    = false;
-        if(!_initalized)
-        {
-            papi::init();
-            papi::register_thread();
-            _initalized = true;
-            _working    = papi::working();
-            if(!_working)
-            {
-                std::cerr << "Warning! PAPI failed to initialized!\n";
-                std::cerr << "The following PAPI events will not be reported: \n";
-                for(const auto& itr : get_events())
-                    std::cerr << "    " << papi::get_event_info(itr).short_descr << "\n";
-                std::cerr << std::flush;
-            }
-        }
-        return _working;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static int& event_set()
-    {
-        static thread_local int _instance = PAPI_NULL;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static bool& enable_multiplex()
-    {
-        static thread_local bool _instance = settings::papi_multiplexing();
-        return _instance;
-    }
-
     //----------------------------------------------------------------------------------//
 
     static void configure()
     {
-        if(!is_configured())
-        {
-            if(!initialize_papi())
-                return;
-            // set overhead to zero
-            apply<void>::set_value(get_overhead_values(), 0);
-            tim::papi::create_event_set(&event_set(), enable_multiplex());
-            tim::papi::add_events(event_set(), get_events().data(), num_events);
-            if(settings::papi_attach())
-                papi::attach(event_set(), process::get_target_id());
-            tim::papi::start(event_set());
-            is_configured() = true;
-        }
+        papi_common::get_initializer<this_type>() = []() {
+            return std::vector<int>({ EventTypes... });
+        };
+        papi_common::get_events<this_type>() = { EventTypes... };
+        papi_common::initialize<this_type>();
     }
-
-    //----------------------------------------------------------------------------------//
-
-    static void thread_init(storage_type*) { configure(); }
-
-    //----------------------------------------------------------------------------------//
-
-    static void thread_finalize(storage_type*)
-    {
-        if(initialize_papi())
-        {
-            value_type values;
-            papi::stop(event_set(), values.data());
-            papi::remove_events(event_set(), get_events().data(), num_events);
-            papi::destroy_event_set(event_set());
-            event_set() = PAPI_NULL;
-        }
-        papi::unregister_thread();
-    }
+    static void thread_init(storage_type*) { this_type::configure(); }
+    static void thread_finalize(storage_type*) { papi_common::finalize<this_type>(); }
 
     //----------------------------------------------------------------------------------//
 
     static value_type record()
     {
-        if(is_configured())
-            tim::papi::read(event_set(), get_read_values().data());
+        if(is_configured<this_type>())
+            tim::papi::read(event_set<this_type>(), get_read_values().data());
         return get_read_values();
     }
 
 private:
-    //----------------------------------------------------------------------------------//
-
-    static value_type& get_overhead_values()
-    {
-        static thread_local value_type _instance;
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
     static value_type& get_read_values()
     {
         static thread_local value_type _instance = []() {
@@ -1177,9 +1009,6 @@ private:
         }();
         return _instance;
     }
-
-public:
-    static value_type get_overhead() { return get_overhead_values(); }
 
 protected:
     using base_type::accum;
@@ -1202,6 +1031,7 @@ public:
     //==================================================================================//
 
     papi_tuple()
+    : papi_common({ EventTypes... })
     {
         apply<void>::set_value(value, 0);
         apply<void>::set_value(accum, 0);
@@ -1219,7 +1049,11 @@ public:
     //
     void start()
     {
-        configure();
+        if(!papi_common::is_configured<this_type>())
+        {
+            papi_common::initialize<this_type>();
+            events = get_events<this_type>();
+        }
         set_started();
         value = std::move(record());
     }
@@ -1229,17 +1063,8 @@ public:
     //
     void stop()
     {
-        auto tmp      = std::move(record());
-        auto overhead = get_overhead_values();
-        // account for the overhead of recording (relevant for load/store)
-        for(uint64_t i = 0; i < tmp.size(); ++i)
-        {
-            tmp[i] -= overhead[i];
-            value[i] -= overhead[i];
-        }
-        for(size_type i = 0; i < num_events; ++i)
-            accum[i] += (tmp[i] - value[i]);
-        value = std::move(tmp);
+        value = (record() - value);
+        accum += value;
         set_stopped();
     }
 
@@ -1395,22 +1220,6 @@ public:
         for(size_type i = 0; i < num_events; ++i)
             arr[i] = 1;
         return arr;
-    }
-
-private:
-    //----------------------------------------------------------------------------------//
-    //  array of events
-    //
-    static std::vector<int>& get_events()
-    {
-        static std::vector<int> _events = { EventTypes... };
-        return _events;
-    }
-
-    static bool& is_configured()
-    {
-        static thread_local bool _instance = false;
-        return _instance;
     }
 };
 //
