@@ -78,8 +78,8 @@ public:
     using list_data_type  = typename list_t::data_type;
     using data_type       = decltype(
         std::tuple_cat(std::declval<tuple_t>().data(), std::declval<list_t>().data()));
-    using tuple_type = tim::impl::tuple_concat<typename tuple_t::tuple_type,
-                                               typename list_t::tuple_type>;
+    using tuple_type =
+        tim::tuple_concat_t<typename tuple_t::tuple_type, typename list_t::tuple_type>;
 
     using tuple_type_list = typename tuple_t::reference_type;
     using list_type_list  = typename list_t::reference_type;
