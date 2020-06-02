@@ -550,35 +550,36 @@ def run_pyctest():
 
     if args.python:
         pyct.test(construct_name("ex-python-bindings"),
-                  construct_command(["./ex_python_bindings"], args),
+                  construct_command(["mpirun", "-np", "2", sys.executable,
+                                     "./ex_python_bindings"], args),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
                    "ENVIRONMENT": test_env})
 
         pyct.test(construct_name("ex-python-caliper"),
-                  construct_command(["./ex_python_caliper"], args),
+                  construct_command([sys.executable, "./ex_python_caliper"], args),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
                    "ENVIRONMENT": test_env})
 
         pyct.test(construct_name("ex-python-general"),
-                  construct_command(["./ex_python_general"], args),
+                  construct_command([sys.executable, "./ex_python_general"], args),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
                    "ENVIRONMENT": test_env})
 
         pyct.test(construct_name("ex-python-profiler"),
-                  construct_command(["./ex_python_profiler"], args),
+                  construct_command([sys.executable, "./ex_python_profiler"], args),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
                    "ENVIRONMENT": test_env})
 
         pyct.test(construct_name("ex-python-sample"),
-                  construct_command(["./ex_python_sample"], args),
+                  construct_command([sys.executable, "./ex_python_sample"], args),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
@@ -621,7 +622,7 @@ def run_pyctest():
 
     if args.python:
         pyct.test(construct_name("ex-python-minimal"),
-                  construct_command(["./ex_python_minimal"], args),
+                  construct_command([sys.executable, "./ex_python_minimal"], args),
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "480",
@@ -637,7 +638,7 @@ def run_pyctest():
 
         if args.python:
             pyct.test(construct_name("ex-python-likwid"),
-                      construct_command(["./ex_python_likwid"], args),
+                      construct_command([sys.executable, "./ex_python_likwid"], args),
                       {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                        "LABELS": pyct.PROJECT_NAME,
                        "TIMEOUT": "300",

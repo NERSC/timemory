@@ -89,7 +89,8 @@ extern "C"
         PROCESS_SETTING(width, int);
 
         if(argv && argc > 0)
-            tim::timemory_init(argc, argv);
+            timemory_init_library(argc, argv);
+            // tim::timemory_init(argc, argv);
 
 #    undef PROCESS_SETTING
     }

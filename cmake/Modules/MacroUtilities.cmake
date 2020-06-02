@@ -605,7 +605,8 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     set(_onevalue   NAME
                     TARGET
                     CATEGORY
-                    FOLDER)
+                    FOLDER
+                    VISIBILITY)
     # multi-value
     set(_multival   HEADERS
                     SOURCES
@@ -629,6 +630,15 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     check_required(COMP_FOLDER)
     check_required(COMP_SOURCES)
 
+    if(NOT COMP_VISIBILITY)
+      set(COMP_VISIBILITY default)
+    endif()
+
+    set(VIS_OPTS "default" "hidden")
+    if(NOT "${COMP_VISIBILITY}" IN_LIST VIS_OPTS)
+        message(FATAL_ERROR "${COMP_TARGET} available visibility options: ${VIS_OPTS}")
+    endif()
+    
     string(TOUPPER "${COMP_NAME}" UPP_COMP)
     string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
 
@@ -683,7 +693,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         target_link_libraries(${TARGET_NAME} PRIVATE
             timemory-compile-options
             timemory-develop-options
-            timemory-default-visibility
+            timemory-${COMP_VISIBILITY}-visibility
             ${_ANALYSIS_TOOLS}
             ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})

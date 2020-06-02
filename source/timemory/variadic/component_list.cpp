@@ -112,7 +112,7 @@ template <typename... Types>
 component_list<Types...>::~component_list()
 {
     stop();
-    DEBUG_PRINT_HERE("%s", "deleting components");
+    // DEBUG_PRINT_HERE("%s", "deleting components");
     apply_v::access<operation_t<operation::generic_deleter>>(m_data);
 }
 

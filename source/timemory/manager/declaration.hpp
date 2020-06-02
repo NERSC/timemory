@@ -75,6 +75,7 @@ public:
     using finalizer_func_t = std::function<void()>;
     using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t = std::deque<finalizer_pair_t>;
+    using finalizer_void_t = std::multimap<void*, finalizer_func_t>;
     using filemap_t        = std::map<string_t, std::map<string_t, std::set<string_t>>>;
 
 public:
@@ -89,6 +90,8 @@ public:
     manager& operator=(manager&&) = delete;
 
     // storage-types add functors to destroy the instances
+    template <typename Func>
+    void add_cleanup(void*, Func&&);
     template <typename Func>
     void add_cleanup(const std::string&, Func&&);
     template <typename StackFunc, typename FinalFunc>
@@ -249,6 +252,7 @@ private:
     finalizer_list_t       m_worker_cleanup;
     finalizer_list_t       m_master_finalizers;
     finalizer_list_t       m_worker_finalizers;
+    finalizer_void_t       m_pointer_fini;
     mutex_t                m_mutex;
     auto_lock_t*           m_lock = nullptr;
     filemap_t              m_output_files;
@@ -309,6 +313,16 @@ public:
         return _tmp;
     }
 };
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename Func>
+void
+manager::add_cleanup(void* _key, Func&& _func)
+{
+    // insert into map
+    m_pointer_fini.insert({ _key, std::forward<Func>(_func) });
+}
 //
 //----------------------------------------------------------------------------------//
 //
