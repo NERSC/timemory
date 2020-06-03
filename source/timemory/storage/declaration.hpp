@@ -415,11 +415,11 @@ public:
     // append a value to the the graph
     template <typename Vp,
               enable_if_t<!(std::is_same<decay_t<Vp>, Type>::value), int> = 0>
-    auto append(const secondary_data_t<Vp>& _secondary);
+    iterator append(const secondary_data_t<Vp>& _secondary);
 
     // append an instance to the graph
     template <typename Vp, enable_if_t<(std::is_same<decay_t<Vp>, Type>::value), int> = 0>
-    auto append(const secondary_data_t<Vp>& _secondary);
+    iterator append(const secondary_data_t<Vp>& _secondary);
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version);
@@ -497,7 +497,7 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
 //
 template <typename Type>
 template <typename Vp, enable_if_t<!(std::is_same<decay_t<Vp>, Type>::value), int>>
-auto
+typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
     insert_init();
@@ -505,7 +505,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     // get the iterator and check if valid
     auto&& _itr = std::get<0>(_secondary);
     if(!_data().graph().is_valid(_itr))
-        return;
+        return nullptr;
 
     // compute hash of prefix
     auto _hash_id = add_hash_id(std::get<1>(_secondary));
@@ -549,7 +549,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 //
 template <typename Type>
 template <typename Vp, enable_if_t<(std::is_same<decay_t<Vp>, Type>::value), int>>
-auto
+typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
     insert_init();
@@ -557,7 +557,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     // get the iterator and check if valid
     auto&& _itr = std::get<0>(_secondary);
     if(!_data().graph().is_valid(_itr))
-        return;
+        return nullptr;
 
     // compute hash of prefix
     auto _hash_id = add_hash_id(std::get<1>(_secondary));
