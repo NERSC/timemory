@@ -212,7 +212,6 @@ extern "C"
                << _filestr.substr(_filestr.find_last_of('/') + 1) << ":" << _line;
         }
 
-        auto  len  = ss.str().length() + ((_extra) ? strlen(_extra) : 0);
         if(_extra && strlen(_extra) > 0)
             ss << "/" << to_string(_extra);
         std::string buff = ss.str();
