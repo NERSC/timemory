@@ -160,9 +160,8 @@
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \
             {                                                                            \
-            template std::shared_ptr<settings> TIMEMORY_SETTINGS_DLL                     \
-                                               settings::shared_instance<API>();         \
-            template settings* TIMEMORY_SETTINGS_DLL settings::instance<API>();          \
+            template std::shared_ptr<settings> settings::shared_instance<API>();         \
+            template settings*                 settings::instance<API>();                \
             }
 //
 #    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN)
@@ -170,9 +169,8 @@
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \
             {                                                                            \
-            extern template std::shared_ptr<settings> TIMEMORY_SETTINGS_DLL              \
-                                                      settings::shared_instance<API>();  \
-            extern template settings* TIMEMORY_SETTINGS_DLL settings::instance<API>();   \
+            extern template std::shared_ptr<settings> settings::shared_instance<API>();  \
+            extern template settings*                 settings::instance<API>();         \
             }
 //
 #    else

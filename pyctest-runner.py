@@ -150,6 +150,7 @@ def configure():
 
     os.environ["PYCTEST_TESTING"] = "ON"
     os.environ["TIMEMORY_PLOT_OUTPUT"] = "ON"
+    os.environ["TIMEMORY_BANNER"] = "OFF"
 
     # update PYTHONPATH for the unit tests
     pypath = os.environ.get("PYTHONPATH", "").split(":")
