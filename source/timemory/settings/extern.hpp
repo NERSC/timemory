@@ -27,7 +27,6 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/definition.hpp"
 #include "timemory/settings/macros.hpp"
-#include "timemory/settings/settings.cpp"
 #include "timemory/settings/types.hpp"
 
 TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)

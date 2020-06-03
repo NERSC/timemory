@@ -77,3 +77,7 @@
 #    include "timemory/config/extern.hpp"
 #endif
 //
+#if defined(TIMEMORY_USE_SETTINGS_EXTERN)
+#    include "timemory/settings/extern.hpp"
+#endif
+//
