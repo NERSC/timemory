@@ -764,8 +764,8 @@ storage<Type, true>::get_shared_manager()
         m_manager = tim::manager::instance();
         if(!m_manager)
             return;
-        if(m_manager->is_finalizing())
-            return;
+        // if(m_manager->is_finalizing())
+        //    return;
 
         auto _label = Type::label();
         for(auto& itr : _label)
@@ -776,8 +776,8 @@ storage<Type, true>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [=]() {};
-        func_t _finalize  = [=]() {
+        auto   _cleanup   = [&]() {};
+        func_t _finalize  = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
@@ -798,6 +798,10 @@ storage<Type, true>::get_shared_manager()
                                    "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();
                 }
+            }
+            else
+            {
+                DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
             }
             trait::runtime_enabled<Type>::set(false);
         };
@@ -976,8 +980,8 @@ storage<Type, false>::get_shared_manager()
         trait::runtime_enabled<Type>::set(_enabled);
 
         bool   _is_master = singleton_t::is_master(this);
-        auto   _cleanup   = [=]() {};
-        func_t _finalize  = [=]() {
+        auto   _cleanup   = [&]() {};
+        func_t _finalize  = [&]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
@@ -998,6 +1002,10 @@ storage<Type, false>::get_shared_manager()
                                    "calling _instance->smart_master_instance().reset()");
                     _instance->smart_master_instance().reset();
                 }
+            }
+            else
+            {
+                DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
             }
             trait::runtime_enabled<Type>::set(false);
         };

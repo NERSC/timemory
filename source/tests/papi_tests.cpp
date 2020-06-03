@@ -104,17 +104,16 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
     std::vector<Tp, tim::ert::aligned_allocator<Tp, 64>> array(nsize);
     std::memset(array.data(), 0, nsize * sizeof(Tp));
 
-    ComponentT::thread_init(nullptr);
-
-    using pointer = ptr_t<ComponentT>;
-    pointer obj   = pointer(new ComponentT(std::forward<ArgsT>(_args)...));
-
-    obj->start();
-    tim::ert::ops_kernel<Nunroll, device_t>(ntrials, nsize, array.data(), op_func,
-                                            store_func);
-    obj->stop();
-
-    ComponentT::thread_finalize(nullptr);
+    ptr_t<ComponentT> _obj;
+    {
+        using measure_t = tim::auto_bundle<TIMEMORY_API, ComponentT>;
+        measure_t obj(std::forward<ArgsT>(_args)...);
+        tim::ert::ops_kernel<Nunroll, device_t>(ntrials, nsize, array.data(), op_func,
+                                                store_func);
+        obj.stop();
+        ComponentT::finalize();
+        _obj = std::make_shared<ComponentT>(*obj.template get<ComponentT>());
+    }
 
     // return zeros if not working
     if(!tim::papi::working())
@@ -122,9 +121,9 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, ArgsT&&... _args)
         std::cout << "\n\nPAPI is not working so returning zeros instead of total_ops = "
                   << total_ops << " and total_lst = " << total_lst << "\n\n"
                   << std::endl;
-        return return_type<ComponentT>(obj, 0, 0);
+        return return_type<ComponentT>(_obj, 0, 0);
     }
-    return return_type<ComponentT>(obj, total_ops, total_lst);
+    return return_type<ComponentT>(_obj, total_ops, total_lst);
 }
 //--------------------------------------------------------------------------------------//
 inline std::string
@@ -179,7 +178,8 @@ TEST_F(papi_tests, tuple_single_precision_ops)
     using test_type = papi_tuple<PAPI_SP_OPS>;
     CHECK_AVAILABLE(test_type);
 
-    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -205,7 +205,8 @@ TEST_F(papi_tests, array_single_precision_ops)
     CHECK_AVAILABLE(test_type);
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
-    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret                     = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -227,7 +228,8 @@ TEST_F(papi_tests, vector_single_precision_ops)
     CHECK_AVAILABLE(test_type);
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
-    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret                     = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -248,7 +250,8 @@ TEST_F(papi_tests, tuple_double_precision_ops)
     using test_type = papi_tuple<PAPI_DP_OPS>;
     CHECK_AVAILABLE(test_type);
 
-    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -270,7 +273,8 @@ TEST_F(papi_tests, array_double_precision_ops)
     CHECK_AVAILABLE(test_type);
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
-    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -292,7 +296,8 @@ TEST_F(papi_tests, vector_double_precision_ops)
     CHECK_AVAILABLE(test_type);
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
-    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -313,7 +318,8 @@ TEST_F(papi_tests, tuple_load_store_ins_sp)
     using test_type = papi_tuple<PAPI_LD_INS, PAPI_SR_INS>;
     CHECK_AVAILABLE(test_type);
 
-    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
@@ -335,7 +341,8 @@ TEST_F(papi_tests, array_load_store_ins_dp)
     CHECK_AVAILABLE(test_type);
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_LST_INS }); };
-    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
@@ -357,7 +364,8 @@ TEST_F(papi_tests, vector_load_store_ins_dp)
     CHECK_AVAILABLE(test_type);
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_LST_INS }); };
-    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);

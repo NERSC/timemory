@@ -115,8 +115,8 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
 
     // revert the environment
     set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", _plot, 1);
-    set_env<std::string>("TIMEMORY_BANNER", _bann.c_str(), 1);
-    set_env<std::string>("TIMEMORY_LIBRARY_CTOR", _ctor.c_str(), 1);
+    set_env<std::string>("TIMEMORY_BANNER", _bann, 1);
+    set_env<std::string>("TIMEMORY_LIBRARY_CTOR", _ctor, 1);
 }
 //
 //--------------------------------------------------------------------------------------//

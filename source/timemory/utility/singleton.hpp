@@ -108,8 +108,17 @@ public:
     // a nullptr after deletion
     void operator delete(void* ptr)
     {
-        this_type* _instance = (this_type*) (ptr);
-        ::delete _instance;
+        if(f_master_instance() && ptr && f_master_instance() == ptr)
+        {
+            this_type* _instance = (this_type*) (ptr);
+            ::delete _instance;
+            f_master_instance() = nullptr;
+        }
+        else if(f_master_instance() && f_master_instance() != ptr)
+        {
+            this_type* _instance = (this_type*) (ptr);
+            ::delete _instance;
+        }
         if(std::this_thread::get_id() == f_master_thread())
             f_master_instance() = nullptr;
     }

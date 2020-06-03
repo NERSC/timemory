@@ -112,6 +112,9 @@ main(int argc, char** argv)
     settings::timing_units() = "msec";
     settings::memory_units() = "kB";
     settings::verbose()      = 1;
+    settings::mpi_init()     = true;
+    settings::mpi_finalize() = true;
+    settings::mpi_thread()   = false;
 
     tim::timemory_init(&argc, &argv);
 

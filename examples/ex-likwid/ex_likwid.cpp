@@ -77,6 +77,8 @@ main(int argc, char** argv)
     };
 
     execute_test("perfmon-nvmon");
+
+    tim::timemory_finalize();
 }
 
 //======================================================================================//

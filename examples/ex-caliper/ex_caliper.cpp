@@ -101,6 +101,8 @@ main(int argc, char** argv)
         throw std::runtime_error(
             "Error!! CALIPER_SCOPE must be one of: 'process', 'thread', 'task'");
     }
+
+    tim::timemory_finalize();
 }
 
 //======================================================================================//
