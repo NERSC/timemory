@@ -289,13 +289,23 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a auditd operation (typically for GOTCHA)
+    // perform a audit operation (typically for GOTCHA)
     //
     template <typename... Args>
     void audit(Args&&... _args)
     {
         using audit_t = operation_t<operation::audit>;
         apply_v::access<audit_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // perform an add_secondary operation
+    //
+    template <typename... Args>
+    void add_secondary(Args&&... _args)
+    {
+        using add_second_t = operation_t<operation::add_secondary>;
+        apply_v::access<add_second_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

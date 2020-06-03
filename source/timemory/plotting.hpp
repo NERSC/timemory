@@ -31,5 +31,5 @@
 #pragma once
 
 #include "timemory/plotting/declaration.hpp"
-//
 #include "timemory/plotting/definition.hpp"
+#include "timemory/plotting/types.hpp"

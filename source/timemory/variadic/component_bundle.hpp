@@ -311,13 +311,23 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a auditd operation (typically for GOTCHA)
+    // perform a audit operation (typically for GOTCHA)
     //
     template <typename... Args>
     void audit(Args&&... _args)
     {
         using audit_t = operation_t<operation::audit>;
         apply_v::access<audit_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // perform an add_secondary operation
+    //
+    template <typename... Args>
+    void add_secondary(Args&&... _args)
+    {
+        using add_second_t = operation_t<operation::add_secondary>;
+        apply_v::access<add_second_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -332,6 +342,10 @@ public:
     //----------------------------------------------------------------------------------//
     // get member functions taking either a type
     //
+    //
+    //----------------------------------------------------------------------------------//
+    //  exact type available
+    //
     template <typename U, typename T = decay_t<U>,
               enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
     T* get()
@@ -345,7 +359,10 @@ public:
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
-
+    //
+    //----------------------------------------------------------------------------------//
+    //  type available with add_pointer
+    //
     template <typename U, typename T = decay_t<U>,
               enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
     T* get()
@@ -358,11 +375,38 @@ public:
     const T* get() const
     {
         return std::get<index_of<T*, data_type>::value>(m_data);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //  type available with remove_pointer
+    //
+    template <
+        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
+        enable_if_t<(!is_one_of<T, data_type>::value &&
+                     !is_one_of<T*, data_type>::value && is_one_of<R, data_type>::value),
+                    int> = 0>
+    T* get()
+    {
+        return &std::get<index_of<R, data_type>::value>(m_data);
     }
 
     template <
-        typename U, typename T = decay_t<U>,
-        enable_if_t<!(is_one_of<T, data_type>::value || is_one_of<T*, data_type>::value),
+        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
+        enable_if_t<(!is_one_of<T, data_type>::value &&
+                     !is_one_of<T*, data_type>::value && is_one_of<R, data_type>::value),
+                    int> = 0>
+    const T* get() const
+    {
+        return &std::get<index_of<R, data_type>::value>(m_data);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //  type is not explicitly listed
+    //
+    template <
+        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
+        enable_if_t<(!is_one_of<T, data_type>::value &&
+                     !is_one_of<T*, data_type>::value && !is_one_of<R, data_type>::value),
                     int> = 0>
     T* get() const
     {

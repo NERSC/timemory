@@ -24,10 +24,8 @@
 
 //======================================================================================//
 //
-#include "timemory/plotting/definition.hpp"
-//
-#include "timemory/operations/extern.hpp"
-//
 #include "timemory/containers/types/generic_bundle.hpp"
+#include "timemory/operations/extern.hpp"
+#include "timemory/plotting/declaration.hpp"
 //
 //======================================================================================//

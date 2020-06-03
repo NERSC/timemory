@@ -22,6 +22,7 @@ set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
     timemory-cereal)
 
+add_interface_library(timemory-dmp)
 add_interface_library(timemory-mpi)
 add_interface_library(timemory-no-mpi-init)
 add_interface_library(timemory-upcxx)
@@ -62,7 +63,6 @@ add_interface_library(timemory-gpu-roofline)
 add_interface_library(timemory-roofline-options)
 
 add_interface_library(timemory-dyninst)
-add_interface_library(timemory-kokkos)
 
 add_interface_library(timemory-mpip-library)
 add_interface_library(timemory-ompt-library)
@@ -73,10 +73,12 @@ set(_DMP_LIBRARIES)
 
 if(TIMEMORY_USE_MPI)
     list(APPEND _DMP_LIBRARIES timemory-mpi)
+    target_link_libraries(timemory-dmp INTERFACE timemory-mpi)
 endif()
 
 if(TIMEMORY_USE_UPCXX)
     list(APPEND _DMP_LIBRARIES timemory-upcxx)
+    target_link_libraries(timemory-dmp INTERFACE timemory-upcxx)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
@@ -97,14 +99,17 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-gperftools-cpu
     timemory-gperftools-heap
     #
+    timemory-python
+    timemory-plotting
+    #
     timemory-caliper
     timemory-gotcha
     timemory-likwid
     timemory-vtune
     timemory-tau
-    timemory-python
-    timemory-plotting
-    timemory-kokkos)
+    timemory-ompt
+    timemory-craypat
+    timemory-allinea-map)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -120,8 +125,10 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
+    timemory-ompt
+    timemory-craypat
+    timemory-allinea-map
     timemory-plotting
-    timemory-kokkos
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -136,8 +143,10 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
+    timemory-ompt
+    timemory-craypat
+    timemory-allinea-map
     timemory-plotting
-    timemory-kokkos
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)

@@ -351,12 +351,22 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // perform an add_secondary operation
+    //
+    template <typename... Args>
+    void add_secondary(Args&&... args)
+    {
+        m_tuple.add_secondary(std::forward<Args>(args)...);
+        m_list.add_secondary(std::forward<Args>(args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
 
     template <template <typename> class OpT, typename... Args>
-    void invoke(Args&&... _args)
+    void invoke(Args&&... args)
     {
-        m_tuple.template invoke<OpT>(std::forward<Args>(_args)...);
-        m_list.template invoke<OpT>(std::forward<Args>(_args)...);
+        m_tuple.template invoke<OpT>(std::forward<Args>(args)...);
+        m_list.template invoke<OpT>(std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -586,15 +596,15 @@ public:
     }
 
     template <typename Tp, typename... Args>
-    void init(Args&&... _args)
+    void init(Args&&... args)
     {
-        m_list.template init<Tp>(std::forward<Args>(_args)...);
+        m_list.template init<Tp>(std::forward<Args>(args)...);
     }
 
     template <typename... Tp, typename... Args>
-    void initialize(Args&&... _args)
+    void initialize(Args&&... args)
     {
-        m_list.template initialize<Tp...>(std::forward<Args>(_args)...);
+        m_list.template initialize<Tp...>(std::forward<Args>(args)...);
     }
 
 public:

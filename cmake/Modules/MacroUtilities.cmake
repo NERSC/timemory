@@ -675,7 +675,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory-external-${LINK}
             timemory-headers
             timemory-vector
-            timemory-mpi
+            timemory-dmp
             ${DEPENDS}
             ${PROPERTY_DEPENDS}
             ${COMP_PUBLIC_LINK})

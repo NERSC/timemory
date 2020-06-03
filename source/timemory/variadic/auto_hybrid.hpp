@@ -205,6 +205,12 @@ public:
         if(m_enabled)
             m_temporary.audit(std::forward<Args>(args)...);
     }
+    template <typename... Args>
+    void add_secondary(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary.add_secondary(std::forward<Args>(args)...);
+    }
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {

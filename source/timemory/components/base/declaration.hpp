@@ -262,6 +262,9 @@ public:
               enable_if_t<(trait::sampler<Up>::value), int> = 0>
     static void add_sample(Vp&&);  /// add a sample
 
+    void set_iterator(graph_iterator itr) { graph_itr = itr; }
+    auto get_iterator() const { return graph_itr; }
+
 protected:
     static base_storage_type* get_storage();
     static void               cleanup() {}
