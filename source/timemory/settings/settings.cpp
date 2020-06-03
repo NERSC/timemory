@@ -22,15 +22,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/settings/macros.hpp"
-//
-#include "timemory/settings/types.hpp"
-//
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/definition.hpp"
-//
+#include "timemory/settings/extern.hpp"
+#include "timemory/settings/macros.hpp"
+#include "timemory/settings/types.hpp"
 
-TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
+// TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
 
 #if defined(TIMEMORY_SETTINGS_SOURCE) ||                                                 \
     !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_SETTINGS_EXTERN))
@@ -52,4 +50,8 @@ get_setting_descriptions() { return get_descriptions<settings, api::native_tag>(
 //
 }  // namespace tim
 
+#endif
+
+#if defined(TIMEMORY_SETTINGS_SOURCE)
+CEREAL_CLASS_VERSION(tim::settings, 1)
 #endif

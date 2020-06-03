@@ -33,6 +33,7 @@ static std::map<string_t, procedure_t*>           end_stubs;
 static strvec_t                                   init_stub_names;
 static strvec_t                                   fini_stub_names;
 static strset_t                                   used_stub_names;
+static std::vector<call_expr_pointer_t>           env_variables;
 static std::map<string_t, call_expr_pointer_t>    beg_expr;
 static std::map<string_t, call_expr_pointer_t>    end_expr;
 static const auto                                 npos_v          = string_t::npos;
@@ -70,12 +71,14 @@ main(int argc, char** argv)
     std::vector<string_t> staticlibname = {};
     tim::process::id_t    _pid          = -1;
 
-    // bpatch->setTrampRecursive(true);
     bpatch->setBaseTrampDeletion(false);
-    // bpatch->setMergeTramp(true);
     bpatch->setTypeChecking(true);
     bpatch->setSaveFPR(true);
-    bpatch->setDelayedParsing(false);
+    bpatch->setDelayedParsing(true);
+    bpatch->setInstrStackFrames(true);
+    bpatch->setLivenessAnalysis(false);
+    bpatch->setTrampRecursive(true);
+    bpatch->setMergeTramp(true);
 
     int _argc = argc;
     int _cmdc = 0;
@@ -217,6 +220,10 @@ main(int argc, char** argv)
         .choices({ "trace", "region" })
         .count(1);
     parser.add_argument()
+        .names({ "--env" })
+        .description(
+            "Environment variables to add to the runtime in form VARIABLE=VALUE");
+    parser.add_argument()
         .names({ "--prefer" })
         .description("Prefer this library types when available")
         .choices({ "shared", "static" })
@@ -247,6 +254,13 @@ main(int argc, char** argv)
             .description("Input executable and arguments (if '-- <CMD>' not provided)")
             .count(1);
     }
+
+    parser
+        .add_argument({ "--dyninst-options" },
+                      "Advanced dyninst options: BPatch::set<OPTION>(bool), e.g. "
+                      "bpatch->setTrampRecursive(true)")
+        .choices({ "TypeChecking", "SaveFPR", "DelayedParsing", "InstrStackFrames",
+                   "TrampRecursive", "MergeTramp", "BaseTrampDeletion" });
 
     string_t extra_help = "-- <CMD> <ARGS>";
     auto     err        = parser.parse(_argc, _argv);
@@ -403,6 +417,7 @@ main(int argc, char** argv)
 
     init_stub_names = parser.get<strvec_t>("init-functions");
     fini_stub_names = parser.get<strvec_t>("fini-functions");
+    auto env_vars   = parser.get<strvec_t>("env");
 
     //----------------------------------------------------------------------------------//
     //
@@ -472,6 +487,38 @@ main(int argc, char** argv)
                 read_collection(itr, collection_includes);
         }
     }
+
+    //----------------------------------------------------------------------------------//
+    //
+    //                              DYNINST OPTIONS
+    //
+    //----------------------------------------------------------------------------------//
+
+    std::set<std::string> dyninst_defs = { "TypeChecking",   "SaveFPR",
+                                           "DelayedParsing", "InstrStackFrames",
+                                           "TrampRecursive", "MergeTramp" };
+    int                   dyninst_verb = 1;
+    if(parser.exists("dyninst-options"))
+    {
+        dyninst_defs = parser.get<std::set<std::string>>("dyninst-options");
+        dyninst_verb = 0;
+    }
+
+    auto get_dyninst_option = [&](const std::string& _opt) {
+        bool _ret = dyninst_defs.find(_opt) != dyninst_defs.end();
+        verbprintf(dyninst_verb, "[dyninst-option]> %-20s = %4s\n", _opt.c_str(),
+                   (_ret) ? "on" : "off");
+        return _ret;
+    };
+
+    bpatch->setTypeChecking(get_dyninst_option("TypeChecking"));
+    bpatch->setSaveFPR(get_dyninst_option("SaveFPR"));
+    bpatch->setDelayedParsing(get_dyninst_option("DelayedParsing"));
+    bpatch->setInstrStackFrames(get_dyninst_option("InstrStackFrames"));
+
+    bpatch->setTrampRecursive(get_dyninst_option("TrampRecursive"));
+    bpatch->setMergeTramp(get_dyninst_option("MergeTramp"));
+    bpatch->setBaseTrampDeletion(get_dyninst_option("BaseTrampDeletion"));
 
     //----------------------------------------------------------------------------------//
     //
@@ -923,6 +970,8 @@ main(int argc, char** argv)
     auto fini_call_args = timemory_call_expr();
     auto umpi_call_args = timemory_call_expr(use_mpi, is_attached);
     auto mode_call_args = timemory_call_expr("TIMEMORY_INSTRUMENTATION_MODE", instr_mode);
+    auto mpie_init_args = timemory_call_expr("TIMEMORY_MPI_INIT", "OFF");
+    auto mpie_fini_args = timemory_call_expr("TIMEMORY_MPI_FINALIZE", "OFF");
     auto mpip_call_args =
         timemory_call_expr("TIMEMORY_MPIP_COMPONENTS", default_components);
     auto ompt_call_args =
@@ -940,6 +989,8 @@ main(int argc, char** argv)
     auto mode_env_call = mode_call_args.get(env_func);
     auto mpip_env_call = mpip_call_args.get(env_func);
     auto ompt_env_call = ompt_call_args.get(env_func);
+    auto mpii_env_call = mpie_init_args.get(env_func);
+    auto mpif_env_call = mpie_fini_args.get(env_func);
 
     for(const auto& itr : use_stubs)
     {
@@ -950,6 +1001,19 @@ main(int argc, char** argv)
         }
     }
 
+    for(auto& itr : env_vars)
+    {
+        auto p = tim::delimit(itr, "=");
+        if(p.size() != 2)
+        {
+            std::cerr << "Error! environment variable: " << itr
+                      << " not in form VARIABLE=VALUE\n";
+            throw std::runtime_error("Bad format");
+        }
+        auto _expr = timemory_call_expr(p.at(0), p.at(1));
+        env_variables.push_back(_expr.get(env_func));
+    }
+
     //----------------------------------------------------------------------------------//
     //
     //  Configure the initialization and finalization routines
@@ -958,10 +1022,20 @@ main(int argc, char** argv)
 
     if(mode_env_call)
         init_names.push_back(mode_env_call.get());
+    if(mpii_env_call)
+        init_names.push_back(mpii_env_call.get());
+    if(mpif_env_call)
+        init_names.push_back(mpif_env_call.get());
     if(use_stubs["mpip"] && mpip_env_call)
         init_names.push_back(mpip_env_call.get());
     if(use_stubs["ompt"] && ompt_env_call)
         init_names.push_back(ompt_env_call.get());
+
+    for(auto itr : env_variables)
+    {
+        if(itr)
+            init_names.push_back(itr.get());
+    }
 
     for(const auto& itr : beg_expr)
     {
@@ -1301,11 +1375,11 @@ main(int argc, char** argv)
     {
         printf("Executing...\n");
 
-        bpatch->setDebugParsing(false);
-        bpatch->setTypeChecking(false);
-        bpatch->setDelayedParsing(true);
-        bpatch->setInstrStackFrames(false);
-        bpatch->setLivenessAnalysis(false);
+        // bpatch->setDebugParsing(false);
+        // bpatch->setTypeChecking(false);
+        // bpatch->setDelayedParsing(true);
+        // bpatch->setInstrStackFrames(true);
+        // bpatch->setLivenessAnalysis(false);
         addr_space->beginInsertionSet();
 
         verbprintf(4, "Registering fork callbacks...\n");
@@ -1689,8 +1763,9 @@ insert_instr(address_space_t* mutatee, procedure_t* funcToInstr,
             continue;
         else if(traceLoc == BPatch_entry)
             mutatee->insertSnippet(*_trace, *itr, BPatch_callBefore, BPatch_firstSnippet);
-        else if(traceLoc == BPatch_exit)
-            mutatee->insertSnippet(*_trace, *itr, BPatch_callAfter, BPatch_firstSnippet);
+        // else if(traceLoc == BPatch_exit)
+        //    mutatee->insertSnippet(*_trace, *itr, BPatch_callAfter,
+        //    BPatch_firstSnippet);
         else
             mutatee->insertSnippet(*_trace, *itr);
     }

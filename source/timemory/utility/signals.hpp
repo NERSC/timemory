@@ -517,7 +517,29 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
         std::cerr << e.what() << std::endl;
     }
 
+#    if defined(_UNIX)
+    auto              bt = tim::get_demangled_backtrace<32>();
+    std::stringstream prefix;
+    prefix << "[PID=" << getpid() << "]";
+    int sz = 0;
+    for(const auto& itr : bt)
+    {
+        if(itr.length() > 0)
+            ++sz;
+    }
+    std::stringstream serr;
+    serr << "\nBacktrace:\n";
+    for(size_t i = 0; i < bt.size(); ++i)
+    {
+        auto& itr = bt.at(i);
+        if(itr.length() > 0)
+            serr << prefix.str() << "[" << i << "/" << sz << "]> " << itr << "\n";
+    }
+    std::cerr << serr.str().c_str() << std::flush;
+#    else
     timemory_stack_backtrace(message);
+#    endif
+
     os << message.str() << std::flush;
 }
 

@@ -35,6 +35,7 @@ fib(long n)
 int
 main(int argc, char** argv)
 {
+    timemory_init_library(argc, argv);
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
     void* t0  = TIMEMORY_AUTO_TIMER("total");
@@ -47,5 +48,6 @@ main(int argc, char** argv)
     FREE_TIMEMORY_AUTO_TIMER(t0);
 
     printf("Answer = %li\n", ans);
+    timemory_finalize_library();
     return EXIT_SUCCESS;
 }

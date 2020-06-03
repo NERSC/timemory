@@ -35,4 +35,6 @@
 #if !defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_SETTINGS_EXTERN) &&           \
     !defined(TIMEMORY_SETTINGS_SOURCE)
 #    include "timemory/settings/settings.cpp"
+#else
+// #    include "timemory/settings/extern.hpp"
 #endif

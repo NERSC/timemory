@@ -99,10 +99,24 @@ plot(string_t _label, string_t _prefix, const string_t& _dir, bool _echo_dart,
     if(settings::verbose() > 2 || settings::debug())
         PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
 
-    set_env<std::string>("TIMEMORY_BANNER", "OFF");
+    auto _ctor = get_env<std::string>("TIMEMORY_LIBRARY_CTOR", "");
+    auto _bann = get_env<std::string>("TIMEMORY_BANNER", "");
+    auto _plot = get_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "0");
+    // if currently in plotting mode, we dont want to plot again
+    if(_plot.length() > 0)
+        return;
+
+    // set-up environment such that forking is safe
+    set_env<std::string>("TIMEMORY_LIBRARY_CTOR", "OFF", 1);
+    set_env<std::string>("TIMEMORY_BANNER", "OFF", 1);
     set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
+
     launch_process(cmd.c_str(), _info + " plot generation failed");
-    set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "0", 1);
+
+    // revert the environment
+    set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", _plot, 1);
+    set_env<std::string>("TIMEMORY_BANNER", _bann, 1);
+    set_env<std::string>("TIMEMORY_LIBRARY_CTOR", _ctor, 1);
 }
 //
 //--------------------------------------------------------------------------------------//

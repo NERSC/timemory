@@ -57,6 +57,7 @@ extern "C"
     void c_timemory_init(int argc, char** argv, timemory_settings _settings)
     {
         cxx_timemory_init(argc, argv, _settings);
+        timemory_init_library(argc, argv);
     }
 
     //==================================================================================//
