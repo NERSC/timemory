@@ -192,8 +192,8 @@ using identity_type_t = typename T::type;
 TEST_F(hybrid_tests, type_check)
 {
     // derived inside hybrid
-    using tuple_type = tim::available_t<typename hybrid_t::tuple_type>;
-    using list_type  = tim::available_t<typename hybrid_t::list_type>;
+    using tuple_type = tim::available_t<typename hybrid_t::tuple_t>;
+    using list_type  = tim::available_t<typename hybrid_t::list_t>;
     // derived inside tuple/list
     using tuple_impl = typename tuple_t::type;
     using list_impl  = typename list_t::type;
@@ -332,9 +332,9 @@ TEST_F(hybrid_tests, auto_timer)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    auto  _cpu  = *obj.get_lhs().get<user_clock>() + *obj.get_lhs().get<system_clock>();
-    auto& _rc   = *obj.get_lhs().get<wall_clock>();
-    auto& _util = *obj.get_lhs().get<cpu_util>();
+    auto  _cpu  = *obj.get<user_clock>() + *obj.get<system_clock>();
+    auto& _rc   = *obj.get<wall_clock>();
+    auto& _util = *obj.get<cpu_util>();
 
     details::print_info(_rc, 1.0, "sec", clock_convert);
     details::print_info(_cpu, 1.25, "sec", clock_convert);

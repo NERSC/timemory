@@ -24,12 +24,15 @@
 //
 
 #include "ex_optional.hpp"  // file that includes optional usage
+
 #include <algorithm>
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <numeric>
 #include <thread>
 #include <vector>
 
@@ -41,14 +44,18 @@
 
 template <typename Tp> using vector_t = std::vector<Tp>;
 
+static bool quiet = false;
 namespace impl
 {
 long fibonacci(long n);
 }
-long fibonacci(long n);
-void status();
-void write(long, long);
-void allreduce(const vector_t<long>& send, vector_t<long>& recv);
+long                fibonacci(long n);
+void                status();
+void                write(long, long);
+void                allreduce(const vector_t<long>& send, vector_t<long>& recv);
+void                scatter_gather(int num_elements_per_proc);
+std::vector<double> create_rand_nums(int num_elements);
+double              compute_avg(const std::vector<double>& array);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -107,8 +114,8 @@ int main(int argc, char** argv)
     //
     //  Execute the work
     //
-    std::atomic<long> ret_sum;
-#pragma omp parallel for
+    long ret_sum = 0;
+#pragma omp parallel for reduction(+ : ret_sum)
     for(int64_t i = 0; i < (int64_t) fibvalues.size(); ++i)
     {
         auto itr = fibvalues.at(i);
@@ -120,8 +127,15 @@ int main(int argc, char** argv)
     std::vector<long> ret_send;
     for(size_t i = 0; i < fibvalues.size(); ++i)
         ret_send.push_back(fibonacci(fibvalues.at(i) % 20 + 10));
+
     allreduce(ret_send, ret_reduce);
+
+    quiet       = true;
+    auto modulo = fibonacci(25);
+
     for(size_t i = 0; i < fibvalues.size(); ++i) write(fibvalues.at(i), ret_reduce.at(i));
+    for(size_t i = 0; i < fibvalues.size(); ++i)
+        scatter_gather(fibonacci(fibvalues.at(i)) % modulo + 200);
 
     //
     // call <auto_tuple_t>.stop() or expand to nothing
@@ -166,6 +180,7 @@ long fibonacci(long n)
 
 void write(long nfib, long answer)
 {
+    if(quiet) return;
 #pragma omp critical
     printf("fibonacci(%li) = %li\n", nfib, answer);
 }
@@ -195,3 +210,112 @@ void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
 #endif
     for(auto& itr : recvbuf) itr = log(itr);
 }
+
+//--------------------------------------------------------------------------------------//
+
+void scatter_gather(int num_elements_per_proc)
+{
+    TIMEMORY_BLANK_MARKER(auto_hybrid_t, "scatter_gatther_", num_elements_per_proc);
+    // printf("Number of elements per process: %i\n", num_elements_per_proc);
+
+#if defined(TIMEMORY_USE_MPI)
+    auto n = num_elements_per_proc;
+
+    // Seed the random number generator to get different results each time
+    srand(time(NULL));
+
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // decide who is the master rank
+    int master_rank = rand() % world_size;
+    if(num_elements_per_proc % 2 == 0)
+    {
+        int root = 0;
+        if(world_rank == root)
+        {
+            // If we are the root process, send our data to everyone
+            for(int i = 0; i < world_size; i++)
+            {
+                if(i != world_rank)
+                    MPI_Send(&master_rank, 1, MPI_INT, i, n % world_size, MPI_COMM_WORLD);
+            }
+        } else
+        {
+            // If we are a receiver process, receive the data from the root
+            MPI_Recv(&master_rank, 1, MPI_INT, root, n % world_size, MPI_COMM_WORLD,
+                     MPI_STATUS_IGNORE);
+        }
+    } else
+    {
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Bcast(&master_rank, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+
+    if(world_rank == master_rank)
+        printf("\nMaster rank: %i, Number of elements per process: %i\n", master_rank,
+               num_elements_per_proc);
+
+    // Create a random array of elements on the root process. Its total
+    // size will be the number of elements per process times the number
+    // of processes
+    std::vector<double> rand_nums;
+    if(world_rank == master_rank)
+        rand_nums = create_rand_nums(num_elements_per_proc * world_size);
+
+    // For each process, create a buffer that will hold a subset of the entire array
+    std::vector<double> sub_rand_nums(num_elements_per_proc, 0.0);
+
+    // Scatter the random numbers from the root process to all processes in the MPI world
+    MPI_Scatter(rand_nums.data(), num_elements_per_proc, MPI_DOUBLE, sub_rand_nums.data(),
+                num_elements_per_proc, MPI_DOUBLE, master_rank, MPI_COMM_WORLD);
+
+    // Compute the average of your subset
+    double sub_avg = compute_avg(sub_rand_nums);
+
+    // Gather all partial averages down to the root process
+    std::vector<double> sub_avgs;
+    if(world_rank == master_rank) sub_avgs.resize(world_size, 0.0);
+
+    MPI_Gather(&sub_avg, 1, MPI_DOUBLE, sub_avgs.data(), 1, MPI_DOUBLE, master_rank,
+               MPI_COMM_WORLD);
+
+    // Now that we have all of the partial averages on the root, compute the
+    // total average of all numbers. Since we are assuming each process computed
+    // an average across an equal amount of elements, this computation will
+    // produce the correct answer.
+    if(world_rank == master_rank)
+    {
+        double avg               = compute_avg(sub_avgs);
+        double original_data_avg = compute_avg(rand_nums);
+        printf("Avg of all elements is %10.8f, Avg computed across original data is "
+               "%10.8f\n",
+               avg, original_data_avg);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+// Creates an array of random numbers. Each number has a value from 0 - 1
+std::vector<double> create_rand_nums(int num_elements)
+{
+    std::vector<double> rand_nums(num_elements, 0.0);
+    for(auto& itr : rand_nums) itr = (rand() / (double) RAND_MAX);
+    return rand_nums;
+}
+
+//--------------------------------------------------------------------------------------//
+
+// Computes the average of an array of numbers
+double compute_avg(const std::vector<double>& array)
+{
+    return std::accumulate(array.begin(), array.end(), 0.0f) / array.size();
+}
+
+//--------------------------------------------------------------------------------------//

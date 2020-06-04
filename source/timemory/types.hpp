@@ -145,22 +145,22 @@
 //
 #if !defined(TIMEMORY_MINIMAL_LIST_TYPES)
 #    define TIMEMORY_MINIMAL_LIST_TYPES                                                  \
-        component::user_list_bundle, component::caliper, component::tau_marker,          \
-            component::papi_vector, component::cuda_event, component::nvtx_marker,       \
-            component::cupti_activity, component::cupti_counters
+        component::user_list_bundle*, component::caliper*, component::tau_marker*,       \
+            component::papi_vector*, component::cuda_event*, component::nvtx_marker*,    \
+            component::cupti_activity*, component::cupti_counters*
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_FULL_LIST_TYPES)
 #    define TIMEMORY_FULL_LIST_TYPES                                                     \
-        component::user_list_bundle, component::gperftools_cpu_profiler,                 \
-            component::gperftools_heap_profiler, component::caliper,                     \
-            component::tau_marker, component::papi_vector,                               \
-            component::cpu_roofline_flops, component::cuda_event,                        \
-            component::nvtx_marker, component::cupti_activity,                           \
-            component::cupti_counters, component::gpu_roofline_sp_flops,                 \
-            component::gpu_roofline_dp_flops
+        component::user_list_bundle*, component::gperftools_cpu_profiler*,               \
+            component::gperftools_heap_profiler*, component::caliper*,                   \
+            component::tau_marker*, component::papi_vector*,                             \
+            component::cpu_roofline_flops*, component::cuda_event*,                      \
+            component::nvtx_marker*, component::cupti_activity*,                         \
+            component::cupti_counters*, component::gpu_roofline_sp_flops*,               \
+            component::gpu_roofline_dp_flops*
 #endif
 
 namespace tim

@@ -30,15 +30,14 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/units.hpp"
-
 #include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/gotcha/types.hpp"
-
+#include "timemory/macros.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/function_traits.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/units.hpp"
+#include "timemory/variadic/types.hpp"
 
 //======================================================================================//
 //
@@ -59,7 +58,7 @@ namespace component
 template <size_t Nt, typename Components, typename Differentiator>
 struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
 {
-    static_assert(Components::has_gotcha_v == false,
+    static_assert(concepts::has_gotcha<Components>::value == false,
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
@@ -67,8 +66,8 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
     using this_type      = gotcha<Nt, Components, Differentiator>;
     using base_type      = base<this_type, value_type>;
     using storage_type   = typename base_type::storage_type;
-    using component_type = typename Components::component_type;
-    using type_tuple     = typename Components::type_tuple;
+    using tuple_type     = concepts::tuple_type_t<Components>;
+    using component_type = concepts::component_type_t<Components>;
 
     template <typename Tp>
     using array_t = std::array<Tp, Nt>;
@@ -88,10 +87,12 @@ struct gotcha : public base<gotcha<Nt, Components, Differentiator>, void>
     using get_initializer_t = std::function<config_t()>;
     using get_select_list_t = std::function<select_list_t()>;
 
-    static constexpr size_t components_size = component_type::size();
+    // static constexpr size_t components_size = component_type::size();
+    static constexpr size_t components_size = std::tuple_size<tuple_type>::value;
     static constexpr bool   differentiator_is_component =
-        (is_one_of<Differentiator, type_tuple>::value ||
-         (components_size == 0 && gotcha_differentiator<Differentiator>::is_component));
+        (is_one_of<Differentiator, tuple_type>::value ||
+         (components_size == 0 && (trait::is_component<Differentiator>::value ||
+                                   gotcha_differentiator<Differentiator>::is_component)));
 
     using operator_type = typename std::conditional<(differentiator_is_component),
                                                     Differentiator, void>::type;
@@ -638,7 +639,7 @@ private:
     static binding_t construct_binder(const std::string& _func)
     {
         auto& _data   = get_data()[N];
-        _data.wrapper = (void*) this_type::wrap_op<N, Ret, Args...>;
+        _data.wrapper = (void*) this_type::replace_func<N, Ret, Args...>;
         return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
     }
 
@@ -650,7 +651,7 @@ private:
     static binding_t construct_binder(const std::string& _func)
     {
         auto& _data   = get_data()[N];
-        _data.wrapper = (void*) this_type::wrap_void_op<N, Args...>;
+        _data.wrapper = (void*) this_type::replace_void_func<N, Args...>;
         return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
     }
 
@@ -758,6 +759,9 @@ private:
 #if defined(TIMEMORY_USE_GOTCHA)
         auto& _data = get_data()[N];
 
+        static constexpr bool void_operator = std::is_same<operator_type, void>::value;
+        static_assert(void_operator, "operator_type should be void!");
+
         typedef Ret (*func_t)(Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
@@ -847,6 +851,9 @@ private:
 #if defined(TIMEMORY_USE_GOTCHA)
         auto& _data = get_data()[N];
 
+        static constexpr bool void_operator = std::is_same<operator_type, void>::value;
+        static_assert(void_operator, "operator_type should be void!");
+
         auto _orig = (void (*)(Args...)) gotcha_get_wrappee(_data.wrappee);
 
         auto& _global_suppress = gotcha_suppression::get();
@@ -929,15 +936,19 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename Ret, typename... Args>
-    static Ret wrap_op(Args... _args)
+    static Ret replace_func(Args... _args)
     {
         static_assert(N < Nt, "Error! N must be less than Nt!");
         static_assert(components_size == 0, "Error! Number of components must be zero!");
 
 #if defined(TIMEMORY_USE_GOTCHA)
         static auto& _data = get_data()[N];
+
         typedef Ret (*func_t)(Args...);
         using wrap_type = tim::component_tuple<operator_type>;
+
+        static constexpr bool void_operator = std::is_same<operator_type, void>::value;
+        static_assert(!void_operator, "operator_type cannot be void!");
 
         auto _orig = (func_t) gotcha_get_wrappee(_data.wrappee);
         if(!_data.ready || !settings::enabled())
@@ -958,15 +969,19 @@ private:
     //----------------------------------------------------------------------------------//
 
     template <size_t N, typename... Args>
-    static void wrap_void_op(Args... _args)
+    static void replace_void_func(Args... _args)
     {
         static_assert(N < Nt, "Error! N must be less than Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
         static auto& _data = get_data()[N];
+
         typedef void (*func_t)(Args...);
-        auto _orig      = (func_t) gotcha_get_wrappee(_data.wrappee);
         using wrap_type = tim::component_tuple<operator_type>;
 
+        static constexpr bool void_operator = std::is_same<operator_type, void>::value;
+        static_assert(!void_operator, "operator_type cannot be void!");
+
+        auto _orig = (func_t) gotcha_get_wrappee(_data.wrappee);
         if(!_data.ready || !settings::enabled())
             (*_orig)(_args...);
         else

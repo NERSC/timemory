@@ -40,7 +40,7 @@
 //======================================================================================//
 //
 #include "timemory/manager/declaration.hpp"
-#include "timemory/plotting/definition.hpp"
+#include "timemory/plotting/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/stream.hpp"
 //

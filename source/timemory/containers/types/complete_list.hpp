@@ -29,28 +29,18 @@
 
 #pragma once
 
-//======================================================================================//
-//
 #include "timemory/api.hpp"
-//
+#include "timemory/components.hpp"
+#include "timemory/components/extern.hpp"
 #include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
-//
 #include "timemory/manager/declaration.hpp"
-#include "timemory/storage/definition.hpp"
-//
-#include "timemory/components.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/variadic/definition.hpp"
-//
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/properties.hpp"
-//
-//======================================================================================//
-//
+#include "timemory/storage/definition.hpp"
+#include "timemory/variadic/definition.hpp"
+
 TIMEMORY_EXTERN_LIST(complete_list_t, TIMEMORY_COMPONENT_TYPES)
-//
-//--------------------------------------------------------------------------------------//

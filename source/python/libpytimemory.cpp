@@ -23,11 +23,9 @@
 // SOFTWARE.
 //
 
-#include "timemory/components/ompt.hpp"
-//
 #include "libpytimemory.hpp"
-//
 #include "timemory/components/definition.hpp"
+#include "timemory/components/ompt.hpp"
 
 //======================================================================================//
 
@@ -275,8 +273,8 @@ PYBIND11_MODULE(libpytimemory, tim)
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
 
-        using type_tuple = typename auto_list_t::type_tuple;
-        tim::manager::get_storage<type_tuple>::print();
+        using tuple_type = typename auto_list_t::tuple_type;
+        tim::manager::get_storage<tuple_type>::print();
 
         if(fname.length() > 0)
         {
@@ -286,8 +284,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     };
     //----------------------------------------------------------------------------------//
     auto _as_json = [&]() {
-        using type_tuple = typename auto_list_t::type_tuple;
-        auto json_str    = manager_t::get_storage<type_tuple>::serialize();
+        using tuple_type = typename auto_list_t::tuple_type;
+        auto json_str    = manager_t::get_storage<tuple_type>::serialize();
         auto json_module = py::module::import("json");
         return json_module.attr("loads")(json_str);
     };

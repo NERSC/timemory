@@ -31,9 +31,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
@@ -41,6 +38,9 @@
 #include "timemory/variadic/component_bundle.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
+
+#include <cstdint>
+#include <string>
 
 namespace tim
 {
@@ -54,7 +54,7 @@ public:
     using base_type           = component_bundle<Tag, Types...>;
     using auto_type           = this_type;
     using component_type      = typename base_type::component_type;
-    using type_tuple          = typename component_type::type_tuple;
+    using tuple_type          = typename component_type::tuple_type;
     using data_type           = typename component_type::data_type;
     using sample_type         = typename component_type::sample_type;
     using bundle_type         = typename component_type::bundle_type;
@@ -243,6 +243,12 @@ public:
     {
         if(m_enabled)
             m_temporary.audit(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void add_secondary(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary.add_secondary(std::forward<Args>(args)...);
     }
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
@@ -547,9 +553,9 @@ auto_bundle<Tag, Types...>::~auto_bundle()
         }
     }
 }
-
+//
 //======================================================================================//
-
+//
 template <typename Tag, typename... Types>
 auto
 get(const auto_bundle<Tag, Types...>& _obj)

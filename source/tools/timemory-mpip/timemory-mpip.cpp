@@ -34,7 +34,6 @@
 using namespace tim::component;
 
 TIMEMORY_DECLARE_COMPONENT(mpi_comm_data)
-TIMEMORY_DECLARE_COMPONENT(mpi_noop)
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -129,6 +128,8 @@ struct mpi_comm_data : base<mpi_comm_data, void>
 
     TIMEMORY_DEFAULT_OBJECT(mpi_comm_data)
 
+    static void preinit() { timemory_mpip_library_ctor(); }
+
     static void global_init(storage_type*)
     {
         auto _data = tim::get_env("TIMEMORY_MPIP_COMM_DATA", true);
@@ -141,68 +142,52 @@ struct mpi_comm_data : base<mpi_comm_data, void>
     void start() {}
     void stop() {}
 
-    void add(const std::string& _name, data_type value)
-    {
-        tracker_t _t(_name);
-        _t.start();
-        _t.store(std::plus<data_type>{}, value);
-        _t.stop();
-    }
-
     // MPI_Send
     void audit(const std::string& _name, const void*, int count, MPI_Datatype datatype,
-               int, int tag, MPI_Comm)
+               int dst, int tag, MPI_Comm)
     {
         int size = 0;
         MPI_Type_size(datatype, &size);
-        add(_name, count * size);
-        add(TIMEMORY_JOIN("_", _name, tag), count * size);
+        tracker_t _t(_name);
+        add(_t, count * size);
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Recv
-    void audit(const std::string& _name, void*, int count, MPI_Datatype datatype, int,
+    void audit(const std::string& _name, void*, int count, MPI_Datatype datatype, int dst,
                int tag, MPI_Comm, MPI_Status*)
     {
         int size = 0;
         MPI_Type_size(datatype, &size);
-        add(_name, count * size);
-        add(TIMEMORY_JOIN("_", _name, tag), count * size);
+        tracker_t _t(_name);
+        add(_t, count * size);
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Isend
     void audit(const std::string& _name, const void*, int count, MPI_Datatype datatype,
-               int, int tag, MPI_Comm, MPI_Request*)
+               int dst, int tag, MPI_Comm, MPI_Request*)
     {
         int size = 0;
         MPI_Type_size(datatype, &size);
-        add(_name, count * size);
-        add(TIMEMORY_JOIN("_", _name, tag), count * size);
+        tracker_t _t(_name);
+        add(_t, count * size);
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Irecv
-    void audit(const std::string& _name, void*, int count, MPI_Datatype datatype, int,
+    void audit(const std::string& _name, void*, int count, MPI_Datatype datatype, int dst,
                int tag, MPI_Comm, MPI_Request*)
     {
         int size = 0;
         MPI_Type_size(datatype, &size);
-        add(_name, count * size);
-        add(TIMEMORY_JOIN("_", _name, tag), count * size);
-    }
-
-    // MPI_Sendrecv
-    void audit(const std::string& _name, const void*, int sendcount,
-               MPI_Datatype sendtype, int, int sendtag, void*, int recvcount,
-               MPI_Datatype recvtype, int, int recvtag, MPI_Comm, MPI_Status*)
-    {
-        int send_size = 0;
-        int recv_size = 0;
-        MPI_Type_size(sendtype, &send_size);
-        MPI_Type_size(recvtype, &recv_size);
-        add(_name, sendcount * send_size + recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size);
-        add(TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, "send", sendtag), sendcount * send_size);
-        add(TIMEMORY_JOIN("_", _name, "recv", recvtag), recvcount * recv_size);
+        tracker_t _t(_name);
+        add(_t, count * size);
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "dst", dst), count * size,
+                      TIMEMORY_JOIN("_", _name, "dst", dst, "tag", tag));
     }
 
     // MPI_Bcast
@@ -211,43 +196,7 @@ struct mpi_comm_data : base<mpi_comm_data, void>
     {
         int size = 0;
         MPI_Type_size(datatype, &size);
-        add(_name, count * size);
-        add(TIMEMORY_JOIN("_", _name, root), count * size);
-    }
-
-    // MPI_Gather
-    void audit(const std::string& _name, const void*, int sendcount,
-               MPI_Datatype sendtype, void*, int recvcount, MPI_Datatype recvtype,
-               int root, MPI_Comm)
-    {
-        int send_size = 0;
-        int recv_size = 0;
-        MPI_Type_size(sendtype, &send_size);
-        MPI_Type_size(recvtype, &recv_size);
-        add(_name, sendcount * send_size + recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, root),
-            sendcount * send_size + recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size);
-        add(TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, "send", root), sendcount * send_size);
-        add(TIMEMORY_JOIN("_", _name, "recv", root), recvcount * recv_size);
-    }
-
-    // MPI_Scatter
-    void audit(const std::string& _name, void*, int sendcount, MPI_Datatype sendtype,
-               void*, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm)
-    {
-        int send_size = 0;
-        int recv_size = 0;
-        MPI_Type_size(sendtype, &send_size);
-        MPI_Type_size(recvtype, &recv_size);
-        add(_name, sendcount * send_size + recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, root),
-            sendcount * send_size + recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size);
-        add(TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, "send", root), sendcount * send_size);
-        add(TIMEMORY_JOIN("_", _name, "recv", root), recvcount * recv_size);
+        add(_name, count * size, TIMEMORY_JOIN("_", _name, "root", root));
     }
 
     // MPI_Allreduce
@@ -259,6 +208,60 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         add(_name, count * size);
     }
 
+    // MPI_Sendrecv
+    void audit(const std::string& _name, const void*, int sendcount,
+               MPI_Datatype sendtype, int, int sendtag, void*, int recvcount,
+               MPI_Datatype recvtype, int, int recvtag, MPI_Comm, MPI_Status*)
+    {
+        int send_size = 0;
+        int recv_size = 0;
+        MPI_Type_size(sendtype, &send_size);
+        MPI_Type_size(recvtype, &recv_size);
+        tracker_t _t(_name);
+        add(_t, sendcount * send_size + recvcount * recv_size);
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size,
+                      TIMEMORY_JOIN("_", _name, "send", "tag", sendtag));
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size,
+                      TIMEMORY_JOIN("_", _name, "recv", "tag", recvtag));
+    }
+
+    // MPI_Gather
+    void audit(const std::string& _name, const void*, int sendcount,
+               MPI_Datatype sendtype, void*, int recvcount, MPI_Datatype recvtype,
+               int root, MPI_Comm)
+    {
+        int send_size = 0;
+        int recv_size = 0;
+        MPI_Type_size(sendtype, &send_size);
+        MPI_Type_size(recvtype, &recv_size);
+        tracker_t _t(_name);
+        add(_t, sendcount * send_size + recvcount * recv_size);
+        tracker_t _r(TIMEMORY_JOIN("_", _name, "root", root));
+        add(_r, sendcount * send_size + recvcount * recv_size);
+        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "send"),
+                      sendcount * send_size);
+        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "recv"),
+                      recvcount * recv_size);
+    }
+
+    // MPI_Scatter
+    void audit(const std::string& _name, void*, int sendcount, MPI_Datatype sendtype,
+               void*, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm)
+    {
+        int send_size = 0;
+        int recv_size = 0;
+        MPI_Type_size(sendtype, &send_size);
+        MPI_Type_size(recvtype, &recv_size);
+        tracker_t _t(_name);
+        add(_t, sendcount * send_size + recvcount * recv_size);
+        tracker_t _r(TIMEMORY_JOIN("_", _name, "root", root));
+        add(_r, sendcount * send_size + recvcount * recv_size);
+        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "send"),
+                      sendcount * send_size);
+        add_secondary(_r, TIMEMORY_JOIN("_", _name, "root", root, "recv"),
+                      recvcount * recv_size);
+    }
+
     // MPI_Alltoall
     void audit(const std::string& _name, void*, int sendcount, MPI_Datatype sendtype,
                void*, int recvcount, MPI_Datatype recvtype, MPI_Comm)
@@ -267,9 +270,36 @@ struct mpi_comm_data : base<mpi_comm_data, void>
         int recv_size = 0;
         MPI_Type_size(sendtype, &send_size);
         MPI_Type_size(recvtype, &recv_size);
-        add(_name, sendcount * send_size + recvcount * recv_size);
-        add(TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size);
-        add(TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size);
+        tracker_t _t(_name);
+        add(_t, sendcount * send_size + recvcount * recv_size);
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "send"), sendcount * send_size);
+        add_secondary(_t, TIMEMORY_JOIN("_", _name, "recv"), recvcount * recv_size);
+    }
+
+private:
+    template <typename... Args>
+    void add(tracker_t& _t, data_type value, Args&&... args)
+    {
+        _t.store(std::plus<data_type>{}, value);
+        TIMEMORY_FOLD_EXPRESSION(add_secondary(_t, std::forward<Args>(args), value));
+    }
+
+    template <typename... Args>
+    void add(const std::string& _name, data_type value, Args&&... args)
+    {
+        tracker_t _t(_name);
+        add(_t, value, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void add_secondary(tracker_t&, const std::string& _name, data_type value,
+                       Args&&... args)
+    {
+        if(tim::settings::add_secondary())
+        {
+            tracker_t _s(_name);
+            add(_s, value, std::forward<Args>(args)...);
+        }
     }
 };
 }  // namespace component
@@ -277,3 +307,7 @@ struct mpi_comm_data : base<mpi_comm_data, void>
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_STORAGE_INITIALIZER(mpi_comm_data, mpi_comm_data)
+TIMEMORY_STORAGE_INITIALIZER(mpi_data_tracker_t, mpi_data_tracker_t)
+//
+//--------------------------------------------------------------------------------------//

@@ -29,13 +29,10 @@
 
 #pragma once
 
-#include "timemory/storage/macros.hpp"
-#include "timemory/storage/node.hpp"
-#include "timemory/storage/types.hpp"
-//
 #include "timemory/backends/dmp.hpp"
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/hash/declaration.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -43,12 +40,13 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/storage/graph.hpp"
 #include "timemory/storage/graph_data.hpp"
+#include "timemory/storage/macros.hpp"
+#include "timemory/storage/node.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/types.hpp"
-//
-#include "timemory/hash/declaration.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -414,8 +412,14 @@ public:
 
     iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id);
 
-    template <typename Vp>
-    void append(const secondary_data_t<Vp>& _secondary);
+    // append a value to the the graph
+    template <typename Vp,
+              enable_if_t<!(std::is_same<decay_t<Vp>, Type>::value), int> = 0>
+    iterator append(const secondary_data_t<Vp>& _secondary);
+
+    // append an instance to the graph
+    template <typename Vp, enable_if_t<(std::is_same<decay_t<Vp>, Type>::value), int> = 0>
+    iterator append(const secondary_data_t<Vp>& _secondary);
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version);
@@ -492,8 +496,8 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-template <typename Vp>
-void
+template <typename Vp, enable_if_t<!(std::is_same<decay_t<Vp>, Type>::value), int>>
+typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
     insert_init();
@@ -501,7 +505,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     // get the iterator and check if valid
     auto&& _itr = std::get<0>(_secondary);
     if(!_data().graph().is_valid(_itr))
-        return;
+        return nullptr;
 
     // compute hash of prefix
     auto _hash_id = add_hash_id(std::get<1>(_secondary));
@@ -522,6 +526,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
         _nitr->second->obj().laps += 1;
         auto& _stats = _nitr->second->stats();
         operation::add_statistics<Type>(_nitr->second->obj(), _stats);
+        return _nitr->second;
     }
     else
     {
@@ -533,7 +538,53 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
         _node.stats() += _tmp.get();
         auto& _stats = _node.stats();
         operation::add_statistics<Type>(_tmp, _stats);
-        m_node_ids[_depth][_hash] = _data().emplace_child(_itr, _node);
+        auto itr = _data().emplace_child(_itr, _node);
+        itr->obj().set_iterator(itr);
+        m_node_ids[_depth][_hash] = itr;
+        return itr;
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+template <typename Vp, enable_if_t<(std::is_same<decay_t<Vp>, Type>::value), int>>
+typename storage<Type, true>::iterator
+storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
+{
+    insert_init();
+
+    // get the iterator and check if valid
+    auto&& _itr = std::get<0>(_secondary);
+    if(!_data().graph().is_valid(_itr))
+        return nullptr;
+
+    // compute hash of prefix
+    auto _hash_id = add_hash_id(std::get<1>(_secondary));
+    // compute hash w.r.t. parent iterator (so identical kernels from different
+    // call-graph parents do not locate same iterator)
+    auto _hash = _hash_id ^ _itr->id();
+    // add the hash alias
+    add_hash_id(_hash_id, _hash);
+    // compute depth
+    auto _depth = _itr->depth() + 1;
+
+    // see if depth + hash entry exists already
+    auto _nitr = m_node_ids[_depth].find(_hash);
+    if(_nitr != m_node_ids[_depth].end())
+    {
+        _nitr->second->obj() += std::get<2>(_secondary);
+        return _nitr->second;
+    }
+    else
+    {
+        // else, create a new entry
+        auto&&       _tmp = std::get<2>(_secondary);
+        graph_node_t _node(_hash, _tmp, _depth, m_thread_idx);
+        auto         itr = _data().emplace_child(_itr, _node);
+        itr->obj().set_iterator(itr);
+        m_node_ids[_depth][_hash] = itr;
+        return itr;
     }
 }
 //

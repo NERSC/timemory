@@ -73,7 +73,7 @@ public:
 
     using data_type         = typename bundle_type::data_type;
     using impl_type         = typename bundle_type::impl_type;
-    using type_tuple        = typename bundle_type::type_tuple;
+    using tuple_type        = typename bundle_type::tuple_type;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
@@ -92,7 +92,7 @@ public:
 
     // used by gotcha
     using component_type   = lightweight_tuple<Types...>;
-    using type             = convert_t<type_tuple, lightweight_tuple<>>;
+    using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
     // used by component hybrid
@@ -168,7 +168,7 @@ public:
     //----------------------------------------------------------------------------------//
     // public static functions
     //
-    static constexpr std::size_t size() { return std::tuple_size<type_tuple>::value; }
+    static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
     static void                  print_storage();
     static void                  init_storage();
 

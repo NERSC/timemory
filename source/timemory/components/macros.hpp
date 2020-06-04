@@ -60,6 +60,12 @@
         {                                                                                \
         struct NAME;                                                                     \
         }                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct is_component<component::NAME> : true_type                                 \
+        {};                                                                              \
+        }                                                                                \
         }
 #endif
 //
@@ -303,6 +309,19 @@
 //
 #if !defined(_EXTERN_LIST_ALIAS)
 #    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_STORAGE_INITIALIZER)
+#    define TIMEMORY_STORAGE_INITIALIZER(TYPE, VAR)                                      \
+        namespace                                                                        \
+        {                                                                                \
+        using namespace tim::component;                                                  \
+        namespace component = tim::component;                                            \
+        tim::storage_initializer storage_initializer__##VAR =                            \
+            tim::storage_initializer::get<TYPE>();                                       \
+        }
 #endif
 
 //--------------------------------------------------------------------------------------//

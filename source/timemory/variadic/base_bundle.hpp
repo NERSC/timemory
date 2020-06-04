@@ -86,7 +86,7 @@ public:
     template <typename... T>
     struct bundle
     {
-        using type_tuple     = std::tuple<T...>;
+        using tuple_type     = std::tuple<T...>;
         using reference_type = std::tuple<T...>;
         using sample_type    = std::tuple<sample_type_t<T>...>;
         using print_t        = std::tuple<operation::print<T>...>;
@@ -140,23 +140,23 @@ public:
     using impl_type      = std::tuple<Types...>;
     using type_bundler   = bundle<impl_type>;
     using sample_type    = typename type_bundler::sample_type;
-    using type_tuple     = typename type_bundler::type_tuple;
+    using tuple_type     = typename type_bundler::tuple_type;
     using reference_type = typename type_bundler::reference_type;
 
     // used by gotcha component to prevent recursion
-    using gotcha_types = typename get_true_types<trait::is_gotcha, type_tuple>::type;
+    using gotcha_types = typename get_true_types<trait::is_gotcha, tuple_type>::type;
     static constexpr bool has_gotcha_v = (mpl::get_tuple_size<gotcha_types>::value != 0);
 
     using user_bundle_types =
-        typename get_true_types<trait::is_user_bundle, type_tuple>::type;
+        typename get_true_types<trait::is_user_bundle, tuple_type>::type;
     static constexpr bool has_user_bundle_v =
         (mpl::get_tuple_size<user_bundle_types>::value != 0);
 
 public:
-    template <template <typename> class Op, typename TupleT = type_tuple>
+    template <template <typename> class Op, typename TupleT = tuple_type>
     using operation_t = typename generic_operation<Op, TupleT>::type;
 
-    template <template <typename> class Op, typename TupleT = type_tuple>
+    template <template <typename> class Op, typename TupleT = tuple_type>
     using custom_operation_t = typename custom_operation<Op, TupleT>::type;
 
 public:
@@ -411,14 +411,14 @@ struct heap_bundle<type_list<Types...>> : public base_bundle<TIMEMORY_API, Types
 //
 template <typename ApiT, typename... Types>
 struct api_bundle
-: public conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+: public conditional_t<(trait::is_available<ApiT>::value),
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
                                     std::tuple<Types...>, std::tuple<>>;
 
     template <typename... Args>
@@ -429,14 +429,14 @@ struct api_bundle
 
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, std::tuple<Types...>>
-: public conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+: public conditional_t<(trait::is_available<ApiT>::value),
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
                                     std::tuple<Types...>, std::tuple<>>;
 
     template <typename... Args>
@@ -447,14 +447,14 @@ struct api_bundle<ApiT, std::tuple<Types...>>
 
 template <typename ApiT, typename... Types>
 struct api_bundle<ApiT, type_list<Types...>>
-: public conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+: public conditional_t<(trait::is_available<ApiT>::value),
                        base_bundle<ApiT, remove_pointer_t<Types>...>,
                        base_bundle<ApiT, std::tuple<>>>
 {
-    using base_bundle_type = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+    using base_bundle_type = conditional_t<(trait::is_available<ApiT>::value),
                                            base_bundle<ApiT, remove_pointer_t<Types>...>,
                                            base_bundle<ApiT, std::tuple<>>>;
-    using data_type        = conditional_t<(std::is_same<ApiT, TIMEMORY_API>::value),
+    using data_type        = conditional_t<(trait::is_available<ApiT>::value),
                                     std::tuple<Types...>, std::tuple<>>;
 
     template <typename... Args>

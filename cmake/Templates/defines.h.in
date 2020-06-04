@@ -22,14 +22,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \headerfile "timemory/plotting.hpp"
- * Routines for plotting via Python in C++
- *
- */
-
 #pragma once
 
-#include "timemory/plotting/declaration.hpp"
-#include "timemory/plotting/definition.hpp"
-#include "timemory/plotting/types.hpp"
+/// \file timemory/defines.h
+/// \brief Provides the definitions for the installation if not using cmake
+
+#if !defined(TIMEMORY_SOURCE) && !defined(TIMEMORY_CMAKE)
+@timemory_CMAKE_DEFINES@
+#endif

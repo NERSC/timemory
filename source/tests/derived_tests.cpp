@@ -284,7 +284,7 @@ TEST_F(derived_tests, cpu_util_hybrid_wc_uc_sc)
     std::cout << '\n';
     using toolset_t = tim::auto_hybrid<tim::component_tuple<wall_clock, user_clock>,
                                        tim::component_list<system_clock, cpu_util>>;
-    using list_type = typename toolset_t::list_type;
+    using list_type = typename toolset_t::list_t;
 
     list_type::get_initializer() = [](list_type& cl) {
         cl.initialize<system_clock, cpu_util>();
@@ -312,7 +312,7 @@ TEST_F(derived_tests, cpu_util_hybrid_wc)
     std::cout << '\n';
     using toolset_t =
         tim::auto_hybrid<tim::component_tuple<wall_clock>, tim::component_list<cpu_util>>;
-    using list_type = typename toolset_t::list_type;
+    using list_type = typename toolset_t::list_t;
 
     list_type::get_initializer() = [](list_type& cl) { cl.initialize<cpu_util>(); };
 

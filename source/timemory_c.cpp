@@ -35,7 +35,6 @@
 #endif
 
 #include "timemory/compat/library.h"
-#include "timemory/containers/auto_timer.hpp"
 #include "timemory/timemory.hpp"
 
 #include <deque>

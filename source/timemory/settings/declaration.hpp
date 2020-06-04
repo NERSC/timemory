@@ -149,7 +149,7 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_processes,
                                     "TIMEMORY_COLLAPSE_PROCESSES",
                                     "Enable/disable combining process-specific data",
-                                    false)
+                                    true)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                                     "Set the maximum depth of label hierarchy reporting",
                                     std::numeric_limits<uint16_t>::max())

@@ -119,6 +119,9 @@ template <typename T>
 struct requires_json;
 
 template <typename T>
+struct is_component;
+
+template <typename T>
 struct is_gotcha;
 
 template <typename T>
@@ -430,6 +433,14 @@ struct convert<InTuple<In...>, OutTuple<Out...>>
         return _out;
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+template <typename ApiT, template <typename...> class InTuple,
+          template <typename...> class OutTuple, typename... In>
+struct convert<InTuple<ApiT, In...>, OutTuple<ApiT>>
+: convert<InTuple<In...>, OutTuple<ApiT>>
+{};
 
 //--------------------------------------------------------------------------------------//
 
