@@ -694,9 +694,11 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-find_package(PAPI ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+if(TIMEMORY_USE_PAPI)
+    find_package(PAPI ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
 
-if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
+if(PAPI_FOUND)
     add_rpath(${PAPI_LIBRARY})
     target_link_libraries(timemory-papi INTERFACE papi-shared)
     target_link_libraries(timemory-papi-static INTERFACE papi-static)
