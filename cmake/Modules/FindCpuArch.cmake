@@ -391,6 +391,7 @@ function(GET_CPU_FEATURES _OUTVAR)
         return()
     endif()
 
+    string(REPLACE "_" "." _CPU_VALID "${_CPU_VALID}")
     foreach(_CANDIDATE ${_CPU_CANDIDATES})
         if("${_CANDIDATE}" IN_LIST _CPU_VALID)
             list(APPEND _FEATURES ${_CANDIDATE})
