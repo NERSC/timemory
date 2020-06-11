@@ -90,6 +90,10 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
             itr = '-';
     }
 
+    size_t pos = std::string::npos;
+    while((pos = exe_name.find("--")) != std::string::npos)
+        exe_name.erase(pos, 1);
+
     settings::output_path() = exe_name;
     // allow environment overrides
     settings::parse();

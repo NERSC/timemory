@@ -3,6 +3,7 @@
 # Build and install timem tool
 #
 if(TIMEMORY_BUILD_TIMEM)
+
     set(_STATIC_LIB)
     foreach(_TARG hash settings manager timing-component rusage-component)
         if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
@@ -30,7 +31,6 @@ if(TIMEMORY_BUILD_TIMEM)
         else()
             set(TIMEMORY_BUILD_TOOLS_LIBEXPECT OFF)
         endif()
-
     endif()
 
     add_executable(timem timem.cpp timem.hpp)
@@ -41,13 +41,17 @@ if(TIMEMORY_BUILD_TIMEM)
         timemory-vector
         timemory-headers
         timemory-papi
+        timemory-mpi
         timem-libexplain
         ${_STATIC_LIB})
 
     set_target_properties(timem PROPERTIES
         INSTALL_RPATH_USE_LINK_PATH ON)
 
-    # timem installation
-    install(TARGETS timem DESTINATION bin)
+    if(TARGET timemory-pid)
+        add_dependencies(timem timemory-pid)
+    endif()
 
+    install(TARGETS timem DESTINATION bin)
+    
 endif()

@@ -31,7 +31,6 @@
 #pragma once
 
 #include "timemory/mpl/apply.hpp"
-#include "timemory/settings/declaration.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -74,9 +73,6 @@ struct mangler
             ret += "v";
         else
             ret += apply<std::string>::join("", type_id<Args>::name()...);
-
-        // if(settings::verbose() > 1 || settings::debug())
-        //    printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
 
         return ret;
     }

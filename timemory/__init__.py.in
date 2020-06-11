@@ -117,6 +117,8 @@ else:
                    # --------------- modules ---------------#
                    'libpytimemory',
                    'mpi_support',
+                   'components',
+                   'component',
                    'plotting',
                    'roofline',
                    'bundle',

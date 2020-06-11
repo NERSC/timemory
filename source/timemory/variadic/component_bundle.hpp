@@ -242,6 +242,11 @@ public:
     template <typename... Args>
     void stop(mpl::lightweight, Args&&...);
 
+    template <typename... Tp, typename... Args>
+    void start(mpl::piecewise_select<Tp...>, Args&&...);
+    template <typename... Tp, typename... Args>
+    void stop(mpl::piecewise_select<Tp...>, Args&&...);
+
     using bundle_type::hash;
     using bundle_type::key;
     using bundle_type::laps;
@@ -337,6 +342,15 @@ public:
     {
         using invoke_t = operation_t<OpT>;
         apply_v::access<invoke_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    void invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, Tag>(
+            this->get<Tp>(), std::forward<Args>(_args)...));
     }
 
     //----------------------------------------------------------------------------------//

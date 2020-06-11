@@ -42,7 +42,7 @@
 #include "timemory/data/statistics.hpp"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/mpl/type_traits.hpp"
-#include "timemory/utility/stream.hpp"
+#include "timemory/data/stream.hpp"
 
 #include <cstdint>
 #include <type_traits>

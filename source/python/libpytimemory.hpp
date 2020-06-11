@@ -24,7 +24,9 @@
 
 #pragma once
 
-#define TIMEMORY_PYBIND11_SOURCE
+#if !defined(TIMEMORY_PYBIND11_SOURCE)
+#    define TIMEMORY_PYBIND11_SOURCE
+#endif
 
 //======================================================================================//
 // disables a bunch of warnings
@@ -42,7 +44,6 @@
 #include "timemory/runtime/insert.hpp"
 #include "timemory/runtime/invoker.hpp"
 #include "timemory/runtime/properties.hpp"
-#include "timemory/utility/signals.hpp"
 
 #include "pybind11/cast.h"
 #include "pybind11/embed.h"
@@ -76,21 +77,13 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-using pybundle_t   = tim::component::user_global_bundle;
-using auto_timer_t = typename tim::auto_timer::type;
-using auto_usage_t =
-    tim::auto_bundle_t<TIMEMORY_API, page_rss, peak_rss, num_minor_page_faults,
-                       num_major_page_faults, voluntary_context_switch,
-                       priority_context_switch>;
+using pybundle_t         = tim::component::user_global_bundle;
+using auto_timer_t       = typename tim::auto_timer::type;
 using auto_list_t        = tim::available_auto_list_t;
 using component_bundle_t = tim::component_bundle<TIMEMORY_API, pybundle_t>;
 using tim_timer_t        = typename auto_timer_t::component_type;
-using rss_usage_t        = typename auto_usage_t::component_type;
 using component_list_t   = typename auto_list_t::component_type;
 using manager_t          = tim::manager;
-using sys_signal_t       = tim::sys_signal;
-using signal_settings_t  = tim::signal_settings;
-using signal_set_t       = signal_settings_t::signal_set_t;
 using farray_t           = py::array_t<double, py::array::c_style | py::array::forcecast>;
 using component_enum_vec = std::vector<TIMEMORY_COMPONENT>;
 
@@ -287,43 +280,6 @@ create_component_list(std::string obj_tag, const component_enum_vec& components)
 
 //--------------------------------------------------------------------------------------//
 
-signal_set_t
-signal_list_to_set(py::list signal_list)
-{
-    signal_set_t signal_set;
-    for(auto itr : signal_list)
-        signal_set.insert(itr.cast<sys_signal_t>());
-    return signal_set;
-}
-
-//--------------------------------------------------------------------------------------//
-
-signal_set_t
-get_default_signal_set()
-{
-    return tim::signal_settings::enabled();
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-enable_signal_detection(py::list signal_list = py::list())
-{
-    auto _sig_set = (signal_list.size() == 0) ? get_default_signal_set()
-                                              : signal_list_to_set(signal_list);
-    tim::enable_signal_detection(_sig_set);
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-disable_signal_detection()
-{
-    tim::disable_signal_detection();
-}
-
-//--------------------------------------------------------------------------------------//
-
 //======================================================================================//
 //
 //                              INITITALIZATION
@@ -354,17 +310,6 @@ auto_timer_t*
 auto_timer(std::string key, bool report_at_exit)
 {
     return new auto_timer_t(key, tim::scope::get_default(), report_at_exit);
-}
-
-//--------------------------------------------------------------------------------------//
-
-rss_usage_t*
-rss_usage(std::string key, bool record)
-{
-    rss_usage_t* _rss = new rss_usage_t(key, true);
-    if(record)
-        _rss->measure();
-    return _rss;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -669,63 +614,6 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 //--------------------------------------------------------------------------------------//
 
 }  // namespace opt
-
-//======================================================================================//
-
-template <typename TupleT>
-struct construct_dict
-{
-    using Type = TupleT;
-
-    construct_dict(TupleT& _tup, py::dict& _dict)
-    {
-        auto _label = std::get<0>(_tup);
-        if(_label.size() > 0)
-            _dict[_label.c_str()] = std::get<1>(_tup);
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <>
-struct construct_dict<std::tuple<std::string, void*>>
-{
-    using Type = std::tuple<std::string, void*>;
-
-    template <typename... ArgsT>
-    construct_dict(ArgsT&&...)
-    {}
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-struct dict
-{
-    static py::dict construct(std::tuple<Types...>& _tup)
-    {
-        using apply_types = std::tuple<construct_dict<Types>...>;
-        py::dict _dict;
-        ::tim::apply<void>::access<apply_types>(_tup, std::ref(_dict));
-        return _dict;
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-struct dict<std::tuple<Types...>>
-{
-    static py::dict construct(std::tuple<Types...>& _tup)
-    {
-        return dict<Types...>::construct(_tup);
-    }
-};
-
-//======================================================================================//
-
-struct settings
-{};
 
 //======================================================================================//
 

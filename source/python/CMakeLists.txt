@@ -28,8 +28,10 @@ file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 #----------------------------------------------------------------------------
 # PyBind11
 #
-add_library(libpytimemory MODULE ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.hpp ${pybind_headers})
+file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.hpp)
+file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.cpp)
+
+add_library(libpytimemory MODULE ${pysources} ${pyheaders} ${pybind_headers})
 
 target_include_directories(libpytimemory SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
@@ -74,7 +76,7 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
     set(BINARY_DIR ${CMAKE_BINARY_DIR}/timemory/${_SUBMODULE})
     file(GLOB _FILES ${SOURCE_DIR}/*.py)
-    
+
     # copy over the python file
     foreach(_FILE ${_FILES})
         get_filename_component(_FILE "${_FILE}" NAME_WE)
@@ -83,10 +85,10 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
                 ${BINARY_DIR}/${_FILE}.py @ONLY)
             install(FILES ${BINARY_DIR}/${_FILE}.py
                 DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/${_SUBMODULE}/)
-            
+
         endif()
     endforeach()
-          
+
     # copy over the init file
     if(EXISTS ${SOURCE_DIR}/__init__.py)
         configure_file(${SOURCE_DIR}/__init__.py

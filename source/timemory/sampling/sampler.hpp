@@ -155,9 +155,19 @@ public:
     ///
     /// where 'a' is the status, 'b' is the error value, and returns true if waiting
     /// should continue
-    template <typename Func = std::function<bool(int, int)>>
-    static int wait(int _verbose = settings::verbose(), bool _debug = settings::debug(),
-                    Func&& _callback = [](int, int) { return true; });
+    template <typename Func = std::function<bool(pid_t, int, int)>>
+    static int wait(
+        pid_t _pid, int _verbose, bool _debug,
+        Func&& _callback = [](pid_t, int, int) { return true; });
+
+    template <typename Func = std::function<bool(pid_t, int, int)>>
+    static int wait(
+        int _verbose = settings::verbose(), bool _debug = settings::debug(),
+        Func&& _callback = [](pid_t, int, int) { return true; })
+    {
+        return wait(process::get_target_id(), _verbose, _debug,
+                    std::forward<Func>(_callback));
+    }
 
     /// \fn set_flags
     /// \brief Set the sigaction flags, e.g. SA_RESTART | SA_SIGINFO
@@ -177,6 +187,28 @@ public:
     /// \brief Value, expressed in number of interupts per second, that configures the
     /// frequency that the sampler samples the relevant measurements
     static void set_rate(const double& frate) { set_frequency(1.0 / frate); }
+
+    /// \fn get_delay
+    /// \brief Get the delay of the sampler
+    static int64_t get_delay(int64_t units = units::usec)
+    {
+        float _us =
+            (get_persistent_data().m_custom_itimerval.it_value.tv_sec * units::usec) +
+            get_persistent_data().m_custom_itimerval.it_value.tv_usec;
+        _us *= static_cast<float>(units) / units::usec;
+        return std::max<int64_t>(_us, 1);
+    }
+
+    /// \fn get_frequency
+    /// \brief Get the frequency of the sampler
+    static int64_t get_frequency(int64_t units = units::usec)
+    {
+        float _us =
+            (get_persistent_data().m_custom_itimerval.it_interval.tv_sec * units::usec) +
+            get_persistent_data().m_custom_itimerval.it_interval.tv_usec;
+        _us *= static_cast<float>(units) / units::usec;
+        return std::max<int64_t>(_us, 1);
+    }
 
 protected:
     size_t        m_idx  = 0;
@@ -215,6 +247,10 @@ template <template <typename...> class CompT, size_t N, typename... Types>
 void
 sampler<CompT<Types...>, N>::execute(int signum)
 {
+    if(settings::debug())
+        printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
+               (int) threading::get_id(), demangle<this_type>().c_str());
+
     for(auto& itr : get_samplers())
     {
         if(itr->is_good(signum))
@@ -239,6 +275,10 @@ template <template <typename...> class CompT, size_t N, typename... Types>
 void
 sampler<CompT<Types...>, N>::execute(int signum, siginfo_t*, void*)
 {
+    if(settings::debug())
+        printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
+               (int) threading::get_id(), demangle<this_type>().c_str());
+
     for(auto& itr : get_samplers())
     {
         if(itr->is_good(signum))
@@ -314,11 +354,29 @@ sampler<CompT<Types...>, N>::configure(int _signal)
 template <template <typename...> class CompT, size_t N, typename... Types>
 template <typename Func>
 int
-sampler<CompT<Types...>, N>::wait(int _verbose, bool _debug, Func&& _callback)
+sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debug,
+                                  Func&& _callback)
 {
-    auto diagnose_status = [=](int status) {
-        auto _pid = process::get_target_id();
+    // if(wait_pid < 1)
+    //    wait_pid = tim::process::get_target_id();
 
+    if(_verbose > 2 || _debug)
+        fprintf(stderr, "[%i]> waiting for pid %i...\n", process::get_id(), wait_pid);
+
+    //----------------------------------------------------------------------------------//
+    //
+    auto print_info = [=](pid_t _pid, int _status, int _errv, int _retv) {
+        if(_debug || _verbose > 2)
+        {
+            fprintf(stderr, "[%i]> return code: %i, error value: %i, status: %i\n", _pid,
+                    _retv, _errv, _status);
+            fflush(stderr);
+        }
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto diagnose_status = [=](pid_t _pid, int status) {
         if(_verbose > 2 || _debug)
             fprintf(stderr, "[%i]> diagnosing status %i...\n", _pid, status);
 
@@ -327,7 +385,6 @@ sampler<CompT<Types...>, N>::wait(int _verbose, bool _debug, Func&& _callback)
             if(_verbose > 2 || (_debug && _verbose > 0))
                 fprintf(stderr, "[%i]> program terminated normally with exit code: %i\n",
                         _pid, WEXITSTATUS(status));
-
             // normal terminatation
             return 0;
         }
@@ -377,24 +434,45 @@ sampler<CompT<Types...>, N>::wait(int _verbose, bool _debug, Func&& _callback)
 
         return ret;
     };
-
-    auto waitpid_eintr = [&](int& status) {
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    auto waitpid_eintr = [&](pid_t _pid, int& status) {
         pid_t pid    = 0;
         int   errval = 0;
+        int   retval = 0;
+
         while((pid = waitpid(WAIT_ANY, &status, 0)) == -1)
         {
             errval = errno;
-            if(errno != errval)
-                perror("Unexpected error in waitpid_eitr");
-            int ret = diagnose_status(status);
-            if(_debug || _verbose > 2)
-                fprintf(stderr, "[%i]> return code: %i\n", pid, ret);
             if(errval == EINTR)
                 continue;
+            if(errno != errval)
+                perror("Unexpected error in waitpid_eitr");
+            retval = diagnose_status(pid, status);
+            print_info(pid, status, errval, retval);
             break;
         }
+
+        if(errval == ECHILD)
+        {
+            do
+            {
+                retval = kill(_pid, 0);
+                errval = errno;
+                // retval = diagnose_status(_pid, status);
+                // print_info(_pid, status, errval, retval);
+                if(errval == ESRCH || retval == -1)
+                    break;
+                std::this_thread::sleep_for(
+                    std::chrono::microseconds(get_frequency(units::usec)));
+            } while(true);
+        }
+
         return errval;
     };
+    //
+    //----------------------------------------------------------------------------------//
 
     int _signal = get_persistent_data().m_signal;
 
@@ -402,14 +480,19 @@ sampler<CompT<Types...>, N>::wait(int _verbose, bool _debug, Func&& _callback)
     // it was stopped because of _signal
     int status = 0;
     int errval = 0;
+    int retval = 0;
     do
     {
         status = 0;
-        errval = waitpid_eintr(status);
-    } while((errval == EINTR && diagnose_status(status) == _signal) &&
-            (_callback(status, errval)));
+        errval = waitpid_eintr(wait_pid, status);
+        print_info(wait_pid, status, errval, retval);
+    } while(
+        (errval == EINTR && (retval = diagnose_status(wait_pid, status)) == _signal) &&
+        (_callback(wait_pid, status, errval)));
 
-    return diagnose_status(status);
+    print_info(wait_pid, status, errval, retval);
+
+    return diagnose_status(wait_pid, status);
 }
 //
 //--------------------------------------------------------------------------------------//

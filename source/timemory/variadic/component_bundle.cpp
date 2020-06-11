@@ -328,6 +328,45 @@ component_bundle<Tag, Types...>::stop(mpl::lightweight, Args&&... args)
 }
 
 //--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename Tag, typename... Types>
+template <typename... Tp, typename... Args>
+void
+component_bundle<Tag, Types...>::start(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    using standard_tuple_t = mpl::sort<trait::start_priority, std::tuple<Tp...>>;
+    using standard_start_t = operation_t<operation::standard_start, standard_tuple_t>;
+
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+    TIMEMORY_FOLD_EXPRESSION(operation::insert_node<Tp>(
+        std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+
+    // start components
+    apply_v::out_of_order<standard_start_t, standard_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+template <typename... Tp, typename... Args>
+void
+component_bundle<Tag, Types...>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    using standard_tuple_t = mpl::sort<trait::stop_priority, std::tuple<Tp...>>;
+    using standard_stop_t  = operation_t<operation::standard_stop, standard_tuple_t>;
+
+    // stop components
+    apply_v::out_of_order<standard_stop_t, standard_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
+
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+}
+
+//--------------------------------------------------------------------------------------//
 // start/stop functions
 //
 template <typename Tag, typename... Types>

@@ -56,6 +56,12 @@ message(STATUS "Adding source/tools/timemory-avail...")
 add_subdirectory(timemory-avail)
 
 #----------------------------------------------------------------------------------------#
+# Build and install timemory-pid tool
+#
+message(STATUS "Adding source/tools/timemory-pid...")
+add_subdirectory(timemory-pid)
+
+#----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
 message(STATUS "Adding source/tools/timem...")
