@@ -24,4 +24,12 @@
 
 #pragma once
 
-#include "timemory/settings/settings.cpp"
+#include "timemory/dll.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/settings/definition.hpp"
+#include "timemory/settings/macros.hpp"
+#include "timemory/settings/types.hpp"
+
+#if !defined(_WINDOWS)
+TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
+#endif

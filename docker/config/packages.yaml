@@ -16,7 +16,7 @@
 packages:
   cmake:
     paths:
-        cmake: /usr/bin/cmake
+      cmake: /usr/bin/cmake
     buildable: False
   dyninst:
     variants: build_type=Release
@@ -25,7 +25,7 @@ packages:
   papi:
     variants: +rapl+powercap+lmsensors~example
   caliper:
-    variants: +callpath+dyninst+gotcha+libpfm+mpi+sampler
+    variants: +callpath+dyninst+gotcha+libpfm~papi~mpi+sampler
   openmpi:
     variants: ~vt-pmi+cuda+thread_multiple fabrics=auto
   tau:

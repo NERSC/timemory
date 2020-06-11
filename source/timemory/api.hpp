@@ -31,6 +31,7 @@
  *
  */
 
+#include "timemory/defines.h"
 #include "timemory/version.h"
 
 #include <type_traits>

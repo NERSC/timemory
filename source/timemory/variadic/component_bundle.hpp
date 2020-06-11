@@ -32,15 +32,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <ios>
-#include <iostream>
-#include <string>
-
 #include "timemory/backends/dmp.hpp"
 #include "timemory/components.hpp"
 #include "timemory/general/source_location.hpp"
@@ -54,12 +45,19 @@
 #include "timemory/variadic/base_bundle.hpp"
 #include "timemory/variadic/types.hpp"
 
+#include <cstdint>
+#include <cstdio>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <string>
+
 //======================================================================================//
 
 namespace tim
 {
-//======================================================================================//
-// variadic list of components
 //
 template <typename Tag, typename... Types>
 class component_bundle : public api_bundle<Tag, implemented_t<Types...>>
@@ -77,7 +75,7 @@ public:
 
     using data_type         = typename bundle_type::data_type;
     using impl_type         = typename bundle_type::impl_type;
-    using type_tuple        = typename bundle_type::type_tuple;
+    using tuple_type        = typename bundle_type::tuple_type;
     using sample_type       = typename bundle_type::sample_type;
     using reference_type    = typename bundle_type::reference_type;
     using user_bundle_types = typename bundle_type::user_bundle_types;
@@ -97,7 +95,7 @@ public:
     // used by gotcha
     using component_type   = component_bundle<Tag, Types...>;
     using auto_type        = auto_bundle<Tag, Types...>;
-    using type             = convert_t<type_tuple, component_bundle<Tag>>;
+    using type             = convert_t<tuple_type, component_bundle<Tag>>;
     using initializer_type = std::function<void(this_type&)>;
 
     // used by component hybrid
@@ -313,13 +311,23 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a auditd operation (typically for GOTCHA)
+    // perform a audit operation (typically for GOTCHA)
     //
     template <typename... Args>
     void audit(Args&&... _args)
     {
         using audit_t = operation_t<operation::audit>;
         apply_v::access<audit_t>(m_data, std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // perform an add_secondary operation
+    //
+    template <typename... Args>
+    void add_secondary(Args&&... _args)
+    {
+        using add_second_t = operation_t<operation::add_secondary>;
+        apply_v::access<add_second_t>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -334,33 +342,72 @@ public:
     //----------------------------------------------------------------------------------//
     // get member functions taking either a type
     //
-    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    //
+    //----------------------------------------------------------------------------------//
+    //  exact type available
+    //
+    template <typename U, typename T = decay_t<U>,
+              enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
     T* get()
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    template <typename U, typename T = decay_t<U>,
+              enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
     const T* get() const
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
-
-    template <typename T, enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
+    //
+    //----------------------------------------------------------------------------------//
+    //  type available with add_pointer
+    //
+    template <typename U, typename T = decay_t<U>,
+              enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
     T* get()
     {
-        return &(std::get<index_of<T*, data_type>::value>(m_data));
+        return std::get<index_of<T*, data_type>::value>(m_data);
     }
 
-    template <typename T, enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
+    template <typename U, typename T = decay_t<U>,
+              enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
     const T* get() const
     {
-        return &(std::get<index_of<T*, data_type>::value>(m_data));
+        return std::get<index_of<T*, data_type>::value>(m_data);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //  type available with remove_pointer
+    //
+    template <
+        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
+        enable_if_t<(!is_one_of<T, data_type>::value &&
+                     !is_one_of<T*, data_type>::value && is_one_of<R, data_type>::value),
+                    int> = 0>
+    T* get()
+    {
+        return &std::get<index_of<R, data_type>::value>(m_data);
     }
 
-    template <typename T, enable_if_t<!(is_one_of<T, data_type>::value ||
-                                        is_one_of<T*, data_type>::value),
-                                      int> = 0>
+    template <
+        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
+        enable_if_t<(!is_one_of<T, data_type>::value &&
+                     !is_one_of<T*, data_type>::value && is_one_of<R, data_type>::value),
+                    int> = 0>
+    const T* get() const
+    {
+        return &std::get<index_of<R, data_type>::value>(m_data);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //  type is not explicitly listed
+    //
+    template <
+        typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
+        enable_if_t<(!is_one_of<T, data_type>::value &&
+                     !is_one_of<T*, data_type>::value && !is_one_of<R, data_type>::value),
+                    int> = 0>
     T* get() const
     {
         void*       ptr   = nullptr;
@@ -439,7 +486,8 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename T, typename... Args,
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              typename... Args,
               enable_if_t<(trait::is_available<T>::value == true &&
                            is_one_of<T, data_type>::value == false &&
                            is_one_of<T*, data_type>::value == false &&
@@ -447,10 +495,14 @@ public:
                           int> = 0>
     void init(Args&&...)
     {
-        using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
+        using bundle_t =
+            decay_t<decltype(std::get<0>(std::declval<user_bundle_types>()))>;
+        static_assert(trait::is_user_bundle<bundle_t>::value, "Error! Not a user_bundle");
         this->init<bundle_t>();
-        this->get<bundle_t>()->insert(component::factory::get_opaque<T>(m_scope),
-                                      component::factory::get_typeids<T>());
+        auto* _bundle = this->get<bundle_t>();
+        if(_bundle)
+            _bundle->insert(component::factory::get_opaque<T>(m_scope),
+                            component::factory::get_typeids<T>());
     }
 
     //----------------------------------------------------------------------------------//
@@ -662,9 +714,9 @@ protected:
     using bundle_type::m_store;
     mutable data_type m_data = data_type{};
 };
-
+//
 //======================================================================================//
-
+//
 template <typename... Types>
 auto
 get(const component_bundle<Types...>& _obj)

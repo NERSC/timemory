@@ -31,7 +31,9 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
+#include "timemory/mpl/available.hpp"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
@@ -139,9 +141,12 @@ namespace concepts
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Nt, typename Components, typename Differentiator>
-struct is_gotcha<component::gotcha<Nt, Components, Differentiator>> : true_type
-{};
+template <template <typename...> class Tuple, typename... T>
+struct has_gotcha<Tuple<T...>>
+{
+    using type = typename get_true_types<trait::is_gotcha, Tuple<T...>>::type;
+    static constexpr bool value = (mpl::get_tuple_size<type>::value != 0);
+};
 //
 //--------------------------------------------------------------------------------------//
 //

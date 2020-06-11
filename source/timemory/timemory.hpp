@@ -171,11 +171,11 @@ struct dummy
 #    endif
 
 //
-#    include "timemory/extern.hpp"
-//
 //   versioning header
 //
 #    include "timemory/version.h"
+//
+#    include "timemory/extern.hpp"
 //
 #    include "timemory/api.hpp"
 #    include "timemory/enum.h"

@@ -149,7 +149,7 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, collapse_processes,
                                     "TIMEMORY_COLLAPSE_PROCESSES",
                                     "Enable/disable combining process-specific data",
-                                    false)
+                                    true)
     TIMEMORY_MEMBER_STATIC_ACCESSOR(uint16_t, max_depth, "TIMEMORY_MAX_DEPTH",
                                     "Set the maximum depth of label hierarchy reporting",
                                     std::numeric_limits<uint16_t>::max())
@@ -614,6 +614,7 @@ struct TIMEMORY_SETTINGS_DLL settings
     //----------------------------------------------------------------------------------//
 
 public:
+    TIMEMORY_VISIBILITY("default")
     static strvector_t get_environment()
     {
 #if defined(_UNIX)
@@ -633,25 +634,26 @@ public:
     TIMEMORY_STATIC_ACCESSOR(strvector_t, environment, get_environment())
 
 public:
-    static string_t tolower(string_t str);
-    static string_t toupper(string_t str);
-    static string_t get_input_prefix();
-    static string_t get_output_prefix(bool fake = false);
-    static void     store_command_line(int argc, char** argv);
+    static string_t tolower(string_t str) TIMEMORY_VISIBILITY("default");
+    static string_t toupper(string_t str) TIMEMORY_VISIBILITY("default");
+    static string_t get_input_prefix() TIMEMORY_VISIBILITY("default");
+    static string_t get_output_prefix(bool fake = false) TIMEMORY_VISIBILITY("default");
+    static void store_command_line(int argc, char** argv) TIMEMORY_VISIBILITY("default");
     static string_t compose_output_filename(const string_t& _tag, string_t _ext,
                                             bool          _mpi_init = false,
                                             const int32_t _mpi_rank = -1,
-                                            bool          fake      = false,
-                                            std::string   _explicit = "");
+                                            bool fake = false, std::string _explicit = "")
+        TIMEMORY_VISIBILITY("default");
     static string_t compose_input_filename(const string_t& _tag, string_t _ext,
                                            bool          _mpi_init = false,
                                            const int32_t _mpi_rank = -1,
-                                           std::string   _explicit = "");
+                                           std::string   _explicit = "")
+        TIMEMORY_VISIBILITY("default");
 
-    static void parse();
+    static void parse() TIMEMORY_VISIBILITY("default");
 
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int);
+    void serialize(Archive& ar, const unsigned int) TIMEMORY_VISIBILITY("default");
 
     template <typename Archive>
     static void serialize_settings(Archive& ar)
@@ -667,13 +669,15 @@ public:
     }
 
     template <size_t Idx = 0>
-    static int64_t indent_width(int64_t _w = settings::width());
+    static int64_t indent_width(int64_t _w = settings::width())
+        TIMEMORY_VISIBILITY("default");
 
     template <typename Tp, size_t Idx = 0>
-    static int64_t indent_width(int64_t _w = indent_width<Idx>());
+    static int64_t indent_width(int64_t _w = indent_width<Idx>())
+        TIMEMORY_VISIBILITY("default");
 
     template <typename Tp>
-    static size_t data_width(int64_t _idx, int64_t _w);
+    static size_t data_width(int64_t _idx, int64_t _w) TIMEMORY_VISIBILITY("default");
 };
 //
 //----------------------------------------------------------------------------------//

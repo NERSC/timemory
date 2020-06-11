@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
@@ -37,6 +38,11 @@
 
 #include <cassert>
 #include <cstdint>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
 
 //======================================================================================//
 //
@@ -69,10 +75,17 @@ namespace component
 template <typename InpT, typename Tag, typename Handler, typename StoreT>
 struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, StoreT>
 {
-    using value_type   = StoreT;
-    using this_type    = data_tracker<InpT, Tag, Handler, StoreT>;
-    using base_type    = base<this_type, value_type>;
-    using handler_type = Handler;
+    using value_type      = StoreT;
+    using this_type       = data_tracker<InpT, Tag, Handler, StoreT>;
+    using base_type       = base<this_type, value_type>;
+    using handler_type    = Handler;
+    using secondary_map_t = std::unordered_map<std::string, this_type>;
+    using secondary_ptr_t = std::shared_ptr<secondary_map_t>;
+    using string_t        = std::string;
+    using start_t =
+        operation::generic_operator<this_type, operation::start<this_type>, Tag>;
+    using stop_t =
+        operation::generic_operator<this_type, operation::stop<this_type>, Tag>;
 
     static std::string& label()
     {
@@ -163,9 +176,75 @@ struct data_tracker : public base<data_tracker<InpT, Tag, Handler, StoreT>, Stor
 
     void set_value(const value_type& v) { value = v; }
 
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+    this_type* add_secondary(const string_t& _key, const T& val)
+    {
+        this_type _tmp;
+        start_t   _start(_tmp);
+        _tmp.store(val);
+        stop_t _stop(_tmp);
+        auto&  _map = *get_secondary_map();
+        _map.insert({ _key, _tmp });
+        return &(_map[_key]);
+    }
+
+    template <typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+    this_type* add_secondary(const string_t& _key, handler_type&& h, const T& val)
+    {
+        this_type _tmp;
+        start_t   _start(_tmp);
+        _tmp.store(std::forward<handler_type>(h), val);
+        stop_t _stop(_tmp);
+        auto&  _map = *get_secondary_map();
+        _map.insert({ _key, _tmp });
+        return &(_map[_key]);
+    }
+
+    template <typename Func, typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+    this_type* add_secondary(const string_t& _key, Func&& f, const T& val)
+    {
+        PRINT_HERE("%s :: adding secondary", demangle<this_type>().c_str());
+        this_type _tmp;
+        start_t   _start(_tmp);
+        _tmp.store(std::forward<Func>(f), val);
+        stop_t _stop(_tmp);
+        auto&  _map = *get_secondary_map();
+        _map.insert({ _key, _tmp });
+        return &(_map[_key]);
+    }
+
+    template <typename Func, typename T,
+              enable_if_t<(concepts::is_acceptable_conversion<T, InpT>::value), int> = 0>
+    this_type* add_secondary(const string_t& _key, handler_type&& h, Func&& f,
+                             const T& val)
+    {
+        this_type _tmp;
+        start_t   _start(_tmp);
+        _tmp.store(std::forward<handler_type>(h), std::forward<Func>(f), val);
+        stop_t _stop(_tmp);
+        auto&  _map = *get_secondary_map();
+        _map.insert({ _key, _tmp });
+        return &(_map[_key]);
+    }
+
     using base_type::get_unit;
     using base_type::load;
     using base_type::value;
+
+    auto get_secondary_map()
+    {
+        if(!m_secondary)
+            m_secondary = std::make_shared<secondary_map_t>();
+        return m_secondary;
+    }
+
+    auto get_secondary() { return (m_secondary) ? *m_secondary : secondary_map_t{}; }
+
+private:
+    secondary_ptr_t m_secondary{ nullptr };
 };
 //
 //--------------------------------------------------------------------------------------//

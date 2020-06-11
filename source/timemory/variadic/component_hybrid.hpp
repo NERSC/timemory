@@ -72,22 +72,22 @@ class component_hybrid
 
 public:
     using this_type       = component_hybrid<CompTuple, CompList>;
-    using tuple_type      = typename CompTuple::component_type;
-    using list_type       = typename CompList::component_type;
-    using tuple_data_type = typename tuple_type::data_type;
-    using list_data_type  = typename list_type::data_type;
-    using data_type       = decltype(std::tuple_cat(std::declval<tuple_type>().data(),
-                                              std::declval<list_type>().data()));
-    using type_tuple      = tim::impl::tuple_concat<typename tuple_type::type_tuple,
-                                               typename list_type::type_tuple>;
+    using tuple_t         = typename CompTuple::component_type;
+    using list_t          = typename CompList::component_type;
+    using tuple_data_type = typename tuple_t::data_type;
+    using list_data_type  = typename list_t::data_type;
+    using data_type       = decltype(
+        std::tuple_cat(std::declval<tuple_t>().data(), std::declval<list_t>().data()));
+    using tuple_type =
+        tim::tuple_concat_t<typename tuple_t::tuple_type, typename list_t::tuple_type>;
 
-    using tuple_type_list = typename tuple_type::reference_type;
-    using list_type_list  = typename list_type::reference_type;
+    using tuple_type_list = typename tuple_t::reference_type;
+    using list_type_list  = typename list_t::reference_type;
 
     // used by gotcha
-    using component_type = component_hybrid<tuple_type, list_type>;
-    using auto_type      = auto_hybrid<tuple_type, list_type>;
-    using type = component_hybrid<typename tuple_type::type, typename list_type::type>;
+    using component_type = component_hybrid<tuple_t, list_t>;
+    using auto_type      = auto_hybrid<tuple_t, list_t>;
+    using type = component_hybrid<typename tuple_t::type, typename list_t::type>;
 
     // used by component hybrid and gotcha
     static constexpr bool is_component_list   = false;
@@ -101,11 +101,10 @@ public:
     static constexpr bool is_component        = false;
 
     // used by gotcha component to prevent recursion
-    static constexpr bool has_gotcha_v =
-        (tuple_type::has_gotcha_v || list_type::has_gotcha_v);
+    static constexpr bool has_gotcha_v = (tuple_t::has_gotcha_v || list_t::has_gotcha_v);
 
     static constexpr bool has_user_bundle_v =
-        (tuple_type::has_user_bundle_v || list_type::has_user_bundle_v);
+        (tuple_t::has_user_bundle_v || list_t::has_user_bundle_v);
 
     using size_type           = int64_t;
     using captured_location_t = source_location::captured;
@@ -116,8 +115,8 @@ public:
     //
     static void init_storage()
     {
-        tuple_type::init_storage();
-        list_type::init_storage();
+        tuple_t::init_storage();
+        list_t::init_storage();
     }
 
     //----------------------------------------------------------------------------------//
@@ -173,7 +172,7 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_hybrid(const tuple_type& _tuple, const list_type& _list)
+    component_hybrid(const tuple_t& _tuple, const list_t& _list)
     : m_tuple(_tuple)
     , m_list(_list)
     {}
@@ -191,20 +190,20 @@ public:
     }
 
 public:
-    tuple_type&       get_tuple() { return m_tuple; }
-    const tuple_type& get_tuple() const { return m_tuple; }
-    list_type&        get_list() { return m_list; }
-    const list_type&  get_list() const { return m_list; }
+    tuple_t&       get_tuple() { return m_tuple; }
+    const tuple_t& get_tuple() const { return m_tuple; }
+    list_t&        get_list() { return m_list; }
+    const list_t&  get_list() const { return m_list; }
 
-    tuple_type&       get_first() { return m_tuple; }
-    const tuple_type& get_first() const { return m_tuple; }
-    list_type&        get_second() { return m_list; }
-    const list_type&  get_second() const { return m_list; }
+    tuple_t&       get_first() { return m_tuple; }
+    const tuple_t& get_first() const { return m_tuple; }
+    list_t&        get_second() { return m_list; }
+    const list_t&  get_second() const { return m_list; }
 
-    tuple_type&       get_lhs() { return m_tuple; }
-    const tuple_type& get_lhs() const { return m_tuple; }
-    list_type&        get_rhs() { return m_list; }
-    const list_type&  get_rhs() const { return m_list; }
+    tuple_t&       get_lhs() { return m_tuple; }
+    const tuple_t& get_lhs() const { return m_tuple; }
+    list_t&        get_rhs() { return m_list; }
+    const list_t&  get_rhs() const { return m_list; }
 
 public:
     int64_t  laps() const { return m_tuple.laps(); }
@@ -352,12 +351,22 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // perform an add_secondary operation
+    //
+    template <typename... Args>
+    void add_secondary(Args&&... args)
+    {
+        m_tuple.add_secondary(std::forward<Args>(args)...);
+        m_list.add_secondary(std::forward<Args>(args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
 
     template <template <typename> class OpT, typename... Args>
-    void invoke(Args&&... _args)
+    void invoke(Args&&... args)
     {
-        m_tuple.template invoke<OpT>(std::forward<Args>(_args)...);
-        m_list.template invoke<OpT>(std::forward<Args>(_args)...);
+        m_tuple.template invoke<OpT>(std::forward<Args>(args)...);
+        m_list.template invoke<OpT>(std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -538,8 +547,8 @@ public:
     //----------------------------------------------------------------------------------//
     static void print_storage()
     {
-        tuple_type::print_storage();
-        list_type::print_storage();
+        tuple_t::print_storage();
+        list_t::print_storage();
     }
 
 public:
@@ -551,14 +560,14 @@ public:
     //
     template <typename Tp,
               enable_if_t<(is_one_of<Tp, tuple_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<tuple_type>().template get<Tp>())
+    auto get() -> decltype(std::declval<tuple_t>().template get<Tp>())
     {
         return m_tuple.template get<Tp>();
     }
 
     template <typename Tp,
               enable_if_t<(is_one_of<Tp, list_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<list_type>().template get<Tp>())
+    auto get() -> decltype(std::declval<list_t>().template get<Tp>())
     {
         return m_list.template get<Tp>();
     }
@@ -587,15 +596,15 @@ public:
     }
 
     template <typename Tp, typename... Args>
-    void init(Args&&... _args)
+    void init(Args&&... args)
     {
-        m_list.template init<Tp>(std::forward<Args>(_args)...);
+        m_list.template init<Tp>(std::forward<Args>(args)...);
     }
 
     template <typename... Tp, typename... Args>
-    void initialize(Args&&... _args)
+    void initialize(Args&&... args)
     {
-        m_list.template initialize<Tp...>(std::forward<Args>(_args)...);
+        m_list.template initialize<Tp...>(std::forward<Args>(args)...);
     }
 
 public:
@@ -626,9 +635,9 @@ public:
 
 protected:
     // objects
-    bool       m_store = false;
-    tuple_type m_tuple = tuple_type{};
-    list_type  m_list  = list_type{};
+    bool    m_store = false;
+    tuple_t m_tuple = tuple_t{};
+    list_t  m_list  = list_t{};
 };
 
 //--------------------------------------------------------------------------------------//

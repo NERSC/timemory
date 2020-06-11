@@ -206,8 +206,10 @@ manager::finalize()
     m_is_finalizing = true;
     m_rank          = std::max<int32_t>(m_rank, dmp::rank());
     if(f_debug())
-        PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
-                   (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
+        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
+                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
+                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
+                   (int) m_pointer_fini.size());
 
     cleanup();
 
@@ -221,6 +223,12 @@ manager::finalize()
         _functors.clear();
     };
 
+    if(f_debug())
+        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
+                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
+                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
+                   (int) m_pointer_fini.size());
+
     //
     //  ideally, only one of these will be populated
     //  these clear the stack before outputting
@@ -230,6 +238,12 @@ manager::finalize()
     // finalize masters second
     _finalize(m_master_cleanup);
 
+    if(f_debug())
+        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
+                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
+                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
+                   (int) m_pointer_fini.size());
+
     //
     //  ideally, only one of these will be populated
     //
@@ -238,14 +252,27 @@ manager::finalize()
     // finalize masters second
     _finalize(m_master_finalizers);
 
+    if(f_debug())
+        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalizing",
+                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
+                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
+                   (int) m_pointer_fini.size());
+
+    for(auto& itr : m_pointer_fini)
+        itr.second();
+
+    m_pointer_fini.clear();
+
     m_is_finalizing = false;
+
+    if(f_debug())
+        PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", "finalized",
+                   (int) m_master_cleanup.size(), (int) m_master_finalizers.size(),
+                   (int) m_worker_cleanup.size(), (int) m_worker_finalizers.size(),
+                   (int) m_pointer_fini.size());
 
     if(m_instance_count == 0 && m_rank == 0)
         write_metadata("manager::finalize");
-
-    if(f_debug())
-        PRINT_HERE("%s [master: %i, worker: %i]", "finalizing",
-                   (int) m_master_finalizers.size(), (int) m_worker_finalizers.size());
 }
 //
 //----------------------------------------------------------------------------------//
@@ -290,6 +317,9 @@ manager::update_metadata_prefix()
     auto _outp_prefix = _settings->get_output_prefix();
     m_metadata_prefix = _outp_prefix;
     m_rank            = std::max<int32_t>(m_rank, dmp::rank());
+    if(f_debug())
+        PRINT_HERE("[rank=%i][id=%i][pid=%i] metadata prefix: '%s'", m_rank,
+                   m_instance_count, process::get_id(), m_metadata_prefix.c_str());
 }
 //
 //----------------------------------------------------------------------------------//
@@ -298,14 +328,25 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::write_metadata(const char* context)
 {
     if(m_rank != 0)
+    {
+        if(f_debug())
+            PRINT_HERE("[%s]> metadata disabled for rank %i", context, (int) m_rank);
         return;
+    }
 
     if(tim::get_env<bool>("TIMEMORY_CXX_PLOT_MODE", false))
+    {
+        if(f_debug())
+            PRINT_HERE("[%s]> plot mode enabled. Skipping metadata", context);
         return;
-
+    }
     auto _settings = f_settings();
     if(!_settings)
+    {
+        if(f_debug())
+            PRINT_HERE("[%s]> Null pointer to settings", context);
         return;
+    }
 
     bool _banner      = _settings->m__banner;
     bool _auto_output = _settings->m__auto_output;
@@ -314,10 +355,22 @@ manager::write_metadata(const char* context)
 
     static bool written = false;
     if(written || m_write_metadata < 1)
+    {
+        if(f_debug() && written)
+            PRINT_HERE("[%s]> metadata already written", context);
+        if(f_debug() && m_write_metadata)
+            PRINT_HERE("[%s]> metadata disabled: %i", context, (int) m_write_metadata);
         return;
+    }
 
     if(!_auto_output || !_file_output)
+    {
+        if(f_debug() && !_auto_output)
+            PRINT_HERE("[%s]> metadata disabled because auto output disabled", context);
+        if(f_debug() && !_file_output)
+            PRINT_HERE("[%s]> metadata disabled because file output disabled", context);
         return;
+    }
 
     written          = true;
     m_write_metadata = -1;

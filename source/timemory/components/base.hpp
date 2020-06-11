@@ -24,9 +24,6 @@
 
 #pragma once
 
-#include "timemory/components/base/types.hpp"
-//
 #include "timemory/components/base/declaration.hpp"
-//
 #include "timemory/components/base/definition.hpp"
-//
+#include "timemory/components/base/types.hpp"

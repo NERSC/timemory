@@ -22,6 +22,7 @@ set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
     timemory-cereal)
 
+add_interface_library(timemory-dmp)
 add_interface_library(timemory-mpi)
 add_interface_library(timemory-no-mpi-init)
 add_interface_library(timemory-upcxx)
@@ -62,7 +63,6 @@ add_interface_library(timemory-gpu-roofline)
 add_interface_library(timemory-roofline-options)
 
 add_interface_library(timemory-dyninst)
-add_interface_library(timemory-kokkos)
 
 add_interface_library(timemory-mpip-library)
 add_interface_library(timemory-ompt-library)
@@ -73,10 +73,12 @@ set(_DMP_LIBRARIES)
 
 if(TIMEMORY_USE_MPI)
     list(APPEND _DMP_LIBRARIES timemory-mpi)
+    target_link_libraries(timemory-dmp INTERFACE timemory-mpi)
 endif()
 
 if(TIMEMORY_USE_UPCXX)
     list(APPEND _DMP_LIBRARIES timemory-upcxx)
+    target_link_libraries(timemory-dmp INTERFACE timemory-upcxx)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
@@ -97,14 +99,17 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-gperftools-cpu
     timemory-gperftools-heap
     #
+    timemory-python
+    timemory-plotting
+    #
     timemory-caliper
     timemory-gotcha
     timemory-likwid
     timemory-vtune
     timemory-tau
-    timemory-python
-    timemory-plotting
-    timemory-kokkos)
+    timemory-ompt
+    timemory-craypat
+    timemory-allinea-map)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -120,8 +125,10 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-likwid
     timemory-vtune
     timemory-tau
+    timemory-ompt
+    timemory-craypat
+    timemory-allinea-map
     timemory-plotting
-    timemory-kokkos
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -136,8 +143,10 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-caliper
     timemory-vtune
     timemory-tau
+    timemory-ompt
+    timemory-craypat
+    timemory-allinea-map
     timemory-plotting
-    timemory-kokkos
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)
@@ -273,6 +282,9 @@ endfunction()
 #                               timemory headers
 #
 #----------------------------------------------------------------------------------------#
+
+# this target is always linked whenever timemory is used via cmake
+target_compile_definitions(timemory-headers INTERFACE TIMEMORY_CMAKE)
 
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
@@ -480,7 +492,8 @@ if(MPI_FOUND)
         set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
     endif()
 
-    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" ON)
+    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" ON
+        CMAKE_DEFINE)
     if(NOT TIMEMORY_USE_MPI_INIT)
         target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
     endif()
@@ -589,6 +602,8 @@ if(TIMEMORY_USE_PYTHON)
         inform_empty_interface(timemory-plotting "Python plotting from C++")
     else()
         add_feature(PYTHON_EXECUTABLE "Python executable")
+        add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
+        set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
         target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING
             TIMEMORY_PYTHON_PLOTTER="${PYTHON_EXECUTABLE}")
         target_link_libraries(timemory-headers INTERFACE timemory-plotting)
@@ -679,9 +694,11 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-find_package(PAPI ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+if(TIMEMORY_USE_PAPI)
+    find_package(PAPI ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
 
-if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
+if(PAPI_FOUND)
     add_rpath(${PAPI_LIBRARY})
     target_link_libraries(timemory-papi INTERFACE papi-shared)
     target_link_libraries(timemory-papi-static INTERFACE papi-static)
@@ -1283,6 +1300,8 @@ else()
     set(TIMEMORY_USE_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
 endif()
+
+add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
 
 
 #----------------------------------------------------------------------------------------#

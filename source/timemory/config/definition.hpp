@@ -107,6 +107,8 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     settings::store_command_line(argc, argv);
 
     auto _manager = manager::instance();
+    if(_manager)
+        _manager->update_metadata_prefix();
     consume_parameters(_manager);
 }
 //

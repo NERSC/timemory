@@ -35,7 +35,6 @@
 #endif
 
 #include "timemory/compat/library.h"
-#include "timemory/containers/auto_timer.hpp"
 #include "timemory/timemory.hpp"
 
 #include <deque>
@@ -47,7 +46,7 @@ using namespace tim::component;
 using auto_timer_t      = tim::auto_timer;
 using library_toolset_t = TIMEMORY_LIBRARY_TYPE;
 using complete_list_t   = typename library_toolset_t::component_type;
-using free_cstr_set_t   = std::unordered_set<const char*>;
+using free_cstr_set_t   = std::unordered_map<std::string, size_t>;
 
 //======================================================================================//
 //
@@ -89,7 +88,8 @@ extern "C"
         PROCESS_SETTING(width, int);
 
         if(argv && argc > 0)
-            tim::timemory_init(argc, argv);
+            timemory_init_library(argc, argv);
+            // tim::timemory_init(argc, argv);
 
 #    undef PROCESS_SETTING
     }
@@ -122,9 +122,9 @@ extern "C"
         auto        itr = free_cstr().find(timer_tag);
         if(itr != free_cstr().end())
         {
-            char* _tag = (char*) timer_tag;
-            free(_tag);
-            free_cstr().erase(itr);
+            auto n = --itr->second;
+            if(n == 0)
+                free_cstr().erase(itr);
         }
         auto obj = new complete_list_t(key_tag);
 #    if defined(DEBUG)
@@ -211,22 +211,11 @@ extern "C"
                << _filestr.substr(_filestr.find_last_of('/') + 1) << ":" << _line;
         }
 
-        auto  len  = ss.str().length() + ((_extra) ? strlen(_extra) : 0);
-        char* buff = (char*) malloc(len * sizeof(char));
-        if(buff)
-        {
-            if(!_extra || strlen(_extra) == 0)
-            {
-                sprintf(buff, "%s", ss.str().c_str());
-            }
-            else
-            {
-                ss << "/" << to_string(_extra);
-                sprintf(buff, "%s", ss.str().c_str());
-            }
-        }
-        free_cstr().insert((const char*) buff);
-        return (const char*) buff;
+        if(_extra && strlen(_extra) > 0)
+            ss << "/" << to_string(_extra);
+        std::string buff = ss.str();
+        free_cstr()[buff] += 1;
+        return free_cstr().find(buff)->first.c_str();
     }
 
 }  // extern "C"

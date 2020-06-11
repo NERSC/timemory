@@ -38,9 +38,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "timemory/mpl/filters.hpp"
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/utility/macros.hpp"
@@ -48,6 +45,9 @@
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
+
+#include <cstdint>
+#include <string>
 
 namespace tim
 {
@@ -62,7 +62,7 @@ public:
     using auto_type           = this_type;
     using component_type      = typename base_type::component_type;
     using data_type           = typename component_type::data_type;
-    using type_tuple          = typename component_type::type_tuple;
+    using tuple_type          = typename component_type::tuple_type;
     using sample_type         = typename component_type::sample_type;
     using type                = convert_t<typename component_type::type, auto_list<>>;
     using initializer_type    = std::function<void(this_type&)>;
@@ -206,6 +206,12 @@ public:
     {
         if(m_enabled)
             m_temporary.audit(std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void add_secondary(Args&&... args)
+    {
+        if(m_enabled)
+            m_temporary.add_secondary(std::forward<Args>(args)...);
     }
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)

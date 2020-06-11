@@ -605,7 +605,8 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     set(_onevalue   NAME
                     TARGET
                     CATEGORY
-                    FOLDER)
+                    FOLDER
+                    VISIBILITY)
     # multi-value
     set(_multival   HEADERS
                     SOURCES
@@ -629,6 +630,15 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
     check_required(COMP_FOLDER)
     check_required(COMP_SOURCES)
 
+    if(NOT COMP_VISIBILITY)
+      set(COMP_VISIBILITY default)
+    endif()
+
+    set(VIS_OPTS "default" "hidden")
+    if(NOT "${COMP_VISIBILITY}" IN_LIST VIS_OPTS)
+        message(FATAL_ERROR "${COMP_TARGET} available visibility options: ${VIS_OPTS}")
+    endif()
+    
     string(TOUPPER "${COMP_NAME}" UPP_COMP)
     string(REPLACE "-" "_" UPP_COMP "${UPP_COMP}")
 
@@ -675,7 +685,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory-external-${LINK}
             timemory-headers
             timemory-vector
-            timemory-mpi
+            timemory-dmp
             ${DEPENDS}
             ${PROPERTY_DEPENDS}
             ${COMP_PUBLIC_LINK})
@@ -683,7 +693,7 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
         target_link_libraries(${TARGET_NAME} PRIVATE
             timemory-compile-options
             timemory-develop-options
-            timemory-default-visibility
+            timemory-${COMP_VISIBILITY}-visibility
             ${_ANALYSIS_TOOLS}
             ${_ARCH_LIBRARY}
             ${COMP_PRIVATE_LINK})
@@ -735,6 +745,20 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
 
 endmacro()
 
+FUNCTION(ADD_CMAKE_DEFINES _VAR)
+    # parse args
+    cmake_parse_arguments(DEF "VALUE;QUOTE" "" "" ${ARGN})
+    if(DEF_VALUE)
+        if(DEF_QUOTE)
+            SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES
+                "${_VAR} \"@${_VAR}@\"")
+        else()
+            SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES "${_VAR} @${_VAR}@")
+        endif()
+    else()
+        SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES "${_VAR}")
+    endif()
+ENDFUNCTION()
 
 #-----------------------------------------------------------------------
 # function add_feature(<NAME> <DOCSTRING>)
@@ -753,6 +777,10 @@ FUNCTION(ADD_FEATURE _var _description)
 
   set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_FEATURES ${_var})
   set_property(GLOBAL PROPERTY ${_var}_DESCRIPTION "${_description}${EXTRA_DESC}")
+
+  IF("CMAKE_DEFINE" IN_LIST ARGN)
+      SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES "${_var} @${_var}@")
+  ENDIF()
 ENDFUNCTION()
 
 
@@ -766,6 +794,12 @@ FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
         MARK_AS_ADVANCED(${_NAME})
     ELSE()
         ADD_FEATURE(${_NAME} "${_MESSAGE}")
+    ENDIF()
+    IF("ADVANCED" IN_LIST ARGN)
+        MARK_AS_ADVANCED(${_NAME})
+    ENDIF()
+    IF("CMAKE_DEFINE" IN_LIST ARGN)
+        SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES ${_NAME})
     ENDIF()
 ENDFUNCTION()
 

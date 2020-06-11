@@ -35,28 +35,30 @@
 
 #pragma once
 
+#include "timemory/components/types.hpp"
 #include "timemory/mpl/filters.hpp"
+#include "timemory/types.hpp"
+#include "timemory/variadic/auto_bundle.hpp"
+#include "timemory/variadic/component_bundle.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"
-//
-#include "timemory/components/types.hpp"
-//
-#include "timemory/types.hpp"
 
 namespace tim
 {
 //
 //--------------------------------------------------------------------------------------//
 //
-using minimal_auto_tuple_t = tim::auto_tuple<TIMEMORY_MINIMAL_TUPLE_TYPES>;
-using minimal_auto_list_t  = tim::auto_list<TIMEMORY_MINIMAL_LIST_TYPES>;
-using minimal_auto_timer_t = auto_hybrid<minimal_auto_tuple_t, minimal_auto_list_t>;
+using minimal_auto_tuple_t = auto_bundle<TIMEMORY_API, TIMEMORY_MINIMAL_TUPLE_TYPES>;
+using minimal_auto_list_t  = auto_bundle<TIMEMORY_API, TIMEMORY_MINIMAL_LIST_TYPES>;
+using minimal_auto_timer_t =
+    auto_bundle<TIMEMORY_API, TIMEMORY_MINIMAL_TUPLE_TYPES, TIMEMORY_MINIMAL_LIST_TYPES>;
 //
 //--------------------------------------------------------------------------------------//
 //
-using full_auto_tuple_t = tim::auto_tuple<TIMEMORY_FULL_TUPLE_TYPES>;
-using full_auto_list_t  = tim::auto_list<TIMEMORY_FULL_LIST_TYPES>;
-using full_auto_timer_t = auto_hybrid<full_auto_tuple_t, full_auto_list_t>;
+using full_auto_tuple_t = auto_bundle<TIMEMORY_API, TIMEMORY_FULL_TUPLE_TYPES>;
+using full_auto_list_t  = auto_bundle<TIMEMORY_API, TIMEMORY_FULL_LIST_TYPES>;
+using full_auto_timer_t =
+    auto_bundle<TIMEMORY_API, TIMEMORY_FULL_TUPLE_TYPES, TIMEMORY_FULL_LIST_TYPES>;
 //
 //--------------------------------------------------------------------------------------//
 //

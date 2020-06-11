@@ -219,6 +219,7 @@ main(int argc, char** argv)
     TEST_SUMMARY(argv[0], num_test, num_fail);
     delete timing;
 
+    tim::timemory_finalize();
     exit(num_fail);
 }
 

@@ -27,6 +27,8 @@
 #include <tuple>
 #include <type_traits>
 
+//--------------------------------------------------------------------------------------//
+
 namespace tim
 {
 namespace concepts
@@ -100,17 +102,17 @@ struct is_auto_wrapper : false_type
 {};
 
 //----------------------------------------------------------------------------------//
-/// concepts the specifies that a type is a gotcha type
+/// determines if a variadic wrapper contains a gotcha component
 ///
 template <typename T>
-struct is_gotcha : false_type
+struct has_gotcha : std::false_type
 {};
 
 //----------------------------------------------------------------------------------//
 /// concepts the specifies that a type is a user_bundle type
 ///
 template <typename T>
-struct is_user_bundle : false_type
+struct has_user_bundle : false_type
 {};
 
 //----------------------------------------------------------------------------------//
@@ -216,28 +218,74 @@ struct is_acceptable_conversion
 
 //----------------------------------------------------------------------------------//
 
+template <typename T>
+struct tuple_type
+{
+    using type = typename T::tuple_type;
+};
+
+template <typename T>
+struct auto_type
+{
+    using type = typename T::auto_type;
+};
+
+template <typename T>
+struct component_type
+{
+    using type = typename T::component_type;
+};
+
+//----------------------------------------------------------------------------------//
+
 }  // namespace concepts
 
 template <typename T>
-using is_empty_t = typename concepts ::is_empty<T>::type;
+using is_empty_t = typename concepts::is_empty<T>::type;
 
 template <typename T>
-using is_variadic_t = typename concepts ::is_variadic<T>::type;
+using is_variadic_t = typename concepts::is_variadic<T>::type;
 
 template <typename T>
-using is_wrapper_t = typename concepts ::is_wrapper<T>::type;
+using is_wrapper_t = typename concepts::is_wrapper<T>::type;
 
 template <typename T>
-using is_stack_wrapper_t = typename concepts ::is_stack_wrapper<T>::type;
+using is_stack_wrapper_t = typename concepts::is_stack_wrapper<T>::type;
 
 template <typename T>
-using is_heap_wrapper_t = typename concepts ::is_heap_wrapper<T>::type;
+using is_heap_wrapper_t = typename concepts::is_heap_wrapper<T>::type;
 
 //----------------------------------------------------------------------------------//
 
 }  // namespace tim
 
 //======================================================================================//
+
+#if !defined(TIMEMORY_CONCEPT_ALIAS)
+#    define TIMEMORY_CONCEPT_ALIAS(ALIAS, TYPE)                                          \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace concepts                                                               \
+        {                                                                                \
+        template <typename T>                                                            \
+        using ALIAS = typename TYPE<T>::type;                                            \
+        }                                                                                \
+        }
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_CONCEPT_ALIAS(is_empty_t, is_empty)
+TIMEMORY_CONCEPT_ALIAS(is_variadic_t, is_variadic)
+TIMEMORY_CONCEPT_ALIAS(is_wrapper_t, is_wrapper)
+TIMEMORY_CONCEPT_ALIAS(is_stack_wrapper_t, is_stack_wrapper)
+TIMEMORY_CONCEPT_ALIAS(is_heap_wrapper_t, is_heap_wrapper)
+
+TIMEMORY_CONCEPT_ALIAS(tuple_type_t, tuple_type)
+TIMEMORY_CONCEPT_ALIAS(auto_type_t, auto_type)
+TIMEMORY_CONCEPT_ALIAS(component_type_t, component_type)
+
+//--------------------------------------------------------------------------------------//
 
 #define TIMEMORY_DEFINE_CONCRETE_CONCEPT(CONCEPT, COMPONENT, VALUE)                      \
     namespace tim                                                                        \
@@ -273,5 +321,50 @@ using is_heap_wrapper_t = typename concepts ::is_heap_wrapper<T>::type;
     template <TYPE... T>                                                                 \
     struct CONCEPT<COMPONENT<T...>> : VALUE                                              \
     {};                                                                                  \
+    }                                                                                    \
+    }
+
+//--------------------------------------------------------------------------------------//
+
+#define TIMEMORY_DEFINE_CONCRETE_CONCEPT_TYPE(CONCEPT, COMPONENT, ...)                   \
+    namespace tim                                                                        \
+    {                                                                                    \
+    namespace concepts                                                                   \
+    {                                                                                    \
+    template <>                                                                          \
+    struct CONCEPT<COMPONENT>                                                            \
+    {                                                                                    \
+        using type = __VA_ARGS__;                                                        \
+    };                                                                                   \
+    }                                                                                    \
+    }
+
+//--------------------------------------------------------------------------------------//
+
+#define TIMEMORY_DEFINE_TEMPLATE_CONCEPT_TYPE(CONCEPT, COMPONENT, TYPE, ...)             \
+    namespace tim                                                                        \
+    {                                                                                    \
+    namespace concepts                                                                   \
+    {                                                                                    \
+    template <TYPE T>                                                                    \
+    struct CONCEPT<COMPONENT<T>>                                                         \
+    {                                                                                    \
+        using type = __VA_ARGS__;                                                        \
+    };                                                                                   \
+    }                                                                                    \
+    }
+
+//--------------------------------------------------------------------------------------//
+
+#define TIMEMORY_DEFINE_VARIADIC_CONCEPT_TYPE(CONCEPT, COMPONENT, TYPE, ...)             \
+    namespace tim                                                                        \
+    {                                                                                    \
+    namespace concepts                                                                   \
+    {                                                                                    \
+    template <TYPE... T>                                                                 \
+    struct CONCEPT<COMPONENT<T...>>                                                      \
+    {                                                                                    \
+        using type = __VA_ARGS__;                                                        \
+    };                                                                                   \
     }                                                                                    \
     }

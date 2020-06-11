@@ -88,6 +88,13 @@ struct ompt_handle
             this_type::get_initializer()();
     }
 
+    static void preinit()
+    {
+        static thread_local auto _data_tracker =
+            tim::storage_initializer::get<ompt_data_tracker<api_type>>();
+        consume_parameters(_data_tracker);
+    }
+
     static void global_init(storage_type*)
     {
         // if handle gets initialized (i.e. used), it indicates we want to disable
@@ -169,7 +176,17 @@ struct ompt_data_tracker : public base<ompt_data_tracker<Api>, void>
         return std::string("OpenMP tools data tracker ") + demangle<api_type>();
     }
 
-    static void global_init(storage_type*) { tracker_t::label() = "ompt_data_tracker"; }
+    static void preinit()
+    {
+        static thread_local auto _tracker_storage = storage_initializer::get<tracker_t>();
+        consume_parameters(_tracker_storage);
+    }
+
+    static void global_init(storage_type*)
+    {
+        preinit();
+        tracker_t::label() = "ompt_data_tracker";
+    }
 
     void start() {}
     void stop() {}

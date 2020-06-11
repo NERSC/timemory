@@ -19,13 +19,14 @@
 | GitHub | `git clone https://github.com/NERSC/timemory.git` |
 | PyPi   | `pip install timemory`                            |
 
-
 ## Purpose
 
 The goal of timemory is to create an open-source performance measurement and analyis package
-which can be used to adapt to any existing C/C++ performance measurement and analysis API and
-is arbitrarily extendable by users within their application. In other words, timemory strives
-to be a universal adaptor toolkit for performance measurement and analysis.
+with modular and reusable components which can be used to adapt to any existing C/C++
+performance measurement and analysis API and is arbitrarily extendable by users within their
+application.
+Timemory is not just another profiling tool, it is a profling _toolkit_ which streamlines building custom
+profiling tools through modularity and then utilizes the toolkit to provides several pre-built tools.
 
 ## Overview
 
@@ -52,6 +53,7 @@ significantly and require a prohibitive amount of memory.
         - The [timemory-mpip](source/tools/timemory-mpip/README.md) library is an example of using timemory + [GOTCHA](https://github.com/LLNL/GOTCHA) to wrap ~245 dynamically-linked MPI function calls with a common set of instrumentation which fully supports inspection of the incoming arguments and return values as needed.
     - The [timemory-avail](source/tools/timemory-avail/README.md) tool provides a way to query the available components, settings, and hardware counters for an installation
 - The goals of timemory are to provide:
+    - __*Toolkit for creating new performance analysis tools*__
     - __*Common instrumentation framework*__
         - Eliminate need for projects to explicitly support multiple instrumentation frameworks
     - High performance when enabled
@@ -65,6 +67,71 @@ significantly and require a prohibitive amount of memory.
         - No instrumentation around arbitrary region 4
     - Provide an intuitive and simple API for creating measurement tools which is relatively future-proof
         - Most performance tools which permit user extensions rely on the user populating structs/classes which inform the framework about data-types and features
+
+Timemory components encapsulate a measurement methodology and the associated values without
+executing any operations which the user cannot control, such as storing measurements in persistent memory. This property is notably absent from the vast majority of other profiling tools and
+timemory might be the only profiling tool which can be built from scratch within an application.
+The job of a profiler is to measure the applications performance with as little perturbation
+as possible, thus, from a toolkit perspective, having complete control over all the operations
+is paramount -- operations which cannot be controlled is one of the primary reasons developers
+write custom tools instead of using existing tools.
+Consider the CrayPAT function for getting hardware counter values. CrayPAT uses the PAPI library
+internally to take the hardware counter measurements and exposes this function for obtaining these
+values:
+
+```cpp
+int PAT_counters(int category, const char* [] name,
+                 unsigned long[] values, int* nevents);
+```
+
+The calls to PAPI are hidden within the CrayPAT profiler implementation and the user does not have
+complete control over _how_ and _when_ those values are set and updated and the user cannot use
+their add own PAPI calls alongside them without possibly interfering with CrayPAT runtime.
+The function is useful for getting values within your application when using the CrayPAT tools
+but (A) there is not much to work with for building a new/custom tool and (B) this relies on
+string processing and a category enumeration which may be unnecessary.
+Before timemory, the choice usually became whether to accept the limitations/overhead of using
+an existing tool or creating a new tool from scratch.
+
+Timemory, however, eliminates these limitations and unnecessary overhead. Building a
+brand-new tool which (A) does only the desired operations and nothing more and (B) has all the
+features of the original tool, is simple and straight-forward. In fact, new components can
+simply be composites of existing components.
+For example, if a component for measuring the FLOP-rate (floating point operations per second)
+is desired, it is arbitrarily easy to create and this new component will have all the
+features of `wall_clock` and `papi_vector` component:
+
+```cpp
+struct flop_rate
+{
+private:
+    wall_clock  wc;
+    papi_vector hw;
+
+public:
+    static void configure()
+    {
+        papi_vector::add_event(PAPI_DP_OPS);
+    }
+
+    void start()
+    {
+        wc.start();
+        hw.start();
+    }
+
+    void stop()
+    {
+        wc.stop();
+        hw.stop();
+    }
+
+    auto get() const
+    {
+        return hw.get() / wc.get();
+    }
+};
+```
 
 ## Why Use timemory?
 
@@ -167,16 +234,6 @@ And for a given bundle `component_tuple<A, B, C> obj`:
 - Variadic interface to all the utilities from C++ code
 - Variadic interface to all the utilities from Python code
     - Includes context-managers and decorators
-
-## Overview
-
-Timemory is generic C++11 template library providing a variety of
-[performance components](https://timemory.readthedocs.io/en/latest/components/overview/)
-for reporting timing, resource usage, hardware counters for the CPU and GPU,
-roofline generation, and simplified generation of GOTCHA wrappers to instrument
-external library function calls.
-
-Timemory provides also provides Python and C interfaces.
 
 ## Profiling and timemory
 

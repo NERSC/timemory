@@ -29,42 +29,22 @@
 
 #pragma once
 
-//======================================================================================//
-//
 #include "timemory/api.hpp"
-//
+#include "timemory/components.hpp"
+#include "timemory/components/extern.hpp"
 #include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
-//
 #include "timemory/manager/declaration.hpp"
-#include "timemory/storage/definition.hpp"
-//
-#include "timemory/components.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/variadic/definition.hpp"
-//
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/properties.hpp"
-//
-//======================================================================================//
-//
-// clang-format off
-//
-/*TIMEMORY_EXTERN_TUPLE(generic_bundle_t,
-                      component::user_global_bundle,
-                      component::user_ompt_bundle,
-                      component::user_mpip_bundle)
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_EXTERN_LIST(generic_bundle_t,
-                     component::user_global_bundle,
-                     component::user_ompt_bundle,
-                     component::user_mpip_bundle)*/
-//
-// clang-format on
-//
-//--------------------------------------------------------------------------------------//
+#include "timemory/storage/definition.hpp"
+#include "timemory/variadic/definition.hpp"
+
+TIMEMORY_EXTERN_BUNDLE(TIMEMORY_API, component::user_global_bundle,
+                       component::user_ompt_bundle, component::user_mpip_bundle)
+
+TIMEMORY_EXTERN_BUNDLE(TIMEMORY_API, component::user_global_bundle*,
+                       component::user_ompt_bundle*, component::user_mpip_bundle*)

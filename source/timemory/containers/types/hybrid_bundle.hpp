@@ -29,40 +29,23 @@
 
 #pragma once
 
-//======================================================================================//
-//
 #include "timemory/api.hpp"
-//
+#include "timemory/components.hpp"
+#include "timemory/components/extern.hpp"
 #include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
-//
 #include "timemory/manager/declaration.hpp"
-#include "timemory/storage/definition.hpp"
-//
-#include "timemory/components.hpp"
-#include "timemory/components/extern.hpp"
-#include "timemory/variadic/definition.hpp"
-//
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/properties.hpp"
-//
+#include "timemory/storage/definition.hpp"
+#include "timemory/variadic/definition.hpp"
+
 #if defined(_WINDOWS)
 #    include "timemory/components.hpp"
 #endif
-//
-//======================================================================================//
-//
-// TIMEMORY_EXTERN_TUPLE(hybrid_bundle_t, component::user_tuple_bundle)
-//
-//--------------------------------------------------------------------------------------//
-//
-// TIMEMORY_EXTERN_LIST(hybrid_bundle_t, component::user_list_bundle)
-//
-//--------------------------------------------------------------------------------------//
-//
-// TIMEMORY_EXTERN_HYBRID(hybrid_bundle_t)
-//
-//--------------------------------------------------------------------------------------//
+
+TIMEMORY_EXTERN_BUNDLE(TIMEMORY_API, component::user_tuple_bundle,
+                       component::user_list_bundle*)

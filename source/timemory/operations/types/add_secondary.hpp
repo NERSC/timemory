@@ -94,9 +94,18 @@ struct add_secondary
         add_secondary_sfinae(_storage, _itr, _rhs, 0);
     }
 
+    //----------------------------------------------------------------------------------//
+    // add_secondary called on type
+    //
+    template <typename... Args>
+    add_secondary(type& _rhs, Args&&... args)
+    {
+        sfinae(_rhs, 0, std::forward<Args>(args)...);
+    }
+
 private:
     //----------------------------------------------------------------------------------//
-    //  If the component has a set_prefix(const string_t&) member function
+    //  If the component has a get_secondary() member function
     //
     template <typename Storage, typename Iterator, typename Up = type>
     auto add_secondary_sfinae(Storage* _storage, Iterator _itr, const Up& _rhs, int)
@@ -112,11 +121,31 @@ private:
     }
 
     //----------------------------------------------------------------------------------//
-    //  If the component does not have a set_prefix(const string_t&) member function
+    //  If the component does not have a get_secondary() member function
     //
     template <typename Storage, typename Iterator, typename Up = type>
     auto add_secondary_sfinae(Storage*, Iterator, const Up&, long)
         -> decltype(void(), void())
+    {}
+
+    //----------------------------------------------------------------------------------//
+    //  If the component has a add_secondary(Args...) member function
+    //
+    template <typename Up, typename... Args>
+    auto sfinae(Up& _obj, int, Args&&... args)
+        -> decltype(_obj.add_secondary(std::forward<Args>(args)...), void())
+    {
+        if(!trait::runtime_enabled<Tp>::get() || !settings::add_secondary())
+            return;
+
+        _obj.add_secondary(std::forward<Args>(args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the component does not have a add_secondary(Args...) member function
+    //
+    template <typename Up, typename... Args>
+    auto sfinae(Up&, long, Args&&...) -> decltype(void(), void())
     {}
 };
 //

@@ -112,7 +112,7 @@ template <typename... Types>
 component_list<Types...>::~component_list()
 {
     stop();
-    DEBUG_PRINT_HERE("%s", "deleting components");
+    // DEBUG_PRINT_HERE("%s", "deleting components");
     apply_v::access<operation_t<operation::generic_deleter>>(m_data);
 }
 
@@ -312,8 +312,8 @@ template <typename... Args>
 auto
 component_list<Types...>::get(Args&&... args) const
 {
-    using data_collect_type = get_data_type_t<type_tuple>;
-    using data_value_type   = get_data_value_t<type_tuple>;
+    using data_collect_type = get_data_type_t<tuple_type>;
+    using data_value_type   = get_data_value_t<tuple_type>;
     using get_data_t        = operation_t<operation::get_data, data_collect_type>;
 
     data_value_type _ret_data;
@@ -330,8 +330,8 @@ template <typename... Args>
 auto
 component_list<Types...>::get_labeled(Args&&... args) const
 {
-    using data_collect_type = get_data_type_t<type_tuple>;
-    using data_label_type   = get_data_label_t<type_tuple>;
+    using data_collect_type = get_data_type_t<tuple_type>;
+    using data_label_type   = get_data_label_t<tuple_type>;
     using get_data_t        = operation_t<operation::get_labeled_data, data_collect_type>;
 
     data_label_type _ret_data;

@@ -11,7 +11,7 @@ endif()
 project(timemory-CUDA-Event-Example LANGUAGES C CXX CUDA)
 
 set(EXE_NAME ex_cuda_event)
-set(COMPONENTS cuda nvtx threading compile-options analysis-tools cudart)
+set(COMPONENTS cuda threading compile-options analysis-tools cudart OPTIONAL_COMPONENTS nvtx)
 
 option(USE_CUPTI "Enable CUPTI" OFF)
 if(USE_CUPTI)
