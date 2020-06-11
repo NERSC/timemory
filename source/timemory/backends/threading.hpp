@@ -200,10 +200,10 @@ struct affinity
             //
             switch(get_mode())
             {
-                case COMPACT: return _compact_instance(tid); break;
+                case COMPACT: return _compact_instance(tid);
                 case SCATTER:
-                case SPREAD: return _scatter_instance(tid); break;
-                case EXPLICIT: return _explicit_instance(tid); break;
+                case SPREAD: return _scatter_instance(tid);
+                case EXPLICIT: return _explicit_instance(tid);
             };
             //
             // default to compact algorithm
