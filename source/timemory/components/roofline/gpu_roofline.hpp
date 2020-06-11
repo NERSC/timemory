@@ -440,8 +440,8 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY: return result_type({ m_data.activity->get() }); break;
-            case MODE::COUNTERS: return m_data.counters->get(); break;
+            case MODE::ACTIVITY: return result_type({ m_data.activity->get() });
+            case MODE::COUNTERS: return m_data.counters->get();
             default: break;
         }
         return result_type{};
