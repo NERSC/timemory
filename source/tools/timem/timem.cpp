@@ -32,7 +32,7 @@ childpid_catcher(int);
 void
 parent_process(pid_t pid);
 void
-child_process(int argc, char** argv) declare_attribute(noreturn);
+      child_process(int argc, char** argv) declare_attribute(noreturn);
 pid_t read_pid(pid_t);
 
 //--------------------------------------------------------------------------------------//

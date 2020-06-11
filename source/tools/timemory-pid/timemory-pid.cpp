@@ -76,8 +76,8 @@ main(int argc, char** argv)
                 EXIT_FAILURE);
 
     // we need to shift args by 2, e.g. ignore 'timem-pid <PID>'
-    auto   argpv     = tim::argparse::argument_vector(argc, argv);
-    auto   argpc     = argpv.get_execv(2);
+    auto argpv = tim::argparse::argument_vector(argc, argv);
+    auto argpc = argpv.get_execv(2);
 
     fprintf(stderr, "[%s]> cmd :: %s\n", argv[0], argpc.args().c_str());
 

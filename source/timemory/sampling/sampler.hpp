@@ -156,14 +156,12 @@ public:
     /// where 'a' is the status, 'b' is the error value, and returns true if waiting
     /// should continue
     template <typename Func = std::function<bool(pid_t, int, int)>>
-    static int wait(
-        pid_t _pid, int _verbose, bool _debug,
-        Func&& _callback = [](pid_t, int, int) { return true; });
+    static int wait(pid_t _pid, int _verbose, bool _debug,
+                    Func&& _callback = [](pid_t, int, int) { return true; });
 
     template <typename Func = std::function<bool(pid_t, int, int)>>
-    static int wait(
-        int _verbose = settings::verbose(), bool _debug = settings::debug(),
-        Func&& _callback = [](pid_t, int, int) { return true; })
+    static int wait(int _verbose = settings::verbose(), bool _debug = settings::debug(),
+                    Func&& _callback = [](pid_t, int, int) { return true; })
     {
         return wait(process::get_target_id(), _verbose, _debug,
                     std::forward<Func>(_callback));

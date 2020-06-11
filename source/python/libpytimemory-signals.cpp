@@ -99,17 +99,16 @@ generate(py::module& _pymod)
     _pymod.def("disable_signal_detection", &disable_signal_detection,
                "Enable signal detection");
     //----------------------------------------------------------------------------------//
-    _pymod.def(
-        "set_exit_action",
-        [&](py::function func) {
-            auto _func              = [&](int errcode) -> void { func(errcode); };
-            using signal_function_t = std::function<void(int)>;
-            using std::placeholders::_1;
-            signal_function_t _f = std::bind<void>(_func, _1);
-            tim::signal_settings::set_exit_action(_f);
-        },
-        "Set the exit action when a signal is raised -- function must accept "
-        "integer");
+    _pymod.def("set_exit_action",
+               [&](py::function func) {
+                   auto _func              = [&](int errcode) -> void { func(errcode); };
+                   using signal_function_t = std::function<void(int)>;
+                   using std::placeholders::_1;
+                   signal_function_t _f = std::bind<void>(_func, _1);
+                   tim::signal_settings::set_exit_action(_f);
+               },
+               "Set the exit action when a signal is raised -- function must accept "
+               "integer");
 
     //----------------------------------------------------------------------------------//
     //

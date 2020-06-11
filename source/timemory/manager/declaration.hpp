@@ -249,8 +249,8 @@ private:
     auto_lock_ptr_t m_lock = auto_lock_ptr_t{ nullptr };
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
-    graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
-    graph_hash_alias_ptr_t m_hash_aliases = get_hash_aliases();
+    graph_hash_map_ptr_t   m_hash_ids           = get_hash_ids();
+    graph_hash_alias_ptr_t m_hash_aliases       = get_hash_aliases();
     finalizer_list_t       m_finalizer_cleanups = {};
     finalizer_list_t       m_master_cleanup     = {};
     finalizer_list_t       m_worker_cleanup     = {};

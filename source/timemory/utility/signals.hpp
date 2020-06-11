@@ -332,7 +332,6 @@ disable_signal_detection()
 
 namespace tim
 {
-
 inline bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
 
 inline void

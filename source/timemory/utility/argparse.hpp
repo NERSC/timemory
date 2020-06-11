@@ -603,18 +603,18 @@ struct argument_parser
         }
 
         friend struct argument_parser;
-        int                      m_position  = Position::IGNORE;
-        int                      m_count     = Count::ANY;
-        int                      m_max_count = Count::ANY;
-        std::vector<std::string> m_names     = {};
-        std::string              m_desc      = {};
-        bool                     m_found     = false;
-        bool                     m_required  = false;
-        int                      m_index     = -1;
-        void*                    m_default   = nullptr;
-        callback_t               m_callback  = [](void*) {};
-        std::set<std::string>    m_choices   = {};
-        std::vector<std::string> m_values    = {};
+        int                        m_position  = Position::IGNORE;
+        int                        m_count     = Count::ANY;
+        int                        m_max_count = Count::ANY;
+        std::vector<std::string>   m_names     = {};
+        std::string                m_desc      = {};
+        bool                       m_found     = false;
+        bool                       m_required  = false;
+        int                        m_index     = -1;
+        void*                      m_default   = nullptr;
+        callback_t                 m_callback  = [](void*) {};
+        std::set<std::string>      m_choices   = {};
+        std::vector<std::string>   m_values    = {};
         std::vector<action_func_t> m_actions   = {};
     };
     //

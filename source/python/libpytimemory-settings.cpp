@@ -31,9 +31,9 @@
 using string_t = std::string;
 
 #define SETTING_PROPERTY(TYPE, FUNC)                                                     \
-    settings.def_property_static(                                                        \
-        TIMEMORY_STRINGIZE(FUNC), [](py::object) { return tim::settings::FUNC(); },      \
-        [](py::object, TYPE v) { tim::settings::FUNC() = v; })
+    settings.def_property_static(TIMEMORY_STRINGIZE(FUNC),                               \
+                                 [](py::object) { return tim::settings::FUNC(); },       \
+                                 [](py::object, TYPE v) { tim::settings::FUNC() = v; })
 
 //======================================================================================//
 //

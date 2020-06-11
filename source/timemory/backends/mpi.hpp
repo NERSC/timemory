@@ -51,31 +51,27 @@ namespace mpi
 {
 //--------------------------------------------------------------------------------------//
 
+#if !defined(TIMEMORY_USE_MPI)
 enum class data_type : int
 {
-#if defined(TIMEMORY_USE_MPI)
-    int_t    = MPI_INT,
-    float_t  = MPI_FLOAT,
-    double_t = MPI_DOUBLE
-#else
     int_t,
     float_t,
     double_t
-#endif
 };
+#endif
 
 //--------------------------------------------------------------------------------------//
 
 #if !defined(MPI_INT)
-#    define MPI_INT ::int_t
+#    define MPI_INT data_type::int_t
 #endif
 
 #if !defined(MPI_FLOAT)
-#    define MPI_FLOAT ::float_t
+#    define MPI_FLOAT data_type::float_t
 #endif
 
 #if !defined(MPI_DOUBLE)
-#    define MPI_DOUBLE ::double_t
+#    define MPI_DOUBLE data_type::double_t
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -113,12 +109,12 @@ enum : int
 }  // namespace threading
 #else
 // dummy MPI types
-using comm_t = int32_t;
-using info_t = int32_t;
-using data_type_t = int32_t;
-using status_t = int32_t;
-static const comm_t comm_world_v = 0;
-static const info_t info_null_v = 0;
+using comm_t                            = int32_t;
+using info_t                            = int32_t;
+using data_type_t                       = int32_t;
+using status_t                          = int32_t;
+static const comm_t  comm_world_v       = 0;
+static const info_t  info_null_v        = 0;
 static const int32_t comm_type_shared_v = 0;
 namespace threading
 {

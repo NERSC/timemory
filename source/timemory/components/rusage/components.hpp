@@ -106,7 +106,7 @@ struct page_rss : public base<page_rss, int64_t>
     {
         return "Amount of memory allocated in pages of memory. Unlike peak_rss, value "
                "will fluctuate as memory is freed/allocated";
-    }    
+    }
     static value_type record() { return get_page_rss(); }
     double            get() const
     {

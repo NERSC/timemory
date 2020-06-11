@@ -89,9 +89,8 @@ get(py::class_<pytuple_t<T>>& _pyclass)
     using bundle_t = pytuple_t<T>;
     auto _get      = [](bundle_t* obj) { return std::get<0>(obj->get()); };
     _pyclass.def("get", _get, "Get the current value");
-    _pyclass.def_static(
-        "has_value", []() { return true; },
-        "Whether the component has an accessible value");
+    _pyclass.def_static("has_value", []() { return true; },
+                        "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -104,9 +103,8 @@ get(py::class_<pytuple_t<T>>& _pyclass)
     using bundle_t = pytuple_t<T>;
     auto _get      = [](bundle_t*) { return py::none{}; };
     _pyclass.def("get", _get, "Component does not return value");
-    _pyclass.def_static(
-        "has_value", []() { return false; },
-        "Whether the component has an accessible value");
+    _pyclass.def_static("has_value", []() { return false; },
+                        "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -194,8 +192,8 @@ generate(py::module& _pymod)
     _pycomp.def_static("label", &T::label, "Get the label for the type");
     _pycomp.def_static("description", &T::description,
                        "Get the description for the type");
-    _pycomp.def_static(
-        "available", []() { return true; }, "Whether the component is available");
+    _pycomp.def_static("available", []() { return true; },
+                       "Whether the component is available");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -255,11 +253,10 @@ generate(py::module& _pymod)
     _pycomp.def("__isub__", _isub, "Subtract rhs from lhs");
     _pycomp.def("__repr__", _repr, "String representation");
 
-    _pycomp.def_static(
-        "available", []() { return false; }, "Whether the component is available");
-    _pycomp.def_static(
-        "has_value", []() { return false; },
-        "Whether the component has an accessible value");
+    _pycomp.def_static("available", []() { return false; },
+                       "Whether the component is available");
+    _pycomp.def_static("has_value", []() { return false; },
+                       "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//
