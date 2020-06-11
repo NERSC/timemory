@@ -28,23 +28,25 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
-#include <sstream>
-#include <string>
-#include <vector>
+#if !defined(_WINDOWS)
 
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <fcntl.h>
-#include <grp.h>
-#include <paths.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#    include <sstream>
+#    include <string>
+#    include <vector>
+
+#    include <cerrno>
+#    include <cstdio>
+#    include <cstdlib>
+#    include <cstring>
+#    include <ctime>
+#    include <fcntl.h>
+#    include <grp.h>
+#    include <paths.h>
+#    include <sys/param.h>
+#    include <sys/stat.h>
+#    include <sys/types.h>
+#    include <sys/wait.h>
+#    include <unistd.h>
 
 namespace tim
 {
@@ -121,4 +123,6 @@ read_fork(TIMEMORY_PIPE* ldd)
 #if !defined(TIMEMORY_UTILITY_SOURCE) &&                                                 \
     !(defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN))
 #    include "timemory/utility/popen.cpp"
+#endif
+
 #endif

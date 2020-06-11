@@ -38,6 +38,8 @@ extern "C"
     extern char** environ;
 }
 
+#if !defined(_WINDOWS)
+
 namespace tim
 {
 namespace popen
@@ -341,3 +343,11 @@ pclose(TIMEMORY_PIPE* p)
 //
 }  // namespace popen
 }  // namespace tim
+
+#else
+
+namespace
+{
+static int windows_popen = 0;
+}
+#endif
