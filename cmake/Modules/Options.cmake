@@ -57,7 +57,7 @@ if(WIN32)
 endif()
 
 # Check if CUDA can be enabled
-if(NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_PACKAGES)
+# if(NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_PACKAGES)
     if(NOT DEFINED TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUDA)
         set(_USE_CUDA ON)
         check_language(CUDA)
@@ -67,10 +67,12 @@ if(NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_PACKAGES)
             message(STATUS "No CUDA support")
             set(_USE_CUDA OFF)
         endif()
+    else()
+        set(_USE_CUDA OFF)
     endif()
-else()
-    set(_USE_CUDA OFF)
-endif()
+# else()
+#    set(_USE_CUDA OFF)
+# endif()
 
 # if already defined, set default for shared to OFF
 if(DEFINED BUILD_STATIC_LIBS AND BUILD_STATIC_LIBS)
@@ -242,7 +244,7 @@ define_default_option(_PYTHON ${TIMEMORY_BUILD_PYTHON})
 define_default_option(_DYNINST ON)
 define_default_option(_ALLINEA_MAP ON)
 define_default_option(_CRAYPAT ON)
-define_default_option(_OMPT ON)
+define_default_option(_OMPT OFF)
 define_default_option(_LIKWID ${_NON_APPLE_UNIX})
 define_default_option(_GOTCHA ${_NON_APPLE_UNIX})
 
@@ -312,7 +314,7 @@ if(${PROJECT_NAME}_MASTER_PROJECT)
 endif()
 
 if(TIMEMORY_USE_CUDA)
-    add_option(TIMEMORY_DISABLE_CUDA_HALF "Disable half/half2 if CUDA_ARCH < 60" OFF)
+    add_option(TIMEMORY_DISABLE_CUDA_HALF "Disable half/half2 if CUDA_ARCH < 60" ON)
 endif()
 
 # cereal options
