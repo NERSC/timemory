@@ -43,7 +43,16 @@ import timemory.roofline as _roofline
 
 
 def parse_args(add_run_args=False):
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser(add_help=False, prog='timemory.roofline',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog ='''\
+Examples:
+  - Perform a Roofline analysis with default parameters
+        python -m timemory.roofline -- ./application
+  - Perform a Roofline analysis with user-defined dimensions: 1000x800, DPI = 50
+        python -m timemory.roofline -P 1000 800 50 -- ./application
+                                     ''')
+
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                         help="{} [OPTIONS [OPTIONS...]] -- <OPTIONAL COMMAND TO EXECUTE>".format(sys.argv[0]))
     parser.add_argument("-d", "--display",
@@ -52,32 +61,36 @@ def parse_args(add_run_args=False):
                         default="roofline")
     parser.add_argument("-D", "--output-dir", type=str, help="Output directory",
                         default=os.getcwd())
-    parser.add_argument("-b", "--bandwidth", type=str, help="Roofline bandwidth peak, \"dram\" as default",
-                        action='append', dest='bandwidths', choices=["l1", "l2", "l3", "dram"], default=['dram'])
-    parser.add_argument("-tb", "--txn_bandwidth", type=float,
-                        help="GPU Instruction Roofline transaction bandwidth peak (NVIDIA V100 values set by default) L1, L2, DRAM",
-                        dest='txns_bandwidths', default=[437.5, 93.6, 25.9], nargs=3)
+    lbandwidth = ["l1", "l2", "l3", "dram"]
+    parser.add_argument("-b", "--bandwidth", type=str, help='Bandwidth type - available optionss are: '
+                        +', '.join(lbandwidth)+", \"dram\" as default.", choices=lbandwidth, metavar='',
+                        dest="bandwidths", default=['dram'])
+    parser.add_argument("-tb", "--txn_bandwidth", type=float, metavar='',
+                        help="GPU Instruction Roofline transaction bandwidth peak: L1, L2, DRAM. "
+                        + "Three arguments are expected. \"437.5 93.6 25.9\" (NVIDIA V100 values)"
+                        + " as default.", dest="txns_bandwidths", default=[437.5, 93.6, 25.9], nargs=3)
     parser.add_argument("-iP", "--inst_peak", type=float,
                         help="GPU Instruction peak (per warp) in GIPS (NVIDIA V100 peak set by default)",
                         dest='inst_peak', default=[489.60], nargs=1)
     parser.add_argument("--format", type=str,
                         help="Image format", default="png")
-    parser.add_argument("-T", "--title", type=str,
-                        help="Title for the plot", default="Roofline")
-    parser.add_argument("-P", "--plot-dimensions", type=int,
-                        help="Image dimensions: Width, Height, DPI",
-                        default=[1600, 1200, 100], nargs=3)
+    parser.add_argument("-T", "--title", type=str, dest='title',
+                        help="Title for the plot, \"Roofline\" as default.", default="Roofline")
+    parser.add_argument("-P", "--plot-dimensions", type=int, metavar='',
+                        help="Image dimensions: Width, Height, DPI. Three arguments are expected."
+                        + " \"1600 1200 100\" as default.", default=[1600, 1200, 100], nargs=3)
     parser.add_argument("-R", "--rank", type=int,
                         help="MPI Rank", default=None)
     parser.add_argument("-v", "--verbose", type=int,
                         help="Verbosity", default=None)
     parser.add_argument("-e", "--echo-dart", action='store_true',
                         help="Echo image as DartMeasurementFile")
-    parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
-                        choices=["cpu_roofline", "cpu_roofline_sp",
-                                 "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
-                                 "gpu_roofline_sp", "gpu_roofline_dp", "gpu_roofline_inst"],
-                        default="cpu_roofline")
+    ltype = ["cpu_roofline", "cpu_roofline_sp",
+             "cpu_roofline_dp", "gpu_roofline", "gpu_roofline_hp",
+             "gpu_roofline_sp", "gpu_roofline_dp", "gpu_roofline_inst"]
+    parser.add_argument("-t", "--rtype", type=str, choices=ltype,
+                        help='Roofline type - available optionss are: '+', '.join(ltype) +
+                        ", \"cpu_roofline\" as default.", metavar='', default="cpu_roofline")
 
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
