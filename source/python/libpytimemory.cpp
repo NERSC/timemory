@@ -24,6 +24,7 @@
 //
 
 #include "libpytimemory.hpp"
+#include "timemory/library.h"
 #include "timemory/components/definition.hpp"
 #include "timemory/components/ompt.hpp"
 
@@ -92,6 +93,63 @@ struct pyenumeration
     }
 };
 
+struct pycomponents
+{
+    template <size_t Idx>
+    static void generate(py::module& _pycomp)
+    {
+        using namespace tim;
+        using T = typename tim::component::enumerator<Idx>::type;
+        if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
+            return;
+        using property_t = tim::component::properties<T>;
+        std::string id   = property_t::enum_string();
+        for(auto& itr : id)
+            itr = tolower(itr);
+
+        // define a component binding in the sub-module
+        auto comp = py::class_<lightweight_tuple<T>>(_pycomp, id.c_str(), T::description().c_str());
+
+        // define constructor
+        comp.def(py::init([](std::string _name) { return new lightweight_tuple<T>(_name); }));
+
+        // bind push
+        auto _push = [](lightweight_tuple<T> *_tuple){ _tuple->push(); };
+        comp.def("push", _push);
+
+        // bind pop
+        auto _pop = [](lightweight_tuple<T> *_tuple){ _tuple->pop(); };
+        comp.def("pop", _pop);
+
+        // bind start 
+        auto _start = [](lightweight_tuple<T> *_tuple){ _tuple->start(); };
+        comp.def("start", _start);
+
+        // bind stop
+        auto _stop = [](lightweight_tuple<T> *_tuple){ _tuple->stop(); };
+        comp.def("stop", _stop);
+
+        // bind reset
+        auto _reset = [](lightweight_tuple<T> *_tuple){ _tuple->reset(); };
+        comp.def("reset", _reset);
+
+        // bind get
+        auto _get = [](lightweight_tuple<T> *_tuple){ return _tuple->get(); };
+        comp.def("get", _get);
+
+        // bind get_labeled
+        auto _get_labeled = [](lightweight_tuple<T> *_tuple){ return _tuple->get_labeled(); };
+        comp.def("get_labeled", _get_labeled);
+    }
+
+    template <size_t... Idx>
+    static void components(py::module& _pycomp,
+                           std::index_sequence<Idx...>)
+    {
+        TIMEMORY_FOLD_EXPRESSION(pycomponents::generate<Idx>(_pycomp));
+    }
+};
+
 //======================================================================================//
 //  Python wrappers
 //======================================================================================//
@@ -143,9 +201,14 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::enum_<TIMEMORY_NATIVE_COMPONENT> components_enum(
         tim, "component", py::arithmetic(), "Components for timemory module");
 
+    py::module components = tim.def_submodule("components", "Individual components for timemory module");
+
     //----------------------------------------------------------------------------------//
 
     pyenumeration::components(components_enum,
+                              std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+
+    pycomponents::components(components,
                               std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
 
     //==================================================================================//
@@ -407,6 +470,42 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
+    auto _init_trace = [&](const char* args, bool read_command_line, const char* cmd) {
+            auto  _str    = std::string(args);
+            char* _args = new char[_str.size()];
+            std::strcpy(_args, _str.c_str());
+
+            _str    = std::string(cmd);
+            char* _cmd = new char[_str.size()];
+            std::strcpy(_cmd, _str.c_str());
+
+        timemory_trace_init(_args, read_command_line, _cmd);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _finalize_trace = [&](){
+        timemory_trace_finalize();
+    };
+    //----------------------------------------------------------------------------------//
+    auto _push_trace = [&](const char *name) {
+        timemory_push_trace(name);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _pop_trace = [&](const char *name) {
+        timemory_pop_trace(name);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _push_region = [&](const char *name) {
+        timemory_push_region(name);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _pop_region = [&](const char *name) {
+        timemory_pop_region(name);
+    };
+    //----------------------------------------------------------------------------------//
+    auto _is_throttled = [&](const char *name) {
+        return timemory_is_throttled(name);
+    };
+    //----------------------------------------------------------------------------------//
 
     //==================================================================================//
     //
@@ -466,6 +565,25 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
+    tim.def("timemory_trace_init", _init_trace, "Initialize Tracing", 
+            py::arg("args") = "wall_clock", py::arg("read_command_line") = false, 
+            py::arg("cmd") = "");
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_trace_finalize", _finalize_trace, "Finalize Tracing");
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_push_trace", _push_trace, "Push Trace", py::arg("name"));
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_pop_trace", _pop_trace, "Pop Trace", py::arg("name"));
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_push_region", _push_region, "Push Trace Region", 
+            py::arg("name"));
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_pop_region", _pop_region, "Pop Trace Region",
+            py::arg("name"));
+    //----------------------------------------------------------------------------------//
+    tim.def("timemory_is_throttled", _is_throttled, "Check if throttled", 
+            py::arg("name"));
+    //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
     //----------------------------------------------------------------------------------//
     tim.def(
@@ -497,6 +615,9 @@ PYBIND11_MODULE(libpytimemory, tim)
                                  [](py::object, TYPE v) { tim::settings::FUNC() = v; })
 
     settings.def(py::init<>(), "Dummy");
+
+    // to parse changes in env vars
+    settings.def("parse", &tim::settings::parse);
 
     using strvector_t = std::vector<std::string>;
 
