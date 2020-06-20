@@ -111,7 +111,7 @@ find_library(LIKWID_hwloc_LIBRARY
 
 #----------------------------------------------------------------------------------------#
 
-find_static_library(LIKWID_lua_LIBRARY
+find_library(LIKWID_lua_LIBRARY
     NAMES
         likwid-lua
     HINTS
