@@ -50,6 +50,23 @@
 #----------------------------------------------------------------------------------------#
 include(CMakeParseArguments)
 
+function(FIND_STATIC_LIBRARY _VAR)
+    set(_options    )
+    set(_onevalue   DOC)
+    set(_multival   NAMES HINTS PATHS PASS_SUFFIXES)
+
+    cmake_parse_arguments(
+        LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
+
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+    find_library(${_VAR}
+                NAMES ${LIBRARY_NAMES}
+                HINTS ${LIBRARY_HINTS}
+                PATHS ${LIBRARY_PATHS}
+                PATH_SUFFIXES ${LIBRARY_PATH_SUFFIXES}
+                DOC "${LIBRARY_DOC}")
+endfunction()
+
 #----------------------------------------------------------------------------------------#
 # search for likwid marker because if this file does not exist, we cannot forward to
 # Likwid
@@ -111,7 +128,7 @@ find_library(LIKWID_hwloc_LIBRARY
 
 #----------------------------------------------------------------------------------------#
 
-find_library(LIKWID_lua_LIBRARY
+find_static_library(LIKWID_lua_LIBRARY
     NAMES
         likwid-lua
     HINTS
