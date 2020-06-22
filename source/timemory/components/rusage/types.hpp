@@ -38,16 +38,10 @@
 //
 TIMEMORY_DECLARE_COMPONENT(peak_rss)
 TIMEMORY_DECLARE_COMPONENT(page_rss)
-TIMEMORY_DECLARE_COMPONENT(stack_rss)
-TIMEMORY_DECLARE_COMPONENT(data_rss)
-TIMEMORY_DECLARE_COMPONENT(num_swap)
 TIMEMORY_DECLARE_COMPONENT(num_io_in)
 TIMEMORY_DECLARE_COMPONENT(num_io_out)
 TIMEMORY_DECLARE_COMPONENT(num_minor_page_faults)
 TIMEMORY_DECLARE_COMPONENT(num_major_page_faults)
-TIMEMORY_DECLARE_COMPONENT(num_msg_sent)
-TIMEMORY_DECLARE_COMPONENT(num_msg_recv)
-TIMEMORY_DECLARE_COMPONENT(num_signals)
 TIMEMORY_DECLARE_COMPONENT(voluntary_context_switch)
 TIMEMORY_DECLARE_COMPONENT(priority_context_switch)
 TIMEMORY_DECLARE_COMPONENT(virtual_memory)
@@ -56,6 +50,15 @@ TIMEMORY_DECLARE_COMPONENT(written_bytes)
 TIMEMORY_DECLARE_COMPONENT(user_mode_time)
 TIMEMORY_DECLARE_COMPONENT(kernel_mode_time)
 TIMEMORY_DECLARE_COMPONENT(current_peak_rss)
+//
+// Fully deprecated
+//
+TIMEMORY_DECLARE_COMPONENT(num_swap)
+TIMEMORY_DECLARE_COMPONENT(stack_rss)
+TIMEMORY_DECLARE_COMPONENT(data_rss)
+TIMEMORY_DECLARE_COMPONENT(num_msg_sent)
+TIMEMORY_DECLARE_COMPONENT(num_msg_recv)
+TIMEMORY_DECLARE_COMPONENT(num_signals)
 //
 //======================================================================================//
 //
@@ -80,16 +83,10 @@ using pair_dd_t = std::pair<double, double>;
 
 TIMEMORY_STATISTICS_TYPE(component::peak_rss, double)
 TIMEMORY_STATISTICS_TYPE(component::page_rss, double)
-TIMEMORY_STATISTICS_TYPE(component::stack_rss, double)
-TIMEMORY_STATISTICS_TYPE(component::data_rss, double)
-TIMEMORY_STATISTICS_TYPE(component::num_swap, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::num_io_in, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::num_io_out, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::num_minor_page_faults, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::num_major_page_faults, int64_t)
-TIMEMORY_STATISTICS_TYPE(component::num_msg_sent, int64_t)
-TIMEMORY_STATISTICS_TYPE(component::num_msg_recv, int64_t)
-TIMEMORY_STATISTICS_TYPE(component::num_signals, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::voluntary_context_switch, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::priority_context_switch, int64_t)
 TIMEMORY_STATISTICS_TYPE(component::read_bytes, resource_usage::alias::pair_dd_t)
@@ -107,8 +104,6 @@ TIMEMORY_STATISTICS_TYPE(component::current_peak_rss, resource_usage::alias::pai
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::peak_rss, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::stack_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::data_rss, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(record_max, component::virtual_memory, true_type)
 
 //--------------------------------------------------------------------------------------//
@@ -177,22 +172,23 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(array_serialization, component::written_bytes, tr
 //                              IS AVAILABLE
 //
 //--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::stack_rss, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::data_rss, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_recv, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_sent, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_signals, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_swap, false_type)
 
 //
 //      WINDOWS (non-UNIX)
 //
 #if !defined(_UNIX)
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::stack_rss, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::data_rss, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_major_page_faults, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_minor_page_faults, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_recv, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_sent, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_signals, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_swap, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
@@ -211,16 +207,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::current_peak_rss, false_
 /// \brief This macro enables the globally disable rusage structures that are
 /// unmaintained by the Linux kernel and are zero on macOS
 ///
-#    if !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE)
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::stack_rss, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::data_rss, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_swap, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_recv, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_msg_sent, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_signals, false_type)
-
-#        if defined(_MACOS)
+#    if !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(_MACOS)
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_in, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::num_io_out, false_type)
@@ -228,8 +215,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::read_bytes, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::written_bytes, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::virtual_memory, false_type)
 
-#        endif
-#    endif  // !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE)
+#    endif  // !defined(TIMEMORY_USE_UNMAINTAINED_RUSAGE) && defined(_MACOS)
 
 #endif
 
@@ -250,18 +236,12 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_timing_category, component::kernel_mode_time, 
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::peak_rss, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::stack_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::data_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_swap, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_io_in, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_io_out, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_minor_page_faults,
                                true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_major_page_faults,
                                true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_msg_sent, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_msg_recv, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::num_signals, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::voluntary_context_switch,
                                true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_memory_category, component::priority_context_switch,
@@ -287,8 +267,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_timing_units, component::kernel_mode_time, t
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::peak_rss, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::page_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::stack_rss, true_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::data_rss, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::read_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::written_bytes, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_memory_units, component::virtual_memory, true_type)
@@ -341,12 +319,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(peak_rss, PEAK_RSS, "peak_rss", "")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(page_rss, PAGE_RSS, "page_rss", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(stack_rss, STACK_RSS, "stack_rss", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(data_rss, DATA_RSS, "data_rss", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(num_swap, NUM_SWAP, "num_swap", "")
-//
 TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, NUM_IO_IN, "num_io_in", "")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, NUM_IO_OUT, "num_io_out", "")
@@ -356,12 +328,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(num_minor_page_faults, NUM_MINOR_PAGE_FAULTS,
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(num_major_page_faults, NUM_MAJOR_PAGE_FAULTS,
                                  "num_major_page_faults", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(num_msg_sent, NUM_MSG_SENT, "num_msg_sent", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(num_msg_recv, NUM_MSG_RECV, "num_msg_recv", "")
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(num_signals, NUM_SIGNALS, "num_signals", "")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(voluntary_context_switch, VOLUNTARY_CONTEXT_SWITCH,
                                  "voluntary_context_switch", "")

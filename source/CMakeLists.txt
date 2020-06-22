@@ -125,7 +125,7 @@ timemory_get_property_depends(TIMEMORY_STATIC_FACTORY_LIBRARIES STATIC FACTORY)
 
 if(CMAKE_CUDA_COMPILER)
     set_source_files_properties(${cxx_sources} PROPERTIES
-        LANGUAGE CUDA
+        # LANGUAGE CUDA
         LINKER_LANGUAGE CUDA)
 endif()
 
