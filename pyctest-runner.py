@@ -242,6 +242,7 @@ def run_pyctest():
         "USE_PAPI": "ON" if args.papi else "OFF",
         "USE_MPI": "ON" if args.mpi else "OFF",
         "USE_CALIPER": "ON" if args.caliper else "OFF",
+        "PYTHON_EXECUTABLE" : "{}".format(sys.executable),
     }
 
     if args.ompt:
@@ -436,6 +437,14 @@ def run_pyctest():
     if args.tools:
         pyct.test("timem-timemory-avail",
                   ["./timem", "./timemory-avail"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
+    if args.python:
+        pyct.test("timemory-python",
+                  [sys.executable, "-c", "\"import timemory\""],
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",

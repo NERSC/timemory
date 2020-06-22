@@ -21,7 +21,7 @@ add_subdirectory(vtune)
 
 if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER)
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/factory.cpp PROPERTIES
-        LANGUAGE CUDA
+        # LANGUAGE CUDA
         LINKER_LANGUAGE CUDA)
 endif()
 
