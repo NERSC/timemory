@@ -433,6 +433,14 @@ def run_pyctest():
                          "TIMEMORY_DART_COUNT=1",
                          "TIMEMORY_PLOT_OUTPUT=ON"])
 
+    if args.tools:
+        pyct.test("timem-timemory-avail",
+                  ["./timem", "./timemory-avail"],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+        
     pyct.test(construct_name("ex-derived"),
               construct_command(["./ex_derived"], args),
               {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
