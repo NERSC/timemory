@@ -27,6 +27,14 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/components/rusage/components.hpp"
+#include "timemory/components/rusage/extern.hpp"
+#include "timemory/operations/types/get.hpp"
+#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/properties.hpp"
+#include "timemory/variadic/definition.hpp"
+
+using namespace tim::component;
 
 //======================================================================================//
 //
@@ -120,17 +128,13 @@ generate(py::module& _pymod, py::module& _pyunits)
                   "Return the current rss usage",
                   py::arg("units") = _pyunits.attr("megabyte"));
     //----------------------------------------------------------------------------------//
-    rss_usage.def("get_raw",
-                  [&](py::object self) { return (*self.cast<rss_usage_t*>()).get(); },
+    rss_usage.def("get_raw", [&](rss_usage_t* self) { return self->get(); },
                   "Return the rss usage data");
     //----------------------------------------------------------------------------------//
-    rss_usage.def("get",
-                  [&](py::object self) {
-                      auto&& _tup           = (*self.cast<rss_usage_t*>()).get_labeled();
-                      using data_label_type = tim::decay_t<decltype(_tup)>;
-                      return pytim::dict<data_label_type>::construct(_tup);
-                  },
-                  "Return the rss usage data");
+    rss_usage.def(
+        "get",
+        [&](rss_usage_t* self) { return pytim::dict::construct(self->get_labeled()); },
+        "Return the rss usage data");
 
     return rss_usage;
 }

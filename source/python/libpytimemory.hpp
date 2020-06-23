@@ -77,15 +77,11 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-using pybundle_t         = tim::component::user_global_bundle;
-using auto_timer_t       = typename tim::auto_timer::type;
-using auto_list_t        = tim::available_auto_list_t;
-using component_bundle_t = tim::component_bundle<TIMEMORY_API, pybundle_t>;
-using tim_timer_t        = typename auto_timer_t::component_type;
-using component_list_t   = typename auto_list_t::component_type;
-using manager_t          = tim::manager;
-using farray_t           = py::array_t<double, py::array::c_style | py::array::forcecast>;
-using component_enum_vec = std::vector<TIMEMORY_COMPONENT>;
+using auto_list_t  = tim::available_auto_list_t;
+using auto_timer_t = typename tim::auto_timer::type;
+using tim_timer_t  = typename auto_timer_t::component_type;
+using manager_t    = tim::manager;
+using farray_t     = py::array_t<double, py::array::c_style | py::array::forcecast>;
 
 //======================================================================================//
 
@@ -102,130 +98,6 @@ protected:
 
 //======================================================================================//
 
-class pycomponent_bundle
-{
-public:
-    using type = pybundle_t;
-
-public:
-    pycomponent_bundle(component_bundle_t* _ptr = nullptr)
-    : m_ptr(_ptr)
-    {}
-
-    ~pycomponent_bundle()
-    {
-        if(m_ptr)
-            m_ptr->stop();
-        delete m_ptr;
-    }
-
-    pycomponent_bundle& operator=(component_bundle_t* _ptr)
-    {
-        if(m_ptr)
-            delete m_ptr;
-        m_ptr = _ptr;
-        return *this;
-    }
-
-    void start()
-    {
-        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
-                         (m_ptr) ? m_ptr->get<pybundle_t>()->size() : 0);
-        if(m_ptr)
-            m_ptr->start();
-    }
-
-    void stop()
-    {
-        DEBUG_PRINT_HERE("%p, global size = %lu, instance size = %lu", m_ptr, size(),
-                         (m_ptr) ? m_ptr->get<pybundle_t>()->size() : 0);
-        if(m_ptr)
-            m_ptr->stop();
-    }
-
-    static size_t size() { return pybundle_t::bundle_size(); }
-
-    static void reset()
-    {
-        DEBUG_PRINT_HERE("size = %lu", size());
-        pybundle_t::reset();
-    }
-
-    template <typename... ArgsT>
-    static void configure(ArgsT&&... _args)
-    {
-        tim::configure<pybundle_t>(std::forward<ArgsT>(_args)...);
-    }
-
-private:
-    component_bundle_t* m_ptr = nullptr;
-};
-
-//======================================================================================//
-
-class auto_timer_decorator
-{
-public:
-    auto_timer_decorator(auto_timer_t* _ptr = nullptr)
-    : m_ptr(_ptr)
-    {}
-
-    ~auto_timer_decorator() { delete m_ptr; }
-
-    auto_timer_decorator& operator=(auto_timer_t* _ptr)
-    {
-        if(m_ptr)
-            delete m_ptr;
-        m_ptr = _ptr;
-        return *this;
-    }
-
-private:
-    auto_timer_t* m_ptr;
-};
-
-//======================================================================================//
-
-class component_list_decorator
-{
-public:
-    component_list_decorator(component_list_t* _ptr = nullptr)
-    : m_ptr(_ptr)
-    {
-        if(m_ptr)
-        {
-            m_ptr->push();
-            m_ptr->start();
-        }
-    }
-
-    ~component_list_decorator()
-    {
-        if(m_ptr)
-            m_ptr->stop();
-        delete m_ptr;
-    }
-
-    component_list_decorator& operator=(component_list_t* _ptr)
-    {
-        if(m_ptr)
-            m_ptr->stop();
-        delete m_ptr;
-        m_ptr = _ptr;
-        if(m_ptr)
-        {
-            m_ptr->push();
-            m_ptr->start();
-        }
-        return *this;
-    }
-
-private:
-    component_list_t* m_ptr;
-};
-
-//======================================================================================//
-
 #if _PYTHON_MAJOR_VERSION > 2
 #    define PYOBJECT_SELF
 #    define PYOBJECT_SELF_PARAM
@@ -238,47 +110,7 @@ private:
 
 namespace pytim
 {
-//======================================================================================//
-
 using string_t = std::string;
-
-//======================================================================================//
-//
-//                          TiMemory (general)
-//
-//======================================================================================//
-
-component_enum_vec
-components_list_to_vec(py::list pystr_list)
-{
-    std::vector<std::string> str_list;
-    for(auto itr : pystr_list)
-        str_list.push_back(itr.cast<std::string>());
-    return tim::enumerate_components(str_list);
-}
-
-//--------------------------------------------------------------------------------------//
-
-component_enum_vec
-components_enum_to_vec(py::list enum_list)
-{
-    component_enum_vec vec;
-    for(auto itr : enum_list)
-        vec.push_back(itr.cast<TIMEMORY_COMPONENT>());
-    return vec;
-}
-
-//--------------------------------------------------------------------------------------//
-
-component_list_t*
-create_component_list(std::string obj_tag, const component_enum_vec& components)
-{
-    auto obj = new component_list_t(obj_tag, true);
-    tim::initialize(*obj, components);
-    return obj;
-}
-
-//--------------------------------------------------------------------------------------//
 
 //======================================================================================//
 //
@@ -288,91 +120,13 @@ create_component_list(std::string obj_tag, const component_enum_vec& components)
 
 namespace init
 {
-//--------------------------------------------------------------------------------------//
-
+//
 manager_wrapper*
 manager()
 {
     return new manager_wrapper();
 }
-
-//--------------------------------------------------------------------------------------//
-
-tim_timer_t*
-timer(std::string key)
-{
-    return new tim_timer_t(key, true);
-}
-
-//--------------------------------------------------------------------------------------//
-
-auto_timer_t*
-auto_timer(std::string key, bool report_at_exit)
-{
-    return new auto_timer_t(key, tim::scope::get_default(), report_at_exit);
-}
-
-//--------------------------------------------------------------------------------------//
-
-component_list_t*
-component_list(py::list components, std::string key)
-{
-    return create_component_list(key, components_enum_to_vec(components));
-}
-
-//----------------------------------------------------------------------------//
-
-auto_timer_decorator*
-timer_decorator(const std::string& key, bool report_at_exit)
-{
-    auto_timer_decorator* _ptr = new auto_timer_decorator();
-    if(!tim::settings::enabled())
-        return _ptr;
-    return &(*_ptr =
-                 new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit));
-}
-
-//----------------------------------------------------------------------------//
-
-component_list_decorator*
-component_decorator(py::list components, const std::string& key)
-{
-    component_list_decorator* _ptr = new component_list_decorator();
-    if(!tim::settings::enabled())
-        return _ptr;
-
-    return &(*_ptr = create_component_list(key, components_enum_to_vec(components)));
-}
-
-//----------------------------------------------------------------------------//
-
-pycomponent_bundle*
-component_bundle(const std::string& func, const std::string& file, const int line,
-                 py::list args)
-{
-    std::string sargs = "";
-    for(auto itr : args)
-    {
-        try
-        {
-            auto v = itr.cast<std::string>();
-            sargs  = (sargs.empty()) ? v : TIMEMORY_JOIN("/", sargs, v);
-        } catch(...)
-        {}
-    }
-    using mode = tim::source_location::mode;
-
-    auto&& _scope = tim::scope::get_default();
-    auto&& _loc =
-        tim::source_location(mode::complete, func.c_str(), line, file.c_str(), sargs);
-    auto&& _obj = (tim::settings::enabled())
-                      ? new component_bundle_t(_loc.get_captured(sargs), true, _scope)
-                      : nullptr;
-    return new pycomponent_bundle(_obj);
-}
-
-//--------------------------------------------------------------------------------------//
-
+//
 }  // namespace init
 
 //======================================================================================//

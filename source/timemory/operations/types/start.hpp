@@ -70,7 +70,7 @@ struct start
 private:
     // resolution #1 (best)
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, Args&&... args)
+    auto sfinae(Up& obj, int, int, int, int, Args&&... args)
         -> decltype(static_cast<base_t<Up>&>(obj).start(crtp::base{},
                                                         std::forward<Args>(args)...),
                     void())
@@ -80,7 +80,7 @@ private:
 
     // resolution #2
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, long, Args&&... args)
+    auto sfinae(Up& obj, int, int, int, long, Args&&... args)
         -> decltype(obj.start(std::forward<Args>(args)...), void())
     {
         obj.start(std::forward<Args>(args)...);
@@ -88,7 +88,7 @@ private:
 
     // resolution #3
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, long, Args&&...)
+    auto sfinae(Up& obj, int, int, long, long, Args&&...)
         -> decltype(static_cast<base_t<Up>&>(obj).start(crtp::base{}), void())
     {
         static_cast<base_t<Up>&>(obj).start(crtp::base{});
@@ -96,14 +96,15 @@ private:
 
     // resolution #4
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, double, Args&&...) -> decltype(obj.start(), void())
+    auto sfinae(Up& obj, int, long, long, long, Args&&...)
+        -> decltype(obj.start(), void())
     {
         obj.start();
     }
 
     // resolution #5 (worst) - no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, long, Args&&...)
+    void sfinae(Up&, long, long, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
     }
@@ -211,7 +212,7 @@ start<Tp>::start(type& obj, Args&&... args)
     if(!trait::runtime_enabled<type>::get())
         return;
     init_storage<Tp>::init();
-    sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
+    sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -223,7 +224,7 @@ start<Tp>::start(type& obj, non_vexing&&, Args&&... args)
     if(!trait::runtime_enabled<type>::get())
         return;
     init_storage<Tp>::init();
-    sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
+    sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -122,6 +122,7 @@ else:
                    'plotting',
                    'roofline',
                    'bundle',
+                   'cupti',
                    'tests',
                    'util',
                    'ert',
@@ -129,9 +130,10 @@ else:
                    # --------------- classes ---------------#
                    'manager',
                    'timer',
-                   'auto_timer',
-                   'timer_decorator',
                    'rss_usage',
+                   'auto_timer',
+                   'component_list',
+                   'component_bundle',
                    # ------------ lib submodules -----------#
                    'units',
                    'options',

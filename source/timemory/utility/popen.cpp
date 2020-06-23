@@ -92,30 +92,30 @@ drop_privileges(int permanent)
 
     if(newgid != oldgid)
     {
-#if !defined(_LINUX)
+#    if !defined(_LINUX)
         auto ret = setegid(newgid);
         if(ret != 0)
             abort();
         if(permanent && setgid(newgid) == -1)
             abort();
-#else
+#    else
         if(setregid((permanent ? newgid : -1), newgid) == -1)
             abort();
-#endif
+#    endif
     }
 
     if(newuid != olduid)
     {
-#if !defined(_LINUX)
+#    if !defined(_LINUX)
         auto ret = seteuid(newuid);
         if(ret != 0)
             abort();
         if(permanent && setuid(newuid) == -1)
             abort();
-#else
+#    else
         if(setreuid((permanent ? newuid : -1), newuid) == -1)
             abort();
-#endif
+#    endif
     }
 
     // verify that the changes were successful
@@ -201,7 +201,7 @@ fork(void)
 {
     pid_t childpid;
 
-    if((childpid = fork()) == -1)
+    if((childpid = ::fork()) == -1)
         return -1;
 
     // If this is the parent process, there's nothing more to do

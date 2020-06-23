@@ -9,16 +9,17 @@
 
 ## [Basics](basics.md)
 
-- Supported Languages
-- General Syntax
+- Dynamic Instrumentation
+- Manual Instrumentation
+    - [Python](python.md)
+    - [C++](templates.md)
+    - [C/C++/Fortran](library.md)
 - Environment Controls
-- Example
 
 ## [Creating Custom Components](custom_components.md)
 
 - Structure of a component
 - Type traits
-- Policy classes
 - Example
 
 ## [Generating a Roofline](roofline.md)

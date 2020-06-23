@@ -27,6 +27,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/settings/extern.hpp"
 
 using string_t = std::string;
 

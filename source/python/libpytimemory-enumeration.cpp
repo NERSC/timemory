@@ -28,6 +28,7 @@
 
 #include "libpytimemory-components.hpp"
 #include "timemory/components/definition.hpp"
+#include "timemory/runtime/properties.hpp"
 
 //======================================================================================//
 //

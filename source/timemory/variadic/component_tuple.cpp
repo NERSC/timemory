@@ -53,19 +53,24 @@ component_tuple<Types...>::component_tuple()
 //
 template <typename... Types>
 template <typename... T, typename Func>
-component_tuple<Types...>::component_tuple(const string_t&        key,
-                                           variadic::config<T...> config,
-                                           const Func&            init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), config)
+component_tuple<Types...>::component_tuple(const string_t& key, variadic::config<T...>,
+                                           const Func&     init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), variadic::config<T...>{})
 , m_data(data_type{})
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
+        {
+            init_storage();
+        }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
+        {
+            init_func(*this);
+        }
+        set_prefix(get_hash_ids()->find(m_hash)->second);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -74,18 +79,23 @@ component_tuple<Types...>::component_tuple(const string_t&        key,
 template <typename... Types>
 template <typename... T, typename Func>
 component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           variadic::config<T...>     config,
-                                           const Func&                init_func)
-: bundle_type(loc.get_hash(), config)
+                                           variadic::config<T...>, const Func& init_func)
+: bundle_type(loc.get_hash(), variadic::config<T...>{})
 , m_data(data_type{})
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
+        {
+            init_storage();
+        }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
+        {
+            init_func(*this);
+        }
+        set_prefix(loc.get_id());
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -95,10 +105,7 @@ template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
                                            scope::config _scope, const Func& init_func)
-: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
+: bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -107,10 +114,10 @@ component_tuple<Types...>::component_tuple(const string_t& key, const bool& stor
         {
             init_storage();
         }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        set_prefix(get_hash_ids()->find(m_hash)->second);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
     }
 }
 
@@ -121,10 +128,7 @@ template <typename Func>
 component_tuple<Types...>::component_tuple(const captured_location_t& loc,
                                            const bool& store, scope::config _scope,
                                            const Func& init_func)
-: bundle_type(loc.get_hash(), store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
+: bundle_type(loc.get_hash(), store, _scope)
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -133,10 +137,10 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
         {
             init_storage();
         }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
-        set_prefix(loc.get_id());
+        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        set_prefix(loc.get_hash());
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
     }
 }
 
@@ -146,10 +150,7 @@ template <typename... Types>
 template <typename Func>
 component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
                                            scope::config _scope, const Func& init_func)
-: bundle_type(hash, store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
+: bundle_type(hash, store, _scope)
 , m_data(data_type{})
 {
     if(settings::enabled())
@@ -158,10 +159,10 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
         {
             init_storage();
         }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
         set_prefix(hash);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
     }
 }
 
@@ -170,7 +171,7 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
 template <typename... Types>
 component_tuple<Types...>::~component_tuple()
 {
-    // IF_CONSTEXPR(get_config<variadic::auto_stop>()) { stop(); }
+    // IF_CONSTEXPR(variadic_config<variadic::auto_stop>::value) { stop(); }
     stop();
 }
 

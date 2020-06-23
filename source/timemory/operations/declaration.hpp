@@ -93,7 +93,7 @@ struct TIMEMORY_OPERATIONS_DLL storage_initializer
     TIMEMORY_DEFAULT_OBJECT(storage_initializer)
 
     template <typename T>
-    static storage_initializer get();
+    static storage_initializer get() TIMEMORY_VISIBILITY("default");
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -236,25 +236,31 @@ public:
 
 public:
     template <typename Tp>
-    static int64_t get_size(const Tp& _data)
+    static int64_t get_labels_size(const Tp& _data)
     {
-        return get_labels_sfinae(_data, 0);
+        return get_labels_size_sfinae(_data, 0);
     }
 
     template <typename Tp>
-    static auto get_size_sfinae(const Tp& _data, int)
+    static auto get_labels_size_sfinae(const Tp& _data, int)
         -> decltype(_data.label_array(), int64_t())
     {
         return _data.label_array().size();
     }
 
     template <typename Tp>
-    static auto get_size_sfinae(const Tp&, long) -> int64_t
+    static auto get_labels_size_sfinae(const Tp&, long) -> int64_t
     {
         return 1;
     }
 
 public:
+    template <typename Tp>
+    static strvec_t get_labels(const Tp& _data)
+    {
+        return get_labels_sfinae(_data, 0);
+    }
+
     template <typename Tp>
     static auto get_labels_sfinae(const Tp& _data, int)
         -> decltype(_data.label_array(), strvec_t())
@@ -269,12 +275,6 @@ public:
     static auto get_labels_sfinae(const Tp&, long) -> strvec_t
     {
         return strvec_t{ Tp::get_label() };
-    }
-
-    template <typename Tp>
-    static strvec_t get_labels(const Tp& _data)
-    {
-        return get_labels_sfinae(_data, 0);
     }
 
 public:

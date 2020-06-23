@@ -115,9 +115,9 @@ manager::manager()
                m_instance_count, process::get_id());
 #    endif
 
-    auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
-                                                   m_metadata_prefix);
-    consume_parameters(fname);
+    // auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
+    //                                               m_metadata_prefix);
+    // consume_parameters(fname);
 
     if(settings::cpu_affinity())
         threading::affinity::set();

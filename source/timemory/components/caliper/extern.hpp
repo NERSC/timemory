@@ -58,20 +58,8 @@
 //
 //======================================================================================//
 //
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<caliper, void>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::caliper, false)
-//
-TIMEMORY_EXTERN_STORAGE(component::caliper, caliper)
+TIMEMORY_EXTERN_COMPONENT(caliper_marker, false, void)
+TIMEMORY_EXTERN_COMPONENT(caliper_config, false, void)
+TIMEMORY_EXTERN_COMPONENT(caliper_loop_marker, false, void)
 //
 //======================================================================================//

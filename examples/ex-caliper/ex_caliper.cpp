@@ -55,7 +55,7 @@ main(int argc, char** argv)
     tim::settings::memory_precision()  = 3;
     tim::settings::memory_scientific() = false;
     tim::timemory_init(argc, argv);
-    tim::backend::cali::init();
+    cali_init();
 
     std::vector<long> fibvalues;
     for(int i = 1; i < argc; ++i)
@@ -63,7 +63,7 @@ main(int argc, char** argv)
 
     if(fibvalues.empty())
     {
-        fibvalues.resize(tim::get_env("NUM_FIBONACCI", 10));
+        fibvalues.resize(tim::get_env<size_t>("NUM_FIBONACCI", 10));
         long n = tim::get_env("FIBONACCI_MIN", 33);
         std::generate_n(fibvalues.data(), fibvalues.size(), [&]() { return n++; });
     }
@@ -83,17 +83,17 @@ main(int argc, char** argv)
 
     if(scope == "process")
     {
-        caliper::enable_process_scope();
+        caliper_common::enable_process_scope();
         execute_test("process");
     }
     else if(scope == "thread")
     {
-        caliper::enable_thread_scope();
+        caliper_common::enable_thread_scope();
         execute_test("thread");
     }
     else if(scope == "task")
     {
-        caliper::enable_task_scope();
+        caliper_common::enable_task_scope();
         execute_test("task");
     }
     else

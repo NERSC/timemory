@@ -224,6 +224,15 @@ struct is_component : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates apis of a component
+///
+template <typename T, typename Tag>
+struct api_components
+{
+    using type = type_list<>;
+};
+
+//--------------------------------------------------------------------------------------//
 /// trait that designates the type is a gotcha... ONLY gotcha should set to TRUE!
 ///
 template <typename T>
@@ -523,6 +532,21 @@ struct derivation_types : false_type
     static constexpr size_t size = 0;
     using type                   = std::tuple<type_list<>>;
 };
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates the type supports these arguments from python.
+/// Specializations MUST be structured as a tim::type_list<...> of tim::type_list<...>
+///
+template <int OpT, typename T>
+struct python_args
+{
+    using type = type_list<type_list<>>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <int OpT, typename T>
+using python_args_t = typename python_args<OpT, T>::type;
 
 //--------------------------------------------------------------------------------------//
 }  // namespace trait

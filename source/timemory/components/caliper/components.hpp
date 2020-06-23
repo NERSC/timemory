@@ -34,8 +34,11 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
-#include "timemory/components/caliper/backends.hpp"
-#include "timemory/components/caliper/types.hpp"
+#if defined(TIMEMORY_USE_CALIPER)
+#    include <caliper/timemory.hpp>
+#else
+#    include "timemory/components/caliper/backends.hpp"
+#    include "timemory/components/caliper/types.hpp"
 
 //======================================================================================//
 //
@@ -43,7 +46,7 @@ namespace tim
 {
 namespace component
 {
-struct caliper : public base<caliper, void>
+struct caliper_marker : public base<caliper, void>
 {
     // timemory component api
     using value_type = void;
@@ -55,71 +58,10 @@ struct caliper : public base<caliper, void>
     {
         return "Forwards markers to Caliper instrumentation";
     }
-    static value_type record() {}
-
-    static void global_init(storage_type*) { backend::cali::init(); }
-
-    caliper(const std::string& _channel = get_channel(),
-            const int& _attributes = get_attributes(), const std::string& _prefix = "")
-    : channel(_channel)
-    , attributes(_attributes)
-    , id(backend::cali::create_attribute(_channel, CALI_TYPE_STRING, _attributes))
-    , prefix(_prefix)
-    {}
-
-    void start() { backend::cali::begin(id, prefix.c_str()); }
-    void stop() { backend::cali::end(id); }
-
-    void set_prefix(const std::string& _prefix) { prefix = _prefix; }
-
-    //----------------------------------------------------------------------------------//
-    //
-    // Custom functions
-    //
-    //----------------------------------------------------------------------------------//
-    using attributes_t = int;
-    static std::string  get_default_channel() { return "timemory"; }
-    static std::string& get_channel()
-    {
-        static std::string _instance = get_default_channel();
-        return _instance;
-    }
-    static attributes_t get_default_attributes()
-    {
-        return (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_THREAD);
-    }
-    static attributes_t& get_attributes()
-    {
-        static attributes_t _instance = get_default_attributes();
-        return _instance;
-    }
-    static void enable_process_scope()
-    {
-        get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_PROCESS);
-    }
-    static void enable_thread_scope()
-    {
-        get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_THREAD);
-    }
-    static void enable_task_scope()
-    {
-        get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_TASK);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
-    // Member Variables
-    //
-    //----------------------------------------------------------------------------------//
-private:
-    std::string         channel    = get_channel();
-    int                 attributes = get_attributes();
-    backend::cali::id_t id =
-        backend::cali::create_attribute(channel, CALI_TYPE_STRING, attributes);
-    std::string prefix = "";
 };
-
-}  // namespace component
-}  // namespace tim
 //
 //======================================================================================//
+//
+}  // namespace component
+}  // namespace tim
+#endif

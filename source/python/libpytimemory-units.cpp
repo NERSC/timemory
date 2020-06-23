@@ -27,6 +27,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/units.hpp"
 
 //======================================================================================//
 //
@@ -53,6 +54,6 @@ generate(py::module& _pymod)
 
     return units;
 }
-};  // namespace pyunits
+}  // namespace pyunits
 //
 //======================================================================================//

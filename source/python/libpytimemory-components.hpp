@@ -31,18 +31,13 @@
 //======================================================================================//
 // disables a bunch of warnings
 //
+#include "timemory/components/types.hpp"
+#include "timemory/mpl/available.hpp"
 #include "timemory/utility/macros.hpp"
 
-#include "timemory/timemory.hpp"
 //
 #include "timemory/enum.h"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/runtime/initialize.hpp"
-#include "timemory/runtime/insert.hpp"
-#include "timemory/runtime/invoker.hpp"
-#include "timemory/runtime/properties.hpp"
-#include "timemory/utility/signals.hpp"
+#include "timemory/mpl/apply.hpp"
 
 #include "pybind11/cast.h"
 #include "pybind11/embed.h"
@@ -57,9 +52,7 @@
 //======================================================================================//
 
 namespace py = pybind11;
-using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
-using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -73,7 +66,7 @@ template <typename TupleT>
 struct construct_dict
 {
     using type = TupleT;
-    construct_dict(TupleT& _tup, py::dict& _dict)
+    construct_dict(const TupleT& _tup, py::dict& _dict)
     {
         auto _label = std::get<0>(_tup);
         if(_label.size() > 0)
@@ -94,10 +87,10 @@ struct construct_dict<std::tuple<std::string, void>>
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename... Types>
 struct dict
 {
-    static py::dict construct(std::tuple<Types...>& _tup)
+    template <typename... Types>
+    static py::dict construct(const std::tuple<Types...>& _tup)
     {
         using apply_types = std::tuple<construct_dict<Types>...>;
         py::dict _dict;
@@ -108,14 +101,6 @@ struct dict
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename... Types>
-struct dict<std::tuple<Types...>>
-{
-    static py::dict construct(std::tuple<Types...>& _tup)
-    {
-        return dict<Types...>::construct(_tup);
-    }
-};
 }  // namespace pytim
 //
 //--------------------------------------------------------------------------------------//
@@ -183,12 +168,49 @@ generate(py::module& _pymod);
 //
 //--------------------------------------------------------------------------------------//
 //
+//                                      COMPONENT_LIST
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace pycomponent_list
+{
+void
+generate(py::module& _pymod);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                      COMPONENT_BUNDLE
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace pycomponent_bundle
+{
+void
+generate(py::module& _pymod);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                      AUTO_TIMER
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace pyauto_timer
+{
+void
+generate(py::module& _pymod);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 //                                      RSS USAGE
 //
 //--------------------------------------------------------------------------------------//
 //
 namespace pyrss_usage
 {
+using namespace tim::component;
 using rss_usage_t =
     tim::component_bundle_t<TIMEMORY_API, page_rss, peak_rss, num_minor_page_faults,
                             num_major_page_faults, voluntary_context_switch,

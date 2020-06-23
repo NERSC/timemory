@@ -121,6 +121,9 @@ struct requires_json;
 template <typename T>
 struct is_component;
 
+template <typename T, typename Tag = void>
+struct api_components;
+
 template <typename T>
 struct is_gotcha;
 

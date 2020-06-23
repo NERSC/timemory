@@ -596,8 +596,8 @@ TEST_F(tuple_tests, explicit_start)
     using config_type  = typename config_t::type;
     using this_tuple_t = tim::auto_tuple_t<wall_clock, cpu_clock, cpu_util, config_t>;
 
-    auto ex_check_start_t = this_tuple_t::get_config<explicit_start>();
-    auto ex_check_stop_t  = this_tuple_t::get_config<explicit_stop>();
+    auto ex_check_start_t = this_tuple_t::variadic_config<explicit_start>::value;
+    auto ex_check_stop_t  = this_tuple_t::variadic_config<explicit_stop>::value;
 
     std::cout << "\n" << std::flush;
     std::cout << "config_t     : " << tim::demangle<config_t>() << "\n";
@@ -637,8 +637,8 @@ TEST_F(tuple_tests, auto_start)
     using this_tuple_t =
         tim::component_tuple_t<wall_clock, cpu_clock, cpu_util, config_t>;
 
-    auto ex_check_start_t = this_tuple_t::get_config<auto_start>();
-    auto ex_check_stop_t  = this_tuple_t::get_config<auto_stop>();
+    auto ex_check_start_t = this_tuple_t::variadic_config<auto_start>::value;
+    auto ex_check_stop_t  = this_tuple_t::variadic_config<auto_stop>::value;
 
     std::cout << "\n" << std::flush;
     std::cout << "config_t     : " << tim::demangle<config_t>() << "\n";

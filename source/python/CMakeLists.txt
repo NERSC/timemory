@@ -31,12 +31,21 @@ file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.cpp)
 
+if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER AND TIMEMORY_BUILD_PYTHON_CUDA)
+    set_source_files_properties(${pysources} PROPERTIES
+        LANGUAGE CUDA
+        LINKER_LANGUAGE CUDA)
+endif()
+
 add_library(libpytimemory MODULE ${pysources} ${pyheaders} ${pybind_headers})
+
+target_compile_definitions(libpytimemory PRIVATE TIMEMORY_PYBIND11_SOURCE)
 
 target_include_directories(libpytimemory SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
 
 target_link_libraries(libpytimemory PRIVATE
+    pybind11::module
     timemory-python
     timemory-headers
     timemory-cxx-shared
@@ -45,7 +54,7 @@ target_link_libraries(libpytimemory PRIVATE
     timemory-python-compile-options
     timemory-mpip-library
     timemory-ompt-library
-    PRIVATE pybind11::module)
+    timemory-default-visibility)
 
 if(TIMEMORY_USE_CUDA)
     set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)
@@ -67,7 +76,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set(PYTHON_SUBMODULE_FOLDERS
-    ert gperftools mpi_support plotting profiler roofline util mpi bundle)
+    ert gperftools mpi_support plotting profiler roofline util mpi bundle components)
 
 set(PYTHON_SUBMODULE_FILES
     common options signals units)
