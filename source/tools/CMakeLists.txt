@@ -29,7 +29,7 @@ endif()
 
 add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
 add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${TIMEMORY_BUILD_TOOLS})
-add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" ${TIMEMORY_BUILD_TOOLS}) # still dev
+add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF) # still dev
 add_option(TIMEMORY_BUILD_DYNINST_TOOLS "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
 add_option(TIMEMORY_BUILD_MPIP_LIBRARY "Build the mpiP library" ${_MPIP})
 add_option(TIMEMORY_BUILD_OMPT_LIBRARY "Build the OMPT library" ${_OMPT})

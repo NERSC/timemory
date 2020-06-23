@@ -215,6 +215,8 @@ void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
 
 void scatter_gather(int num_elements_per_proc)
 {
+    if(num_elements_per_proc == 0) return;
+
     TIMEMORY_BLANK_MARKER(auto_hybrid_t, "scatter_gatther_", num_elements_per_proc);
     (void) num_elements_per_proc;
     // printf("Number of elements per process: %i\n", num_elements_per_proc);
