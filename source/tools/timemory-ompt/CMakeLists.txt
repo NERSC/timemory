@@ -26,6 +26,7 @@ foreach(_TYPE ${LIB_TYPES})
     set(TARGET_NAME timemory-ompt-${_LC_TYPE})
 
     add_library(${TARGET_NAME} ${_TYPE} ${PROJECT_SOURCE_DIR}/timemory-ompt.cpp)
+    add_library(timemory::${TARGET_NAME} ALIAS ${TARGET_NAME})
 
     # public link targets
     target_link_libraries(${TARGET_NAME} PUBLIC

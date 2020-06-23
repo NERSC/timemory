@@ -13,6 +13,8 @@ unset(CMAKE_CXX_CLANG_TIDY)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
 add_library(timemory-python-compile-options INTERFACE)
+add_library(${PROJECT_NAME}::timemory-python-compile-options ALIAS
+    timemory-python-compile-options)
 add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-compile-options)
 add_cxx_flag_if_avail("-Wno-deprecated-declarations" timemory-python-compile-options)
 add_cxx_flag_if_avail("-Wno-unused-but-set-parameter" timemory-python-compile-options)
@@ -38,7 +40,7 @@ if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER AND TIMEMORY_BUILD_PYTHON_CUDA)
 endif()
 
 add_library(libpytimemory MODULE ${pysources} ${pyheaders} ${pybind_headers})
-
+add_library(${PROJECT_NAME}::libpytimemory ALIAS libpytimemory)
 target_compile_definitions(libpytimemory PRIVATE TIMEMORY_PYBIND11_SOURCE)
 
 target_include_directories(libpytimemory SYSTEM PUBLIC
