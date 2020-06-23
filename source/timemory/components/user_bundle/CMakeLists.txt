@@ -6,7 +6,7 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER)
     set_source_files_properties(${source_files} PROPERTIES
-        LANGUAGE CUDA
+        # LANGUAGE CUDA
         LINKER_LANGUAGE CUDA)
 endif()
 

@@ -2,7 +2,12 @@
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #
-if(TIMEMORY_BUILD_TIMEM)
+if(NOT TIMEMORY_BUILD_TIMEM)
+  set(_EXCLUDE EXCLUDE_FROM_ALL)
+  set(_OPTIONAL OPTIONAL)
+endif()
+
+# if(TIMEMORY_BUILD_TIMEM)
     set(_STATIC_LIB)
     foreach(_TARG hash settings manager timing-component rusage-component)
         if(TARGET timemory-${_TARG}-static AND NOT TIMEMORY_USE_COVERAGE)
@@ -33,7 +38,7 @@ if(TIMEMORY_BUILD_TIMEM)
 
     endif()
 
-    add_executable(timem timem.cpp timem.hpp)
+    add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
 
     target_link_libraries(timem PRIVATE
         timemory-compile-options
@@ -48,6 +53,9 @@ if(TIMEMORY_BUILD_TIMEM)
         INSTALL_RPATH_USE_LINK_PATH ON)
 
     # timem installation
-    install(TARGETS timem DESTINATION bin)
+    install(TARGETS timem
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+        COMPONENT   tools
+        ${_OPTIONAL})
 
-endif()
+# endif()

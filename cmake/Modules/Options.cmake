@@ -10,6 +10,8 @@ include_guard(DIRECTORY)
 include(MacroUtilities)
 include(CheckLanguage)
 
+set(TIMEMORY_REQUIRE_PACKAGES ON CACHE BOOL "Disable auto-detection and explicitly require packages")
+
 function(DEFINE_DEFAULT_OPTION VAR VAL)
     if(TIMEMORY_REQUIRE_PACKAGES)
         set(${VAR} OFF PARENT_SCOPE)
@@ -26,7 +28,7 @@ set(_BUILD_OPT OFF)
 set(_BUILD_CALIPER ON)
 set(_NON_APPLE_UNIX OFF)
 set(_DEFAULT_BUILD_SHARED ON)
-set(_DEFAULT_BUILD_STATIC ON)
+set(_DEFAULT_BUILD_STATIC OFF)
 
 set(SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
 set(TIMEMORY_gperftools_COMPONENTS "profiler" CACHE STRING "gperftools components")
@@ -56,23 +58,19 @@ if(WIN32)
     set(_BUILD_CALIPER OFF)
 endif()
 
-# Check if CUDA can be enabled
-# if(NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_PACKAGES)
-    if(NOT DEFINED TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUDA)
-        set(_USE_CUDA ON)
-        check_language(CUDA)
-        if(CMAKE_CUDA_COMPILER)
-            enable_language(CUDA)
-        else()
-            message(STATUS "No CUDA support")
-            set(_USE_CUDA OFF)
-        endif()
+# Check if CUDA can be enabled if CUDA is enabled or in auto-detect mode
+if(TIMEMORY_USE_CUDA OR (NOT DEFINED TIMEMORY_USE_CUDA AND NOT TIMEMORY_REQUIRE_PACKAGES))
+    set(_USE_CUDA ON)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        enable_language(CUDA)
     else()
+        message(STATUS "No CUDA support")
         set(_USE_CUDA OFF)
     endif()
-# else()
-#    set(_USE_CUDA OFF)
-# endif()
+else()
+    set(_USE_CUDA OFF)
+endif()
 
 # if already defined, set default for shared to OFF
 if(DEFINED BUILD_STATIC_LIBS AND BUILD_STATIC_LIBS)
@@ -191,13 +189,13 @@ add_option(TIMEMORY_BUILD_GOOGLE_TEST
 add_option(TIMEMORY_BUILD_EXAMPLES
     "Build the examples"  ${TIMEMORY_BUILD_TESTING})
 add_option(TIMEMORY_BUILD_C
-    "Build the C compatible library" ${${PROJECT_NAME}_MASTER_PROJECT})
+    "Build the C compatible library" OFF)
 add_option(TIMEMORY_BUILD_PYTHON
-    "Build Python binds for ${PROJECT_NAME}" ${${PROJECT_NAME}_MASTER_PROJECT})
+    "Build Python binds for ${PROJECT_NAME}" OFF)
 add_option(TIMEMORY_BUILD_LTO
     "Enable link-time optimizations in build" OFF)
 add_option(TIMEMORY_BUILD_TOOLS
-    "Enable building tools" ${${PROJECT_NAME}_MASTER_PROJECT})
+    "Enable building tools" OFF)
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" ${_BUILD_OPT})
 add_option(TIMEMORY_BUILD_CALIPER
@@ -369,3 +367,12 @@ foreach(_VAR ${DEFAULT_OPTION_VARIABLES})
     unset(${_VAR})
     # message(STATUS "Result: ${_VAR} :: ${${_VAR}}")
 endforeach()
+
+# some logic depends on this not being set
+if(NOT TIMEMORY_USE_CUDA)
+    unset(CMAKE_CUDA_COMPILER CACHE)
+endif()
+
+if(TIMEMORY_USE_PYTHON)
+    set(TIMEMORY_BUILD_PYTHON ON)
+endif()
