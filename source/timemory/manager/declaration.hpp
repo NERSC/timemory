@@ -426,7 +426,7 @@ manager::do_clear()
 
     auto ret = storage_type::noninit_instance();
     if(ret)
-        ret->data().reset();
+        ret->reset();
 
     if(f_debug())
         printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",

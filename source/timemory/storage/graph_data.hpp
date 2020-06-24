@@ -145,7 +145,7 @@ public:
 
     inline void reset()
     {
-        m_graph.clear();
+        m_graph.erase_children(m_head);
         m_depth   = 0;
         m_current = m_head;
     }
