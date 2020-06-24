@@ -14,6 +14,8 @@
 
 [timemory Testing Dashboard (CDash)](https://cdash.nersc.gov/index.php?project=TiMemory)
 
+[timemory Tutorials](https://github.com/NERSC/timemory-tutorials)
+
 |        |                                                   |
 | ------ | ------------------------------------------------- |
 | GitHub | `git clone https://github.com/NERSC/timemory.git` |
@@ -112,6 +114,8 @@ is desired, it is arbitrarily easy to create and this new component will have al
 features of `wall_clock` and `papi_vector` component:
 
 ```cpp
+// This "component" is for conceptual demonstration only
+// It is not intended to be copy+pasted
 struct flop_rate
 {
 private:
