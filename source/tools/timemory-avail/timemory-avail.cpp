@@ -59,11 +59,37 @@ int  padding      = 4;
 
 //--------------------------------------------------------------------------------------//
 
+struct unknown
+{};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type, bool>
+struct component_value_type;
+
+template <typename Type>
+struct component_value_type<Type, true>
+{
+    using type = typename Type::value_type;
+};
+
+template <typename Type>
+struct component_value_type<Type, false>
+{
+    using type = unknown;
+};
+
+template <typename Type>
+using component_value_type_t =
+    typename component_value_type<Type, tim::trait::is_available<Type>::value>::type;
+
+//--------------------------------------------------------------------------------------//
+
 template <typename Type>
 struct get_availability
 {
     using this_type  = get_availability<Type>;
-    using value_type = typename Type::value_type;
+    using value_type = component_value_type_t<Type>;
 
     static info_type get_info()
     {
