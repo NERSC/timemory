@@ -22,28 +22,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#if !defined(TIMEMORY_PYUNITS_SOURCE)
+#    define TIMEMORY_PYUNITS_SOURCE
+#endif
 
-#include "timemory/components/macros.hpp"
-#include "timemory/components/rusage/components.hpp"
-#include "timemory/components/rusage/extern/base.hpp"
-#include "timemory/components/rusage/extern/operations.hpp"
-#include "timemory/components/rusage/extern/storage.hpp"
+#include "libpytimemory-components.hpp"
+#include "timemory/units.hpp"
 
 //======================================================================================//
 //
-namespace tim
+namespace pyunits
 {
-namespace component
+py::module
+generate(py::module& _pymod)
 {
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_msg_sent>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::num_msg_sent, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::num_msg_sent, num_msg_sent)
+    py::module units = _pymod.def_submodule("units", "units for timing and memory");
+
+    units.attr("psec")     = tim::units::psec;
+    units.attr("nsec")     = tim::units::nsec;
+    units.attr("usec")     = tim::units::usec;
+    units.attr("msec")     = tim::units::msec;
+    units.attr("csec")     = tim::units::csec;
+    units.attr("dsec")     = tim::units::dsec;
+    units.attr("sec")      = tim::units::sec;
+    units.attr("byte")     = tim::units::byte;
+    units.attr("kilobyte") = tim::units::kilobyte;
+    units.attr("megabyte") = tim::units::megabyte;
+    units.attr("gigabyte") = tim::units::gigabyte;
+    units.attr("terabyte") = tim::units::terabyte;
+    units.attr("petabyte") = tim::units::petabyte;
+
+    return units;
+}
+}  // namespace pyunits
 //
 //======================================================================================//

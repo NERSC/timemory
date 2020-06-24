@@ -110,7 +110,6 @@ public:
 
     inline void clear()
     {
-        m_graph.erase_children(m_head);
         m_graph.clear();
         m_has_head  = false;
         m_depth     = 0;
@@ -146,7 +145,7 @@ public:
 
     inline void reset()
     {
-        m_graph.erase_children(m_head);
+        m_graph.clear();
         m_depth   = 0;
         m_current = m_head;
     }

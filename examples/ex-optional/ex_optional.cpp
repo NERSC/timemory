@@ -215,7 +215,10 @@ void allreduce(const vector_t<long>& sendbuf, vector_t<long>& recvbuf)
 
 void scatter_gather(int num_elements_per_proc)
 {
+    if(num_elements_per_proc == 0) return;
+
     TIMEMORY_BLANK_MARKER(auto_hybrid_t, "scatter_gatther_", num_elements_per_proc);
+    (void) num_elements_per_proc;
     // printf("Number of elements per process: %i\n", num_elements_per_proc);
 
 #if defined(TIMEMORY_USE_MPI)
@@ -256,7 +259,7 @@ void scatter_gather(int num_elements_per_proc)
     }
 
     if(world_rank == master_rank)
-        printf("\nMaster rank: %i, Number of elements per process: %i\n", master_rank,
+        printf("Master rank: %i, Number of elements per process: %i\n", master_rank,
                num_elements_per_proc);
 
     // Create a random array of elements on the root process. Its total

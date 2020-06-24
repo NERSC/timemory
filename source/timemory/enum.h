@@ -60,7 +60,7 @@
 /// \brief The number of enumerated components defined by timemory
 //
 #if !defined(TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE)
-#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 68
+#    define TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE 64
 #endif
 //
 /// \enum TIMEMORY_NATIVE_COMPONENT
@@ -69,76 +69,96 @@
 //
 enum TIMEMORY_NATIVE_COMPONENT
 {
-    ALLINEA_MAP              = 0,
-    CALIPER                  = 1,
-    CPU_CLOCK                = 2,
-    CPU_ROOFLINE_DP_FLOPS    = 3,
-    CPU_ROOFLINE_FLOPS       = 4,
-    CPU_ROOFLINE_SP_FLOPS    = 5,
-    CPU_UTIL                 = 6,
-    CRAYPAT_COUNTERS         = 7,
-    CRAYPAT_FLUSH_BUFFER     = 8,
-    CRAYPAT_HEAP_STATS       = 9,
-    CRAYPAT_RECORD           = 10,
-    CRAYPAT_REGION           = 11,
-    CUDA_EVENT               = 12,
-    CUDA_PROFILER            = 13,
-    CUPTI_ACTIVITY           = 14,
-    CUPTI_COUNTERS           = 15,
-    CURRENT_PEAK_RSS         = 16,
-    DATA_RSS                 = 17,
-    GPERFTOOLS_CPU_PROFILER  = 18,
-    GPERFTOOLS_HEAP_PROFILER = 19,
-    GPU_ROOFLINE_DP_FLOPS    = 20,
-    GPU_ROOFLINE_FLOPS       = 21,
-    GPU_ROOFLINE_HP_FLOPS    = 22,
-    GPU_ROOFLINE_SP_FLOPS    = 23,
-    KERNEL_MODE_TIME         = 24,
-    LIKWID_MARKER            = 25,
-    LIKWID_NVMARKER          = 26,
-    MALLOC_GOTCHA            = 27,
-    MONOTONIC_CLOCK          = 28,
-    MONOTONIC_RAW_CLOCK      = 29,
-    NUM_IO_IN                = 30,
-    NUM_IO_OUT               = 31,
-    NUM_MAJOR_PAGE_FAULTS    = 32,
-    NUM_MINOR_PAGE_FAULTS    = 33,
-    NUM_MSG_RECV             = 34,
-    NUM_MSG_SENT             = 35,
-    NUM_SIGNALS              = 36,
-    NUM_SWAP                 = 37,
-    NVTX_MARKER              = 38,
-    OMPT_HANDLE              = 39,
-    PAGE_RSS                 = 40,
-    PAPI_ARRAY               = 41,
-    PAPI_VECTOR              = 42,
-    PEAK_RSS                 = 43,
-    PRIORITY_CONTEXT_SWITCH  = 44,
-    PROCESS_CPU_CLOCK        = 45,
-    PROCESS_CPU_UTIL         = 46,
-    READ_BYTES               = 47,
-    STACK_RSS                = 48,
-    SYS_CLOCK                = 49,
-    TAU_MARKER               = 50,
-    THREAD_CPU_CLOCK         = 51,
-    THREAD_CPU_UTIL          = 52,
-    TRIP_COUNT               = 53,
-    USER_CLOCK               = 54,
-    USER_GLOBAL_BUNDLE       = 55,
-    USER_LIST_BUNDLE         = 56,
-    USER_MODE_TIME           = 57,
-    USER_MPIP_BUNDLE         = 58,
-    USER_OMPT_BUNDLE         = 59,
-    USER_TUPLE_BUNDLE        = 60,
-    VIRTUAL_MEMORY           = 61,
-    VOLUNTARY_CONTEXT_SWITCH = 62,
-    VTUNE_EVENT              = 63,
-    VTUNE_FRAME              = 64,
-    VTUNE_PROFILER           = 65,
-    WALL_CLOCK               = 66,
-    WRITTEN_BYTES            = 67,
+    ALLINEA_MAP = 0,
+    CALIPER_MARKER,
+    CALIPER_CONFIG,
+    CALIPER_LOOP_MARKER,
+    CPU_CLOCK,
+    CPU_ROOFLINE_DP_FLOPS,
+    CPU_ROOFLINE_FLOPS,
+    CPU_ROOFLINE_SP_FLOPS,
+    CPU_UTIL,
+    CRAYPAT_COUNTERS,
+    CRAYPAT_FLUSH_BUFFER,
+    CRAYPAT_HEAP_STATS,
+    CRAYPAT_RECORD,
+    CRAYPAT_REGION,
+    CUDA_EVENT,
+    CUDA_PROFILER,
+    CUPTI_ACTIVITY,
+    CUPTI_COUNTERS,
+    CURRENT_PEAK_RSS,
+    GPERFTOOLS_CPU_PROFILER,
+    GPERFTOOLS_HEAP_PROFILER,
+    GPU_ROOFLINE_DP_FLOPS,
+    GPU_ROOFLINE_FLOPS,
+    GPU_ROOFLINE_HP_FLOPS,
+    GPU_ROOFLINE_SP_FLOPS,
+    KERNEL_MODE_TIME,
+    LIKWID_MARKER,
+    LIKWID_NVMARKER,
+    MALLOC_GOTCHA,
+    MONOTONIC_CLOCK,
+    MONOTONIC_RAW_CLOCK,
+    NUM_IO_IN,
+    NUM_IO_OUT,
+    NUM_MAJOR_PAGE_FAULTS,
+    NUM_MINOR_PAGE_FAULTS,
+    NVTX_MARKER,
+    OMPT_HANDLE,
+    PAGE_RSS,
+    PAPI_ARRAY,
+    PAPI_VECTOR,
+    PEAK_RSS,
+    PRIORITY_CONTEXT_SWITCH,
+    PROCESS_CPU_CLOCK,
+    PROCESS_CPU_UTIL,
+    READ_BYTES,
+    SYS_CLOCK,
+    TAU_MARKER,
+    THREAD_CPU_CLOCK,
+    THREAD_CPU_UTIL,
+    TRIP_COUNT,
+    USER_CLOCK,
+    USER_GLOBAL_BUNDLE,
+    USER_LIST_BUNDLE,
+    USER_MODE_TIME,
+    USER_MPIP_BUNDLE,
+    USER_OMPT_BUNDLE,
+    USER_TUPLE_BUNDLE,
+    VIRTUAL_MEMORY,
+    VOLUNTARY_CONTEXT_SWITCH,
+    VTUNE_EVENT,
+    VTUNE_FRAME,
+    VTUNE_PROFILER,
+    WALL_CLOCK,
+    WRITTEN_BYTES,
     TIMEMORY_USER_COMPONENT_ENUM TIMEMORY_COMPONENTS_END =
         (TIMEMORY_NATIVE_COMPONENT_ENUM_SIZE + TIMEMORY_USER_COMPONENT_ENUM_SIZE)
 };
-
+//
+//--------------------------------------------------------------------------------------//
+//
 typedef int TIMEMORY_COMPONENT;
+//
+#if !defined(CALIPER)
+#    define CALIPER CALIPER_MARKER
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+enum TIMEMORY_OPERATION
+{
+    TIMEMORY_CONSTRUCT = 0,
+    TIMEMORY_START,
+    TIMEMORY_STOP,
+    TIMEMORY_STORE,
+    TIMEMORY_RECORD,
+    TIMEMORY_MEASURE,
+    TIMEMORY_MARK_BEGIN,
+    TIMEMORY_MARK_END,
+    TIMEMORY_OPERATION_END
+};
+//
+//--------------------------------------------------------------------------------------//
+//

@@ -255,9 +255,6 @@ get<Type, true>::get(storage_type& data, result_type& ret)
             }
         }
 
-        if(!settings::collapse_threads() || _thread_scope_only)
-            return _list;
-
         result_type _combined;
         operation::finalize::merge<Type, true>(_combined, _list);
         return _combined;

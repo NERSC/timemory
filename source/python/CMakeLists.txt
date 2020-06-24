@@ -13,6 +13,8 @@ unset(CMAKE_CXX_CLANG_TIDY)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
 add_library(timemory-python-compile-options INTERFACE)
+add_library(${PROJECT_NAME}::timemory-python-compile-options ALIAS
+    timemory-python-compile-options)
 add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-compile-options)
 add_cxx_flag_if_avail("-Wno-deprecated-declarations" timemory-python-compile-options)
 add_cxx_flag_if_avail("-Wno-unused-but-set-parameter" timemory-python-compile-options)
@@ -28,13 +30,24 @@ file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 #----------------------------------------------------------------------------
 # PyBind11
 #
-add_library(libpytimemory MODULE ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.hpp ${pybind_headers})
+file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.hpp)
+file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.cpp)
+
+if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER AND TIMEMORY_BUILD_PYTHON_CUDA)
+    set_source_files_properties(${pysources} PROPERTIES
+        LANGUAGE CUDA
+        LINKER_LANGUAGE CUDA)
+endif()
+
+add_library(libpytimemory MODULE ${pysources} ${pyheaders} ${pybind_headers})
+add_library(${PROJECT_NAME}::libpytimemory ALIAS libpytimemory)
+target_compile_definitions(libpytimemory PRIVATE TIMEMORY_PYBIND11_SOURCE)
 
 target_include_directories(libpytimemory SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
 
 target_link_libraries(libpytimemory PRIVATE
+    pybind11::module
     timemory-python
     timemory-headers
     timemory-cxx-shared
@@ -43,7 +56,7 @@ target_link_libraries(libpytimemory PRIVATE
     timemory-python-compile-options
     timemory-mpip-library
     timemory-ompt-library
-    PRIVATE pybind11::module)
+    timemory-default-visibility)
 
 if(TIMEMORY_USE_CUDA)
     set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)
@@ -65,7 +78,8 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set(PYTHON_SUBMODULE_FOLDERS
-    ert gperftools mpi_support plotting profiler roofline util mpi bundle)
+    api ert gperftools mpi mpi_support plotting profiler roofline
+    util bundle component hardware_counters)
 
 set(PYTHON_SUBMODULE_FILES
     common options signals units)
@@ -74,7 +88,7 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
     set(BINARY_DIR ${CMAKE_BINARY_DIR}/timemory/${_SUBMODULE})
     file(GLOB _FILES ${SOURCE_DIR}/*.py)
-    
+
     # copy over the python file
     foreach(_FILE ${_FILES})
         get_filename_component(_FILE "${_FILE}" NAME_WE)
@@ -83,10 +97,10 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
                 ${BINARY_DIR}/${_FILE}.py @ONLY)
             install(FILES ${BINARY_DIR}/${_FILE}.py
                 DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/${_SUBMODULE}/)
-            
+
         endif()
     endforeach()
-          
+
     # copy over the init file
     if(EXISTS ${SOURCE_DIR}/__init__.py)
         configure_file(${SOURCE_DIR}/__init__.py

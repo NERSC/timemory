@@ -244,6 +244,7 @@ function(find_package_interface)
 
     if(NOT TARGET ${PACKAGE_INTERFACE})
         add_library(${PACKAGE_INTERFACE} INTERFACE)
+        add_library(${PROJECT_NAME}::${PACKAGE_INTERFACE} ALIAS ${PACKAGE_INTERFACE})
     endif()
     
     if("${PACKAGE_DESCRIPTION}" STREQUAL "")
@@ -593,7 +594,7 @@ if(TIMEMORY_USE_PYTHON)
     endif()
 
     # make sure the library version is an exact match for the Python executable
-    find_package(PythonLibs "${TIMEMORY_PYTHON_VERSION}" ${TIMEMORY_FIND_REQUIREMENT})
+    find_package(PythonLibs ${TIMEMORY_PYTHON_VERSION} ${TIMEMORY_FIND_REQUIREMENT})
 
     # if either not found, disable
     if(NOT PythonInterp_FOUND OR NOT PythonLibs_FOUND)

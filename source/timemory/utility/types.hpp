@@ -32,6 +32,7 @@
 
 #include <array>
 #include <bitset>
+#include <functional>
 #include <initializer_list>
 #include <memory>
 #include <ostream>
@@ -176,6 +177,12 @@ namespace mpl
 /// \brief a generic type for indicating that function call or constructor should be
 /// as lightweight as possible.
 struct lightweight
+{};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Tp>
+struct piecewise_select
 {};
 //
 //--------------------------------------------------------------------------------------//
@@ -448,6 +455,46 @@ operator+(config _lhs, config _rhs)
 {
     return either(_lhs, _rhs, std::make_index_sequence<scope_count>{});
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class tim::scope::destructor
+/// \brief provides an object which can be returned from functions that will execute
+/// the lambda provided during construction when it is destroyed
+///
+struct destructor
+{
+    template <typename FuncT>
+    destructor(FuncT&& _func)
+    : m_functor(std::forward<FuncT>(_func))
+    {}
+
+    // delete copy operations
+    destructor(const destructor&) = delete;
+    destructor& operator=(const destructor&) = delete;
+
+    // allow move operations
+    destructor(destructor&& rhs)
+    : m_functor(std::move(rhs.m_functor))
+    {
+        rhs.m_functor = []() {};
+    }
+
+    destructor& operator=(destructor&& rhs)
+    {
+        if(this != &rhs)
+        {
+            m_functor     = std::move(rhs.m_functor);
+            rhs.m_functor = []() {};
+        }
+        return *this;
+    }
+
+    ~destructor() { m_functor(); }
+
+private:
+    std::function<void()> m_functor = []() {};
+};
 //
 //--------------------------------------------------------------------------------------//
 //

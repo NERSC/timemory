@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/backends/device.hpp"
+#include "timemory/backends/hardware_counters.hpp"
 #include "timemory/backends/types/cupti.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/macros.hpp"
@@ -62,8 +63,7 @@ using string_t = std::string;
 template <typename KeyT, typename MappedT>
 using map_t            = std::map<KeyT, MappedT>;
 using strvec_t         = std::vector<string_t>;
-using boolvec_t        = std::vector<bool>;
-using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
+using hwcounter_info_t = std::vector<hardware_counters::info>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -1750,38 +1750,32 @@ tim::cupti::available_events_info(CUdevice device)
         size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
 
         char eventName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
-        char eventShortDesc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
-        char eventLongDesc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
 
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME,
                                                    &ssize, eventName));
+        if(ssize < TIMEMORY_CUPTI_PROFILER_NAME_SHORT)
+            eventName[ssize] = '\0';
 
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
-            eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &lsize, eventShortDesc));
+            eventIdArray[i], CUPTI_EVENT_ATTR_SHORT_DESCRIPTION, &lsize, short_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            short_desc[lsize] = '\0';
 
-        auto as_string = [](char* cstr, size_t len) {
-            std::stringstream ss;
-            for(size_t ii = 0; ii < len; ++ii)
-            {
-                if(cstr[ii] == '\0')
-                    ss << ' ';
-                else
-                    ss << cstr[ii];
-            }
-            return ss.str();
-        };
-        std::string short_desc = as_string(eventShortDesc, lsize);
-        lsize                  = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
-
+        lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
         TIMEMORY_CUPTI_CALL(cuptiEventGetAttribute(
-            eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &lsize, eventLongDesc));
+            eventIdArray[i], CUPTI_EVENT_ATTR_LONG_DESCRIPTION, &lsize, long_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            long_desc[lsize] = '\0';
 
-        std::string long_desc = as_string(eventLongDesc, lsize);
-
-        std::get<0>(event_info).push_back(eventName);
-        std::get<1>(event_info).push_back(true);
-        std::get<2>(event_info).push_back(short_desc);
-        std::get<3>(event_info).push_back(long_desc);
+        string_t _sym   = eventName;
+        string_t _pysym = "cuda_" + _sym;
+        for(auto& itr : _pysym)
+            itr = tolower(itr);
+        event_info.push_back(
+            hardware_counters::info(true, hardware_counters::interface::cupti, i, 0, _sym,
+                                    _pysym, short_desc, long_desc));
     }
 
     free(domainIdArray);
@@ -1814,63 +1808,53 @@ tim::cupti::available_metrics_info(CUdevice device)
     for(uint32_t i = 0; i < numMetric; i++)
     {
         char metricName[TIMEMORY_CUPTI_PROFILER_NAME_SHORT];
-        char metricShortDesc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
-        char metricLongDesc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char short_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
+        char long_desc[TIMEMORY_CUPTI_PROFILER_NAME_LONG];
 
         size_t ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
         size_t lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
-
-        auto as_string = [](char* cstr, size_t len) {
-            std::stringstream ss;
-            len = std::min<size_t>(len, strlen(cstr));
-            for(size_t ii = 0; ii < len; ++ii)
-            {
-                if(cstr[ii] == '\0')
-                    ss << ' ';
-                else
-                    ss << cstr[ii];
-            }
-            return ss.str();
-        };
-
-        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
-            metricIdArray[i], CUPTI_METRIC_ATTR_NAME, &ssize, (void*) &metricName));
-
-        std::get<0>(metric_info).push_back(metricName);
-
-        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
-                                                    CUPTI_METRIC_ATTR_SHORT_DESCRIPTION,
-                                                    &lsize, (void*) &metricShortDesc));
-
-        auto short_desc = as_string(metricShortDesc, lsize);
-        std::get<2>(metric_info).push_back(short_desc);
-        lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
-
-        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
-                                                    CUPTI_METRIC_ATTR_LONG_DESCRIPTION,
-                                                    &lsize, (void*) &metricLongDesc));
-
-        auto long_desc = as_string(metricLongDesc, lsize);
-        std::get<3>(metric_info).push_back(long_desc);
 
         ssize = sizeof(CUpti_MetricValueKind);
         TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
             metricIdArray[i], CUPTI_METRIC_ATTR_VALUE_KIND, &ssize, (void*) &metricKind));
 
+        ssize = TIMEMORY_CUPTI_PROFILER_NAME_SHORT;
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(
+            metricIdArray[i], CUPTI_METRIC_ATTR_NAME, &ssize, (void*) &metricName));
+        if(ssize < TIMEMORY_CUPTI_PROFILER_NAME_SHORT)
+            metricName[ssize] = '\0';
+
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
+                                                    CUPTI_METRIC_ATTR_SHORT_DESCRIPTION,
+                                                    &lsize, (void*) &short_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            short_desc[lsize] = '\0';
+
+        lsize = TIMEMORY_CUPTI_PROFILER_NAME_LONG;
+        TIMEMORY_CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
+                                                    CUPTI_METRIC_ATTR_LONG_DESCRIPTION,
+                                                    &lsize, (void*) &long_desc));
+        if(lsize < TIMEMORY_CUPTI_PROFILER_NAME_LONG)
+            long_desc[lsize] = '\0';
+
+        bool _avail = true;
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
-            std::get<1>(metric_info).push_back(false);
-
+            _avail = false;
             if(settings::verbose() > 2 && settings::debug())
                 printf("Metric %s cannot be profiled as metric requires GPU"
                        "time duration for kernel run.\n",
                        metricName);
         }
-        else
-        {
-            std::get<1>(metric_info).push_back(true);
-        }
+
+        string_t _sym   = metricName;
+        string_t _pysym = "cuda_" + _sym;
+        for(auto& itr : _pysym)
+            itr = tolower(itr);
+        metric_info.push_back(
+            hardware_counters::info(_avail, hardware_counters::interface::cupti, i, 0,
+                                    _sym, _pysym, short_desc, long_desc));
     }
     free(metricIdArray);
     return metric_info;

@@ -93,24 +93,20 @@ struct craypat_region
 
     void start()
     {
-        if(m_label == nullptr)
-            return;
         tracker_type::start();
-        backend::craypat::region_begin(tracker_type::m_tot, m_label);
+        backend::craypat::region_begin(tracker_type::m_tot, m_label.c_str());
     }
 
     void stop()
     {
-        if(m_label == nullptr)
-            return;
         backend::craypat::region_end(tracker_type::m_tot);
         tracker_type::stop();
     }
 
-    void set_prefix(const char* _label) { m_label = _label; }
+    void set_prefix(const std::string& _label) { m_label = _label; }
 
 private:
-    const char* m_label = nullptr;
+    std::string m_label = {};
 };
 //
 //--------------------------------------------------------------------------------------//

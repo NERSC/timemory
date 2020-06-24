@@ -663,9 +663,8 @@ struct apply<void>
     template <typename Access, typename Tuple, size_t... Idx, typename... Args>
     static inline void access_fold(Tuple&& _t, index_sequence<Idx...>, Args&&... _args)
     {
-        TIMEMORY_FOLD_EXPRESSION(Access_t<Idx, Access>(
-            std::forward<decltype(std::get<Idx>(_t))>(std::get<Idx>(_t)),
-            std::forward<Args>(_args)...));
+        TIMEMORY_FOLD_EXPRESSION(
+            Access_t<Idx, Access>(std::get<Idx>(_t), std::forward<Args>(_args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -678,6 +677,25 @@ struct apply<void>
         static_assert(N == Nt, "Cannot fold Access from Tuple because sizes differ");
         access_fold<Access>(std::forward<Tuple>(__t), std::make_index_sequence<N>{},
                             std::forward<Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename Access, size_t... Idx, typename... Args>
+    static inline auto get_fold(index_sequence<Idx...>, Args&&... _args)
+    {
+        return std::make_tuple(
+            Access_t<Idx, Access>::get(std::forward<Args>(_args)...)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename Access, typename... Args>
+    static inline auto get(Args&&... __args)
+    {
+        constexpr auto N = std::tuple_size<decay_t<Access>>::value;
+        return get_fold<Access>(std::make_index_sequence<N>{},
+                                std::forward<Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//

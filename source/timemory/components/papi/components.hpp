@@ -1210,13 +1210,19 @@ public:
         return ss.str();
     }
 
-    template <typename Tp = double>
-    std::vector<Tp> get() const
+    template <typename Lhs, typename Rhs, size_t N, size_t... Idx>
+    static void convert(std::array<Lhs, N>& lhs, const std::array<Rhs, N>& rhs,
+                        std::index_sequence<Idx...>)
     {
-        std::vector<Tp> values;
-        auto&           _data = (is_transient) ? accum : value;
-        for(auto& itr : _data)
-            values.push_back(itr);
+        TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(lhs) =
+                                     static_cast<Lhs>(std::get<Idx>(rhs)));
+    }
+    template <typename Tp = double>
+    auto get() const
+    {
+        std::array<Tp, num_events> values;
+        auto&                      _data = (is_transient) ? accum : value;
+        convert(values, _data, std::make_index_sequence<num_events>{});
         return values;
     }
 

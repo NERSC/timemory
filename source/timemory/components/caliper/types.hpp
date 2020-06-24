@@ -33,32 +33,36 @@
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-//
-#include "timemory/components/opaque.hpp"
 
 //======================================================================================//
 //
-TIMEMORY_DECLARE_COMPONENT(caliper)
+TIMEMORY_DEFINE_API(caliper)
 //
-//======================================================================================//
+TIMEMORY_DECLARE_COMPONENT(caliper_config)
+TIMEMORY_DECLARE_COMPONENT(caliper_marker)
+TIMEMORY_DECLARE_COMPONENT(caliper_loop_marker)
 //
-//                              REQUIRES PREFIX
+// deprecated
+//
+TIMEMORY_COMPONENT_ALIAS(caliper, caliper_marker)
+//
+TIMEMORY_DECLARE_API_COMPONENTS(api::caliper, component::caliper_marker,
+                                component::caliper_config, component::caliper_loop_marker)
 //
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(requires_prefix, component::caliper, true_type)
-
-//--------------------------------------------------------------------------------------//
 //
-//                              IS AVAILABLE
-//
-//--------------------------------------------------------------------------------------//
-
 #if !defined(TIMEMORY_USE_CALIPER)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper_marker, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper_config, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::caliper_loop_marker, false_type)
 #endif
-
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(caliper, CALIPER, "caliper", "cali")
+TIMEMORY_PROPERTY_SPECIALIZATION(caliper_marker, CALIPER, "caliper_marker", "caliper",
+                                 "cali")
+TIMEMORY_PROPERTY_SPECIALIZATION(caliper_config, CALIPER_CONFIG, "caliper_config", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(caliper_loop_marker, CALIPER_LOOP_MARKER,
+                                 "caliper_loop_marker", "")
+//
+//======================================================================================//

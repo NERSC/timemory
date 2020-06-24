@@ -510,12 +510,6 @@ public:
     /// Erase all children of the node pointed to by iterator.
     inline void erase_children(const iterator_base&);
 
-    /// Erase all siblings to the right of the iterator.
-    inline void erase_right_siblings(const iterator_base&);
-
-    /// Erase all siblings to the left of the iterator.
-    inline void erase_left_siblings(const iterator_base&);
-
     /// Insert empty node as last/first child of node pointed to by position.
     template <typename iter>
     inline iter append_child(iter position);
@@ -704,9 +698,6 @@ public:
 
     /// Count the total number of nodes.
     inline size_t size() const;
-
-    /// Count the total number of nodes below the indicated node (plus one).
-    inline size_t size(const iterator_base&) const;
 
     /// Check if graph is empty.
     inline bool empty() const;
@@ -987,15 +978,10 @@ graph<T, AllocatorT>::erase_children(const iterator_base& it)
 
     graph_node* cur = it.node->first_child;
 
-    while(cur != nullptr)
-    {
-        graph_node* prev = nullptr;
-        cur              = cur->next_sibling;
-        erase_children(pre_order_iterator(prev));
-        if(prev)
-            m_alloc.destroy(prev);
-        m_alloc.deallocate(prev, 1);
-    }
+    if(cur)
+        while(cur->next_sibling && cur->next_sibling != feet)
+            erase(pre_order_iterator(cur->next_sibling));
+
     it.node->first_child = nullptr;
     it.node->last_child  = nullptr;
 }

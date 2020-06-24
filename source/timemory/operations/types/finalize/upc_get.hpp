@@ -89,8 +89,8 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
 
     upc::barrier();
 
-    int upc_rank = upc::rank();
-    int upc_size = upc::size();
+    int comm_rank = upc::rank();
+    int comm_size = upc::size();
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -127,14 +127,14 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
         return send_serialize(storage_type::master_instance()->get());
     };
 
-    results.resize(upc_size);
+    results.resize(comm_size);
 
     //------------------------------------------------------------------------------//
     //  Combine on master rank
     //
-    if(upc_rank == 0)
+    if(comm_rank == 0)
     {
-        for(int i = 1; i < upc_size; ++i)
+        for(int i = 1; i < comm_size; ++i)
         {
             upcxx::future<std::string> fut = upcxx::rpc(i, remote_serialize);
             while(!fut.ready())
@@ -142,23 +142,23 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
             fut.wait();
             results[i] = recv_serialize(fut.result());
         }
-        results[upc_rank] = data.get();
+        results[comm_rank] = data.get();
     }
 
     upcxx::barrier(upcxx::world());
 
-    if(upc_rank != 0)
+    if(comm_rank != 0)
         results = distrib_type(1, data.get());
 
     // collapse into a single result
-    if(settings::collapse_processes() && upc_rank == 0)
+    if(settings::collapse_processes() && comm_rank == 0)
     {
         auto init_size = get_num_records(results);
         if(settings::debug() || settings::verbose() > 3)
         {
             PRINT_HERE("[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks",
                        demangle<upc_get<Type, true>>().c_str(), (int) process::get_id(),
-                       upc_rank, init_size, upc_size);
+                       comm_rank, init_size, comm_size);
         }
 
         auto _collapsed = distrib_type{};
@@ -183,32 +183,32 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
             PRINT_HERE("[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
                        "from %i ranks",
                        demangle<upc_get<Type, true>>().c_str(), (int) process::get_id(),
-                       upc_rank, init_size, fini_size, upc_size);
+                       comm_rank, init_size, fini_size, comm_size);
         }
     }
-    else if(settings::node_count() > 0 && upc_rank == 0)
+    else if(settings::node_count() > 0 && comm_rank == 0)
     {
         // calculate some size parameters
-        int32_t nmod  = upc_size % settings::node_count();
-        int32_t bins  = upc_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
-        int32_t bsize = upc_size / bins;
+        int32_t nmod  = comm_size % settings::node_count();
+        int32_t bins  = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
+        int32_t bsize = comm_size / bins;
 
         if(settings::debug() || settings::verbose() > 3)
-            PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, upc_size = %i, bins = "
+            PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
                        "%i, bin size = %i",
                        demangle<upc_get<Type, true>>().c_str(), (int) process::get_id(),
-                       upc_rank, settings::node_count(), upc_size, bins, bsize);
+                       comm_rank, settings::node_count(), comm_size, bins, bsize);
 
         // generate a map of the ranks to the node ids
         int32_t                              ncnt = 0;  // current count
         int32_t                              midx = 0;  // current bin map index
         std::map<int32_t, std::set<int32_t>> binmap;
-        for(int32_t i = 0; i < upc_size; ++i)
+        for(int32_t i = 0; i < comm_size; ++i)
         {
             if(settings::debug())
                 PRINT_HERE("[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
                            demangle<upc_get<Type, true>>().c_str(),
-                           (int) process::get_id(), upc_rank, i, midx);
+                           (int) process::get_id(), comm_rank, i, midx);
 
             binmap[midx].insert(i);
             // check to see if we reached the bin size
@@ -225,7 +225,7 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
             PRINT_HERE(
                 "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into %i bins",
                 demangle<upc_get<Type, true>>().c_str(), (int) process::get_id(),
-                upc_rank, init_size, upc_size, (int) binmap.size());
+                comm_rank, init_size, comm_size, (int) binmap.size());
 
         assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
 
@@ -253,7 +253,7 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
             PRINT_HERE("[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
                        "and %i bins",
                        demangle<upc_get<Type, true>>().c_str(), (int) process::get_id(),
-                       upc_rank, init_size, fini_size, (int) results.size());
+                       comm_rank, init_size, fini_size, (int) results.size());
         }
     }
 
@@ -262,7 +262,7 @@ upc_get<Type, true>::upc_get(storage_type& data, distrib_type& results)
         auto ret_size = get_num_records(results);
         PRINT_HERE("[%s][pid=%i]> %i total records on rank %i of %i",
                    demangle<upc_get<Type, true>>().c_str(), (int) process::get_id(),
-                   ret_size, upc_rank, upc_size);
+                   ret_size, comm_rank, comm_size);
     }
 
 #endif

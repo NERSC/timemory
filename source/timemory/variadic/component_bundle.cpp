@@ -54,20 +54,26 @@ component_bundle<Tag, Types...>::component_bundle()
 //
 template <typename Tag, typename... Types>
 template <typename... T, typename Func>
-component_bundle<Tag, Types...>::component_bundle(const string_t&        key,
-                                                  variadic::config<T...> config,
-                                                  const Func&            init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), config)
+component_bundle<Tag, Types...>::component_bundle(const string_t& key,
+                                                  variadic::config<T...>,
+                                                  const Func& init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), variadic::config<T...>{})
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
+        {
+            init_storage();
+        }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
+        {
+            init_func(*this);
+        }
+        set_prefix(get_hash_ids()->find(m_hash)->second);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -76,19 +82,25 @@ component_bundle<Tag, Types...>::component_bundle(const string_t&        key,
 template <typename Tag, typename... Types>
 template <typename... T, typename Func>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc,
-                                                  variadic::config<T...>     config,
-                                                  const Func&                init_func)
-: bundle_type(loc.get_hash(), config)
+                                                  variadic::config<T...>,
+                                                  const Func& init_func)
+: bundle_type(loc.get_hash(), variadic::config<T...>{})
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>(config)) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
+        {
+            init_storage();
+        }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
+        {
+            init_func(*this);
+        }
+        set_prefix(loc.get_hash());
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -100,19 +112,19 @@ component_bundle<Tag, Types...>::component_bundle(const string_t& key, const boo
                                                   scope::config _scope,
                                                   const Func&   init_func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
+              _scope + scope::config(variadic_config<variadic::flat_scope>::value,
+                                     variadic_config<variadic::timeline_scope>::value,
+                                     variadic_config<variadic::tree_scope>::value))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>()) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_store>::value) { init_storage(); }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        set_prefix(get_hash_ids()->find(m_hash)->second);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
     }
 }
 
@@ -124,19 +136,19 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc
                                                   const bool& store, scope::config _scope,
                                                   const Func& init_func)
 : bundle_type(loc.get_hash(), store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
+              _scope + scope::config(variadic_config<variadic::flat_scope>::value,
+                                     variadic_config<variadic::timeline_scope>::value,
+                                     variadic_config<variadic::tree_scope>::value))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>()) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
-        set_prefix(loc.get_id());
+        IF_CONSTEXPR(!variadic_config<variadic::no_store>::value) { init_storage(); }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        set_prefix(loc.get_hash());
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
     }
 }
 
@@ -148,19 +160,19 @@ component_bundle<Tag, Types...>::component_bundle(size_t hash, const bool& store
                                                   scope::config _scope,
                                                   const Func&   init_func)
 : bundle_type(hash, store,
-              _scope + scope::config(get_config<variadic::flat_scope>(),
-                                     get_config<variadic::timeline_scope>(),
-                                     get_config<variadic::tree_scope>()))
+              _scope + scope::config(variadic_config<variadic::flat_scope>::value,
+                                     variadic_config<variadic::timeline_scope>::value,
+                                     variadic_config<variadic::tree_scope>::value))
 , m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!get_config<variadic::no_store>()) { init_storage(); }
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
+        IF_CONSTEXPR(!variadic_config<variadic::no_store>::value) { init_storage(); }
+        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
         set_prefix(hash);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
     }
 }
 
@@ -325,6 +337,45 @@ component_bundle<Tag, Types...>::stop(mpl::lightweight, Args&&... args)
     ++m_laps;
 
     derive(*this);
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename Tag, typename... Types>
+template <typename... Tp, typename... Args>
+void
+component_bundle<Tag, Types...>::start(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    using standard_tuple_t = mpl::sort<trait::start_priority, std::tuple<Tp...>>;
+    using standard_start_t = operation_t<operation::standard_start, standard_tuple_t>;
+
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+    TIMEMORY_FOLD_EXPRESSION(operation::insert_node<Tp>(
+        std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+
+    // start components
+    apply_v::out_of_order<standard_start_t, standard_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+template <typename... Tp, typename... Args>
+void
+component_bundle<Tag, Types...>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    using standard_tuple_t = mpl::sort<trait::stop_priority, std::tuple<Tp...>>;
+    using standard_stop_t  = operation_t<operation::standard_stop, standard_tuple_t>;
+
+    // stop components
+    apply_v::out_of_order<standard_stop_t, standard_tuple_t, 1>(
+        m_data, std::forward<Args>(args)...);
+
+    TIMEMORY_FOLD_EXPRESSION(
+        operation::pop_node<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
 }
 
 //--------------------------------------------------------------------------------------//

@@ -24,9 +24,16 @@
 //
 
 #include "libpytimemory.hpp"
+<<<<<<< HEAD
 #include "timemory/library.h"
 #include "timemory/components/definition.hpp"
+=======
+#include "libpytimemory-components.hpp"
+#include "timemory/components.hpp"
+#include "timemory/components/extern.hpp"
+>>>>>>> aee44b25a8e4f3c583469d63e17977cedde81fd6
 #include "timemory/components/ompt.hpp"
+#include "timemory/settings/extern.hpp"
 
 //======================================================================================//
 
@@ -67,6 +74,7 @@ manager_wrapper::get()
 }
 
 //======================================================================================//
+<<<<<<< HEAD
 
 struct pyenumeration
 {
@@ -151,6 +159,8 @@ struct pycomponents
 };
 
 //======================================================================================//
+=======
+>>>>>>> aee44b25a8e4f3c583469d63e17977cedde81fd6
 //  Python wrappers
 //======================================================================================//
 
@@ -173,31 +183,11 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     //==================================================================================//
     //
-    //      Units submodule
-    //
-    //==================================================================================//
-    py::module units = tim.def_submodule("units", "units for timing and memory");
-
-    units.attr("psec")     = tim::units::psec;
-    units.attr("nsec")     = tim::units::nsec;
-    units.attr("usec")     = tim::units::usec;
-    units.attr("msec")     = tim::units::msec;
-    units.attr("csec")     = tim::units::csec;
-    units.attr("dsec")     = tim::units::dsec;
-    units.attr("sec")      = tim::units::sec;
-    units.attr("byte")     = tim::units::byte;
-    units.attr("kilobyte") = tim::units::kilobyte;
-    units.attr("megabyte") = tim::units::megabyte;
-    units.attr("gigabyte") = tim::units::gigabyte;
-    units.attr("terabyte") = tim::units::terabyte;
-    units.attr("petabyte") = tim::units::petabyte;
-
-    //==================================================================================//
-    //
-    //      Components submodule
+    //      Submodules and enumerations built in another compilation unit
     //
     //==================================================================================//
 
+<<<<<<< HEAD
     py::enum_<TIMEMORY_NATIVE_COMPONENT> components_enum(
         tim, "component", py::arithmetic(), "Components for timemory module");
 
@@ -284,6 +274,20 @@ PYBIND11_MODULE(libpytimemory, tim)
               "Return the available CUPTI events", py::arg("device") = 0);
     cupti.def("available_metrics", get_available_cupti_metrics,
               "Return the available CUPTI metric", py::arg("device") = 0);
+=======
+    auto units      = pyunits::generate(tim);
+    auto components = pycomponents::generate(tim);
+
+    pyapi::generate(tim);
+    pysignals::generate(tim);
+    pysettings::generate(tim);
+    pyauto_timer::generate(tim);
+    pycomponent_list::generate(tim);
+    pycomponent_bundle::generate(tim);
+    pyhardware_counters::generate(tim);
+    pyenumeration::generate(components);
+    pyrss_usage::generate(tim, units);
+>>>>>>> aee44b25a8e4f3c583469d63e17977cedde81fd6
 
     //==================================================================================//
     //
@@ -304,28 +308,24 @@ PYBIND11_MODULE(libpytimemory, tim)
     py::class_<manager_wrapper> man(
         tim, "manager", "object which controls static data lifetime and finalization");
 
-    py::class_<tim_timer_t> timer(tim, "timer",
-                                  "Auto-timer that does not start/stop based on scope");
+    py::class_<tim::scope::destructor> destructor(
+        tim, "scope_destructor",
+        "An object that executes an operation when it is destroyed");
 
-    py::class_<auto_timer_t> auto_timer(tim, "auto_timer", "Pre-configured bundle");
+    destructor.def(py::init([]() { return new tim::scope::destructor([]() {}); }),
+                   "Destructor", py::return_value_policy::move);
+    destructor.def(py::init([](py::function pyfunc) {
+                       return new tim::scope::destructor([=]() { pyfunc(); });
+                   }),
+                   "Destructor", py::return_value_policy::take_ownership);
 
-    py::class_<component_list_t> comp_list(tim, "component_tuple",
-                                           "Generic component_tuple");
-
-    py::class_<auto_timer_decorator> timer_decorator(
-        tim, "timer_decorator", "Auto-timer type used in decorators");
-
-    py::class_<component_list_decorator> comp_decorator(
-        tim, "component_decorator", "Component list used in decorators");
-
-    py::class_<pycomponent_bundle> comp_bundle(
-        tim, "component_bundle", "Component bundle specific to Python interface");
-
-    py::class_<rss_usage_t> rss_usage(tim, "rss_usage",
-                                      "Pre-configured memory usage bundle");
-
-    py::class_<pytim::settings> settings(tim, "settings",
-                                         "Global configuration settings for timemory");
+    destructor.def_static(
+        "test",
+        []() {
+            return tim::scope::destructor([]() { puts("I am a scoped destructor"); });
+        },
+        "Tests whether C++ returning a non-pointer works. If message is displayed at "
+        "assignment, this is incorrect");
 
     //==================================================================================//
     //
@@ -527,12 +527,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("enabled", [&]() { return tim::settings::enabled(); },
             "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("enable_signal_detection", &pytim::enable_signal_detection,
-            "Enable signal detection", py::arg("signal_list") = py::list());
-    //----------------------------------------------------------------------------------//
-    tim.def("disable_signal_detection", &pytim::disable_signal_detection,
-            "Enable signal detection");
-    //----------------------------------------------------------------------------------//
     tim.def("has_mpi_support", [&]() { return tim::mpi::is_supported(); },
             "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
@@ -541,17 +535,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_self", set_rusage_self,
             "Set the rusage to record child processes");
-    //----------------------------------------------------------------------------------//
-    tim.def("set_exit_action",
-            [&](py::function func) {
-                auto _func              = [&](int errcode) -> void { func(errcode); };
-                using signal_function_t = std::function<void(int)>;
-                using std::placeholders::_1;
-                signal_function_t _f = std::bind<void>(_func, _1);
-                tim::signal_settings::set_exit_action(_f);
-            },
-            "Set the exit action when a signal is raised -- function must accept "
-            "integer");
     //----------------------------------------------------------------------------------//
     tim.def("timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list(),
             py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
@@ -605,6 +588,7 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     //==================================================================================//
     //
+<<<<<<< HEAD
     //                          SETTINGS
     //
     //==================================================================================//
@@ -796,6 +780,8 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     //==================================================================================//
     //
+=======
+>>>>>>> aee44b25a8e4f3c583469d63e17977cedde81fd6
     //                          TIMING MANAGER
     //
     //==================================================================================//
@@ -810,291 +796,6 @@ PYBIND11_MODULE(libpytimemory, tim)
             "Write a CTestNotes.cmake file", py::arg("directory") = ".",
             py::arg("append") = false);
     //----------------------------------------------------------------------------------//
-    // man.def(
-    //    "clear",
-    //    [&](py::object) {
-    //        manager_t::instance()->clear(component_list_t("clear", false));
-    //    },
-    //    "Clear the storage");
-    //----------------------------------------------------------------------------------//
-
-    //==================================================================================//
-    //
-    //                      AUTO TIMER
-    //
-    //==================================================================================//
-    auto_timer.def(py::init(&pytim::init::auto_timer), "Initialization",
-                   py::arg("key") = "", py::arg("report_at_exit") = false,
-                   py::return_value_policy::take_ownership);
-    //----------------------------------------------------------------------------------//
-    auto_timer.def("__str__",
-                   [&](py::object self) {
-                       std::stringstream _ss;
-                       auto_timer_t*     _self = self.cast<auto_timer_t*>();
-                       _ss << *_self;
-                       return _ss.str();
-                   },
-                   "Print the auto timer");
-    //----------------------------------------------------------------------------------//
-    auto_timer.def("get_raw",
-                   [&](py::object self) { return (*self.cast<auto_timer_t*>()).get(); },
-                   "Get the component list data");
-    //----------------------------------------------------------------------------------//
-    auto_timer.def("get",
-                   [&](py::object self) {
-                       auto&& _tup = (*self.cast<auto_timer_t*>()).get_labeled();
-                       using data_label_type = tim::decay_t<decltype(_tup)>;
-                       return pytim::dict<data_label_type>::construct(_tup);
-                   },
-                   "Get the component list data");
-    //----------------------------------------------------------------------------------//
-    timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
-                        py::return_value_policy::automatic);
-    //----------------------------------------------------------------------------------//
-
-    auto configure_pybundle = [](py::list _args, bool flat_profile,
-                                 bool timeline_profile) {
-        std::set<TIMEMORY_COMPONENT> components;
-        if(_args.empty())
-            components.insert(WALL_CLOCK);
-
-        for(auto itr : _args)
-        {
-            std::string        _sitr = "";
-            TIMEMORY_COMPONENT _citr = TIMEMORY_COMPONENTS_END;
-
-            try
-            {
-                _sitr = itr.cast<std::string>();
-                if(_sitr.length() > 0)
-                    _citr = tim::runtime::enumerate(_sitr);
-                else
-                    continue;
-            } catch(...)
-            {}
-
-            if(_citr == TIMEMORY_COMPONENTS_END)
-            {
-                try
-                {
-                    _citr = itr.cast<TIMEMORY_COMPONENT>();
-                } catch(...)
-                {}
-            }
-
-            if(_citr != TIMEMORY_COMPONENTS_END)
-                components.insert(_citr);
-            else
-            {
-                PRINT_HERE("%s", "ignoring argument that failed casting to either "
-                                 "'timemory.component' and string");
-            }
-        }
-
-        size_t isize = pycomponent_bundle::size();
-        if(tim::settings::debug() || tim::settings::verbose() > 3)
-        {
-            PRINT_HERE("%s", "configuring pybundle");
-        }
-
-        using bundle_type = typename pycomponent_bundle::type;
-        tim::configure<bundle_type>(components,
-                                    tim::scope::config{ flat_profile, timeline_profile });
-
-        if(tim::settings::debug() || tim::settings::verbose() > 3)
-        {
-            size_t fsize = pycomponent_bundle::size();
-            if((fsize - isize) < components.size())
-            {
-                std::stringstream ss;
-                ss << "Warning: final size " << fsize << ", input size " << isize
-                   << ". Difference is less than the components size: "
-                   << components.size();
-                PRINT_HERE("%s", ss.str().c_str());
-                throw std::runtime_error(ss.str());
-            }
-            PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n",
-                       (unsigned long) fsize, (unsigned long) isize,
-                       (unsigned long) components.size());
-        }
-    };
-
-    pybundle_t::global_init(nullptr);
-
-    //==================================================================================//
-    //
-    //                      Component bundle
-    //
-    //==================================================================================//
-    comp_bundle.def(py::init(&pytim::init::component_bundle), "Initialization",
-                    py::arg("func"), py::arg("file"), py::arg("line"),
-                    py::arg("extra") = py::list(),
-                    py::return_value_policy::take_ownership);
-    //----------------------------------------------------------------------------------//
-    comp_bundle.def("start", &pycomponent_bundle::start, "Start the bundle");
-    //----------------------------------------------------------------------------------//
-    comp_bundle.def("stop", &pycomponent_bundle::stop, "Stop the bundle");
-    //----------------------------------------------------------------------------------//
-    comp_bundle.def_static(
-        "configure", configure_pybundle, py::arg("components") = py::list(),
-        py::arg("flat_profile") = false, py::arg("timeline_profile") = false,
-        "Configure the profiler types (default: 'wall_clock')");
-    //----------------------------------------------------------------------------------//
-    comp_bundle.def_static("reset", &pycomponent_bundle::reset,
-                           "Reset the components in the bundle");
-
-    //==================================================================================//
-    //
-    //                      TIMEMORY COMPONENT_TUPLE
-    //
-    //==================================================================================//
-    comp_list.def(py::init(&pytim::init::component_list), "Initialization",
-                  py::arg("components") = py::list(), py::arg("key") = "",
-                  py::return_value_policy::take_ownership);
-    //----------------------------------------------------------------------------------//
-    comp_list.def("start",
-                  [&](py::object self) { self.cast<component_list_t*>()->start(); },
-                  "Start component tuple");
-    //----------------------------------------------------------------------------------//
-    comp_list.def("stop",
-                  [&](py::object self) { self.cast<component_list_t*>()->stop(); },
-                  "Stop component tuple");
-    //----------------------------------------------------------------------------------//
-    comp_list.def("report",
-                  [&](py::object self) {
-                      std::cout << *(self.cast<component_list_t*>()) << std::endl;
-                  },
-                  "Report component tuple");
-    //----------------------------------------------------------------------------------//
-    comp_list.def("__str__",
-                  [&](py::object self) {
-                      std::stringstream ss;
-                      ss << *(self.cast<component_list_t*>());
-                      return ss.str();
-                  },
-                  "Stringify component tuple");
-    //----------------------------------------------------------------------------------//
-    comp_list.def("reset",
-                  [&](py::object self) { self.cast<component_list_t*>()->reset(); },
-                  "Reset the component tuple");
-    //----------------------------------------------------------------------------------//
-    comp_list.def("__str__",
-                  [&](py::object self) {
-                      std::stringstream _ss;
-                      component_list_t* _self = self.cast<component_list_t*>();
-                      _ss << *_self;
-                      return _ss.str();
-                  },
-                  "Print the component tuple");
-    //----------------------------------------------------------------------------------//
-    comp_list.def(
-        "get_raw",
-        [&](py::object self) { return (*self.cast<component_list_t*>()).get(); },
-        "Get the component list data");
-    //----------------------------------------------------------------------------------//
-    comp_list.def("get",
-                  [&](py::object self) {
-                      auto&& _tup = (*self.cast<component_list_t*>()).get_labeled();
-                      using data_label_type = tim::decay_t<decltype(_tup)>;
-                      return pytim::dict<data_label_type>::construct(_tup);
-                  },
-                  "Get the component list data");
-    //----------------------------------------------------------------------------------//
-    comp_decorator.def(py::init(&pytim::init::component_decorator), "Initialization",
-                       py::return_value_policy::automatic);
-    //----------------------------------------------------------------------------------//
-
-    //==================================================================================//
-    //
-    //                      AUTO TIMER DECORATOR
-    //
-    //==================================================================================//
-    /*
-    decorate_auto_timer.def(
-        py::init(&pytim::decorators::init::auto_timer), "Initialization",
-        py::arg("key") = "", py::arg("line") = pytim::get_line(1),
-        py::arg("report_at_exit") = false, py::return_value_policy::take_ownership);
-    decorate_auto_timer.def("__call__", &pytim::decorators::auto_timer::call,
-                            "Call operator");
-                            */
-
-    //----------------------------------------------------------------------------------//
-
-    //==================================================================================//
-    //
-    //                      RSS USAGE
-    //
-    //==================================================================================//
-    rss_usage.def(py::init(&pytim::init::rss_usage),
-                  "Initialization of RSS measurement class", py::arg("key") = "",
-                  py::arg("record") = false, py::return_value_policy::take_ownership);
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("record", [&](py::object self) { self.cast<rss_usage_t*>()->record(); },
-                  "Record the RSS usage");
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("__str__",
-                  [&](py::object self) {
-                      std::stringstream ss;
-                      ss << *(self.cast<rss_usage_t*>());
-                      return ss.str();
-                  },
-                  "Stringify the rss usage");
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("__iadd__",
-                  [&](py::object self, py::object rhs) {
-                      *(self.cast<rss_usage_t*>()) += *(rhs.cast<rss_usage_t*>());
-                      return self;
-                  },
-                  "Add rss usage");
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("__isub__",
-                  [&](py::object self, py::object rhs) {
-                      *(self.cast<rss_usage_t*>()) -= *(rhs.cast<rss_usage_t*>());
-                      return self;
-                  },
-                  "Subtract rss usage");
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("__add__",
-                  [&](py::object self, py::object rhs) {
-                      rss_usage_t* _rss = new rss_usage_t(*(self.cast<rss_usage_t*>()));
-                      *_rss += *(rhs.cast<rss_usage_t*>());
-                      return _rss;
-                  },
-                  "Add rss usage", py::return_value_policy::take_ownership);
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("__sub__",
-                  [&](py::object self, py::object rhs) {
-                      rss_usage_t* _rss = new rss_usage_t(*(self.cast<rss_usage_t*>()));
-                      *_rss -= *(rhs.cast<rss_usage_t*>());
-                      return _rss;
-                  },
-                  "Subtract rss usage", py::return_value_policy::take_ownership);
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("current",
-                  [&](py::object self, int64_t /*_units*/) {
-                      return std::get<0>(*self.cast<rss_usage_t*>()).get_display();
-                  },
-                  "Return the current rss usage",
-                  py::arg("units") = units.attr("megabyte"));
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("peak",
-                  [&](py::object self, int64_t /*_units*/) {
-                      return std::get<1>(*self.cast<rss_usage_t*>()).get_display();
-                  },
-                  "Return the current rss usage",
-                  py::arg("units") = units.attr("megabyte"));
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("get_raw",
-                  [&](py::object self) { return (*self.cast<rss_usage_t*>()).get(); },
-                  "Return the rss usage data");
-    //----------------------------------------------------------------------------------//
-    rss_usage.def("get",
-                  [&](py::object self) {
-                      auto&& _tup           = (*self.cast<rss_usage_t*>()).get_labeled();
-                      using data_label_type = tim::decay_t<decltype(_tup)>;
-                      return pytim::dict<data_label_type>::construct(_tup);
-                  },
-                  "Return the rss usage data");
 
     //==================================================================================//
     //

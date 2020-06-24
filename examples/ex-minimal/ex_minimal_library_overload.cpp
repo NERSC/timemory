@@ -30,6 +30,7 @@
 #    undef TIMEMORY_USE_NVTX
 #endif
 
+#include "timemory/components/timing/wall_clock.hpp"
 #include "timemory/library.h"
 #include "timemory/operations/definition.hpp"
 #include "timemory/plotting/definition.hpp"

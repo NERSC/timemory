@@ -22,12 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//======================================================================================//
-//
-#include "timemory/plotting/definition.hpp"
-//
-#include "timemory/operations/extern.hpp"
-//
 #include "timemory/containers/types/full_auto_timer.hpp"
-//
-//======================================================================================//

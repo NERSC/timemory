@@ -74,9 +74,6 @@ public:
 
     jump(std::string&& libpath)
     {
-        if(tim::get_env("TIMEMORY_DEBUG", false))
-            PRINT_HERE("%s", "");
-
         auto libhandle = dlopen(libpath.c_str(), RTLD_LAZY);
 
         if(!libhandle)

@@ -33,6 +33,7 @@
 // define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs in bits/papi.hpp
 // cause problems
 
+#include "timemory/backends/hardware_counters.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/backends/types/papi.hpp"
@@ -88,9 +89,7 @@ namespace papi
 using string_t         = std::string;
 using event_info_t     = PAPI_event_info_t;
 using ulong_t          = unsigned long int;
-using strvec_t         = std::vector<string_t>;
-using boolvec_t        = std::vector<bool>;
-using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
+using hwcounter_info_t = std::vector<hardware_counters::info>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -410,6 +409,8 @@ init()
         if(!working())
             fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
     }
+#else
+    working() = false;
 #endif
 }
 
@@ -821,39 +822,74 @@ available_events_info()
             if(ret != PAPI_OK)
                 continue;
 
-            auto as_string = [](char* cstr) {
-                auto              n = strlen(cstr);
-                std::stringstream ss;
-                for(decltype(n) j = 0; j < n; ++j)
-                {
-                    ss << cstr[j];
-                    if(cstr[j] == '\0')
-                        break;
-                }
-                return ss.str();
-            };
-
-            std::get<0>(evts).push_back(as_string(info.symbol));
-            std::get<1>(evts).push_back(query_event((i | PAPI_PRESET_MASK)));
-            std::get<2>(evts).push_back(as_string(info.short_descr));
-            std::get<3>(evts).push_back(as_string(info.long_descr));
+            bool     _avail = query_event((i | PAPI_PRESET_MASK));
+            string_t _sym   = get_timemory_papi_presets()[i].symbol;
+            string_t _pysym = _sym;
+            for(auto& itr : _pysym)
+                itr = tolower(itr);
+            string_t _rm = "papi_";
+            auto     idx = _pysym.find(_rm);
+            if(idx != string_t::npos)
+                _pysym.substr(idx + _rm.length());
+            evts.push_back(hardware_counters::info(
+                _avail, hardware_counters::interface::papi, i, PAPI_PRESET_MASK, _sym,
+                _pysym, get_timemory_papi_presets()[i].short_descr,
+                get_timemory_papi_presets()[i].long_descr,
+                hardware_counters::modifier_vec_t{}));
         }
     }
 #endif
-    if(!working() || std::get<0>(evts).empty())
+    if(!working() || evts.empty())
     {
         for(int i = 0; i < TIMEMORY_PAPI_PRESET_EVENTS; ++i)
         {
             if(get_timemory_papi_presets()[i].symbol == NULL)
                 continue;
-            std::get<0>(evts).push_back(get_timemory_papi_presets()[i].symbol);
-            std::get<1>(evts).push_back(false);
-            std::get<2>(evts).push_back(get_timemory_papi_presets()[i].short_descr);
-            std::get<3>(evts).push_back(get_timemory_papi_presets()[i].long_descr);
+
+            string_t _sym   = get_timemory_papi_presets()[i].symbol;
+            string_t _pysym = _sym;
+            for(auto& itr : _pysym)
+                itr = tolower(itr);
+            evts.push_back(hardware_counters::info(
+                false, hardware_counters::interface::papi, i, PAPI_PRESET_MASK, _sym,
+                _pysym, get_timemory_papi_presets()[i].short_descr,
+                get_timemory_papi_presets()[i].long_descr));
         }
     }
 
     return evts;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline tim::hardware_counters::info
+get_hwcounter_info(const std::string& event_code_str)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    details::init_library();
+#endif
+
+    if(working())
+    {
+        auto         idx         = get_event_code(event_code_str);
+        event_info_t _info       = get_event_info(idx);
+        bool         _avail      = query_event(idx);
+        string_t     _sym        = _info.symbol;
+        string_t     _short_desc = _info.short_descr;
+        string_t     _long_desc  = _info.long_descr;
+        string_t     _pysym      = _sym;
+        for(auto& itr : _pysym)
+            itr = tolower(itr);
+        // int32_t _off = _info.event_code;
+        int32_t _off = 0;
+        return hardware_counters::info(_avail, hardware_counters::interface::papi, idx,
+                                       _off, _sym, _pysym, _short_desc, _long_desc);
+    }
+    else
+    {
+        return hardware_counters::info(false, hardware_counters::interface::papi, -1, 0,
+                                       event_code_str, "", "", "");
+    }
 }
 
 //--------------------------------------------------------------------------------------//
