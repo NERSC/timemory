@@ -48,7 +48,7 @@ namespace pyhardware_counters
 py::module
 generate(py::module& _pymod)
 {
-    using iface_t      = tim::hardware_counters::interface;
+    using iface_t      = tim::hardware_counters::interface::type;
     using iface_enum_t = py::enum_<iface_t>;
     using info_t       = tim::hardware_counters::info;
 

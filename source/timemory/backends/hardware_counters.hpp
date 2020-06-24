@@ -40,13 +40,21 @@ using info_vec_t     = std::vector<info>;
     auto&       NAME() { return std::get<INDEX>(*this); }                                \
     const auto& NAME() const { return std::get<INDEX>(*this); }
 //
-enum class interface;
+struct interface
+{
+    enum type
+    {
+        papi = 0,
+        cupti,
+        unknown
+    };
+};
 //
 struct info
-: public std::tuple<bool, interface, int32_t, int32_t, string_t, string_t, string_t,
-                    string_t, modifier_vec_t>
+: public std::tuple<bool, int, int32_t, int32_t, string_t, string_t, string_t, string_t,
+                    modifier_vec_t>
 {
-    using base_type = std::tuple<bool, interface, int32_t, int32_t, string_t, string_t,
+    using base_type = std::tuple<bool, int, int32_t, int32_t, string_t, string_t,
                                  string_t, string_t, modifier_vec_t>;
 
     info()            = default;
@@ -66,7 +74,7 @@ struct info
     {}
 
     template <typename Arg = modifier_vec_t>
-    info(bool _avail, interface _cat, int32_t _idx, int32_t _off, string_t _sym,
+    info(bool _avail, int _cat, int32_t _idx, int32_t _off, string_t _sym,
          string_t _pysym, string_t _short, string_t _long, Arg&& _arg = modifier_vec_t{})
     : base_type(_avail, _cat, _idx, _off, _sym, _pysym, _short, _long,
                 std::forward<Arg>(_arg))
@@ -95,15 +103,6 @@ get_info()
     static info_vec_t _instance;
     return _instance;
 }
-//
-//--------------------------------------------------------------------------------------//
-// definition
-enum class interface
-{
-    papi,
-    cupti,
-    unknown
-};
 //
 }  // namespace hardware_counters
 }  // namespace tim
