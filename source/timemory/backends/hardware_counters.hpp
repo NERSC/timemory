@@ -35,18 +35,13 @@ using string_t       = std::string;
 using modifier_t     = std::function<void(info&)>;
 using modifier_vec_t = std::vector<modifier_t>;
 using info_vec_t     = std::vector<info>;
-
+//
 #define TIMEMORY_HWCOUNTER_INFO_ACCESSOR(NAME, INDEX)                                    \
     auto&       NAME() { return std::get<INDEX>(*this); }                                \
     const auto& NAME() const { return std::get<INDEX>(*this); }
-
-enum class interface : int32_t
-{
-    papi,
-    cupti,
-    unknown
-};
-
+//
+enum class interface;
+//
 struct info
 : public std::tuple<bool, interface, int32_t, int32_t, string_t, string_t, string_t,
                     string_t, modifier_vec_t>
@@ -89,15 +84,26 @@ struct info
 
     auto id() const { return (this->index() | this->offset()); }
 };
-
+//
 #undef TIMEMORY_HWCOUNTER_INFO_ACCESSOR
-
+//
+//--------------------------------------------------------------------------------------//
+//
 inline info_vec_t&
 get_info()
 {
     static info_vec_t _instance;
     return _instance;
 }
-
+//
+//--------------------------------------------------------------------------------------//
+// definition
+enum class interface
+{
+    papi,
+    cupti,
+    unknown
+};
+//
 }  // namespace hardware_counters
 }  // namespace tim

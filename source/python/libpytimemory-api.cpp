@@ -203,6 +203,6 @@ generate_cupti(py::module& _pymod)
     return _cupti;
 }
 //
-}  // namespace pyhardware_counters
+}  // namespace pyapi
 //
 //======================================================================================//
