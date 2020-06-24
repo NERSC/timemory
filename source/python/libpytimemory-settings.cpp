@@ -160,6 +160,6 @@ generate(py::module& _pymod)
 
     return settings;
 }
-};  // namespace pysettings
+}  // namespace pysettings
 //
 //======================================================================================//

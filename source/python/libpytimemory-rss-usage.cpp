@@ -138,6 +138,6 @@ generate(py::module& _pymod, py::module& _pyunits)
 
     return rss_usage;
 }
-};  // namespace pyrss_usage
+}  // namespace pyrss_usage
 //
 //======================================================================================//

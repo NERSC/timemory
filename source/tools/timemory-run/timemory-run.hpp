@@ -123,6 +123,7 @@ static bool binary_rewrite   = 0;
 static bool loop_level_instr = false;
 static bool werror           = false;
 static bool stl_func_instr   = false;
+static bool cstd_func_instr  = false;
 static bool use_mpi          = false;
 static bool is_static_exe    = false;
 static bool use_return_info  = false;

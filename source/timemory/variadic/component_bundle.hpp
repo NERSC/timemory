@@ -122,7 +122,7 @@ public:
         static initializer_type _instance = [](this_type& cl) {
             static auto env_enum = []() {
                 auto _tag = demangle<Tag>();
-                for(auto itr : { string_t("tim::"), string_t("::") })
+                for(auto itr : { string_t("tim::"), string_t("api::") })
                 {
                     auto _pos = _tag.find(itr);
                     do
@@ -132,6 +132,24 @@ public:
                         _pos = _tag.find(itr);
                     } while(_pos != std::string::npos);
                 }
+
+                for(auto itr : { string_t("::"), string_t("<"), string_t(">"),
+                                 string_t(" "), string_t("__") })
+                {
+                    auto _pos = _tag.find(itr);
+                    do
+                    {
+                        if(_pos != std::string::npos)
+                            _tag = _tag.replace(_pos, itr.length(), "_");
+                        _pos = _tag.find(itr);
+                    } while(_pos != std::string::npos);
+                }
+
+                if(_tag.length() > 0 && _tag.at(0) == '_')
+                    _tag = _tag.substr(1);
+                if(_tag.length() > 0 && _tag.at(_tag.size() - 1) == '_')
+                    _tag = _tag.substr(0, _tag.size() - 1);
+
                 for(auto& itr : _tag)
                     itr = toupper(itr);
                 auto env_var = string_t("TIMEMORY_") + _tag + "_COMPONENTS";

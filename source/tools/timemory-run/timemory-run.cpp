@@ -201,10 +201,11 @@ main(int argc, char** argv)
             "Libraries with instrumentation routines (default: \"libtimemory\")");
     parser.add_argument()
         .names({ "-S", "--stdlib" })
-        .description(
-            "Enable instrumentation of C++ standard library functions. Use with caution! "
-            "May causes deadlocks/segfaults because timemory uses the STL internally. "
-            "Use with '-E/--function-exclude' option as needed")
+        .description("Enable instrumentation of C++ standard library functions.")
+        .count(0);
+    parser.add_argument()
+        .names({ "--cstdlib" })
+        .description("Enable instrumentation of C standard library functions.")
         .count(0);
     parser.add_argument()
         .names({ "-p", "--pid" })
@@ -343,6 +344,9 @@ main(int argc, char** argv)
 
     if(parser.exists("S"))
         stl_func_instr = true;
+
+    if(parser.exists("cstdlib"))
+        cstd_func_instr = true;
 
     if(parser.exists("mpi"))
         use_mpi = true;
@@ -1380,7 +1384,7 @@ main(int argc, char** argv)
         // bpatch->setDelayedParsing(true);
         // bpatch->setInstrStackFrames(true);
         // bpatch->setLivenessAnalysis(false);
-        addr_space->beginInsertionSet();
+        // addr_space->beginInsertionSet();
 
         verbprintf(4, "Registering fork callbacks...\n");
         auto _prefork  = bpatch->registerPreForkCallback(&timemory_fork_callback);
@@ -1525,7 +1529,7 @@ process_file_for_instrumentation(const string_t& file_name)
         return true;
     }
 
-    string_t          ext_str = "\\.(C|S)$";
+    string_t          ext_str = "\\.S$";
     static std::regex ext_regex(ext_str, regex_opts);
     static std::regex sys_regex("^(s|k|e|w)_[A-Za-z_0-9\\-]+\\.(c|C)$", regex_opts);
     static std::regex userlib_regex("^lib(timemory|caliper|gotcha|papi|cupti|TAU|likwid|"
@@ -1546,7 +1550,7 @@ process_file_for_instrumentation(const string_t& file_name)
         return false;
     }
 
-    if(c_stdlib_module_constraint(file_name))
+    if(!cstd_func_instr && c_stdlib_module_constraint(file_name))
     {
         verbprintf(3, "Excluding instrumentation [c std library] : '%s'...\n",
                    file_name.c_str());
@@ -1640,16 +1644,12 @@ instrument_entity(const string_t& function_name)
 
     static std::regex exclude(
         "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
-        "dyninst|tm_clones|malloc$|calloc$|free$|realloc$|std::addressof)",
+        "dyninst|tm_clones)",
         regex_opts);
-    static std::regex exclude_cxx(
-        "(std::max|std::min|std::fill|std::forward|std::get|std::"
-        "thread|std::hash|std::locale|std::_Sp_counted_base|std::use_facet)",
-        regex_opts);
-    static std::regex leading(
-        "^(_|frame_dummy|\\(|targ|new|delete|operator new|operator delete|std::allocat|"
-        "nvtx|gcov|main\\.cold\\.|TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)",
-        regex_opts);
+    static std::regex exclude_cxx("(std::_Sp_counted_base)", regex_opts);
+    static std::regex leading("^(_|frame_dummy|\\(|targ|nvtx|gcov|main\\.cold\\.|TAU|tau|"
+                              "Tau|dyn|RT|clone|thunk)",
+                              regex_opts);
     static std::regex stlfunc("^std::", regex_opts);
     strset_t          whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
 
@@ -1659,7 +1659,7 @@ instrument_entity(const string_t& function_name)
         return false;
     }
 
-    if(c_stdlib_function_constraint(function_name))
+    if(!cstd_func_instr && c_stdlib_function_constraint(function_name))
     {
         verbprintf(3, "Excluding function [libc] : '%s'...\n", function_name.c_str());
         return false;

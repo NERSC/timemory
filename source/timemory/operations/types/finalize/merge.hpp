@@ -132,7 +132,6 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                                (int) lhs.size());
 
                 // remove the entry from this graph since it has been added
-                rhs.graph().erase_children(entry.second);
                 rhs.graph().erase(entry.second);
             }
         }

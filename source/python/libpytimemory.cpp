@@ -95,56 +95,18 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    auto units = pyunits::generate(tim);
+    auto units      = pyunits::generate(tim);
+    auto components = pycomponents::generate(tim);
 
+    pyapi::generate(tim);
     pysignals::generate(tim);
     pysettings::generate(tim);
-    pycomponents::generate(tim);
-    pyenumeration::generate(tim);
     pyauto_timer::generate(tim);
     pycomponent_list::generate(tim);
     pycomponent_bundle::generate(tim);
+    pyhardware_counters::generate(tim);
+    pyenumeration::generate(components);
     pyrss_usage::generate(tim, units);
-
-    //==================================================================================//
-    //
-    //      CUPTI submodule
-    //
-    //==================================================================================//
-    py::module cupti = tim.def_submodule("cupti", "cupti query");
-
-    auto get_available_cupti_events = [=](int device) {
-#if defined(TIMEMORY_USE_CUPTI)
-        CUdevice cu_device;
-        TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
-        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
-        return tim::cupti::available_events(cu_device);
-#else
-        tim::consume_parameters(device);
-        return py::list();
-#endif
-    };
-
-    auto get_available_cupti_metrics = [=](int device) {
-#if defined(TIMEMORY_USE_CUPTI)
-        CUdevice cu_device;
-        TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
-        TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
-        auto     ret = tim::cupti::available_metrics(cu_device);
-        py::list l;
-        for(const auto& itr : ret)
-            l.append(py::cast<std::string>(itr));
-        return l;
-#else
-        tim::consume_parameters(device);
-        return py::list();
-#endif
-    };
-
-    cupti.def("available_events", get_available_cupti_events,
-              "Return the available CUPTI events", py::arg("device") = 0);
-    cupti.def("available_metrics", get_available_cupti_metrics,
-              "Return the available CUPTI metric", py::arg("device") = 0);
 
     //==================================================================================//
     //

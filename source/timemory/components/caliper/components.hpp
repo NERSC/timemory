@@ -35,7 +35,12 @@
 #include "timemory/units.hpp"
 
 #if defined(TIMEMORY_USE_CALIPER)
-#    include <caliper/timemory.hpp>
+//
+//  Temporarily locating this inside the timemory package, in the future,
+//  the plan is for it to live inside the Caliper repository so that Caliper can
+//  can arbitrarily extend/modify/etc.
+//
+#    include "timemory/components/caliper/timemory.hpp"
 #else
 #    include "timemory/components/caliper/backends.hpp"
 #    include "timemory/components/caliper/types.hpp"
@@ -46,11 +51,11 @@ namespace tim
 {
 namespace component
 {
-struct caliper_marker : public base<caliper, void>
+struct caliper_marker : public base<caliper_marker, void>
 {
     // timemory component api
     using value_type = void;
-    using this_type  = caliper;
+    using this_type  = caliper_marker;
     using base_type  = base<this_type, value_type>;
 
     static std::string label() { return "caliper"; }

@@ -90,8 +90,9 @@ get(py::class_<pytuple_t<T>>& _pyclass)
     using bundle_t = pytuple_t<T>;
     auto _get      = [](bundle_t* obj) { return std::get<0>(obj->get()); };
     _pyclass.def("get", _get, "Get the current value");
-    _pyclass.def_static("has_value", []() { return true; },
-                        "Whether the component has an accessible value");
+    _pyclass.def_property_readonly_static(
+        "has_value", []() { return true; },
+        "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -104,8 +105,9 @@ get(py::class_<pytuple_t<T>>& _pyclass)
     using bundle_t = pytuple_t<T>;
     auto _get      = [](bundle_t*) { return py::none{}; };
     _pyclass.def("get", _get, "Component does not return value");
-    _pyclass.def_static("has_value", []() { return false; },
-                        "Whether the component has an accessible value");
+    _pyclass.def_property_readonly_static(
+        "has_value", []() { return false; },
+        "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -324,7 +326,7 @@ generate(py::module& _pymod)
     using bundle_t   = pytuple_t<T>;
     std::string id   = get_class_name(property_t::enum_string());
 
-    auto _init       = [](const std::string& key) { return new bundle_t(key); };
+    auto _init       = [](std::string key) { return new bundle_t(key); };
     auto _push       = [](bundle_t* obj) { obj->push(); };
     auto _pop        = [](bundle_t* obj) { obj->pop(); };
     auto _start      = [](bundle_t* obj) { obj->start(); };
@@ -337,7 +339,8 @@ generate(py::module& _pymod)
     auto _key        = [](bundle_t* obj) { return obj->key(); };
     auto _laps       = [](bundle_t* obj) { return obj->laps(); };
     auto _rekey      = [](bundle_t* obj, std::string _key) { obj->rekey(_key); };
-    auto _add        = [](bundle_t* lhs, bundle_t* rhs) -> bundle_t* {
+
+    /*auto _add        = [](bundle_t* lhs, bundle_t* rhs) -> bundle_t* {
         if(!lhs || !rhs)
             return nullptr;
         auto ret = new bundle_t(*lhs);
@@ -355,7 +358,7 @@ generate(py::module& _pymod)
         if(lhs && rhs)
             *lhs += *rhs;
         return lhs;
-    };
+    };*/
     auto _isub = [](bundle_t* lhs, bundle_t* rhs) {
         if(lhs && rhs)
             *lhs -= *rhs;
@@ -395,17 +398,17 @@ generate(py::module& _pymod)
     _pycomp.def("laps", _laps, "Get the number of laps");
 
     // operators
-    _pycomp.def("__add__", _add, "Get addition of two components");
-    _pycomp.def("__sub__", _sub, "Get difference between two components");
-    _pycomp.def("__iadd__", _iadd, "Add rhs to lhs");
-    _pycomp.def("__isub__", _isub, "Subtract rhs from lhs");
+    _pycomp.def(py::self + py::self);
+    _pycomp.def(py::self - py::self);
+    _pycomp.def(py::self += py::self);
+    _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
     _pycomp.def("__repr__", _repr, "String representation");
 
     _pycomp.def_static("label", &T::label, "Get the label for the type");
     _pycomp.def_static("description", &T::description,
                        "Get the description for the type");
-    _pycomp.def_static("available", []() { return true; },
-                       "Whether the component is available");
+    _pycomp.def_property_readonly_static("available", []() { return true; },
+                                         "Whether the component is available");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -423,7 +426,7 @@ generate(py::module& _pymod)
     std::string id    = get_class_name(property_t::enum_string());
     std::string _desc = "not available";
 
-    auto _init       = [](const std::string&) -> bundle_t* { return nullptr; };
+    auto _init       = [](const std::string&) -> bundle_t* { return new bundle_t{}; };
     auto _push       = [](bundle_t*) {};
     auto _pop        = [](bundle_t*) {};
     auto _start      = [](bundle_t*) {};
@@ -463,16 +466,17 @@ generate(py::module& _pymod)
     _pycomp.def("laps", _laps, "Get the number of laps");
 
     // operators
-    _pycomp.def("__add__", _add, "Get addition of two components");
-    _pycomp.def("__sub__", _sub, "Get difference between two components");
-    _pycomp.def("__iadd__", _iadd, "Add rhs to lhs");
-    _pycomp.def("__isub__", _isub, "Subtract rhs from lhs");
+    _pycomp.def("__add__", _add, "Get addition of two components", py::is_operator());
+    _pycomp.def("__sub__", _sub, "Get difference between two components",
+                py::is_operator());
+    _pycomp.def("__iadd__", _iadd, "Add rhs to lhs", py::is_operator());
+    _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
     _pycomp.def("__repr__", _repr, "String representation");
 
-    _pycomp.def_static("available", []() { return false; },
-                       "Whether the component is available");
-    _pycomp.def_static("has_value", []() { return false; },
-                       "Whether the component has an accessible value");
+    _pycomp.def_property_readonly_static("available", []() { return false; },
+                                         "Whether the component is available");
+    _pycomp.def_property_readonly_static("has_value", []() { return false; },
+                                         "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -493,13 +497,13 @@ py::module
 generate(py::module& _pymod)
 {
     py::module _pycomp = _pymod.def_submodule(
-        "components",
+        "component",
         "Stand-alone classes for the components. Unless push() and pop() are called on "
         "these objects, they will not store any data in the timemory call-graph (if "
         "applicable)");
     pyinternal::components(_pycomp, std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
     return _pycomp;
 }
-};  // namespace pycomponents
+}  // namespace pycomponents
 //
 //======================================================================================//

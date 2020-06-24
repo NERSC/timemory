@@ -78,7 +78,8 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set(PYTHON_SUBMODULE_FOLDERS
-    ert gperftools mpi_support plotting profiler roofline util mpi bundle components)
+    api ert gperftools mpi mpi_support plotting profiler roofline
+    util bundle component hardware_counters)
 
 set(PYTHON_SUBMODULE_FILES
     common options signals units)

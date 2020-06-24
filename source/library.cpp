@@ -90,8 +90,11 @@ get_region_map()
 static components_stack_t&
 get_components_stack()
 {
-    static thread_local components_stack_t _instance;
-    return _instance;
+    static auto                            _leader_tid = std::this_thread::get_id();
+    static components_stack_t              _leader_instance;
+    static thread_local components_stack_t _worker_instance = _leader_instance;
+    return (std::this_thread::get_id() == _leader_tid) ? _leader_instance
+                                                       : _worker_instance;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -100,7 +103,7 @@ get_components_stack()
 inline std::string&
 get_default_components()
 {
-    static thread_local std::string _instance =
+    static std::string _instance =
         tim::get_env<std::string>("TIMEMORY_GLOBAL_COMPONENTS", "wall_clock");
     return _instance;
 }

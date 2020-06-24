@@ -108,6 +108,9 @@ else:
         from . import options
         from . import units
         from . import signals
+        from . import component
+        from . import api
+        from . import hardware_counters
         from .common import *
         from .libpytimemory import *
 
@@ -116,15 +119,15 @@ else:
                    'version',
                    # --------------- modules ---------------#
                    'libpytimemory',
+                   'hardware_counters',
                    'mpi_support',
-                   'components',
                    'component',
                    'plotting',
                    'roofline',
                    'bundle',
-                   'cupti',
                    'tests',
                    'util',
+                   'api',
                    'ert',
                    'mpi',
                    # --------------- classes ---------------#

@@ -233,6 +233,6 @@ generate(py::module& _pymod)
     comp_bundle.def_static("reset", &pycomponent_bundle::reset,
                            "Reset the components in the bundle");
 }
-};  // namespace pycomponent_bundle
+}  // namespace pycomponent_bundle
 //
 //======================================================================================//

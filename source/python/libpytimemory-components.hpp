@@ -45,6 +45,8 @@
 #include "pybind11/functional.h"
 #include "pybind11/iostream.h"
 #include "pybind11/numpy.h"
+#include "pybind11/operators.h"
+#include "pybind11/options.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
@@ -152,7 +154,7 @@ namespace pysignals
 {
 py::module
 generate(py::module& _pymod);
-}
+}  // namespace pysignals
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -164,7 +166,31 @@ namespace pyunits
 {
 py::module
 generate(py::module& _pymod);
-}
+}  // namespace pyunits
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                      HARDWARE_COUNTERS
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace pyhardware_counters
+{
+py::module
+generate(py::module& _pymod);
+}  // namespace pyhardware_counters
+//
+//--------------------------------------------------------------------------------------//
+//
+//                                          APIs
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace pyapi
+{
+py::module
+generate(py::module& _pymod);
+}  // namespace pyapi
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -176,7 +202,7 @@ namespace pycomponent_list
 {
 void
 generate(py::module& _pymod);
-}
+}  // namespace pycomponent_list
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -188,7 +214,7 @@ namespace pycomponent_bundle
 {
 void
 generate(py::module& _pymod);
-}
+}  // namespace pycomponent_bundle
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -200,7 +226,7 @@ namespace pyauto_timer
 {
 void
 generate(py::module& _pymod);
-}
+}  // namespace pyauto_timer
 //
 //--------------------------------------------------------------------------------------//
 //

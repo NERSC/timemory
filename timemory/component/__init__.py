@@ -40,9 +40,9 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 """
-This submodule imports the compiled timemory components.
+This submodule imports the compiled timemory component.
 
-    from timemory.components import WallClock
+    from timemory.component import WallClock
     import time
 
     wc = WallClock("label")
@@ -53,6 +53,6 @@ This submodule imports the compiled timemory components.
 """
 
 try:
-    from ..libpytimemory.components import *
+    from ..libpytimemory.component import *
 except Exception as e:
     print("{}".format(e))
