@@ -50,6 +50,8 @@ generate(py::module& _pymod)
         _pymod, "settings", "Global configuration settings for timemory");
 
     settings.def(py::init<>(), "Dummy");
+    // to parse changes in env vars
+    settings.def("parse", &tim::settings::parse);
 
     using strvector_t = std::vector<std::string>;
 

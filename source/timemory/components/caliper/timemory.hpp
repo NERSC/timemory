@@ -230,8 +230,8 @@ private:
 
 public:
     // emulate CALI_MARK_BEGIN and CALI_MARK_END via static calls which require a string
-    static void start(const std::string& _name) { cali_begin_region(_name.c_str()); }
-    static void stop(const std::string& _name) { cali_end_region(_name.c_str()); }
+    static void start(const std::string& _name) { cali_begin_byname(_name.c_str()); }
+    static void stop(const std::string& _name) { cali_end_byname(_name.c_str()); }
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
     //

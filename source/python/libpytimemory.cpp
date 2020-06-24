@@ -25,6 +25,7 @@
 
 #include "libpytimemory.hpp"
 #include "libpytimemory-components.hpp"
+#include "timemory/library.h"
 #include "timemory/components.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/components/ompt.hpp"
