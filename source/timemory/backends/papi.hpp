@@ -832,8 +832,8 @@ available_events_info()
             if(idx != string_t::npos)
                 _pysym.substr(idx + _rm.length());
             evts.push_back(hardware_counters::info(
-                _avail, hardware_counters::interface::papi, i, PAPI_PRESET_MASK, _sym,
-                _pysym, get_timemory_papi_presets()[i].short_descr,
+                _avail, hardware_counters::api::papi, i, PAPI_PRESET_MASK, _sym, _pysym,
+                get_timemory_papi_presets()[i].short_descr,
                 get_timemory_papi_presets()[i].long_descr));
         }
     }
@@ -850,8 +850,8 @@ available_events_info()
             for(auto& itr : _pysym)
                 itr = tolower(itr);
             evts.push_back(hardware_counters::info(
-                false, hardware_counters::interface::papi, i, PAPI_PRESET_MASK, _sym,
-                _pysym, get_timemory_papi_presets()[i].short_descr,
+                false, hardware_counters::api::papi, i, PAPI_PRESET_MASK, _sym, _pysym,
+                get_timemory_papi_presets()[i].short_descr,
                 get_timemory_papi_presets()[i].long_descr));
         }
     }
@@ -881,12 +881,12 @@ get_hwcounter_info(const std::string& event_code_str)
             itr = tolower(itr);
         // int32_t _off = _info.event_code;
         int32_t _off = 0;
-        return hardware_counters::info(_avail, hardware_counters::interface::papi, idx,
-                                       _off, _sym, _pysym, _short_desc, _long_desc);
+        return hardware_counters::info(_avail, hardware_counters::api::papi, idx, _off,
+                                       _sym, _pysym, _short_desc, _long_desc);
     }
     else
     {
-        return hardware_counters::info(false, hardware_counters::interface::papi, -1, 0,
+        return hardware_counters::info(false, hardware_counters::api::papi, -1, 0,
                                        event_code_str, "", "", "");
     }
 }

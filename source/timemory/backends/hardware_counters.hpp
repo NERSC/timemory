@@ -36,7 +36,7 @@ namespace hardware_counters
 {
 using string_t = std::string;
 //
-struct interface
+struct api
 {
     enum type
     {
