@@ -493,7 +493,7 @@ if(MPI_FOUND)
         set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
     endif()
 
-    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" ON
+    add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" OFF
         CMAKE_DEFINE)
     if(NOT TIMEMORY_USE_MPI_INIT)
         target_link_libraries(timemory-mpi INTERFACE timemory-no-mpi-init)
