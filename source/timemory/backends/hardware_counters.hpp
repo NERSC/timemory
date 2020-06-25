@@ -36,10 +36,6 @@ using modifier_t     = std::function<void(info&)>;
 using modifier_vec_t = std::vector<modifier_t>;
 using info_vec_t     = std::vector<info>;
 //
-#define TIMEMORY_HWCOUNTER_INFO_ACCESSOR(NAME, INDEX)                                    \
-    auto&       NAME() { return std::get<INDEX>(*this); }                                \
-    const auto& NAME() const { return std::get<INDEX>(*this); }
-//
 struct interface
 {
     enum type
@@ -80,6 +76,10 @@ struct info
                 std::forward<Arg>(_arg))
     {}
 
+#define TIMEMORY_HWCOUNTER_INFO_ACCESSOR(NAME, INDEX)                                    \
+    auto&       NAME() { return std::get<INDEX>(*this); }                                \
+    const auto& NAME() const { return std::get<INDEX>(*this); }
+    //
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(available, 0)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(iface, 1)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(index, 2)
@@ -89,11 +89,11 @@ struct info
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(short_description, 6)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(long_description, 7)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(modifiers, 8)
+    //
+#undef TIMEMORY_HWCOUNTER_INFO_ACCESSOR
 
     auto id() const { return (this->index() | this->offset()); }
 };
-//
-#undef TIMEMORY_HWCOUNTER_INFO_ACCESSOR
 //
 //--------------------------------------------------------------------------------------//
 //

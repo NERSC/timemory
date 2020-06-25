@@ -36,36 +36,21 @@ add_option(TIMEMORY_BUILD_OMPT_LIBRARY "Build the OMPT library" ${_OMPT})
 
 if(TIMEMORY_BUILD_MPIP_LIBRARY AND (NOT TARGET timemory-cxx-shared OR
     NOT TIMEMORY_USE_MPI OR NOT TIMEMORY_USE_GOTCHA))
-    if(TIMEMORY_REQUIRE_PACKAGES)
-        message(FATAL_ERROR
-            "TIMEMORY_BUILD_MPIP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_MPI=ON, and TIMEMORY_USE_GOTCHA=ON...")
-    else()
-        message(AUTHOR_WARNING
-            "TIMEMORY_BUILD_MPIP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_MPI=ON, and TIMEMORY_USE_GOTCHA=ON...")
-        set(TIMEMORY_BUILD_MPIP_LIBRARY OFF CACHE BOOL "Build the mpiP library" FORCE)
-    endif()
+    message(AUTHOR_WARNING
+        "TIMEMORY_BUILD_MPIP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_MPI=ON, and TIMEMORY_USE_GOTCHA=ON...")
+    set(TIMEMORY_BUILD_MPIP_LIBRARY OFF CACHE BOOL "Build the mpiP library" FORCE)
 endif()
 
 if(TIMEMORY_BUILD_OMPT_LIBRARY AND NOT TIMEMORY_USE_OMPT)
-    if(TIMEMORY_REQUIRE_PACKAGES)
-        message(FATAL_ERROR
-            "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
-    else()
-        message(AUTHOR_WARNING
-            "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
-        set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
-    endif()
+    message(AUTHOR_WARNING
+        "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
+    set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
 endif()
 
 if(NOT TARGET timemory-cxx-shared AND TIMEMORY_BUILD_KOKKOS_TOOLS)
-    if(TIMEMORY_REQUIRE_PACKAGES)
-        message(FATAL_ERROR
-            "TIMEMORY_BUILD_KOKKOS_TOOLS requires BUILD_SHARED_LIBS=ON...")
-    else()
-        message(AUTHOR_WARNING
-            "TIMEMORY_BUILD_KOKKOS_TOOLS requires BUILD_SHARED_LIBS=ON...")
-        set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF CACHE BOOL "Build the kokkos-tools libraries" FORCE)
-    endif()
+    message(AUTHOR_WARNING
+        "TIMEMORY_BUILD_KOKKOS_TOOLS requires BUILD_SHARED_LIBS=ON...")
+    set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF CACHE BOOL "Build the kokkos-tools libraries" FORCE)
 endif()
 
 #----------------------------------------------------------------------------------------#
