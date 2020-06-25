@@ -247,13 +247,13 @@ install:
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --python ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
-  - travis_wait 90 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=/home/timemory-install
+  - travis_wait 90 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
   - cd build-timemory/Linux
   - make install -j
 
 script:
   - eval "${MATRIX_EVAL}"
-  - export TIMEMORY_PYTHON_INSTALL=/home/timemory-install/lib/python${TRAVIS_PYTHON_VERSION}/site-packages
+  - export TIMEMORY_PYTHON_INSTALL=${HOME}/timemory-install/lib/python${TRAVIS_PYTHON_VERSION}/site-packages
   - export PYTHONPATH=${TIMEMORY_PYTHON_INSTALL}:${PYTHONPATH}
   - if [ -d "${TIMEMORY_PYTHON_INSTALL}" ]; then python -c "import timemory; print(timemory.__file__)"; fi
   - echo "Testing is Done"
