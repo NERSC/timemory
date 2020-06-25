@@ -111,9 +111,35 @@ static bool mpi_is_attached = false;
 
 #if defined(TIMEMORY_MPI_GOTCHA)
 
+//--------------------------------------------------------------------------------------//
+// query environment setting for whether to enable finalization via MPI_Comm_create_keyval
+//
+extern "C" bool
+timemory_mpi_finalize_comm_keyval()
+{
+    return tim::get_env<bool>("TIMEMORY_MPI_FINALIZE_COMM_KEYVAL", true);
+}
+
+//--------------------------------------------------------------------------------------//
+// query environment setting for whether to enable finalization via gotcha wrapper
+//
+extern "C" bool
+timemory_mpi_finalize_gotcha_wrapper()
+{
+    return tim::get_env<bool>("TIMEMORY_MPI_FINALIZE_GOTCHA_WRAPPER", false);
+}
+
+//--------------------------------------------------------------------------------------//
+
 static int
 timemory_trace_mpi_finalize(MPI_Comm, int, void*, void*)
 {
+    // only execute once
+    static bool once = false;
+    if(once || tim::mpi::is_finalized())
+        return MPI_SUCCESS;
+    once = true;
+    // do finalization
     if(tim::settings::debug() || tim::settings::verbose() > 1)
         PRINT_HERE("%s", "comm keyval finalization started");
     timemory_trace_finalize();
@@ -128,13 +154,16 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 {
     static void set_attr()
     {
+        if(mpi_is_attached || !timemory_mpi_finalize_comm_keyval())
+            return;
         auto lk                  = tim::trace::lock<tim::trace::library>();
         auto _state              = tim::settings::enabled();
         tim::settings::enabled() = false;
-        int comm_key             = 0;
-        MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_trace_mpi_finalize, &comm_key,
-                               NULL);
-        MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
+        int  comm_key            = 0;
+        auto ret = MPI_Comm_create_keyval(MPI_NULL_COPY_FN, &timemory_trace_mpi_finalize,
+                                          &comm_key, NULL);
+        if(ret == MPI_SUCCESS)
+            MPI_Comm_set_attr(MPI_COMM_SELF, comm_key, NULL);
         tim::settings::enabled() = _state;
     }
 
@@ -173,6 +202,8 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     // MPI_Finalize
     int operator()()
     {
+        if(tim::mpi::is_finalized())
+            return MPI_SUCCESS;
         if(mpi_is_attached)
         {
             auto mode =
@@ -187,12 +218,14 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
                 timemory_pop_region("MPI_Init(int*, char**)");
                 timemory_pop_region("MPI_Init_thread(int*, char**, int, int*)");
             }
-            timemory_trace_finalize();
         }
         if(tim::settings::debug())
+            PRINT_HERE("%s", "finalizing trace");
+        timemory_trace_mpi_finalize(MPI_COMM_WORLD, 0, nullptr, nullptr);
+        if(tim::settings::debug())
             PRINT_HERE("%s", "finalizing MPI");
-        auto ret                 = MPI_Finalize();
         tim::mpi::is_finalized() = true;
+        auto ret                 = MPI_Finalize();
         return ret;
     }
 
@@ -229,7 +262,7 @@ setup_mpi_gotcha()
     mpi_trace_gotcha_t::get_initializer() = []() {
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 0, MPI_Init);
         TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 1, MPI_Init_thread);
-        if(mpi_is_attached)
+        if(mpi_is_attached || timemory_mpi_finalize_gotcha_wrapper())
             TIMEMORY_C_GOTCHA(mpi_trace_gotcha_t, 2, MPI_Finalize);
     };
     return true;
@@ -420,7 +453,8 @@ extern "C"
 
         _trace_map[id].emplace_back(traceset_t(id));
         _trace_map[id].back().start();
-        (*get_overhead())[id].first.start();
+        if(get_overhead())
+            (*get_overhead())[id].first.start();
     }
     //
     //----------------------------------------------------------------------------------//
@@ -450,7 +484,12 @@ extern "C"
                     (int) tim::threading::get_id());
         }
 
-        (*get_overhead())[id].first.stop();
+        // if there were no entries, return (pop called without a push)
+        if(offset < 0)
+            return;
+
+        if(get_overhead())
+            (*get_overhead())[id].first.stop();
 
         if(offset >= 0 && ntotal > 0)
         {
@@ -458,14 +497,17 @@ extern "C"
             _trace_map[id].pop_back();
         }
 
-        if(get_throttle()->count(id) > 0)
+        if(get_throttle() && get_throttle()->count(id) > 0)
             return;
 
-        auto _count = ++((*get_overhead())[id].second);
+        if(!get_overhead())
+            return;
+
+        auto _count = ++(get_overhead()->at(id).second);
 
         if(_count % tim::settings::throttle_count() == 0)
         {
-            auto _accum = (*get_overhead())[id].first.get_accum() / _count;
+            auto _accum = get_overhead()->at(id).first.get_accum() / _count;
             if(_accum < tim::settings::throttle_value())
             {
                 if(tim::settings::debug() || tim::settings::verbose() > 0)
@@ -501,8 +543,8 @@ extern "C"
                         (unsigned long) _count);
                 }
             }
-            (*get_overhead())[id].first.reset();
-            (*get_overhead())[id].second = 0;
+            get_overhead()->at(id).first.reset();
+            get_overhead()->at(id).second = 0;
         }
     }
     //

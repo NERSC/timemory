@@ -23,29 +23,18 @@
 // SOFTWARE.
 //
 
-#include "timemory-run.hpp"
-
 #include <regex>
 #include <string>
 
-bool
+extern "C" bool
 timemory_source_file_constraint(const std::string& fname)
 {
+    static auto regex_opts =
+        std::regex_constants::ECMAScript | std::regex_constants::optimize;
     // clang-format off
     //
-    std::regex file_regex("(@EXCLUDE_SOURCE_FILES@)");
+    std::regex file_regex("^(@EXCLUDE_SOURCE_FILES@)$", regex_opts);
     return std::regex_search(fname, file_regex);
     //
     // clang-format on
-}
-
-//======================================================================================//
-//
-static inline void
-consume()
-{
-    consume_parameters(initialize_expr, bpatch, use_mpi, stl_func_instr, cstd_func_instr,
-                       werror, loop_level_instr, error_print, binary_rewrite, debug_print,
-                       expect_error, is_static_exe, available_module_functions,
-                       instrumented_module_functions, regex_opts);
 }
