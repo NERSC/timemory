@@ -1644,14 +1644,15 @@ instrument_entity(const string_t& function_name)
 
     static std::regex exclude(
         "(timemory|tim::|cereal|N3tim|MPI_Init|MPI_Finalize|::__[A-Za-z]|"
-        "dyninst|tm_clones)",
+        "dyninst|tm_clones|malloc$|calloc$|free$|realloc$|std::addressof)",
         regex_opts);
-    static std::regex exclude_cxx("(std::_Sp_counted_base)", regex_opts);
-    static std::regex leading("^(_|frame_dummy|\\(|targ|nvtx|gcov|main\\.cold\\.|TAU|tau|"
-                              "Tau|dyn|RT|clone|thunk)",
-                              regex_opts);
+    static std::regex exclude_cxx("(std::_Sp_counted_base|std::use_facet)", regex_opts);
+    static std::regex leading(
+        "^(_|frame_dummy|\\(|targ|new|delete|operator new|operator delete|std::allocat|"
+        "nvtx|gcov|main\\.cold\\.|TAU|tau|Tau|dyn|RT|dl|sys|pthread|posix|clone|thunk)",
+        regex_opts);
     static std::regex stlfunc("^std::", regex_opts);
-    strset_t          whole = { "malloc", "free", "init", "fini", "_init", "_fini" };
+    strset_t          whole = { "init", "fini", "_init", "_fini" };
 
     if(!stl_func_instr && std::regex_search(function_name, stlfunc))
     {

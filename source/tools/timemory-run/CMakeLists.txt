@@ -29,6 +29,7 @@ if(TIMEMORY_USE_DYNINST)
                     NOT "${_FILE}" MATCHES "/test/" AND
                     NOT "${_FILE}" MATCHES "/unittests/" AND
                     NOT "${_FILE}" MATCHES "google-test" AND
+                    NOT "${_FILE}" MATCHES "llvm-ompt" AND
                     NOT "${_FILE}" MATCHES "/example/" AND
                     NOT "${_FILE}" MATCHES "/examples/" AND
                     NOT "${_FILE}" MATCHES "/doc/" AND
