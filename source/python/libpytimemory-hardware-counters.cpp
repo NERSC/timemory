@@ -48,28 +48,27 @@ namespace pyhardware_counters
 py::module
 generate(py::module& _pymod)
 {
-    using iface_t      = tim::hardware_counters::interface::type;
+    using iface_t      = tim::hardware_counters::api::type;
     using iface_enum_t = py::enum_<iface_t>;
     using info_t       = tim::hardware_counters::info;
 
     py::module _hw = _pymod.def_submodule("hardware_counters",
                                           "Hardware counter identifiers and info");
 
-    iface_enum_t _iface(_hw, "interface");
-    _iface.value("papi", tim::hardware_counters::interface::papi)
-        .value("cuda", tim::hardware_counters::interface::cupti)
-        .value("unknown", tim::hardware_counters::interface::cupti)
+    iface_enum_t _iface(_hw, "api");
+    _iface.value("papi", tim::hardware_counters::api::papi)
+        .value("cuda", tim::hardware_counters::api::cupti)
+        .value("unknown", tim::hardware_counters::api::cupti)
         .export_values();
 
     auto _init = [](std::string _sym, iface_t _if) -> info_t* {
         for(const auto& itr : tim::hardware_counters::get_info())
         {
             if((_sym == itr.symbol() && _if == itr.iface()) ||
-               (_sym == itr.symbol() &&
-                _if == tim::hardware_counters::interface::unknown))
+               (_sym == itr.symbol() && _if == tim::hardware_counters::api::unknown))
                 return new info_t(itr);
         }
-        if(_if == tim::hardware_counters::interface::papi)
+        if(_if == tim::hardware_counters::api::papi)
             return new info_t(tim::papi::get_hwcounter_info(_sym));
 
         return nullptr;
@@ -77,8 +76,8 @@ generate(py::module& _pymod)
 
     py::class_<info_t> _info(_hw, "Info");
     _info.def(py::init(_init), "Get a hardware counter identifier");
-    _info.def("interface", py::overload_cast<>(&info_t::iface, py::const_),
-              "Library interface used for accessing hardware counter");
+    _info.def("api", py::overload_cast<>(&info_t::iface, py::const_),
+              "Library API used for accessing hardware counter");
     _info.def("symbol", py::overload_cast<>(&info_t::symbol, py::const_),
               "Symbol for the hardware counter");
     _info.def("short_description",
@@ -134,7 +133,8 @@ generate(py::module& _pymod)
         }
     };
 
-    _hw.def("generate_presets", _generate_presets, "Get attribute");
+    _generate_presets();
+    // _hw.def("generate_presets", _generate_presets, "Get attribute");
     return _hw;
 }
 //

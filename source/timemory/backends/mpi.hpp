@@ -52,26 +52,29 @@ namespace mpi
 //--------------------------------------------------------------------------------------//
 
 #if !defined(TIMEMORY_USE_MPI)
-enum class data_type : int
+struct dummy_data_type
 {
-    int_t,
-    float_t,
-    double_t
+    enum type
+    {
+        int_t,
+        float_t,
+        double_t
+    };
 };
 #endif
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(MPI_INT)
-#    define MPI_INT data_type::int_t
+#if !defined(TIMEMORY_USE_MPI) && !defined(MPI_INT)
+#    define MPI_INT ::tim::mpi::dummy_data_type::int_t
 #endif
 
-#if !defined(MPI_FLOAT)
-#    define MPI_FLOAT data_type::float_t
+#if !defined(TIMEMORY_USE_MPI) && !defined(MPI_FLOAT)
+#    define MPI_FLOAT ::tim::mpi::dummy_data_type::float_t
 #endif
 
-#if !defined(MPI_DOUBLE)
-#    define MPI_DOUBLE data_type::double_t
+#if !defined(TIMEMORY_USE_MPI) && !defined(MPI_DOUBLE)
+#    define MPI_DOUBLE ::tim::mpi::dummy_data_type::double_t
 #endif
 
 //--------------------------------------------------------------------------------------//

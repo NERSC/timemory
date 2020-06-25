@@ -1773,9 +1773,9 @@ tim::cupti::available_events_info(CUdevice device)
         string_t _pysym = "cuda_" + _sym;
         for(auto& itr : _pysym)
             itr = tolower(itr);
-        event_info.push_back(
-            hardware_counters::info(true, hardware_counters::interface::cupti, i, 0, _sym,
-                                    _pysym, short_desc, long_desc));
+        event_info.push_back(hardware_counters::info(true, hardware_counters::api::cupti,
+                                                     i, 0, _sym, _pysym, short_desc,
+                                                     long_desc));
     }
 
     free(domainIdArray);
@@ -1853,8 +1853,8 @@ tim::cupti::available_metrics_info(CUdevice device)
         for(auto& itr : _pysym)
             itr = tolower(itr);
         metric_info.push_back(
-            hardware_counters::info(_avail, hardware_counters::interface::cupti, i, 0,
-                                    _sym, _pysym, short_desc, long_desc));
+            hardware_counters::info(_avail, hardware_counters::api::cupti, i, 0, _sym,
+                                    _pysym, short_desc, long_desc));
     }
     free(metricIdArray);
     return metric_info;
