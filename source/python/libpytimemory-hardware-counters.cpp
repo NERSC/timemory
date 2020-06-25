@@ -134,7 +134,8 @@ generate(py::module& _pymod)
         }
     };
 
-    _hw.def("generate_presets", _generate_presets, "Get attribute");
+    generate_presets();
+    // _hw.def("generate_presets", _generate_presets, "Get attribute");
     return _hw;
 }
 //
