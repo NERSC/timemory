@@ -26,15 +26,15 @@
 
 #include "timemory/backends/types/papi.hpp"
 
+#include <functional>
+#include <string>
+#include <vector>
+
 namespace tim
 {
 namespace hardware_counters
 {
-struct info;
-using string_t       = std::string;
-using modifier_t     = std::function<void(info&)>;
-using modifier_vec_t = std::vector<modifier_t>;
-using info_vec_t     = std::vector<info>;
+using string_t = std::string;
 //
 struct interface
 {
@@ -47,11 +47,10 @@ struct interface
 };
 //
 struct info
-: public std::tuple<bool, int, int32_t, int32_t, string_t, string_t, string_t, string_t,
-                    modifier_vec_t>
+: public std::tuple<bool, int, int32_t, int32_t, string_t, string_t, string_t, string_t>
 {
-    using base_type = std::tuple<bool, int, int32_t, int32_t, string_t, string_t,
-                                 string_t, string_t, modifier_vec_t>;
+    using base_type =
+        std::tuple<bool, int, int32_t, int32_t, string_t, string_t, string_t, string_t>;
 
     info()            = default;
     ~info()           = default;
@@ -69,11 +68,9 @@ struct info
     : base_type(std::forward<base_type>(rhs))
     {}
 
-    template <typename Arg = modifier_vec_t>
     info(bool _avail, int _cat, int32_t _idx, int32_t _off, string_t _sym,
-         string_t _pysym, string_t _short, string_t _long, Arg&& _arg = modifier_vec_t{})
-    : base_type(_avail, _cat, _idx, _off, _sym, _pysym, _short, _long,
-                std::forward<Arg>(_arg))
+         string_t _pysym, string_t _short, string_t _long)
+    : base_type(_avail, _cat, _idx, _off, _sym, _pysym, _short, _long)
     {}
 
 #define TIMEMORY_HWCOUNTER_INFO_ACCESSOR(NAME, INDEX)                                    \
@@ -88,7 +85,6 @@ struct info
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(python_symbol, 5)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(short_description, 6)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(long_description, 7)
-    TIMEMORY_HWCOUNTER_INFO_ACCESSOR(modifiers, 8)
     //
 #undef TIMEMORY_HWCOUNTER_INFO_ACCESSOR
 
@@ -96,6 +92,8 @@ struct info
 };
 //
 //--------------------------------------------------------------------------------------//
+//
+using info_vec_t = std::vector<info>;
 //
 inline info_vec_t&
 get_info()
