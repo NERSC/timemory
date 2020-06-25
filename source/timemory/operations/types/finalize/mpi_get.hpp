@@ -310,7 +310,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
 #if !defined(TIMEMORY_USE_MPI)
     if(settings::debug())
         PRINT_HERE("%s", "timemory not using MPI");
-
+    consume_parameters(dst, inp, functor);
     return;
 #else
     if(settings::debug())

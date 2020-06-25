@@ -54,6 +54,5 @@ This submodule imports the compiled timemory hardware_counters.
 
 try:
     from ..libpytimemory.hardware_counters import *
-    from ..libpytimemory.hardware_counters.preset import *
 except Exception as e:
     print("{}".format(e))
