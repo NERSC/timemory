@@ -51,18 +51,41 @@ namespace tim
 {
 namespace component
 {
+//
 struct caliper_marker : public base<caliper_marker, void>
 {
-    // timemory component api
     using value_type = void;
     using this_type  = caliper_marker;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "caliper"; }
+    static std::string label() { return "caliper_marker"; }
     static std::string description()
     {
-        return "Forwards markers to Caliper instrumentation";
+        return "Generic forwarding of markers to Caliper instrumentation";
     }
+};
+//
+struct caliper_loop_marker : public base<caliper_loop_marker, void>
+{
+    using value_type = void;
+    using this_type  = caliper_loop_marker;
+    using base_type  = base<this_type, value_type>;
+
+    static std::string label() { return "caliper_loop_marker"; }
+    static std::string description()
+    {
+        return "Variant of caliper_marker with support for loop marking";
+    }
+};
+//
+struct caliper_config : public base<caliper_config, void>
+{
+    using value_type = void;
+    using this_type  = caliper_config;
+    using base_type  = base<this_type, value_type>;
+
+    static std::string label() { return "caliper_config"; }
+    static std::string description() { return "Caliper configuration manager"; }
 };
 //
 //======================================================================================//

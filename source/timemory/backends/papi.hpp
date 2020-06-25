@@ -834,8 +834,7 @@ available_events_info()
             evts.push_back(hardware_counters::info(
                 _avail, hardware_counters::interface::papi, i, PAPI_PRESET_MASK, _sym,
                 _pysym, get_timemory_papi_presets()[i].short_descr,
-                get_timemory_papi_presets()[i].long_descr,
-                hardware_counters::modifier_vec_t{}));
+                get_timemory_papi_presets()[i].long_descr));
         }
     }
 #endif

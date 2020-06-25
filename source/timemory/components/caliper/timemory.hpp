@@ -155,6 +155,9 @@ struct caliper_config
     using value_type         = void;
     using instance_tracker_t = policy::instance_tracker<caliper_config, false>;
 
+    static std::string label() { return "caliper_config"; }
+    static std::string description() { return "Caliper configuration manager"; }
+
     static auto& get_manager()
     {
         static cali::ConfigManager _instance;
@@ -233,8 +236,11 @@ struct caliper_marker
     using this_type  = caliper_marker;
     using base_type  = base<this_type, value_type>;
 
-    using caliper_common::description;
-    using caliper_common::label;
+    static std::string label() { return "caliper_marker"; }
+    static std::string description()
+    {
+        return "Generic forwarding of markers to Caliper instrumentation";
+    }
 
     TIMEMORY_DEFAULT_OBJECT(caliper_marker)
 
@@ -306,8 +312,11 @@ struct caliper_loop_marker
     using this_type  = caliper_loop_marker;
     using base_type  = base<this_type, value_type>;
 
-    using caliper_common::description;
-    using caliper_common::label;
+    static std::string label() { return "caliper_loop_marker"; }
+    static std::string description()
+    {
+        return "Variant of caliper_marker with support for loop marking";
+    }
 
     TIMEMORY_DEFAULT_OBJECT(caliper_loop_marker)
 

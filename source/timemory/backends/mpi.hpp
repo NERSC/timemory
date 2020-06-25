@@ -63,15 +63,15 @@ enum class data_type : int
 //--------------------------------------------------------------------------------------//
 
 #if !defined(MPI_INT)
-#    define MPI_INT ::int_t
+#    define MPI_INT data_type::int_t
 #endif
 
 #if !defined(MPI_FLOAT)
-#    define MPI_FLOAT ::float_t
+#    define MPI_FLOAT data_type::float_t
 #endif
 
 #if !defined(MPI_DOUBLE)
-#    define MPI_DOUBLE ::double_t
+#    define MPI_DOUBLE data_type::double_t
 #endif
 
 //--------------------------------------------------------------------------------------//
