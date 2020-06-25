@@ -393,6 +393,7 @@ public:
     graph_t&            graph();
     iterator&           current();
 
+    void           reset();
     inline bool    empty() const { return (_data().graph().size() <= 1); }
     inline size_t  size() const { return _data().graph().size() - 1; }
     iterator       pop();
@@ -465,6 +466,32 @@ private:
     std::shared_ptr<printer_t> m_printer;
     sample_array_t             m_samples;
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+void
+storage<Type, true>::reset()
+{
+    // have the data graph erase all children of the head node
+    if(m_graph_data_instance)
+        m_graph_data_instance->reset();
+    // erase all the cached iterators except for m_node_ids[0][0]
+    for(auto& ditr : m_node_ids)
+    {
+        auto _depth = ditr.first;
+        if(_depth != 0)
+            ditr.second.clear();
+        else
+        {
+            for(auto itr = ditr.second.begin(); itr != ditr.second.end(); ++itr)
+            {
+                if(itr->first != 0)
+                    ditr.second.erase(itr);
+            }
+        }
+    }
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -867,6 +894,7 @@ public:
     void initialize() final;
     void finalize() final;
 
+    void          reset() {}
     bool          empty() const { return true; }
     inline size_t size() const { return 0; }
     inline size_t depth() const { return 0; }

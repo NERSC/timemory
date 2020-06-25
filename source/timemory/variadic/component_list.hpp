@@ -35,7 +35,6 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
-#include "timemory/components.hpp"
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"

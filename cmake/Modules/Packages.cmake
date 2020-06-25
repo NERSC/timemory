@@ -244,6 +244,7 @@ function(find_package_interface)
 
     if(NOT TARGET ${PACKAGE_INTERFACE})
         add_library(${PACKAGE_INTERFACE} INTERFACE)
+        add_library(${PROJECT_NAME}::${PACKAGE_INTERFACE} ALIAS ${PACKAGE_INTERFACE})
     endif()
     
     if("${PACKAGE_DESCRIPTION}" STREQUAL "")

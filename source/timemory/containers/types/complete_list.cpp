@@ -22,33 +22,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//======================================================================================//
-//
-#include "timemory/components.hpp"
-//
-#include "timemory/variadic/lightweight_tuple.hpp"
-//
-#include "timemory/variadic/component_hybrid.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
-//
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-//
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/runtime/initialize.hpp"
-#include "timemory/runtime/properties.hpp"
-//
-#include "timemory/operations/extern.hpp"
-//
-#include "timemory/plotting/definition.hpp"
-//
-#include "timemory/storage/declaration.hpp"
-#include "timemory/storage/definition.hpp"
-#include "timemory/storage/types.hpp"
-//
 #include "timemory/containers/types/complete_list.hpp"
-//
-//======================================================================================//

@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/backends/device.hpp"
+#include "timemory/backends/hardware_counters.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/settings/declaration.hpp"
@@ -127,8 +128,7 @@ using string_t = std::string;
 template <typename KeyT, typename MappedT>
 using map_t            = std::map<KeyT, MappedT>;
 using strvec_t         = std::vector<string_t>;
-using boolvec_t        = std::vector<bool>;
-using hwcounter_info_t = std::tuple<strvec_t, boolvec_t, strvec_t, strvec_t>;
+using hwcounter_info_t = std::vector<hardware_counters::info>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -880,39 +880,6 @@ public:
     using const_iterator      = typename data_type::const_iterator;
     using named_elapsed_t     = uomap_t<std::string, uint64_t>;
     using named_elapsed_map_t = uomap_t<uint64_t, named_elapsed_t>;
-
-    // value_type is not used but keeping it here bc of plans to use something
-    // similar later for a "thread_value" to distinguish traditional additions
-    // vs. addition from other threads when they merge
-    /*
-    template <typename Up>
-    class value_type
-    {
-    public:
-        value_type() = delete;
-
-        explicit value_type(const Up& _val)
-        : m_value(_val)
-        {
-        }
-        explicit value_type(Up&& val)
-        : m_value(std::move(val))
-        {
-        }
-
-        value_type(const value_type&) = default;
-        value_type(value_type&&)      = default;
-
-        value_type& operator=(const value_type&) = default;
-        value_type& operator=(value_type&&) = default;
-
-        Up&       get() { return m_value; }
-        const Up& get() const { return m_value; }
-
-    private:
-        Up m_value;
-    };
-    */
 
     struct lock_holder
     {

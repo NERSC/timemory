@@ -78,7 +78,7 @@ struct generic_operator
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<(trait::is_available<Rp>::value), int> = 0,
               enable_if_t<(std::is_pointer<Up>::value), int>     = 0>
-    explicit generic_operator(Up& obj, Args&&... args)
+    explicit generic_operator(Up obj, Args&&... args)
     {
         check<Up>();
         if(obj)
@@ -88,7 +88,7 @@ struct generic_operator
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<(trait::is_available<Rp>::value), int> = 0,
               enable_if_t<(std::is_pointer<Up>::value), int>     = 0>
-    explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
+    explicit generic_operator(Up obj, Up rhs, Args&&... args)
     {
         check<Up>();
         if(obj && rhs)
@@ -98,40 +98,40 @@ struct generic_operator
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up& obj, int, int, Args&&... args)
+    auto pointer_sfinae(Up obj, int, int, Args&&... args)
         -> decltype(Op(*obj, std::forward<Args>(args)...), void())
     {
         Op(*obj, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up& obj, int, long, Args&&...) -> decltype(Op{ *obj }, void())
+    auto pointer_sfinae(Up obj, int, long, Args&&...) -> decltype(Op{ *obj }, void())
     {
         Op{ *obj };
     }
 
     template <typename Up, typename... Args>
-    void pointer_sfinae(Up&, long, long, Args&&...)
+    void pointer_sfinae(Up, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up& obj, Up& rhs, int, int, Args&&... args)
+    auto pointer_sfinae(Up obj, Up rhs, int, int, Args&&... args)
         -> decltype(Op(*obj, *rhs, std::forward<Args>(args)...), void())
     {
         Op(*obj, *rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up& obj, Up& rhs, int, long, Args&&...)
+    auto pointer_sfinae(Up obj, Up rhs, int, long, Args&&...)
         -> decltype(Op(*obj, *rhs), void())
     {
         Op(*obj, *rhs);
     }
 
     template <typename Up, typename... Args>
-    void pointer_sfinae(Up&, Up&, long, long, Args&&...)
+    void pointer_sfinae(Up, Up, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//

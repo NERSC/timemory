@@ -31,13 +31,13 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/data/stream.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/storage/types.hpp"
-#include "timemory/utility/stream.hpp"
 
 #include <fstream>
 #include <memory>
@@ -736,6 +736,9 @@ storage<Type, true>::internal_print()
 
         if(!m_printer)
             m_printer.reset(new printer_t(Type::get_label(), this));
+
+        if(m_manager)
+            m_manager->add_entries(this->size());
 
         m_printer->execute();
 

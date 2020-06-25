@@ -127,6 +127,7 @@ struct page_rss : public base<page_rss, int64_t>
         value      = std::move(tmp);
         set_stopped();
     }
+    void measure() { accum = value = std::max<int64_t>(value, record()); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -558,7 +559,11 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
     //----------------------------------------------------------------------------------//
     // record a measurment (for file sampling)
     //
-    void measure() { std::get<0>(value) = get_bytes_read(); }
+    void measure()
+    {
+        std::get<0>(accum) = std::get<0>(value) =
+            std::max<int64_t>(std::get<0>(value), get_bytes_read());
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -741,7 +746,11 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
     //----------------------------------------------------------------------------------//
     // record a measurment (for file sampling)
     //
-    void measure() { std::get<0>(value) = get_bytes_written(); }
+    void measure()
+    {
+        std::get<0>(accum) = std::get<0>(value) =
+            std::max<int64_t>(std::get<0>(value), get_bytes_written());
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -776,6 +785,7 @@ struct virtual_memory : public base<virtual_memory>
         value      = std::move(tmp);
         set_stopped();
     }
+    void measure() { accum = value = std::max<int64_t>(value, record()); }
 };
 
 //--------------------------------------------------------------------------------------//

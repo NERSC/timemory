@@ -184,35 +184,20 @@ extern "C"
         if(_mode == 1 && (!_extra || strlen(_extra) == 0))
             return _func;
 
-        auto to_string = [](const char* cstr) {
-            std::stringstream _ss;
-            if(cstr)
-            {
-                for(int i = 0; i < MAX_STR_LEN; ++i)
-                {
-                    if(cstr[i] == '\0' || i + 1 == static_cast<int>(strlen(cstr)))
-                        break;
-                    _ss << cstr[i];
-                }
-            }
-            return _ss.str();
-        };
-
         std::stringstream ss;
-
         if(_mode == 1)
         {
-            ss << to_string(_func) << "/";
+            ss << _func;
         }
         else if(_mode == 2)
         {
-            auto _filestr = to_string(_file);
-            ss << to_string(_func) << "/"
-               << _filestr.substr(_filestr.find_last_of('/') + 1) << ":" << _line;
+            auto _filestr = std::string(_file);
+            ss << _func << "/" << _filestr.substr(_filestr.find_last_of('/') + 1) << ":"
+               << _line;
         }
 
         if(_extra && strlen(_extra) > 0)
-            ss << "/" << to_string(_extra);
+            ss << "/" << _extra;
         std::string buff = ss.str();
         free_cstr()[buff] += 1;
         return free_cstr().find(buff)->first.c_str();

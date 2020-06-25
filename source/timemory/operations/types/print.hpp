@@ -39,8 +39,8 @@
 //
 //======================================================================================//
 
+#include "timemory/data/stream.hpp"
 #include "timemory/mpl/type_traits.hpp"
-#include "timemory/utility/stream.hpp"
 
 #include <cstdint>
 #include <ostream>

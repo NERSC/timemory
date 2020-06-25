@@ -274,9 +274,17 @@ protected:
         m_thr = --get_thread_started();
     }
 
+    auto get_global_count() { return m_tot; }
+    auto get_thread_count() { return m_tot; }
+
+    auto global_tracker_start() { return (start(), m_tot); }
+    auto global_tracker_stop() { return (stop(), m_tot); }
+    auto thread_tracker_start() { return (start(), m_thr); }
+    auto thread_tracker_stop() { return (stop(), m_thr); }
+
 protected:
-    int_type m_tot = 0;
-    int_type m_thr = 0;
+    int_type m_tot = get_started_count();
+    int_type m_thr = get_thread_started_count();
 };
 
 //======================================================================================//
@@ -318,8 +326,12 @@ protected:
     //
     void stop() { m_tot = --get_started(); }
 
+    auto get_global_count() { return m_tot; }
+    auto global_tracker_start() { return (start(), m_tot); }
+    auto global_tracker_stop() { return (stop(), m_tot); }
+
 protected:
-    int_type m_tot = 0;
+    int_type m_tot = get_started_count();
 };
 
 //======================================================================================//

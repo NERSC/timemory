@@ -66,6 +66,8 @@ class context(Enum):
 
 #----------------------------------------------------------------------------------------#
 #
+
+
 class base_decorator(object):
     """
     A base class for the decorators and context managers
@@ -102,11 +104,11 @@ class base_decorator(object):
                 self.signature = getattr(context, self.mode)
             except Exception as e:
                 print(e)
-                self.signature = determine_deferred(is_decorator, is_context_manager)
+                self.signature = determine_deferred(
+                    is_decorator, is_context_manager)
         elif self.signature == context.defer:
-            self.signature = determine_deferred(is_decorator, is_context_manager)
-
-
+            self.signature = determine_deferred(
+                is_decorator, is_context_manager)
 
     #------------------------------------------------------------------------------------#
     #
@@ -116,7 +118,6 @@ class base_decorator(object):
             self.is_class = True
         else:
             self.is_class = False
-
 
     #------------------------------------------------------------------------------------#
     #
@@ -134,10 +135,9 @@ class base_decorator(object):
             else:
                 return ''
         return _str
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def arg_string(self, args, kwargs):
         """
         Generate a string of the arguments
@@ -178,22 +178,21 @@ class auto_timer(base_decorator):
             key=key, add_args=add_args, is_class=is_class, mode=mode)
         self.report_at_exit = report_at_exit
         self._self_obj = None
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __call__(self, func):
         """
         Decorator
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
             self.parse_wrapped(func, args, kwargs)
-            self.determine_signature(is_decorator=True, is_context_manager=False)
+            self.determine_signature(
+                is_decorator=True, is_context_manager=False)
 
             _func = func.__name__
             _key = ''
@@ -213,15 +212,13 @@ class auto_timer(base_decorator):
             return _ret
 
         return function_wrapper
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __enter__(self, *args, **kwargs):
         """
         Context manager
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
@@ -239,10 +236,9 @@ class auto_timer(base_decorator):
         _key = _key.strip('/')
 
         self._self_obj = timer_decorator(_key, self.report_at_exit)
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
         del self._self_obj
 
@@ -271,22 +267,21 @@ class timer(base_decorator):
         super(timer, self).__init__(key=key, add_args=add_args,
                                     is_class=is_class, mode=mode)
         self._self_obj = None
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __call__(self, func):
         """
         Decorator
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
             self.parse_wrapped(func, args, kwargs)
-            self.determine_signature(is_decorator=True, is_context_manager=False)
+            self.determine_signature(
+                is_decorator=True, is_context_manager=False)
 
             _func = func.__name__
             _key = ''
@@ -309,15 +304,13 @@ class timer(base_decorator):
             return ret
 
         return function_wrapper
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __enter__(self, *args, **kwargs):
         """
         Context manager
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
@@ -336,10 +329,9 @@ class timer(base_decorator):
 
         self._self_obj = timer(_key)
         self._self_obj.start()
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self._self_obj.stop()
         self._self_obj.report()
@@ -363,7 +355,6 @@ class rss_usage(base_decorator):
         # ...
     """
 
-
     #------------------------------------------------------------------------------------#
     #
     def __init__(self, key="", add_args=False, is_class=False, mode="defer"):
@@ -371,22 +362,21 @@ class rss_usage(base_decorator):
             key=key, add_args=add_args, is_class=is_class, mode=mode)
         self._self_obj = None
         self._self_dif = None
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __call__(self, func):
         """
         Decorator
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
             self.parse_wrapped(func, args, kwargs)
-            self.determine_signature(is_decorator=True, is_context_manager=False)
+            self.determine_signature(
+                is_decorator=True, is_context_manager=False)
 
             _func = func.__name__
             _key = ''
@@ -413,15 +403,13 @@ class rss_usage(base_decorator):
             return ret
 
         return function_wrapper
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __enter__(self, *args, **kwargs):
         """
         Context manager entrance
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
@@ -441,10 +429,9 @@ class rss_usage(base_decorator):
         self._self_obj = rss_usage(_key)
         self._self_dif = rss_usage(_key)
         self._self_dif.record()
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """
         Context manager exit
@@ -496,22 +483,21 @@ class marker(base_decorator):
         self.components = marker.get_components(components)
         self.report_at_exit = report_at_exit
         self._self_obj = None
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __call__(self, func):
         """
         Decorator
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
             self.parse_wrapped(func, args, kwargs)
-            self.determine_signature(is_decorator=True, is_context_manager=False)
+            self.determine_signature(
+                is_decorator=True, is_context_manager=False)
 
             _func = func.__name__
             _key = ''
@@ -531,15 +517,13 @@ class marker(base_decorator):
             return ret
 
         return function_wrapper
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __enter__(self, *args, **kwargs):
         """
         Context manager
         """
-        import timemory
         _file = FILE(3)
         _line = LINE(2)
         _func = FUNC(2)
@@ -557,10 +541,9 @@ class marker(base_decorator):
         _key = _key.strip('/')
 
         self._self_obj = component_decorator(self.components, _key)
-
-
     #------------------------------------------------------------------------------------#
     #
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
         del self._self_obj
 

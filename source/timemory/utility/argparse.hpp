@@ -25,6 +25,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <cstring>
 #include <deque>
@@ -247,13 +248,137 @@ struct is_container
 //
 //--------------------------------------------------------------------------------------//
 //
+//                      argument vector
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \class argument_vector
+/// \brief This class exists to simplify creating argument arrays compatible with execv*
+/// routines and MPI_Comm_spawn/MPI_Comm_spawn_multiple
+///
+struct argument_vector : std::vector<std::string>
+{
+    struct c_args : std::tuple<int, char**, std::string>
+    {
+        using base_type = std::tuple<int, char**, std::string>;
+        template <typename... Args>
+        c_args(Args&&... args)
+        : base_type(std::forward<Args>(args)...)
+        {}
+
+        auto& argc() { return std::get<0>(*this); }
+        auto& argv() { return std::get<1>(*this); }
+        auto& args() { return std::get<2>(*this); }
+
+        const auto& argc() const { return std::get<0>(*this); }
+        const auto& argv() const { return std::get<1>(*this); }
+        const auto& args() const { return std::get<2>(*this); }
+
+        void clear()
+        {
+            // uses comma operator to execute delete and return nullptr
+            for(int i = 0; i < argc(); ++i)
+                argv()[i] = (delete[] argv()[i], nullptr);
+            argv() = (delete[] argv(), nullptr);
+        }
+    };
+
+    using base_type = std::vector<std::string>;
+    using cargs_t   = c_args;
+
+    template <typename... Args>
+    argument_vector(Args&&... args)
+    : base_type(std::forward<Args>(args)...)
+    {}
+
+    explicit argument_vector(int& argc, char**& argv)
+    : base_type()
+    {
+        reserve(argc);
+        for(int i = 0; i < argc; ++i)
+            push_back(argv[i]);
+    }
+
+    explicit argument_vector(int& argc, const char**& argv)
+    : base_type()
+    {
+        reserve(argc);
+        for(int i = 0; i < argc; ++i)
+            push_back(argv[i]);
+    }
+
+    explicit argument_vector(int& argc, const char* const*& argv)
+    {
+        reserve(argc);
+        for(int i = 0; i < argc; ++i)
+            push_back(argv[i]);
+    }
+
+    cargs_t get_execv(const base_type& _prepend, size_t _beg = 0,
+                      size_t _end = std::numeric_limits<size_t>::max()) const
+    {
+        std::stringstream cmdss;
+        // find the end if not specified
+        _end = std::min<size_t>(size(), _end);
+        // determine the number of arguments
+        auto _argc = (_end - _beg) + _prepend.size();
+        // create the new C argument array, add an extra entry at the end which will
+        // always be a null pointer because that is how execv determines the end
+        char** _argv = new char*[_argc + 1];
+
+        // ensure all arguments are null pointers initially
+        for(size_t i = 0; i < _argc + 1; ++i)
+            _argv[i] = nullptr;
+
+        // add the prepend list
+        size_t _idx = 0;
+        for(const auto& itr : _prepend)
+            _argv[_idx++] = helpers::strdup(itr.c_str());
+
+        // copy over the arguments stored internally from the range specified
+        for(auto i = _beg; i < _end; ++i)
+            _argv[_idx++] = helpers::strdup(this->at(i).c_str());
+
+        // add check that last argument really is a nullptr
+        assert(_argv[_argc] == nullptr);
+
+        // create the command string
+        for(size_t i = 0; i < _argc; ++i)
+            cmdss << " " << _argv[i];
+        auto cmd = cmdss.str().substr(1);
+
+        // return a new (int argc, char** argv) and subtract 1 bc nullptr in last entry
+        // does not count as argc
+        return cargs_t(_argc - 1, _argv, cmd);
+    }
+
+    cargs_t get_execv(size_t _beg = 0,
+                      size_t _end = std::numeric_limits<size_t>::max()) const
+    {
+        return get_execv(base_type{}, _beg, _end);
+    }
+
+    // helper function to free the memory created by get_execv, pass by reference
+    // so that we can set values to nullptr and avoid multiple delete errors
+    static void free_execv(cargs_t& itr) { itr.clear(); }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 //                      argument parser
 //
 //--------------------------------------------------------------------------------------//
 //
-
 struct argument_parser
 {
+    struct arg_result;
+
+    using this_type     = argument_parser;
+    using result_type   = arg_result;
+    using bool_func_t   = std::function<bool(this_type&)>;
+    using action_func_t = std::function<void(this_type&)>;
+    using action_pair_t = std::pair<bool_func_t, action_func_t>;
+    using error_func_t  = std::function<void(this_type&, arg_result&)>;
     //
     //----------------------------------------------------------------------------------//
     //
@@ -275,10 +400,6 @@ struct argument_parser
         bool        m_error = false;
         std::string m_what  = {};
     };
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    using result_type = arg_result;
     //
     //----------------------------------------------------------------------------------//
     //
@@ -375,6 +496,13 @@ struct argument_parser
             return *this;
         }
 
+        template <typename ActionFuncT>
+        argument& action(ActionFuncT&& _func)
+        {
+            m_actions.push_back(std::forward<ActionFuncT>(_func));
+            return *this;
+        }
+
         bool found() const { return m_found; }
 
         template <typename T>
@@ -452,6 +580,12 @@ struct argument_parser
             return arg_result();
         }
 
+        void execute_actions(argument_parser& p)
+        {
+            for(auto& itr : m_actions)
+                itr(p);
+        }
+
         friend std::ostream& operator<<(std::ostream& os, const argument& arg)
         {
             std::stringstream ss;
@@ -469,18 +603,19 @@ struct argument_parser
         }
 
         friend struct argument_parser;
-        int                      m_position  = Position::IGNORE;
-        int                      m_count     = Count::ANY;
-        int                      m_max_count = Count::ANY;
-        std::vector<std::string> m_names     = {};
-        std::string              m_desc      = {};
-        bool                     m_found     = false;
-        bool                     m_required  = false;
-        int                      m_index     = -1;
-        void*                    m_default   = nullptr;
-        callback_t               m_callback  = [](void*) {};
-        std::set<std::string>    m_choices   = {};
-        std::vector<std::string> m_values    = {};
+        int                        m_position  = Position::IGNORE;
+        int                        m_count     = Count::ANY;
+        int                        m_max_count = Count::ANY;
+        std::vector<std::string>   m_names     = {};
+        std::string                m_desc      = {};
+        bool                       m_found     = false;
+        bool                       m_required  = false;
+        int                        m_index     = -1;
+        void*                      m_default   = nullptr;
+        callback_t                 m_callback  = [](void*) {};
+        std::set<std::string>      m_choices   = {};
+        std::vector<std::string>   m_values    = {};
+        std::vector<action_func_t> m_actions   = {};
     };
     //
     //----------------------------------------------------------------------------------//
@@ -504,6 +639,26 @@ struct argument_parser
                            const std::string& desc, bool req = false)
     {
         return add_argument().names(_names).description(desc).required(req);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename BoolFuncT, typename ActionFuncT>
+    this_type& add_action(BoolFuncT&& _b, ActionFuncT& _act)
+    {
+        m_actions.push_back(
+            { std::forward<BoolFuncT>(_b), std::forward<ActionFuncT>(_act) });
+        return *this;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename ActionFuncT>
+    this_type& add_action(const std::string& _name, ActionFuncT& _act)
+    {
+        auto _b = [=](this_type& p) { return p.exists(_name); };
+        m_actions.push_back({ _b, std::forward<ActionFuncT>(_act) });
+        return *this;
     }
     //
     //----------------------------------------------------------------------------------//
@@ -671,6 +826,9 @@ struct argument_parser
             std::cerr << '\n';
         }
 
+        using argmap_t = std::map<std::string, argument*>;
+
+        argmap_t   m_arg_map = {};
         arg_result err;
         int        argc = _args.size();
         // the set of options which use a single leading dash but are longer than
@@ -691,6 +849,7 @@ struct argument_parser
                     if(m_name_map.find(name) != m_name_map.end())
                         return arg_result("Duplicate of argument name: " + n);
                     m_name_map[name] = a.m_index;
+                    m_arg_map[name]  = &a;
                     if(nleading_dash == 1 && name.length() > 1)
                         long_short_opts.insert(name);
                 }
@@ -719,7 +878,7 @@ struct argument_parser
                     if(b)
                         return b;
                     if(err)
-                        return err;
+                        return (m_error_func(*this, err), err);
                     continue;
                 }
 
@@ -736,20 +895,20 @@ struct argument_parser
                 {
                     err = end_argument();
                     if(err)
-                        return err;
+                        return (m_error_func(*this, err), err);
 
                     auto name   = current_arg.substr(nleading_dash);
                     auto islong = (nleading_dash > 1 || long_short_opts.count(name) > 0);
                     err         = begin_argument(name, islong, argv_index);
                     if(err)
-                        return err;
+                        return (m_error_func(*this, err), err);
                 }
                 else if(current_arg.length() > 0)
                 {
                     // argument value
                     err = add_value(current_arg, argv_index);
                     if(err)
-                        return err;
+                        return (m_error_func(*this, err), err);
                 }
             }
         }
@@ -759,7 +918,7 @@ struct argument_parser
         }
         err = end_argument();
         if(err)
-            return err;
+            return (m_error_func(*this, err), err);
         for(auto& a : m_arguments)
         {
             if(a.m_required && !a.m_found)
@@ -772,15 +931,28 @@ struct argument_parser
                                   std::to_string(a.m_position));
             }
         }
+
+        for(auto& itr : m_actions)
+        {
+            if(itr.first(*this))
+                itr.second(*this);
+        }
+
+        for(auto& itr : m_arg_map)
+        {
+            if(exists(itr.first))
+                itr.second->execute_actions(*this);
+        }
+
         return arg_result();
     }
     //
     //----------------------------------------------------------------------------------//
     //
-    void enable_help()
+    argument& enable_help()
     {
-        add_argument().names({ "-h", "--help" }).description("Shows this page");
         m_help_enabled = true;
+        return add_argument().names({ "-h", "--help" }).description("Shows this page");
     }
     //
     //----------------------------------------------------------------------------------//
@@ -814,6 +986,14 @@ struct argument_parser
         if(itr != m_name_map.end())
             return m_arguments[static_cast<size_t>(itr->second)].size();
         return 0;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename ErrorFuncT>
+    void on_error(ErrorFuncT&& _func)
+    {
+        m_error_func = std::forward<ErrorFuncT>(_func);
     }
 
 private:
@@ -963,15 +1143,20 @@ private:
         }
         return arg_result();
     }
-
+    //
+    //----------------------------------------------------------------------------------//
+    //
+protected:
     bool                       m_help_enabled         = false;
     int                        m_current              = -1;
     int                        m_width                = 30;
     std::string                m_desc                 = {};
     std::string                m_bin                  = {};
+    error_func_t               m_error_func           = [](this_type&, result_type) {};
     std::vector<argument>      m_arguments            = {};
     std::map<int, int>         m_positional_arguments = {};
     std::map<std::string, int> m_name_map             = {};
+    std::vector<action_pair_t> m_actions              = {};
 };  // namespace argparse
 //
 //--------------------------------------------------------------------------------------//

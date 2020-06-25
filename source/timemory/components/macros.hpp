@@ -72,6 +72,28 @@
 //--------------------------------------------------------------------------------------//
 //
 /**
+ * \macro TIMEMORY_DECLARE_API_COMPONENTS
+ * \brief Declare a non-templated component type in the tim::component namespace
+ */
+
+#if !defined(TIMEMORY_DECLARE_API_COMPONENTS)
+#    define TIMEMORY_DECLARE_API_COMPONENTS(API, ...)                                    \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct api_components<API, void>                                                 \
+        {                                                                                \
+            using type = type_list<__VA_ARGS__>;                                         \
+        };                                                                               \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
  * \macro TIMEMORY_BUNDLE_INDEX
  * \brief Declare a bundle index
  */
@@ -566,6 +588,16 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#endif
+
+//======================================================================================//
+
+#if !defined(TIMEMORY_EXTERN_COMPONENT)
+#    define TIMEMORY_EXTERN_COMPONENT(NAME, HAS_DATA, ...)                               \
+        TIMEMORY_EXTERN_TEMPLATE(                                                        \
+            struct tim::component::base<tim::component::NAME, __VA_ARGS__>)              \
+        TIMEMORY_EXTERN_OPERATIONS(component::NAME, HAS_DATA)                            \
+        TIMEMORY_EXTERN_STORAGE(component::NAME, NAME)
 #endif
 
 //======================================================================================//

@@ -138,7 +138,7 @@ public:
             printf("[%s]> buffer = %p\n", __FUNCTION__, (void*) buffer);
         device::params<DeviceT> _params(0, 512, 0, 0);
         device::launch(nsize, _params, initialize_buffer<DeviceT, Up, uint64_t>, buffer,
-                       Up(1), nsize);
+                       Up{ 1 }, nsize);
         return buffer;
     }
 

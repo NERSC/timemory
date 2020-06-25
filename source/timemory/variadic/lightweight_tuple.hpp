@@ -41,7 +41,6 @@
 #include <string>
 
 #include "timemory/backends/dmp.hpp"
-#include "timemory/components.hpp"
 #include "timemory/general/source_location.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
@@ -119,21 +118,12 @@ public:
     }
 
 public:
-    using concat_type = concat<Types...>;
-
-    template <typename T>
-    static constexpr bool get_config()
+    template <typename T, typename... U>
+    struct variadic_config
     {
-        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
-        return (is_one_of<T, var_config_t>::value);
-    }
-
-    template <typename T, typename Config>
-    static constexpr bool get_config(Config&&)
-    {
-        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
-        return (is_one_of<T, var_config_t>::value || is_one_of<T, Config>::value);
-    }
+        static constexpr bool value = is_one_of<
+            T, contains_one_of_t<variadic::is_config, concat<Types..., U...>>>::value;
+    };
 
 public:
     lightweight_tuple();

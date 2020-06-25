@@ -20,7 +20,7 @@
 | ------ | ------------------------------------------------- |
 | GitHub | `git clone https://github.com/NERSC/timemory.git` |
 | PyPi   | `pip install timemory`                            |
-| Spack | `spack install timemory` |
+| Spack  | `spack install timemory`                          |
 
 ## Purpose
 
@@ -30,6 +30,15 @@ performance measurement and analysis API and is arbitrarily extendable by users 
 application.
 Timemory is not just another profiling tool, it is a profling _toolkit_ which streamlines building custom
 profiling tools through modularity and then utilizes the toolkit to provides several pre-built tools.
+
+## Versioning
+
+Timemory originated as a very simple tool for recording timing and memory measurements (hence the name) in C, C++, and Python and only supported
+three modes prior to the 3.0.0 release: a fixed set of timers, a pair of memory measurements, and the combination of the two.
+__Prior to the 3.0.0 release, timemory was almost completely rewritten from scratch__ with the sole exceptions of some C/C++ macro, e.g.
+`TIMEMORY_AUTO_TIMER`, and some Python decorators and context-manager, e.g. `timemory.util.auto_timer`, whose behavior were
+able to be fully replicated in the new release. Thus, while it may appear that timemory is a mature project at v3.0+, it
+is essentially still in it's first major release.
 
 ## Overview
 

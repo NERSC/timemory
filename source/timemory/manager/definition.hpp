@@ -87,11 +87,13 @@ manager::manager()
 , m_write_metadata(0)
 , m_instance_count(f_manager_instance_count()++)
 , m_rank(dmp::rank())
-, m_metadata_prefix("")
+, m_num_entries(0)
+, m_thread_index(threading::get_id())
 , m_thread_id(std::this_thread::get_id())
+, m_metadata_prefix("")
+, m_lock(std::make_shared<auto_lock_t>(m_mutex, std::defer_lock))
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
-, m_lock(new auto_lock_t(m_mutex, std::defer_lock))
 {
     f_thread_counter()++;
     static std::atomic<int> _once(0);
@@ -107,15 +109,15 @@ manager::manager()
 
 #    if !defined(TIMEMORY_DISABLE_BANNER)
     if(_first && settings::banner())
-        printf("#--------------------- tim::manager initialized "
-               "[rank=%i][id=%i][pid=%i] "
-               "---------------------#\n\n",
-               m_rank, m_instance_count, process::get_id());
+        printf("#------------------------- tim::manager initialized "
+               "[id=%i][pid=%i] "
+               "-------------------------#\n\n",
+               m_instance_count, process::get_id());
 #    endif
 
-    auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
-                                                   m_metadata_prefix);
-    consume_parameters(fname);
+    // auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
+    //                                               m_metadata_prefix);
+    // consume_parameters(fname);
 
     if(settings::cpu_affinity())
         threading::affinity::set();
@@ -144,8 +146,6 @@ manager::~manager()
                m_rank, m_instance_count, process::get_id());
     }
 #    endif
-
-    delete m_lock;
 }
 //
 //----------------------------------------------------------------------------------//
@@ -331,6 +331,14 @@ manager::write_metadata(const char* context)
     {
         if(f_debug())
             PRINT_HERE("[%s]> metadata disabled for rank %i", context, (int) m_rank);
+        return;
+    }
+
+    if(m_num_entries < 1)
+    {
+        if(f_debug())
+            PRINT_HERE("[%s]> No components generated output. Skipping metadata",
+                       context);
         return;
     }
 

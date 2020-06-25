@@ -21,6 +21,7 @@ install(FILES ${CMAKE_CURRENT_LIST_DIR}/defines.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
 
 # subdirs
+add_subdirectory(utility)
 add_subdirectory(hash)
 add_subdirectory(environment)
 add_subdirectory(settings)

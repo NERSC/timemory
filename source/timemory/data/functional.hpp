@@ -23,8 +23,7 @@
 // SOFTWARE.
 //
 
-/** \file functional.hpp
- * \headerfile functional.hpp "timemory/utility/functional.hpp"
+/** \file "timemory/utility/functional.hpp"
  * This provides functions on types
  *
  */

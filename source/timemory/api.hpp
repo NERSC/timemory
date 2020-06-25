@@ -39,21 +39,72 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+/**
+ * \macro TIMEMORY_DECLARE_API
+ * \brief Declare an API category
+ */
+
+#if !defined(TIMEMORY_DECLARE_API)
+#    define TIMEMORY_DECLARE_API(NAME)                                                   \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace api                                                                    \
+        {                                                                                \
+        struct NAME;                                                                     \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+/**
+ * \macro TIMEMORY_DEFINE_API
+ * \brief Define an API category
+ */
+
+#if !defined(TIMEMORY_DEFINE_API)
+#    define TIMEMORY_DEFINE_API(NAME)                                                    \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace api                                                                    \
+        {                                                                                \
+        struct NAME                                                                      \
+        {};                                                                              \
+        }                                                                                \
+        namespace trait                                                                  \
+        {                                                                                \
+        template <>                                                                      \
+        struct is_api<api::NAME> : true_type                                             \
+        {};                                                                              \
+        }                                                                                \
+        }
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 namespace tim
 {
 //
 using true_type  = std::true_type;
 using false_type = std::false_type;
 //
-namespace api
+namespace trait
 {
-// this is a type for tagging native types
-struct native_tag
+template <typename T>
+struct is_api : false_type
 {};
+}  // namespace trait
 //
-}  // namespace api
 }  // namespace tim
 
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_DECLARE_API(native_tag)
+TIMEMORY_DEFINE_API(native_tag)
+
+TIMEMORY_DECLARE_API(python)
+TIMEMORY_DEFINE_API(python)
 //
 //--------------------------------------------------------------------------------------//
 //

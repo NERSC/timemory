@@ -36,6 +36,7 @@
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
+#include "timemory/utility/declaration.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -556,12 +557,13 @@ struct TIMEMORY_SETTINGS_DLL settings
 
     //----------------------------------------------------------------------------------//
     //      Signals
-    //--------------------------------------------/settings/declaration.hpp-------------------------//
+    //----------------------------------------------------------------------------------//
 
-    /// allow signal handling to be activated
-    TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, allow_signal_handler,
-                                    "TIMEMORY_ALLOW_SIGNAL_HANDLER",
-                                    "Allow signal handling to be activated", true)
+    TIMEMORY_MEMBER_STATIC_REFERENCE(bool, allow_signal_handler,
+                                     "TIMEMORY_ALLOW_SIGNAL_HANDLER",
+                                     "Allow signal handling to be activated",
+                                     ([]() -> bool& { return signal_settings::allow(); }),
+                                     ([](bool v) { signal_settings::allow() = v; }))
 
     /// enable signals in timemory_init
     TIMEMORY_MEMBER_STATIC_ACCESSOR(bool, enable_signal_handler,

@@ -41,7 +41,7 @@ main(int argc, char** argv)
     void* t0  = TIMEMORY_AUTO_TIMER("total");
     long  ans = fib(nfib);
 
-    void* t1 = TIMEMORY_BLANK_AUTO_TIMER("nested");
+    void* t1 = TIMEMORY_BASIC_AUTO_TIMER("nested");
     ans += fib(nfib + 1);
 
     FREE_TIMEMORY_AUTO_TIMER(t1);

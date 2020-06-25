@@ -38,10 +38,13 @@
 #include <iostream>
 #include <string>
 
+#include "timemory/components/base/types.hpp"
+#include "timemory/components/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/runtime/types.hpp"
 #include "timemory/variadic/types.hpp"
 
 //======================================================================================//
@@ -163,43 +166,37 @@ public:
     using print_t = typename type_bundler::print_t;
 
 private:
-    using concat_type = concat<Types...>;
-
-    template <typename T, typename Config>
-    static constexpr bool get_config(Config&& = variadic::config<>{})
+    template <typename T, typename... U>
+    struct variadic_config
     {
-        using var_config_t = contains_one_of_t<variadic::is_config, concat_type>;
-        return (is_one_of<T, var_config_t>::value || is_one_of<T, Config>::value);
-    }
+        static constexpr bool value = is_one_of<
+            T, contains_one_of_t<variadic::is_config, concat<Types..., U...>>>::value;
+    };
 
 public:
     explicit base_bundle(uint64_t _hash = 0, bool _store = settings::enabled(),
                          scope::config _scope = scope::get_default())
     : m_store(_store && settings::enabled())
     , m_is_pushed(false)
-    , m_scope(_scope)
+    , m_scope(_scope + get_scope_config())
     , m_laps(0)
     , m_hash(_hash)
     {}
 
     template <typename... T>
-    explicit base_bundle(uint64_t hash, bool store, variadic::config<T...> config)
+    explicit base_bundle(uint64_t hash, bool store, variadic::config<T...>)
     : m_store(store && settings::enabled())
     , m_is_pushed(false)
-    , m_scope(get_config<variadic::tree_scope>(config),
-              get_config<variadic::flat_scope>(config),
-              get_config<variadic::timeline_scope>(config))
+    , m_scope(get_scope_config<T...>())
     , m_laps(0)
     , m_hash(hash)
     {}
 
     template <typename... T>
-    explicit base_bundle(uint64_t hash, variadic::config<T...> config)
+    explicit base_bundle(uint64_t hash, variadic::config<T...>)
     : m_store(settings::enabled())
     , m_is_pushed(false)
-    , m_scope(get_config<variadic::tree_scope>(config),
-              get_config<variadic::flat_scope>(config),
-              get_config<variadic::timeline_scope>(config))
+    , m_scope(get_scope_config<T...>())
     , m_laps(0)
     , m_hash(hash)
     {}
@@ -245,6 +242,16 @@ public:
     //----------------------------------------------------------------------------------//
     //
     const string_t& get_prefix() const { return prefix(); }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename... T>
+    static auto get_scope_config()
+    {
+        return scope::config(variadic_config<variadic::flat_scope, T...>::value,
+                             variadic_config<variadic::timeline_scope, T...>::value,
+                             variadic_config<variadic::tree_scope, T...>::value);
+    }
 
 protected:
     //----------------------------------------------------------------------------------//

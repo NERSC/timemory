@@ -72,6 +72,7 @@ public:
     using comm_group_t     = std::tuple<mpi::comm_t, int32_t>;
     using mutex_t          = std::mutex;
     using auto_lock_t      = std::unique_lock<mutex_t>;
+    using auto_lock_ptr_t  = std::shared_ptr<std::unique_lock<mutex_t>>;
     using finalizer_func_t = std::function<void()>;
     using finalizer_pair_t = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t = std::deque<finalizer_pair_t>;
@@ -122,6 +123,7 @@ public:
     int32_t get_rank() const { return m_rank; }
     bool    is_finalizing() const { return m_is_finalizing; }
     void    is_finalizing(bool v) { m_is_finalizing = v; }
+    void    add_entries(uint64_t n) { m_num_entries += n; }
 
 public:
     // Public static functions
@@ -235,27 +237,27 @@ protected:
 
 private:
     /// notifies that it is finalizing
-    bool  m_is_finalizing  = false;
-    short m_write_metadata = 0;
-    /// instance id
-    int32_t         m_instance_count;
-    int32_t         m_rank;
+    bool            m_is_finalizing   = false;
+    short           m_write_metadata  = 0;
+    int32_t         m_instance_count  = 0;
+    int32_t         m_rank            = 0;
+    uint64_t        m_num_entries     = 0;
     int64_t         m_thread_index    = threading::get_id();
+    std::thread::id m_thread_id       = threading::get_tid();
     string_t        m_metadata_prefix = "";
-    std::thread::id m_thread_id;
+    mutex_t         m_mutex;
+    auto_lock_ptr_t m_lock = auto_lock_ptr_t{ nullptr };
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
-    graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
-    graph_hash_alias_ptr_t m_hash_aliases = get_hash_aliases();
-    finalizer_list_t       m_finalizer_cleanups;
-    finalizer_list_t       m_master_cleanup;
-    finalizer_list_t       m_worker_cleanup;
-    finalizer_list_t       m_master_finalizers;
-    finalizer_list_t       m_worker_finalizers;
-    finalizer_void_t       m_pointer_fini;
-    mutex_t                m_mutex;
-    auto_lock_t*           m_lock = nullptr;
-    filemap_t              m_output_files;
+    graph_hash_map_ptr_t   m_hash_ids           = get_hash_ids();
+    graph_hash_alias_ptr_t m_hash_aliases       = get_hash_aliases();
+    finalizer_list_t       m_finalizer_cleanups = {};
+    finalizer_list_t       m_master_cleanup     = {};
+    finalizer_list_t       m_worker_cleanup     = {};
+    finalizer_list_t       m_master_finalizers  = {};
+    finalizer_list_t       m_worker_finalizers  = {};
+    finalizer_void_t       m_pointer_fini       = {};
+    filemap_t              m_output_files       = {};
 
 private:
     struct persistent_data
@@ -424,7 +426,7 @@ manager::do_clear()
 
     auto ret = storage_type::noninit_instance();
     if(ret)
-        ret->data().reset();
+        ret->reset();
 
     if(f_debug())
         printf("[%s]> pointer: %p. has storage: %s. empty: %s...\n",

@@ -59,11 +59,37 @@ int  padding      = 4;
 
 //--------------------------------------------------------------------------------------//
 
+struct unknown
+{};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type, bool>
+struct component_value_type;
+
+template <typename Type>
+struct component_value_type<Type, true>
+{
+    using type = typename Type::value_type;
+};
+
+template <typename Type>
+struct component_value_type<Type, false>
+{
+    using type = unknown;
+};
+
+template <typename Type>
+using component_value_type_t =
+    typename component_value_type<Type, tim::trait::is_available<Type>::value>::type;
+
+//--------------------------------------------------------------------------------------//
+
 template <typename Type>
 struct get_availability
 {
     using this_type  = get_availability<Type>;
-    using value_type = typename Type::value_type;
+    using value_type = component_value_type_t<Type>;
 
     static info_type get_info()
     {
@@ -194,7 +220,7 @@ banner(IntArrayT _breaks, std::array<bool, N> _use, char filler = '-', char deli
 
 static constexpr size_t num_component_options  = 6;
 static constexpr size_t num_settings_options   = 3;
-static constexpr size_t num_hw_counter_options = 4;
+static constexpr size_t num_hw_counter_options = 5;
 
 template <size_t N = num_component_options>
 void
@@ -382,7 +408,8 @@ main(int argc, char** argv)
         write_settings_info(*os, { options[VAL], options[LANG], options[DESC] });
 
     if(include_hw_counters)
-        write_hw_counter_info(*os, { true, !force_brief, !options[DESC], options[DESC] });
+        write_hw_counter_info(
+            *os, { true, !force_brief, options[LANG], !options[DESC], options[DESC] });
 
     return 0;
 }
@@ -637,27 +664,41 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
     static_assert(N >= num_hw_counter_options,
                   "Error! Too few hw counter options + fields");
 
-    using width_type = array_t<int64_t, 4>;
-    using width_bool = array_t<bool, 4>;
+    using width_type = array_t<int64_t, N>;
+    using width_bool = array_t<bool, N>;
 
     tim::cupti::device_t device;
 
 #if defined(TIMEMORY_USE_CUPTI)
     TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
+    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, tim::settings::cupti_device()));
 #endif
 
     auto _cupti_events  = tim::cupti::available_events_info(device);
     auto _cupti_metrics = tim::cupti::available_metrics_info(device);
     auto _papi_events   = tim::papi::available_events_info();
 
-    using hwcounter_info_t = tim::papi::hwcounter_info_t;
+    auto _process_counters = [](auto& _events, int32_t _offset) {
+        for(auto& itr : _events)
+        {
+            itr.offset() += _offset;
+            itr.python_symbol() = "timemory.hardware_counters." + itr.python_symbol();
+        }
+        return static_cast<int32_t>(_events.size());
+    };
+
+    int32_t _offset = 0;
+    _offset += _process_counters(_papi_events, _offset);
+    _offset += _process_counters(_cupti_events, _offset);
+    _offset += _process_counters(_cupti_metrics, _offset);
+
+    using hwcounter_info_t = std::vector<tim::hardware_counters::info>;
     auto fields =
         std::vector<hwcounter_info_t>{ _papi_events, _cupti_events, _cupti_metrics };
     auto                 subcategories = std::vector<std::string>{ "CPU", "GPU", "" };
-    array_t<string_t, 4> _labels       = { "HARDWARE COUNTER", "AVAILABLE", "SUMMARY",
+    array_t<string_t, N> _labels = { "HARDWARE COUNTER", "AVAILABLE", "PYTHON", "SUMMARY",
                                      "DESCRIPTION" };
-    array_t<bool, 4>     _center       = { false, true, false, false };
+    array_t<bool, N>     _center = { false, true, false, false, false };
 
     width_type _widths;
     width_bool _wusing;
@@ -668,19 +709,19 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
         _wusing.at(i) = options[i];
     }
 
-    for(const auto& itr : fields)
+    for(const auto& fitr : fields)
     {
-        auto nsize = std::get<0>(itr).size();
-        for(size_t i = 0; i < nsize; ++i)
+        for(const auto& itr : fitr)
         {
-            auto _len0    = std::get<0>(itr).at(i).length() + padding;
-            auto _len1    = 6 + padding;
-            auto _len2    = std::get<2>(itr).at(i).length() + padding;
-            auto _len3    = std::get<3>(itr).at(i).length() + padding;
-            _widths.at(0) = std::max<uint64_t>(_widths.at(0), _len0);
-            _widths.at(1) = std::max<uint64_t>(_widths.at(1), _len1);
-            _widths.at(2) = std::max<uint64_t>(_widths.at(2), _len2);
-            _widths.at(3) = std::max<uint64_t>(_widths.at(3), _len3);
+            width_type _w = { { (int64_t) itr.symbol().length(), (int64_t) 6,
+                                (int64_t) itr.python_symbol().length(),
+                                (int64_t) itr.short_description().length(),
+                                (int64_t) itr.long_description().length() } };
+            for(auto& witr : _w)
+                witr += padding;
+
+            for(size_t i = 0; i < N; ++i)
+                _widths.at(i) = std::max<uint64_t>(_widths.at(i), _w.at(i));
         }
     }
 
@@ -697,7 +738,7 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
     os << "\n" << banner(_widths, _wusing, '-');
 
     size_t nitr = 0;
-    for(const auto& itr : fields)
+    for(const auto& fitr : fields)
     {
         auto idx = nitr++;
 
@@ -711,12 +752,11 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
                 if(options[0])
                     write_entry(os, subcategories.at(idx), _widths.at(0) - 1, true,
                                 _mark.at(0));
-                if(options[1])
-                    write_entry(os, "", _widths.at(1), _center.at(1), _mark.at(1));
-                if(options[2])
-                    write_entry(os, "", _widths.at(2), _center.at(2), _mark.at(2));
-                if(options[3])
-                    write_entry(os, "", _widths.at(3), _center.at(3), _mark.at(3));
+                for(size_t i = 1; i < N; ++i)
+                {
+                    if(options[i])
+                        write_entry(os, "", _widths.at(i), _center.at(i), _mark.at(i));
+                }
                 os << "\n";
                 if(!markdown)
                     os << banner(_widths, _wusing, '-');
@@ -728,24 +768,25 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
                 os << banner(_widths, _wusing, '-');
         }
 
-        auto nsize = std::get<0>(itr).size();
-        for(size_t i = 0; i < nsize; ++i)
+        for(const auto& itr : fitr)
         {
             os << global_delim;
 
-            auto _e0 = std::get<0>(itr).at(i);
-            auto _e1 = std::get<1>(itr).at(i);
-            auto _e2 = std::get<2>(itr).at(i);
-            auto _e3 = std::get<3>(itr).at(i);
-
             if(options[0])
-                write_entry(os, _e0, _widths.at(0) - 1, _center.at(0), _mark.at(0));
+                write_entry(os, itr.symbol(), _widths.at(0) - 1, _center.at(0),
+                            _mark.at(0));
             if(options[1])
-                write_entry(os, _e1, _widths.at(1), _center.at(1), _mark.at(1));
-            if(options[2])
-                write_entry(os, _e2, _widths.at(2), _center.at(2), _mark.at(2));
-            if(options[3])
-                write_entry(os, _e3, _widths.at(3), _center.at(3), _mark.at(3));
+                write_entry(os, itr.available(), _widths.at(1), _center.at(1),
+                            _mark.at(1));
+
+            array_t<string_t, N> _e = { { "", "", itr.python_symbol(),
+                                          itr.short_description(),
+                                          itr.long_description() } };
+            for(size_t i = 2; i < N; ++i)
+            {
+                if(options[i])
+                    write_entry(os, _e.at(i), _widths.at(i), _center.at(i), _mark.at(i));
+            }
 
             os << "\n";
         }

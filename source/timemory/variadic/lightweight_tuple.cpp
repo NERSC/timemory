@@ -50,18 +50,22 @@ lightweight_tuple<Types...>::lightweight_tuple()
 //
 template <typename... Types>
 template <typename... T, typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(const string_t&        key,
-                                               variadic::config<T...> config,
-                                               const Func&            init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), false, config)
+lightweight_tuple<Types...>::lightweight_tuple(const string_t& key,
+                                               variadic::config<T...>,
+                                               const Func& init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), false,
+              variadic::config<T...>{})
 , m_data(data_type{})
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
+        {
+            init_func(*this);
+        }
+        set_prefix(get_hash_ids()->find(m_hash)->second);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -70,17 +74,20 @@ lightweight_tuple<Types...>::lightweight_tuple(const string_t&        key,
 template <typename... Types>
 template <typename... T, typename Func>
 lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& loc,
-                                               variadic::config<T...>     config,
-                                               const Func&                init_func)
-: bundle_type(loc.get_hash(), false, config)
+                                               variadic::config<T...>,
+                                               const Func& init_func)
+: bundle_type(loc.get_hash(), false, variadic::config<T...>{})
 , m_data(data_type{})
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!get_config<variadic::no_init>(config)) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
+        {
+            init_func(*this);
+        }
+        set_prefix(loc.get_hash());
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -88,18 +95,20 @@ lightweight_tuple<Types...>::lightweight_tuple(const captured_location_t& loc,
 //
 template <typename... Types>
 template <typename... T, typename Func>
-lightweight_tuple<Types...>::lightweight_tuple(size_t                 _hash,
-                                               variadic::config<T...> config,
-                                               const Func&            init_func)
-: bundle_type(_hash, false, config)
+lightweight_tuple<Types...>::lightweight_tuple(size_t      _hash, variadic::config<T...>,
+                                               const Func& init_func)
+: bundle_type(_hash, false, variadic::config<T...>{})
 , m_data(data_type{})
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!get_config<variadic::no_init>()) { init_func(*this); }
-        set_prefix(key);
+        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
+        {
+            init_func(*this);
+        }
+        set_prefix(_hash);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(get_config<variadic::auto_start>()) { start(); }
+        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
     }
 }
 

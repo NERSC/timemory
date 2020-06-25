@@ -67,6 +67,21 @@ struct construct
     template <typename... Args, enable_if_t<(sizeof...(Args) == 0), int> = 0>
     construct(type&, Args&&...);
 
+    template <typename... Args,
+              enable_if_t<(std::is_constructible<Tp, Args...>::value), int> = 0>
+    static auto get(Args&&... args)
+    {
+        return Tp(std::forward<Args>(args)...);
+    }
+
+    template <typename... Args, enable_if_t<(!std::is_constructible<Tp, Args...>::value &&
+                                             std::is_default_constructible<Tp>::value),
+                                            int> = 0>
+    static auto get(Args&&...)
+    {
+        return Tp{};
+    }
+
 private:
     //  The equivalent of supports args
     template <typename Up, typename... Args>

@@ -60,25 +60,19 @@ struct set_prefix
     TIMEMORY_DELETED_OBJECT(set_prefix)
 
     set_prefix(type& obj, const string_t& prefix);
-
-    template <typename Up = Tp, enable_if_t<(trait::requires_prefix<Up>::value), int> = 0>
-    set_prefix(type& obj, uint64_t nhash, const string_t& prefix);
-
-    template <typename Up                                            = Tp,
-              enable_if_t<!(trait::requires_prefix<Up>::value), int> = 0>
     set_prefix(type& obj, uint64_t nhash, const string_t& prefix);
 
 private:
     //  If the component has a set_prefix(const string_t&) member function
     template <typename U>
-    auto sfinae(U& obj, int, int, const string_t& prefix)
+    auto sfinae_str(U& obj, int, int, const string_t& prefix)
         -> decltype(obj.set_prefix(prefix), void())
     {
         obj.set_prefix(prefix);
     }
 
     template <typename U>
-    auto sfinae(U& obj, int, long, const string_t& prefix)
+    auto sfinae_str(U& obj, int, long, const string_t& prefix)
         -> decltype(obj.set_prefix(prefix.c_str()), void())
     {
         obj.set_prefix(prefix.c_str());
@@ -86,20 +80,21 @@ private:
 
     //  If the component does not have a set_prefix(const string_t&) member function
     template <typename U>
-    auto sfinae(U&, long, long, const string_t&) -> decltype(void(), void())
+    void sfinae_str(U&, long, long, const string_t&)
     {}
 
 private:
     //  If the component has a set_prefix(uint64_t) member function
     template <typename U>
-    auto sfinae(U& obj, int, uint64_t nhash) -> decltype(obj.set_prefix(nhash), void())
+    auto sfinae_hash(U& obj, int, uint64_t nhash)
+        -> decltype(obj.set_prefix(nhash), void())
     {
         obj.set_prefix(nhash);
     }
 
     //  If the component does not have a set_prefix(uint64_t) member function
     template <typename U>
-    auto sfinae(U&, long, uint64_t) -> decltype(void(), void())
+    void sfinae_hash(U&, long, uint64_t)
     {}
 };
 //
@@ -143,33 +138,19 @@ set_prefix<Tp>::set_prefix(type& obj, const string_t& prefix)
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    sfinae(obj, 0, 0, prefix);
+    sfinae_str(obj, 0, 0, prefix);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename Up, enable_if_t<(trait::requires_prefix<Up>::value), int>>
 set_prefix<Tp>::set_prefix(type& obj, uint64_t nhash, const string_t& prefix)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
 
-    sfinae(obj, 0, nhash);
-    sfinae(obj, 0, 0, prefix);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-template <typename Up, enable_if_t<!(trait::requires_prefix<Up>::value), int>>
-set_prefix<Tp>::set_prefix(type& obj, uint64_t nhash, const string_t& prefix)
-{
-    if(!trait::runtime_enabled<type>::get())
-        return;
-
-    sfinae(obj, 0, nhash);
-    sfinae(obj, 0, 0, prefix);
+    sfinae_hash(obj, 0, nhash);
+    sfinae_str(obj, 0, 0, prefix);
 }
 //
 //--------------------------------------------------------------------------------------//

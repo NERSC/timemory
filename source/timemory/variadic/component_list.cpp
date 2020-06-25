@@ -62,7 +62,7 @@ component_list<Types...>::component_list(const string_t& key, const bool& store,
     {
         init_storage();
         _func(*this);
-        set_prefix(key);
+        set_prefix(get_hash_ids()->find(m_hash)->second);
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
     }
 }
@@ -82,7 +82,7 @@ component_list<Types...>::component_list(const captured_location_t& loc,
     {
         init_storage();
         _func(*this);
-        set_prefix(loc.get_id());
+        set_prefix(loc.get_hash());
         apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
     }
 }
@@ -431,8 +431,9 @@ component_list<Types...>::set_prefix(T* obj) const
 {
     using PrefixOpT =
         operation::generic_operator<T, operation::set_prefix<T>, TIMEMORY_API>;
-    auto _key = get_hash_ids()->find(m_hash)->second;
-    PrefixOpT(obj, m_hash, _key);
+    auto itr = get_hash_ids()->find(m_hash);
+    if(itr != get_hash_ids()->end())
+        PrefixOpT(obj, m_hash, itr->second);
 }
 
 //--------------------------------------------------------------------------------------//

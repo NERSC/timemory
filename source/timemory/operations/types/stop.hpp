@@ -70,7 +70,7 @@ struct stop
 private:
     // resolution #1 (best)
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, Args&&... args)
+    auto sfinae(Up& obj, int, int, int, int, Args&&... args)
         -> decltype(static_cast<base_t<Up>&>(obj).stop(crtp::base{},
                                                        std::forward<Args>(args)...),
                     void())
@@ -80,7 +80,7 @@ private:
 
     // resolution #2
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, long, Args&&... args)
+    auto sfinae(Up& obj, int, int, int, long, Args&&... args)
         -> decltype(obj.stop(std::forward<Args>(args)...), void())
     {
         obj.stop(std::forward<Args>(args)...);
@@ -88,7 +88,7 @@ private:
 
     // resolution #3
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, long, Args&&...)
+    auto sfinae(Up& obj, int, int, long, long, Args&&...)
         -> decltype(static_cast<base_t<Up>&>(obj).stop(crtp::base{}), void())
     {
         static_cast<base_t<Up>&>(obj).stop(crtp::base{});
@@ -96,14 +96,14 @@ private:
 
     // resolution #4
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, double, Args&&...) -> decltype(obj.stop(), void())
+    auto sfinae(Up& obj, int, long, long, long, Args&&...) -> decltype(obj.stop(), void())
     {
         obj.stop();
     }
 
     // resolution #5 (worst) - no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, long, Args&&...)
+    void sfinae(Up&, long, long, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
     }
@@ -210,7 +210,7 @@ stop<Tp>::stop(type& obj, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
-    sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
+    sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
 }
 
 //
@@ -222,9 +222,8 @@ stop<Tp>::stop(type& obj, non_vexing&&, Args&&... args)
 {
     if(!trait::runtime_enabled<type>::get())
         return;
-    sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
+    sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
 }
-
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -239,7 +238,6 @@ priority_stop<Tp>::priority_stop(type& obj, Args&&... args)
         conditional_t<(trait::stop_priority<Tp>::value < 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);
 }
-
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -254,7 +252,6 @@ standard_stop<Tp>::standard_stop(type& obj, Args&&... args)
         conditional_t<(trait::stop_priority<Tp>::value == 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);
 }
-
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -269,11 +266,6 @@ delayed_stop<Tp>::delayed_stop(type& obj, Args&&... args)
         conditional_t<(trait::stop_priority<Tp>::value > 0), true_type, false_type>;
     sfinae(obj, sfinae_type{}, std::forward<Args>(args)...);
 }
-
-//
-//--------------------------------------------------------------------------------------//
-//
-
 //
 //--------------------------------------------------------------------------------------//
 //

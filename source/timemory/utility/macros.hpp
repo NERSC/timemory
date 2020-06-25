@@ -235,8 +235,10 @@
 
 #if !defined(PRINT_HERE)
 #    define PRINT_HERE(fmt, ...)                                                         \
-        fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__, __LINE__, \
-                __VA_ARGS__)
+        (fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",                   \
+                 (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),       \
+                 __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__),                         \
+         fflush(stderr))
 #endif
 
 #if !defined(DEBUG_PRINT_HERE)
@@ -244,8 +246,11 @@
 #        define DEBUG_PRINT_HERE(fmt, ...)                                               \
             if(::tim::settings::debug())                                                 \
             {                                                                            \
-                fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,   \
+                fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",            \
+                        (int) ::tim::process::get_id(),                                  \
+                        (int) ::tim::threading::get_id(), __FUNCTION__, __FILE__,        \
                         __LINE__, __VA_ARGS__);                                          \
+                fflush(stderr);                                                          \
             }
 #    else
 #        define DEBUG_PRINT_HERE(fmt, ...)
@@ -256,20 +261,37 @@
 #    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, fmt, ...)                                  \
         if(::tim::settings::verbose() >= VERBOSE_LEVEL)                                  \
         {                                                                                \
-            fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,       \
-                    __LINE__, __VA_ARGS__);                                              \
+            fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",                \
+                    (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
+                    __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__);                      \
+            fflush(stderr);                                                              \
+        }
+#endif
+
+#if !defined(CONDITIONAL_PRINT_HERE)
+#    define CONDITIONAL_PRINT_HERE(CONDITION, fmt, ...)                                  \
+        if(CONDITION)                                                                    \
+        {                                                                                \
+            fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",                \
+                    (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),    \
+                    __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__);                      \
+            fflush(stderr);                                                              \
         }
 #endif
 
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __PRETTY_FUNCTION__,          \
-                    __FILE__, __LINE__, __VA_ARGS__)
+            (fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",               \
+                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
+                     __PRETTY_FUNCTION__, __FILE__, __LINE__, __VA_ARGS__),              \
+             fflush(stderr))
 #    else
 #        define PRETTY_PRINT_HERE(fmt, ...)                                              \
-            fprintf(stderr, "> [%s@'%s':%i] " fmt "...\n", __FUNCTION__, __FILE__,       \
-                    __LINE__, __VA_ARGS__)
+            (fprintf(stderr, "[pid=%i][tid=%i][%s@'%s':%i]> " fmt "...\n",               \
+                     (int) ::tim::process::get_id(), (int) ::tim::threading::get_id(),   \
+                     __FUNCTION__, __FILE__, __LINE__, __VA_ARGS__),                     \
+             fflush(stderr))
 #    endif
 #endif
 
@@ -322,4 +344,30 @@ _DBG(const char* msg)
         {}
 #    define _DBG(...)                                                                    \
         {}
+#endif
+
+//======================================================================================//
+//
+// Define macros for utility
+//
+//======================================================================================//
+//
+#if defined(TIMEMORY_UTILITY_SOURCE)
+#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
+#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN)
+#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
+#else
+#    define TIMEMORY_UTILITY_LINKAGE(...) inline __VA_ARGS__
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_UTILITY_DLL)
+#    if defined(TIMEMORY_UTILITY_SOURCE)
+#        define TIMEMORY_UTILITY_DLL tim_dll_export
+#    elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN)
+#        define TIMEMORY_UTILITY_DLL tim_dll_import
+#    else
+#        define TIMEMORY_UTILITY_DLL
+#    endif
 #endif

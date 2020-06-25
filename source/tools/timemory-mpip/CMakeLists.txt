@@ -8,6 +8,7 @@ endif()
 project(timemory-mpip-tool)
 
 add_library(timemory-mpip-shared SHARED ${PROJECT_SOURCE_DIR}/timemory-mpip.cpp)
+add_library(timemory::timemory-mpip-shared ALIAS timemory-mpip-shared)
 
 # public link targets
 target_link_libraries(timemory-mpip-shared PUBLIC
