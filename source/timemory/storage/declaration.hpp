@@ -393,9 +393,15 @@ public:
     graph_t&            graph();
     iterator&           current();
 
-    void           reset();
-    inline bool    empty() const { return (_data().graph().size() <= 1); }
-    inline size_t  size() const { return _data().graph().size() - 1; }
+    void        reset();
+    inline bool empty() const
+    {
+        return (m_graph_data_instance) ? (_data().graph().size() <= 1) : true;
+    }
+    inline size_t size() const
+    {
+        return (m_graph_data_instance) ? (_data().graph().size() - 1) : 0;
+    }
     iterator       pop();
     result_array_t get();
     dmp_result_t   mpi_get();

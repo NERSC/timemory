@@ -24,17 +24,20 @@
 
 #pragma once
 
-#include "timemory/settings/declaration.hpp"
-#include "timemory/variadic/auto_bundle.hpp"
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/types.hpp"
+/** \file "timemory/variadic/functional.hpp"
+ * This provides function-based forms of the variadic bundlers
+ *
+ */
 
-#if !defined(TIMEMORY_FOLD_EXPRESSION)
-#    define TIMEMORY_FOLD_EXPRESSION(...)                                                \
-        ::tim::consume_parameters(::std::initializer_list<int>{ (__VA_ARGS__, 0)... })
-#endif
+#include "timemory/api.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/available.hpp"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/operations/types/generic.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/utility/types.hpp"
+
+#include <type_traits>
 
 namespace tim
 {
@@ -42,9 +45,33 @@ namespace func_impl
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename Tuple, typename... Args, size_t... Idx>
+template <template <typename> class OpT, typename Tag = TIMEMORY_API,
+          template <typename...> class TupleT, typename... Tp, typename... Args>
 void
-construct(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
+invoke(TupleT<Tp...>&& _obj, Args&&... _args)
+{
+    using data_type = std::tuple<Tp...>;
+    TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, Tag>(
+        std::get<index_of<Tp, data_type>::value>(_obj), std::forward<Args>(_args)...));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename, typename> class OpT, typename Tag = TIMEMORY_API,
+          template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+invoke(TupleT<Tp...>&& _obj, Args&&... _args)
+{
+    using data_type = std::tuple<Tp...>;
+    TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp, Tag>, Tag>(
+        std::get<index_of<Tp, data_type>::value>(_obj), std::forward<Args>(_args)...));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename TupleT, typename... Args, size_t... Idx>
+void
+construct(TupleT&& obj, Args&&... args, index_sequence<Idx...>)
 {
     if(settings::enabled())
         TIMEMORY_FOLD_EXPRESSION(
@@ -53,9 +80,9 @@ construct(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tuple, typename... Args, size_t... Idx>
+template <typename TupleT, typename... Args, size_t... Idx>
 void
-mark_begin(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
+mark_begin(TupleT&& obj, Args&&... args, index_sequence<Idx...>)
 {
     if(settings::enabled())
         TIMEMORY_FOLD_EXPRESSION(
@@ -64,9 +91,9 @@ mark_begin(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tuple, typename... Args, size_t... Idx>
+template <typename TupleT, typename... Args, size_t... Idx>
 void
-mark_end(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
+mark_end(TupleT&& obj, Args&&... args, index_sequence<Idx...>)
 {
     if(settings::enabled())
         TIMEMORY_FOLD_EXPRESSION(
@@ -75,9 +102,9 @@ mark_end(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tuple, typename... Args, size_t... Idx>
+template <typename TupleT, typename... Args, size_t... Idx>
 void
-store(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
+store(TupleT&& obj, Args&&... args, index_sequence<Idx...>)
 {
     if(settings::enabled())
         TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).store(std::forward<Args>(args)...));
@@ -85,9 +112,9 @@ store(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename Tuple, typename... Args, size_t... Idx>
+template <typename TupleT, typename... Args, size_t... Idx>
 void
-audit(Tuple&& obj, Args&&... args, index_sequence<Idx...>)
+audit(TupleT&& obj, Args&&... args, index_sequence<Idx...>)
 {
     if(settings::enabled())
         TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).audit(std::forward<Args>(args)...));
@@ -106,12 +133,34 @@ start(Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
+template <template <typename...> class TupleT, typename... Types, typename... Args>
+void
+start(TupleT<Types...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        func_impl::invoke<operation::start>(std::forward<TupleT<Types...>>(obj),
+                                            std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename... Args>
 void
 stop(Args&&... args)
 {
     if(settings::enabled())
         TIMEMORY_FOLD_EXPRESSION(args.stop());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename...> class TupleT, typename... Types, typename... Args>
+void
+stop(TupleT<Types...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        func_impl::invoke<operation::stop>(std::forward<TupleT<Types...>>(obj),
+                                           std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -126,49 +175,49 @@ print(std::ostream& os, Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class Tuple, typename... Types, typename... Args>
+template <template <typename...> class TupleT, typename... Types, typename... Args>
 void
-construct(Tuple<Types...>&& obj, Args&&... args)
+construct(TupleT<Types...>&& obj, Args&&... args)
 {
     constexpr auto N = sizeof...(Types);
     if(settings::enabled())
-        func_impl::construct(std::forward<Tuple<Types...>>(obj),
+        func_impl::construct(std::forward<TupleT<Types...>>(obj),
                              std::forward<Args>(args)..., make_index_sequence<N>{});
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class Tuple, typename... Types, typename... Args>
+template <template <typename...> class TupleT, typename... Types, typename... Args>
 void
-mark_begin(Tuple<Types...>&& obj, Args&&... args)
+mark_begin(TupleT<Types...>&& obj, Args&&... args)
 {
     constexpr auto N = sizeof...(Types);
     if(settings::enabled())
-        func_impl::mark_begin(std::forward<Tuple<Types...>>(obj),
+        func_impl::mark_begin(std::forward<TupleT<Types...>>(obj),
                               std::forward<Args>(args)..., make_index_sequence<N>{});
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class Tuple, typename... Types, typename... Args>
+template <template <typename...> class TupleT, typename... Types, typename... Args>
 void
-mark_end(Tuple<Types...>&& obj, Args&&... args)
+mark_end(TupleT<Types...>&& obj, Args&&... args)
 {
     constexpr auto N = sizeof...(Types);
     if(settings::enabled())
-        func_impl::mark_end(std::forward<Tuple<Types...>>(obj),
+        func_impl::mark_end(std::forward<TupleT<Types...>>(obj),
                             std::forward<Args>(args)..., make_index_sequence<N>{});
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename...> class Tuple, typename... Types, typename... Args>
+template <template <typename...> class TupleT, typename... Types, typename... Args>
 void
-store(Tuple<Types...>&& obj, Args&&... args)
+store(TupleT<Types...>&& obj, Args&&... args)
 {
     constexpr auto N = sizeof...(Types);
     if(settings::enabled())
-        func_impl::store(std::forward<Tuple<Types...>>(obj), std::forward<Args>(args)...,
+        func_impl::store(std::forward<TupleT<Types...>>(obj), std::forward<Args>(args)...,
                          make_index_sequence<N>{});
 }
 
