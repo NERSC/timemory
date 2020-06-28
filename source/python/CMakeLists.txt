@@ -93,7 +93,7 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
         get_filename_component(_DIR "${_FILE}" DIRECTORY)
         get_filename_component(_FILE "${_FILE}" NAME_WE)
         string(REPLACE "${PROJECT_SOURCE_DIR}/" "" _DIR "${_DIR}")
-        if(EXISTS ${PROJECT_NAME})
+        if(EXISTS ${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py)
             configure_file(${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py
                 ${CMAKE_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
         elseif(EXISTS ${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py.in)
