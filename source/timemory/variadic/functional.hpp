@@ -145,21 +145,24 @@ template <typename... Args>
 void
 print(std::ostream& os, Args&&... args)
 {
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(os << args << "\n");
+    TIMEMORY_FOLD_EXPRESSION(os << args << "\n");
 }
 //
-//--------------------------------------------------------------------------------------//
+template <typename... Args>
+void
+print(std::ostream& os, const std::string& delim, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(os << args << delim);
+}
 //
 template <template <typename...> class OpT, typename ApiT = TIMEMORY_API,
           template <typename...> class TupleT, typename... Tp, typename... Args>
 void
 invoke(TupleT<Tp...>& obj, Args&&... args)
 {
-    invoke_impl::invoke<OpT, ApiT>(obj, std::forward<Args>(args)...);
+    if(settings::enabled())
+        invoke_impl::invoke<OpT, ApiT>(obj, std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename TupleT, typename ApiT = TIMEMORY_API, typename... Args>
 auto
@@ -177,8 +180,6 @@ construct(Args&&... args)
     return TupleT{};
 }
 //
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp>
 auto
@@ -186,8 +187,6 @@ destroy(TupleT<Tp...>& obj)
 {
     invoke_impl::invoke<operation::generic_deleter, ApiT>(obj);
 }
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -214,21 +213,6 @@ start(TupleT<Tp...>& obj, Args&&... args)
     }
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-start(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = TupleT<decay_t<Tp>...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).start(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -254,21 +238,6 @@ stop(TupleT<Tp...>& obj, Args&&... args)
     }
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-stop(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = TupleT<decay_t<Tp>...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).stop(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -279,21 +248,6 @@ mark_begin(TupleT<Tp...>& obj, Args&&... args)
                                                          std::forward<Args>(args)...);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-mark_begin(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = TupleT<decay_t<Tp>...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).mark_begin(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -302,21 +256,6 @@ mark_end(TupleT<Tp...>& obj, Args&&... args)
     if(settings::enabled())
         invoke_impl::invoke<operation::mark_end, ApiT>(obj, std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-mark_end(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = TupleT<decay_t<Tp>...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).mark_end(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -327,21 +266,6 @@ store(TupleT<Tp...>& obj, Args&&... args)
         invoke_impl::invoke<operation::store, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-store(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = TupleT<decay_t<Tp>...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).store(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -350,21 +274,6 @@ reset(TupleT<Tp...>& obj, Args&&... args)
     if(settings::enabled())
         invoke_impl::invoke<operation::reset, ApiT>(obj, std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-reset(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).reset(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -375,21 +284,6 @@ record(TupleT<Tp...>& obj, Args&&... args)
         invoke_impl::invoke<operation::record, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-record(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).record(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -398,21 +292,6 @@ measure(TupleT<Tp...>& obj, Args&&... args)
     if(settings::enabled())
         invoke_impl::invoke<operation::measure, ApiT>(obj, std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-measure(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).measure(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -424,21 +303,6 @@ push(TupleT<Tp...>& obj, Args&&... args)
                                                           std::forward<Args>(args)...);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-push(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).push(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -447,21 +311,6 @@ pop(TupleT<Tp...>& obj, Args&&... args)
     if(settings::enabled())
         invoke_impl::invoke<operation::pop_node, ApiT>(obj, std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-pop(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).pop(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -473,21 +322,6 @@ set_prefix(TupleT<Tp...>& obj, Args&&... args)
                                                          std::forward<Args>(args)...);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-set_prefix(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).set_prefix(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -496,21 +330,6 @@ set_scope(TupleT<Tp...>& obj, Args&&... args)
     if(settings::enabled())
         invoke_impl::invoke<operation::set_scope, ApiT>(obj, std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-set_scope(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).set_scope(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -521,21 +340,6 @@ assemble(TupleT<Tp...>& obj, Args&&... args)
         invoke_impl::invoke<operation::assemble, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-assemble(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).assemble(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -544,21 +348,6 @@ derive(TupleT<Tp...>& obj, Args&&... args)
     if(settings::enabled())
         invoke_impl::invoke<operation::derive, ApiT>(obj, std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-derive(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).derive(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -569,21 +358,6 @@ audit(TupleT<Tp...>& obj, Args&&... args)
         invoke_impl::invoke<operation::audit, ApiT>(obj, std::forward<Args>(args)...);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-audit(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).audit(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 void
@@ -593,21 +367,6 @@ add_secondary(TupleT<Tp...>& obj, Args&&... args)
         invoke_impl::invoke<operation::add_secondary, ApiT>(obj,
                                                             std::forward<Args>(args)...);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
-add_secondary(TupleT<Tp...>&& obj, Args&&... args)
-{
-    using data_type = std::tuple<Tp...>;
-    if(settings::enabled())
-        TIMEMORY_FOLD_EXPRESSION(
-            std::get<index_of<decay_t<Tp>, data_type>::value>(obj).add_secondary(
-                std::forward<Args>(args)...));
-}
-//
-//--------------------------------------------------------------------------------------//
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
@@ -624,8 +383,6 @@ get(TupleT<Tp...>& obj, Args&&... args)
     return _data;
 }
 //
-//--------------------------------------------------------------------------------------//
-//
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
 auto
@@ -639,6 +396,308 @@ get_labeled(TupleT<Tp...>& obj, Args&&... args)
     invoke_impl::invoke_out_of_order<operation::get_labeled_data, data_collect_type, 2,
                                      ApiT>(obj, _data, std::forward<Args>(args)...);
     return _data;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+//          Forwarded bundles
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace invoke_impl
+{
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+start(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).start(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+stop(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).stop(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+mark_begin(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).mark_begin(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+mark_end(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).mark_end(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+store(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).store(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+reset(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).reset(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+record(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).record(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+measure(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).measure(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+push(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).push(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+pop(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).pop(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+set_prefix(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).set_prefix(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+set_scope(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).set_scope(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+assemble(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).assemble(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+derive(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).derive(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+audit(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(obj).audit(std::forward<Args>(args)...));
+}
+//
+template <template <typename...> class TupleT, typename... Tp, size_t... Idx,
+          typename... Args>
+void
+add_secondary(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
+{
+    TIMEMORY_FOLD_EXPRESSION(
+        std::get<Idx>(obj).add_secondary(std::forward<Args>(args)...));
+}
+//
+}  // namespace invoke_impl
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+start(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::start(std::forward<TupleT<Tp...>>(obj),
+                           std::make_index_sequence<sizeof...(Tp)>{},
+                           std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+stop(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::stop(std::forward<TupleT<Tp...>>(obj),
+                          std::make_index_sequence<sizeof...(Tp)>{},
+                          std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+mark_begin(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::mark_begin(std::forward<TupleT<Tp...>>(obj),
+                                std::make_index_sequence<sizeof...(Tp)>{},
+                                std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+mark_end(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::mark_end(std::forward<TupleT<Tp...>>(obj),
+                              std::make_index_sequence<sizeof...(Tp)>{},
+                              std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+store(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::store(std::forward<TupleT<Tp...>>(obj),
+                           std::make_index_sequence<sizeof...(Tp)>{},
+                           std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+reset(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::reset(std::forward<TupleT<Tp...>>(obj),
+                           std::make_index_sequence<sizeof...(Tp)>{},
+                           std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+record(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::record(std::forward<TupleT<Tp...>>(obj),
+                            std::make_index_sequence<sizeof...(Tp)>{},
+                            std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+measure(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::measure(std::forward<TupleT<Tp...>>(obj),
+                             std::make_index_sequence<sizeof...(Tp)>{},
+                             std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+push(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::push(std::forward<TupleT<Tp...>>(obj),
+                          std::make_index_sequence<sizeof...(Tp)>{},
+                          std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+pop(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::pop(std::forward<TupleT<Tp...>>(obj),
+                         std::make_index_sequence<sizeof...(Tp)>{},
+                         std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+set_prefix(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::set_prefix(std::forward<TupleT<Tp...>>(obj),
+                                std::make_index_sequence<sizeof...(Tp)>{},
+                                std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+set_scope(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::set_scope(std::forward<TupleT<Tp...>>(obj),
+                               std::make_index_sequence<sizeof...(Tp)>{},
+                               std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+assemble(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::assemble(std::forward<TupleT<Tp...>>(obj),
+                              std::make_index_sequence<sizeof...(Tp)>{},
+                              std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+derive(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::derive(std::forward<TupleT<Tp...>>(obj),
+                            std::make_index_sequence<sizeof...(Tp)>{},
+                            std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+audit(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::audit(std::forward<TupleT<Tp...>>(obj),
+                           std::make_index_sequence<sizeof...(Tp)>{},
+                           std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+add_secondary(TupleT<Tp...>&& obj, Args&&... args)
+{
+    if(settings::enabled())
+        invoke_impl::add_secondary(std::forward<TupleT<Tp...>>(obj),
+                                   std::make_index_sequence<sizeof...(Tp)>{},
+                                   std::forward<Args>(args)...);
 }
 //
 //--------------------------------------------------------------------------------------//
