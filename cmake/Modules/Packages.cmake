@@ -1238,7 +1238,7 @@ if(TIMEMORY_USE_DYNINST)
     set(TIMEMORY_BOOST_COMPONENTS "${_BOOST_COMPONENTS}" CACHE STRING
         "Boost components used by Dyninst in timemory")
     if(Dyninst_FOUND)
-        # set(Boost_NO_BOOST_CMAKE ON)
+        set(Boost_NO_BOOST_CMAKE ON)
         find_package(Boost ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT}
             COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
     endif()

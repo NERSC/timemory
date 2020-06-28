@@ -160,7 +160,7 @@ if(TIMEMORY_INSTALL_TREE)
     set(Boost_DIR "@Boost_DIR@")
     # set(Kokkos_DIR "@Kokkos_DIR@")
 
-    # set(Boost_NO_BOOST_CMAKE ON CACHE BOOL "Disable use of BoostConfig.cmake")
+    set(Boost_NO_BOOST_CMAKE ON CACHE BOOL "Disable use of BoostConfig.cmake")
     timemory_dependent_package(MPI      @TIMEMORY_USE_MPI@)
     timemory_dependent_package(caliper  @TIMEMORY_USE_CALIPER@)
     timemory_dependent_package(gotcha   @TIMEMORY_USE_GOTCHA@)
