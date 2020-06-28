@@ -17,7 +17,7 @@ if(TARGET timemory-cxx-shared)
 elseif(TARGET timemory-cxx-static)
     set(_LIBRARY_TARGET timemory-cxx-static)
 endif()
-  
+
 set(_LIBRARY)
 if(TIMEMORY_USE_TESTING_LINK_LIBRARY)
     set(_LIBRARY ${_LIBRARY_TARGET})
@@ -38,6 +38,11 @@ target_compile_options(test-opt-flags INTERFACE ${_FLAGS})
 if(NOT TIMEMORY_USE_ARCH)
   add_target_flag_if_avail(test-opt-flags "-march=native")
 endif()
+
+add_library(test-werror-flags INTERFACE)
+add_target_flag_if_avail(test-werror-flags "-W" "-Wall" "-Wextra" "-pedantic" "-Werror")
+target_link_libraries(test-werror-flags INTERFACE timemory::timemory-headers timemory::timemory-compile-timing)
+target_compile_definitions(test-werror-flags INTERFACE TIMEMORY_CMAKE)
 
 set(HYBRID_COMPONENTS )
 
@@ -78,6 +83,10 @@ if(_LIBRARY_TARGET)
         SOURCES         throttle_tests.cpp
         LINK_LIBRARIES  ${_LIBRARY_TARGET})
 endif()
+
+add_timemory_google_test(warning_tests
+    SOURCES         warning_tests.cpp
+    LINK_LIBRARIES  test-werror-flags)
 
 add_timemory_google_test(argparse_tests
     SOURCES         argparse_tests.cpp
