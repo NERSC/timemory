@@ -61,11 +61,13 @@ using record_map_t       = std::unordered_map<uint64_t, toolset_t>;
 using component_enum_t   = std::vector<TIMEMORY_COMPONENT>;
 using components_stack_t = std::deque<component_enum_t>;
 
+namespace
+{
+static auto library_manager_handle  = tim::manager::instance();
+static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
 static std::string spacer =
     "#-------------------------------------------------------------------------#";
-
-static auto _settings = tim::settings::shared_instance<tim::api::native_tag>();
-static auto _manager  = tim::manager::instance();
+}  // namespace
 
 //--------------------------------------------------------------------------------------//
 
@@ -192,6 +194,11 @@ extern "C"
     }
 
     //----------------------------------------------------------------------------------//
+    //
+    //
+    bool timemory_library_is_initialized(void) { return get_library_state()[0]; }
+
+    //----------------------------------------------------------------------------------//
     //  initialize the library
     //
     void timemory_init_library(int argc, char** argv)
@@ -209,7 +216,7 @@ extern "C"
         }
 
         tim::timemory_init(argc, argv);
-        _manager->update_metadata_prefix();
+        library_manager_handle->update_metadata_prefix();
         // tim::settings::parse();
     }
 

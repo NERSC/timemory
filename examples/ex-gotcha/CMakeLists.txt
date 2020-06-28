@@ -28,5 +28,5 @@ target_link_libraries(ex_gotcha_lib_mpi PUBLIC timemory-gotcha-example timemory-
 add_executable(ex_gotcha_mpi ex_gotcha.cpp)
 target_link_libraries(ex_gotcha_mpi ex_gotcha_lib_mpi timemory-mpi)
 
-install(TARGETS ex_gotcha ex_gotcha_mpi ex_gotcha_replacement DESTINATION bin)
-install(TARGETS ex_gotcha_lib             DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS ex_gotcha ex_gotcha_mpi ex_gotcha_replacement DESTINATION bin OPTIONAL)
+install(TARGETS ex_gotcha_lib             DESTINATION ${CMAKE_INSTALL_LIBDIR} OPTIONAL)

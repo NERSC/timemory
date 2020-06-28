@@ -56,8 +56,8 @@ using trace_map_t    = std::unordered_map<size_t, std::deque<traceset_t>>;
 
 namespace
 {
-static auto library_manager_handle  = tim::manager::master_instance();
-static auto library_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
+static auto trace_manager_handle  = tim::manager::instance();
+static auto trace_settings_handle = tim::settings::shared_instance<TIMEMORY_API>();
 static std::atomic<uint32_t> library_trace_count{ 0 };
 }  // namespace
 
@@ -154,7 +154,7 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
 {
     static void set_attr()
     {
-        if(mpi_is_attached || !timemory_mpi_finalize_comm_keyval())
+        if(!timemory_mpi_finalize_comm_keyval())
             return;
         auto lk                  = tim::trace::lock<tim::trace::library>();
         auto _state              = tim::settings::enabled();
@@ -170,6 +170,9 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     // MPI_Init
     int operator()(int* argc, char*** argv)
     {
+        if(recursive())
+            return MPI_Init(argc, argv);
+        recursive()              = true;
         auto ret                 = MPI_Init(argc, argv);
         tim::mpi::is_finalized() = false;
         set_attr();
@@ -180,12 +183,16 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
             timemory_push_trace("MPI_Init(int*, char**)");
         else if(mode == "region")
             timemory_push_region("MPI_Init(int*, char**)");
+        recursive() = false;
         return ret;
     }
 
     // MPI_Init_thread
     int operator()(int* argc, char*** argv, int req, int* prov)
     {
+        if(recursive())
+            return MPI_Init_thread(argc, argv, req, prov);
+        recursive()              = true;
         auto ret                 = MPI_Init_thread(argc, argv, req, prov);
         tim::mpi::is_finalized() = false;
         set_attr();
@@ -196,14 +203,23 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
             timemory_push_trace("MPI_Init_thread(int*, char**, int, int*)");
         else if(mode == "region")
             timemory_push_region("MPI_Init_thread(int*, char**, int, int*)");
+        recursive() = false;
         return ret;
     }
 
     // MPI_Finalize
     int operator()()
     {
-        if(tim::mpi::is_finalized())
+        if(recursive() || tim::mpi::is_finalized())
             return MPI_SUCCESS;
+        recursive() = true;
+        if(!timemory_mpi_finalize_gotcha_wrapper())
+        {
+            auto ret    = MPI_Finalize();
+            recursive() = false;
+            return ret;
+        }
+
         if(mpi_is_attached)
         {
             auto mode =
@@ -226,6 +242,7 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
             PRINT_HERE("%s", "finalizing MPI");
         tim::mpi::is_finalized() = true;
         auto ret                 = MPI_Finalize();
+        recursive()              = false;
         return ret;
     }
 
@@ -233,6 +250,12 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
     {
         static auto _instance =
             tim::get_env<std::string>("TIMEMORY_TRACE_COMPONENTS", "");
+        return _instance;
+    }
+
+    static bool& recursive()
+    {
+        static bool _instance = false;
         return _instance;
     }
 
@@ -368,6 +391,14 @@ extern "C"
     //
     //----------------------------------------------------------------------------------//
     //
+    bool timemory_trace_is_initialized()
+    {
+        return (get_library_state()[0] &&
+                library_trace_count.load(std::memory_order_relaxed) > 0);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     bool timemory_is_throttled(const char* name)
     {
         size_t _id = tim::get_hash_id(name);
@@ -422,6 +453,9 @@ extern "C"
     //
     void timemory_push_trace_hash(uint64_t id)
     {
+        if(!timemory_trace_is_initialized())
+            timemory_trace_init("", true, "");
+
         auto lk = tim::trace::lock<tim::trace::library>();
 
         if(!lk)
@@ -552,6 +586,9 @@ extern "C"
     //
     void timemory_push_trace(const char* name)
     {
+        if(!timemory_trace_is_initialized())
+            timemory_trace_init("", true, "");
+
         uint64_t _hash = std::numeric_limits<uint64_t>::max();
         {
             auto lk = tim::trace::lock<tim::trace::library>();
@@ -611,13 +648,12 @@ extern "C"
         if(get_library_state()[0])
             return;
 
-        timemory_mpip_library_ctor();
-        timemory_ompt_library_ctor();
+            // timemory_mpip_library_ctor();
+            // timemory_ompt_library_ctor();
 
-        if(use_mpi_gotcha && !mpi_gotcha_handle.get())
+#if defined(TIMEMORY_MPI_GOTCHA)
+        if(!mpi_gotcha_handle.get())
         {
-            PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
-                       (int) tim::process::get_id(), (int) tim::threading::get_id());
             mpi_gotcha_handle =
                 std::make_shared<mpi_trace_bundle_t>("timemory_trace_mpi_gotcha");
             mpi_trace_gotcha::get_trace_components() = args;
@@ -625,9 +661,14 @@ extern "C"
             mpi_trace_gotcha::get_command()          = cmd;
             if(mpi_is_attached)
                 mpi_trace_gotcha::set_attr();
-            else
-                return;
         }
+        else if(mpi_gotcha_handle.get())
+        {
+            PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
+                       (int) tim::process::get_id(), (int) tim::threading::get_id());
+            trace_manager_handle->update_metadata_prefix();
+        }
+#endif
 
         if(library_trace_count++ == 0)
         {
@@ -670,14 +711,8 @@ extern "C"
 
             tim::set_env<std::string>("TIMEMORY_TRACE_COMPONENTS", args, 0);
 
-            // reset traces just in case
-            // user_trace_bundle::reset();
-
             // configure bundle
-            // user_trace_bundle::global_init(nullptr);
             tim::env::configure<user_trace_bundle>("TIMEMORY_TRACE_COMPONENTS", args);
-            // tim::manager::get_storage<user_trace_bundle>::initialize();
-            // user_trace_bundle::get_storage()->data_init();
 
             tim::settings::parse();
         }

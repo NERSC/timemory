@@ -22,4 +22,4 @@ find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 # headers are always available
 add_executable(ex_cxx_statistics ex_statistics.cpp)
 target_link_libraries(ex_cxx_statistics timemory-statistics-example)
-install(TARGETS ex_cxx_statistics DESTINATION bin)
+install(TARGETS ex_cxx_statistics DESTINATION bin OPTIONAL)

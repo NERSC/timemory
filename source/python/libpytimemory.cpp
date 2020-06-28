@@ -262,8 +262,8 @@ PYBIND11_MODULE(libpytimemory, tim)
                 std::cerr << "\nBacktrace:\n";
                 if(itr.length() > 0)
                     std::cerr << itr << "\n";
-                std::cerr << "\n" << std::flush;
             }
+            std::cerr << "\n" << std::flush;
 #endif
             PRINT_HERE("ERROR: %s", e.what());
         }

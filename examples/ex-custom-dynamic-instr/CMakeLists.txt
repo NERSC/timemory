@@ -24,5 +24,6 @@ foreach(_TYPE SHARED STATIC)
     add_library(${_TARG} ${_TYPE} ${LIB_NAME}.cpp)
     target_link_libraries(${_TARG} PUBLIC timemory::custom-dynamic-instr-example)
     set_target_properties(${_TARG} PROPERTIES OUTPUT_NAME ${LIB_NAME})
-    install(TARGETS ${_TARG} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(TARGETS ${_TARG} DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        COMPONENT examples OPTIONAL)
 endforeach()

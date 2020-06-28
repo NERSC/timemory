@@ -160,8 +160,29 @@ struct enabled_statistics
 //
 //--------------------------------------------------------------------------------------//
 //
+struct init_mode
+{
+    enum value
+    {
+        thread,
+        global
+    };
+};
+//
+using fini_mode = init_mode;
+//
+template <int ModeV>
+using mode_constant = std::integral_constant<int, ModeV>;
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename U>
 using has_data_t = typename has_data<U>::type;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct init;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -387,6 +408,11 @@ struct generic_counter;
 //
 template <typename T, typename Op, typename Tag = TIMEMORY_API>
 struct generic_operator;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct fini;
 //
 //--------------------------------------------------------------------------------------//
 //

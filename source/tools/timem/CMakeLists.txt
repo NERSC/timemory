@@ -41,13 +41,14 @@ add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem PRIVATE
     timemory-compile-options
-    timemory-arch
-    timemory-vector
     timemory-headers
+    timemory-arch
     timemory-papi
     timemory-mpi
     timem-libexplain
     ${_STATIC_LIB})
+
+add_target_flag_if_avail(timem "-g")
 
 set_target_properties(timem PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH ON)

@@ -56,6 +56,12 @@ main(int argc, char** argv)
     tim::set_env<string_t>("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
 #endif
 
+#if defined(TIMEMORY_USE_MPI)
+    auto _dmp_argc = 1;
+    auto _dmp_argv = argv;
+    tim::dmp::initialize(_dmp_argc, _dmp_argv);
+#endif
+
     argv0                  = argv[0];
     auto env_collect_paths = tim::get_env<string_t>("TIMEMORY_COLLECTION_PATH", "");
     prefix_collection_path(env_collect_paths, collection_paths);
@@ -77,7 +83,7 @@ main(int argc, char** argv)
     bpatch->setDelayedParsing(true);
     bpatch->setInstrStackFrames(true);
     bpatch->setLivenessAnalysis(false);
-    bpatch->setTrampRecursive(true);
+    bpatch->setTrampRecursive(false);
     bpatch->setMergeTramp(true);
 
     int _argc = argc;
@@ -123,13 +129,13 @@ main(int argc, char** argv)
         return ss.str();
     };
 
-    if(verbose_level > 1)
+    if(verbose_level > 1 && tim::dmp::rank() == 0)
     {
         std::cout << "[original]: " << cmd_string(argc, argv) << std::endl;
         std::cout << "[cfg-args]: " << cmd_string(_argc, _argv) << std::endl;
     }
 
-    if(_cmdc > 0)
+    if(_cmdc > 0 && tim::dmp::rank() == 0)
         std::cout << "\n [command]: " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
     if(_cmdc > 0)

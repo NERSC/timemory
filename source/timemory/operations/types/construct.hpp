@@ -103,9 +103,9 @@ struct construct<Tp*>
     using base_type = construct<Tp>;
 
     template <typename... Args>
-    static auto get(Args&&... args)
+    static Tp* get(Args&&...)
     {
-        return new Tp(base_type::get(std::forward<Args>(args)...));
+        return nullptr;
     }
 };
 //
@@ -115,9 +115,9 @@ struct construct<std::shared_ptr<Tp>>
     using base_type = construct<Tp>;
 
     template <typename... Args>
-    static auto get(Args&&... args)
+    static auto get(Args&&...)
     {
-        return std::shared_ptr<Tp>(new Tp(base_type::get(std::forward<Args>(args)...)));
+        return std::shared_ptr<Tp>(nullptr);
     }
 };
 //
@@ -127,10 +127,9 @@ struct construct<std::unique_ptr<Tp, Deleter...>>
     using base_type = construct<Tp>;
 
     template <typename... Args>
-    static auto get(Args&&... args)
+    static auto get(Args&&...)
     {
-        return std::unique_ptr<Tp, Deleter...>(
-            new Tp(base_type::get(std::forward<Args>(args)...)));
+        return std::unique_ptr<Tp, Deleter...>(nullptr);
     }
 };
 //

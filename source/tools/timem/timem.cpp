@@ -51,6 +51,7 @@ main(int argc, char** argv)
 
     // set some defaults
     tim::settings::banner()      = false;
+    tim::settings::auto_output() = false;
     tim::settings::file_output() = false;
     tim::settings::scientific()  = false;
     tim::settings::width()       = 16;
@@ -59,6 +60,8 @@ main(int argc, char** argv)
     auto _mpi_argc = 1;
     auto _mpi_argv = argv;
     tim::mpi::initialize(_mpi_argc, _mpi_argv);
+
+    tim::settings::auto_output() = false;
 
     using parser_t     = tim::argparse::argument_parser;
     using parser_err_t = typename parser_t::result_type;
@@ -109,7 +112,11 @@ main(int argc, char** argv)
         .action([](parser_t& p) { sample_freq() = p.get<double>("sample-freq"); });
     parser.add_argument({ "-e", "--events", "--papi-events" },
                         "Set the hardware counter events to record");
-    parser.add_argument({ "--mpi" }, "Enable MPI support").count(0);
+    parser
+        .add_argument(
+            { "--mpi" },
+            "Launch processes via MPI_Comm_spawn_multiple (reduced functionality)")
+        .count(0);
     parser.add_argument({ "--disable-papi" }, "Disable hardware counters")
         .count(0)
         .action([](parser_t&) { use_papi() = false; });
@@ -153,7 +160,7 @@ main(int argc, char** argv)
         if(!tim::trait::is_available<papi_array_t>::value)
             throw std::runtime_error("Error! timemory was not built with PAPI support");
 
-        auto              evts = parser.get<std::vector<std::string>>("shell-flags");
+        auto              evts = parser.get<std::vector<std::string>>("events");
         std::stringstream ss;
         for(const auto& itr : evts)
             ss << itr << ",";
@@ -176,6 +183,8 @@ main(int argc, char** argv)
         ss << "[" << command().c_str() << "] measurement totals";
         if(use_mpi())
             ss << " (# ranks = " << tim::mpi::size() << "):";
+        else if(tim::dmp::size() > 1)
+            ss << " (# ranks = " << tim::dmp::size() << "):";
         else
             ss << ":";
         return ss.str();
@@ -388,16 +397,6 @@ main(int argc, char** argv)
         sampler_t::ignore();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-        // tim::mpi::barrier(comm_child_v);
-
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-        if(use_mpi())
-        {
-            // while(!kill(worker_pid(), 0))
-            {}
-        }
-
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::mpi::barrier(comm_world_v);
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
@@ -409,9 +408,9 @@ main(int argc, char** argv)
 
     delete get_sampler();
 
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
-    // tim::timemory_finalize();
-    tim::mpi::finalize();
+    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "Completed");
+    if(use_mpi())
+        tim::mpi::finalize();
 
     return ec;
 }
@@ -468,7 +467,7 @@ parent_process(pid_t pid)
 
     std::vector<timem_bundle_t> _measurements;
 
-    if(use_mpi())
+    if(use_mpi() || tim::mpi::size() > 1)
         _measurements = { get_measure()->mpi_get() };
     else
         _measurements = { *get_measure() };
@@ -482,7 +481,7 @@ parent_process(pid_t pid)
         auto& itr = _measurements.at(i);
         if(itr.empty())
             continue;
-        if(_measurements.size() > 0 && use_mpi())
+        if(_measurements.size() > 0 && (use_mpi() || tim::mpi::size() > 1))
             itr.set_rank(i);
         _oss << "\n" << itr << std::flush;
     }
@@ -527,6 +526,9 @@ parent_process(pid_t pid)
     }
 
     std::cerr << std::flush;
+
+    // tim::mpi::barrier();
+    // tim::mpi::finalize();
 }
 
 //--------------------------------------------------------------------------------------//
