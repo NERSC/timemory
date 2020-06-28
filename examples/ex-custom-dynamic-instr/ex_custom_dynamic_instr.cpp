@@ -30,10 +30,10 @@ using namespace tim::component;
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_DECLARE_COMPONENT(flops_per_bytes)
-TIMEMORY_STATISTICS_TYPE(component::flops_per_bytes, double)
+TIMEMORY_DECLARE_COMPONENT(inst_per_cycle)
+TIMEMORY_STATISTICS_TYPE(component::inst_per_cycle, double)
 #if !defined(TIMEMORY_USE_PAPI)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::flops_per_bytes, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::inst_per_cycle, false_type)
 #endif
 //
 //--------------------------------------------------------------------------------------//
