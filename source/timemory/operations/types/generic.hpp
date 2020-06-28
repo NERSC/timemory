@@ -57,7 +57,7 @@ namespace operation
 template <typename Tp, typename Op, typename Tag>
 struct generic_operator
 {
-    using type       = Tp;
+    using type       = std::remove_pointer_t<Tp>;
     using value_type = typename type::value_type;
 
     TIMEMORY_DELETED_OBJECT(generic_operator)

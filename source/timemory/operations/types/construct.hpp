@@ -97,6 +97,43 @@ private:
     {}
 };
 //
+template <typename Tp>
+struct construct<Tp*>
+{
+    using base_type = construct<Tp>;
+
+    template <typename... Args>
+    static auto get(Args&&... args)
+    {
+        return new Tp(base_type::get(std::forward<Args>(args)...));
+    }
+};
+//
+template <typename Tp>
+struct construct<std::shared_ptr<Tp>>
+{
+    using base_type = construct<Tp>;
+
+    template <typename... Args>
+    static auto get(Args&&... args)
+    {
+        return std::shared_ptr<Tp>(new Tp(base_type::get(std::forward<Args>(args)...)));
+    }
+};
+//
+template <typename Tp, typename... Deleter>
+struct construct<std::unique_ptr<Tp, Deleter...>>
+{
+    using base_type = construct<Tp>;
+
+    template <typename... Args>
+    static auto get(Args&&... args)
+    {
+        return std::unique_ptr<Tp, Deleter...>(
+            new Tp(base_type::get(std::forward<Args>(args)...)));
+    }
+};
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>

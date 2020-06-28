@@ -29,6 +29,8 @@
 
 namespace tim
 {
+namespace runtime
+{
 //
 template <typename Tools, typename Func, typename... Args,
           typename Ret = std::result_of_t<Func(Args...)>,
@@ -59,4 +61,5 @@ invoke(std::string&& label, Func&& func, Args&&... args)
     _obj.stop();
 }
 //
+}  // namespace runtime
 }  // namespace tim

@@ -144,7 +144,7 @@ fibonacci(int64_t n, int64_t cutoff)
                             : (fibonacci<Tp>(_n - 1, _cutoff) +
                                fibonacci<Tp>(_n - 2, _cutoff));
         };
-        return tim::invoke<auto_tuple_t>(labeler(n), fib, n, cutoff);
+        return tim::runtime::invoke<auto_tuple_t>(labeler(n), fib, n, cutoff);
     }
     return fibonacci(n);
 }
