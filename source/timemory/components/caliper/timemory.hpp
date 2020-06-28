@@ -36,12 +36,6 @@
 #    include "pybind11/stl.h"
 #endif
 
-extern "C"
-{
-    void cali_begin_region(const char* name);
-    void cali_end_region(const char* name);
-}
-
 //======================================================================================//
 //
 namespace tim
@@ -264,8 +258,8 @@ private:
 
 public:
     // emulate CALI_MARK_BEGIN and CALI_MARK_END via static calls which require a string
-    static void start(const std::string& _name) { cali_begin_region(_name.c_str()); }
-    static void stop(const std::string& _name) { cali_end_region(_name.c_str()); }
+    static void start(const std::string& _name) { CALI_MARK_BEGIN(_name.c_str()); }
+    static void stop(const std::string& _name) { CALI_MARK_END(_name.c_str()); }
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
     //

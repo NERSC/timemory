@@ -91,7 +91,7 @@ get(py::class_<pytuple_t<T>>& _pyclass)
     auto _get      = [](bundle_t* obj) { return std::get<0>(obj->get()); };
     _pyclass.def("get", _get, "Get the current value");
     _pyclass.def_property_readonly_static(
-        "has_value", []() { return true; },
+        "has_value", [](py::object) { return true; },
         "Whether the component has an accessible value");
 }
 //
@@ -106,7 +106,7 @@ get(py::class_<pytuple_t<T>>& _pyclass)
     auto _get      = [](bundle_t*) { return py::none{}; };
     _pyclass.def("get", _get, "Component does not return value");
     _pyclass.def_property_readonly_static(
-        "has_value", []() { return false; },
+        "has_value", [](py::object) { return false; },
         "Whether the component has an accessible value");
 }
 //
@@ -326,7 +326,8 @@ generate(py::module& _pymod)
     using bundle_t   = pytuple_t<T>;
     std::string id   = get_class_name(property_t::enum_string());
 
-    auto _init       = [](std::string key) { return new bundle_t(key); };
+    auto _init       = []() { return new bundle_t{}; };
+    auto _sinit      = [](std::string key) { return new bundle_t(key); };
     auto _push       = [](bundle_t* obj) { obj->push(); };
     auto _pop        = [](bundle_t* obj) { obj->pop(); };
     auto _start      = [](bundle_t* obj) { obj->start(); };
@@ -340,25 +341,6 @@ generate(py::module& _pymod)
     auto _laps       = [](bundle_t* obj) { return obj->laps(); };
     auto _rekey      = [](bundle_t* obj, std::string _key) { obj->rekey(_key); };
 
-    /*auto _add        = [](bundle_t* lhs, bundle_t* rhs) -> bundle_t* {
-        if(!lhs || !rhs)
-            return nullptr;
-        auto ret = new bundle_t(*lhs);
-        *ret += *rhs;
-        return ret;
-    };
-    auto _sub = [](bundle_t* lhs, bundle_t* rhs) -> bundle_t* {
-        if(!lhs || !rhs)
-            return nullptr;
-        auto ret = new bundle_t(*lhs);
-        *ret -= *rhs;
-        return ret;
-    };
-    auto _iadd = [](bundle_t* lhs, bundle_t* rhs) {
-        if(lhs && rhs)
-            *lhs += *rhs;
-        return lhs;
-    };*/
     auto _isub = [](bundle_t* lhs, bundle_t* rhs) {
         if(lhs && rhs)
             *lhs -= *rhs;
@@ -375,6 +357,7 @@ generate(py::module& _pymod)
 
     // these have direct mappings to the component
     _pycomp.def(py::init(_init), "Creates component");
+    _pycomp.def(py::init(_sinit), "Creates component with a label");
     _pycomp.def("push", _push, "Push into the call-graph");
     _pycomp.def("pop", _pop, "Pop off the call-graph");
     _pycomp.def("start", _start, "Start measurement");
@@ -407,8 +390,9 @@ generate(py::module& _pymod)
     _pycomp.def_static("label", &T::label, "Get the label for the type");
     _pycomp.def_static("description", &T::description,
                        "Get the description for the type");
-    _pycomp.def_property_readonly_static("available", []() { return true; },
-                                         "Whether the component is available");
+    _pycomp.def_property_readonly_static(
+        "available", [](py::object) { return true; },
+        "Whether the component is available");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -426,7 +410,8 @@ generate(py::module& _pymod)
     std::string id    = get_class_name(property_t::enum_string());
     std::string _desc = "not available";
 
-    auto _init       = [](const std::string&) -> bundle_t* { return new bundle_t{}; };
+    auto _init       = []() { return new bundle_t{}; };
+    auto _sinit      = [](std::string) { return new bundle_t{}; };
     auto _push       = [](bundle_t*) {};
     auto _pop        = [](bundle_t*) {};
     auto _start      = [](bundle_t*) {};
@@ -449,6 +434,7 @@ generate(py::module& _pymod)
     py::class_<bundle_t> _pycomp(_pymod, id.c_str(), _desc.c_str());
 
     _pycomp.def(py::init(_init), "Creates component");
+    _pycomp.def(py::init(_sinit), "Creates component with a label");
     _pycomp.def("push", _push, "Push into the call-graph");
     _pycomp.def("pop", _pop, "Pop off the call-graph");
     _pycomp.def("start", _start, "Start measurement");
@@ -473,10 +459,12 @@ generate(py::module& _pymod)
     _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
     _pycomp.def("__repr__", _repr, "String representation");
 
-    _pycomp.def_property_readonly_static("available", []() { return false; },
-                                         "Whether the component is available");
-    _pycomp.def_property_readonly_static("has_value", []() { return false; },
-                                         "Whether the component has an accessible value");
+    _pycomp.def_property_readonly_static(
+        "available", [](py::object) { return false; },
+        "Whether the component is available");
+    _pycomp.def_property_readonly_static(
+        "has_value", [](py::object) { return false; },
+        "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//
