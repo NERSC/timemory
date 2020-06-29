@@ -400,15 +400,12 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         }
 
         auto _dst = std::vector<Type>{};
-        // reverse so we can pop off the back
-        std::reverse(dst.begin(), dst.end());
-        while(!dst.empty())
+        for(auto& itr : dst)
         {
             if(_dst.empty())
-                _dst.emplace_back(dst.back());
+                _dst.emplace_back(std::move(itr));
             else
-                _dst.front() = functor(_dst.front(), dst.back());
-            dst.pop_back();
+                _dst.front() = functor(_dst.front(), itr);
         }
 
         // assign dst to collapsed entry
@@ -494,10 +491,6 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
                        (int) comm_rank, (int) init_size, (int) fini_size,
                        (int) dst.size());
         }
-    }
-    else
-    {
-        dst = {};
     }
 
     if(settings::debug() || settings::verbose() > 1)

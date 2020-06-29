@@ -34,6 +34,8 @@ parent_process(pid_t pid);
 void
       child_process(int argc, char** argv) declare_attribute(noreturn);
 pid_t read_pid(pid_t);
+static bool&
+timem_mpi_was_finalized();
 
 //--------------------------------------------------------------------------------------//
 
@@ -44,24 +46,23 @@ main(int argc, char** argv)
     // setenv("TIMEMORY_BANNER", "OFF", 0);
     master_pid() = getpid();
 
+    // parallel settings
     tim::settings::mpi_init()       = false;
     tim::settings::mpi_finalize()   = false;
     tim::settings::upcxx_init()     = false;
     tim::settings::upcxx_finalize() = false;
-
-    // set some defaults
+    // other settings
     tim::settings::banner()      = false;
     tim::settings::auto_output() = false;
     tim::settings::file_output() = false;
     tim::settings::scientific()  = false;
     tim::settings::width()       = 16;
     tim::settings::precision()   = 6;
+    tim::manager::instance()->set_write_metadata(-1);
 
     auto _mpi_argc = 1;
     auto _mpi_argv = argv;
     tim::mpi::initialize(_mpi_argc, _mpi_argv);
-
-    tim::settings::auto_output() = false;
 
     using parser_t     = tim::argparse::argument_parser;
     using parser_err_t = typename parser_t::result_type;
@@ -73,7 +74,8 @@ main(int argc, char** argv)
     };
 
     auto help_action = [](parser_t& p) {
-        p.print_help("-- <CMD> <ARGS>");
+        if(tim::dmp::rank() == 0)
+            p.print_help("-- <CMD> <ARGS>");
         exit(EXIT_FAILURE);
     };
 
@@ -120,6 +122,15 @@ main(int argc, char** argv)
     parser.add_argument({ "--disable-papi" }, "Disable hardware counters")
         .count(0)
         .action([](parser_t&) { use_papi() = false; });
+    parser.add_argument({ "--disable-mpi" }, "Disable MPI_Finalize")
+        .count(0)
+        .action([](parser_t&) { timem_mpi_was_finalized() = true; });
+    parser
+        .add_argument({ "-i", "--indiv" },
+                      "Output individual results for each process (i.e. rank) instead of "
+                      "reporting the aggregation")
+        .count(0)
+        .action([](parser_t&) { tim::settings::collapse_processes() = false; });
     parser
         .add_argument({ "-s", "--shell" }, "Enable launching command via a shell command "
                                            "(if no arguments, $SHELL is used)")
@@ -142,6 +153,9 @@ main(int argc, char** argv)
 
     if(help_check(parser, _argc, _argv))
         help_action(parser);
+
+    if(!debug() && verbose() < 1)
+        tim::settings::papi_quiet() = true;
 
     // make sure config is instantiated
     tim::consume_parameters(get_config());
@@ -175,8 +189,6 @@ main(int argc, char** argv)
     tim::settings::suppress_parsing() = true;
     tim::settings::auto_output()      = false;
     tim::settings::output_prefix()    = "";
-
-    tim::manager::instance()->set_write_metadata(-1);
 
     auto compose_prefix = [&]() {
         std::stringstream ss;
@@ -232,6 +244,19 @@ main(int argc, char** argv)
 
     if(use_mpi())
     {
+        tim::trait::runtime_enabled<user_clock>::set(false);
+        tim::trait::runtime_enabled<system_clock>::set(false);
+        tim::trait::runtime_enabled<cpu_clock>::set(false);
+        tim::trait::runtime_enabled<cpu_util>::set(false);
+        tim::trait::runtime_enabled<peak_rss>::set(false);
+        tim::trait::runtime_enabled<num_major_page_faults>::set(false);
+        tim::trait::runtime_enabled<num_minor_page_faults>::set(false);
+        tim::trait::runtime_enabled<priority_context_switch>::set(false);
+        tim::trait::runtime_enabled<voluntary_context_switch>::set(false);
+        tim::trait::runtime_enabled<user_mode_time>::set(false);
+        tim::trait::runtime_enabled<kernel_mode_time>::set(false);
+        tim::trait::runtime_enabled<papi_array_t>::set(false);
+
         using info_t      = tim::mpi::info_t;
         using argvector_t = tim::argparse::argument_vector;
         using cargs_t     = typename argvector_t::cargs_t;
@@ -409,7 +434,7 @@ main(int argc, char** argv)
     delete get_sampler();
 
     CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "Completed");
-    if(use_mpi())
+    if(use_mpi() || (!timem_mpi_was_finalized() && tim::dmp::size() == 1))
         tim::mpi::finalize();
 
     return ec;
@@ -468,7 +493,7 @@ parent_process(pid_t pid)
     std::vector<timem_bundle_t> _measurements;
 
     if(use_mpi() || tim::mpi::size() > 1)
-        _measurements = { get_measure()->mpi_get() };
+        _measurements = get_measure()->mpi_get();
     else
         _measurements = { *get_measure() };
 
@@ -645,6 +670,15 @@ child_process(int argc, char** argv)
     }
 
     exit(ret);
+}
+
+//--------------------------------------------------------------------------------------//
+
+static bool&
+timem_mpi_was_finalized()
+{
+    static bool _instance = false;
+    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//

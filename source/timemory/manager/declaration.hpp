@@ -350,8 +350,6 @@ manager::add_finalizer(const std::string& _key, StackFunc&& _stack_func,
     remove_finalizer(_key);
 
     m_metadata_prefix = settings::get_output_prefix(true);
-    if(f_debug())
-        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     if(m_write_metadata == 0)
         m_write_metadata = 1;

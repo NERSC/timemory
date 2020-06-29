@@ -51,7 +51,7 @@ namespace operation
 template <typename Tp>
 struct fini
 {
-    using type       = Tp;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(fini)
 

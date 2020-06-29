@@ -56,7 +56,7 @@ template <typename FuncT>
 component_list<Types...>::component_list(const string_t& key, const bool& store,
                                          scope::config _scope, const FuncT& _func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
-, m_data(invoke::construct<data_type>(key, store, _scope))
+, m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
@@ -76,7 +76,7 @@ component_list<Types...>::component_list(const captured_location_t& loc,
                                          const bool& store, scope::config _scope,
                                          const FuncT& _func)
 : bundle_type(loc.get_hash(), store, _scope)
-, m_data(invoke::construct<data_type>(loc, store, _scope))
+, m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())
@@ -95,7 +95,7 @@ template <typename FuncT>
 component_list<Types...>::component_list(size_t _hash, const bool& store,
                                          scope::config _scope, const FuncT& _func)
 : bundle_type(_hash, store, _scope)
-, m_data(invoke::construct<data_type>(_hash, store, _scope))
+, m_data(data_type{})
 {
     apply_v::set_value(m_data, nullptr);
     if(settings::enabled())

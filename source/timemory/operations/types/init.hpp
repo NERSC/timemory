@@ -49,7 +49,7 @@ namespace operation
 template <typename Tp>
 struct init
 {
-    using type       = Tp;
+    using type = Tp;
 
     TIMEMORY_DELETED_OBJECT(init)
 

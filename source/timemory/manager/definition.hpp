@@ -115,10 +115,6 @@ manager::manager()
                m_instance_count, process::get_id());
 #    endif
 
-    // auto fname = settings::compose_output_filename("metadata", "json", false, -1, true,
-    //                                               m_metadata_prefix);
-    // consume_parameters(fname);
-
     if(settings::cpu_affinity())
         threading::affinity::set();
 }
@@ -311,15 +307,17 @@ manager::exit_hook()
 TIMEMORY_MANAGER_LINKAGE(void)
 manager::update_metadata_prefix()
 {
+    m_rank = std::max<int32_t>(m_rank, dmp::rank());
+    if(m_write_metadata < 0)
+        return;
     auto _settings = f_settings();
     if(!_settings)
         return;
     auto _outp_prefix = _settings->get_output_prefix();
     m_metadata_prefix = _outp_prefix;
-    m_rank            = std::max<int32_t>(m_rank, dmp::rank());
     if(f_debug())
-        PRINT_HERE("[rank=%i][id=%i][pid=%i] metadata prefix: '%s'", m_rank,
-                   m_instance_count, process::get_id(), m_metadata_prefix.c_str());
+        PRINT_HERE("[rank=%i][id=%i] metadata prefix: '%s'", m_rank, m_instance_count,
+                   m_metadata_prefix.c_str());
 }
 //
 //----------------------------------------------------------------------------------//

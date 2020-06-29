@@ -25,10 +25,10 @@
 
 #include "libpytimemory.hpp"
 #include "libpytimemory-components.hpp"
-#include "timemory/library.h"
 #include "timemory/components.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/components/ompt.hpp"
+#include "timemory/library.h"
 #include "timemory/settings/extern.hpp"
 
 //======================================================================================//
@@ -291,40 +291,28 @@ PYBIND11_MODULE(libpytimemory, tim)
     };
     //----------------------------------------------------------------------------------//
     auto _init_trace = [&](const char* args, bool read_command_line, const char* cmd) {
-            auto  _str    = std::string(args);
-            char* _args = new char[_str.size()];
-            std::strcpy(_args, _str.c_str());
+        auto  _str  = std::string(args);
+        char* _args = new char[_str.size()];
+        std::strcpy(_args, _str.c_str());
 
-            _str    = std::string(cmd);
-            char* _cmd = new char[_str.size()];
-            std::strcpy(_cmd, _str.c_str());
+        _str       = std::string(cmd);
+        char* _cmd = new char[_str.size()];
+        std::strcpy(_cmd, _str.c_str());
 
         timemory_trace_init(_args, read_command_line, _cmd);
     };
     //----------------------------------------------------------------------------------//
-    auto _finalize_trace = [&](){
-        timemory_trace_finalize();
-    };
+    auto _finalize_trace = [&]() { timemory_trace_finalize(); };
     //----------------------------------------------------------------------------------//
-    auto _push_trace = [&](const char *name) {
-        timemory_push_trace(name);
-    };
+    auto _push_trace = [&](const char* name) { timemory_push_trace(name); };
     //----------------------------------------------------------------------------------//
-    auto _pop_trace = [&](const char *name) {
-        timemory_pop_trace(name);
-    };
+    auto _pop_trace = [&](const char* name) { timemory_pop_trace(name); };
     //----------------------------------------------------------------------------------//
-    auto _push_region = [&](const char *name) {
-        timemory_push_region(name);
-    };
+    auto _push_region = [&](const char* name) { timemory_push_region(name); };
     //----------------------------------------------------------------------------------//
-    auto _pop_region = [&](const char *name) {
-        timemory_pop_region(name);
-    };
+    auto _pop_region = [&](const char* name) { timemory_pop_region(name); };
     //----------------------------------------------------------------------------------//
-    auto _is_throttled = [&](const char *name) {
-        return timemory_is_throttled(name);
-    };
+    auto _is_throttled = [&](const char* name) { return timemory_is_throttled(name); };
     //----------------------------------------------------------------------------------//
 
     //==================================================================================//
@@ -368,8 +356,8 @@ PYBIND11_MODULE(libpytimemory, tim)
     tim.def("finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_trace_init", _init_trace, "Initialize Tracing", 
-            py::arg("args") = "wall_clock", py::arg("read_command_line") = false, 
+    tim.def("timemory_trace_init", _init_trace, "Initialize Tracing",
+            py::arg("args") = "wall_clock", py::arg("read_command_line") = false,
             py::arg("cmd") = "");
     //----------------------------------------------------------------------------------//
     tim.def("timemory_trace_finalize", _finalize_trace, "Finalize Tracing");
@@ -378,13 +366,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("timemory_pop_trace", _pop_trace, "Pop Trace", py::arg("name"));
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_push_region", _push_region, "Push Trace Region", 
-            py::arg("name"));
+    tim.def("timemory_push_region", _push_region, "Push Trace Region", py::arg("name"));
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_pop_region", _pop_region, "Pop Trace Region",
-            py::arg("name"));
+    tim.def("timemory_pop_region", _pop_region, "Pop Trace Region", py::arg("name"));
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_is_throttled", _is_throttled, "Check if throttled", 
+    tim.def("timemory_is_throttled", _is_throttled, "Check if throttled",
             py::arg("name"));
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
