@@ -428,12 +428,14 @@ def run_pyctest():
     #--------------------------------------------------------------------------#
     # create tests
     #
+    pypath = ":".join(["{}".format(pyct.BINARY_DIRECTORY), os.environ.get("PYTHONPATH", "")])
     test_env = ";".join(["CPUPROFILE_FREQUENCY=200",
                          "CPUPROFILE_REALTIME=1",
                          "CALI_CONFIG_PROFILE=runtime-report",
                          "TIMEMORY_DART_OUTPUT=ON",
                          "TIMEMORY_DART_COUNT=1",
-                         "TIMEMORY_PLOT_OUTPUT=ON"])
+                         "TIMEMORY_PLOT_OUTPUT=ON",
+                         "PYTHONPATH={}".format(pypath)])
 
     if args.tools:
         pyct.test("timem-timemory-avail",
