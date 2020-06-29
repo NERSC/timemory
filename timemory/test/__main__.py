@@ -23,8 +23,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-''' @file tests/__main__.py
-Run Python TiMemory unittests
+''' @file test/__main__.py
+Run all timemory unittests
 '''
 
 from __future__ import absolute_import
@@ -42,7 +42,8 @@ import os
 import unittest
 import timemory as tim
 
-def run_tests():
+# discover and run all timemory unittests in the current directory
+def run_all_tests():
     # auto discover unittests from test_*.py files into the timemory test suite
     timTestSuite = unittest.defaultTestLoader.discover(start_dir=os.path.dirname(os.path.abspath(__file__)), 
                                                        pattern='test*.py')
@@ -74,4 +75,4 @@ def run_tests():
 
 # run all tests
 if __name__ == "__main__":
-    run_tests()
+    run_all_tests()
