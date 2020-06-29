@@ -20,9 +20,9 @@ The environement variable `ENABLE_TIMEMORY_MPIP` (default: `"ON"`) controls conf
 This library configures the `tim::user_mpip_bundle` component with the components specified by the following environment variables in terms of priority:
 
 - `TIMEMORY_MPIP_COMPONENTS`
+- `TIMEMORY_TRACE_COMPONENTS`
 - `TIMEMORY_PROFILER_COMPONENTS`
 - `TIMEMORY_GLOBAL_COMPONENTS`
-- `TIMEMORY_COMPONENT_LIST_INIT`
 
 When one of the above environment variables are set to `"none"`, then the priority search for component configurations is abandoned.
 
