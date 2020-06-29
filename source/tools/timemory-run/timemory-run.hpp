@@ -573,7 +573,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
 
     if(_rewrite)
     {
-        verbprintf(1, "Opening '%s' for binary rewrite...\n", _pid);
+        verbprintf(1, "Opening '%s' for binary rewrite...\n", _name.c_str());
         if(!_name.empty())
             mutatee = bpatch->openBinary(_name.c_str(), false);
         if(!mutatee)

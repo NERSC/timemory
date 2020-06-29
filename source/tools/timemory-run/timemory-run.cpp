@@ -1208,10 +1208,11 @@ main(int argc, char** argv)
                     flow->getOuterLoops(basic_loop);
                 for(auto litr : basic_loop)
                 {
+                    auto lname  = get_loop_file_line_info(mod, itr, flow, litr);
+                    auto _lname = lname.get();
+                    auto _lhash = std::hash<string_t>()(_lname);
+                    hash_ids.push_back({ _lhash, _lname });
                     auto _lf = [=]() {
-                        auto lname        = get_loop_file_line_info(mod, itr, flow, litr);
-                        auto _lname       = lname.get();
-                        auto _lhash       = std::hash<string_t>()(_lname);
                         auto _ltrace_entr = (entr_hash)
                                                 ? timemory_call_expr(_lhash)
                                                 : timemory_call_expr(_lname.c_str());

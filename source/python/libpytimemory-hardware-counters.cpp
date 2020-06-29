@@ -93,16 +93,15 @@ generate(py::module& _pymod)
                                           "Known hardware counter identifiers and info");
 
     auto _generate_presets = [&]() {
-        tim::cupti::device_t device;
+    // tim::cupti::device_t device;
 #if defined(TIMEMORY_USE_CUPTI)
-        TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
-        TIMEMORY_CUDA_DRIVER_API_CALL(
-            cuDeviceGet(&device, tim::settings::cupti_device()));
+    // TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
+    // TIMEMORY_CUDA_DRIVER_API_CALL(
+    //    cuDeviceGet(&device, tim::settings::cupti_device()));
 #endif
-
-        auto _cupti_events  = tim::cupti::available_events_info(device);
-        auto _cupti_metrics = tim::cupti::available_metrics_info(device);
-        auto _papi_events   = tim::papi::available_events_info();
+        // auto _cupti_events  = tim::cupti::available_events_info(device);
+        // auto _cupti_metrics = tim::cupti::available_metrics_info(device);
+        auto _papi_events = tim::papi::available_events_info();
 
         auto _process_counters = [](auto& _events, int32_t _offset) {
             for(auto& itr : _events)
@@ -112,10 +111,11 @@ generate(py::module& _pymod)
 
         int32_t _offset = 0;
         _offset += _process_counters(_papi_events, _offset);
-        _offset += _process_counters(_cupti_events, _offset);
-        _offset += _process_counters(_cupti_metrics, _offset);
+        // _offset += _process_counters(_cupti_events, _offset);
+        // _offset += _process_counters(_cupti_metrics, _offset);
 
-        for(auto&& fitr : { _papi_events, _cupti_events, _cupti_metrics })
+        // for(auto&& fitr : { _papi_events, _cupti_events, _cupti_metrics })
+        for(auto&& fitr : { _papi_events })
             for(auto&& itr : fitr)
             {
                 tim::hardware_counters::get_info().emplace_back(std::move(itr));
