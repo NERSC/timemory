@@ -297,7 +297,7 @@ if(TIMEMORY_LINK_RT)
     target_link_libraries(timemory-headers INTERFACE rt)
 endif()
 # include threading because of rooflines
-target_link_libraries(timemory-headers INTERFACE timemory-threading timemory-mpi)
+target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
 #----------------------------------------------------------------------------------------#
 #

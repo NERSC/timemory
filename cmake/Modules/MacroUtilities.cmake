@@ -687,12 +687,12 @@ macro(BUILD_INTERMEDIATE_LIBRARY)
             timemory-external-${LINK}
             timemory-headers
             timemory-vector
-            timemory-dmp
             ${DEPENDS}
             ${PROPERTY_DEPENDS}
             ${COMP_PUBLIC_LINK})
 
         target_link_libraries(${TARGET_NAME} PRIVATE
+            timemory-dmp
             timemory-compile-options
             timemory-develop-options
             timemory-${COMP_VISIBILITY}-visibility

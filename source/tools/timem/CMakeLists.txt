@@ -42,7 +42,9 @@ add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem PRIVATE
     timemory-compile-options
+    timemory-threading
     timemory-headers
+    timemory-cereal
     timemory-arch
     timemory-papi
     timem-libexplain
@@ -68,7 +70,9 @@ add_executable(timem-mpi ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem-mpi PRIVATE
     timemory-compile-options
+    timemory-threading
     timemory-headers
+    timemory-cereal
     timemory-arch
     timemory-papi
     timemory-mpi
