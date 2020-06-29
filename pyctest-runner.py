@@ -215,7 +215,7 @@ def run_pyctest():
         "TIMEMORY_CCACHE_BUILD": "OFF",
         "TIMEMORY_BUILD_C": "ON",
         "TIMEMORY_BUILD_LTO": "ON" if args.lto else "OFF",
-        "TIMEMORY_BUILD_OMPT": "ON" if args.ompt else "OFF",
+        "TIMEMORY_BUILD_OMPT": "OFF",
         "TIMEMORY_BUILD_TOOLS": "ON" if args.tools else "OFF",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_PYTHON": "ON" if args.python else "OFF",
@@ -241,7 +241,6 @@ def run_pyctest():
         "TIMEMORY_USE_GPERFTOOLS": "ON" if args.gperftools else "OFF",
         "TIMEMORY_USE_STATISTICS": "ON" if args.stats else "OFF",
         "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
-        "TIMEMORY_USE_MPI_INIT": "ON" if args.mpi_init else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
         "USE_PAPI": "ON" if args.papi else "OFF",
@@ -249,6 +248,9 @@ def run_pyctest():
         "USE_CALIPER": "ON" if args.caliper else "OFF",
         "PYTHON_EXECUTABLE": "{}".format(sys.executable),
     }
+
+    if args.mpi and args.mpi_init:
+        build_opts["TIMEMORY_USE_MPI_INIT"] = "ON"
 
     if args.ompt:
         build_opts["OPENMP_ENABLE_LIBOMPTARGET"] = "OFF"
