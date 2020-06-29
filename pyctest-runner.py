@@ -124,6 +124,10 @@ def configure():
 
     args = parser.parse_args()
 
+    if "shared" not in args.build_libs:
+        print("Python cannot be built with static libraries")
+        args.python = False
+
     if os.environ.get("CTEST_SITE") is not None:
         pyct.set("CTEST_SITE", "{}".format(os.environ.get("CTEST_SITE")))
 
@@ -428,7 +432,8 @@ def run_pyctest():
     #--------------------------------------------------------------------------#
     # create tests
     #
-    pypath = ":".join(["{}".format(pyct.BINARY_DIRECTORY), os.environ.get("PYTHONPATH", "")])
+    pypath = ":".join(["{}".format(pyct.BINARY_DIRECTORY),
+                       os.environ.get("PYTHONPATH", "")])
     test_env = ";".join(["CPUPROFILE_FREQUENCY=200",
                          "CPUPROFILE_REALTIME=1",
                          "CALI_CONFIG_PROFILE=runtime-report",
@@ -444,24 +449,6 @@ def run_pyctest():
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
                    "ENVIRONMENT": test_env})
-
-    if args.python:
-        pyct.test("timemory-python",
-                  [sys.executable, "-c", "\"import timemory\""],
-                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                   "LABELS": pyct.PROJECT_NAME,
-                   "TIMEOUT": "300",
-                   "ENVIRONMENT": test_env})
-
-        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
-        for t in pyunittests:
-            pyct.test("python-unittest-{}".format(t),
-                      [sys.executable, "-m",
-                          "timemory.test.test_{}".format(t)],
-                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                       "LABELS": pyct.PROJECT_NAME,
-                       "TIMEOUT": "300",
-                       "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("ex-derived"),
               construct_command(["./ex_derived"], args),
@@ -580,6 +567,23 @@ def run_pyctest():
                        "ENVIRONMENT": test_env})
 
     if args.python:
+        pyct.test("timemory-python",
+                  [sys.executable, "-c", "\"import timemory\""],
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
+
+        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
+        for t in pyunittests:
+            pyct.test("python-unittest-{}".format(t),
+                      [sys.executable, "-m",
+                          "timemory.test.test_{}".format(t)],
+                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                       "LABELS": pyct.PROJECT_NAME,
+                       "TIMEOUT": "300",
+                       "ENVIRONMENT": test_env})
+
         pyct.test(construct_name("ex-python-bindings"),
                   construct_command(["mpirun", "-np", "2", sys.executable,
                                      "./ex_python_bindings"], args),
