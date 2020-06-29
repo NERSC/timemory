@@ -104,12 +104,13 @@ get_library_state();
 
 //--------------------------------------------------------------------------------------//
 
-static bool use_mpi_gotcha  = false;
-static bool mpi_is_attached = false;
+static bool use_mpi_gotcha = false;
 
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_MPI_GOTCHA)
+
+static bool mpi_is_attached = false;
 
 //--------------------------------------------------------------------------------------//
 // query environment setting for whether to enable finalization via MPI_Comm_create_keyval

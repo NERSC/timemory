@@ -32,6 +32,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
+#include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -40,7 +41,11 @@
 
 #include "timemory/runtime/types.hpp"
 
+#include <functional>
 #include <regex>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 //======================================================================================//
 //
@@ -51,32 +56,41 @@ namespace tim
 //
 namespace env
 {
+//
+using user_bundle_spec_t = std::function<std::string()>;
+//
 using user_bundle_variables_t =
-    std::unordered_map<size_t, std::pair<std::string, std::vector<std::string>>>;
+    std::unordered_map<size_t, std::vector<user_bundle_spec_t>>;
 //
 static inline user_bundle_variables_t&
 get_user_bundle_variables()
 {
     static user_bundle_variables_t _instance = {
-        { component::global_bundle_idx, { "TIMEMORY_GLOBAL_COMPONENTS", {} } },
-        { component::tuple_bundle_idx, { "TIMEMORY_TUPLE_COMPONENTS", {} } },
-        { component::list_bundle_idx, { "TIMEMORY_LIST_COMPONENTS", {} } },
+        { component::global_bundle_idx,
+          { []() { return settings::global_components(); } } },
+        { component::tuple_bundle_idx,
+          { []() { return settings::tuple_components(); } } },
+        { component::list_bundle_idx, { []() { return settings::list_components(); } } },
         { component::ompt_bundle_idx,
-          { "TIMEMORY_OMPT_COMPONENTS",
-            { "TIMEMORY_TRACE_COMPONENTS", "TIMEMORY_PROFILER_COMPONENTS",
-              "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
-              "TIMEMORY_COMPONENT_LIST_INIT" } } },
+          { []() { return settings::ompt_components(); },
+            []() { return settings::trace_components(); },
+            []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } },
         { component::mpip_bundle_idx,
-          { "TIMEMORY_MPIP_COMPONENTS",
-            { "TIMEMORY_TRACE_COMPONENTS", "TIMEMORY_PROFILER_COMPONENTS",
-              "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS",
-              "TIMEMORY_COMPONENT_LIST_INIT" } } },
+          { []() { return settings::mpip_components(); },
+            []() { return settings::trace_components(); },
+            []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } },
         { component::trace_bundle_idx,
-          { "TIMEMORY_TRACE_COMPONENTS",
-            { "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS" } } },
+          { []() { return settings::trace_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } },
         { component::profiler_bundle_idx,
-          { "TIMEMORY_PROFILER_COMPONENTS",
-            { "TIMEMORY_COMPONENTS", "TIMEMORY_GLOBAL_COMPONENTS" } } }
+          { []() { return settings::profiler_components(); },
+            []() { return settings::components(); },
+            []() { return settings::global_components(); } } }
     };
     return _instance;
 }
@@ -85,25 +99,23 @@ get_user_bundle_variables()
 //
 template <typename VecT>
 auto
-get_bundle_components(const std::string& custom_env, const VecT& fallback_env)
+get_bundle_components(const VecT& _priority)
 {
     using string_t = std::string;
     const auto regex_constants =
         std::regex_constants::ECMAScript | std::regex_constants::icase;
-    auto env_tool = get_env<string_t>(custom_env, "");
-    if(env_tool.empty() &&
-       !std::regex_match(env_tool, std::regex("none", regex_constants)))
+    string_t _custom{};
+    for(const auto& itr : _priority)
     {
-        for(const auto& itr : fallback_env)
+        auto _spec = itr();
+        if(_spec.length() > 0)
         {
-            env_tool = get_env<string_t>(itr);
-            if(env_tool.length() > 0 ||
-               std::regex_match(env_tool, std::regex("none", regex_constants)))
-                break;
+            if(!std::regex_match(_spec, std::regex("none", regex_constants)))
+                _custom = _spec;
+            break;
         }
     }
-    auto env_enum = tim::enumerate_components(tim::delimit(env_tool));
-    return env_enum;
+    return tim::enumerate_components(tim::delimit(_custom));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -117,8 +129,8 @@ initialize_bundle()
     auto itr               = env::get_user_bundle_variables().find(Idx);
     if(itr != env::get_user_bundle_variables().end())
     {
-        auto env_enum = env::get_bundle_components(itr->second.first, itr->second.second);
-        tim::configure<user_bundle_type>(env_enum);
+        auto _enum = env::get_bundle_components(itr->second);
+        tim::configure<user_bundle_type>(_enum);
     }
 }
 //
@@ -237,8 +249,26 @@ public:
         return *this;
     }
 
-    user_bundle(user_bundle&&) = default;
-    user_bundle& operator=(user_bundle&&) = default;
+    user_bundle(user_bundle&& rhs)
+    : base_type(std::move(rhs))
+    , m_scope(std::move(rhs.m_scope))
+    , m_prefix(std::move(rhs.m_prefix))
+    , m_typeids(std::move(rhs.m_typeids))
+    , m_bundle(std::move(rhs.m_bundle))
+    {}
+
+    user_bundle& operator=(user_bundle&& rhs)
+    {
+        if(this != &rhs)
+        {
+            base_type::operator=(std::move(rhs));
+            m_scope            = std::move(rhs.m_scope);
+            m_prefix           = std::move(rhs.m_prefix);
+            m_typeids          = std::move(rhs.m_typeids);
+            m_bundle           = std::move(rhs.m_bundle);
+        }
+        return *this;
+    }
 
 public:
     //  Configure the tool for a specific component
@@ -383,14 +413,11 @@ public:
     }
 
     template <typename Type, typename... Types, typename... Args>
-    void insert(Args&&... args)
+    void insert(Args... args)
     {
-        this->insert(factory::get_opaque<Type>(std::forward<Args>(args)...),
-                     factory::get_typeids<Type>());
-
-        TIMEMORY_FOLD_EXPRESSION(
-            this->insert(factory::get_opaque<Types>(std::forward<Args>(args)...),
-                         factory::get_typeids<Types>()));
+        this->insert(factory::get_opaque<Type>(args...), factory::get_typeids<Type>());
+        TIMEMORY_FOLD_EXPRESSION(this->insert(factory::get_opaque<Types>(args...),
+                                              factory::get_typeids<Types>()));
     }
 
 protected:

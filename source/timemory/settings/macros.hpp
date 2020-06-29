@@ -115,7 +115,7 @@
         static TYPE& FUNC() { return *(instance()->m__##FUNC); }                         \
                                                                                          \
     private:                                                                             \
-        TYPE& generate__##FUNC()                                                         \
+        TYPE* generate__##FUNC()                                                         \
         {                                                                                \
             auto _parse = []() {                                                         \
                 auto ret = tim::get_env<TYPE>(ENV_VAR, GETTER());                        \
@@ -124,9 +124,9 @@
             };                                                                           \
             get_setting_descriptions()[ENV_VAR] = DESC;                                  \
             get_parse_callbacks()[ENV_VAR]      = _parse;                                \
-            return GETTER();                                                             \
+            return &GETTER();                                                            \
         }                                                                                \
-        TYPE* m__##FUNC = &(generate__##FUNC());
+        TYPE* m__##FUNC = generate__##FUNC();
 #endif
 //
 //--------------------------------------------------------------------------------------//

@@ -39,10 +39,9 @@ __all__ = ["profile"]
 _records = deque()
 _counter = 0
 _skip_counts = []
+_is_running = False
 _start_events = ["call"] # + ["c_call"]
 _stop_events = ["return"] # + ["c_return"]
-_is_running = False
-_components = os.environ.get("TIMEMORY_PROFILER_COMPONENTS", "")
 _always_skipped_functions = ["__exit__"]
 _always_skipped_files = ["__init__.py"]
 
@@ -77,7 +76,7 @@ def _profiler_function(frame, event, arg):
             _skip_counts.append(_count)
             return
 
-        _func = "{}".format(frame.f_code.co_name)        
+        _func = "{}".format(frame.f_code.co_name)
         _line = int(frame.f_lineno) if _include_line else -1
         _file = "" if not _include_filepath else "{}".format(
             frame.f_code.co_filename)
@@ -186,7 +185,10 @@ class profile():
         global _start_events
         global _stop_events
         global _is_running
-        global _components
+
+        _trace = settings.trace_components
+        _profl = settings.profiler_components
+        _components = _profl if _trace is None else _trace
 
         self._original_profiler_function = sys.getprofile()
         self._use = (not _is_running and profile.is_enabled() is True)
