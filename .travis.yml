@@ -245,7 +245,7 @@ install:
   - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip
   - source activate pyctest
   - if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
-  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --python ${BUILD_ARGS}"
+  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
   - travis_wait 90 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install

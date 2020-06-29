@@ -124,9 +124,8 @@ def configure():
 
     args = parser.parse_args()
 
-    if "shared" not in args.build_libs:
-        print("Python cannot be built with static libraries")
-        args.python = False
+    if "shared" not in args.build_libs and args.python:
+        raise RuntimeError("Python cannot be built with static libraries")
 
     if os.environ.get("CTEST_SITE") is not None:
         pyct.set("CTEST_SITE", "{}".format(os.environ.get("CTEST_SITE")))
