@@ -1,7 +1,8 @@
 version: 1.0.{build}
 
+# https://developercommunity.visualstudio.com/content/problem/457095/cannot-bind-temporary-int-object-to-an-rvalue-refe.html
+# ^ this issue has caused support to be dropped for Visual Studio 2017
 image:
-  - Visual Studio 2017
   - Visual Studio 2019
 
 test: on
@@ -16,16 +17,16 @@ environment:
   matrix:
     - PYTHON: 36
       CPP: 17
+      CONFIG: Debug
+    - PYTHON: 36
+      CPP: 17
+      CONFIG: RelWithDebInfo
+    - PYTHON: 37
+      CPP: 17
       CONFIG: MinSizeRel
-    - CONDA: 36
+    - CONDA: 37
       CPP: 17
       CONFIG: Release
-
-matrix:
-  exclude:
-    - image: Visual Studio 2017
-      CPP: 17
-      CONFIG: Debug
 
 install:
   # Configure environment
@@ -79,6 +80,8 @@ build_script:
   - mkdir build-timemory
   - cd build-timemory
   - cmake
+    -DBUILD_STATIC_LIBS=ON
+    -DBUILD_SHARED_LIBS=ON
     -DCMAKE_BUILD_TYPE="%CONFIG%"
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
@@ -100,3 +103,6 @@ build_script:
   - .\outputs\runtime\%CONFIG%\ex_c_minimal.exe & exit 0
   - .\outputs\runtime\%CONFIG%\ex_c_minimal_library.exe & exit 0
   - .\outputs\runtime\%CONFIG%\ex_c_timing.exe & exit 0
+  - mkdir testpyimport
+  - cd testpyimport
+  - %PYTHON_EXE% -c "import timemory"
