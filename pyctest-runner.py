@@ -450,15 +450,12 @@ def run_pyctest():
                    "TIMEOUT": "300",
                    "ENVIRONMENT": test_env})
 
-        pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
-        for t in pyunittests:
-            pyct.test("python-unittest-{}".format(t),
-                      [sys.executable, "-m",
-                          "timemory.test.test_{}".format(t)],
-                      {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                       "LABELS": pyct.PROJECT_NAME,
-                       "TIMEOUT": "300",
-                       "ENVIRONMENT": test_env})
+         pyct.test("python-unittests",
+                   [sys.executable, "-m", "timemory.test"],
+                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "300",
+                    "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("ex-derived"),
               construct_command(["./ex_derived"], args),
