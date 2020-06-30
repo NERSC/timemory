@@ -107,8 +107,10 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
             configure_file(${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py.in
                 ${CMAKE_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
         endif()
-        install(FILES ${CMAKE_BINARY_DIR}/${_DIR}/${_FILE}.py
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_DIR})
+        if(CMAKE_INSTALL_PYTHONDIR)
+            install(FILES ${CMAKE_BINARY_DIR}/${_DIR}/${_FILE}.py
+                DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_DIR})
+        endif()
     endforeach()
 endforeach()
 
@@ -144,11 +146,12 @@ file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_exe_info.txt "${MPI_EXE_
 file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
 file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
 
-foreach(_TYPE exe c cxx)
-    install(FILES ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/mpi_support)
-endforeach(_TYPE exe c cxx)
-
+if(CMAKE_INSTALL_PYTHONDIR)
+    foreach(_TYPE exe c cxx)
+        install(FILES ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/mpi_support)
+    endforeach(_TYPE exe c cxx)
+endif()
 
 #----------------------------------------------------------------------------
 # Install the python stuff
@@ -156,14 +159,18 @@ endforeach(_TYPE exe c cxx)
 configure_file(${PROJECT_SOURCE_DIR}/timemory/__init__.py.in
     ${CMAKE_BINARY_DIR}/timemory/__init__.py @ONLY)
 
-install(FILES ${CMAKE_BINARY_DIR}/timemory/__init__.py
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+if(CMAKE_INSTALL_PYTHONDIR)
+    install(FILES ${CMAKE_BINARY_DIR}/timemory/__init__.py
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+endif()
 
 foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
     get_filename_component(PYLIB_SUBMODULE "${PYLIB_SUBMODULE}" NAME_WE)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/${PYLIB_SUBMODULE}.py
         ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
 
-    install(FILES ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+    if(CMAKE_INSTALL_PYTHONDIR)
+        install(FILES ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+    endif()
 endforeach()
