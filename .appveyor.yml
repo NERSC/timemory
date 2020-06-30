@@ -17,9 +17,6 @@ environment:
   matrix:
     - PYTHON: 36
       CPP: 17
-      CONFIG: Debug
-    - PYTHON: 36
-      CPP: 17
       CONFIG: RelWithDebInfo
     - PYTHON: 37
       CPP: 17
@@ -86,6 +83,7 @@ build_script:
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_USE_MPI=OFF
+    -DTIMEMORY_USE_PYTHON=ON
     -DTIMEMORY_BUILD_C=ON
     -DTIMEMORY_BUILD_PYTHON=ON
     -DTIMEMORY_BUILD_EXAMPLES=ON
