@@ -105,4 +105,4 @@ build_script:
   - .\outputs\runtime\%CONFIG%\ex_c_timing.exe & exit 0
   - mkdir testpyimport
   - cd testpyimport
-  - %PYTHON_EXE% -c "import timemory"
+  - python.exe -c "import timemory"
