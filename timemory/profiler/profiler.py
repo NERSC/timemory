@@ -27,12 +27,12 @@
 import os
 import sys
 import copy
+from functools import wraps
 from collections import deque
 from ..libpytimemory import component_bundle
 from ..libpytimemory import settings
-from functools import wraps
 
-__all__ = ["profile"]
+__all__ = ["profile", "Profiler"]
 #
 #   Variables
 #
@@ -40,8 +40,8 @@ _records = deque()
 _counter = 0
 _skip_counts = []
 _is_running = False
-_start_events = ["call"] # + ["c_call"]
-_stop_events = ["return"] # + ["c_return"]
+_start_events = ["call"]  # + ["c_call"]
+_stop_events = ["return"]  # + ["c_return"]
 _always_skipped_functions = ["__exit__"]
 _always_skipped_files = ["__init__.py"]
 
@@ -116,24 +116,6 @@ def _profiler_function(frame, event, arg):
             entry.stop()
             del entry
         _counter -= 1
-
-
-def _run(sz=[4, 3]):
-    import numpy as np
-    arr = np.zeros(sz, dtype=np.float)
-    arr *= 1.5
-    return arr
-
-
-def _do_sleep(nsec):
-    import time
-    time.sleep(nsec)
-
-
-def _main():
-    ret = _run()
-    print("result: {}".format(ret))
-    _do_sleep(1)
 
 
 #----------------------------------------------------------------------------------------#
@@ -227,9 +209,6 @@ class profile():
         if self._use:
             _is_running = False
             sys.setprofile(self._original_profiler_function)
-            import traceback
-            if exec_type is not None and exec_value is not None and exec_tb is not None:
-                traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
 
     #------------------------------------------------------------------------------------#
     #
@@ -322,3 +301,6 @@ class profile():
             if self._use:
                 _is_running = False
         return self
+
+
+Profiler = profile

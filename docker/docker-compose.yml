@@ -10,7 +10,7 @@ services:
   # timemory development container w/ CUDA 10.0
   #
   timemory-dev-10-0:
-    image: jrmadsen/timemory:cuda-10.0
+    image: nersc/timemory:cuda-10.0
     stdin_open: true
     tty: true
     build:
@@ -29,7 +29,7 @@ services:
   # timemory development container w/ CUDA 10.1
   #
   timemory-dev-10-1:
-    image: jrmadsen/timemory:cuda-10.1
+    image: nersc/timemory:cuda-10.1
     stdin_open: true
     tty: true
     build:
@@ -48,7 +48,7 @@ services:
   # timemory development container w/ CUDA 10.2
   #
   timemory-latest:
-    image: jrmadsen/timemory:latest
+    image: nersc/timemory:latest
     stdin_open: true
     tty: true
     build:
