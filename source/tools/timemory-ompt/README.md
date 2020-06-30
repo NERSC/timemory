@@ -1,6 +1,6 @@
 # timemory-ompt
 
-Produces a `libtimemory-ompt.so` that uses GOTCHA wrappers around ~245 MPI functions.
+Produces a `libtimemory-ompt.so` library which uses the OpenMP-tools (OMP-T) interface.
 
 Four functions are provided for C, C++, and Fortran:
 
@@ -20,9 +20,9 @@ The environement variable `ENABLE_TIMEMORY_OMPT` (default: `"ON"`) controls conf
 This library configures the `tim::user_ompt_bundle` component with the components specified by the following environment variables in terms of priority:
 
 - `TIMEMORY_OMPT_COMPONENTS`
+- `TIMEMORY_TRACE_COMPONENTS`
 - `TIMEMORY_PROFILER_COMPONENTS`
 - `TIMEMORY_GLOBAL_COMPONENTS`
-- `TIMEMORY_COMPONENT_LIST_INIT`
 
 When one of the above environment variables are set to `"none"`, then the priority search for component configurations is abandoned.
 
