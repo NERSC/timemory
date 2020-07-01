@@ -460,14 +460,7 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::pop()
 {
-    auto itr = _data().pop_graph();
-    // if data has popped all the way up to the zeroth (relative) depth then worker
-    // threads should insert a new dummy at the current master thread id and depth.
-    // Be aware, this changes 'm_current' inside the data graph
-    //
-    if(_data().at_sea_level() && _data().dummy_count() < settings::max_thread_bookmarks())
-        _data().add_dummy();
-    return itr;
+    return _data().pop_graph();
 }
 //
 //--------------------------------------------------------------------------------------//

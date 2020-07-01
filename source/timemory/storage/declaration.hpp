@@ -506,6 +506,15 @@ typename storage<Type, true>::iterator
 storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
 {
     insert_init();
+    
+    // if data is all the way up to the zeroth (relative) depth then worker
+    // threads should insert a new dummy at the current master thread id and depth.
+    // Be aware, this changes 'm_current' inside the data graph
+    //
+    if(!m_is_master && _data().at_sea_level() &&
+       _data().dummy_count() < settings::max_thread_bookmarks())
+        _data().add_dummy();
+
     auto hash_depth = scope_data.compute_depth(_data().depth());
     auto hash_value = scope_data.compute_hash(hash_id, hash_depth, m_timeline_counter);
     add_hash_id(hash_id, hash_value);
