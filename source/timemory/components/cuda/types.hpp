@@ -29,10 +29,19 @@
 
 #pragma once
 
+#include "timemory/backends/cuda.hpp"
+#include "timemory/backends/nvtx.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
+
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+namespace pybind11
+{
+class object;
+}
+#endif
 
 //======================================================================================//
 //
@@ -174,6 +183,46 @@ struct collects_data<component::nvtx_marker>
     using value_type            = void;
     static constexpr bool value = false;
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+//
+template <>
+struct python_args<TIMEMORY_CONSTRUCT, component::nvtx_marker>
+{
+    using type = type_list<type_list<nvtx::color::color_t>>;
+};
+//
+/*
+//
+template <>
+struct python_args<TIMEMORY_MARK_BEGIN, component::nvtx_marker>
+{
+    using type = type_list<pybind11::object>;
+};
+//
+template <>
+struct python_args<TIMEMORY_MARK_END, component::nvtx_marker>
+{
+    using type = type_list<pybind11::object>;
+};
+//
+template <>
+struct python_args<TIMEMORY_MARK_BEGIN, component::cuda_event>
+{
+    using type = type_list<pybind11::object>;
+};
+//
+template <>
+struct python_args<TIMEMORY_MARK_END, component::cuda_event>
+{
+    using type = type_list<pybind11::object>;
+};
+//
+*/
+//
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //

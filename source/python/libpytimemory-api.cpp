@@ -27,6 +27,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/papi.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -47,11 +48,15 @@ py::module
 generate_cupti(py::module& _pymod);
 //
 py::module
+generate_cuda(py::module& _pymod);
+//
+py::module
 generate(py::module& _pymod)
 {
     py::module _api =
         _pymod.def_submodule("api", "Direct python interfaces to various APIs");
     generate_papi(_api);
+    generate_cuda(_api);
     generate_cupti(_api);
     return _api;
 }
@@ -201,6 +206,37 @@ generate_cupti(py::module& _pymod)
                "Return the available CUPTI metric", py::arg("device") = 0);
 
     return _cupti;
+}
+//
+py::module
+generate_cuda(py::module& _pymod)
+{
+    py::module _cuda = _pymod.def_submodule("cuda", "cuda");
+    /*
+    py::class_<tim::cuda::stream_t> _stream(_cuda, "Stream");
+
+    auto _create_stream = [](bool default_stream) -> tim::cuda::stream_t* {
+        auto _s = new tim::cuda::stream_t{};
+        if(!default_stream)
+        {
+            auto _ret = tim::cuda::stream_create(*_s);
+            if(!_ret)
+            {
+                delete _s;
+                _s = nullptr;
+            }
+        }
+        return _s;
+    };
+
+    _stream.def(py::init(_create_stream), "Creates a CUDA stream",
+                py::arg("default_stream") = false);
+    _cuda.def("stream", _create_stream, "Create a CUDA stream");
+    _cuda.def(
+        "default_stream", []() { return new tim::cuda::stream_t{}; },
+        "Get the default CUDA stream");
+    */
+    return _cuda;
 }
 //
 }  // namespace pyapi

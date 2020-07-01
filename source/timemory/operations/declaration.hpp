@@ -29,19 +29,11 @@
 
 #pragma once
 
-#include "timemory/operations/macros.hpp"
-#include "timemory/operations/types.hpp"
-
-#include "timemory/components/base.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/function_traits.hpp"
-#include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/operations/macros.hpp"
+#include "timemory/operations/types.hpp"
 
 #include <bitset>
 #include <cstdio>

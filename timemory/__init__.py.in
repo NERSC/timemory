@@ -125,6 +125,8 @@ else:
                    'plotting',
                    'roofline',
                    'bundle',
+                   'region',
+                   'trace',
                    'test',
                    'util',
                    'api',

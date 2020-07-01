@@ -132,11 +132,11 @@ class TimemoryTimelineTests(unittest.TestCase):
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "ON"
         tim.settings.parse()
 
-    # Tear down class: timemory_finalize
+    # Tear down class: finalize
     @classmethod
     def tearDownClass(self):
         # timemory finalize
-        # tim.timemory_finalize()
+        # tim.finalize()
         # tim.dmp.finalize()
         pass
 

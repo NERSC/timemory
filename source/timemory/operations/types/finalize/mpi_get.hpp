@@ -23,21 +23,15 @@
 // SOFTWARE.
 
 /**
- * \file timemory/operations/types/finalize_get.hpp
- * \brief Definition for various functions for finalize_get in operations
+ * \file timemory/operations/types/finalize/mpi_get.hpp
+ * \brief Definition for various functions for finalizing MPI data
  */
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/operations/macros.hpp"
-//
-#include "timemory/operations/types.hpp"
-//
 #include "timemory/operations/declaration.hpp"
-//
-//======================================================================================//
+#include "timemory/operations/macros.hpp"
+#include "timemory/operations/types.hpp"
 
 namespace tim
 {

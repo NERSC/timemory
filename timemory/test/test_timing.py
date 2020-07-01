@@ -87,16 +87,16 @@ class TimemoryTimingTests(unittest.TestCase):
         settings.timing_units = "sec"
         settings.timing_precision = 9
         settings.json_output = True
-        tim.timemory_init()  # need args? timemory is inited as soon as you import timemory
+        tim.init()  # need args? timemory is inited as soon as you import timemory
         settings.dart_output = True
         settings.dart_count = True
         settings.dart_count = 1
         settings.banner = False
 
-    # tear down class: timemory_finalize
+    # tear down class: finalize
     @classmethod
     def tearDownClass(self):
-        # tim.timemory_finalize()
+        # tim.finalize()
         # tim.dmp.finalize()
         pass
 

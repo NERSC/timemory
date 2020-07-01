@@ -96,9 +96,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    auto units      = pyunits::generate(tim);
-    auto components = pycomponents::generate(tim);
-
     pyapi::generate(tim);
     pysignals::generate(tim);
     pysettings::generate(tim);
@@ -106,8 +103,86 @@ PYBIND11_MODULE(libpytimemory, tim)
     pycomponent_list::generate(tim);
     pycomponent_bundle::generate(tim);
     pyhardware_counters::generate(tim);
-    pyenumeration::generate(components);
-    pyrss_usage::generate(tim, units);
+    auto pyunit = pyunits::generate(tim);
+    auto pycomp = pycomponents::generate(tim);
+    pyrss_usage::generate(tim, pyunit);
+    pyenumeration::generate(pycomp);
+
+    //==================================================================================//
+    //
+    //      Tracing submodule
+    //
+    //==================================================================================//
+
+    py::module _trace = tim.def_submodule(
+        "region", "C/C++/Fortran-compatible library functions (subject to throttling)");
+
+    _trace.def("init", &timemory_trace_init, "Initialize Tracing",
+               py::arg("args") = "wall_clock", py::arg("read_command_line") = false,
+               py::arg("cmd") = "");
+    _trace.def("finalize", &timemory_trace_finalize, "Finalize Tracing");
+    _trace.def("is_throttled", &timemory_is_throttled, "Check if key is throttled",
+               py::arg("key"));
+    _trace.def("push", &timemory_push_trace, "Push Trace", py::arg("key"));
+    _trace.def("pop", &timemory_pop_trace, "Pop Trace", py::arg("key"));
+
+    //==================================================================================//
+    //
+    //      Region submodule
+    //
+    //==================================================================================//
+
+    py::module _region = tim.def_submodule(
+        "region",
+        "C/C++/Fortran-compatible library functions (not subject to throttling)");
+
+    //----------------------------------------------------------------------------------//
+    auto _set_default = [](py::list types) {
+        std::stringstream ss;
+        for(auto itr : types)
+            ss << "," << itr.cast<std::string>();
+        timemory_set_default(ss.str().substr(1).c_str());
+    };
+    //----------------------------------------------------------------------------------//
+    auto _add_components = [](py::list types) {
+        std::stringstream ss;
+        for(auto itr : types)
+            ss << "," << itr.cast<std::string>();
+        timemory_add_components(ss.str().substr(1).c_str());
+    };
+    //----------------------------------------------------------------------------------//
+    auto _remove_components = [](py::list types) {
+        std::stringstream ss;
+        for(auto itr : types)
+            ss << "," << itr.cast<std::string>();
+        timemory_remove_components(ss.str().substr(1).c_str());
+    };
+    //----------------------------------------------------------------------------------//
+    auto _push_components = [](py::list types) {
+        std::stringstream ss;
+        for(auto itr : types)
+            ss << "," << itr.cast<std::string>();
+        timemory_push_components(ss.str().substr(1).c_str());
+    };
+    //----------------------------------------------------------------------------------//
+
+    _region.def("push", &timemory_push_region, "Push Trace Region", py::arg("key"));
+    _region.def("pop", &timemory_pop_region, "Pop Trace Region", py::arg("key"));
+    _region.def("pause", &timemory_pause, "Pause data collection");
+    _region.def("resume", &timemory_resume, "Resume data collection");
+    _region.def("set_default", _set_default, "Set the default list of components");
+    _region.def("add_components", _add_components,
+                "Add these components to the current collection");
+    _region.def("remove_components", _remove_components,
+                "Remove these components from the current collection");
+    _region.def("push_components", _push_components,
+                "Set the current components to collect");
+    _region.def("pop_components", &timemory_pop_components,
+                "Pop the current set of components");
+    _region.def("begin", &timemory_get_begin_record,
+                "Begin recording and get an identifier", py::arg("key"));
+    _region.def("end", &timemory_end_record, "End recording an identifier",
+                py::arg("id"));
 
     //==================================================================================//
     //
@@ -152,7 +227,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Helper lambdas
     //
     //==================================================================================//
-    auto report = [&](std::string fname) {
+    auto report = [](std::string fname) {
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
 
@@ -166,20 +241,20 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _as_json = [&]() {
+    auto _as_json = []() {
         using tuple_type = typename auto_list_t::tuple_type;
         auto json_str    = manager_t::get_storage<tuple_type>::serialize();
         auto json_module = py::module::import("json");
         return json_module.attr("loads")(json_str);
     };
     //----------------------------------------------------------------------------------//
-    auto set_rusage_child = [&]() {
+    auto set_rusage_child = []() {
 #if !defined(_WINDOWS)
         tim::get_rusage_type() = RUSAGE_CHILDREN;
 #endif
     };
     //----------------------------------------------------------------------------------//
-    auto set_rusage_self = [&]() {
+    auto set_rusage_self = []() {
 #if !defined(_WINDOWS)
         tim::get_rusage_type() = RUSAGE_SELF;
 #endif
@@ -187,7 +262,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //----------------------------------------------------------------------------------//
     //
-    auto _start_mpip = [&]() {
+    auto _start_mpip = []() {
 #if defined(TIMEMORY_USE_MPIP_LIBRARY)
         return timemory_start_mpip();
 #else
@@ -197,7 +272,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //----------------------------------------------------------------------------------//
     //
-    auto _stop_mpip = [&](uint64_t id) {
+    auto _stop_mpip = [](uint64_t id) {
 #if defined(TIMEMORY_USE_MPIP_LIBRARY)
         return timemory_stop_mpip(id);
 #else
@@ -208,7 +283,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //----------------------------------------------------------------------------------//
     //
-    auto _init_ompt = [&]() {
+    auto _init_ompt = []() {
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
         return timemory_start_ompt();
 #else
@@ -218,7 +293,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //----------------------------------------------------------------------------------//
     //
-    auto _stop_ompt = [&](uint64_t id) {
+    auto _stop_ompt = [](uint64_t id) {
 #if defined(TIMEMORY_USE_OMPT_LIBRARY)
         return timemory_stop_ompt(id);
 #else
@@ -227,7 +302,7 @@ PYBIND11_MODULE(libpytimemory, tim)
 #endif
     };
     //----------------------------------------------------------------------------------//
-    auto _init = [&](py::list argv, std::string _prefix, std::string _suffix) {
+    auto _init = [](py::list argv, std::string _prefix, std::string _suffix) {
         if(argv.size() < 1)
             return;
         int    _argc = argv.size();
@@ -245,7 +320,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         delete[] _argv;
     };
     //----------------------------------------------------------------------------------//
-    auto _finalize = [&]() {
+    auto _finalize = []() {
         try
         {
             if(!tim::get_env("TIMEMORY_SKIP_FINALIZE", false))
@@ -270,7 +345,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _init_mpi = [&]() {
+    auto _init_mpi = []() {
         try
         {
             // tim::mpi::init();
@@ -280,7 +355,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _finalize_mpi = [&]() {
+    auto _finalize_mpi = []() {
         try
         {
             // tim::mpi::finalize();
@@ -290,30 +365,6 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _init_trace = [&](const char* args, bool read_command_line, const char* cmd) {
-        auto  _str  = std::string(args);
-        char* _args = new char[_str.size()];
-        std::strcpy(_args, _str.c_str());
-
-        _str       = std::string(cmd);
-        char* _cmd = new char[_str.size()];
-        std::strcpy(_cmd, _str.c_str());
-
-        timemory_trace_init(_args, read_command_line, _cmd);
-    };
-    //----------------------------------------------------------------------------------//
-    auto _finalize_trace = [&]() { timemory_trace_finalize(); };
-    //----------------------------------------------------------------------------------//
-    auto _push_trace = [&](const char* name) { timemory_push_trace(name); };
-    //----------------------------------------------------------------------------------//
-    auto _pop_trace = [&](const char* name) { timemory_pop_trace(name); };
-    //----------------------------------------------------------------------------------//
-    auto _push_region = [&](const char* name) { timemory_push_region(name); };
-    //----------------------------------------------------------------------------------//
-    auto _pop_region = [&](const char* name) { timemory_pop_region(name); };
-    //----------------------------------------------------------------------------------//
-    auto _is_throttled = [&](const char* name) { return timemory_is_throttled(name); };
-    //----------------------------------------------------------------------------------//
 
     //==================================================================================//
     //
@@ -322,20 +373,20 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def("toggle", [&](bool on) { tim::settings::enabled() = on; },
+    tim.def("toggle", [](bool on) { tim::settings::enabled() = on; },
             "Enable/disable timemory", py::arg("on") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("enable", [&]() { tim::settings::enabled() = true; }, "Enable timemory");
+    tim.def("enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("disable", [&]() { tim::settings::enabled() = false; }, "Disable timemory");
+    tim.def("disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("is_enabled", [&]() { return tim::settings::enabled(); },
+    tim.def("is_enabled", []() { return tim::settings::enabled(); },
             "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("enabled", [&]() { return tim::settings::enabled(); },
+    tim.def("enabled", []() { return tim::settings::enabled(); },
             "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("has_mpi_support", [&]() { return tim::mpi::is_supported(); },
+    tim.def("has_mpi_support", []() { return tim::mpi::is_supported(); },
             "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_children", set_rusage_child,
@@ -355,23 +406,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("finalize", _finalize,
             "Finalize timemory (generate output) -- important to call if using MPI");
-    //----------------------------------------------------------------------------------//
-    tim.def("timemory_trace_init", _init_trace, "Initialize Tracing",
-            py::arg("args") = "wall_clock", py::arg("read_command_line") = false,
-            py::arg("cmd") = "");
-    //----------------------------------------------------------------------------------//
-    tim.def("timemory_trace_finalize", _finalize_trace, "Finalize Tracing");
-    //----------------------------------------------------------------------------------//
-    tim.def("timemory_push_trace", _push_trace, "Push Trace", py::arg("name"));
-    //----------------------------------------------------------------------------------//
-    tim.def("timemory_pop_trace", _pop_trace, "Pop Trace", py::arg("name"));
-    //----------------------------------------------------------------------------------//
-    tim.def("timemory_push_region", _push_region, "Push Trace Region", py::arg("name"));
-    //----------------------------------------------------------------------------------//
-    tim.def("timemory_pop_region", _pop_region, "Pop Trace Region", py::arg("name"));
-    //----------------------------------------------------------------------------------//
-    tim.def("timemory_is_throttled", _is_throttled, "Check if throttled",
-            py::arg("name"));
     //----------------------------------------------------------------------------------//
     tim.def("get", _as_json, "Get the storage data");
     //----------------------------------------------------------------------------------//

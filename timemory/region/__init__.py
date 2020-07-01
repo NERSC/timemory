@@ -1,4 +1,5 @@
 #!@PYTHON_EXECUTABLE@
+#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California,
@@ -23,56 +24,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-''' @file test/__main__.py
-Run all timemory unittests
-'''
-
 from __future__ import absolute_import
+import os
+import imp
+import sys
+import importlib
 
-__author__ = "Muhammad Haseeb"
+__author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2020, The Regents of the University of California"
-__credits__ = ["Muhammad Haseeb"]
+__credits__ = ["Jonathan Madsen"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
 __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
-import os
-import unittest
-import timemory as tim
+"""
+This submodule imports the standard C, C++, and Fortran library calls. The
+components here can associated with dynamic instrumentation (region).
+However, unlike the tracing mode, these library calls are NOT subject to
+throttling.
+"""
 
-# discover and run all timemory unittests in the current directory
-def run_all_tests():
-    # auto discover unittests from test_*.py files into the timemory test suite
-    timTestSuite = unittest.defaultTestLoader.discover(start_dir=os.path.dirname(os.path.abspath(__file__)), 
-                                                       pattern='test*.py')
-
-    # print the loaded tests
-    print('============= Loaded Tests =============\n\n {}\n'.format(timTestSuite))
-
-    # create a results object to store test results
-    result = unittest.TestResult()
-
-    # enable stdout buffer  
-    result.buffer = True
-
-    # run all tests in timTestSuite, use result object to store results
-    print ('\n============= Tests Stdout =============\n')
-    # run the tests
-    timTestSuite.run(result)
-
-    # finalize tracing
-    tim.trace.finalize()
-
-    # finalize timemory
-    tim.finalize()
-
-    # print the results
-    print ('\n============= Results =============\n')
-    print("{}\n".format(result))
-
-
-# run all tests
-if __name__ == "__main__":
-    run_all_tests()
+try:
+    from ..libpytimemory.region import *
+except Exception as e:
+    print("{}".format(e))
