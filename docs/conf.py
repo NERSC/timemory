@@ -57,7 +57,7 @@ for t in ["timem", "timemory-run", "timemory-mpip", "timemory-ompt",
           "timemory-avail"]:
     shutil.copyfile(
         os.path.join(_srcdir, "source", "tools", t, "README.md"),
-        os.path.join(_docdir, "getting_started", "{}.md".format(t)))
+        os.path.join(_docdir, "tools", "{}.md".format(t)))
 
 install('mkdocs-cinder')
 # install('mkdocs-inspired')
