@@ -103,15 +103,6 @@ public:
     using type             = convert_t<tuple_type, component_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    // used by component hybrid
-    static constexpr bool is_component_list   = false;
-    static constexpr bool is_component_tuple  = true;
-    static constexpr bool is_component_hybrid = false;
-    static constexpr bool is_component_type   = true;
-    static constexpr bool is_auto_list        = false;
-    static constexpr bool is_auto_tuple       = false;
-    static constexpr bool is_auto_hybrid      = false;
-    static constexpr bool is_auto_type        = false;
     static constexpr bool is_component        = false;
     static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
@@ -179,36 +170,51 @@ public:
     // public static functions
     //
     static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
+    /// requests the components to output their storage
     static void                  print_storage();
+    /// requests the component initialize their storage
     static void                  init_storage();
 
     //----------------------------------------------------------------------------------//
     // public member functions
     //
+    /// tells each component to push itself into the call-stack hierarchy
     void push();
+    /// tells each component to pop itself off of the call-stack hierarchy
     void pop();
+    /// requests each component record a measurment
     template <typename... Args>
     void measure(Args&&...);
+    /// requests each component take a sample (if supported)
     template <typename... Args>
     void sample(Args&&...);
+    /// invokes start on all the components
     template <typename... Args>
     void start(Args&&...);
+    /// invokes stop on all the components
     template <typename... Args>
     void stop(Args&&...);
+    /// requests each component performs a measurement
     template <typename... Args>
     this_type& record(Args&&...);
+    /// invokes reset member function on all the components
     template <typename... Args>
     void reset(Args&&...);
+    /// returns a tuple of invoking get() on all the components
     template <typename... Args>
     auto get(Args&&...) const;
+    /// returns a tuple of the component label + invoking get() on all the components
     template <typename... Args>
-    auto             get_labeled(Args&&...) const;
+    auto get_labeled(Args&&...) const;
+    /// returns a reference to the underlying tuple of components
     data_type&       data();
+    /// returns a const reference to the underlying tuple of components
     const data_type& data() const;
 
-    // lightweight variants which exclude push/pop and assemble/derive
+    /// variant of start() which excludes push()
     template <typename... Args>
     void start(mpl::lightweight, Args&&...);
+    /// variant of stop() which excludes pop()
     template <typename... Args>
     void stop(mpl::lightweight, Args&&...);
 
@@ -219,7 +225,7 @@ public:
     using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
-    // construct the objects that have constructors with matching arguments
+    /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
     void construct(Args&&... _args)
@@ -247,8 +253,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // mark a beginning position in the execution (typically used by asynchronous
-    // structures)
+    /// mark a beginning position in the execution (typically used by asynchronous
+    /// structures)
     //
     template <typename... Args>
     void mark_begin(Args&&... _args)
@@ -257,8 +263,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // mark a beginning position in the execution (typically used by asynchronous
-    // structures)
+    /// mark a beginning position in the execution (typically used by asynchronous
+    /// structures)
     //
     template <typename... Args>
     void mark_end(Args&&... _args)
@@ -267,7 +273,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // store a value
+    /// store a value
     //
     template <typename... Args>
     void store(Args&&... _args)
@@ -276,7 +282,8 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform a audit operation (typically for GOTCHA)
+    /// allow the components to inspect the incoming arguments before start
+    /// or out-going return value before returning (typically using in GOTCHA components)
     //
     template <typename... Args>
     void audit(Args&&... _args)
@@ -285,8 +292,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // perform an add_secondary operation
-    //
+    /// perform an add_secondary operation
     template <typename... Args>
     void add_secondary(Args&&... _args)
     {
@@ -294,7 +300,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// apply a user-defined operation to all the components
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
@@ -302,9 +308,9 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // get member functions taking either a type
-    //
-    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    /// return a pointer to a component in the variadic type list
+    /// or in user_bundle
+    template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     T* get()
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
@@ -335,20 +341,20 @@ public:
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <
-        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-        enable_if_t<(trait::is_available<T>::value && is_one_of<T, data_type>::value),
-                    int> = 0>
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
+                          int> = 0>
     auto get_component()
     {
         return get<T>();
     }
 
     //----------------------------------------------------------------------------------//
-
+    /// initialize a component that does not exist in specified template parameters
+    /// but the template parameters do provide a user_bundle
     template <
         typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && has_user_bundle_v),
+        enable_if_t<is_one_of<T, reference_type>::value == false && has_user_bundle_v,
                     int> = 0>
     void init(Args&&...)
     {
@@ -384,8 +390,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    /// apply a member function to a type that is in variadic list AND is available
-    ///
+    // apply a member function to a type that is in variadic list AND is available
     template <typename T, typename Func, typename... Args,
               enable_if_t<(is_one_of<T, data_type>::value == true), int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
@@ -528,14 +533,21 @@ public:
     }
 
 public:
+    /// returns the number of caliper measurements for the bundle
     int64_t         laps() const { return bundle_type::laps(); }
+    /// returns the key for the bundle
     std::string     key() const { return bundle_type::key(); }
+    /// return the hash value of the key
     uint64_t        hash() const { return bundle_type::hash(); }
+    /// changes the key/hash for the bundle
     void            rekey(const string_t& _key) { bundle_type::rekey(_key); }
+    /// whether the components update their call-stack storage
     bool&           store() { return bundle_type::store(); }
     const bool&     store() const { return bundle_type::store(); }
     const string_t& prefix() const { return bundle_type::prefix(); }
     const string_t& get_prefix() const { return bundle_type::get_prefix(); }
+    void            set_prefix(const string_t&) const;
+    void            set_scope(scope::config);
 
 protected:
     static int64_t output_width(int64_t w = 0) { return bundle_type::output_width(w); }
@@ -546,9 +558,7 @@ protected:
     // protected member functions
     data_type&       get_data();
     const data_type& get_data() const;
-    void             set_prefix(const string_t&) const;
     void             set_prefix(size_t) const;
-    void             set_scope(scope::config);
 
 protected:
     // objects

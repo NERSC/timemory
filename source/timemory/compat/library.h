@@ -22,9 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file timemory_c.h
- * \headerfile timemory_c.h "timemory/timemory_c.h"
- * This header file provides the C interface to TiMemory
+/** \file timemory/compat/library.h
+ * This header file provides the library interface to timemory
  *
  */
 

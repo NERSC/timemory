@@ -73,7 +73,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::add_statistics
+/// \struct operation::add_statistics
 /// \brief
 ///     Enabling statistics in timemory has two parts:
 ///     1. tim::trait::record_statistics must be set to true for component

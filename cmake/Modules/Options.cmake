@@ -99,11 +99,11 @@ endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
 
 # CMake options
-add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
-add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
-add_feature(CMAKE_C_STANDARD "C language standard")
-add_feature(CMAKE_CXX_STANDARD "C++ language standard")
-add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
+add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)" DOC)
+add_feature(CMAKE_INSTALL_PREFIX "Installation prefix" DOC)
+add_feature(CMAKE_C_STANDARD "C language standard" DOC)
+add_feature(CMAKE_CXX_STANDARD "C++ language standard" DOC)
+add_feature(CMAKE_CUDA_STANDARD "CUDA language standard" DOC)
 add_feature(CMAKE_C_FLAGS "C build flags")
 add_feature(CMAKE_CXX_FLAGS "C++ build flags")
 add_feature(CMAKE_CUDA_FLAGS "CUDA build flags")
@@ -210,7 +210,7 @@ add_option(TIMEMORY_BUILD_QUIET
     "Disable verbose messages" OFF NO_FEATURE)
 add_option(TIMEMORY_REQUIRE_PACKAGES
     "All find_package(...) use REQUIRED" OFF)
-if(_NON_APPLE_UNIX)
+if(_NON_APPLE_UNIX OR TIMEMORY_BUILD_DOCS)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
 endif()
@@ -295,11 +295,12 @@ add_option(TIMEMORY_USE_LIKWID
     "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
 add_option(TIMEMORY_USE_GOTCHA
     "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
-if(CMAKE_CXX_COMPILER_IS_CLANG)
+add_option(TIMEMORY_BUILD_ERT
+    "Build ERT library" ON)
+if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)
     add_option(TIMEMORY_USE_XRAY
         "Enable XRay instrumentation" OFF CMAKE_DEFINE)
 endif()
-
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -308,11 +309,57 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 if(${PROJECT_NAME}_MASTER_PROJECT)
-    add_feature(TIMEMORY_gperftools_COMPONENTS "gperftool components")
+    add_feature(TIMEMORY_gperftools_COMPONENTS "gperftool components" DOC)
 endif()
 
-if(TIMEMORY_USE_CUDA)
+if(TIMEMORY_USE_CUDA OR TIMEMORY_BUILD_DOCS)
     add_option(TIMEMORY_DISABLE_CUDA_HALF "Disable half/half2 if CUDA_ARCH < 60" ON)
+endif()
+
+set(_DYNINST OFF)
+if(TIMEMORY_BUILD_TOOLS AND TIMEMORY_USE_DYNINST)
+    set(_DYNINST ON)
+endif()
+
+set(_MPIP ${TIMEMORY_USE_MPI})
+if(_MPIP AND (NOT BUILD_SHARED_LIBS OR NOT TIMEMORY_USE_GOTCHA))
+    set(_MPIP OFF)
+endif()
+
+set(_OMPT ${TIMEMORY_USE_OMPT})
+if(_OMPT AND NOT BUILD_SHARED_LIBS)
+    set(_OMPT OFF)
+endif()
+
+add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
+add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${TIMEMORY_BUILD_TOOLS})
+add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF)
+add_option(TIMEMORY_BUILD_DYNINST_TOOLS
+    "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
+add_option(TIMEMORY_BUILD_MPIP_LIBRARY "Build the mpiP library" ${_MPIP})
+add_option(TIMEMORY_BUILD_OMPT_LIBRARY "Build the OMPT library" ${_OMPT})
+
+unset(_MPIP)
+unset(_OMPT)
+unset(_DYNINST)
+
+if(TIMEMORY_BUILD_MPIP_LIBRARY AND (NOT BUILD_SHARED_LIBS OR
+    NOT TIMEMORY_USE_MPI OR NOT TIMEMORY_USE_GOTCHA))
+    message(AUTHOR_WARNING
+        "TIMEMORY_BUILD_MPIP_LIBRARY requires BUILD_SHARED_LIBS=ON, TIMEMORY_USE_MPI=ON, and TIMEMORY_USE_GOTCHA=ON...")
+    set(TIMEMORY_BUILD_MPIP_LIBRARY OFF CACHE BOOL "Build the mpiP library" FORCE)
+endif()
+
+if(TIMEMORY_BUILD_OMPT_LIBRARY AND NOT TIMEMORY_USE_OMPT)
+    message(AUTHOR_WARNING
+        "TIMEMORY_BUILD_OMPT_LIBRARY requires BUILD_SHARED_LIBS=ON and TIMEMORY_USE_OMPT=ON...")
+    set(TIMEMORY_BUILD_OMPT_LIBRARY OFF CACHE BOOL "Build the OMPT library" FORCE)
+endif()
+
+if(NOT BUILD_SHARED_LIBS AND TIMEMORY_BUILD_KOKKOS_TOOLS)
+    message(AUTHOR_WARNING
+        "TIMEMORY_BUILD_KOKKOS_TOOLS requires BUILD_SHARED_LIBS=ON...")
+    set(TIMEMORY_BUILD_KOKKOS_TOOLS OFF CACHE BOOL "Build the kokkos-tools libraries" FORCE)
 endif()
 
 # cereal options

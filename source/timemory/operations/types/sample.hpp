@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::sample
+/// \struct operation::sample
 /// \brief This operation class is used for sampling
 ///
 //

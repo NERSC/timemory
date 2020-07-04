@@ -291,7 +291,7 @@ add_arguments(py::object parser = py::none(), std::string fpath = ".")
                                  required=False, action='store_true')
 
              parser.add_argument('--write-ctest-notes',
-                                 help="Write a CTestNotes.cmake file for TiMemory ASCII output",
+                                 help="Write a CTestNotes.cmake file for timemory ASCII output",
                                  required=False, action='store_true')
 
              parser.set_defaults(enabled=True)

@@ -170,7 +170,7 @@ using filter_false = typename filter_if_false<Predicate, Sequence>::type;
 
 //======================================================================================//
 //
-/// \class filter_if_false_after_decay
+/// \struct filter_if_false_after_decay
 /// \brief Removes types if predicate evaluates to false. Applies
 /// decay_t<remove_pointer_t<T>> before evaluating predicate
 //

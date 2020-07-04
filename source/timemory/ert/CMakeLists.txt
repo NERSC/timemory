@@ -1,6 +1,4 @@
 
-add_option(TIMEMORY_BUILD_ERT "Build ERT library" ON)
-
 if(NOT TIMEMORY_BUILD_ERT)
     return()
 endif()

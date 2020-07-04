@@ -24,7 +24,7 @@
 
 /** \file mpl/apply.hpp
  * \headerfile mpl/apply.hpp "timemory/mpl/apply.hpp"
- * Provides the template meta-programming expansions heavily utilized by TiMemory
+ * Provides the template meta-programming expansions heavily utilized by timemory
  *
  */
 

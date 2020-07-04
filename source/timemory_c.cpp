@@ -25,7 +25,7 @@
 /** \file ctimemory.cpp
  * This is the C++ proxy for the C interface. Compilation of this file is not
  * required for C++ codes but is compiled into "libtimemory.*" (timemory-cxx-library)
- * so that the "libctimemory.*" can be linked during the TiMemory build and
+ * so that the "libctimemory.*" can be linked during the timemory build and
  * "libctimemory.*" can be stand-alone linked to C code.
  *
  */

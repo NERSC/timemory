@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::construct
+/// \struct operation::construct
 /// \brief The purpose of this operation class is construct an object with specific args
 ///
 //

@@ -95,15 +95,6 @@ public:
     using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    // used by component hybrid
-    static constexpr bool is_component_list    = false;
-    static constexpr bool is_lightweight_tuple = true;
-    static constexpr bool is_component_hybrid  = false;
-    static constexpr bool is_component_type    = true;
-    static constexpr bool is_auto_list         = false;
-    static constexpr bool is_auto_tuple        = false;
-    static constexpr bool is_auto_hybrid       = false;
-    static constexpr bool is_auto_type         = false;
     static constexpr bool is_component         = false;
     static constexpr bool has_gotcha_v         = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v    = bundle_type::has_user_bundle_v;
@@ -270,19 +261,19 @@ public:
     //----------------------------------------------------------------------------------//
     // get member functions taking either a type
     //
-    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     T* get()
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     const T* get() const
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
-    template <typename T, enable_if_t<!(is_one_of<T, data_type>::value), int> = 0>
+    template <typename T, enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     T* get() const
     {
         void*       ptr   = nullptr;
@@ -301,10 +292,9 @@ public:
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <
-        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-        enable_if_t<(trait::is_available<T>::value && is_one_of<T, data_type>::value),
-                    int> = 0>
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
+                          int> = 0>
     auto get_component()
     {
         return get<T>();
@@ -314,8 +304,7 @@ public:
 
     template <
         typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && has_user_bundle_v),
-                    int> = 0>
+        enable_if_t<!is_one_of<T, reference_type>::value && has_user_bundle_v, int> = 0>
     void init(Args&&...)
     {
         using bundle_t = decltype(std::get<0>(std::declval<user_bundle_types>()));
@@ -328,15 +317,14 @@ public:
 
     template <
         typename T, typename... Args,
-        enable_if_t<(is_one_of<T, reference_type>::value == false && !has_user_bundle_v),
-                    int> = 0>
+        enable_if_t<!is_one_of<T, reference_type>::value && !has_user_bundle_v, int> = 0>
     void init(Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
     //  variadic initialization
     //
-    template <typename T, typename... Tail, enable_if_t<(sizeof...(Tail) == 0), int> = 0>
+    template <typename T, typename... Tail, enable_if_t<sizeof...(Tail) == 0, int> = 0>
     void initialize()
     {
         this->init<T>();
@@ -353,7 +341,7 @@ public:
     /// apply a member function to a type that is in variadic list AND is available
     ///
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == true), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto&& _obj = get<T>();
@@ -361,7 +349,7 @@ public:
     }
 
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == false), int> = 0>
+              enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     void type_apply(Func&&, Args&&...)
     {}
 

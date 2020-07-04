@@ -41,7 +41,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::generic_operator
+/// \struct operation::generic_operator
 /// \brief This operation class is similar to pointer_operator but can handle non-pointer
 /// types
 ///

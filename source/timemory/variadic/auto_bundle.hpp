@@ -64,17 +64,6 @@ public:
     using type       = convert_t<typename component_type::type, auto_bundle<Tag>>;
     using value_type = component_type;
 
-    // used by component hybrid and gotcha
-    static constexpr bool is_component_bundle = false;
-    static constexpr bool is_component_list   = false;
-    static constexpr bool is_component_tuple  = false;
-    static constexpr bool is_component_hybrid = false;
-    static constexpr bool is_component_type   = false;
-    static constexpr bool is_auto_bundle      = true;
-    static constexpr bool is_auto_list        = false;
-    static constexpr bool is_auto_tuple       = false;
-    static constexpr bool is_auto_hybrid      = false;
-    static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
     static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
@@ -168,46 +157,56 @@ public:
     operator const component_type&() const { return m_temporary; }
 
     // partial interface to underlying component_bundle
+    /// push components into call-stack storage
     void push()
     {
         if(m_enabled)
             m_temporary.push();
     }
+    /// pop components off call-stack storage
     void pop()
     {
         if(m_enabled)
             m_temporary.pop();
     }
+    /// execute a measurement
     template <typename... Args>
     void measure(Args&&... args)
     {
         if(m_enabled)
             m_temporary.measure(std::forward<Args>(args)...);
     }
+    /// execute a sample
     template <typename... Args>
     void sample(Args&&... args)
     {
         if(m_enabled)
             m_temporary.sample(std::forward<Args>(args)...);
     }
+    /// invoke start member function on all components
     template <typename... Args>
     void start(Args&&... args)
     {
         if(m_enabled)
             m_temporary.start(std::forward<Args>(args)...);
     }
+    /// invoke stop member function on all components
     template <typename... Args>
     void stop(Args&&... args)
     {
         if(m_enabled)
             m_temporary.stop(std::forward<Args>(args)...);
     }
+    /// invoke assemble member function on all components to determine if measurements can
+    /// be derived from other components in a bundle
     template <typename... Args>
     void assemble(Args&&... args)
     {
         if(m_enabled)
             m_temporary.assemble(std::forward<Args>(args)...);
     }
+    /// invoke derive member function on all components to extract measurements from other
+    /// components in the bundle
     template <typename... Args>
     void derive(Args&&... args)
     {

@@ -106,15 +106,6 @@ public:
     using type             = convert_t<tuple_type, component_list<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    // used by component hybrid
-    static constexpr bool is_component_list   = true;
-    static constexpr bool is_component_tuple  = false;
-    static constexpr bool is_component_hybrid = false;
-    static constexpr bool is_component_type   = true;
-    static constexpr bool is_auto_list        = false;
-    static constexpr bool is_auto_tuple       = false;
-    static constexpr bool is_auto_hybrid      = false;
-    static constexpr bool is_auto_type        = false;
     static constexpr bool is_component        = false;
     static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
@@ -433,14 +424,14 @@ public:
     }
 
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              enable_if_t<!(is_one_of<T*, data_type>::value), int> = 0>
+              enable_if_t<!is_one_of<T*, data_type>::value, int> = 0>
     T* get()
     {
         return nullptr;
     }
 
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-              enable_if_t<!(is_one_of<T*, data_type>::value), int> = 0>
+              enable_if_t<!is_one_of<T*, data_type>::value, int> = 0>
     const T* get() const
     {
         return nullptr;
@@ -458,7 +449,7 @@ public:
     /// with older compilers
     template <
         typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-        enable_if_t<(trait::is_available<T>::value && is_one_of<T*, data_type>::value),
+        enable_if_t<trait::is_available<T>::value && is_one_of<T*, data_type>::value,
                     int> = 0>
     auto get_component()
     {
@@ -470,7 +461,7 @@ public:
     ///
     template <
         typename U, typename T = std::remove_pointer_t<decay_t<U>>, typename... Args,
-        enable_if_t<(is_one_of<T*, data_type>::value && trait::is_available<T>::value),
+        enable_if_t<is_one_of<T*, data_type>::value && trait::is_available<T>::value,
                     char> = 0>
     void init(Args&&... _args)
     {
@@ -503,8 +494,8 @@ public:
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
-              enable_if_t<(!is_one_of<T*, data_type>::value &&
-                           trait::is_available<T>::value && has_user_bundle_v),
+              enable_if_t<!is_one_of<T*, data_type>::value &&
+                              trait::is_available<T>::value && has_user_bundle_v,
                           int> = 0>
     void init(Args&&... args)
     {
@@ -520,8 +511,8 @@ public:
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
-              enable_if_t<(!trait::is_available<T>::value ||
-                           (!is_one_of<T*, data_type>::value && !has_user_bundle_v)),
+              enable_if_t<!trait::is_available<T>::value ||
+                              (!is_one_of<T*, data_type>::value && !has_user_bundle_v),
                           long> = 0>
     void init(Args&&...)
     {
@@ -547,8 +538,8 @@ public:
     /// apply a member function to a type that is in variadic list AND is available
     ///
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, reference_type>::value == true), int> = 0,
-              enable_if_t<(trait::is_available<T>::value == true), int>       = 0>
+              enable_if_t<is_one_of<T, reference_type>::value == true, int> = 0,
+              enable_if_t<trait::is_available<T>::value == true, int>       = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto&& _obj = get<T>();
@@ -560,8 +551,8 @@ public:
     /// "apply" a member function to a type that is in variadic list BUT is NOT available
     ///
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, reference_type>::value == true), int> = 0,
-              enable_if_t<(trait::is_available<T>::value == false), int>      = 0>
+              enable_if_t<is_one_of<T, reference_type>::value == true, int> = 0,
+              enable_if_t<trait::is_available<T>::value == false, int>      = 0>
     void type_apply(Func&&, Args&&...)
     {}
 
@@ -569,7 +560,7 @@ public:
     /// invoked when a request to apply a member function to a type not in variadic list
     ///
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, reference_type>::value == false), int> = 0>
+              enable_if_t<is_one_of<T, reference_type>::value == false, int> = 0>
     void type_apply(Func&&, Args&&...)
     {}
 

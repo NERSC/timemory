@@ -39,7 +39,8 @@ if("${LIBNAME}" STREQUAL "")
     string(TOLOWER "${PROJECT_NAME}" LIBNAME)
 endif()
 
-add_interface_library(${LIBNAME}-compile-options)
+add_interface_library(${LIBNAME}-compile-options
+    "Adds the standard set of compiler flags used by timemory")
 
 #----------------------------------------------------------------------------------------#
 # macro converting string to list

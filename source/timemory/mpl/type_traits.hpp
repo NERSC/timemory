@@ -83,7 +83,7 @@ struct is_available<T*> : is_available<std::remove_pointer_t<T>>
 {};
 
 //--------------------------------------------------------------------------------------//
-/// \class data
+/// \struct data
 /// \brief trait to specify the value type of a component before the definition of
 /// the component
 ///

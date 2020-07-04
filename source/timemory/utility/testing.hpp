@@ -24,7 +24,7 @@
 
 /** \file utility/testing.hpp
  * \headerfile utility/testing.hpp "timemory/utility/testing.hpp"
- * This is used for C++ testing of the TiMemory package
+ * This is used for C++ testing of the timemory package
  *
  */
 
@@ -41,7 +41,7 @@
 #include <sstream>
 #include <stdexcept>
 
-// TiMemory headers
+// timemory headers
 #include "timemory/backends/dmp.hpp"
 #include "timemory/utility/macros.hpp"
 
