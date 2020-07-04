@@ -30,20 +30,4 @@
 #include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<voluntary_context_switch>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::voluntary_context_switch, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::voluntary_context_switch, voluntary_context_switch)
-//
-//======================================================================================//
+TIMEMORY_EXTERN_COMPONENT(voluntary_context_switch, true, int64_t)

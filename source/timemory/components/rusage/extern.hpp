@@ -29,8 +29,6 @@
 
 #pragma once
 
-//======================================================================================//
-//
 #include "timemory/components/rusage/extern/current_peak_rss.hpp"
 #include "timemory/components/rusage/extern/kernel_mode_time.hpp"
 #include "timemory/components/rusage/extern/num_io_in.hpp"
@@ -45,5 +43,3 @@
 #include "timemory/components/rusage/extern/virtual_memory.hpp"
 #include "timemory/components/rusage/extern/voluntary_context_switch.hpp"
 #include "timemory/components/rusage/extern/written_bytes.hpp"
-//
-//======================================================================================//

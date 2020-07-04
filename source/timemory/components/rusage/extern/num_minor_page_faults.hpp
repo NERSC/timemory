@@ -30,20 +30,4 @@
 #include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<num_minor_page_faults>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::num_minor_page_faults, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::num_minor_page_faults, num_minor_page_faults)
-//
-//======================================================================================//
+TIMEMORY_EXTERN_COMPONENT(num_minor_page_faults, true, int64_t)

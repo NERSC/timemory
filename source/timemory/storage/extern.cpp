@@ -22,21 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-///
-/// define TIMEMORY_SOURCE to select appropriate macros
-///
-#if !defined(TIMEMORY_SOURCE)
-#    define TIMEMORY_SOURCE
-#endif
-
-//======================================================================================//
-// clang-format off
-//
-#include "timemory/environment/declaration.hpp"
-//
-#include "timemory/storage/definition.hpp"
-//
 #include "timemory/storage/extern.hpp"
-//
-// clang-format on
-//======================================================================================//
+#include "timemory/environment/declaration.hpp"
+#include "timemory/storage/definition.hpp"

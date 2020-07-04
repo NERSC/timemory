@@ -51,25 +51,7 @@
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/storage/declaration.hpp"
 #endif
-//
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<trip_count, int64_t>)
-//
-}  // namespace component
-}  // namespace tim
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_OPERATIONS(component::trip_count, true)
-//
-//======================================================================================//
-//
-TIMEMORY_EXTERN_STORAGE(component::trip_count, trip_count)
-//
-//======================================================================================//
+
+#if !defined(_WINDOWS)
+TIMEMORY_EXTERN_COMPONENT(trip_count, true, int64_t)
+#endif

@@ -30,20 +30,4 @@
 #include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<kernel_mode_time>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::kernel_mode_time, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::kernel_mode_time, kernel_mode_time)
-//
-//======================================================================================//
+TIMEMORY_EXTERN_COMPONENT(kernel_mode_time, true, int64_t)

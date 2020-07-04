@@ -29,12 +29,6 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/storage/macros.hpp"
-//
-#include "timemory/storage/types.hpp"
-//
 #include "timemory/storage/declaration.hpp"
-//
-//======================================================================================//
+#include "timemory/storage/macros.hpp"
+#include "timemory/storage/types.hpp"

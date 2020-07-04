@@ -293,7 +293,7 @@ public:
             size_t sum = 0;
             for(auto&& itr : _typeids)
             {
-                if(itr > 0 && !contains(itr, get_typeids()))
+                if(itr > 0 && contains(itr, get_typeids()))
                 {
                     if(settings::verbose() > 1)
                         PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
@@ -412,7 +412,7 @@ public:
             size_t sum = 0;
             for(auto&& itr : _typeids)
             {
-                if(itr > 0 && !contains(itr, m_typeids))
+                if(itr > 0 && contains(itr, m_typeids))
                     return;
                 sum += itr;
                 m_typeids.emplace_back(std::move(itr));

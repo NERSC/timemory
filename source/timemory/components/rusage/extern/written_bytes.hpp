@@ -30,20 +30,4 @@
 #include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<written_bytes, std::array<int64_t, 2>>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::written_bytes, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::written_bytes, written_bytes)
-//
-//======================================================================================//
+TIMEMORY_EXTERN_COMPONENT(written_bytes, true, std::array<int64_t, 2>)

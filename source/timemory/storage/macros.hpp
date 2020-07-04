@@ -39,10 +39,14 @@
 //
 #if defined(TIMEMORY_STORAGE_SOURCE)
 #    define TIMEMORY_STORAGE_DLL tim_dll_export
+#    define TIMEMORY_STORAGE_LINKAGE
 #elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_STORAGE_EXTERN)
 #    define TIMEMORY_STORAGE_DLL tim_dll_import
+#    define TIMEMORY_STORAGE_LINKAGE
+#    define TIMEMORY_STORAGE_HIDE_DEFINITION
 #else
 #    define TIMEMORY_STORAGE_DLL
+#    define TIMEMORY_STORAGE_LINKAGE inline
 #endif
 //
 //--------------------------------------------------------------------------------------//
