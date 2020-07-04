@@ -47,34 +47,31 @@ template <typename Tag, typename... Types>
 component_bundle<Tag, Types...>::component_bundle()
 {
     apply_v::set_value(m_data, nullptr);
-    if(settings::enabled())
-        init_storage();
+    // if(settings::enabled())
+    //    init_storage();
 }
 
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag, typename... Types>
 template <typename... T, typename Func>
-component_bundle<Tag, Types...>::component_bundle(const string_t&        key,
-                                                  variadic::config<T...> config,
-                                                  const Func&            init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), variadic::config<T...>{})
+component_bundle<Tag, Types...>::component_bundle(const string_t&     key,
+                                                  quirk::config<T...> config,
+                                                  const Func&         init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), quirk::config<T...>{})
 , m_data(invoke::construct<data_type, Tag>(key, config))
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
-        {
-            init_func(*this);
-        }
+        // IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value)
+        //{
+        //    init_storage();
+        //}
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -83,25 +80,22 @@ component_bundle<Tag, Types...>::component_bundle(const string_t&        key,
 template <typename Tag, typename... Types>
 template <typename... T, typename Func>
 component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc,
-                                                  variadic::config<T...>     config,
+                                                  quirk::config<T...>        config,
                                                   const Func&                init_func)
-: bundle_type(loc.get_hash(), variadic::config<T...>{})
+: bundle_type(loc.get_hash(), quirk::config<T...>{})
 , m_data(invoke::construct<data_type, Tag>(loc, config))
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
-        {
-            init_func(*this);
-        }
+        // IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value)
+        //{
+        //    init_storage();
+        //}
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
         invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -113,19 +107,19 @@ component_bundle<Tag, Types...>::component_bundle(const string_t& key, const boo
                                                   scope::config _scope,
                                                   const Func&   init_func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store,
-              _scope + scope::config(variadic_config<variadic::flat_scope>::value,
-                                     variadic_config<variadic::timeline_scope>::value,
-                                     variadic_config<variadic::tree_scope>::value))
+              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
+                                     quirk_config<quirk::timeline_scope>::value,
+                                     quirk_config<quirk::tree_scope>::value))
 , m_data(invoke::construct<data_type, Tag>(key, store, _scope))
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store>::value) { init_storage(); }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        // IF_CONSTEXPR(!quirk_config<quirk::no_store>::value) { init_storage(); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -137,19 +131,19 @@ component_bundle<Tag, Types...>::component_bundle(const captured_location_t& loc
                                                   const bool& store, scope::config _scope,
                                                   const Func& init_func)
 : bundle_type(loc.get_hash(), store,
-              _scope + scope::config(variadic_config<variadic::flat_scope>::value,
-                                     variadic_config<variadic::timeline_scope>::value,
-                                     variadic_config<variadic::tree_scope>::value))
+              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
+                                     quirk_config<quirk::timeline_scope>::value,
+                                     quirk_config<quirk::tree_scope>::value))
 , m_data(invoke::construct<data_type, Tag>(loc, store, _scope))
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store>::value) { init_storage(); }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        // IF_CONSTEXPR(!quirk_config<quirk::no_store>::value) { init_storage(); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
         invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -161,19 +155,19 @@ component_bundle<Tag, Types...>::component_bundle(size_t hash, const bool& store
                                                   scope::config _scope,
                                                   const Func&   init_func)
 : bundle_type(hash, store,
-              _scope + scope::config(variadic_config<variadic::flat_scope>::value,
-                                     variadic_config<variadic::timeline_scope>::value,
-                                     variadic_config<variadic::tree_scope>::value))
+              _scope + scope::config(quirk_config<quirk::flat_scope>::value,
+                                     quirk_config<quirk::timeline_scope>::value,
+                                     quirk_config<quirk::tree_scope>::value))
 , m_data(invoke::construct<data_type, Tag>(hash, store, _scope))
 {
     apply_v::set_value(m_data, nullptr);
     if(m_store)
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store>::value) { init_storage(); }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        // IF_CONSTEXPR(!quirk_config<quirk::no_store>::value) { init_storage(); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(hash);
         invoke::set_scope<Tag>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 

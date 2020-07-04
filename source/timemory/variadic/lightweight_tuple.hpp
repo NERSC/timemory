@@ -120,26 +120,26 @@ public:
 
 public:
     template <typename T, typename... U>
-    struct variadic_config
+    struct quirk_config
     {
-        static constexpr bool value = is_one_of<
-            T, contains_one_of_t<variadic::is_config, concat<Types..., U...>>>::value;
+        static constexpr bool value =
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:
     lightweight_tuple();
 
     template <typename... T, typename Func = initializer_type>
-    explicit lightweight_tuple(const string_t& key, variadic::config<T...> = {},
+    explicit lightweight_tuple(const string_t& key, quirk::config<T...> = {},
                                const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit lightweight_tuple(const captured_location_t& loc,
-                               variadic::config<T...> = {},
-                               const Func&            = get_initializer());
+    explicit lightweight_tuple(const captured_location_t& loc, quirk::config<T...> = {},
+                               const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit lightweight_tuple(size_t _hash, variadic::config<T...> = {},
+    explicit lightweight_tuple(size_t _hash, quirk::config<T...> = {},
                                const Func& = get_initializer());
 
     ~lightweight_tuple();

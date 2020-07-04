@@ -155,7 +155,7 @@ write_ctest_notes(py::object man, std::string directory, bool append)
     for(const auto& itr : filenames)
     {
         std::string fname = itr.cast<std::string>();
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
         while(fname.find("\\") != std::string::npos)
             fname = fname.replace(fname.find("\\"), 1, "/");
 #endif

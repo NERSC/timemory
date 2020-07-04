@@ -250,6 +250,12 @@ generic_serialization(const std::string& fname, const Tp& obj)
     ofs.close();
 }
 //
+// deprecated namespace
+namespace variadic
+{
+using namespace quirk;
+}
+//
 }  // namespace tim
 
 #    include "timemory/variadic/definition.hpp"

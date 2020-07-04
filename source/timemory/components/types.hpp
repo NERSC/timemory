@@ -69,7 +69,7 @@ struct nothing : base<nothing, skeleton::base>
 
 }  // namespace component
 
-namespace variadic
+namespace quirk
 {
 struct auto_start;
 struct auto_stop;
@@ -87,8 +87,7 @@ struct exit_report;
 struct no_init;
 struct no_fini;
 struct no_store;
-}  // namespace variadic
-
+}  // namespace quirk
 }  // namespace tim
 
 //======================================================================================//
@@ -114,20 +113,20 @@ struct no_store;
 
 //======================================================================================//
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::auto_start, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::auto_stop, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::explicit_start, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::explicit_stop, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::auto_start, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::auto_stop, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::explicit_start, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::explicit_stop, false_type)
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::tree_scope, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::flat_scope, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::timeline_scope, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::tree_scope, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::flat_scope, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::timeline_scope, false_type)
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::exit_report, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::exit_report, false_type)
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::no_init, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::no_fini, false_type)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, variadic::no_store, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::no_init, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::no_fini, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, quirk::no_store, false_type)
 
 //======================================================================================//
 

@@ -54,25 +54,19 @@ component_tuple<Types...>::component_tuple()
 //
 template <typename... Types>
 template <typename... T, typename Func>
-component_tuple<Types...>::component_tuple(const string_t&        key,
-                                           variadic::config<T...> config,
-                                           const Func&            init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), variadic::config<T...>{})
+component_tuple<Types...>::component_tuple(const string_t&     key,
+                                           quirk::config<T...> config,
+                                           const Func&         init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), quirk::config<T...>{})
 , m_data(invoke::construct<data_type>(key, config))
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
-        {
-            init_func(*this);
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value) { init_storage(); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -81,24 +75,18 @@ component_tuple<Types...>::component_tuple(const string_t&        key,
 template <typename... Types>
 template <typename... T, typename Func>
 component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           variadic::config<T...>     config,
+                                           quirk::config<T...>        config,
                                            const Func&                init_func)
-: bundle_type(loc.get_hash(), variadic::config<T...>{})
+: bundle_type(loc.get_hash(), quirk::config<T...>{})
 , m_data(invoke::construct<data_type>(loc, config))
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
-        {
-            init_func(*this);
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value) { init_storage(); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(loc.get_id());
         invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -117,10 +105,10 @@ component_tuple<Types...>::component_tuple(const string_t& key, const bool& stor
         {
             init_storage();
         }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
         invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -140,10 +128,10 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
         {
             init_storage();
         }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
         invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -162,10 +150,10 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
         {
             init_storage();
         }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(hash);
         invoke::set_scope(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -174,7 +162,7 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
 template <typename... Types>
 component_tuple<Types...>::~component_tuple()
 {
-    // IF_CONSTEXPR(variadic_config<variadic::auto_stop>::value) { stop(); }
+    // IF_CONSTEXPR(quirk_config<quirk::auto_stop>::value) { stop(); }
     stop();
 }
 
