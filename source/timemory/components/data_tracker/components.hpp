@@ -50,7 +50,7 @@ namespace tim
 {
 namespace component
 {
-/// \class component::data_tracker
+/// \struct component::data_tracker
 /// \brief This component is provided to facilitate data tracking. The first
 /// template parameter is the type of data to be tracked, the second is a custom
 /// tag, the third is the implementation for how to track the data.

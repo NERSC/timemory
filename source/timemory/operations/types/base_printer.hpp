@@ -46,7 +46,7 @@ namespace operation
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class operation::base_printer
+/// \struct operation::base_printer
 /// \brief invoked from the base class to provide default printing behavior
 //
 //--------------------------------------------------------------------------------------//

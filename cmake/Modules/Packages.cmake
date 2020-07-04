@@ -12,60 +12,104 @@ enable_testing()
 #
 ##########################################################################################
 
-add_interface_library(timemory-headers)
-add_interface_library(timemory-cereal)
-add_interface_library(timemory-cereal-xml)
-add_interface_library(timemory-extern)
-add_interface_library(timemory-statistics)
+add_interface_library(timemory-headers
+    "Provides minimal set of include flags to compile with timemory")
+add_interface_library(timemory-cereal
+    "Provides include flags for serialization library")
+add_interface_library(timemory-cereal-xml
+    "Enables XML serialization output")
+add_interface_library(timemory-extern
+    "Enables pre-processor directive to ensure all extern templates are used")
+add_interface_library(timemory-statistics
+    "Enables statistics for all components which define TIMEMORY_STATISTICS_TYPE(...)")
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
     timemory-cereal)
 
-add_interface_library(timemory-dmp)
-add_interface_library(timemory-mpi)
-add_interface_library(timemory-no-mpi-init)
-add_interface_library(timemory-upcxx)
-add_interface_library(timemory-threading)
+add_interface_library(timemory-dmp
+    "Enables the default distributed memory parallelism library (e.g. MPI, UPC++)")
+add_interface_library(timemory-mpi
+    "Enables MPI support")
+add_interface_library(timemory-no-mpi-init
+    "Disables the generation of MPI_Init and MPI_Init_thread symbols")
+add_interface_library(timemory-upcxx
+    "Enables UPC++ support")
+add_interface_library(timemory-threading
+    "Enables multithreading support")
 
-add_interface_library(timemory-papi)
-add_interface_library(timemory-papi-static)
-add_interface_library(timemory-cuda)
-add_interface_library(timemory-cuda-compiler)
-add_interface_library(timemory-cupti)
-add_interface_library(timemory-cudart)
-add_interface_library(timemory-cudart-device)
-add_interface_library(timemory-cudart-static)
-add_interface_library(timemory-nvtx)
-add_interface_library(timemory-caliper)
-add_interface_library(timemory-gotcha)
-add_interface_library(timemory-likwid)
-add_interface_library(timemory-vtune)
-add_interface_library(timemory-tau)
-add_interface_library(timemory-ompt)
-add_interface_library(timemory-python)
-add_interface_library(timemory-plotting)
-add_interface_library(timemory-allinea-map)
-add_interface_library(timemory-craypat)
+add_interface_library(timemory-papi
+    "Enables PAPI support")
+add_interface_library(timemory-papi-static
+    "Enables PAPI support + links to static library")
+add_interface_library(timemory-cuda
+    "Enables CUDA support")
+add_interface_library(timemory-cuda-compiler
+    "Enables some CUDA compiler flags")
+add_interface_library(timemory-cupti
+    "Enables CUPTI support (requires linking to libcuda)")
+add_interface_library(timemory-cudart
+    "Link to CUDA runtime (shared library)")
+add_interface_library(timemory-cudart-device
+    "Link to CUDA device runtime")
+add_interface_library(timemory-cudart-static
+    "Link to CUDA runtime (static library)")
+add_interface_library(timemory-nvtx
+    "Enables CUDA NVTX support")
+add_interface_library(timemory-caliper
+    "Enables Caliper support")
+add_interface_library(timemory-gotcha
+    "Enables Gotcha support")
+add_interface_library(timemory-likwid
+    "Enables LIKWID support")
+add_interface_library(timemory-vtune
+    "Enables VTune support (ittnotify)")
+add_interface_library(timemory-tau
+    "Enables TAU support")
+add_interface_library(timemory-ompt
+    "Enables OpenMP-tools support")
+add_interface_library(timemory-python
+    "Enables python support (embedded interpreter)")
+add_interface_library(timemory-plotting
+    "Enables python plotting support (system call)")
+add_interface_library(timemory-allinea-map
+    "Enables Allinea-MAP support")
+add_interface_library(timemory-craypat
+    "Enables CrayPAT support")
 
-add_interface_library(timemory-coverage)
-add_interface_library(timemory-gperftools-compile-options)
-add_interface_library(timemory-all-gperftools)
-add_interface_library(timemory-gperftools)
-add_interface_library(timemory-gperftools-cpu)
-add_interface_library(timemory-gperftools-heap)
-add_interface_library(timemory-gperftools-static)
-add_interface_library(timemory-tcmalloc-minimal)
+add_interface_library(timemory-coverage
+    "Enables code-coverage flags")
+add_interface_library(timemory-gperftools-compile-options
+    "Enables compiler flags for resolving function calls in gperftools output")
+add_interface_library(timemory-all-gperftools
+    "Enables all gperftools components (cpu and heap profilers)")
+add_interface_library(timemory-gperftools
+    "Enables user-selected gperftools component (${_GPERF_COMPONENTS})")
+add_interface_library(timemory-gperftools-cpu
+    "Enables gperftools cpu profiler support")
+add_interface_library(timemory-gperftools-heap
+    "Enables gperftools heap profiler support")
+add_interface_library(timemory-gperftools-static
+    "Enables gperftools support via static linking")
+add_interface_library(timemory-tcmalloc-minimal
+    "Enables gperftools tcmalloc_minimal library")
 
-add_interface_library(timemory-roofline)
-add_interface_library(timemory-cpu-roofline)
-add_interface_library(timemory-gpu-roofline)
-add_interface_library(timemory-roofline-options)
+add_interface_library(timemory-roofline
+    "Enables flags and libraries for proper roofline generation")
+add_interface_library(timemory-cpu-roofline
+    "Enables flags and libraries for proper CPU roofline generation")
+add_interface_library(timemory-gpu-roofline
+    "Enables flags and libraries for proper GPU roofline generation")
+add_interface_library(timemory-roofline-options
+    "Compiler flags for roofline generation")
 
-add_interface_library(timemory-dyninst)
+add_interface_library(timemory-dyninst
+    "Provides flags and libraries for Dyninst (dynamic instrumentation")
 
-add_interface_library(timemory-mpip-library)
-add_interface_library(timemory-ompt-library)
+add_interface_library(timemory-mpip-library
+    "Provides MPIP library for MPI performance analysis")
+add_interface_library(timemory-ompt-library
+    "Provides OMPT library for OpenMP performance analysis")
 
 target_link_libraries(timemory-mpip-library INTERFACE timemory-mpi timemory-gotcha)
 
@@ -157,16 +201,20 @@ if(NOT TIMEMORY_USE_PYTHON OR TIMEMORY_FORCE_GPERFTOOLS_PYTHON)
     set(_GPERF_IN_LIBRARY ON)
 endif()
 
-add_interface_library(timemory-extensions)
+add_interface_library(timemory-extensions
+    "Provides a single target for all the timemory extensions which were found")
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
 
-add_interface_library(timemory-external-shared)
+add_interface_library(timemory-external-shared
+    "Provides a single target for all the timemory extensions (shared libraries)")
 target_link_libraries(timemory-external-shared INTERFACE ${TIMEMORY_EXTERNAL_SHARED_INTERFACES})
 
-add_interface_library(timemory-external-static)
+add_interface_library(timemory-external-static
+    "Provides a single target for all the timemory extensions (static libraries)")
 target_link_libraries(timemory-external-static INTERFACE ${TIMEMORY_EXTERNAL_STATIC_INTERFACES})
 
-add_interface_library(timemory-analysis-tools)
+add_interface_library(timemory-analysis-tools
+    "Internal. Provides sanitizer, gperftools-cpu, coverage, xray")
 
 if(TIMEMORY_USE_SANITIZER)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)

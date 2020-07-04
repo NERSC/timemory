@@ -24,7 +24,7 @@
 
 /**
  * \headerfile "timemory/settings.hpp"
- * Handles TiMemory settings, parses environment
+ * Handles timemory settings, parses environment
  *
  */
 

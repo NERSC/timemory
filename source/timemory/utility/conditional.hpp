@@ -38,10 +38,10 @@
 namespace tim
 {
 ///
-/// \brief conditional<_Category, _EvalArgs...>
-/// This provides a conditional generator
+/// \struct conditional
+/// \brief This provides a conditional generator
 ///
-/// \example Profiling Categories
+/// \example tim::conditional
 ///
 ///     struct G4ProfileType
 ///     {
@@ -89,26 +89,26 @@ namespace tim
 ///         delete fTrackProfiler;
 ///     }
 ///
-template <size_t _Category, typename... _EvalArgs>
+template <size_t CategoryT, typename... EvalArgsT>
 struct conditional
 {
 public:
-    using this_type       = conditional<_Category, _EvalArgs...>;
-    using eval_functor_t  = std::function<bool(_EvalArgs...)>;
-    using label_functor_t = std::function<std::string(_EvalArgs...)>;
+    using this_type       = conditional<CategoryT, EvalArgsT...>;
+    using eval_functor_t  = std::function<bool(EvalArgsT...)>;
+    using label_functor_t = std::function<std::string(EvalArgsT...)>;
 
     // invokes the functor that determines whether to enable profiling
-    static bool query(_EvalArgs... _args) { return get_evaluator()(_args...); }
+    static bool query(EvalArgsT... _args) { return get_evaluator()(_args...); }
     // invokes the functor for generating a label when profiling is enabled
-    static std::string label(_EvalArgs... _args) { return get_labeler()(_args...); }
+    static std::string label(EvalArgsT... _args) { return get_labeler()(_args...); }
 
     ///
-    /// \brief get_evaluator
-    /// This is the functor that determines whether to activate the profiler.
+    /// \fn get_evaluator
+    /// \brief This is the functor that determines whether to activate the profiler.
     /// By default, returns false.
     /// Use a lambda to customize the activation of the profiler for the category
     ///
-    /// \example Profile only G4Electron
+    /// \example tim::conditional::get_evaluator
     ///
     ///     using TrackProfiler = G4Profiler<G4ProfileType::Track, const G4Track*>;
     ///
@@ -135,17 +135,17 @@ public:
     ///
     static eval_functor_t& get_evaluator()
     {
-        static eval_functor_t _instance = [](_EvalArgs...) { return false; };
+        static eval_functor_t _instance = [](EvalArgsT...) { return false; };
         return _instance;
     }
 
     ///
-    /// \brief get_labeler
-    /// This is the functor that generates a label for a profiling instance.
+    /// \fn get_labeler
+    /// \brief This is the functor that generates a label for a profiling instance.
     /// By default, it returns an empty string.
     /// Use a lambda to customize the label for the profiling instance
     ///
-    /// \example Create labels based on particle energy bins of 10 MeV
+    /// \example tim::conditional::get_labeler
     ///
     ///     TrackProfiler::get_labeler() = [](const Track* t)
     ///     {
@@ -164,7 +164,7 @@ public:
     ///
     static label_functor_t& get_labeler()
     {
-        static label_functor_t _instance = [](_EvalArgs...) { return std::string(""); };
+        static label_functor_t _instance = [](EvalArgsT...) { return std::string(""); };
         return _instance;
     }
 };

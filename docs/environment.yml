@@ -16,3 +16,6 @@ dependencies:
   - pillow
   - pip
   - setuptools
+  - breathe
+  - sphinx-markdown-tables
+  

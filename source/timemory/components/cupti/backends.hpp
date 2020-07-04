@@ -72,7 +72,7 @@ operator-(const cupti::profiler::results_t& lhs, const cupti::profiler::results_
 //
 namespace cupti
 {
-/// \class tim::cupti::perfworks_translation
+/// \struct tim::cupti::perfworks_translation
 /// \brief provides the mapping from the old CUPTI events and metrics to the perfworks
 /// metrics
 ///

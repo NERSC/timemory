@@ -986,7 +986,7 @@ struct compute
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class tim::math::compute<std::tuple<>>
+/// \struct tim::math::compute<std::tuple<>>
 /// \brief this specialization exists for statistics<tuple<>> which is the default
 /// type when statistics have not been enabled
 ///

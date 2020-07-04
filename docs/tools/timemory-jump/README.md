@@ -1,13 +1,16 @@
 # timemory jump library
 
-The timemory jump library implements the **jump** instrumentation mode for `timemory-run` tool. 
+The timemory jump library implements the **jump** instrumentation mode for `timemory-run` tool. Additionally, this library can
+be linked to in lieu of the traditional timemory library and provide instrumentation via setting the environment variable
+`TIMEMORY_JUMP_LIBRARY` on libraries which provide `dlsym` and `dlopen`.
 
 ## Description
+
 The **jump** mode is used to insert dynamic instrumentation code in an application binary using **function pointers**. The inserted function pointers dereference to the instrumentation code at runtime alleviating the risk of self instrumentation loop in case a library that is being used by instrumentation code is instrumented. For example, dynamic instrumentation of `libm` may lead to a self instrumentation loop. The **jump** instrumentation mode can be used by using the `--jump` option with `timemory-run` tool.
 
 ## About timemory-run tool
 
-Please refer to [timemory-run in ^timemory/source/tools/timemory-run](../tools/timemory-run/README.md#timemory_run)
+Please refer to [timemory-run documentation](../timemory-run/README.md) for infomation about this tool.
 
 ## Usage
 
@@ -81,12 +84,12 @@ Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cm
 [timemory]> Command: '/home/mhaseeb/repos/spack/opt/spack/linux-ubuntu18.04-broadwell/gcc-8.4.0/python-3.7.7-2dybrjceqs3qc4k7ci56t56bvzb4csxc/bin/python -m timemory.plotting -f timemory-lscpu.inst-output/wall.json -t "wall " -o timemory-lscpu.inst-output' returned a non-zero exit code: 256... plot/definition.hpp:77 plot generation failed
 
 |----------------------------------------------------------------------------------------------------|
-|                              REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                              |
-|----------------------------------------------------------------------------------------------------|
-|  LABEL   | COUNT  | DEPTH  | METRIC | UNITS  |  SUM   | MEAN   |  MIN   |  MAX   | STDDEV | % SELF |
-|----------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
-| >>> main |      1 |      0 | wall   | sec    |  0.026 |  0.026 |  0.026 |  0.026 |  0.000 |  100.0 |
-|----------------------------------------------------------------------------------------------------|
+| REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                             |
+| ---------------------------------------------------------------------------------------------------- |
+| LABEL                                                                                                | COUNT    | DEPTH    | METRIC   | UNITS    | SUM      | MEAN     | MIN      | MAX      | STDDEV   | % SELF   |
+| ----------                                                                                           | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| >>> main                                                                                             | 1        | 0        | wall     | sec      | 0.026    | 0.026    | 0.026    | 0.026    | 0.000    | 100.0    |
+| ---------------------------------------------------------------------------------------------------- |
 
 
 [metadata::manager::finalize]> Outputting 'timemory-lscpu.inst-output/metadata.json'...

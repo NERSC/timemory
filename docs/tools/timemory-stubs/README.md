@@ -1,13 +1,16 @@
 # timemory stubs library
 
-The timemory stubs library implements the **stub** instrumentation mode for `timemory-run` tool.
+The timemory stubs library implements the **stub** instrumentation mode for `timemory-run` tool. Additionally, this library can
+be linked to in lieu of the traditional timemory library and provide instrumentation via `LD_PRELOAD` on Linux and `DYLD_INSERT_LIBRARIES`
+on macOS.
 
 ## Description
-The **stubs** mode is used to insert instrumentation stubs in an application binary. 
+
+The **stubs** mode is used to insert instrumentation stubs in an application binary.
 
 ## About timemory-run tool
 
-Please refer to [timemory-run in ^timemory/source/tools/timemory-run](../tools/timemory-run/README.md#timemory_run).
+Please refer to [timemory-run documentation](../timemory-run/README.md) for infomation about this tool.
 
 ## Usage
 
@@ -115,10 +118,10 @@ Opening 'timemory-lscpu.inst-output/wall.jpeg' for output...
 Closed 'timemory-lscpu.inst-output/wall.jpeg'...
 
 |----------------------------------------------------------------------------------------------------|
-|                              REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                              |
-|----------------------------------------------------------------------------------------------------|
-|  LABEL   | COUNT  | DEPTH  | METRIC | UNITS  |  SUM   | MEAN   |  MIN   |  MAX   | STDDEV | % SELF |
-|----------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
-| >>> main |      1 |      0 | wall   | sec    |  0.026 |  0.026 |  0.026 |  0.026 |  0.000 |  100.0 |
-|----------------------------------------------------------------------------------------------------|
+| REAL-CLOCK TIMER (I.E. WALL-CLOCK TIMER)                                                             |
+| ---------------------------------------------------------------------------------------------------- |
+| LABEL                                                                                                | COUNT    | DEPTH    | METRIC   | UNITS    | SUM      | MEAN     | MIN      | MAX      | STDDEV   | % SELF   |
+| ----------                                                                                           | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| >>> main                                                                                             | 1        | 0        | wall     | sec      | 0.026    | 0.026    | 0.026    | 0.026    | 0.000    | 100.0    |
+| ---------------------------------------------------------------------------------------------------- |
 ```

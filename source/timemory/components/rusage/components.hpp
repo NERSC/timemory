@@ -50,7 +50,7 @@ namespace component
 //          Resource Usage types
 //
 //--------------------------------------------------------------------------------------//
-/// \class peak_rss
+/// \struct peak_rss
 /// \brief
 /// this struct extracts the high-water mark (or a change in the high-water mark) of
 /// the resident set size (RSS). Which is current amount of memory in RAM.
@@ -88,7 +88,7 @@ struct peak_rss : public base<peak_rss>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class page_rss
+/// \struct page_rss
 /// \brief
 /// this struct measures the resident set size (RSS) currently allocated in pages of
 /// memory. Unlike the peak_rss, this value will fluctuate as memory gets freed and
@@ -131,7 +131,7 @@ struct page_rss : public base<page_rss, int64_t>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class num_io_in
+/// \struct num_io_in
 /// \brief
 /// the number of times the file system had to perform input.
 //
@@ -171,7 +171,7 @@ struct num_io_in : public base<num_io_in>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class num_io_out
+/// \struct num_io_out
 /// \brief
 /// the number of times the file system had to perform output.
 //
@@ -211,7 +211,7 @@ struct num_io_out : public base<num_io_out>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class num_minor_page_faults
+/// \struct num_minor_page_faults
 /// \brief
 /// the number of page faults serviced without any I/O activity; here I/O activity is
 /// avoided by reclaiming a page frame from the list of pages awaiting reallocation.
@@ -253,7 +253,7 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class num_major_page_faults
+/// \struct num_major_page_faults
 /// \brief
 /// the number of page faults serviced that required I/O activity.
 //
@@ -293,7 +293,7 @@ struct num_major_page_faults : public base<num_major_page_faults>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class voluntary_context_switch
+/// \struct voluntary_context_switch
 /// \brief
 /// the number of times a context switch resulted due to a process voluntarily giving up
 /// the processor before its time slice was completed (usually to await availability of a
@@ -338,7 +338,7 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
 using vol_cxt_switch = voluntary_context_switch;
 
 //--------------------------------------------------------------------------------------//
-/// \class priority_context_switch
+/// \struct priority_context_switch
 /// \brief
 /// the number of times a context switch resulted due to a higher priority process
 /// becoming runnable or because the current process exceeded its time slice
@@ -382,7 +382,7 @@ struct priority_context_switch : public base<priority_context_switch>
 using prio_cxt_switch = priority_context_switch;
 
 //--------------------------------------------------------------------------------------//
-/// \class read_bytes
+/// \struct read_bytes
 /// \brief I/O counter: bytes read Attempt to count the number of bytes which this process
 /// really did cause to be fetched from the storage layer. Done at the submit_bio() level,
 /// so it is accurate for block-backed filesystems.
@@ -567,7 +567,7 @@ struct read_bytes : public base<read_bytes, std::pair<int64_t, int64_t>>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class written_bytes
+/// \struct written_bytes
 /// \brief I/O counter: Attempt to count the number of bytes which this process caused to
 /// be sent to the storage layer. This is done at page-dirtying time.
 //
@@ -754,7 +754,7 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class virtual_memory
+/// \struct virtual_memory
 /// \brief
 /// this struct extracts the virtual memory usage
 //
@@ -789,7 +789,7 @@ struct virtual_memory : public base<virtual_memory>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class user_mode_time
+/// \struct user_mode_time
 /// \brief This is the total amount of time spent executing in user mode
 //
 struct user_mode_time : public base<user_mode_time, int64_t>
@@ -832,7 +832,7 @@ struct user_mode_time : public base<user_mode_time, int64_t>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class kernel_mode_time
+/// \struct kernel_mode_time
 /// \brief This is the total amount of time spent executing in kernel mode
 //
 struct kernel_mode_time : public base<kernel_mode_time, int64_t>
@@ -875,7 +875,7 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class current_peak_rss
+/// \struct current_peak_rss
 /// \brief
 /// this struct extracts the absolute value of high-water mark of the resident set size
 /// (RSS) at start and stop points. RSS is current amount of memory in RAM.

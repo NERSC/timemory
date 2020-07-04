@@ -67,7 +67,7 @@ if(NOT TIMEMORY_USE_SANITIZER)
     add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
 endif()
 
-add_interface_library(timemory-lto)
+add_interface_library(timemory-lto "Adds link-time-optimization flags")
 add_target_flag_if_avail(timemory-lto "-flto=thin")
 if(NOT cxx_timemory_lto_flto_thin)
     add_target_flag_if_avail(timemory-lto "-flto")
@@ -84,7 +84,8 @@ endif()
 #----------------------------------------------------------------------------------------#
 # print compilation timing reports (Clang compiler)
 #
-add_interface_library(timemory-compile-timing)
+add_interface_library(timemory-compile-timing
+    "Adds compiler flags which report compilation timing metrics")
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_target_flag_if_avail(timemory-compile-timing "-ftime-trace")
     if(NOT cxx_timemory_compile_timing_ftime_trace)
@@ -105,7 +106,8 @@ endif()
 #----------------------------------------------------------------------------------------#
 # use xray instrumentation
 #
-add_interface_library(timemory-xray)
+add_interface_library(timemory-xray
+    "Adds compiler flags to enable xray-instrumentation (Clang only)")
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_target_flag_if_avail(timemory-xray "-fxray-instrument" "-fxray-instruction-threshold=1")
     if(NOT cxx_timemory_xray_fxray_instrument)
@@ -118,7 +120,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 # developer build flags
 #
-add_interface_library(timemory-develop-options)
+add_interface_library(timemory-develop-options "Adds developer compiler flags")
 if(TIMEMORY_BUILD_DEVELOPER)
     add_target_flag_if_avail(timemory-develop-options
         "-Wshadow" "-Wextra" "-Wpedantic" "-Werror")
@@ -127,9 +129,12 @@ endif()
 #----------------------------------------------------------------------------------------#
 # visibility build flags
 #
-add_interface_library(timemory-default-visibility)
-add_interface_library(timemory-protected-visibility)
-add_interface_library(timemory-hidden-visibility)
+add_interface_library(timemory-default-visibility
+    "Adds -fvisibility=default compiler flag")
+add_interface_library(timemory-protected-visibility
+    "Adds -fvisibility=protected compiler flag")
+add_interface_library(timemory-hidden-visibility
+    "Adds -fvisibility=hidden compiler flag")
 
 add_target_flag_if_avail(timemory-default-visibility "-fvisibility=default")
 add_target_flag_if_avail(timemory-protected-visibility "-fvisibility=protected")
@@ -158,8 +163,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 # architecture optimizations
 #
-add_interface_library(timemory-vector)
-add_interface_library(timemory-arch)
+add_interface_library(timemory-vector
+    "Adds pre-processor definition of the max vectorization width in bytes")
+add_interface_library(timemory-arch
+    "Adds architecture-specific compiler flags")
 target_link_libraries(timemory-compile-options INTERFACE timemory-vector)
 
 set(VECTOR_DEFINITION               TIMEMORY_VEC)
@@ -177,14 +184,16 @@ set(SANITIZER_TYPES address memory thread leak undefined unreachable null bounds
 set_property(CACHE SANITIZER_TYPE PROPERTY STRINGS "${SANITIZER_TYPES}")
 
 foreach(_TYPE ${SANITIZER_TYPES})
-    add_interface_library(timemory-${_TYPE}-sanitizer)
+    add_interface_library(timemory-${_TYPE}-sanitizer
+        "Adds compiler flags to enable ${_TYPE} sanitizer (-fsanitizer=${_TYPE})")
     set(_FLAGS "-fno-optimize-sibling-calls" "-fno-omit-frame-pointer"
         "-fno-inline-functions" "-fsanitize=${_TYPE}")
     add_target_flag(timemory-${_TYPE}-sanitizer ${_FLAGS})
     set_property(TARGET timemory-${_TYPE}-sanitizer PROPERTY INTERFACE_LINK_OPTIONS ${_FLAGS})
 endforeach()
 
-add_interface_library(timemory-sanitizer)
+add_interface_library(timemory-sanitizer
+    "Adds compiler flags to enable ${SANITIZER_TYPE} sanitizer (-fsanitizer=${SANITIZER_TYPE})")
 if(TIMEMORY_USE_SANITIZER)
     foreach(_TYPE ${SANITIZER_TYPE})
         if(TARGET timemory-${_TYPE}-sanitizer)

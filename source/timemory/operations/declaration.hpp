@@ -80,7 +80,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class storage_initializer
+/// \struct storage_initializer
 /// \brief This provides an object that can initialize the storage opaquely, e.g.
 /// \code
 /// namespace
@@ -112,7 +112,7 @@ struct non_vexing
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class common_utils
+/// \struct common_utils
 /// \brief common string manipulation utilities
 ///
 //

@@ -47,7 +47,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::plus
+/// \struct operation::plus
 /// \brief Define addition operations
 ///
 //
@@ -115,7 +115,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::minus
+/// \struct operation::minus
 /// \brief Define subtraction operations
 ///
 //
@@ -172,7 +172,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::multipy
+/// \struct operation::multipy
 /// \brief This operation class is used for multiplication of a component
 ///
 //
@@ -215,7 +215,7 @@ struct multiply
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::divide
+/// \struct operation::divide
 /// \brief This operation class is used for division of a component
 ///
 //
