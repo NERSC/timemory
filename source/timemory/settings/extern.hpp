@@ -30,6 +30,4 @@
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
 
-#if !defined(_WINDOWS)
 TIMEMORY_SETTINGS_EXTERN_TEMPLATE(api::native_tag)
-#endif
