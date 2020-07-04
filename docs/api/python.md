@@ -264,12 +264,10 @@ CLASSES
      |  Methods defined here:
      |
      |  __add__(...)
-     |      __add__(self: timemory.libpytimemory.component.WrittenBytes,
-arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
+     |      __add__(self: timemory.libpytimemory.component.WrittenBytes, arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
      |
      |  __iadd__(...)
-     |      __iadd__(self: timemory.libpytimemory.component.WrittenBytes,
-arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
+     |      __iadd__(self: timemory.libpytimemory.component.WrittenBytes, arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
      |
      |  __init__(...)
      |      __init__(*args, **kwargs)
@@ -284,8 +282,7 @@ arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.c
      |      Creates component with a label
      |
      |  __isub__(...)
-     |      __isub__(self: timemory.libpytimemory.component.WrittenBytes,
-arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
+     |      __isub__(self: timemory.libpytimemory.component.WrittenBytes, arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
      |
      |      Subtract rhs from lhs
      |
@@ -295,8 +292,7 @@ arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.c
      |      String representation
      |
      |  __sub__(...)
-     |      __sub__(self: timemory.libpytimemory.component.WrittenBytes,
-arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
+     |      __sub__(self: timemory.libpytimemory.component.WrittenBytes, arg0: timemory.libpytimemory.component.WrittenBytes) -> timemory.libpytimemory.component.WrittenBytes
      |
      |  get(...)
      |      get(self: timemory.libpytimemory.component.WrittenBytes) -> List[float[2]]
