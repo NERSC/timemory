@@ -228,7 +228,7 @@ public:
     {}
 
     user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
-                const typeid_sec_t& _typeids, scope::config _scope = scope::get_default())
+                const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
     , m_typeids()
@@ -442,7 +442,7 @@ protected:
 protected:
     static bool contains(size_t _val, const typeid_vec_t& _targ)
     {
-        for(const auto& itr : _targ)
+        for(const auto& _itr : _targ)
             if(_itr == _val)
                 return true;
         return false;

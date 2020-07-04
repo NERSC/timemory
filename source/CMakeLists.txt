@@ -75,9 +75,6 @@ set(CXX_LIBRARY_SOURCES     ${cxx_sources} ${timemory_glob_headers} ${cereal_hea
 # build the C++ libraries
 #
 set(_USE_EXTERN TIMEMORY_USE_EXTERN)
-if(WIN32)
-    set(_USE_EXTERN )
-endif()
 
 set(_ARCH_LIBRARY )
 if(TIMEMORY_USE_ARCH)

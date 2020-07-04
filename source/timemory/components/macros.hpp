@@ -348,59 +348,54 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#    if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#        define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                                            \
-            namespace tim                                                                                             \
-            {                                                                                                         \
-            extern template class TIMEMORY_COMPONENT_DLL                                                              \
-                impl::storage<TYPE, implements_storage<TYPE>::value>;                                                 \
-            extern template class TIMEMORY_COMPONENT_DLL                                                              \
-                                                         storage<TYPE, typename TYPE::value_type>;                    \
-            extern template class TIMEMORY_COMPONENT_DLL singleton<                                                   \
-                impl::storage<TYPE, implements_storage<TYPE>::value>,                                                 \
-                std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                                 \
-                                impl::storage_deleter<impl::storage<                                                  \
-                                    TYPE, implements_storage<TYPE>::value>>>>;                                        \
-            extern template TIMEMORY_COMPONENT_DLL                                                                    \
-                                                   storage_singleton<storage<TYPE, typename TYPE::value_type>>*       \
-                                                   get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
-            extern template TIMEMORY_COMPONENT_DLL storage_initializer                                                \
-                                                   storage_initializer::get<TYPE>();                                  \
-            }
-#    endif
+#if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE, ...)                                                            \
+        namespace tim                                                                                             \
+        {                                                                                                         \
+        extern template class TIMEMORY_COMPONENT_DLL                                                              \
+            impl::storage<TYPE, implements_storage<TYPE>::value>;                                                 \
+        extern template class TIMEMORY_COMPONENT_DLL                                                              \
+                                                     storage<TYPE, typename TYPE::value_type>;                    \
+        extern template class TIMEMORY_COMPONENT_DLL singleton<                                                   \
+            impl::storage<TYPE, implements_storage<TYPE>::value>,                                                 \
+            std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                                 \
+                            impl::storage_deleter<                                                                \
+                                impl::storage<TYPE, implements_storage<TYPE>::value>>>>;                          \
+        extern template TIMEMORY_COMPONENT_DLL                                                                    \
+                                               storage_singleton<storage<TYPE, typename TYPE::value_type>>*       \
+                                               get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
+        extern template TIMEMORY_COMPONENT_DLL storage_initializer                                                \
+                                               storage_initializer::get<TYPE>();                                  \
+        }
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#    if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
-#        define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                                                 \
-            namespace tim                                                                                      \
-            {                                                                                                  \
-            template class TIMEMORY_COMPONENT_DLL                                                              \
-                impl::storage<TYPE, implements_storage<TYPE>::value>;                                          \
-            template class TIMEMORY_COMPONENT_DLL                                                              \
-                                                  storage<TYPE, typename TYPE::value_type>;                    \
-            template class TIMEMORY_COMPONENT_DLL singleton<                                                   \
-                impl::storage<TYPE, implements_storage<TYPE>::value>,                                          \
-                std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                          \
-                                impl::storage_deleter<impl::storage<                                           \
-                                    TYPE, implements_storage<TYPE>::value>>>>;                                 \
-            template TIMEMORY_COMPONENT_DLL                                                                    \
-                                            storage_singleton<storage<TYPE, typename TYPE::value_type>>*       \
-                                            get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
-            template TIMEMORY_COMPONENT_DLL storage_initializer                                                \
-                                            storage_initializer::get<TYPE>();                                  \
-            }                                                                                                  \
-            namespace                                                                                          \
-            {                                                                                                  \
-            using namespace tim::component;                                                                    \
-            namespace component = tim::component;                                                              \
-            tim::storage_initializer storage_initializer__##VAR =                                              \
-                tim::storage_initializer::get<TYPE>();                                                         \
-            }
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
+#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE, VAR)                                                 \
+        namespace tim                                                                                      \
+        {                                                                                                  \
+        template class TIMEMORY_COMPONENT_DLL                                                              \
+                                              impl::storage<TYPE, implements_storage<TYPE>::value>;        \
+        template class TIMEMORY_COMPONENT_DLL storage<TYPE, typename TYPE::value_type>;                    \
+        template class TIMEMORY_COMPONENT_DLL singleton<                                                   \
+            impl::storage<TYPE, implements_storage<TYPE>::value>,                                          \
+            std::unique_ptr<impl::storage<TYPE, implements_storage<TYPE>::value>,                          \
+                            impl::storage_deleter<                                                         \
+                                impl::storage<TYPE, implements_storage<TYPE>::value>>>>;                   \
+        template TIMEMORY_COMPONENT_DLL                                                                    \
+                                        storage_singleton<storage<TYPE, typename TYPE::value_type>>*       \
+                                        get_storage_singleton<storage<TYPE, typename TYPE::value_type>>(); \
+        template TIMEMORY_COMPONENT_DLL storage_initializer                                                \
+                                        storage_initializer::get<TYPE>();                                  \
+        }                                                                                                  \
+        namespace                                                                                          \
+        {                                                                                                  \
+        using namespace tim::component;                                                                    \
+        namespace component = tim::component;                                                              \
+        tim::storage_initializer storage_initializer__##VAR =                                              \
+            tim::storage_initializer::get<TYPE>();                                                         \
+        }
 #endif
 
 //======================================================================================//
@@ -409,71 +404,62 @@
 //
 //======================================================================================//
 //
-#    if !defined(TIMEMORY_DECLARE_EXTERN_OPERATIONS)
-#        define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                \
-            namespace tim                                                                   \
-            {                                                                               \
-            namespace operation                                                             \
-            {                                                                               \
-            extern template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;     \
-            extern template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;       \
-            extern template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;            \
-            extern template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;              \
-            extern template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;            \
-            extern template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;     \
-            extern template struct TIMEMORY_COMPONENT_DLL                                   \
-                                                          print_statistics<COMPONENT_NAME>; \
-            extern template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;    \
-            extern template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;    \
-            extern template struct TIMEMORY_COMPONENT_DLL echo_measurement<                 \
-                COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                \
-            extern template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;             \
-            extern template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;         \
-            extern template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;           \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::print<                  \
-                COMPONENT_NAME,                                                             \
-                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;                  \
-            extern template struct TIMEMORY_COMPONENT_DLL finalize::merge<                  \
-                COMPONENT_NAME,                                                             \
-                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;                  \
-            }                                                                               \
-            }
-#    endif
+#if !defined(TIMEMORY_DECLARE_EXTERN_OPERATIONS)
+#    define TIMEMORY_DECLARE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)                 \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace operation                                                              \
+        {                                                                                \
+        extern template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;      \
+        extern template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;        \
+        extern template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;             \
+        extern template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;               \
+        extern template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;             \
+        extern template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;      \
+        extern template struct TIMEMORY_COMPONENT_DLL print_statistics<COMPONENT_NAME>;  \
+        extern template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;     \
+        extern template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;     \
+        extern template struct TIMEMORY_COMPONENT_DLL echo_measurement<                  \
+            COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
+        extern template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;              \
+        extern template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;          \
+        extern template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;            \
+        extern template struct TIMEMORY_COMPONENT_DLL finalize::print<                   \
+            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+        extern template struct TIMEMORY_COMPONENT_DLL finalize::merge<                   \
+            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+        }                                                                                \
+        }
+#endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#    if !defined(TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS)
-#        define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)         \
-            namespace tim                                                                \
-            {                                                                            \
-            namespace operation                                                          \
-            {                                                                            \
-            template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;         \
-            template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;           \
-            template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;                \
-            template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;                  \
-            template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;                \
-            template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;         \
-            template struct TIMEMORY_COMPONENT_DLL print_statistics<COMPONENT_NAME>;     \
-            template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;        \
-            template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;        \
-            template struct TIMEMORY_COMPONENT_DLL echo_measurement<                     \
-                COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;             \
-            template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;                 \
-            template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;             \
-            template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;               \
-            template struct TIMEMORY_COMPONENT_DLL finalize::print<                      \
-                COMPONENT_NAME,                                                          \
-                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;               \
-            template struct TIMEMORY_COMPONENT_DLL finalize::merge<                      \
-                COMPONENT_NAME,                                                          \
-                (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;               \
-            }                                                                            \
-            }
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-//
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS)
+#    define TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(COMPONENT_NAME, HAS_DATA)             \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace operation                                                              \
+        {                                                                                \
+        template struct TIMEMORY_COMPONENT_DLL init_storage<COMPONENT_NAME>;             \
+        template struct TIMEMORY_COMPONENT_DLL set_prefix<COMPONENT_NAME>;               \
+        template struct TIMEMORY_COMPONENT_DLL reset<COMPONENT_NAME>;                    \
+        template struct TIMEMORY_COMPONENT_DLL get<COMPONENT_NAME>;                      \
+        template struct TIMEMORY_COMPONENT_DLL print<COMPONENT_NAME>;                    \
+        template struct TIMEMORY_COMPONENT_DLL print_header<COMPONENT_NAME>;             \
+        template struct TIMEMORY_COMPONENT_DLL print_statistics<COMPONENT_NAME>;         \
+        template struct TIMEMORY_COMPONENT_DLL print_storage<COMPONENT_NAME>;            \
+        template struct TIMEMORY_COMPONENT_DLL serialization<COMPONENT_NAME>;            \
+        template struct TIMEMORY_COMPONENT_DLL echo_measurement<                         \
+            COMPONENT_NAME, trait::echo_enabled<COMPONENT_NAME>::value>;                 \
+        template struct TIMEMORY_COMPONENT_DLL copy<COMPONENT_NAME>;                     \
+        template struct TIMEMORY_COMPONENT_DLL assemble<COMPONENT_NAME>;                 \
+        template struct TIMEMORY_COMPONENT_DLL derive<COMPONENT_NAME>;                   \
+        template struct TIMEMORY_COMPONENT_DLL finalize::print<                          \
+            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+        template struct TIMEMORY_COMPONENT_DLL finalize::merge<                          \
+            COMPONENT_NAME, (HAS_DATA && trait::is_available<COMPONENT_NAME>::value)>;   \
+        }                                                                                \
+        }
 #endif
 
 //======================================================================================//
