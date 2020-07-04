@@ -98,17 +98,6 @@ public:
     using type             = convert_t<tuple_type, component_bundle<Tag>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    // used by component hybrid
-    static constexpr bool is_component_bundle = true;
-    static constexpr bool is_component_list   = false;
-    static constexpr bool is_component_tuple  = false;
-    static constexpr bool is_component_hybrid = false;
-    static constexpr bool is_component_type   = true;
-    static constexpr bool is_auto_bundle      = false;
-    static constexpr bool is_auto_list        = false;
-    static constexpr bool is_auto_tuple       = false;
-    static constexpr bool is_auto_hybrid      = false;
-    static constexpr bool is_auto_type        = false;
     static constexpr bool is_component        = false;
     static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
@@ -370,14 +359,14 @@ public:
     //  exact type available
     //
     template <typename U, typename T = decay_t<U>,
-              enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     T* get()
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
     }
 
     template <typename U, typename T = decay_t<U>,
-              enable_if_t<(is_one_of<T, data_type>::value), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     const T* get() const
     {
         return &(std::get<index_of<T, data_type>::value>(m_data));
@@ -387,14 +376,14 @@ public:
     //  type available with add_pointer
     //
     template <typename U, typename T = decay_t<U>,
-              enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
+              enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
     T* get()
     {
         return std::get<index_of<T*, data_type>::value>(m_data);
     }
 
     template <typename U, typename T = decay_t<U>,
-              enable_if_t<(is_one_of<T*, data_type>::value), int> = 0>
+              enable_if_t<is_one_of<T*, data_type>::value, int> = 0>
     const T* get() const
     {
         return std::get<index_of<T*, data_type>::value>(m_data);
@@ -405,8 +394,8 @@ public:
     //
     template <
         typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
-        enable_if_t<(!is_one_of<T, data_type>::value &&
-                     !is_one_of<T*, data_type>::value && is_one_of<R, data_type>::value),
+        enable_if_t<!is_one_of<T, data_type>::value && !is_one_of<T*, data_type>::value &&
+                        is_one_of<R, data_type>::value,
                     int> = 0>
     T* get()
     {
@@ -415,8 +404,8 @@ public:
 
     template <
         typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
-        enable_if_t<(!is_one_of<T, data_type>::value &&
-                     !is_one_of<T*, data_type>::value && is_one_of<R, data_type>::value),
+        enable_if_t<!is_one_of<T, data_type>::value && !is_one_of<T*, data_type>::value &&
+                        is_one_of<R, data_type>::value,
                     int> = 0>
     const T* get() const
     {
@@ -428,8 +417,8 @@ public:
     //
     template <
         typename U, typename T = decay_t<U>, typename R = remove_pointer_t<T>,
-        enable_if_t<(!is_one_of<T, data_type>::value &&
-                     !is_one_of<T*, data_type>::value && !is_one_of<R, data_type>::value),
+        enable_if_t<!is_one_of<T, data_type>::value && !is_one_of<T*, data_type>::value &&
+                        !is_one_of<R, data_type>::value,
                     int> = 0>
     T* get() const
     {
@@ -449,10 +438,9 @@ public:
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
     /// with older compilers
-    template <
-        typename U, typename T = std::remove_pointer_t<decay_t<U>>,
-        enable_if_t<(trait::is_available<T>::value && is_one_of<T, data_type>::value),
-                    int> = 0>
+    template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
+              enable_if_t<trait::is_available<T>::value && is_one_of<T, data_type>::value,
+                          int> = 0>
     auto get_component()
     {
         return get<T>();
@@ -463,9 +451,9 @@ public:
     ///
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
-              enable_if_t<(trait::is_available<T>::value == true &&
-                           is_one_of<T*, data_type>::value == true &&
-                           is_one_of<T, data_type>::value == false),
+              enable_if_t<trait::is_available<T>::value == true &&
+                              is_one_of<T*, data_type>::value == true &&
+                              is_one_of<T, data_type>::value == false,
                           char> = 0>
     void init(Args&&... _args)
     {
@@ -497,9 +485,9 @@ public:
     //
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
-              enable_if_t<(trait::is_available<T>::value == true &&
-                           is_one_of<T*, data_type>::value == false &&
-                           is_one_of<T, data_type>::value == true),
+              enable_if_t<trait::is_available<T>::value == true &&
+                              is_one_of<T*, data_type>::value == false &&
+                              is_one_of<T, data_type>::value == true,
                           char> = 0>
     void init(Args&&... _args)
     {
@@ -511,10 +499,10 @@ public:
 
     template <typename U, typename T = std::remove_pointer_t<decay_t<U>>,
               typename... Args,
-              enable_if_t<(trait::is_available<T>::value == true &&
-                           is_one_of<T, data_type>::value == false &&
-                           is_one_of<T*, data_type>::value == false &&
-                           has_user_bundle_v == true),
+              enable_if_t<trait::is_available<T>::value == true &&
+                              is_one_of<T, data_type>::value == false &&
+                              is_one_of<T*, data_type>::value == false &&
+                              has_user_bundle_v == true,
                           int> = 0>
     void init(Args&&...)
     {
@@ -531,10 +519,10 @@ public:
     //----------------------------------------------------------------------------------//
 
     template <typename T, typename... Args,
-              enable_if_t<(trait::is_available<T>::value == false ||
-                           (is_one_of<T*, data_type>::value == false &&
-                            is_one_of<T, data_type>::value == false &&
-                            has_user_bundle_v == false)),
+              enable_if_t<trait::is_available<T>::value == false ||
+                              (is_one_of<T*, data_type>::value == false &&
+                               is_one_of<T, data_type>::value == false &&
+                               has_user_bundle_v == false),
                           int> = 0>
     void init(Args&&...)
     {}
@@ -552,7 +540,7 @@ public:
     /// apply a member function to a type that is in variadic list AND is available
     ///
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == true), int> = 0>
+              enable_if_t<is_one_of<T, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto&& _obj = get<T>();
@@ -560,7 +548,7 @@ public:
     }
 
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T*, data_type>::value == true), int> = 0>
+              enable_if_t<is_one_of<T*, data_type>::value == true, int> = 0>
     void type_apply(Func&& _func, Args&&... _args)
     {
         auto&& _obj = get<T*>();
@@ -568,8 +556,8 @@ public:
     }
 
     template <typename T, typename Func, typename... Args,
-              enable_if_t<(is_one_of<T, data_type>::value == false &&
-                           is_one_of<T*, data_type>::value == false),
+              enable_if_t<is_one_of<T, data_type>::value == false &&
+                              is_one_of<T*, data_type>::value == false,
                           int> = 0>
     void type_apply(Func&&, Args&&...)
     {}

@@ -18,13 +18,12 @@ where `Size` is the maximum number of external functions to be wrapped,
 `Diff` is an optional template parameter for differentiating `gotcha` components with equivalent `Size` and `Tools`
 parameters but wrap different functions. Note: the `Tools` type cannot contain other `gotcha` components.
 
-### Use Cases
+## Use Cases
 
 The `gotcha` component in timemory can provide either of the following functionalities:
 
 1. Scoped instrumentation around external dynamically-linked function calls
 2. Wholesale replacement of external dynamically-linked function calls
-
 
 ## Traditional GOTCHA in C
 

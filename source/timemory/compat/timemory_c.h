@@ -24,7 +24,7 @@
 
 /** \file timemory_c.h
  * \headerfile timemory_c.h "timemory/timemory_c.h"
- * This header file provides the C interface to TiMemory
+ * This header file provides the C interface to timemory
  *
  */
 

@@ -42,7 +42,7 @@ namespace tim
 {
 namespace data
 {
-/// \class data::handler<V, Tag>
+/// \struct data::handler<V, Tag>
 /// \brief This class is used to provide the implementation for tracking data
 /// via the data_tracker component. It is written such that it can be
 /// defined for a specific data type (e.g. int) with a tag (e.g. ConvergenceIterations)

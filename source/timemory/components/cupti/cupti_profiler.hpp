@@ -127,7 +127,7 @@ namespace component
 //          CUPTI Profiler component
 //
 //--------------------------------------------------------------------------------------//
-/// \class cupti_profiler
+/// \struct cupti_profiler
 /// \brief CUPTI profiler component
 ///
 struct cupti_profiler : public base<cupti_profiler, std::map<std::string, double>>

@@ -47,7 +47,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::get
+/// \struct operation::get
 ///
 /// \brief The purpose of this operation class is to provide a non-template hook to get
 /// the object itself
@@ -92,7 +92,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::get_data
+/// \struct operation::get_data
 /// \brief The purpose of this operation class is to combine the output types from the
 /// "get()" member function for multiple components -- this is specifically used in the
 /// Python interface to provide direct access to the results
@@ -163,7 +163,7 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::get_data
+/// \struct operation::get_data
 /// \brief The purpose of this operation class is to combine the output types from the
 /// "get()" member function for multiple components -- this is specifically used in the
 /// Python interface to provide direct access to the results

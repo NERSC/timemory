@@ -47,7 +47,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::compose
+/// \struct operation::compose
 /// \brief The purpose of this operation class is operating on two components to compose
 /// a result, e.g. use system-clock and user-clock to get a cpu-clock
 ///

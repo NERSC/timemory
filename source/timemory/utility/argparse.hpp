@@ -252,7 +252,7 @@ struct is_container
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class argument_vector
+/// \struct argument_vector
 /// \brief This class exists to simplify creating argument arrays compatible with execv*
 /// routines and MPI_Comm_spawn/MPI_Comm_spawn_multiple
 ///

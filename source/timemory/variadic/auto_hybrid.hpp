@@ -71,15 +71,6 @@ public:
         convert_t<typename component_type::type, auto_hybrid<type_list<>, type_list<>>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    // used by gotcha
-    static constexpr bool is_component_list   = false;
-    static constexpr bool is_component_tuple  = false;
-    static constexpr bool is_component_hybrid = false;
-    static constexpr bool is_component_type   = false;
-    static constexpr bool is_auto_list        = false;
-    static constexpr bool is_auto_tuple       = false;
-    static constexpr bool is_auto_hybrid      = true;
-    static constexpr bool is_auto_type        = true;
     static constexpr bool is_component        = false;
     static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
     static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;

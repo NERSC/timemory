@@ -56,7 +56,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::print
+/// \struct operation::print
 /// \brief print routines for individual components
 //
 //--------------------------------------------------------------------------------------//

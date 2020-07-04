@@ -47,7 +47,7 @@ namespace operation
 //--------------------------------------------------------------------------------------//
 //
 ///
-/// \class operation::echo_measurement
+/// \struct operation::echo_measurement
 /// \brief This operation class echoes DartMeasurements for a CDash dashboard
 ///
 //

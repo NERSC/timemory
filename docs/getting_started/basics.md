@@ -4,7 +4,7 @@
 
 Dynamic instrumentation (instrumentation without any modifications to the source code) is only
 available on Linux and requires the Dyninst package. It is recommended to install Dyninst
-via Spack. For further information, please see documentation on [timemory-run](../tools/timemory-run.md).
+via Spack. For further information, please see documentation on [timemory-run](../tools/timemory-run/README.md).
 
 ## Manual Instrumentation
 

@@ -1,6 +1,6 @@
 # Features
 
-## Cross-Language Support: C, C++, CUDA, and Python
+## Cross-Language Support
 
 It is very common for Python projects to implement expensive routines in C or C++. Implementing a timemory auto-tuple in any combination
 of these languages will produce one combined report for all the languages (provided each language links to the same library).
@@ -14,45 +14,15 @@ new thread starts recording a component. The state of the singleton on the maste
 thread is destroyed, the thread-local call-graph is merged back into the master call-graph. Only during the
 one-time merge into the master call-graph is a synchronization lock (mutex) utilized.
 
-## MPI
+## Distributed Memory Parallelism
 
-If a project uses MPI, Timemory will combined the reports from all the MPI ranks when a report is requested.
+If a project uses MPI or UPC++, timemory components will automatically provide support for combining this data
+into a single output, support per-rank output, or.
 
-## PAPI
+## Hardware Counters
 
-PAPI counters are available as a component in the same way timing and rusage components are available. If timemory
-is not compiled with PAPI, it is safe to keep their declaration in the code and their output will be suppressed.
-
-There are two components for PAPI counters detailed [here](docs:components/papi.md).
-
-Example:
-
-```c++
-using papi_tuple_t = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
-using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
-                                       peak_rss, page_rss, papi_tuple_t>;
-
-void some_function()
-{
-    TIMEMORY_MARKER(auto_tuple_t, "");
-    // ...
-}
-```
-
-## CUDA
-
-At this stage, timemory implements a `cudaEvent_t` that will record the elapsed time between
-two points in the stream pipeline execution. The CUDA documentation for this component
-(`tim::component::cuda_event`) can be found
-[here](https://devblogs.nvidia.com/how-implement-performance-metrics-cuda-cc/)
-and should be constructed on a per-stream basis:
-
-```c++
-tim::component::cuda_event evt(stream);
-saxpy<<<ngrid, block, 0, stream>>>(N, 1.0f, _dx, _dy);
-```
-
-Support for CUPTI (CUDA hardware counters) is in development.
+CPU hardware counters are available via PAPI components.
+GPU hardware counters are available via the `cupti_counters` component.
 
 ## Plot Generation in Python
 

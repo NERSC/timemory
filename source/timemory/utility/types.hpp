@@ -122,7 +122,7 @@ using identity_t = typename identity<T>::type;
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class type_list
+/// \struct type_list
 /// \brief lightweight tuple-alternative for meta-programming logic
 template <typename... Tp>
 struct type_list
@@ -156,7 +156,7 @@ namespace crtp
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class tim::crtp::base
+/// \struct tim::crtp::base
 /// \brief a generic type for prioritizing a function call to the base class over
 /// derived functions, e.g. void start(crtp::base, Args&&... args) { start(args...); }
 struct base
@@ -173,7 +173,7 @@ namespace mpl
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class tim::mpl::lightweight
+/// \struct tim::mpl::lightweight
 /// \brief a generic type for indicating that function call or constructor should be
 /// as lightweight as possible.
 struct lightweight
@@ -196,21 +196,21 @@ namespace scope
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class flat
+/// \struct flat
 /// \brief Dummy struct to designates flat (no hierarchy) storage
 struct flat : std::integral_constant<int, 0>
 {};
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class timeline
+/// \struct timeline
 /// \brief Dummy struct to designates timeline (hierarchical, non-duplicated) storage
 struct timeline : std::integral_constant<int, 1>
 {};
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class tree
+/// \struct tree
 /// \brief Dummy struct to designates tree (hierarchical) storage
 struct tree : std::integral_constant<int, 2>
 {};
@@ -458,7 +458,7 @@ operator+(config _lhs, config _rhs)
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class tim::scope::destructor
+/// \struct tim::scope::destructor
 /// \brief provides an object which can be returned from functions that will execute
 /// the lambda provided during construction when it is destroyed
 ///
@@ -507,7 +507,7 @@ namespace lifetime
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class lifetime::scoped
+/// \struct lifetime::scoped
 /// \brief Dummy struct for meta-programming to designate that a component activates
 /// it's features at the first start() invocation and deactivates it's features when
 /// all instances that called start() have called stop(). Thus, the component's
@@ -519,7 +519,7 @@ struct scoped
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class lifetime::persistent
+/// \struct lifetime::persistent
 /// \brief Dummy struct for meta-programming to designate that a component activates its
 /// features in {global,thread}_init and deactivates it's features in
 /// {global,thead}_finalize
@@ -538,7 +538,7 @@ namespace audit
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class incoming
+/// \struct incoming
 /// \brief Used by component audit member function to designate the
 /// parameters being passed are incoming (e.g. before a gotcha wrappee is invoked)
 ///
@@ -547,7 +547,7 @@ struct incoming
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \class outgoing
+/// \struct outgoing
 /// \brief Used by component audit member function to designate the
 /// parameters being passed are outgoing (e.g. the return value from a gotcha wrappee)
 ///

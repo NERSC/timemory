@@ -366,10 +366,12 @@ ENDFUNCTION()
 # macro to add an interface lib
 #
 MACRO(ADD_INTERFACE_LIBRARY _TARGET)
-    add_library(${_TARGET} INTERFACE ${ARGN})
+    add_library(${_TARGET} INTERFACE)
     add_library(${PROJECT_NAME}::${_TARGET} ALIAS ${_TARGET})
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
     add_enabled_interface(${_TARGET})
+    set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
+        "${PROJECT_NAME}::${_TARGET}` | ${ARGN} |")
 ENDMACRO()
 
 
@@ -772,7 +774,9 @@ FUNCTION(ADD_FEATURE _var _description)
   set(EXTRA_DESC "")
   foreach(currentArg ${ARGN})
       if(NOT "${currentArg}" STREQUAL "${_var}" AND
-         NOT "${currentArg}" STREQUAL "${_description}")
+         NOT "${currentArg}" STREQUAL "${_description}" AND
+         NOT "${currentArg}" STREQUAL "CMAKE_DEFINE" AND
+         NOT "${currentArg}" STREQUAL "DOC")
           set(EXTRA_DESC "${EXTA_DESC}${currentArg}")
       endif()
   endforeach()
@@ -782,6 +786,13 @@ FUNCTION(ADD_FEATURE _var _description)
 
   IF("CMAKE_DEFINE" IN_LIST ARGN)
       SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_DEFINES "${_var} @${_var}@")
+      IF(TIMEMORY_BUILD_DOCS)
+          SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_OPTIONS_DOC
+              "${_var}` | ${_description}${EXTRA_DESC} |")
+      ENDIF()
+  ELSEIF("DOC" IN_LIST ARGN AND TIMEMORY_BUILD_DOCS)
+      SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_OPTIONS_DOC
+          "${_var}` | ${_description}${EXTRA_DESC} |")
   ENDIF()
 ENDFUNCTION()
 
@@ -796,6 +807,10 @@ FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
         MARK_AS_ADVANCED(${_NAME})
     ELSE()
         ADD_FEATURE(${_NAME} "${_MESSAGE}")
+        IF(TIMEMORY_BUILD_DOCS)
+            SET_PROPERTY(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_OPTIONS_DOC
+                "${_NAME}` | ${_MESSAGE} |")
+        ENDIF()
     ENDIF()
     IF("ADVANCED" IN_LIST ARGN)
         MARK_AS_ADVANCED(${_NAME})
