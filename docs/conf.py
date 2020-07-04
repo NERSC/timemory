@@ -30,9 +30,12 @@ sys.path.insert(0, os.path.abspath('..'))
 def install(package):
     sp.call([sys.executable, "-m", "pip", "install", package])
 
+
+# Check if we're running on Read the Docs' servers
+read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+
+
 # -- Project information -----------------------------------------------------
-
-
 project = 'timemory'
 copyright = '2020,  The Regents of the University of California'
 author = 'Jonathan R. Madsen'
@@ -45,7 +48,8 @@ _docdir = os.path.realpath(os.getcwd())
 _srcdir = os.path.realpath(os.path.join(os.getcwd(), ".."))
 _bindir = os.path.realpath(os.path.join(os.getcwd(), "build-timemory"))
 _doxbin = os.path.realpath(os.path.join(_bindir, "doc"))
-_doxdir = os.path.realpath(os.path.join(_docdir, "_static", "doxygen-docs"))
+_doxdir = os.path.realpath(os.path.join(
+    _docdir, "_build", "html", "doxygen-docs"))
 _xmldir = os.path.realpath(os.path.join(_docdir, "doxygen-xml"))
 _sitedir = os.path.realpath(os.path.join(os.getcwd(), "..", "site"))
 
