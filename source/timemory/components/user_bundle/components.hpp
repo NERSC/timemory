@@ -183,6 +183,7 @@ public:
     static void global_init(storage_type*) TIMEMORY_VISIBILITY("default");
 
     using opaque_array_t = std::vector<opaque>;
+    using typeid_vec_t   = std::vector<size_t>;
     using typeid_set_t   = std::set<size_t>;
 
     static size_t bundle_size() { return get_data().size(); }
@@ -219,12 +220,24 @@ public:
     }
 
     user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
-                const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
+                const typeid_vec_t& _typeids, scope::config _scope = scope::get_default())
     : m_scope(_scope)
     , m_prefix(_prefix)
     , m_typeids(_typeids)
     , m_bundle(_bundle_vec)
     {}
+
+    user_bundle(const string_t& _prefix, const opaque_array_t& _bundle_vec,
+                const typeid_sec_t& _typeids, scope::config _scope = scope::get_default())
+    : m_scope(_scope)
+    , m_prefix(_prefix)
+    , m_typeids()
+    , m_bundle(_bundle_vec)
+    {
+        m_typeids.reserve(_typeids.size());
+        for(const auto& itr : _typeids)
+            m_typeids.emplace_back(itr);
+    }
 
     ~user_bundle()
     {
@@ -272,7 +285,7 @@ public:
 
 public:
     //  Configure the tool for a specific component
-    static void configure(opaque&& obj, typeid_set_t&& _typeids)
+    static void configure(opaque&& obj, std::set<size_t>&& _typeids)
     {
         if(obj)
         {
@@ -280,7 +293,7 @@ public:
             size_t sum = 0;
             for(auto&& itr : _typeids)
             {
-                if(itr > 0 && get_typeids().count(itr) > 0)
+                if(itr > 0 && !contains(itr, get_typeids()))
                 {
                     if(settings::verbose() > 1)
                         PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
@@ -288,7 +301,7 @@ public:
                 }
                 sum += itr;
                 if(itr > 0)
-                    get_typeids().insert(std::move(itr));
+                    get_typeids().emplace_back(std::move(itr));
             }
             if(sum == 0)
             {
@@ -399,10 +412,10 @@ public:
             size_t sum = 0;
             for(auto&& itr : _typeids)
             {
-                if(itr > 0 && m_typeids.count(itr) > 0)
+                if(itr > 0 && !contains(itr, m_typeids))
                     return;
                 sum += itr;
-                m_typeids.insert(std::move(itr));
+                m_typeids.emplace_back(std::move(itr));
             }
             if(sum == 0)
                 return;
@@ -423,15 +436,24 @@ public:
 protected:
     scope::config  m_scope   = scope::get_default();
     string_t       m_prefix  = "";
-    typeid_set_t   m_typeids = get_typeids();
+    typeid_vec_t   m_typeids = get_typeids();
     opaque_array_t m_bundle  = get_data();
+
+protected:
+    static bool contains(size_t _val, const typeid_vec_t& _targ)
+    {
+        for(const auto& itr : _targ)
+            if(_itr == _val)
+                return true;
+        return false;
+    }
 
 private:
     struct persistent_data
     {
         mutex_t        lock;
         opaque_array_t data    = {};
-        typeid_set_t   typeids = {};
+        typeid_vec_t   typeids = {};
     };
 
     //----------------------------------------------------------------------------------//
@@ -448,7 +470,7 @@ public:
     //----------------------------------------------------------------------------------//
     //  The configuration strings
     //
-    static typeid_set_t& get_typeids() { return get_persistent_data().typeids; }
+    static typeid_vec_t& get_typeids() { return get_persistent_data().typeids; }
 
     //----------------------------------------------------------------------------------//
     //  Get lock
