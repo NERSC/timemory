@@ -115,7 +115,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
 
     py::module _trace = tim.def_submodule(
-        "region", "C/C++/Fortran-compatible library functions (subject to throttling)");
+        "trace", "C/C++/Fortran-compatible library functions (subject to throttling)");
 
     _trace.def("init", &timemory_trace_init, "Initialize Tracing",
                py::arg("args") = "wall_clock", py::arg("read_command_line") = false,

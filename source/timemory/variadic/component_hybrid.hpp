@@ -89,7 +89,7 @@ public:
     using auto_type      = auto_hybrid<tuple_t, list_t>;
     using type = component_hybrid<typename tuple_t::type, typename list_t::type>;
 
-    static constexpr bool is_component        = false;
+    static constexpr bool is_component = false;
     static constexpr bool has_gotcha_v = (tuple_t::has_gotcha_v || list_t::has_gotcha_v);
     static constexpr bool has_user_bundle_v =
         (tuple_t::has_user_bundle_v || list_t::has_user_bundle_v);

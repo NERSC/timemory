@@ -71,9 +71,9 @@ public:
         convert_t<typename component_type::type, auto_hybrid<type_list<>, type_list<>>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component        = false;
-    static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
-    static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
+    static constexpr bool is_component      = false;
+    static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 
 public:
     //----------------------------------------------------------------------------------//

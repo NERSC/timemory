@@ -65,9 +65,20 @@ if(TIMEMORY_BUILD_PYTHON)
         INSTALL_RPATH_USE_LINK_PATH ON
         ${EXTRA_PROPERTIES})
 
+    set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME})
+    if(NOT IS_ABSOLUTE "${_PYLIB}")
+        set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
+    endif()
+    file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
+        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    # message(STATUS "RELATIVE PATH: ${LIB_RELPATH}")
+
     if(UNIX AND NOT APPLE)
         set_target_properties(libpytimemory PROPERTIES INSTALL_RPATH
-            "\$ORIGIN/../../..:\$ORIGIN/../../../timemory:\$ORIGIN:${CMAKE_INSTALL_RPATH}")
+            "\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/${LIB_RELPATH}/timemory:\$ORIGIN/../../..:\$ORIGIN/../../../timemory:\$ORIGIN:${CMAKE_INSTALL_RPATH}")
+    elseif(APPLE)
+        set_target_properties(libpytimemory PROPERTIES INSTALL_RPATH
+            "@loader_path/${LIB_RELPATH}:@loader_path/${LIB_RELPATH}/timemory:@loader_path/../../..:@loader_path/../../../timemory:@loader_path:${CMAKE_INSTALL_RPATH}")
     endif()
 
     install(TARGETS libpytimemory

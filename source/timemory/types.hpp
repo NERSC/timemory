@@ -137,8 +137,8 @@
 //
 #if !defined(TIMEMORY_FULL_TUPLE_TYPES)
 #    define TIMEMORY_FULL_TUPLE_TYPES                                                    \
-        component::user_tuple_bundle, component::wall_clock, component::system_clock, component::user_clock,           \
-            component::cpu_util, component::peak_rss
+        component::user_tuple_bundle, component::wall_clock, component::system_clock,    \
+            component::user_clock, component::cpu_util, component::peak_rss
 #endif
 //
 //--------------------------------------------------------------------------------------//

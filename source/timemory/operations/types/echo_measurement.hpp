@@ -186,9 +186,9 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// generate a measurement tag
     ///
-    template <typename Vt, typename... _Extra>
+    template <typename Vt, typename... ExtraT>
     static void generate_measurement(std::ostream& os, attributes_t attributes,
-                                     const std::vector<Vt, _Extra...>& value)
+                                     const std::vector<Vt, ExtraT...>& value)
     {
         auto _default_name = attributes["name"];
         int  i             = 0;
@@ -204,7 +204,7 @@ struct echo_measurement<Tp, true> : public common_utils
     //----------------------------------------------------------------------------------//
     /// generate a measurement tag
     ///
-    template <typename Lhs, typename Rhs, typename... _Extra>
+    template <typename Lhs, typename Rhs, typename... ExtraT>
     static void generate_measurement(std::ostream& os, attributes_t attributes,
                                      const std::pair<Lhs, Rhs>& value)
     {

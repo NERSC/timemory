@@ -95,9 +95,9 @@ public:
     using type             = convert_t<tuple_type, lightweight_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component         = false;
-    static constexpr bool has_gotcha_v         = bundle_type::has_gotcha_v;
-    static constexpr bool has_user_bundle_v    = bundle_type::has_user_bundle_v;
+    static constexpr bool is_component      = false;
+    static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
 public:
     //

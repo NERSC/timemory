@@ -103,9 +103,9 @@ public:
     using type             = convert_t<tuple_type, component_tuple<>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component        = false;
-    static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
-    static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
+    static constexpr bool is_component      = false;
+    static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
 public:
     //
@@ -171,9 +171,9 @@ public:
     //
     static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
     /// requests the components to output their storage
-    static void                  print_storage();
+    static void print_storage();
     /// requests the component initialize their storage
-    static void                  init_storage();
+    static void init_storage();
 
     //----------------------------------------------------------------------------------//
     // public member functions
@@ -207,7 +207,7 @@ public:
     template <typename... Args>
     auto get_labeled(Args&&...) const;
     /// returns a reference to the underlying tuple of components
-    data_type&       data();
+    data_type& data();
     /// returns a const reference to the underlying tuple of components
     const data_type& data() const;
 
@@ -534,13 +534,13 @@ public:
 
 public:
     /// returns the number of caliper measurements for the bundle
-    int64_t         laps() const { return bundle_type::laps(); }
+    int64_t laps() const { return bundle_type::laps(); }
     /// returns the key for the bundle
-    std::string     key() const { return bundle_type::key(); }
+    std::string key() const { return bundle_type::key(); }
     /// return the hash value of the key
-    uint64_t        hash() const { return bundle_type::hash(); }
+    uint64_t hash() const { return bundle_type::hash(); }
     /// changes the key/hash for the bundle
-    void            rekey(const string_t& _key) { bundle_type::rekey(_key); }
+    void rekey(const string_t& _key) { bundle_type::rekey(_key); }
     /// whether the components update their call-stack storage
     bool&           store() { return bundle_type::store(); }
     const bool&     store() const { return bundle_type::store(); }

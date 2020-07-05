@@ -435,13 +435,14 @@ def run_pyctest():
     #
     pypath = ":".join(["{}".format(pyct.BINARY_DIRECTORY),
                        os.environ.get("PYTHONPATH", "")])
-    test_env = ";".join(["CPUPROFILE_FREQUENCY=200",
+    base_env = ";".join(["CPUPROFILE_FREQUENCY=200",
                          "CPUPROFILE_REALTIME=1",
                          "CALI_CONFIG_PROFILE=runtime-report",
-                         "TIMEMORY_DART_OUTPUT=ON",
-                         "TIMEMORY_DART_COUNT=1",
                          "TIMEMORY_PLOT_OUTPUT=ON",
                          "PYTHONPATH={}".format(pypath)])
+    test_env = ";".join([base_env,
+                         "TIMEMORY_DART_OUTPUT=ON",
+                         "TIMEMORY_DART_COUNT=1"])
 
     if args.tools:
         pyct.test("timem-timemory-avail",
@@ -573,7 +574,7 @@ def run_pyctest():
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
-                   "ENVIRONMENT": test_env})
+                   "ENVIRONMENT": base_env})
 
         pyunittests = ["flat", "rusage", "throttle", "timeline", "timing"]
         for t in pyunittests:
@@ -583,7 +584,7 @@ def run_pyctest():
                       {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                        "LABELS": pyct.PROJECT_NAME,
                        "TIMEOUT": "300",
-                       "ENVIRONMENT": test_env})
+                       "ENVIRONMENT": base_env})
 
         pyct.test(construct_name("ex-python-bindings"),
                   construct_command(["mpirun", "-np", "2", sys.executable,
@@ -591,15 +592,16 @@ def run_pyctest():
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
-                   "ENVIRONMENT": test_env})
+                   "ENVIRONMENT": base_env})
 
-        pyct.test(construct_name("ex-python-caliper"),
-                  construct_command(
-                      [sys.executable, "./ex_python_caliper"], args),
-                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                   "LABELS": pyct.PROJECT_NAME,
-                   "TIMEOUT": "300",
-                   "ENVIRONMENT": test_env})
+        if args.caliper:
+            pyct.test(construct_name("ex-python-caliper"),
+                      construct_command(
+                [sys.executable, "./ex_python_caliper"], args),
+                {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                 "LABELS": pyct.PROJECT_NAME,
+                 "TIMEOUT": "300",
+                 "ENVIRONMENT": base_env})
 
         pyct.test(construct_name("ex-python-general"),
                   construct_command(
@@ -607,7 +609,7 @@ def run_pyctest():
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
-                   "ENVIRONMENT": test_env})
+                   "ENVIRONMENT": base_env})
 
         pyct.test(construct_name("ex-python-profiler"),
                   construct_command(
@@ -615,7 +617,7 @@ def run_pyctest():
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
-                   "ENVIRONMENT": test_env})
+                   "ENVIRONMENT": base_env})
 
         pyct.test(construct_name("ex-python-sample"),
                   construct_command(
@@ -623,14 +625,15 @@ def run_pyctest():
                   {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                    "LABELS": pyct.PROJECT_NAME,
                    "TIMEOUT": "300",
-                   "ENVIRONMENT": test_env})
+                   "ENVIRONMENT": base_env})
 
-    pyct.test(construct_name("ex-caliper"),
-              construct_command(["./ex_caliper"], args),
-              {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-               "LABELS": pyct.PROJECT_NAME,
-               "TIMEOUT": "300",
-               "ENVIRONMENT": test_env})
+    if args.caliper:
+        pyct.test(construct_name("ex-caliper"),
+                  construct_command(["./ex_caliper"], args),
+                  {"WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                   "LABELS": pyct.PROJECT_NAME,
+                   "TIMEOUT": "300",
+                   "ENVIRONMENT": test_env})
 
     pyct.test(construct_name("ex-c-minimal"),
               construct_command(["./ex_c_minimal"], args),
