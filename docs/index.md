@@ -13,5 +13,5 @@
    tools
    api
    components
-   doxygen-docs
+   doxygen
 ```
