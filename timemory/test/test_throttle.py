@@ -140,7 +140,7 @@ class TimemoryThrottleTests(unittest.TestCase):
             tim.trace.pop(self.shortDescription())
         tim.trace.pop("true")
 
-        self.assertTrue(tim.is_throttled(self.shortDescription()))
+        self.assertTrue(tim.trace.is_throttled(self.shortDescription()))
 
     # ---------------------------------------------------------------------------------- #
     # test expect_false
@@ -156,7 +156,7 @@ class TimemoryThrottleTests(unittest.TestCase):
             consume(v)
             tim.trace.pop(self.shortDescription())
 
-        self.assertFalse(tim.is_throttled(self.shortDescription()))
+        self.assertFalse(tim.trace.is_throttled(self.shortDescription()))
 
     # ---------------------------------------------------------------------------------- #
     def test_region_serial(self):
@@ -164,19 +164,19 @@ class TimemoryThrottleTests(unittest.TestCase):
         region_serial
         """
         def _run(name):
-            tim.push_region("rsthread")
+            tim.region.push("rsthread")
             n = 8 * settings.throttle_count
             for i in range(n):
-                tim.push_region(name)
-                tim.pop_region(name)
+                tim.region.push(name)
+                tim.region.pop(name)
 
-            tim.pop_region("rsthread")
+            tim.region.pop("rsthread")
 
         for i in range(self.nthreads):
             _run(self.shortDescription())
 
-        # print(tim.is_throttled(self.shortDescription()))
-        # print(tim.is_throttled("thread"))
+        # print(tim.trace.is_throttled(self.shortDescription()))
+        # print(tim.trace.is_throttled("thread"))
 
     # ---------------------------------------------------------------------------------- #
     # test region_multithreaded
@@ -185,13 +185,13 @@ class TimemoryThrottleTests(unittest.TestCase):
         region_multithreaded
         """
         def _run(name):
-            tim.push_region("rthread")
+            tim.region.push("rthread")
             n = 8 * settings.throttle_count
             for i in range(n):
-                tim.push_region(name)
-                tim.pop_region(name)
+                tim.region.push(name)
+                tim.region.pop(name)
 
-            tim.pop_region("rthread")
+            tim.region.pop("rthread")
 
         threads = []
 
@@ -231,7 +231,7 @@ class TimemoryThrottleTests(unittest.TestCase):
                     tim.trace.pop(name)
 
             tim.trace.pop("mthread")
-            is_throttled[idx] = tim.is_throttled(name)
+            is_throttled[idx] = tim.trace.is_throttled(name)
 
         # thread handles
         threads = []
@@ -266,8 +266,8 @@ class TimemoryThrottleTests(unittest.TestCase):
                 for i in range(n):
                     with marker(components=("wall_clock"), key=self.shortDescription()):
                         pass
-            self.assertFalse(tim.is_throttled("thread"))
-            self.assertFalse(tim.is_throttled(
+            self.assertFalse(tim.trace.is_throttled("thread"))
+            self.assertFalse(tim.trace.is_throttled(
                 self.shortDescription()))
 
         # run with auto tuple (wall_clock)
@@ -288,9 +288,9 @@ class TimemoryThrottleTests(unittest.TestCase):
                     with marker(components=("wall_clock"), key=self.shortDescription()):
                         pass
 
-            self.assertFalse(tim.is_throttled(
+            self.assertFalse(tim.trace.is_throttled(
                 self.shortDescription()))
-            self.assertFalse(tim.is_throttled("thread"))
+            self.assertFalse(tim.trace.is_throttled("thread"))
 
         # thread handles
         threads = []

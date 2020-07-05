@@ -113,7 +113,7 @@ else:
         from . import hardware_counters
         from .common import *
         from .libpytimemory import *
-
+        init = initialize
         __all__ = ['version_info',
                    'build_info',
                    'version',
@@ -159,40 +159,32 @@ else:
                    'has_mpi_support',
                    'set_rusage_children',
                    'set_rusage_self',
-                   'set_exit_action',
                    'timemory_init',
                    'timemory_finalize',
-                   'timemory_trace_init',
-                   'timemory_trace_finalize',
-                   'timemory_push_trace',
-                   'timemory_pop_trace',
-                   'timemory_push_region',
-                   'timemory_pop_region',
-                   'timemory_is_throttled',
                    'initialize',
                    'finalize',
-                   'mpi_init',
-                   'mpi_finalize',
+                   'init',
                    ]
 
-        # print("{}".format(sys.argv[:]))
         args = copy.copy(sys.argv)
-        while len(args) > 0 and len(args[0]) > 0 and args[0][0] == '-':
-            args.pop(0)
-        # print("{}".format(args))
+        try:
+            while len(args) > 0 and len(args[0]) > 0 and args[0][0] == '-':
+                args.pop(0)
+        except Exception as e:
+            args = []
+            pass
 
         if len(args) == 0:
             args.append("python")
 
         if os.environ.get("TIMEMORY_LIBRARY_CTOR", True):
-            timemory_init(args)
+            initialize(args)
 
         if os.environ.get("TIMEMORY_LIBRARY_DTOR", True):
-            atexit.register(timemory_finalize)
+            atexit.register(finalize)
 
         settings.python_exe = "{}".format(sys.executable)
-        settings.command_line = args
-
+        settings.command_line = sys.argv
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -204,29 +196,36 @@ else:
         from .common import *
 
         __all__ = ['version_info',
-                'build_info',
-                'version',
-                # --------------- modules ---------------#
-                'mpi_support',
-                'roofline',
-                'mpi',
-                # --------------- functions -------------#
-                'LINE',
-                'FUNC',
-                'FILE',
-                ]
+                   'build_info',
+                   'version',
+                   # --------------- modules ---------------#
+                   'mpi_support',
+                   'roofline',
+                   'mpi',
+                   # --------------- functions -------------#
+                   'LINE',
+                   'FUNC',
+                   'FILE',
+                   ]
 
-sys.modules[__name__].__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@, @TIMEMORY_VERSION_MINOR@, @TIMEMORY_VERSION_PATCH@))
-sys.modules[__name__].__setattr__("version", "@TIMEMORY_VERSION@")
-sys.modules[__name__].__setattr__("build_info", {"date": "@TIMEMORY_INSTALL_DATE@",
-                                                 "library_architecture": "@CMAKE_SYSTEM_PROCESSOR@",
-                                                 "system_name": "@CMAKE_SYSTEM_NAME@",
-                                                 "system_version": "@CMAKE_SYSTEM_VERSION@",
-                                                 "build_type": "@CMAKE_BUILD_TYPE@",
-                                                 "compiler": "@CMAKE_CXX_COMPILER@",
-                                                 "compiler_id": "@CMAKE_CXX_COMPILER_ID@",
-                                                 "compiler_version": "@CMAKE_CXX_COMPILER_VERSION@"
-                                                 })
+sys.modules[__name__].__setattr__(
+    "version_info",
+    (@TIMEMORY_VERSION_MAJOR@,
+     @TIMEMORY_VERSION_MINOR@,
+     @TIMEMORY_VERSION_PATCH@))
+sys.modules[__name__].__setattr__(
+    "version",
+    "@TIMEMORY_VERSION@")
+sys.modules[__name__].__setattr__(
+    "build_info",
+    {"date": "@TIMEMORY_INSTALL_DATE@",
+     "library_architecture": "@CMAKE_SYSTEM_PROCESSOR@",
+     "system_name": "@CMAKE_SYSTEM_NAME@",
+     "system_version": "@CMAKE_SYSTEM_VERSION@",
+     "build_type": "@CMAKE_BUILD_TYPE@",
+     "compiler": "@CMAKE_CXX_COMPILER@",
+     "compiler_id": "@CMAKE_CXX_COMPILER_ID@",
+     "compiler_version": "@CMAKE_CXX_COMPILER_VERSION@"})
 
 version_info = sys.modules[__name__].__getattribute__("version_info")
 '''Tuple of version fields'''
