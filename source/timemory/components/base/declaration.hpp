@@ -368,8 +368,8 @@ public:
 
     template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
               enable_if_t<(std::is_same<UnitT, std::string>::value), int> = 0>
+    static std::string get_display_unit();
 
-    static std::string             get_display_unit();
     static short                   get_width();
     static short                   get_precision();
     static std::ios_base::fmtflags get_format_flags();

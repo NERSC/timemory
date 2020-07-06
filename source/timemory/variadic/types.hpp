@@ -657,27 +657,35 @@ namespace std
 //
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::component_tuple<Types...>>;
+tuple_size<tim::lightweight_tuple<Types...>>;
+
+template <typename Tag, typename... Types>
+TSTAG(struct)
+tuple_size<tim::component_bundle<Tag, Types...>>;
 
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::component_list<Types...>>;
+tuple_size<tim::component_tuple<Types...>>;
+
+template <typename... Types>
+TSTAG(struct)
+tuple_size<tim::component_list<Types...>>;
 
 template <typename TupleT, typename ListT>
 TSTAG(struct)
-tuple_size<::tim::component_hybrid<TupleT, ListT>>;
+tuple_size<tim::component_hybrid<TupleT, ListT>>;
 
 template <typename TupleT, typename ListT>
 TSTAG(struct)
-tuple_size<::tim::auto_hybrid<TupleT, ListT>>;
+tuple_size<tim::auto_hybrid<TupleT, ListT>>;
 
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::auto_tuple<Types...>>;
+tuple_size<tim::auto_tuple<Types...>>;
 
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::auto_list<Types...>>;
+tuple_size<tim::auto_list<Types...>>;
 //
 //--------------------------------------------------------------------------------------//
 //
