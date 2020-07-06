@@ -264,6 +264,9 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     _timemory_activate_clang_tidy()
 endif()
 
+message(STATUS "Adding timemory (python)...")
+add_subdirectory(timemory)
+
 message(STATUS "Adding source...")
 add_subdirectory(source)
 

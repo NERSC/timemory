@@ -63,10 +63,10 @@ def run_all_tests():
     timTestSuite.run(result)
 
     # finalize tracing
-    tim.timemory_trace_finalize()
+    tim.trace.finalize()
 
     # finalize timemory
-    tim.timemory_finalize()
+    tim.finalize()
 
     # print the results
     print ('\n============= Results =============\n')

@@ -1,4 +1,4 @@
-
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME library)
 
@@ -63,9 +63,6 @@ set(CXX_LIBRARY_SOURCES     ${cxx_sources} ${timemory_glob_headers} ${cereal_hea
 # build the C++ libraries
 #
 set(_USE_EXTERN TIMEMORY_USE_EXTERN)
-if(WIN32)
-    set(_USE_EXTERN )
-endif()
 
 set(_ARCH_LIBRARY )
 if(TIMEMORY_USE_ARCH)

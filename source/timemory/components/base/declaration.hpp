@@ -258,6 +258,12 @@ public:
     const last_type&  get_last() const { return last; }
     const bool&       get_is_transient() const { return is_transient; }
 
+    void set_laps(int64_t v) { laps = v; }
+    void set_value(value_type v) { value = v; }
+    void set_accum(accum_type v) { accum = v; }
+    void set_last(last_type v) { last = v; }
+    void set_is_transient(bool v) { is_transient = v; }
+
     template <typename Vp, typename Up = Tp,
               enable_if_t<(trait::sampler<Up>::value), int> = 0>
     static void add_sample(Vp&&);  /// add a sample

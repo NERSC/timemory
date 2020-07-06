@@ -30,20 +30,4 @@
 #include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<page_rss>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::page_rss, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::page_rss, page_rss)
-//
-//======================================================================================//
+TIMEMORY_EXTERN_COMPONENT(page_rss, true, int64_t)

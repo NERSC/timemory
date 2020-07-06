@@ -30,20 +30,4 @@
 #include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<priority_context_switch>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::priority_context_switch, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::priority_context_switch, priority_context_switch)
-//
-//======================================================================================//
+TIMEMORY_EXTERN_COMPONENT(priority_context_switch, true, int64_t)

@@ -180,11 +180,11 @@ class TimemoryRUsageTests(unittest.TestCase):
         tim.settings.banner = False
         tim.settings.dart_type = "peak_rss"
 
-    # tear down class: timemory_finalize
+    # tear down class: finalize
     @classmethod
     def tearDownClass(self):
         # timemory finalize
-        # tim.timemory_finalize()
+        # tim.finalize()
         # tim.dmp.finalize()
         pass
 

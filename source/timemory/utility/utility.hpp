@@ -373,15 +373,15 @@ get_backtrace(Func&& func = [](const char* inp) { return std::string(inp); })
     }
     return btrace;
 }
-
+//
 //--------------------------------------------------------------------------------------//
-
+//
 template <size_t Depth, size_t Offset = 0>
 static inline auto
 get_demangled_backtrace()
 {
     auto demangle_bt = [](const char* cstr) {
-        auto str = std::string(cstr);
+        auto str = demangle(std::string(cstr));
         auto beg = str.find("(_Z");
         auto end = str.find("+0x", beg);
         if(beg != std::string::npos && end != std::string::npos)
@@ -392,7 +392,43 @@ get_demangled_backtrace()
         }
         return str;
     };
-    return get_backtrace<Depth, Offset>(std::move(demangle_bt));
+    return get_backtrace<Depth, Offset>(demangle_bt);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Depth, size_t Offset = 0>
+static inline auto
+print_backtrace(std::ostream& os = std::cerr)
+{
+    auto              bt = tim::get_backtrace<Depth, Offset>();
+    std::stringstream ss;
+    for(const auto& itr : bt)
+    {
+        ss << "\nBacktrace:\n";
+        if(itr.length() > 0)
+            ss << itr << "\n";
+    }
+    ss << "\n";
+    os << std::flush;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Depth, size_t Offset = 0>
+static inline auto
+print_demangled_backtrace(std::ostream& os = std::cerr)
+{
+    auto              bt = tim::get_demangled_backtrace<Depth, Offset>();
+    std::stringstream ss;
+    for(const auto& itr : bt)
+    {
+        ss << "\nBacktrace:\n";
+        if(itr.length() > 0)
+            ss << itr << "\n";
+    }
+    ss << "\n";
+    os << std::flush;
 }
 //
 #endif

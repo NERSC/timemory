@@ -135,13 +135,10 @@ public:
 
     static void add_event(int evt)
     {
-        auto pevents = private_events();
-        if(pevents)
-        {
-            auto fitr = std::find(pevents->begin(), pevents->end(), evt);
-            if(fitr == pevents->end())
-                pevents->push_back(evt);
-        }
+        auto& pevents = private_events();
+        auto  fitr    = std::find(pevents.begin(), pevents.end(), evt);
+        if(fitr == pevents.end())
+            pevents.push_back(evt);
     }
 
     //----------------------------------------------------------------------------------//
@@ -202,15 +199,12 @@ public:
             vector_t<string_t> events_str_list = delimit(events_str);
             vector_t<int>      events_list;
 
-            auto pevents = private_events();
-            if(pevents)
+            auto& pevents = private_events();
+            for(auto itr = pevents.begin(); itr != pevents.end(); ++itr)
             {
-                for(auto itr = pevents->begin(); itr != pevents->end(); ++itr)
-                {
-                    auto fitr = std::find(events_list.begin(), events_list.end(), *itr);
-                    if(fitr == events_list.end())
-                        events_list.push_back(*itr);
-                }
+                auto fitr = std::find(events_list.begin(), events_list.end(), *itr);
+                if(fitr == events_list.end())
+                    events_list.push_back(*itr);
             }
 
             for(const auto& itr : events_str_list)
@@ -321,9 +315,9 @@ protected:
     event_list events{};
 
 protected:
-    static std::shared_ptr<vector_t<int>> private_events()
+    static vector_t<int>& private_events()
     {
-        static auto _instance = std::make_shared<vector_t<int>>();
+        static auto _instance = vector_t<int>{};
         return _instance;
     }
 };

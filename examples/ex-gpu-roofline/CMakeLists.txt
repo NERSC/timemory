@@ -71,12 +71,14 @@ install(
         ex-gpu-roofline-single
         ex-gpu-roofline-double
     DESTINATION
-        bin)
+        bin
+    COMPONENT examples
+    OPTIONAL)
 
 if(TARGET ex-gpu-roofline)
-    install(TARGETS ex-gpu-roofline DESTINATION bin)
+    install(TARGETS ex-gpu-roofline DESTINATION bin COMPONENT examples OPTIONAL)
 endif()
 
 if(TARGET ex-gpu-roofline-half)
-    install(TARGETS ex-gpu-roofline-half DESTINATION bin)
+    install(TARGETS ex-gpu-roofline-half DESTINATION bin COMPONENT examples OPTIONAL)
 endif()

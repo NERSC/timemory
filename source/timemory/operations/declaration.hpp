@@ -29,19 +29,11 @@
 
 #pragma once
 
-#include "timemory/operations/macros.hpp"
-#include "timemory/operations/types.hpp"
-
-#include "timemory/components/base.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/mpl/function_traits.hpp"
-#include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/storage/declaration.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/operations/macros.hpp"
+#include "timemory/operations/types.hpp"
 
 #include <bitset>
 #include <cstdio>
@@ -132,6 +124,7 @@ public:
         return get_distance_sfinae(_data);
     }
 
+private:
     template <typename Tp>
     static auto get_distance_sfinae(const Tp& _data, int)
         -> decltype(std::distance(_data.begin(), _data.end()), size_t())
@@ -172,6 +165,7 @@ public:
         return _data;
     }
 
+private:
     template <typename Tp>
     static auto get_entry_sfinae(const Tp& _data, int, size_t _idx)
         -> decltype(_data.begin(), typename Tp::value_type())
@@ -241,6 +235,7 @@ public:
         return get_labels_size_sfinae(_data, 0);
     }
 
+private:
     template <typename Tp>
     static auto get_labels_size_sfinae(const Tp& _data, int)
         -> decltype(_data.label_array(), int64_t())
@@ -258,12 +253,13 @@ public:
     template <typename Tp>
     static strvec_t get_labels(const Tp& _data)
     {
-        return get_labels_sfinae(_data, 0);
+        return get_labels_sfinae(_data, 0, 0);
     }
 
+private:
     template <typename Tp>
-    static auto get_labels_sfinae(const Tp& _data, int)
-        -> decltype(_data.label_array(), strvec_t())
+    static auto get_labels_sfinae(const Tp& _data, int, int)
+        -> decltype(_data.label_array(), strvec_t{})
     {
         strvec_t _ret;
         for(const auto& itr : _data.label_array())
@@ -272,9 +268,16 @@ public:
     }
 
     template <typename Tp>
-    static auto get_labels_sfinae(const Tp&, long) -> strvec_t
+    static auto get_labels_sfinae(const Tp& _data, int, long)
+        -> decltype(_data.get_label(), strvec_t{})
     {
-        return strvec_t{ Tp::get_label() };
+        return strvec_t{ _data.get_label() };
+    }
+
+    template <typename Tp>
+    static auto get_labels_sfinae(const Tp&, long, long) -> strvec_t
+    {
+        return strvec_t{ "" };
     }
 
 public:
@@ -309,8 +312,15 @@ public:
 
 public:
     template <typename Tp>
-    static auto get_display_units_sfinae(const Tp& _data, int)
-        -> decltype(_data.display_unit_array(), strvec_t())
+    static strvec_t get_display_units(const Tp& _data)
+    {
+        return get_display_units_sfinae(_data, 0, 0);
+    }
+
+private:
+    template <typename Tp>
+    static auto get_display_units_sfinae(const Tp& _data, int, int)
+        -> decltype(_data.display_unit_array(), strvec_t{})
     {
         strvec_t _ret;
         for(const auto& itr : _data.display_unit_array())
@@ -319,15 +329,17 @@ public:
     }
 
     template <typename Tp>
-    static auto get_display_units_sfinae(const Tp&, long) -> strvec_t
+    static auto get_display_units_sfinae(const Tp& _data, int, long)
+        -> decltype(_data.get_display_unit(), strvec_t{})
+
     {
         return as_string_vec(Tp::get_display_unit());
     }
 
     template <typename Tp>
-    static strvec_t get_display_units(const Tp& _data)
+    static auto get_display_units_sfinae(const Tp&, long, long) -> strvec_t
     {
-        return get_display_units_sfinae(_data, 0);
+        return strvec_t{ "" };
     }
 
 public:
@@ -339,6 +351,7 @@ public:
         return get_widths_sfinae(_data, 0);
     }
 
+private:
     template <typename Tp>
     static auto get_widths_sfinae(const Tp& _data, int)
         -> decltype(_data.width_array(), sizevector_t())
@@ -352,6 +365,7 @@ public:
         return sizevector_t{ Tp::get_width() };
     }
 
+public:
     //----------------------------------------------------------------------------------//
     /// generate an attribute
     ///
@@ -446,7 +460,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <bool _Enabled, typename Arg, enable_if_t<(_Enabled == true), int> = 0>
+    template <bool EnabledV, typename Arg, enable_if_t<(EnabledV == true), int> = 0>
     static void print_tag(std::ostream& os, const Arg& _arg)
     {
         if(!is_empty(_arg))
@@ -455,7 +469,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <bool _Enabled, typename Arg, enable_if_t<(_Enabled == false), int> = 0>
+    template <bool EnabledV, typename Arg, enable_if_t<(EnabledV == false), int> = 0>
     static void print_tag(std::ostream&, const Arg&)
     {}
 };

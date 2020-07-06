@@ -37,14 +37,15 @@ endif()
 if(TIMEMORY_C_LIBRARY)
     add_executable(ex_c_minimal ex_minimal.c)
     target_link_libraries(ex_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
-    install(TARGETS ex_c_minimal DESTINATION bin)
+    install(TARGETS ex_c_minimal DESTINATION bin COMPONENT examples OPTIONAL)
 
     # if C stubs via CXX library are available
     if(TIMEMORY_CXX_LIBRARY)
         add_executable(ex_c_minimal_library_overload ex_minimal_library_overload.c)
         target_link_libraries(ex_c_minimal_library_overload timemory-minimal-example
             ${TIMEMORY_C_LIBRARY} ${TIMEMORY_CXX_LIBRARY})
-        install(TARGETS ex_c_minimal_library_overload DESTINATION bin)
+        install(TARGETS ex_c_minimal_library_overload DESTINATION bin
+            COMPONENT examples OPTIONAL)
     endif()
 endif()
 
@@ -53,22 +54,28 @@ if(TIMEMORY_CXX_LIBRARY)
     add_executable(ex_c_minimal_library ex_minimal_library.c)
     target_link_libraries(ex_c_minimal_library timemory-minimal-example
         ${TIMEMORY_CXX_LIBRARY} ${TIMEMORY_C_LIBRARY})
-    install(TARGETS ex_c_minimal_library DESTINATION bin)
+    install(TARGETS ex_c_minimal_library DESTINATION bin
+        COMPONENT examples OPTIONAL)
 endif()
 
 # headers are always available
 add_executable(ex_cxx_minimal ex_minimal.cpp)
 target_link_libraries(ex_cxx_minimal timemory-minimal-example)
-install(TARGETS ex_cxx_minimal DESTINATION bin)
+install(TARGETS ex_cxx_minimal DESTINATION bin
+    COMPONENT examples OPTIONAL)
 
 if(TIMEMORY_CXX_LIBRARY)
     add_executable(ex_cxx_minimal_library ex_minimal_library.cpp)
-    target_link_libraries(ex_cxx_minimal_library timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
-    install(TARGETS ex_cxx_minimal_library DESTINATION bin)
+    target_link_libraries(ex_cxx_minimal_library timemory-minimal-example
+        ${TIMEMORY_CXX_LIBRARY})
+    install(TARGETS ex_cxx_minimal_library DESTINATION bin
+        COMPONENT examples OPTIONAL)
 
     add_executable(ex_cxx_minimal_library_overload ex_minimal_library_overload.cpp)
-    target_link_libraries(ex_cxx_minimal_library_overload timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
-    install(TARGETS ex_cxx_minimal_library_overload DESTINATION bin)
+    target_link_libraries(ex_cxx_minimal_library_overload timemory-minimal-example
+        ${TIMEMORY_CXX_LIBRARY})
+    install(TARGETS ex_cxx_minimal_library_overload DESTINATION bin
+        COMPONENT examples OPTIONAL)
 endif()
 
 if(NOT PYTHON_EXECUTABLE)
@@ -84,4 +91,6 @@ install(
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
         GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ)
+        WORLD_EXECUTE WORLD_READ
+    COMPONENT examples
+    OPTIONAL)

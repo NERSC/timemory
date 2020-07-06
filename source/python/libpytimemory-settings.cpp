@@ -32,9 +32,10 @@
 using string_t = std::string;
 
 #define SETTING_PROPERTY(TYPE, FUNC)                                                     \
-    settings.def_property_static(TIMEMORY_STRINGIZE(FUNC),                               \
-                                 [](py::object) { return tim::settings::FUNC(); },       \
-                                 [](py::object, TYPE v) { tim::settings::FUNC() = v; })
+    settings.def_property_static(                                                        \
+        TIMEMORY_STRINGIZE(FUNC), [](py::object) { return tim::settings::FUNC(); },      \
+        [](py::object, TYPE v) { tim::settings::FUNC() = v; },                           \
+        "Binds to 'tim::settings::" TIMEMORY_STRINGIZE(FUNC) "()'")
 
 //======================================================================================//
 //
@@ -114,6 +115,15 @@ generate(py::module& _pymod)
     SETTING_PROPERTY(bool, stack_clearing);
     SETTING_PROPERTY(bool, add_secondary);
     SETTING_PROPERTY(tim::process::id_t, target_pid);
+    // components
+    SETTING_PROPERTY(string_t, global_components);
+    SETTING_PROPERTY(string_t, tuple_components);
+    SETTING_PROPERTY(string_t, list_components);
+    SETTING_PROPERTY(string_t, ompt_components);
+    SETTING_PROPERTY(string_t, mpip_components);
+    SETTING_PROPERTY(string_t, trace_components);
+    SETTING_PROPERTY(string_t, profiler_components);
+    SETTING_PROPERTY(string_t, components);
     // papi
     SETTING_PROPERTY(bool, papi_multiplexing);
     SETTING_PROPERTY(bool, papi_fail_on_error);

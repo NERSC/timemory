@@ -24,6 +24,5 @@
 
 #pragma once
 
-#include "timemory/backends/types/cuda.hpp"
 #include "timemory/backends/types/cupti.hpp"
 #include "timemory/backends/types/papi.hpp"

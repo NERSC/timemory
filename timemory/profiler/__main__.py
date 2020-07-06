@@ -37,7 +37,7 @@ import warnings
 import traceback
 import multiprocessing as mp
 
-import timemory
+import timemory.settings as settings
 from .profiler import profile
 
 
@@ -69,7 +69,7 @@ def run(args, cmd):
 
     output_path = get_value("TIMEMORY_OUTPUT_PATH",
                             "timemory-output", str, args.output_dir)
-    timemory.settings.output_path = output_path
+    settings.output_path = output_path
 
     p = profile(args.components)
 

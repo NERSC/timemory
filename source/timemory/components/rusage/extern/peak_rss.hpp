@@ -30,20 +30,4 @@
 #include "timemory/components/rusage/extern/operations.hpp"
 #include "timemory/components/rusage/extern/storage.hpp"
 
-//======================================================================================//
-//
-namespace tim
-{
-namespace component
-{
-//
-TIMEMORY_EXTERN_TEMPLATE(struct base<peak_rss>)
-//
-}  // namespace component
-}  // namespace tim
-//
-TIMEMORY_EXTERN_OPERATIONS(component::peak_rss, true)
-//
-TIMEMORY_EXTERN_STORAGE(component::peak_rss, peak_rss)
-//
-//======================================================================================//
+TIMEMORY_EXTERN_COMPONENT(peak_rss, true, int64_t)

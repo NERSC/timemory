@@ -22,4 +22,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "timemory/timemory.hpp"
+
+#include "gtest/gtest.h"
+
+#include <chrono>
+#include <thread>
+
+//--------------------------------------------------------------------------------------//
+
+class warning_tests : public ::testing::Test
+{};
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(warning_tests, dummy)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+}
+
+//--------------------------------------------------------------------------------------//
+
+int
+main(int argc, char** argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+
+//--------------------------------------------------------------------------------------//

@@ -29,18 +29,11 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/operations/macros.hpp"
-//
-#include "timemory/operations/types.hpp"
-//
-#include "timemory/operations/declaration.hpp"
-//
-//======================================================================================//
-
 #include "timemory/data/stream.hpp"
 #include "timemory/mpl/type_traits.hpp"
+#include "timemory/operations/declaration.hpp"
+#include "timemory/operations/macros.hpp"
+#include "timemory/operations/types.hpp"
 
 #include <cstdint>
 #include <ostream>

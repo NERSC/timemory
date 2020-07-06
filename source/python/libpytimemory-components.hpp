@@ -32,12 +32,10 @@
 // disables a bunch of warnings
 //
 #include "timemory/components/types.hpp"
-#include "timemory/mpl/available.hpp"
-#include "timemory/utility/macros.hpp"
-
-//
 #include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/available.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include "pybind11/cast.h"
 #include "pybind11/embed.h"

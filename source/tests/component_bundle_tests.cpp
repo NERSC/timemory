@@ -219,14 +219,14 @@ TEST_F(component_bundle_tests, get)
     auto lhs = lhs_t(TIMEMORY_JOIN("/", details::get_test_name(), "lhs"));
     auto rhs = rhs_t(TIMEMORY_JOIN("/", details::get_test_name(), "rhs"));
 
-    tim::start(lhs, rhs);
-    tim::mark_begin(std::forward_as_tuple(lhs, rhs));
+    tim::invoke::start(std::forward_as_tuple(lhs, rhs));
+    tim::invoke::mark_begin(std::forward_as_tuple(lhs, rhs));
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     details::consume(1000);
 
-    tim::mark_end(std::forward_as_tuple(lhs, rhs));
-    tim::stop(lhs, rhs);
+    tim::invoke::mark_end(std::forward_as_tuple(lhs, rhs));
+    tim::invoke::stop(std::forward_as_tuple(lhs, rhs));
 
     auto cb = lhs.get();
     auto ab = rhs.get();
@@ -246,7 +246,7 @@ TEST_F(component_bundle_tests, get)
     std::cout << "ab         = " << tim::demangle<decltype(ab)>() << "\n";
     std::cout << "\n" << std::flush;
 
-    tim::print(std::cout, lhs, rhs);
+    tim::invoke::print(std::cout, lhs, rhs);
 
     EXPECT_NEAR(std::get<0>(cb), 2.0, 0.1);
     EXPECT_NEAR(std::get<0>(ab), 2.0, 0.1);

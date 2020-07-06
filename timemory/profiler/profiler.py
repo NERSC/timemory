@@ -27,22 +27,21 @@
 import os
 import sys
 import copy
+from functools import wraps
 from collections import deque
 from ..libpytimemory import component_bundle
 from ..libpytimemory import settings
-from functools import wraps
 
-__all__ = ["profile"]
+__all__ = ["profile", "Profiler"]
 #
 #   Variables
 #
 _records = deque()
 _counter = 0
 _skip_counts = []
-_start_events = ["call"] # + ["c_call"]
-_stop_events = ["return"] # + ["c_return"]
 _is_running = False
-_components = os.environ.get("TIMEMORY_PROFILER_COMPONENTS", "")
+_start_events = ["call"]  # + ["c_call"]
+_stop_events = ["return"]  # + ["c_return"]
 _always_skipped_functions = ["__exit__"]
 _always_skipped_files = ["__init__.py"]
 
@@ -77,7 +76,7 @@ def _profiler_function(frame, event, arg):
             _skip_counts.append(_count)
             return
 
-        _func = "{}".format(frame.f_code.co_name)        
+        _func = "{}".format(frame.f_code.co_name)
         _line = int(frame.f_lineno) if _include_line else -1
         _file = "" if not _include_filepath else "{}".format(
             frame.f_code.co_filename)
@@ -117,24 +116,6 @@ def _profiler_function(frame, event, arg):
             entry.stop()
             del entry
         _counter -= 1
-
-
-def _run(sz=[4, 3]):
-    import numpy as np
-    arr = np.zeros(sz, dtype=np.float)
-    arr *= 1.5
-    return arr
-
-
-def _do_sleep(nsec):
-    import time
-    time.sleep(nsec)
-
-
-def _main():
-    ret = _run()
-    print("result: {}".format(ret))
-    _do_sleep(1)
 
 
 #----------------------------------------------------------------------------------------#
@@ -186,7 +167,10 @@ class profile():
         global _start_events
         global _stop_events
         global _is_running
-        global _components
+
+        _trace = settings.trace_components
+        _profl = settings.profiler_components
+        _components = _profl if _trace is None else _trace
 
         self._original_profiler_function = sys.getprofile()
         self._use = (not _is_running and profile.is_enabled() is True)
@@ -225,9 +209,6 @@ class profile():
         if self._use:
             _is_running = False
             sys.setprofile(self._original_profiler_function)
-            import traceback
-            if exec_type is not None and exec_value is not None and exec_tb is not None:
-                traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)
 
     #------------------------------------------------------------------------------------#
     #
@@ -320,3 +301,6 @@ class profile():
             if self._use:
                 _is_running = False
         return self
+
+
+Profiler = profile

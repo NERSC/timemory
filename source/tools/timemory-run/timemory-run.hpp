@@ -27,9 +27,11 @@
 
 #include "timemory-run-fork.hpp"
 
+#include "timemory/backends/dmp.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/environment.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/utility/argparse.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/variadic/macros.hpp"
@@ -170,12 +172,12 @@ static auto            regex_opts =
 
 // control debug printf statements
 #define dprintf(...)                                                                     \
-    if(debug_print || verbose_level > 0)                                                 \
+    if(tim::dmp::rank() == 0 && (debug_print || verbose_level > 0))                      \
         fprintf(stderr, __VA_ARGS__);
 
 // control verbose printf statements
 #define verbprintf(LEVEL, ...)                                                           \
-    if(verbose_level >= LEVEL)                                                           \
+    if(tim::dmp::rank() == 0 && verbose_level >= LEVEL)                                  \
         fprintf(stderr, __VA_ARGS__);
 
 //======================================================================================//
@@ -571,7 +573,9 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
 
     if(_rewrite)
     {
-        mutatee = bpatch->openBinary(_name.c_str(), false);
+        verbprintf(1, "Opening '%s' for binary rewrite...\n", _name.c_str());
+        if(!_name.empty())
+            mutatee = bpatch->openBinary(_name.c_str(), false);
         if(!mutatee)
         {
             fprintf(stderr, "[timemory-run]> Failed to open binary '%s'\n",
@@ -581,7 +585,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
     }
     else if(_pid >= 0)
     {
-        verbprintf(0, "Before processAttach\n");
+        verbprintf(1, "Attaching to process %i...\n", _pid);
         char* _cmdv0 = (_cmdc > 0) ? _cmdv[0] : nullptr;
         mutatee      = bpatch->processAttach(_cmdv0, _pid);
         if(!mutatee)
@@ -593,7 +597,7 @@ timemory_get_address_space(patch_pointer_t bpatch, int _cmdc, char** _cmdv, bool
     }
     else
     {
-        verbprintf(0, "Before processCreate\n");
+        verbprintf(1, "Creating process '%s'...\n", _cmdv[0]);
         mutatee = bpatch->processCreate(_cmdv[0], (const char**) _cmdv, nullptr);
         if(!mutatee)
         {

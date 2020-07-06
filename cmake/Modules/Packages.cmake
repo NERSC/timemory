@@ -345,7 +345,7 @@ if(TIMEMORY_LINK_RT)
     target_link_libraries(timemory-headers INTERFACE rt)
 endif()
 # include threading because of rooflines
-target_link_libraries(timemory-headers INTERFACE timemory-threading timemory-mpi)
+target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -610,128 +610,16 @@ if(TIMEMORY_USE_PYTHON AND NOT TIMEMORY_BUILD_PYTHON)
     if(NOT "${TIMEMORY_PYTHON_VERSION}" MATCHES "${PYBIND11_PYTHON_VERSION}*")
         message(STATUS "TIMEMORY_PYTHON_VERSION is set to ${TIMEMORY_PYTHON_VERSION}")
         message(STATUS "PYBIND11_PYTHON_VERSION is set to ${PYBIND11_PYTHON_VERSION}")
-        message(FATAL_ERROR "Mismatched 'TIMEMORY_PYTHON_VERSION' and 'PYBIND11_PYTHON_VERSION'")
+        message(FATAL_ERROR
+            "Mismatched 'TIMEMORY_PYTHON_VERSION' and 'PYBIND11_PYTHON_VERSION'")
     endif()
 
 endif()
 
-# if using python find interpretor and libraries. If either not found, disable.
 if(TIMEMORY_USE_PYTHON)
-    # display version
-    add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory")
-
-    # if TIMEMORY_PYTHON_VERSION specified, set to desired python version
-    set(_PYVERSION ${TIMEMORY_PYTHON_VERSION})
-
-    # if TIMEMORY_PYTHON_VERSION is not set but PYBIND11_PYTHON_VERSION is
-    if("${_PYVERSION}" STREQUAL "" AND PYBIND11_PYTHON_VERSION)
-        set(_PYVERSION ${PYBIND11_PYTHON_VERSION})
-    endif()
-
-    # if python version was specifed, do exact match
-    if(_PYVERSION)
-        find_package(PythonInterp "${_PYVERSION}" ${TIMEMORY_FIND_REQUIREMENT})
-    else()
-        find_package(PythonInterp ${TIMEMORY_FIND_REQUIREMENT})
-    endif()
-
-    # set TIMEMORY_PYTHON_VERSION if we have the python version
-    if(PYTHON_VERSION_STRING)
-        set(TIMEMORY_PYTHON_VERSION "${PYTHON_VERSION_STRING}" CACHE STRING
-            "Python version for timemory")
-    endif()
-
-    # make sure the library version is an exact match for the Python executable
-    find_package(PythonLibs ${TIMEMORY_PYTHON_VERSION} ${TIMEMORY_FIND_REQUIREMENT})
-
-    # if either not found, disable
-    if(NOT PythonInterp_FOUND OR NOT PythonLibs_FOUND)
-        set(TIMEMORY_USE_PYTHON OFF)
-        set(TIMEMORY_BUILD_PYTHON OFF)
-        inform_empty_interface(timemory-plotting "Python plotting from C++")
-    else()
-        add_feature(PYTHON_EXECUTABLE "Python executable")
-        add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE)
-        set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
-        target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING
-            TIMEMORY_PYTHON_PLOTTER="${PYTHON_EXECUTABLE}")
-        target_link_libraries(timemory-headers INTERFACE timemory-plotting)
-    endif()
-
-elseif(NOT TIMEMORY_USE_PYTHON)
-    set(TIMEMORY_BUILD_PYTHON OFF)
-endif()
-
-if(TIMEMORY_USE_PYTHON)
-
-    # C++ standard
-    if(NOT WIN32 AND NOT "${PYBIND11_CPP_STANDARD}" STREQUAL "-std=c++${CMAKE_CXX_STANDARD}")
-        set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
-            CACHE STRING "PyBind11 CXX standard" FORCE)
-    endif()
-
-    set(PYBIND11_INSTALL ON CACHE BOOL "Enable Pybind11 installation")
-
-    if(TIMEMORY_BUILD_PYTHON AND NOT TARGET pybind11)
-        # checkout PyBind11 if not checked out
-        checkout_git_submodule(RECURSIVE
-            RELATIVE_PATH external/pybind11
-            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-            REPO_URL https://github.com/jrmadsen/pybind11.git
-            REPO_BRANCH master)
-
-        # add PyBind11 to project
-        add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
-    endif()
-
-
-    if(NOT PYBIND11_PYTHON_VERSION)
-        unset(PYBIND11_PYTHON_VERSION CACHE)
-        execute_process(COMMAND ${PYTHON_EXECUTABLE}
-            -c "import sys; print('{}.{}'.format(sys.version_info[0], sys.version_info[1]))"
-            OUTPUT_VARIABLE PYTHON_VERSION
-            OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-        set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}" CACHE STRING "Python version")
-    endif()
-
-    add_feature(PYBIND11_CPP_STANDARD "PyBind11 C++ standard")
-    add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
-
-    if(NOT "${TIMEMORY_PYTHON_VERSION}" MATCHES "${PYBIND11_PYTHON_VERSION}*")
-        message(STATUS "TIMEMORY_PYTHON_VERSION is set to ${TIMEMORY_PYTHON_VERSION}")
-        message(STATUS "PYBIND11_PYTHON_VERSION is set to ${PYBIND11_PYTHON_VERSION}")
-        message(FATAL_ERROR "Mismatched 'TIMEMORY_PYTHON_VERSION' and 'PYBIND11_PYTHON_VERSION'")
-    endif()
-
-    execute_process(COMMAND ${PYTHON_EXECUTABLE}
-        -c "import time ; print('{} {}'.format(time.ctime(), time.tzname[0]))"
-        OUTPUT_VARIABLE TIMEMORY_INSTALL_DATE
-        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-
-    string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
-
-    if(SKBUILD)
-        set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}
-            CACHE PATH "Installation directory for python")
-    else()
-        set(CMAKE_INSTALL_PYTHONDIR
-            lib/python${PYBIND11_PYTHON_VERSION}/site-packages
-            CACHE PATH "Installation directory for python")
-    endif()
-
-    if(TIMEMORY_BUILD_PYTHON)
-        target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
-        target_include_directories(timemory-python SYSTEM INTERFACE
-            ${PYTHON_INCLUDE_DIRS}
-            $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
-        target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
-    elseif(pybind11_FOUND)
-        target_compile_definitions(timemory-python INTERFACE TIMEMORY_USE_PYTHON)
-        target_include_directories(timemory-python SYSTEM INTERFACE
-            ${PYTHON_INCLUDE_DIRS} ${PYBIND11_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIRS})
-        target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
-    endif()
+    include(PythonConfig)
 else()
+    set(TIMEMORY_BUILD_PYTHON OFF)
     inform_empty_interface(timemory-python "Python embedded interpreter")
     inform_empty_interface(timemory-plotting "Python plotting from C++")
 endif()
@@ -1289,6 +1177,9 @@ if(TIMEMORY_USE_DYNINST)
         set(Boost_NO_BOOST_CMAKE ON)
         find_package(Boost ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT}
             COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
+        # install the revision of FindBoost.cmake which is quiet
+        install(FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/FindBoost.cmake
+            DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules)
     endif()
 endif()
 

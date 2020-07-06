@@ -63,7 +63,7 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
     unsigned long baseAddr = (unsigned long) (*loopStartInst)[0]->getAddress();
     unsigned long lastAddr =
         (unsigned long) (*loopExitInst)[loopExitInst->size() - 1]->getAddress();
-    verbprintf(0, "Loop: size of lastAddr = %lu: baseAddr = %lu, lastAddr = %lu\n",
+    verbprintf(3, "Loop: size of lastAddr = %lu: baseAddr = %lu, lastAddr = %lu\n",
                (unsigned long) loopExitInst->size(), (unsigned long) baseAddr,
                (unsigned long) lastAddr);
 
@@ -116,7 +116,7 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
         // perfect solution, but we will work with the Dyninst team to find something
         // better.
         bool info2 = mutatee_module->getSourceLines((unsigned long) lastAddr, linesEnd);
-        verbprintf(0, "size of linesEnd = %lu\n", (unsigned long) linesEnd.size());
+        verbprintf(3, "size of linesEnd = %lu\n", (unsigned long) linesEnd.size());
 
         if(info2)
         {

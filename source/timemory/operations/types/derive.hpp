@@ -29,17 +29,10 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/operations/macros.hpp"
-//
-#include "timemory/operations/types.hpp"
-//
 #include "timemory/operations/declaration.hpp"
-//
-//======================================================================================//
-
-#include "timemory/utility/utility.hpp"
+#include "timemory/operations/macros.hpp"
+#include "timemory/operations/types.hpp"
+#include "timemory/utility/types.hpp"
 
 namespace tim
 {

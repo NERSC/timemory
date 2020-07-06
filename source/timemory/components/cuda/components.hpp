@@ -38,6 +38,12 @@
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/cuda/types.hpp"
 
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+#    include "pybind11/cast.h"
+#    include "pybind11/pybind11.h"
+#    include "pybind11/stl.h"
+#endif
+
 //======================================================================================//
 //
 namespace tim
@@ -114,12 +120,19 @@ struct cuda_event : public base<cuda_event, float>
     }
 
 public:
-    explicit cuda_event(cuda::stream_t _stream = 0)
+    explicit cuda_event(cuda::stream_t _stream)
     : m_stream(_stream)
-    , m_global(marker())
+    , m_global(marker{})
     {}
 
-    ~cuda_event() {}
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+    // explicit cuda_event(pybind11::object _stream)
+    //: cuda_event(_stream.cast<cuda::stream_t>())
+    //{}
+#endif
+
+    cuda_event()                  = default;
+    ~cuda_event()                 = default;
     cuda_event(const cuda_event&) = default;
     cuda_event(cuda_event&&)      = default;
     cuda_event& operator=(const cuda_event&) = default;
@@ -179,7 +192,8 @@ public:
         }
     }
 
-    void set_stream(cuda::stream_t _stream = 0) { m_stream = _stream; }
+    void set_stream(cuda::stream_t _stream) { m_stream = _stream; }
+    auto get_stream() { return m_stream; }
 
     void mark_begin()
     {
@@ -203,6 +217,11 @@ public:
 
     void mark_end(cuda::stream_t _stream) { m_markers[m_current_marker].stop(_stream); }
 
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+    // void mark_begin(pybind11::object obj) { mark_begin(obj.cast<cuda::stream_t>()); }
+    // void mark_end(pybind11::object obj) { mark_begin(obj.cast<cuda::stream_t>()); }
+#endif
+
 protected:
     void append_marker_list(const uint64_t nsize)
     {
@@ -218,8 +237,28 @@ private:
     uint64_t       m_num_markers       = 0;
     uint64_t       m_marker_batch_size = get_batched_marker_size();
     cuda::stream_t m_stream            = 0;
-    marker         m_global;
-    marker_list_t  m_markers;
+    marker         m_global            = {};
+    marker_list_t  m_markers           = {};
+
+public:
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+    //
+    /// this is called by python api
+    ///
+    ///     Use this to add customizations to the python module. The instance
+    ///     of the component is within in a variadic wrapper which is used
+    ///     elsewhere to ensure that calling mark_begin(...) on a component
+    ///     without that member function is not invalid
+    ///
+    template <template <typename...> class BundleT>
+    static void configure(api::python, pybind11::class_<BundleT<cuda_event>>& _pyclass)
+    {
+        auto _sync = [](BundleT<cuda_event>* obj) {
+            obj->template get<cuda_event>()->sync();
+        };
+        _pyclass.def("sync", _sync, "Synchronize the event (blocking)");
+    }
+#endif
 };
 //
 //======================================================================================//
@@ -311,6 +350,48 @@ struct cuda_profiler
             cudaProfilerStop();
 #endif
     }
+
+public:
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+    //
+    /// this is called by python api
+    ///
+    ///     args --> pybind11::args --> pybind11::tuple
+    ///     kwargs --> pybind11::kwargs --> pybind11::dict
+    ///
+    static void configure(api::python, pybind11::args _args, pybind11::kwargs _kwargs)
+    {
+        auto _config = get_initializer()();
+        if(_args.size() > 0)
+            std::get<0>(_config) = _args[0].cast<std::string>();
+        if(_args.size() > 1)
+            std::get<1>(_config) = _args[1].cast<std::string>();
+        if(_args.size() > 2)
+        {
+            auto _m = _args[2].cast<std::string>();
+            if(_m == "csv")
+                std::get<2>(_config) = mode::csv;
+        }
+        //
+        if(_kwargs)
+        {
+            for(auto itr : _kwargs)
+            {
+                if(itr.first.cast<std::string>().find("in") == 0)
+                    std::get<0>(_config) = itr.second.cast<std::string>();
+                else if(itr.first.cast<std::string>().find("out") == 0)
+                    std::get<1>(_config) = itr.second.cast<std::string>();
+                else
+                {
+                    auto _m = itr.second.cast<std::string>();
+                    if(_m == "csv")
+                        std::get<2>(_config) = mode::csv;
+                }
+            }
+        }
+        configure(std::get<0>(_config), std::get<1>(_config), std::get<2>(_config));
+    }
+#endif
 };
 //
 //======================================================================================//
@@ -335,13 +416,88 @@ struct nvtx_marker : public base<nvtx_marker, void>
         return _instance;
     }
 
-    static const int32_t& get_thread_id()
+    static void thread_init() { nvtx::name_thread(threading::get_id()); }
+
+    explicit nvtx_marker()
+    : m_color(0)
+    , m_stream(0)
+    , m_prefix(nullptr)
+    {}
+
+    explicit nvtx_marker(const nvtx::color::color_t& _color)
+    : m_color(_color)
+    , m_stream(0)
+    , m_prefix(nullptr)
+    {}
+
+    explicit nvtx_marker(cuda::stream_t _stream)
+    : m_color(0)
+    , m_stream(_stream)
+    , m_prefix(nullptr)
+    {}
+
+    nvtx_marker(const nvtx::color::color_t& _color, cuda::stream_t _stream)
+    : m_color(_color)
+    , m_stream(_stream)
+    , m_prefix(nullptr)
+    {}
+
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+    // explicit nvtx_marker(pybind11::object _stream)
+    //: nvtx_marker(_stream.cast<cuda::stream_t>())
+    //{}
+
+    // nvtx_marker(const nvtx::color::color_t& _color, pybind11::object _stream)
+    //: nvtx_marker(_color, _stream.cast<cuda::stream_t>())
+    //{}
+#endif
+
+    void start() { m_range_id = nvtx::range_start(get_attribute()); }
+    void stop()
     {
-        static std::atomic<int32_t> _thread_counter(0);
-        static thread_local int32_t _thread_id = _thread_counter++;
-        return _thread_id;
+        if(use_device_sync())
+            cuda::device_sync();
+        else
+            cuda::stream_sync(m_stream);
+        nvtx::range_stop(m_range_id);
     }
 
+    void mark_begin()
+    {
+        nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_begin_t", threading::get_id()));
+    }
+
+    void mark_end()
+    {
+        nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_end_t", threading::get_id()));
+    }
+
+    void mark_begin(cuda::stream_t _stream)
+    {
+        nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_begin_t", threading::get_id(), "_s",
+                                 get_stream_id(_stream)));
+    }
+
+    void mark_end(cuda::stream_t _stream)
+    {
+        nvtx::mark(TIMEMORY_JOIN("", m_prefix, "_end_t", threading::get_id(), "_s",
+                                 get_stream_id(_stream)));
+    }
+
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+    // void mark_begin(pybind11::object obj) { mark_begin(obj.cast<cuda::stream_t>()); }
+    // void mark_end(pybind11::object obj) { mark_begin(obj.cast<cuda::stream_t>()); }
+#endif
+
+    void set_stream(cuda::stream_t _stream) { m_stream = _stream; }
+    void set_color(nvtx::color::color_t _color) { m_color = _color; }
+    void set_prefix(const char* _prefix) { m_prefix = _prefix; }
+
+    auto get_range_id() { return m_range_id; }
+    auto get_stream() { return m_stream; }
+    auto get_color() { return m_color; }
+
+private:
     static const int32_t& get_stream_id(cuda::stream_t _stream)
     {
         using pair_t    = std::pair<cuda::stream_t, int32_t>;
@@ -354,74 +510,72 @@ struct nvtx_marker : public base<nvtx_marker, void>
         return _instance->find(_stream)->second;
     }
 
-    static void thread_init(storage_type*) { nvtx::name_thread(get_thread_id()); }
-
-    nvtx_marker(const nvtx::color::color_t& _color = 0, const std::string& _prefix = "",
-                cuda::stream_t _stream = 0)
-    : color(_color)
-    , prefix(_prefix)
-    , stream(_stream)
-    {}
-
-    void start() { range_id = nvtx::range_start(get_attribute()); }
-    void stop()
-    {
-        if(use_device_sync())
-            cuda::device_sync();
-        else
-            cuda::stream_sync(stream);
-        nvtx::range_stop(range_id);
-    }
-
-    void mark_begin()
-    {
-        nvtx::mark(prefix + "_begin_t" + std::to_string(get_thread_id()));
-    }
-
-    void mark_end() { nvtx::mark(prefix + "_end_t" + std::to_string(get_thread_id())); }
-
-    void mark_begin(cuda::stream_t _stream)
-    {
-        nvtx::mark(prefix + "_begin_t" + std::to_string(get_thread_id()) + "_s" +
-                   std::to_string(get_stream_id(_stream)));
-    }
-
-    void mark_end(cuda::stream_t _stream)
-    {
-        nvtx::mark(prefix + "_end_t" + std::to_string(get_thread_id()) + "_s" +
-                   std::to_string(get_stream_id(_stream)));
-    }
-
-    void set_stream(cuda::stream_t _stream) { stream = _stream; }
-
-    void set_prefix(const std::string& _prefix) { prefix = _prefix; }
-
 private:
-    nvtx::color::color_t     color = 0;
-    nvtx::event_attributes_t attribute;
-    nvtx::range_id_t         range_id = 0;
-    std::string              prefix   = "";
-    cuda::stream_t           stream   = 0;
+    bool                     m_has_attribute = false;
+    nvtx::color::color_t     m_color         = 0;
+    nvtx::event_attributes_t m_attribute     = {};
+    nvtx::range_id_t         m_range_id      = 0;
+    cuda::stream_t           m_stream        = 0;
+    const char*              m_prefix        = nullptr;
 
 private:
     nvtx::event_attributes_t& get_attribute()
     {
-        if(!has_attribute)
+        if(!m_has_attribute)
         {
+            m_has_attribute = true;
             if(settings::debug())
             {
                 std::stringstream ss;
-                ss << "[nvtx_marker]> Creating NVTX marker with label: \"" << prefix
-                   << "\" and color " << std::hex << color << "...";
+                ss << "[nvtx_marker]> Creating NVTX marker with label: \"" << m_prefix
+                   << "\" and color " << std::hex << m_color << "...";
                 std::cout << ss.str() << std::endl;
             }
-            attribute     = nvtx::init_marker(prefix, color);
-            has_attribute = true;
+            m_attribute = nvtx::init_marker(m_prefix, m_color);
         }
-        return attribute;
+        return m_attribute;
     }
 
-    bool has_attribute = false;
+public:
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+    //
+    /// this is called by python api
+    ///
+    ///     Use this to add customizations to the python module. The instance
+    ///     of the component is within in a variadic wrapper which is used
+    ///     elsewhere to ensure that calling mark_begin(...) on a component
+    ///     without that member function is not invalid
+    ///
+    template <template <typename...> class BundleT>
+    static void configure(api::python, pybind11::class_<BundleT<nvtx_marker>>& _pyclass)
+    {
+        _pyclass.def_property_static(
+            "use_device_sync", [](pybind11::object) { return use_device_sync(); },
+            [](pybind11::object, bool v) { use_device_sync() = v; },
+            "Configure CudaEvent to use cudaSynchronize() vs. cudaStreamSychronize(...)");
+
+        // add nvtx colors
+        pybind11::enum_<nvtx::color::color_idx> _pyattr(_pyclass, "color", "NVTX colors");
+        _pyattr.value("red", nvtx::color::red_idx)
+            .value("blue", nvtx::color::blue_idx)
+            .value("green", nvtx::color::green_idx)
+            .value("yellow", nvtx::color::yellow_idx)
+            .value("purple", nvtx::color::purple_idx)
+            .value("cyan", nvtx::color::cyan_idx)
+            .value("pink", nvtx::color::pink_idx)
+            .value("light_green", nvtx::color::light_green_idx);
+        _pyattr.export_values();
+
+        auto _set_color = [](BundleT<nvtx_marker>* obj, nvtx::color::color_t arg) {
+            obj->template get<nvtx_marker>()->set_color(arg);
+        };
+        auto _get_color = [](BundleT<nvtx_marker>* obj) {
+            return obj->template get<nvtx_marker>()->get_color();
+        };
+        _pyclass.def("set_color", _set_color, "Set the color");
+        _pyclass.def("get_color", _get_color, "Return the color");
+    }
+#endif
 };
 //
 //======================================================================================//

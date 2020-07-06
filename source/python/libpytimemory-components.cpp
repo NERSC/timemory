@@ -390,9 +390,8 @@ generate(py::module& _pymod)
     _pycomp.def_static("label", &T::label, "Get the label for the type");
     _pycomp.def_static("description", &T::description,
                        "Get the description for the type");
-    _pycomp.def_property_readonly_static(
-        "available", [](py::object) { return true; },
-        "Whether the component is available");
+    _pycomp.def_property_readonly_static("available", [](py::object) { return true; },
+                                         "Whether the component is available");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -459,12 +458,10 @@ generate(py::module& _pymod)
     _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
     _pycomp.def("__repr__", _repr, "String representation");
 
-    _pycomp.def_property_readonly_static(
-        "available", [](py::object) { return false; },
-        "Whether the component is available");
-    _pycomp.def_property_readonly_static(
-        "has_value", [](py::object) { return false; },
-        "Whether the component has an accessible value");
+    _pycomp.def_property_readonly_static("available", [](py::object) { return false; },
+                                         "Whether the component is available");
+    _pycomp.def_property_readonly_static("has_value", [](py::object) { return false; },
+                                         "Whether the component has an accessible value");
 }
 //
 //--------------------------------------------------------------------------------------//

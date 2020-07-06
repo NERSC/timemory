@@ -70,16 +70,17 @@ public:
     using captured_location_t = typename component_type::captured_location_t;
     using value_type          = component_type;
 
-    static constexpr bool is_component        = false;
-    static constexpr bool has_gotcha_v        = component_type::has_gotcha_v;
-    static constexpr bool has_user_bundle_v   = component_type::has_user_bundle_v;
+    static constexpr bool is_component      = false;
+    static constexpr bool has_gotcha_v      = component_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v = component_type::has_user_bundle_v;
 
 public:
     template <typename T, typename... U>
-    struct variadic_config
+    struct quirk_config
     {
-        static constexpr bool value = is_one_of<
-            T, contains_one_of_t<variadic::is_config, concat<Types..., U...>>>::value;
+        static constexpr bool value =
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:
@@ -106,11 +107,11 @@ public:
 
 public:
     template <typename... T, typename Init = initializer_type>
-    explicit auto_tuple(const string_t&, variadic::config<T...>,
+    explicit auto_tuple(const string_t&, quirk::config<T...>,
                         const Init& = this_type::get_initializer());
 
     template <typename... T, typename Init = initializer_type>
-    explicit auto_tuple(const captured_location_t&, variadic::config<T...>,
+    explicit auto_tuple(const captured_location_t&, quirk::config<T...>,
                         const Init& = this_type::get_initializer());
 
     template <typename Init = initializer_type>
@@ -324,21 +325,20 @@ protected:
 
 template <typename... Types>
 template <typename... T, typename Init>
-auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...>,
+auto_tuple<Types...>::auto_tuple(const string_t& key, quirk::config<T...>,
                                  const Init&     init_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(variadic_config<variadic::exit_report, T...>::value)
-, m_temporary(m_enabled
-                  ? component_type(key, m_enabled,
-                                   variadic_config<variadic::flat_scope, T...>::value)
-                  : component_type{})
+, m_report_at_exit(quirk_config<quirk::exit_report, T...>::value)
+, m_temporary(m_enabled ? component_type(key, m_enabled,
+                                         quirk_config<quirk::flat_scope, T...>::value)
+                        : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start, T...>::value)
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start, T...>::value)
         {
             m_temporary.start();
         }
@@ -349,21 +349,20 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, variadic::config<T...>,
 
 template <typename... Types>
 template <typename... T, typename Init>
-auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, variadic::config<T...>,
+auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, quirk::config<T...>,
                                  const Init&                init_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(variadic_config<variadic::exit_report, T...>::value)
-, m_temporary(m_enabled
-                  ? component_type(loc, m_enabled,
-                                   variadic_config<variadic::flat_scope, T...>::value)
-                  : component_type{})
+, m_report_at_exit(quirk_config<quirk::exit_report, T...>::value)
+, m_temporary(m_enabled ? component_type(loc, m_enabled,
+                                         quirk_config<quirk::flat_scope, T...>::value)
+                        : component_type{})
 , m_reference_object(nullptr)
 
 {
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start, T...>::value)
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start, T...>::value)
         {
             m_temporary.start();
         }
@@ -377,7 +376,7 @@ template <typename Init>
 auto_tuple<Types...>::auto_tuple(const string_t& key, scope::config _scope,
                                  bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit || variadic_config<variadic::exit_report>::value)
+, m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
@@ -385,10 +384,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, scope::config _scope,
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start>::value)
-        {
-            m_temporary.start();
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start>::value) { m_temporary.start(); }
     }
 }
 
@@ -399,7 +395,7 @@ template <typename Init>
 auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, scope::config _scope,
                                  bool report_at_exit, const Init& init_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit || variadic_config<variadic::exit_report>::value)
+, m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
@@ -407,10 +403,7 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, scope::config _
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start>::value)
-        {
-            m_temporary.start();
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start>::value) { m_temporary.start(); }
     }
 }
 
@@ -421,7 +414,7 @@ template <typename Init>
 auto_tuple<Types...>::auto_tuple(size_t hash, scope::config _scope, bool report_at_exit,
                                  const Init& init_func)
 : m_enabled(settings::enabled())
-, m_report_at_exit(report_at_exit || variadic_config<variadic::exit_report>::value)
+, m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
@@ -429,10 +422,7 @@ auto_tuple<Types...>::auto_tuple(size_t hash, scope::config _scope, bool report_
     if(m_enabled)
     {
         init(init_func);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start>::value)
-        {
-            m_temporary.start();
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start>::value) { m_temporary.start(); }
     }
 }
 
@@ -442,16 +432,13 @@ template <typename... Types>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, scope::config _scope,
                                  bool report_at_exit)
 : m_enabled(true)
-, m_report_at_exit(report_at_exit || variadic_config<variadic::exit_report>::value)
+, m_report_at_exit(report_at_exit || quirk_config<quirk::exit_report>::value)
 , m_temporary(component_type(tmp.clone(true, _scope)))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
     {
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start>::value)
-        {
-            m_temporary.start();
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start>::value) { m_temporary.start(); }
     }
 }
 
@@ -463,7 +450,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, scope::config 
                                  const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() ||
-                   variadic_config<variadic::exit_report>::value)
+                   quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(key, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
@@ -471,10 +458,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& key, bool store, scope::config 
     if(m_enabled)
     {
         init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start>::value)
-        {
-            m_temporary.start();
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start>::value) { m_temporary.start(); }
     }
 }
 
@@ -487,7 +471,7 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store,
                                  Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() ||
-                   variadic_config<variadic::exit_report>::value)
+                   quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(loc, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
@@ -495,10 +479,7 @@ auto_tuple<Types...>::auto_tuple(const captured_location_t& loc, bool store,
     if(m_enabled)
     {
         init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start>::value)
-        {
-            m_temporary.start();
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start>::value) { m_temporary.start(); }
     }
 }
 
@@ -510,7 +491,7 @@ auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::config _scope,
                                  const Init& init_func, Arg&& arg, Args&&... args)
 : m_enabled(store && settings::enabled())
 , m_report_at_exit(settings::destructor_report() ||
-                   variadic_config<variadic::exit_report>::value)
+                   quirk_config<quirk::exit_report>::value)
 , m_temporary(m_enabled ? component_type(hash, m_enabled, _scope) : component_type{})
 , m_reference_object(nullptr)
 
@@ -518,10 +499,7 @@ auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::config _scope,
     if(m_enabled)
     {
         init(init_func, std::forward<Arg>(arg), std::forward<Args>(args)...);
-        IF_CONSTEXPR(!variadic_config<variadic::explicit_start>::value)
-        {
-            m_temporary.start();
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::explicit_start>::value) { m_temporary.start(); }
     }
 }
 
@@ -530,7 +508,7 @@ auto_tuple<Types...>::auto_tuple(size_t hash, bool store, scope::config _scope,
 template <typename... Types>
 auto_tuple<Types...>::~auto_tuple()
 {
-    IF_CONSTEXPR(!variadic_config<variadic::explicit_stop>::value)
+    IF_CONSTEXPR(!quirk_config<quirk::explicit_stop>::value)
     {
         if(m_enabled)
         {

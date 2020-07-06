@@ -43,10 +43,16 @@
 
 #if defined(_LINUX)
 #    include <pthread.h>
+#    include <sys/syscall.h>
+#    include <unistd.h>
 #endif
 
 #if defined(_MACOS)
 #    include <sys/sysctl.h>
+#endif
+
+#if defined(_WINDOWS)
+#    include <processthreadsapi.h>
 #endif
 
 namespace tim
@@ -92,6 +98,20 @@ static inline bool
 is_master_thread()
 {
     return (get_tid() == get_master_tid());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline uint32_t
+get_sys_tid()
+{
+#if defined(_LINUX)
+    return syscall(SYS_gettid);
+#elif defined(_WINDOWS)
+    return GetCurrentThreadId();
+#else
+    return static_cast<uint32_t>(get_id());
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//

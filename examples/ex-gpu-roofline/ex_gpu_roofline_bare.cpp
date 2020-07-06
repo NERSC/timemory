@@ -27,9 +27,9 @@
 #    define DISABLE_TIMEMORY
 #endif
 
+#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/backends/types/cuda.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"

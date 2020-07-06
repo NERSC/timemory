@@ -167,10 +167,11 @@ public:
 
 private:
     template <typename T, typename... U>
-    struct variadic_config
+    struct quirk_config
     {
-        static constexpr bool value = is_one_of<
-            T, contains_one_of_t<variadic::is_config, concat<Types..., U...>>>::value;
+        static constexpr bool value =
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:
@@ -184,7 +185,7 @@ public:
     {}
 
     template <typename... T>
-    explicit base_bundle(uint64_t hash, bool store, variadic::config<T...>)
+    explicit base_bundle(uint64_t hash, bool store, quirk::config<T...>)
     : m_store(store && settings::enabled())
     , m_is_pushed(false)
     , m_scope(get_scope_config<T...>())
@@ -193,7 +194,7 @@ public:
     {}
 
     template <typename... T>
-    explicit base_bundle(uint64_t hash, variadic::config<T...>)
+    explicit base_bundle(uint64_t hash, quirk::config<T...>)
     : m_store(settings::enabled())
     , m_is_pushed(false)
     , m_scope(get_scope_config<T...>())
@@ -248,9 +249,9 @@ public:
     template <typename... T>
     static auto get_scope_config()
     {
-        return scope::config(variadic_config<variadic::flat_scope, T...>::value,
-                             variadic_config<variadic::timeline_scope, T...>::value,
-                             variadic_config<variadic::tree_scope, T...>::value);
+        return scope::config(quirk_config<quirk::flat_scope, T...>::value,
+                             quirk_config<quirk::timeline_scope, T...>::value,
+                             quirk_config<quirk::tree_scope, T...>::value);
     }
 
 protected:

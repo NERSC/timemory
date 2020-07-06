@@ -52,12 +52,20 @@ if(TIMEMORY_USE_DYNINST)
 
     add_target_flag_if_avail(timemory-run-interface "-Wno-unused-function")
 
+    if(TARGET timemory::timemory-settings-static)
+        set(_LIBRARY timemory::timemory-settings-static)
+    elseif(TARGET timemory::timemory-settings-shared)
+        set(_LIBRARY timemory::timemory-settings-shared)
+    endif()
+
     target_link_libraries(timemory-run-interface INTERFACE
         timemory-headers
         timemory-dyninst
+        timemory-dmp
         timemory-arch
         timemory-compile-options
-        timemory-roofline-options)
+        timemory-roofline-options
+        ${_LIBRARY})
 
     add_executable(timemory-run
         ${CMAKE_CURRENT_LIST_DIR}/timemory-run.cpp

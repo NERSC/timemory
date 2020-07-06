@@ -37,28 +37,60 @@ if(TIMEMORY_BUILD_TOOLS_LIBEXPECT)
     endif()
 endif()
 
+# non-MPI version
 add_executable(timem ${_EXCLUDE} timem.cpp timem.hpp)
 
 target_link_libraries(timem PRIVATE
     timemory-compile-options
-    timemory-arch
-    timemory-vector
+    timemory-threading
     timemory-headers
+    timemory-cereal
+    timemory-arch
+    timemory-papi
+    timem-libexplain
+    ${_STATIC_LIB})
+
+add_target_flag_if_avail(timem "-g")
+
+set_target_properties(timem PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH ON)
+
+# timem installation
+install(TARGETS timem
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT   tools
+    ${_OPTIONAL})
+
+# do not build timem-mpi if not using mpi
+if(NOT TIMEMORY_USE_MPI)
+    return()
+endif()
+  
+add_executable(timem-mpi ${_EXCLUDE} timem.cpp timem.hpp)
+
+target_link_libraries(timem-mpi PRIVATE
+    timemory-compile-options
+    timemory-threading
+    timemory-headers
+    timemory-cereal
+    timemory-arch
     timemory-papi
     timemory-mpi
     timem-libexplain
     ${_STATIC_LIB})
 
-set_target_properties(timem PROPERTIES
+add_target_flag_if_avail(timem-mpi "-g")
+
+set_target_properties(timem-mpi PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH ON)
 
 # ensure timemory-pid is built
 if(TARGET timemory-pid)
-    add_dependencies(timem timemory-pid)
+    add_dependencies(timem-mpi timemory-pid)
 endif()
 
 # timem installation
-install(TARGETS timem
+install(TARGETS timem-mpi
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT   tools
     ${_OPTIONAL})

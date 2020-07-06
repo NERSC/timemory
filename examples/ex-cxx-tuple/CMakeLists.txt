@@ -20,5 +20,5 @@ find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} timemory-cxx-tuple-example)
-install(TARGETS ${EXE_NAME} DESTINATION bin)
+install(TARGETS ${EXE_NAME} DESTINATION bin OPTIONAL)
 

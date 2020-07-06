@@ -44,6 +44,8 @@
 
 // Define macros for WIN32 for importing/exporting external symbols to DLLs
 #if !defined(tim_dll)
+#    define tim_dll
+/*
 #    if defined(_WINDOWS)
 #        if defined(TIMEMORY_DLL_EXPORT)
 #            define tim_dll __declspec(dllexport)
@@ -55,14 +57,17 @@
 #    else
 #        define tim_dll
 #    endif
+*/
 #endif
 
 #if defined(_WINDOWS) && (defined(TIMEMORY_DLL_EXPORT) || defined(TIMEMORY_DLL_IMPORT))
 #    if !defined(tim_dll_export)
-#        define tim_dll_export __declspec(dllexport)
+//#        define tim_dll_export __declspec(dllexport)
+#        define tim_dll_export
 #    endif
 #    if !defined(tim_dll_import)
-#        define tim_dll_import __declspec(dllimport)
+//#        define tim_dll_import __declspec(dllimport)
+#        define tim_dll_import
 #    endif
 #else
 #    if !defined(tim_dll_export)

@@ -56,6 +56,12 @@ main(int argc, char** argv)
     tim::set_env<string_t>("DYNINSTAPI_RT_LIB", DYNINST_API_RT, 0);
 #endif
 
+#if defined(TIMEMORY_USE_MPI)
+    auto _dmp_argc = 1;
+    auto _dmp_argv = argv;
+    tim::dmp::initialize(_dmp_argc, _dmp_argv);
+#endif
+
     argv0                  = argv[0];
     auto env_collect_paths = tim::get_env<string_t>("TIMEMORY_COLLECTION_PATH", "");
     prefix_collection_path(env_collect_paths, collection_paths);
@@ -77,7 +83,7 @@ main(int argc, char** argv)
     bpatch->setDelayedParsing(true);
     bpatch->setInstrStackFrames(true);
     bpatch->setLivenessAnalysis(false);
-    bpatch->setTrampRecursive(true);
+    bpatch->setTrampRecursive(false);
     bpatch->setMergeTramp(true);
 
     int _argc = argc;
@@ -123,13 +129,13 @@ main(int argc, char** argv)
         return ss.str();
     };
 
-    if(verbose_level > 1)
+    if(verbose_level > 1 && tim::dmp::rank() == 0)
     {
         std::cout << "[original]: " << cmd_string(argc, argv) << std::endl;
         std::cout << "[cfg-args]: " << cmd_string(_argc, _argv) << std::endl;
     }
 
-    if(_cmdc > 0)
+    if(_cmdc > 0 && tim::dmp::rank() == 0)
         std::cout << "\n [command]: " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
     if(_cmdc > 0)
@@ -1202,10 +1208,11 @@ main(int argc, char** argv)
                     flow->getOuterLoops(basic_loop);
                 for(auto litr : basic_loop)
                 {
+                    auto lname  = get_loop_file_line_info(mod, itr, flow, litr);
+                    auto _lname = lname.get();
+                    auto _lhash = std::hash<string_t>()(_lname);
+                    hash_ids.push_back({ _lhash, _lname });
                     auto _lf = [=]() {
-                        auto lname        = get_loop_file_line_info(mod, itr, flow, litr);
-                        auto _lname       = lname.get();
-                        auto _lhash       = std::hash<string_t>()(_lname);
                         auto _ltrace_entr = (entr_hash)
                                                 ? timemory_call_expr(_lhash)
                                                 : timemory_call_expr(_lname.c_str());

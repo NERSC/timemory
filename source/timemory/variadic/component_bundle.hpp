@@ -42,6 +42,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/variadic/base_bundle.hpp"
+#include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <cstdint>
@@ -98,9 +99,9 @@ public:
     using type             = convert_t<tuple_type, component_bundle<Tag>>;
     using initializer_type = std::function<void(this_type&)>;
 
-    static constexpr bool is_component        = false;
-    static constexpr bool has_gotcha_v        = bundle_type::has_gotcha_v;
-    static constexpr bool has_user_bundle_v   = bundle_type::has_user_bundle_v;
+    static constexpr bool is_component      = false;
+    static constexpr bool has_gotcha_v      = bundle_type::has_gotcha_v;
+    static constexpr bool has_user_bundle_v = bundle_type::has_user_bundle_v;
 
 public:
     //
@@ -157,21 +158,22 @@ public:
 
 public:
     template <typename T, typename... U>
-    struct variadic_config
+    struct quirk_config
     {
-        static constexpr bool value = is_one_of<
-            T, contains_one_of_t<variadic::is_config, concat<Types..., U...>>>::value;
+        static constexpr bool value =
+            is_one_of<T,
+                      contains_one_of_t<quirk::is_config, concat<Types..., U...>>>::value;
     };
 
 public:
     component_bundle();
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_bundle(const string_t& key, variadic::config<T...>,
+    explicit component_bundle(const string_t& key, quirk::config<T...>,
                               const Func& = get_initializer());
 
     template <typename... T, typename Func = initializer_type>
-    explicit component_bundle(const captured_location_t& loc, variadic::config<T...>,
+    explicit component_bundle(const captured_location_t& loc, quirk::config<T...>,
                               const Func& = get_initializer());
 
     template <typename Func = initializer_type>
@@ -267,8 +269,7 @@ public:
     template <typename... Args>
     void assemble(Args&&... _args)
     {
-        using assemble_t = operation_t<operation::assemble>;
-        apply_v::access<assemble_t>(m_data, std::forward<Args>(_args)...);
+        invoke::assemble(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -277,8 +278,7 @@ public:
     template <typename... Args>
     void derive(Args&&... _args)
     {
-        using derive_t = operation_t<operation::derive>;
-        apply_v::access<derive_t>(m_data, std::forward<Args>(_args)...);
+        invoke::derive(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -288,8 +288,7 @@ public:
     template <typename... Args>
     void mark_begin(Args&&... _args)
     {
-        using mark_begin_t = operation_t<operation::mark_begin>;
-        apply_v::access<mark_begin_t>(m_data, std::forward<Args>(_args)...);
+        invoke::mark_begin(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -299,8 +298,7 @@ public:
     template <typename... Args>
     void mark_end(Args&&... _args)
     {
-        using mark_end_t = operation_t<operation::mark_end>;
-        apply_v::access<mark_end_t>(m_data, std::forward<Args>(_args)...);
+        invoke::mark_end(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -309,8 +307,7 @@ public:
     template <typename... Args>
     void store(Args&&... _args)
     {
-        using store_t = operation_t<operation::store>;
-        apply_v::access<store_t>(m_data, std::forward<Args>(_args)...);
+        invoke::store(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -319,8 +316,7 @@ public:
     template <typename... Args>
     void audit(Args&&... _args)
     {
-        using audit_t = operation_t<operation::audit>;
-        apply_v::access<audit_t>(m_data, std::forward<Args>(_args)...);
+        invoke::audit(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -329,8 +325,7 @@ public:
     template <typename... Args>
     void add_secondary(Args&&... _args)
     {
-        using add_second_t = operation_t<operation::add_secondary>;
-        apply_v::access<add_second_t>(m_data, std::forward<Args>(_args)...);
+        invoke::add_secondary(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -338,8 +333,7 @@ public:
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
-        using invoke_t = operation_t<OpT>;
-        apply_v::access<invoke_t>(m_data, std::forward<Args>(_args)...);
+        invoke::invoke<OpT, Tag>(m_data, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

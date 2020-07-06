@@ -245,7 +245,7 @@ install:
   - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip
   - source activate pyctest
   - if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
-  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --python ${BUILD_ARGS}"
+  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
   - travis_wait 90 python ./pyctest-runner.py -cc ${CC} -cxx ${CXX} ${ARGS} --pyctest-build-type=${BUILD_TYPE} -j 1 -- -V --output-on-failure -- ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
@@ -261,11 +261,8 @@ script:
 
 after_success:
   - eval "${MATRIX_EVAL}"
-  - SUBMIT_COVERAGE=0
-  - if [ -n "${COVERAGE}" ]; then SUBMIT_COVERAGE=1; fi
-  - if [ -z "$(which lcov)" ]; then SUBMIT_COVERAGE=0; fi
   # Create lcov report: capture coverage info, filter, debugging, and upload
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --directory build-timemory/Linux --capture --output-file coverage.info ; fi
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' --output-file coverage.info; fi
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --list coverage.info; fi
-  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Capturing coverage..."; lcov --directory . --capture --output-file coverage.info ; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Removing some coverage..."; lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/external/*' --output-file coverage.info; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Listing coverage..."; lcov --list coverage.info; fi
+  - if [ -n "${COVERAGE}" ]; then echo "Submitting coverage..."; bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi

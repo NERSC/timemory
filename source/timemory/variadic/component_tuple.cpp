@@ -32,6 +32,7 @@
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/types.hpp"
 
 //======================================================================================//
@@ -53,24 +54,19 @@ component_tuple<Types...>::component_tuple()
 //
 template <typename... Types>
 template <typename... T, typename Func>
-component_tuple<Types...>::component_tuple(const string_t& key, variadic::config<T...>,
-                                           const Func&     init_func)
-: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), variadic::config<T...>{})
-, m_data(data_type{})
+component_tuple<Types...>::component_tuple(const string_t&     key,
+                                           quirk::config<T...> config,
+                                           const Func&         init_func)
+: bundle_type(((settings::enabled()) ? add_hash_id(key) : 0), quirk::config<T...>{})
+, m_data(invoke::construct<data_type>(key, config))
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
-        {
-            init_func(*this);
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value) { init_storage(); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
-        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
+        invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -79,23 +75,18 @@ component_tuple<Types...>::component_tuple(const string_t& key, variadic::config
 template <typename... Types>
 template <typename... T, typename Func>
 component_tuple<Types...>::component_tuple(const captured_location_t& loc,
-                                           variadic::config<T...>, const Func& init_func)
-: bundle_type(loc.get_hash(), variadic::config<T...>{})
-, m_data(data_type{})
+                                           quirk::config<T...>        config,
+                                           const Func&                init_func)
+: bundle_type(loc.get_hash(), quirk::config<T...>{})
+, m_data(invoke::construct<data_type>(loc, config))
 {
     if(settings::enabled())
     {
-        IF_CONSTEXPR(!variadic_config<variadic::no_store, T...>::value)
-        {
-            init_storage();
-        }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init, T...>::value)
-        {
-            init_func(*this);
-        }
+        IF_CONSTEXPR(!quirk_config<quirk::no_store, T...>::value) { init_storage(); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init, T...>::value) { init_func(*this); }
         set_prefix(loc.get_id());
-        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start, T...>::value) { start(); }
+        invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start, T...>::value) { start(); }
     }
 }
 
@@ -106,7 +97,7 @@ template <typename Func>
 component_tuple<Types...>::component_tuple(const string_t& key, const bool& store,
                                            scope::config _scope, const Func& init_func)
 : bundle_type((settings::enabled()) ? add_hash_id(key) : 0, store, _scope)
-, m_data(data_type{})
+, m_data(invoke::construct<data_type>(key, store, _scope))
 {
     if(settings::enabled())
     {
@@ -114,10 +105,10 @@ component_tuple<Types...>::component_tuple(const string_t& key, const bool& stor
         {
             init_storage();
         }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(get_hash_ids()->find(m_hash)->second);
-        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -129,7 +120,7 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
                                            const bool& store, scope::config _scope,
                                            const Func& init_func)
 : bundle_type(loc.get_hash(), store, _scope)
-, m_data(data_type{})
+, m_data(invoke::construct<data_type>(loc, store, _scope))
 {
     if(settings::enabled())
     {
@@ -137,10 +128,10 @@ component_tuple<Types...>::component_tuple(const captured_location_t& loc,
         {
             init_storage();
         }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(loc.get_hash());
-        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -151,7 +142,7 @@ template <typename Func>
 component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
                                            scope::config _scope, const Func& init_func)
 : bundle_type(hash, store, _scope)
-, m_data(data_type{})
+, m_data(invoke::construct<data_type>(hash, store, _scope))
 {
     if(settings::enabled())
     {
@@ -159,10 +150,10 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
         {
             init_storage();
         }
-        IF_CONSTEXPR(!variadic_config<variadic::no_init>::value) { init_func(*this); }
+        IF_CONSTEXPR(!quirk_config<quirk::no_init>::value) { init_func(*this); }
         set_prefix(hash);
-        apply_v::access<operation_t<operation::set_scope>>(m_data, m_scope);
-        IF_CONSTEXPR(variadic_config<variadic::auto_start>::value) { start(); }
+        invoke::set_scope(m_data, m_scope);
+        IF_CONSTEXPR(quirk_config<quirk::auto_start>::value) { start(); }
     }
 }
 
@@ -171,7 +162,7 @@ component_tuple<Types...>::component_tuple(size_t hash, const bool& store,
 template <typename... Types>
 component_tuple<Types...>::~component_tuple()
 {
-    // IF_CONSTEXPR(variadic_config<variadic::auto_stop>::value) { stop(); }
+    // IF_CONSTEXPR(quirk_config<quirk::auto_stop>::value) { stop(); }
     stop();
 }
 
@@ -197,11 +188,11 @@ component_tuple<Types...>::push()
     if(!m_is_pushed)
     {
         // reset the data
-        apply_v::access<operation_t<operation::reset>>(m_data);
+        invoke::reset(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = true;
         // insert node or find existing node
-        apply_v::access<operation_t<operation::insert_node>>(m_data, m_scope, m_hash);
+        invoke::push(m_data, m_scope, m_hash);
     }
 }
 
@@ -215,7 +206,7 @@ component_tuple<Types...>::pop()
     if(m_is_pushed)
     {
         // set the current node to the parent node
-        apply_v::access<operation_t<operation::pop_node>>(m_data);
+        invoke::pop(m_data);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed = false;
     }
@@ -229,7 +220,7 @@ template <typename... Args>
 void
 component_tuple<Types...>::measure(Args&&... args)
 {
-    apply_v::access<operation_t<operation::measure>>(m_data, std::forward<Args>(args)...);
+    invoke::measure(m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -253,24 +244,8 @@ template <typename... Args>
 void
 component_tuple<Types...>::start(mpl::lightweight, Args&&... args)
 {
-    using standard_start_t = operation_t<operation::standard_start>;
-
-    using priority_types_t = impl::filter_false<negative_start_priority, impl_type>;
-    using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
-    using priority_start_t = operation_t<operation::priority_start, priority_tuple_t>;
-
-    using delayed_types_t = impl::filter_false<positive_start_priority, impl_type>;
-    using delayed_tuple_t = mpl::sort<trait::start_priority, delayed_types_t>;
-    using delayed_start_t = operation_t<operation::delayed_start, delayed_tuple_t>;
-
     assemble(*this);
-
-    // start components
-    apply_v::out_of_order<priority_start_t, priority_tuple_t, 1>(
-        m_data, std::forward<Args>(args)...);
-    apply_v::access<standard_start_t>(m_data, std::forward<Args>(args)...);
-    apply_v::out_of_order<delayed_start_t, delayed_tuple_t, 1>(
-        m_data, std::forward<Args>(args)...);
+    invoke::start(m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -280,26 +255,8 @@ template <typename... Args>
 void
 component_tuple<Types...>::stop(mpl::lightweight, Args&&... args)
 {
-    using standard_stop_t = operation_t<operation::standard_stop>;
-
-    using priority_types_t = impl::filter_false<negative_stop_priority, impl_type>;
-    using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
-    using priority_stop_t  = operation_t<operation::priority_stop, priority_tuple_t>;
-
-    using delayed_types_t = impl::filter_false<positive_stop_priority, impl_type>;
-    using delayed_tuple_t = mpl::sort<trait::stop_priority, delayed_types_t>;
-    using delayed_stop_t  = operation_t<operation::delayed_stop, delayed_tuple_t>;
-
-    // stop components
-    apply_v::out_of_order<priority_stop_t, priority_tuple_t, 1>(
-        m_data, std::forward<Args>(args)...);
-    apply_v::access<standard_stop_t>(m_data, std::forward<Args>(args)...);
-    apply_v::out_of_order<delayed_stop_t, delayed_tuple_t, 1>(
-        m_data, std::forward<Args>(args)...);
-
-    // increment laps
+    invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
-
     derive(*this);
 }
 
@@ -343,7 +300,7 @@ component_tuple<Types...>&
 component_tuple<Types...>::record(Args&&... args)
 {
     ++m_laps;
-    apply_v::access<operation_t<operation::record>>(m_data, std::forward<Args>(args)...);
+    invoke::record(m_data, std::forward<Args>(args)...);
     return *this;
 }
 
@@ -355,7 +312,7 @@ template <typename... Args>
 void
 component_tuple<Types...>::reset(Args&&... args)
 {
-    apply_v::access<operation_t<operation::reset>>(m_data, std::forward<Args>(args)...);
+    invoke::reset(m_data, std::forward<Args>(args)...);
     m_laps = 0;
 }
 
@@ -367,14 +324,7 @@ template <typename... Args>
 auto
 component_tuple<Types...>::get(Args&&... args) const
 {
-    using data_collect_type = get_data_type_t<tuple_type>;
-    using data_value_type   = get_data_value_t<tuple_type>;
-    using get_data_t        = operation_t<operation::get_data, data_collect_type>;
-
-    data_value_type _ret_data;
-    apply_v::out_of_order<get_data_t, data_collect_type, 2>(m_data, _ret_data,
-                                                            std::forward<Args>(args)...);
-    return _ret_data;
+    return invoke::get(m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -385,14 +335,7 @@ template <typename... Args>
 auto
 component_tuple<Types...>::get_labeled(Args&&... args) const
 {
-    using data_collect_type = get_data_type_t<tuple_type>;
-    using data_label_type   = get_data_label_t<tuple_type>;
-    using get_data_t        = operation_t<operation::get_labeled_data, data_collect_type>;
-
-    data_label_type _ret_data;
-    apply_v::out_of_order<get_data_t, data_collect_type, 2>(m_data, _ret_data,
-                                                            std::forward<Args>(args)...);
-    return _ret_data;
+    return invoke::get_labeled(m_data, std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -473,7 +416,7 @@ template <typename... Types>
 void
 component_tuple<Types...>::set_prefix(const string_t& _key) const
 {
-    apply_v::access<operation_t<operation::set_prefix>>(m_data, m_hash, _key);
+    invoke::set_prefix(m_data, m_hash, _key);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -484,7 +427,7 @@ component_tuple<Types...>::set_prefix(size_t _hash) const
 {
     auto itr = get_hash_ids()->find(_hash);
     if(itr != get_hash_ids()->end())
-        apply_v::access<operation_t<operation::set_prefix>>(m_data, _hash, itr->second);
+        invoke::set_prefix(m_data, _hash, itr->second);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -494,7 +437,7 @@ void
 component_tuple<Types...>::set_scope(scope::config val)
 {
     m_scope = val;
-    apply_v::access<operation_t<operation::set_scope>>(m_data, val);
+    invoke::set_scope(m_data, m_scope);
 }
 
 //--------------------------------------------------------------------------------------//

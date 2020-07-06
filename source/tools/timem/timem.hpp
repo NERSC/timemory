@@ -26,6 +26,7 @@
 
 #define TIMEM_DEBUG
 #define TIMEMORY_DISABLE_BANNER
+#define TIMEMORY_DISABLE_METADATA
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
 #include "timemory/sampling/sampler.hpp"
@@ -128,6 +129,9 @@ struct custom_print
 
     custom_print(std::size_t N, std::size_t /*_Ntot*/, base_type& obj, std::ostream& os)
     {
+        if(!tim::trait::runtime_enabled<Tp>::get())
+            return;
+
         std::stringstream ss;
         if(N == 0)
             ss << std::endl;
@@ -136,17 +140,6 @@ struct custom_print
             ss << print_properties<Tp>::rank() << "|> ";
         ss << obj << std::endl;
         os << ss.str();
-    }
-};
-//
-template <typename Tp>
-struct custom_mpi_get
-{
-    using value_type = typename Tp::value_type;
-
-    custom_mpi_get(const Tp& obj, std::vector<Tp>& v)
-    {
-        operation::finalize::mpi_get<Tp, true>(v, obj);
     }
 };
 //
@@ -381,9 +374,10 @@ class timem_tuple : public lightweight_tuple<Types...>
 public:
     using base_type = lightweight_tuple<Types...>;
     using apply_v   = typename base_type::apply_v;
-    using impl_type = typename base_type::impl_type;
+    using data_type = typename base_type::impl_type;
+    using this_type = timem_tuple<Types...>;
 
-    template <template <typename> class Op, typename Tuple = impl_type>
+    template <template <typename> class Op, typename Tuple = data_type>
     using custom_operation_t =
         typename base_type::template custom_operation<Op, Tuple>::type;
 
@@ -407,31 +401,8 @@ public:
     template <template <typename...> class Tuple, typename... T>
     struct mpi_getter<Tuple<T...>>
     {
-        using type       = Tuple<operation::custom_mpi_get<T>...>;
         using value_type = Tuple<std::vector<T>...>;
-
-        template <typename U>
-        static auto get(const std::vector<U>& vec)
-        {
-            U ret{};
-            for(const auto& itr : vec)
-                ret += itr;
-            return std::make_tuple(ret, vec.size());
-        }
-
-        template <size_t... Idx, size_t N = sizeof...(Idx)>
-        static auto get(const value_type& vec, std::index_sequence<Idx...>)
-        {
-            Tuple<T...>           ret;
-            std::array<size_t, N> sz;
-            TIMEMORY_FOLD_EXPRESSION(std::tie(std::get<Idx>(ret), std::get<Idx>(sz)) =
-                                         get(std::get<Idx>(vec)));
-            return std::make_tuple(ret, sz);
-        }
     };
-
-    template <typename T>
-    using mpi_getter_t = typename mpi_getter<T>::type;
 
     template <typename T>
     using mpi_getter_v = typename mpi_getter<T>::value_type;
@@ -445,6 +416,12 @@ public:
     : base_type(key)
     {}
 
+    timem_tuple(const std::string& _key, data_type&& _data)
+    : base_type(_key)
+    {
+        m_data = std::move(_data);
+    }
+
     ~timem_tuple() {}
 
     void start() { base_type::start(); }
@@ -456,36 +433,31 @@ public:
     void sample()
     {
         base_type::sample();
-        apply<void>::access<opsample_t<impl_type>>(this->m_data);
+        apply<void>::access<opsample_t<data_type>>(this->m_data);
     }
 
-    auto& mpi_get()
+    auto mpi_get()
     {
-        auto v_data = mpi_getter_v<impl_type>{};
-        apply<void>::access2<mpi_getter_t<impl_type>>(this->m_data, v_data);
-        constexpr auto        N = std::tuple_size<impl_type>::value;
-        std::array<size_t, N> sz;
-        std::tie(m_data, sz) =
-            mpi_getter<impl_type>::get(v_data, make_index_sequence<N>{});
-        size_t tot = 0;
-        for(auto itr : sz)
-            tot += itr;
-        m_empty = (tot > 0) ? false : true;
-        return *this;
+        constexpr auto N      = std::tuple_size<data_type>::value;
+        auto           v_data = mpi_getter_v<data_type>{};
+        // merge the data
+        mpi_get(v_data, m_data, make_index_sequence<N>{});
+        // return an array of this_type
+        return mpi_get(v_data, make_index_sequence<N>{});
     }
 
     friend std::ostream& operator<<(std::ostream& os, const timem_tuple<Types...>& obj)
     {
         std::stringstream ssp;
         std::stringstream ssd;
-        auto&&            data  = obj.m_data;
-        auto&&            key   = obj.key();
-        auto&&            width = obj.output_width();
+        auto&&            _data  = obj.m_data;
+        auto&&            _key   = obj.key();
+        auto&&            _width = obj.output_width();
 
-        using print_t = custom_operation_t<operation::custom_print, impl_type>;
-        apply<void>::access_with_indices<print_t>(data, std::ref(ssd));
+        using print_t = custom_operation_t<operation::custom_print, data_type>;
+        apply<void>::access_with_indices<print_t>(_data, std::ref(ssd));
 
-        ssp << std::setw(width) << std::left << key;
+        ssp << std::setw(_width) << std::left << _key;
         os << ssp.str() << ssd.str();
 
         return os;
@@ -493,13 +465,53 @@ public:
 
     void set_rank(int32_t _rank)
     {
-        apply<void>::access<custom_operation_t<operation::print_properties, impl_type>>(
+        apply<void>::access<custom_operation_t<operation::print_properties, data_type>>(
             this->m_data, operation::set_print_rank{}, _rank);
     }
 
     bool empty() const { return m_empty; }
 
-protected:
+private:
+    // this mpi_get overload merges the results from the different mpi processes
+    template <typename... Tp, size_t... Idx>
+    auto mpi_get(std::tuple<std::vector<Tp>...>& _data, std::tuple<Tp...>& _inp,
+                 std::index_sequence<Idx...>)
+    {
+        TIMEMORY_FOLD_EXPRESSION(
+            operation::finalize::mpi_get<decay_t<std::tuple_element_t<Idx, data_type>>,
+                                         true>(std::get<Idx>(_data),
+                                               std::get<Idx>(_inp)));
+    }
+
+    // this mpi_get overload converts the merged data into the tuples which are
+    // of the same data type as the timem_tuple m_data field
+    template <size_t Idx, typename... Tp>
+    auto mpi_get(std::vector<std::tuple<Tp...>>& _targ,
+                 std::tuple<std::vector<Tp>...>& _data)
+    {
+        auto&& _entries = std::get<Idx>(_data);
+        size_t n        = _entries.size();
+        if(n > _targ.size())
+            _targ.resize(n, std::tuple<Tp...>{});
+        for(size_t i = 0; i < n; ++i)
+            std::get<Idx>(_targ.at(i)) = std::move(_entries.at(i));
+    }
+
+    // this mpi_get overload converts the data tuples into timem_tuple instances
+    template <typename... Tp, size_t... Idx>
+    auto mpi_get(std::tuple<std::vector<Tp>...>& _data, std::index_sequence<Idx...>)
+    {
+        // convert the tuple of vectors into a vector of tuples
+        std::vector<std::tuple<Tp...>> _vec;
+        TIMEMORY_FOLD_EXPRESSION(mpi_get<Idx>(_vec, _data));
+        // convert the vector of tuples into a vector of this_tupe
+        std::vector<this_type> _ret;
+        for(auto&& itr : _vec)
+            _ret.emplace_back(this_type(this->key(), std::move(itr)));
+        return _ret;
+    }
+
+private:
     using base_type::m_data;
     bool m_empty = false;
 };

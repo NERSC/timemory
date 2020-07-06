@@ -35,8 +35,11 @@
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/declaration.hpp"
+#include "timemory/operations/types/fini.hpp"
+#include "timemory/operations/types/init.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
+#include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"
 
 #include <fstream>
@@ -48,6 +51,137 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 //                              base::storage
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace base
+{
+//
+#if !defined(TIMEMORY_STORAGE_HIDE_DEFINITION)
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE
+storage::storage(bool _is_master, int64_t _instance_id, const std::string& _label)
+: m_initialized(false)
+, m_finalized(false)
+, m_global_init(false)
+, m_thread_init(false)
+, m_data_init(false)
+, m_is_master(_is_master)
+, m_node_init(dmp::is_initialized())
+, m_node_rank(dmp::rank())
+, m_node_size(dmp::size())
+, m_instance_id(_instance_id)
+, m_thread_idx(threading::get_id())
+, m_label(_label)
+, m_hash_ids(::tim::get_hash_ids())
+, m_hash_aliases(::tim::get_hash_aliases())
+{
+    if(m_is_master && m_instance_id > 0)
+    {
+        int _id = m_instance_id;
+        PRINT_HERE("%s: %i (%s)",
+                   "Error! base::storage is master but is not zero instance", _id,
+                   m_label.c_str());
+        if(m_instance_id > 10)
+        {
+            // at this point we have a recursive loop
+            throw std::runtime_error("duplication!");
+        }
+    }
+
+    if(!m_is_master && m_instance_id == 0)
+    {
+        int _id = m_instance_id;
+        PRINT_HERE("%s: %i (%s)",
+                   "Warning! base::storage is not master but is zero instance", _id,
+                   m_label.c_str());
+    }
+
+    if(settings::debug())
+        PRINT_HERE("%s: %i (%s)", "base::storage instance created", (int) m_instance_id,
+                   m_label.c_str());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE storage::~storage()
+{
+    if(settings::debug())
+        PRINT_HERE("%s: %i (%s)", "base::storage instance deleted", (int) m_instance_id,
+                   m_label.c_str());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE std::atomic<int>&
+                         storage::storage_once_flag()
+{
+    static std::atomic<int> _instance(0);
+    return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE void
+storage::stop_profiler()
+{
+    // disable gperf if profiling
+#    if defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) || \
+        defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
+    try
+    {
+        if(storage_once_flag()++ == 0)
+            gperf::profiler_stop();
+    } catch(std::exception& e)
+    {
+        std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
+                  << ". Continuing..." << std::endl;
+    }
+#    endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE void
+storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
+{
+    ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE hash_result_type
+                         storage::add_hash_id(const std::string& _prefix)
+{
+    return ::tim::add_hash_id(m_hash_ids, _prefix);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE void
+storage::add_file_output(const std::string& _category, const std::string& _label,
+                         const std::string& _file)
+{
+    m_manager = manager::instance();
+    if(m_manager)
+        m_manager->add_file_output(_category, _label, _file);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_LINKAGE void
+storage::free_shared_manager()
+{
+    if(m_manager)
+        m_manager->remove_finalizer(m_label);
+}
+//
+#endif
+//--------------------------------------------------------------------------------------//
+//
+}  // namespace base
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -271,13 +405,13 @@ storage<Type, true>::finalize()
         master_is_finalizing() = true;
     manager::instance()->is_finalizing(true);
 
-    auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+    using fini_t = operation::fini<Type>;
+    auto upcast  = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
 
     if(m_thread_init)
-        Type::thread_finalize(upcast);
-
+        fini_t(upcast, operation::mode_constant<operation::fini_mode::thread>{});
     if(m_is_master && m_global_init)
-        Type::global_finalize(upcast);
+        fini_t(upcast, operation::mode_constant<operation::fini_mode::global>{});
 
     if(settings::debug())
         PRINT_HERE("[%s]> finalizing...", m_label.c_str());
@@ -311,10 +445,13 @@ storage<Type, true>::global_init()
             m_global_init = true;
             if(!m_is_master && master_instance())
                 master_instance()->global_init();
-            auto upcast =
-                static_cast<tim::storage<Type, typename Type::value_type>*>(this);
             if(m_is_master)
-                Type::global_init(upcast);
+            {
+                using init_t = operation::init<Type>;
+                auto upcast =
+                    static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+                init_t(upcast, operation::mode_constant<operation::init_mode::global>{});
+            }
             return m_global_init;
         }();
     return m_global_init;
@@ -333,9 +470,10 @@ storage<Type, true>::thread_init()
                 master_instance()->thread_init();
             bool _global_init = global_init();
             consume_parameters(_global_init);
+            using init_t = operation::init<Type>;
             auto upcast =
                 static_cast<tim::storage<Type, typename Type::value_type>*>(this);
-            Type::thread_init(upcast);
+            init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
             return m_thread_init;
         }();
     return m_thread_init;
@@ -454,14 +592,7 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::pop()
 {
-    auto itr = _data().pop_graph();
-    // if data has popped all the way up to the zeroth (relative) depth then worker
-    // threads should insert a new dummy at the current master thread id and depth.
-    // Be aware, this changes 'm_current' inside the data graph
-    //
-    if(_data().at_sea_level() && _data().dummy_count() < settings::max_thread_bookmarks())
-        _data().add_dummy();
-    return itr;
+    return _data().pop_graph();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -871,16 +1002,17 @@ storage<Type, false>::initialize()
 
     m_initialized = true;
 
-    auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+    auto upcast  = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+    using init_t = operation::init<Type>;
 
     if(!m_is_master)
     {
-        Type::thread_init(upcast);
+        init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
     }
     else
     {
-        Type::global_init(upcast);
-        Type::thread_init(upcast);
+        init_t(upcast, operation::mode_constant<operation::init_mode::global>{});
+        init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
     }
 }
 //
@@ -899,21 +1031,22 @@ storage<Type, false>::finalize()
     if(settings::debug())
         printf("[%s]> finalizing...\n", m_label.c_str());
 
-    auto upcast = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
+    using fini_t = operation::fini<Type>;
+    auto upcast  = static_cast<tim::storage<Type, typename Type::value_type>*>(this);
 
     m_finalized = true;
     manager::instance()->is_finalizing(true);
     if(!m_is_master)
     {
         worker_is_finalizing() = true;
-        Type::thread_finalize(upcast);
+        fini_t(upcast, operation::mode_constant<operation::fini_mode::thread>{});
     }
     else
     {
         master_is_finalizing() = true;
         worker_is_finalizing() = true;
-        Type::thread_finalize(upcast);
-        Type::global_finalize(upcast);
+        fini_t(upcast, operation::mode_constant<operation::fini_mode::thread>{});
+        fini_t(upcast, operation::mode_constant<operation::fini_mode::global>{});
     }
 }
 //

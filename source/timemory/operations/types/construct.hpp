@@ -29,15 +29,9 @@
 
 #pragma once
 
-//======================================================================================//
-//
-#include "timemory/operations/macros.hpp"
-//
-#include "timemory/operations/types.hpp"
-//
 #include "timemory/operations/declaration.hpp"
-//
-//======================================================================================//
+#include "timemory/operations/macros.hpp"
+#include "timemory/operations/types.hpp"
 
 namespace tim
 {
@@ -95,6 +89,42 @@ private:
     template <typename Up, typename... Args>
     auto sfinae(Up&, long, Args&&...) -> decltype(void(), void())
     {}
+};
+//
+template <typename Tp>
+struct construct<Tp*>
+{
+    using base_type = construct<Tp>;
+
+    template <typename... Args>
+    static Tp* get(Args&&...)
+    {
+        return nullptr;
+    }
+};
+//
+template <typename Tp>
+struct construct<std::shared_ptr<Tp>>
+{
+    using base_type = construct<Tp>;
+
+    template <typename... Args>
+    static auto get(Args&&...)
+    {
+        return std::shared_ptr<Tp>(nullptr);
+    }
+};
+//
+template <typename Tp, typename... Deleter>
+struct construct<std::unique_ptr<Tp, Deleter...>>
+{
+    using base_type = construct<Tp>;
+
+    template <typename... Args>
+    static auto get(Args&&...)
+    {
+        return std::unique_ptr<Tp, Deleter...>(nullptr);
+    }
 };
 //
 //--------------------------------------------------------------------------------------//

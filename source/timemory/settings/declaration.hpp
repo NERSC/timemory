@@ -255,7 +255,7 @@ struct TIMEMORY_SETTINGS_DLL settings
     TIMEMORY_MEMBER_STATIC_REFERENCE(
         process::id_t, target_pid, "TIMEMORY_TARGET_PID",
         "Process ID for the components which require this",
-        ([]() -> process::id_t& { return process::get_target_id(); }),
+        ([]() -> process::id_t& { return std::ref(process::get_target_id()).get(); }),
         ([](process::id_t v) { process::get_target_id() = v; }))
 
     /// configure component storage stack clearing
@@ -275,6 +275,68 @@ struct TIMEMORY_SETTINGS_DLL settings
         "Average call time in nanoseconds when # laps > throttle_count that triggers "
         "throttling",
         10000)
+
+    //==================================================================================//
+    //
+    //                          COMPONENT SETTINGS
+    //
+    //==================================================================================//
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, global_components, "TIMEMORY_GLOBAL_COMPONENTS",
+        "A specification of components which is used by multiple variadic bundlers and "
+        "user_bundles as the fall-back set of components if their specific variable is "
+        "not set. E.g. user_mpip_bundle will use this if TIMEMORY_MPIP_COMPONENTS is not "
+        "specified",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, tuple_components, "TIMEMORY_TUPLE_COMPONENTS",
+        "A specification of components which will be added to component_tuple structures "
+        "containing the 'user_tuple_bundle'. These components will automatically be "
+        "activated",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, list_components, "TIMEMORY_LIST_COMPONENTS",
+        "A specification of components which will be added to component_list structures "
+        "containing the 'user_list_bundle'. These components will only be activated if "
+        "the 'user_list_bundle' is activated.",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, ompt_components, "TIMEMORY_OMPT_COMPONENTS",
+        "A specification of components which will be added "
+        "to structures containing the 'user_ompt_bundle'. Priority: TRACE_COMPONENTS -> "
+        "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, mpip_components, "TIMEMORY_MPIP_COMPONENTS",
+        "A specification of components which will be added "
+        "to structures containing the 'user_mpip_bundle'. Priority: TRACE_COMPONENTS -> "
+        "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, trace_components, "TIMEMORY_TRACE_COMPONENTS",
+        "A specification of components which will be used by the interfaces which are "
+        "designed for full profiling. These components will be subjected to throttling. "
+        "Priority: COMPONENTS -> GLOBAL_COMPONENTS",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, profiler_components, "TIMEMORY_PROFILER_COMPONENTS",
+        "A specification of components which will be used by the interfaces which are "
+        "designed for full python profiling. This specification will be overridden by a "
+        "trace_components specification. Priority: COMPONENTS -> GLOBAL_COMPONENTS",
+        "")
+
+    TIMEMORY_MEMBER_STATIC_ACCESSOR(
+        string_t, components, "TIMEMORY_COMPONENTS",
+        "A specification of components which is used by the library interface. This "
+        "falls back to TIMEMORY_GLOBAL_COMPONENTS.",
+        "")
 
     //==================================================================================//
     //
@@ -329,10 +391,6 @@ struct TIMEMORY_SETTINGS_DLL settings
         "Enable/disable timemory calling upcxx::finalize() during "
         "timemory_finalize()",
         true)
-
-    //----------------------------------------------------------------------------------//
-    //      PROCESS
-    //----------------------------------------------------------------------------------//
 
     //----------------------------------------------------------------------------------//
     //      PAPI
@@ -778,10 +836,6 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MEMORY_WIDTH", memory_width)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MEMORY_UNITS", memory_units)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_INIT", mpi_init)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_FINALIZE", mpi_finalize)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD", mpi_thread)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD_TYPE", mpi_thread_type)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PATH", output_path)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OUTPUT_PREFIX", output_prefix)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_INPUT_PATH", input_path)
@@ -797,6 +851,20 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_ADD_SECONDARY", add_secondary)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_THROTTLE_COUNT", throttle_count)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_THROTTLE_VALUE", throttle_value)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_GLOBAL_COMPONENTS", global_components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TUPLE_COMPONENTS", tuple_components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_LIST_COMPONENTS", list_components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_OMPT_COMPONENTS", ompt_components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPIP_COMPONENTS", mpip_components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_TRACE_COMPONENTS", trace_components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PROFILER_COMPONENTS", profiler_components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_COMPONENTS", components)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_INIT", mpi_init)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_FINALIZE", mpi_finalize)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD", mpi_thread)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_MPI_THREAD_TYPE", mpi_thread_type)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_UPCXX_INIT", upcxx_init)
+    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_UPCXX_FINALIZE", upcxx_finalize)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_MULTIPLEXING", papi_multiplexing)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_FAIL_ON_ERROR", papi_fail_on_error)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PAPI_QUIET", papi_quiet)
@@ -851,8 +919,6 @@ settings::serialize(Archive& ar, const unsigned int)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_PYTHON_EXE", python_exe)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_COMMAND_LINE", command_line)
     TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_ENVIRONMENT", environment)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_UPCXX_INIT", upcxx_init)
-    TIMEMORY_SETTINGS_TRY_CATCH_NVP("TIMEMORY_UPCXX_FINALIZE", upcxx_finalize)
 }
 //
 //----------------------------------------------------------------------------------//

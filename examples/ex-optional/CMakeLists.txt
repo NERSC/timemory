@@ -37,7 +37,7 @@ target_link_libraries(ex_optional_on timemory ${_OMP})
 target_link_libraries(ex_optional_off timemory-compile-options ${_OMP})
 target_compile_definitions(ex_optional_on PRIVATE USE_TIMEMORY)
 
-install(TARGETS ex_optional_on ex_optional_off DESTINATION bin)
+install(TARGETS ex_optional_on ex_optional_off DESTINATION bin OPTIONAL)
 
 if(_MPI)
     add_executable(ex_optional_on.mpi ${sources})
@@ -47,5 +47,5 @@ if(_MPI)
     target_link_libraries(ex_optional_off.mpi timemory-compile-options ${_MPI} ${_OMP})
     target_compile_definitions(ex_optional_on.mpi PRIVATE USE_TIMEMORY)
 
-    install(TARGETS ex_optional_on.mpi ex_optional_off.mpi DESTINATION bin)
+    install(TARGETS ex_optional_on.mpi ex_optional_off.mpi DESTINATION bin OPTIONAL)
 endif()

@@ -69,15 +69,15 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(...)                              \
-            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(__VA_ARGS__)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(NAME, VAL)                        \
+            TIMEMORY_INSTANTIATE_EXTERN_OPERATIONS(NAME, VAL)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_STORAGE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(...)                                 \
-            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(__VA_ARGS__)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(NAME, ARG)                           \
+            TIMEMORY_INSTANTIATE_EXTERN_STORAGE(NAME, ARG)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -94,15 +94,15 @@
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(...)                              \
-            TIMEMORY_DECLARE_EXTERN_OPERATIONS(__VA_ARGS__)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(NAME, VAL)                        \
+            TIMEMORY_DECLARE_EXTERN_OPERATIONS(NAME, VAL)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #    if !defined(TIMEMORY_EXTERN_USER_BUNDLE_STORAGE)
-#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(...)                                 \
-            TIMEMORY_DECLARE_EXTERN_STORAGE(__VA_ARGS__)
+#        define TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(NAME, ARG)                           \
+            TIMEMORY_DECLARE_EXTERN_STORAGE(NAME, ARG)
 #    endif
 //
 //--------------------------------------------------------------------------------------//
@@ -153,35 +153,21 @@ namespace component
 //
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct base<user_bundle<global_bundle_idx, api::native_tag>, void>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct base<user_bundle<tuple_bundle_idx, api::native_tag>, void>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct base<user_bundle<list_bundle_idx, api::native_tag>, void>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct base<user_bundle<ompt_bundle_idx, api::native_tag>, void>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct base<user_bundle<mpip_bundle_idx, api::native_tag>, void>)
 //
-//--------------------------------------------------------------------------------------//
-//
-//                          Derived instantiation
-//
-//--------------------------------------------------------------------------------------//
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct user_bundle<global_bundle_idx, api::native_tag>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(
     struct user_bundle<tuple_bundle_idx, api::native_tag>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(struct user_bundle<list_bundle_idx, api::native_tag>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(struct user_bundle<ompt_bundle_idx, api::native_tag>)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(struct user_bundle<mpip_bundle_idx, api::native_tag>)
 //
 }  // namespace component
@@ -190,25 +176,17 @@ TIMEMORY_EXTERN_USER_BUNDLE_TEMPLATE(struct user_bundle<mpip_bundle_idx, api::na
 //======================================================================================//
 //
 TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_global_bundle, false)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_tuple_bundle, false)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_list_bundle, false)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_ompt_bundle, false)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_OPERATIONS(component::user_mpip_bundle, false)
 //
 //======================================================================================//
 //
 TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_global_bundle, user_global_bundle)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_tuple_bundle, user_tuple_bundle)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_list_bundle, user_list_bundle)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_ompt_bundle, user_ompt_bundle)
-//
 TIMEMORY_EXTERN_USER_BUNDLE_STORAGE(component::user_mpip_bundle, user_mpip_bundle)
 //
 //======================================================================================//
