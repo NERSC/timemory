@@ -302,6 +302,11 @@ if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)
         "Enable XRay instrumentation" OFF CMAKE_DEFINE)
 endif()
 
+if(TIMEMORY_BUILD_EXAMPLES AND TIMEMORY_USE_COVERAGE AND
+        "$ENV{CONTINUOUS_INTEGRATION}" STREQUAL "true")
+    set(BUILD_ERT OFF CACHE BOOL "Disable ERT example")
+endif()
+
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(TIMEMORY_BUILD_LTO OFF)
