@@ -86,10 +86,10 @@ public:
     using string_t    = typename bundle_type::string_t;
     using string_hash = typename bundle_type::string_hash;
 
-    template <template <typename> class Op, typename Tuple = impl_type>
+    template <template <typename> class Op, typename Tuple = data_type>
     using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;
 
-    template <template <typename> class Op, typename Tuple = impl_type>
+    template <template <typename> class Op, typename Tuple = data_type>
     using custom_operation_t =
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 

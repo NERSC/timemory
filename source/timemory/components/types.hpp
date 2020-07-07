@@ -56,10 +56,6 @@ namespace component
 template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
-// generic static polymorphic base class
-template <typename Tp, typename ValueType = int64_t>
-struct base;
-
 // holder that provides nothing
 template <typename... Types>
 struct placeholder;
@@ -93,6 +89,7 @@ struct no_store;
 //======================================================================================//
 
 #include "timemory/components/allinea/types.hpp"
+#include "timemory/components/base/types.hpp"
 #include "timemory/components/caliper/types.hpp"
 #include "timemory/components/craypat/types.hpp"
 #include "timemory/components/cuda/types.hpp"
