@@ -142,6 +142,16 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_flamegraph, component::process_cpu_clock
 //
 //--------------------------------------------------------------------------------------//
 //
+//                          BASE CLASS HAS ACCUM MEMBER
+//
+//--------------------------------------------------------------------------------------//
+//
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(base_has_accum, component::monotonic_clock, false_type)
+// TIMEMORY_DEFINE_CONCRETE_TRAIT(base_has_accum, component::monotonic_raw_clock,
+// false_type)
+//
+//--------------------------------------------------------------------------------------//
+//
 //                                  DERIVATION
 //
 //--------------------------------------------------------------------------------------//

@@ -244,18 +244,11 @@ main(int argc, char** argv)
 
     if(use_mpi())
     {
-        tim::trait::runtime_enabled<user_clock>::set(false);
-        tim::trait::runtime_enabled<system_clock>::set(false);
-        tim::trait::runtime_enabled<cpu_clock>::set(false);
-        tim::trait::runtime_enabled<cpu_util>::set(false);
-        tim::trait::runtime_enabled<peak_rss>::set(false);
-        tim::trait::runtime_enabled<num_major_page_faults>::set(false);
-        tim::trait::runtime_enabled<num_minor_page_faults>::set(false);
-        tim::trait::runtime_enabled<priority_context_switch>::set(false);
-        tim::trait::runtime_enabled<voluntary_context_switch>::set(false);
-        tim::trait::runtime_enabled<user_mode_time>::set(false);
-        tim::trait::runtime_enabled<kernel_mode_time>::set(false);
-        tim::trait::runtime_enabled<papi_array_t>::set(false);
+        tim::trait::apply<tim::trait::runtime_enabled>::set<
+            user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
+            num_major_page_faults, num_minor_page_faults, priority_context_switch,
+            voluntary_context_switch, user_mode_time, kernel_mode_time, papi_array_t>(
+            false);
 
         using info_t      = tim::mpi::info_t;
         using argvector_t = tim::argparse::argument_vector;

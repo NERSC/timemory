@@ -64,6 +64,27 @@ class auto_hybrid;
 //
 namespace trait
 {
+/// \struct tim::trait::apply
+/// \brief generic functions for setting/accessing static properties on types
+template <template <typename...> class TraitT, typename... CommonT>
+struct apply
+{
+    //
+    template <typename... Types, typename... Args>
+    static inline void set(Args&&... args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(
+            TraitT<Types, CommonT...>::set(std::forward<Args>(args)...));
+    }
+    //
+    template <typename... Types, typename... Args>
+    static inline auto get(Args&&... args)
+    {
+        return std::make_tuple(
+            TraitT<Types, CommonT...>::get(std::forward<Args>(args)...)...);
+    }
+};  //
+//
 template <typename T>
 struct base_has_accum;
 

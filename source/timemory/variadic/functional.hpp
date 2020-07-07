@@ -157,7 +157,7 @@ print(std::ostream& os, const std::string& delim, Args&&... args)
 //
 template <template <typename...> class OpT, typename ApiT = TIMEMORY_API,
           template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 invoke(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -165,7 +165,7 @@ invoke(TupleT<Tp...>& obj, Args&&... args)
 }
 //
 template <typename TupleT, typename ApiT = TIMEMORY_API, typename... Args>
-auto
+TIMEMORY_FLATTEN auto
 construct(Args&&... args)
 {
     IF_CONSTEXPR(trait::is_available<ApiT>::value)
@@ -182,7 +182,7 @@ construct(Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp>
-auto
+TIMEMORY_FLATTEN auto
 destroy(TupleT<Tp...>& obj)
 {
     invoke_impl::invoke<operation::generic_deleter, ApiT>(obj);
@@ -190,7 +190,7 @@ destroy(TupleT<Tp...>& obj)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 start(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -215,7 +215,7 @@ start(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 stop(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -240,7 +240,7 @@ stop(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 mark_begin(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -250,7 +250,7 @@ mark_begin(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 mark_end(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -259,7 +259,7 @@ mark_end(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 store(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -268,7 +268,7 @@ store(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 reset(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -277,7 +277,7 @@ reset(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 record(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -286,7 +286,7 @@ record(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 measure(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -295,7 +295,7 @@ measure(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 push(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -305,7 +305,7 @@ push(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 pop(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -314,7 +314,7 @@ pop(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 set_prefix(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -324,7 +324,7 @@ set_prefix(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 set_scope(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -333,7 +333,7 @@ set_scope(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 assemble(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -342,7 +342,7 @@ assemble(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 derive(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -351,7 +351,7 @@ derive(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 audit(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -360,7 +360,7 @@ audit(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 add_secondary(TupleT<Tp...>& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -370,7 +370,7 @@ add_secondary(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-auto
+TIMEMORY_FLATTEN auto
 get(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
@@ -385,7 +385,7 @@ get(TupleT<Tp...>& obj, Args&&... args)
 //
 template <typename ApiT = TIMEMORY_API, template <typename...> class TupleT,
           typename... Tp, typename... Args>
-auto
+TIMEMORY_FLATTEN auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args)
 {
     using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
@@ -541,7 +541,7 @@ add_secondary(TupleT<Tp...>&& obj, index_sequence<Idx...>, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 start(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -551,7 +551,7 @@ start(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 stop(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -561,7 +561,7 @@ stop(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 mark_begin(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -571,7 +571,7 @@ mark_begin(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 mark_end(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -581,7 +581,7 @@ mark_end(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 store(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -591,7 +591,7 @@ store(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 reset(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -601,7 +601,7 @@ reset(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 record(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -611,7 +611,7 @@ record(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 measure(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -621,7 +621,7 @@ measure(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 push(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -631,7 +631,7 @@ push(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 pop(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -641,7 +641,7 @@ pop(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 set_prefix(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -651,7 +651,7 @@ set_prefix(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 set_scope(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -661,7 +661,7 @@ set_scope(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 assemble(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -671,7 +671,7 @@ assemble(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 derive(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -681,7 +681,7 @@ derive(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 audit(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())
@@ -691,7 +691,7 @@ audit(TupleT<Tp...>&& obj, Args&&... args)
 }
 //
 template <template <typename...> class TupleT, typename... Tp, typename... Args>
-void
+TIMEMORY_FLATTEN void
 add_secondary(TupleT<Tp...>&& obj, Args&&... args)
 {
     if(settings::enabled())

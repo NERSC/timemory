@@ -82,6 +82,9 @@ template <typename T>
 struct is_available<T*> : is_available<std::remove_pointer_t<T>>
 {};
 
+template <typename T>
+using is_available_t = typename is_available<T>::type;
+
 //--------------------------------------------------------------------------------------//
 /// \struct data
 /// \brief trait to specify the value type of a component before the definition of
@@ -100,8 +103,31 @@ struct data
 template <typename T>
 struct runtime_enabled
 {
-    static bool get() { return get_runtime_value(); }
-    static void set(bool val) { get_runtime_value() = val; }
+    // GET specialization if component is available
+    template <typename U = T>
+    static enable_if_t<is_available<U>::value, bool> get()
+    {
+        return get_runtime_value();
+    }
+
+    // SET specialization if component is available
+    template <typename U = T>
+    static enable_if_t<is_available<U>::value, void> set(bool val)
+    {
+        get_runtime_value() = val;
+    }
+
+    // GET specialization if component is NOT available
+    template <typename U = T>
+    static enable_if_t<!is_available<U>::value, bool> get()
+    {
+        return false;
+    }
+
+    // SET specialization if component is NOT available
+    template <typename U = T>
+    static enable_if_t<!is_available<U>::value, void> set(bool)
+    {}
 
 private:
     static bool& get_runtime_value()

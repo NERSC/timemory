@@ -62,6 +62,43 @@ TEST_F(apply_tests, set_value)
 }
 
 //--------------------------------------------------------------------------------------//
+// declare a component and set it to always off
+TIMEMORY_DECLARE_COMPONENT(always_off)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::always_off, false_type)
+//
+TEST_F(apply_tests, traits)
+{
+    using namespace tim::component;
+    tim::trait::apply<tim::trait::runtime_enabled>::set<
+        wall_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss>(false);
+    tim::trait::apply<tim::trait::runtime_enabled>::set<user_clock, peak_rss, always_off>(
+        true);
+
+    enum
+    {
+        WallClockIdx = 0,
+        UserClockIdx,
+        SystemClockIdx,
+        CpuClockIdx,
+        CpuUtilIdx,
+        PeakRssIdx,
+        AlwaysOffIdx
+    };
+
+    auto check = tim::trait::apply<tim::trait::runtime_enabled>::get<
+        wall_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
+        always_off>();
+
+    EXPECT_FALSE(std::get<WallClockIdx>(check));
+    EXPECT_TRUE(std::get<UserClockIdx>(check));
+    EXPECT_FALSE(std::get<SystemClockIdx>(check));
+    EXPECT_FALSE(std::get<CpuClockIdx>(check));
+    EXPECT_FALSE(std::get<CpuUtilIdx>(check));
+    EXPECT_TRUE(std::get<PeakRssIdx>(check));
+    EXPECT_FALSE(std::get<AlwaysOffIdx>(check));
+}
+
+//--------------------------------------------------------------------------------------//
 
 int
 main(int argc, char** argv)
