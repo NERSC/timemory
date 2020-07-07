@@ -13,5 +13,6 @@
    tools
    api
    components
+   tutorials
    doxygen
 ```
