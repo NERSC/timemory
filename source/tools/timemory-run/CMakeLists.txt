@@ -1,4 +1,8 @@
 
+if(WIN32)
+    return()
+endif()
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()

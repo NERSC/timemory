@@ -242,7 +242,7 @@ before_install:
 install:
   - eval "${MATRIX_EVAL}"
   - env
-  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip
+  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow pip cython
   - source activate pyctest
   - if [ -n "$(which mpicc)" ]; then python -m pip install mpi4py; fi
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis ${BUILD_ARGS}"

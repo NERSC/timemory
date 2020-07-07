@@ -16,14 +16,23 @@ platform:
 environment:
   matrix:
     - PYTHON: 36
-      CPP: 17
-      CONFIG: RelWithDebInfo
+      CPP: 14
+      CONFIG: MinSizeRel
     - PYTHON: 37
       CPP: 17
+      CONFIG: RelWithDebInfo
+    - CONDA: 36
+      CPP: 14
       CONFIG: MinSizeRel
     - CONDA: 37
       CPP: 17
       CONFIG: Release
+    - PYTHON: 38
+      CPP: 17
+      CONFIG: MinSizeRel
+    - CONDA: 38
+      CPP: 14
+      CONFIG: MinSizeRel
 
 install:
   # Configure environment
@@ -52,6 +61,7 @@ install:
           $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
         }
         python -m pip install --disable-pip-version-check --user --upgrade pip wheel
+        python -m pip install --disable-pip-version-check --user cython
       } elseif ($env:CONDA) {
         if ($env:PLATFORM -eq "x64") {
           $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
@@ -65,8 +75,7 @@ install:
           $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         }
         conda update -y -q -n base conda
-        conda config --add channels conda-forge
-        conda install -y -q pip setuptools scikit-build numpy matplotlib pillow
+        conda install -y -c defaults -c conda-forge -q pip setuptools scikit-build numpy matplotlib pillow cython
       }
       $env:TIMEMORY_FILE_OUTPUT = "OFF"
       $env:TIMEMORY_AUTO_OUTPUT = "OFF"
@@ -80,14 +89,16 @@ build_script:
     -DBUILD_STATIC_LIBS=ON
     -DBUILD_SHARED_LIBS=ON
     -DCMAKE_BUILD_TYPE="%CONFIG%"
-    -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
+    -DCMAKE_CXX_STANDARD="%CPP"
+    -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DTIMEMORY_USE_MPI=OFF
     -DTIMEMORY_USE_PYTHON=ON
     -DTIMEMORY_BUILD_C=ON
     -DTIMEMORY_BUILD_PYTHON=ON
     -DTIMEMORY_BUILD_EXAMPLES=ON
-    -DTIMEMORY_BUILD_GTEST=OFF
+    -DTIMEMORY_BUILD_GOOGLE_TEST=OFF
+    -DTIMEMORY_BUILD_TOOLS=ON
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%

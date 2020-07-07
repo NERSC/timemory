@@ -1,4 +1,9 @@
 
+# no windows support
+if(WIN32)
+    return()
+endif()
+
 #----------------------------------------------------------------------------------------#
 # Build and install timem tool
 #

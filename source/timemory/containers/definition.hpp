@@ -29,28 +29,19 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
-//
 #include "timemory/operations/definition.hpp"
 #include "timemory/storage/definition.hpp"
-//
 #include "timemory/containers/declaration.hpp"
 #include "timemory/containers/macros.hpp"
 #include "timemory/containers/types.hpp"
-//
 #include "timemory/variadic/lightweight_tuple.hpp"
-//
 #include "timemory/variadic/component_bundle.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
-//
 #include "timemory/variadic/auto_bundle.hpp"
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
-//
 #include "timemory/containers/auto_timer.hpp"
 #include "timemory/containers/auto_user_bundle.hpp"
-//
-//--------------------------------------------------------------------------------------//

@@ -331,8 +331,13 @@ if(_OMPT AND NOT BUILD_SHARED_LIBS)
     set(_OMPT OFF)
 endif()
 
+set(_TIMEM ${TIMEMORY_BUILD_TOOLS})
+if(_TIMEM AND WIN32)
+    set(_TIMEM OFF)
+endif()
+
 add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
-add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${TIMEMORY_BUILD_TOOLS})
+add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${_TIMEM})
 add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF)
 add_option(TIMEMORY_BUILD_DYNINST_TOOLS
     "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})

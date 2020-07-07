@@ -109,13 +109,3 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_RUNTIME_SOURCE)
-#    define TIMEMORY_RUNTIME_DLL tim_dll_export
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_RUNTIME_EXTERN)
-#    define TIMEMORY_RUNTIME_DLL tim_dll_import
-#else
-#    define TIMEMORY_RUNTIME_DLL
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
