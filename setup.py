@@ -355,7 +355,7 @@ with warnings.catch_warnings():
             'console_scripts': [
                 'timemory-plotter=timemory.plotting.__main__:try_plot',
                 'timemory-roofline=timemory.roofline.__main__:try_plot',
-                'timemory-line-profiler=timemory.line_profiler.__main__:main',
-                'timemory-profiler=timemory.profiler.__main__:main'],
+                'timemory-python-line-profiler=timemory.line_profiler.__main__:main',
+                'timemory-python-profiler=timemory.profiler.__main__:main'],
         },
     )
