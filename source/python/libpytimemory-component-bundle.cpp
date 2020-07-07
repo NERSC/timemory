@@ -146,7 +146,7 @@ generate(py::module& _pymod)
     auto configure_pybundle = [](py::list _args, bool flat_profile,
                                  bool timeline_profile) {
         std::set<TIMEMORY_COMPONENT> components;
-        if(_args.empty())
+        if(_args.size() == 0)
             components.insert(WALL_CLOCK);
 
         for(auto itr : _args)

@@ -89,8 +89,33 @@ consume(long n)
 
 //--------------------------------------------------------------------------------------//
 
+static int    _argc = 0;
+static char** _argv = nullptr;
+
+//--------------------------------------------------------------------------------------//
+
 class component_bundle_tests : public ::testing::Test
-{};
+{
+protected:
+    void SetUp() override
+    {
+        static bool configured = false;
+        if(!configured)
+        {
+            configured                   = true;
+            tim::settings::verbose()     = 0;
+            tim::settings::debug()       = false;
+            tim::settings::json_output() = true;
+            tim::settings::mpi_thread()  = false;
+            tim::settings::scientific()  = true;
+            tim::mpi::initialize(_argc, _argv);
+            tim::timemory_init(_argc, _argv);
+            tim::settings::dart_output() = true;
+            tim::settings::dart_count()  = 1;
+            tim::settings::banner()      = false;
+        }
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 
@@ -255,24 +280,269 @@ TEST_F(component_bundle_tests, get)
 }
 
 //--------------------------------------------------------------------------------------//
+//  these types are available on every OS
+//
+template <typename ApiT>
+struct test
+{
+    using direct_auto_t =
+        tim::auto_bundle<ApiT, wall_clock, cpu_clock, peak_rss, page_rss*, user_clock*>;
+    using direct_comp_t = tim::component_bundle<ApiT, wall_clock, cpu_clock, peak_rss,
+                                                page_rss*, user_clock*>;
+    using derive_auto_t = typename direct_comp_t::auto_type;
+    using derive_comp_t = typename direct_auto_t::component_type;
+
+    using direct_auto_data_t = typename direct_auto_t::data_type;
+    using direct_comp_data_t = typename direct_comp_t::data_type;
+    using derive_auto_data_t = typename derive_auto_t::data_type;
+    using derive_comp_data_t = typename derive_comp_t::data_type;
+};
+
+template <typename Tp>
+constexpr auto
+fixed_count(int) -> decltype(Tp::fixed_count(), uint64_t())
+{
+    return Tp::fixed_count();
+}
+
+template <typename Tp>
+constexpr auto
+fixed_count(long)
+{
+    return (tim::mpl::get_tuple_size<Tp>::value -
+            tim::mpl::get_tuple_size<
+                typename tim::get_true_types<std::is_pointer, Tp>::type>::value);
+}
+
+template <typename Tp>
+constexpr auto
+optional_count(int) -> decltype(Tp::optional_count(), uint64_t())
+{
+    return Tp::optional_count();
+}
+
+template <typename Tp>
+constexpr auto
+optional_count(long)
+{
+    return (tim::mpl::get_tuple_size<
+            typename tim::get_true_types<std::is_pointer, Tp>::type>::value);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, native_type_fixed_size_check)
+{
+    using api_t = TIMEMORY_API;
+    EXPECT_EQ(fixed_count<test<api_t>::direct_auto_t>(0), 3);
+    EXPECT_EQ(fixed_count<test<api_t>::direct_comp_t>(0), 3);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_auto_t>(0), 3);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_comp_t>(0), 3);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, native_data_fixed_size_check)
+{
+    using api_t = TIMEMORY_API;
+    EXPECT_EQ(fixed_count<test<api_t>::direct_auto_data_t>(0), 3);
+    EXPECT_EQ(fixed_count<test<api_t>::direct_comp_data_t>(0), 3);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_auto_data_t>(0), 3);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_comp_data_t>(0), 3);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, native_type_optional_size_check)
+{
+    using api_t = TIMEMORY_API;
+    EXPECT_EQ(optional_count<test<api_t>::direct_auto_t>(0), 2);
+    EXPECT_EQ(optional_count<test<api_t>::direct_comp_t>(0), 2);
+    EXPECT_EQ(optional_count<test<api_t>::derive_auto_t>(0), 2);
+    EXPECT_EQ(optional_count<test<api_t>::derive_comp_t>(0), 2);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, native_data_optional_size_check)
+{
+    using api_t = TIMEMORY_API;
+    EXPECT_EQ(optional_count<test<api_t>::direct_auto_data_t>(0), 2);
+    EXPECT_EQ(optional_count<test<api_t>::direct_comp_data_t>(0), 2);
+    EXPECT_EQ(optional_count<test<api_t>::derive_auto_data_t>(0), 2);
+    EXPECT_EQ(optional_count<test<api_t>::derive_comp_data_t>(0), 2);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, native_type_count_wo_init)
+{
+    using api_t = TIMEMORY_API;
+    auto A      = test<api_t>::direct_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::direct_auto"));
+    auto B = test<api_t>::direct_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::direct_comp"));
+    auto C = test<api_t>::derive_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::derive_auto"));
+    auto D = test<api_t>::derive_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::derive_comp"));
+
+    EXPECT_EQ(A.count(), 3);
+    EXPECT_EQ(B.count(), 3);
+    EXPECT_EQ(C.count(), 3);
+    EXPECT_EQ(D.count(), 3);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, native_type_count_w_init)
+{
+    using api_t                                   = TIMEMORY_API;
+    test<api_t>::direct_auto_t::get_initializer() = [](auto& cb) {
+        // initialize one of two pointers and a type which does not belong
+        cb.template initialize<page_rss, system_clock>();
+    };
+
+    auto A = test<api_t>::direct_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::direct_auto"));
+    auto C = test<api_t>::derive_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::derive_auto"));
+
+    test<api_t>::derive_comp_t::get_initializer() = [](auto& cb) {
+        // initialize both pointers
+        cb.template initialize<page_rss, user_clock>();
+    };
+
+    auto B = test<api_t>::direct_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::direct_comp"));
+    auto D = test<api_t>::derive_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<TIMEMORY_API>::derive_comp"));
+
+    EXPECT_EQ(A.count(), 4);
+    EXPECT_EQ(B.count(), 5);
+    EXPECT_EQ(C.count(), 4);
+    EXPECT_EQ(D.count(), 5);
+
+    test<api_t>::derive_auto_t::get_initializer() = [](auto&) {};
+    test<api_t>::direct_comp_t::get_initializer() = [](auto&) {};
+}
+
+//--------------------------------------------------------------------------------------//
+
+// declare a new API
+TIMEMORY_DEFINE_API(custom_tag)
+// make the API unavailable
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, api::custom_tag, false_type)
+// macro for API
+#define CUSTOM_API tim::api::custom_tag
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, custom_type_fixed_size_check)
+{
+    using api_t = CUSTOM_API;
+    EXPECT_EQ(fixed_count<test<api_t>::direct_auto_t>(0), 0);
+    EXPECT_EQ(fixed_count<test<api_t>::direct_comp_t>(0), 0);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_auto_t>(0), 0);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_comp_t>(0), 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, custom_data_fixed_size_check)
+{
+    using api_t = CUSTOM_API;
+    EXPECT_EQ(fixed_count<test<api_t>::direct_auto_data_t>(0), 0);
+    EXPECT_EQ(fixed_count<test<api_t>::direct_comp_data_t>(0), 0);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_auto_data_t>(0), 0);
+    EXPECT_EQ(fixed_count<test<api_t>::derive_comp_data_t>(0), 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, custom_type_optional_size_check)
+{
+    using api_t = CUSTOM_API;
+    EXPECT_EQ(optional_count<test<api_t>::direct_auto_t>(0), 0);
+    EXPECT_EQ(optional_count<test<api_t>::direct_comp_t>(0), 0);
+    EXPECT_EQ(optional_count<test<api_t>::derive_auto_t>(0), 0);
+    EXPECT_EQ(optional_count<test<api_t>::derive_comp_t>(0), 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, custom_data_optional_size_check)
+{
+    using api_t = CUSTOM_API;
+    EXPECT_EQ(optional_count<test<api_t>::direct_auto_data_t>(0), 0);
+    EXPECT_EQ(optional_count<test<api_t>::direct_comp_data_t>(0), 0);
+    EXPECT_EQ(optional_count<test<api_t>::derive_auto_data_t>(0), 0);
+    EXPECT_EQ(optional_count<test<api_t>::derive_comp_data_t>(0), 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, custom_type_count_wo_init)
+{
+    using api_t = CUSTOM_API;
+    auto A      = test<api_t>::direct_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::direct_auto"));
+    auto B = test<api_t>::direct_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::direct_comp"));
+    auto C = test<api_t>::derive_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::derive_auto"));
+    auto D = test<api_t>::derive_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::derive_comp"));
+
+    EXPECT_EQ(A.count(), 0);
+    EXPECT_EQ(B.count(), 0);
+    EXPECT_EQ(C.count(), 0);
+    EXPECT_EQ(D.count(), 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, custom_type_count_w_init)
+{
+    using api_t                                   = CUSTOM_API;
+    test<api_t>::direct_auto_t::get_initializer() = [](auto& cb) {
+        // initialize one of two pointers and a type which does not belong
+        cb.template initialize<page_rss, system_clock>();
+    };
+
+    auto A = test<api_t>::direct_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<api_t>::direct_auto"));
+    auto C = test<api_t>::derive_auto_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::derive_auto"));
+
+    test<api_t>::derive_comp_t::get_initializer() = [](auto& cb) {
+        // initialize both pointers
+        cb.template initialize<page_rss, user_clock>();
+    };
+
+    auto B = test<api_t>::direct_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::direct_comp"));
+    auto D = test<api_t>::derive_comp_t(
+        TIMEMORY_JOIN("/", details::get_test_name(), "test<CUSTOM_API>::derive_comp"));
+
+    EXPECT_EQ(A.count(), 0);
+    EXPECT_EQ(B.count(), 0);
+    EXPECT_EQ(C.count(), 0);
+    EXPECT_EQ(D.count(), 0);
+
+    test<api_t>::derive_auto_t::get_initializer() = [](auto&) {};
+    test<api_t>::direct_comp_t::get_initializer() = [](auto&) {};
+}
+
+//--------------------------------------------------------------------------------------//
 
 int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-
-    tim::settings::verbose()     = 0;
-    tim::settings::debug()       = false;
-    tim::settings::json_output() = true;
-    tim::timemory_init(&argc, &argv);
-    tim::settings::dart_output() = true;
-    tim::settings::dart_count()  = 1;
-    tim::settings::banner()      = false;
-
-    tim::settings::dart_type() = "peak_rss";
-    // TIMEMORY_VARIADIC_BLANK_AUTO_TUPLE("PEAK_RSS", ::tim::component::peak_rss);
+    _argc    = argc;
+    _argv    = argv;
     auto ret = RUN_ALL_TESTS();
-
     tim::timemory_finalize();
     tim::dmp::finalize();
     return ret;

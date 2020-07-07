@@ -120,85 +120,6 @@ base<Tp, Value>::load() const
 //
 //--------------------------------------------------------------------------------------//
 //
-//                  Node operations
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
-void
-base<Tp, Value>::insert_node(scope::config _scope, int64_t _hash)
-{
-    if(!is_on_stack)
-    {
-        is_on_stack   = true;
-        is_flat       = _scope.is_flat();
-        auto _storage = static_cast<storage_type*>(get_storage());
-        assert(_storage != nullptr);
-        auto  _beg_depth = _storage->depth();
-        Type* obj        = static_cast<Type*>(this);
-        graph_itr        = _storage->insert(_scope, *obj, _hash);
-        auto _end_depth  = _storage->depth();
-        depth_change     = (_beg_depth < _end_depth) || _scope.is_timeline();
-        _storage->stack_push(obj);
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-// pop the node off the graph
-//
-template <typename Tp, typename Value>
-template <typename Up, typename Vp, enable_if_t<(implements_storage<Up, Vp>::value), int>>
-void
-base<Tp, Value>::pop_node()
-{
-    if(is_on_stack)
-    {
-        is_on_stack   = false;
-        Type& obj     = graph_itr->obj();
-        auto& stats   = graph_itr->stats();
-        Type& rhs     = static_cast<Type&>(*this);
-        depth_change  = false;
-        auto _storage = static_cast<storage_type*>(get_storage());
-        assert(_storage != nullptr);
-
-        if(storage_type::is_finalizing())
-        {
-            obj += rhs;
-            obj.plus(rhs);
-            operation::add_secondary<Type>(_storage, graph_itr, rhs);
-            operation::add_statistics<Type>(rhs, stats);
-        }
-        else if(is_flat)
-        {
-            obj += rhs;
-            obj.plus(rhs);
-            operation::add_secondary<Type>(_storage, graph_itr, rhs);
-            operation::add_statistics<Type>(rhs, stats);
-            _storage->stack_pop(&rhs);
-        }
-        else
-        {
-            auto _beg_depth = _storage->depth();
-            obj += rhs;
-            obj.plus(rhs);
-            operation::add_secondary<Type>(_storage, graph_itr, rhs);
-            operation::add_statistics<Type>(rhs, stats);
-            if(_storage)
-            {
-                _storage->pop();
-                _storage->stack_pop(&rhs);
-                auto _end_depth = _storage->depth();
-                depth_change    = (_beg_depth > _end_depth);
-            }
-        }
-        obj.is_running = false;
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 //          Units, display units, width, precision, labels, display labels
 //
 //--------------------------------------------------------------------------------------//
@@ -272,18 +193,6 @@ base<Tp, Value>::get_display_unit()
         _instance = std::get<0>(units::get_memory_unit(settings::memory_units()));
 
     return _instance;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Value>
-template <typename T>
-void
-base<Tp, Value>::append(graph_iterator itr, const T& rhs)
-{
-    auto _storage = storage_type::instance();
-    if(_storage)
-        operation::add_secondary<T>(_storage, itr, rhs);
 }
 //
 //--------------------------------------------------------------------------------------//

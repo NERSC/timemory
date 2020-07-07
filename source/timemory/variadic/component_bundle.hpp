@@ -254,6 +254,35 @@ public:
     using bundle_type::store;
 
     //----------------------------------------------------------------------------------//
+    /// query the number of (compile-time) fixed components
+    //
+    static constexpr uint64_t fixed_count()
+    {
+        return (size() -
+                mpl::get_tuple_size<
+                    typename get_true_types<std::is_pointer, data_type>::type>::value);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// query the number of (run-time) optional components
+    //
+    static constexpr uint64_t optional_count()
+    {
+        return mpl::get_tuple_size<
+            typename get_true_types<std::is_pointer, data_type>::type>::value;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// number of objects that will be performing measurements
+    //
+    uint64_t count()
+    {
+        uint64_t _count = 0;
+        invoke::invoke<operation::generic_counter>(m_data, std::ref(_count));
+        return _count;
+    }
+
+    //----------------------------------------------------------------------------------//
     // construct the objects that have constructors with matching arguments
     //
     template <typename... Args>

@@ -137,6 +137,9 @@ template <typename T>
 struct uses_memory_units;
 
 template <typename T>
+struct uses_percent_units;
+
+template <typename T>
 struct requires_json;
 
 template <typename T>
@@ -463,7 +466,7 @@ struct convert<InTuple<In...>, OutTuple<Out...>>
 template <typename ApiT, template <typename...> class InTuple,
           template <typename...> class OutTuple, typename... In>
 struct convert<InTuple<ApiT, In...>, OutTuple<ApiT>>
-: convert<InTuple<In...>, OutTuple<ApiT>>
+: convert<type_list<In...>, OutTuple<ApiT>>
 {};
 
 //--------------------------------------------------------------------------------------//

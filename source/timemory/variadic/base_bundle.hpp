@@ -116,7 +116,9 @@ public:
     template <template <typename> class Op, typename... T>
     struct generic_operation
     {
-        using type = std::tuple<operation::generic_operator<T, Op<T>, tag_type>...>;
+        using type =
+            std::tuple<operation::generic_operator<remove_pointer_t<T>,
+                                                   Op<remove_pointer_t<T>>, tag_type>...>;
     };
 
     template <template <typename> class Op, typename... T>
@@ -428,6 +430,8 @@ struct api_bundle
                                            base_bundle<ApiT, std::tuple<>>>;
     using data_type        = conditional_t<(trait::is_available<ApiT>::value),
                                     std::tuple<Types...>, std::tuple<>>;
+    using tuple_type       = data_type;
+    using impl_type        = data_type;
 
     template <typename... Args>
     api_bundle(Args&&... args)
@@ -446,6 +450,8 @@ struct api_bundle<ApiT, std::tuple<Types...>>
                                            base_bundle<ApiT, std::tuple<>>>;
     using data_type        = conditional_t<(trait::is_available<ApiT>::value),
                                     std::tuple<Types...>, std::tuple<>>;
+    using tuple_type       = data_type;
+    using impl_type        = data_type;
 
     template <typename... Args>
     api_bundle(Args&&... args)
@@ -464,6 +470,8 @@ struct api_bundle<ApiT, type_list<Types...>>
                                            base_bundle<ApiT, std::tuple<>>>;
     using data_type        = conditional_t<(trait::is_available<ApiT>::value),
                                     std::tuple<Types...>, std::tuple<>>;
+    using tuple_type       = data_type;
+    using impl_type        = data_type;
 
     template <typename... Args>
     api_bundle(Args&&... args)

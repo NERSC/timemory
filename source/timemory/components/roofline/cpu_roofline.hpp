@@ -292,6 +292,8 @@ struct cpu_roofline
 
     static void global_finalize(storage_type* _store)
     {
+        // query environment for whether this is part of CI test
+        // auto ci = get_env<bool>("CONTINUOUS_INTEGRATION", false);
         if(_store && _store->size() > 0)
         {
             // run roofline peak generation
@@ -469,9 +471,8 @@ protected:
     using base_type::value;
 
     friend struct base<this_type, value_type>;
-
-    using base_type::implements_storage_v;
-    friend class impl::storage<this_type, implements_storage_v>;
+    friend class impl::storage<this_type,
+                               implements_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//

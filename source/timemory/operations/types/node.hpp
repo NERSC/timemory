@@ -29,9 +29,13 @@
 
 #pragma once
 
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/add_secondary.hpp"
+#include "timemory/operations/types/add_statistics.hpp"
+#include "timemory/operations/types/math.hpp"
 
 namespace tim
 {
@@ -62,11 +66,27 @@ struct insert_node
 
 private:
     //  typical resolution: component
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, Args&&... args)
-        -> decltype(obj.insert_node(std::forward<Args>(args)...), void())
+    template <typename Up, typename Vp = value_type, typename StorageT = storage<Up, Vp>,
+              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+    auto sfinae(Up& _obj, int, int, int, scope::config _scope, int64_t _hash)
+        -> decltype(_obj.is_on_stack && _obj.is_flat && _obj.get_storage() &&
+                        _obj.graph_itr && _obj.depth_change,
+                    void())
     {
-        obj.insert_node(std::forward<Args>(args)...);
+        using storage_type = storage<Tp, value_type>;
+        // obj.insert_node(std::forward<Args>(args)...);
+        if(!_obj.is_on_stack)
+        {
+            _obj.is_on_stack = true;
+            _obj.is_flat     = _scope.is_flat();
+            auto _storage    = static_cast<storage_type*>(_obj.get_storage());
+            assert(_storage != nullptr);
+            auto _beg_depth   = _storage->depth();
+            _obj.graph_itr    = _storage->insert(_scope, _obj, _hash);
+            auto _end_depth   = _storage->depth();
+            _obj.depth_change = (_beg_depth < _end_depth) || _scope.is_timeline();
+            _storage->stack_push(&_obj);
+        }
     }
 
     //  typical resolution: variadic bundle of components
@@ -112,11 +132,53 @@ struct pop_node
 
 private:
     //  typical resolution: component
-    template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, int, Args&&... args)
-        -> decltype(obj.pop_node(std::forward<Args>(args)...), void())
+    template <typename Up, typename Vp = value_type, typename StorageT = storage<Up, Vp>,
+              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
+    auto sfinae(Up& _obj, int, int, int, int)
+        -> decltype(_obj.is_on_stack && _obj.depth_change && _obj.get_storage() &&
+                        _obj.graph_itr,
+                    void())
     {
-        obj.pop_node(std::forward<Args>(args)...);
+        using storage_type = StorageT;
+        // obj.pop_node(std::forward<Args>(args)...);
+        if(_obj.is_on_stack)
+        {
+            _obj.is_on_stack  = false;
+            type& targ        = _obj.graph_itr->obj();
+            auto& stats       = _obj.graph_itr->stats();
+            _obj.depth_change = false;
+            auto _storage     = static_cast<storage_type*>(_obj.get_storage());
+            assert(_storage != nullptr);
+
+            if(storage_type::is_finalizing())
+            {
+                operation::plus<type>(targ, _obj);
+                operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                operation::add_statistics<type>(_obj, stats);
+            }
+            else if(_obj.is_flat)
+            {
+                operation::plus<type>(targ, _obj);
+                operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                operation::add_statistics<type>(_obj, stats);
+                _storage->stack_pop(&_obj);
+            }
+            else
+            {
+                auto _beg_depth = _storage->depth();
+                operation::plus<type>(targ, _obj);
+                operation::add_secondary<type>(_storage, _obj.graph_itr, _obj);
+                operation::add_statistics<type>(_obj, stats);
+                if(_storage)
+                {
+                    _storage->pop();
+                    _storage->stack_pop(&_obj);
+                    auto _end_depth   = _storage->depth();
+                    _obj.depth_change = (_beg_depth > _end_depth);
+                }
+            }
+            targ.is_running = false;
+        }
     }
 
     //  typical resolution: component

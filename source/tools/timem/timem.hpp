@@ -29,6 +29,15 @@
 #define TIMEMORY_DISABLE_METADATA
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
+#include "timemory/macros.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/utility/macros.hpp"
+
+#if defined(_MACOS)
+TIMEMORY_FORWARD_DECLARE_COMPONENT(page_rss)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::page_rss, false_type)
+#endif
+
 #include "timemory/sampling/sampler.hpp"
 #include "timemory/timemory.hpp"
 

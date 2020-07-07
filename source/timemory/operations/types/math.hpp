@@ -65,8 +65,9 @@ struct plus
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        sfinae(obj, 0, 0, rhs);
         obj = std::max(obj, rhs);
+        // ensures update to laps
+        sfinae(obj, 0, 0, rhs);
     }
 
     template <typename Up = Tp, enable_if_t<!(trait::record_max<Up>::value), int> = 0,
@@ -76,8 +77,9 @@ struct plus
         if(!trait::runtime_enabled<type>::get())
             return;
 
-        sfinae(obj, 0, 0, rhs);
         obj += rhs;
+        // ensures update to laps
+        sfinae(obj, 0, 0, rhs);
     }
 
     template <typename Vt, typename Up = Tp,
@@ -132,9 +134,9 @@ struct minus
         if(!trait::runtime_enabled<type>::get())
             return;
 
+        obj -= rhs;
         // ensures update to laps
         sfinae(obj, 0, 0, rhs);
-        obj -= rhs;
     }
 
     template <typename Vt, typename Up = Tp,

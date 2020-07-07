@@ -29,6 +29,24 @@
 
 //======================================================================================//
 //
+//                              COMPONENTS
+//
+//======================================================================================//
+#if !defined(TIMEMORY_FORWARD_DECLARE_COMPONENT)
+/// use this macro for forward declarations. Using \ref TIMEMORY_DECLARE_COMPONENT
+/// on a pre-existing type will fail because of is_component specialization
+#    define TIMEMORY_FORWARD_DECLARE_COMPONENT(NAME)                                     \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace component                                                              \
+        {                                                                                \
+        struct NAME;                                                                     \
+        }                                                                                \
+        }
+#endif
+
+//======================================================================================//
+//
 //                              TYPE TRAITS
 //
 //======================================================================================//
