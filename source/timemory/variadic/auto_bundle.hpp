@@ -213,24 +213,28 @@ public:
         if(m_enabled)
             m_temporary.derive(std::forward<Args>(args)...);
     }
+    /// invoke mark_begin member function on all components
     template <typename... Args>
     void mark_begin(Args&&... args)
     {
         if(m_enabled)
             m_temporary.mark_begin(std::forward<Args>(args)...);
     }
+    /// invoke mark_begin member function on all components
     template <typename... Args>
     void mark_end(Args&&... args)
     {
         if(m_enabled)
             m_temporary.mark_end(std::forward<Args>(args)...);
     }
+    /// invoke store member function on all components
     template <typename... Args>
     void store(Args&&... args)
     {
         if(m_enabled)
             m_temporary.store(std::forward<Args>(args)...);
     }
+    /// invoke audit member function on all components
     template <typename... Args>
     void audit(Args&&... args)
     {
@@ -243,17 +247,20 @@ public:
         if(m_enabled)
             m_temporary.add_secondary(std::forward<Args>(args)...);
     }
+    /// invoke the provided operation on all components
     template <template <typename> class OpT, typename... Args>
     void invoke(Args&&... _args)
     {
         if(m_enabled)
             m_temporary.template invoke<OpT>(std::forward<Args>(_args)...);
     }
+    /// invoke get member function on all components to get their data
     template <typename... Args>
     auto get(Args&&... args) const
     {
         return m_temporary.get(std::forward<Args>(args)...);
     }
+    /// invoke get member function on all components to get data labeled with component name
     template <typename... Args>
     auto get_labeled(Args&&... args) const
     {
