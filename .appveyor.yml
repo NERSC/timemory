@@ -85,13 +85,13 @@ install:
 build_script:
   - mkdir build-timemory
   - cd build-timemory
-  - cmake
+  - cmake .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
     -DBUILD_STATIC_LIBS=ON
     -DBUILD_SHARED_LIBS=ON
     -DCMAKE_BUILD_TYPE="%CONFIG%"
-    -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DCMAKE_CXX_STANDARD="%CPP"
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
+    -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_USE_MPI=OFF
     -DTIMEMORY_USE_PYTHON=ON
     -DTIMEMORY_BUILD_C=ON
@@ -99,7 +99,6 @@ build_script:
     -DTIMEMORY_BUILD_EXAMPLES=ON
     -DTIMEMORY_BUILD_GOOGLE_TEST=OFF
     -DTIMEMORY_BUILD_TOOLS=ON
-    .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
   - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
