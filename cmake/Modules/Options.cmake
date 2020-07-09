@@ -164,9 +164,15 @@ if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard" ON)
     add_option(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard" ON)
 
+    # compiling with Clang + NVCC will produce many warnings w/o GCC extensions
+    set(_CXX_EXT OFF)
+    if(CMAKE_CXX_COMPILER_IS_CLANG AND (TIMEMORY_USE_CUDA OR _USE_CUDA))
+        set(_CXX_EXT ON)
+    endif()
+
     # extensions
     add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)" OFF)
-    add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)" OFF)
+    add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)" ${_CXX_EXT})
     add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)" OFF)
 else()
     add_feature(CMAKE_C_STANDARD_REQUIRED "Require C language standard")
