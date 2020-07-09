@@ -405,6 +405,10 @@ roi.start();
 // do something in region of interest...
 //
 roi.stop();
+// access to data
+auto hwc = roi.get();
+// print
+std::cout << hwc << '\n';
 ```
 
 Or encoding the PAPI enumeration types explicitly:
@@ -419,6 +423,10 @@ roi.start();
 // do something in region of interest...
 //
 roi.stop();
+// access to data
+auto hwc = roi.get();
+// print
+std::cout << hwc << '\n';
 ```
 
 ### Python Context Manager
@@ -430,6 +438,23 @@ with marker(["papi_vector"], key="MY_REGION_OF_INTEREST"):
     #
     # do something in region of interest...
     #
+```
+
+### Python Component Class
+
+```python
+from timemory.component import PapiVector
+
+hwc = PapiVector("MY_REGION_OF_INTEREST")
+hwc.start()
+//
+// do something in region of interest...
+//
+hwc.stop()
+// get values
+l1_tcm, l2_tcm, l3_tcm = hwc.get()
+// print as string
+print("{}".format(hwc))
 ```
 
 ### C Enumeration Interface
