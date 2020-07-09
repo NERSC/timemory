@@ -191,8 +191,7 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test peak rss
     def test_peak_rss(self):
-        """
-        peak rss
+        """peak rss
         """
         if not comp.PeakRss.available:
             raise unittest.SkipTest('[{}] not available'.format('peak_rss'))
@@ -203,8 +202,7 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test page rss
     def test_page_rss(self):
-        """
-        page rss
+        """page rss
         """
         if not comp.PageRss.available:
             raise unittest.SkipTest('[{}] not available'.format('page_rss'))
@@ -215,8 +213,7 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test read_bytes
     def test_read_bytes(self):
-        """
-        read bytes
+        """read bytes
         """
         if not comp.ReadBytes.available:
             raise unittest.SkipTest('[{}] not available'.format('read_bytes'))
@@ -227,8 +224,7 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test write_bytes
     def test_written_bytes(self):
-        """
-        written bytes
+        """written bytes
         """
         if not comp.WrittenBytes.available:
             raise unittest.SkipTest(
@@ -240,8 +236,7 @@ class TimemoryRUsageTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test write_bytes
     def test_current_peak_rss(self):
-        """
-        current peak rss
+        """current peak rss
         """
         if not comp.CurrentPeakRss.available:
             raise unittest.SkipTest(

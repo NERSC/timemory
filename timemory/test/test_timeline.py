@@ -143,8 +143,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_parse(self):
-        """
-        parse
+        """parse
         """
         tim.settings.timeline_profile = False
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "ON"
@@ -160,8 +159,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_no_timeline(self):
-        """
-        no timeline
+        """no_timeline
         """
         old_data = tim.get()["timemory"]["ranks"][0]["value0"]["graph"]
         os.environ["TIMEMORY_TIMELINE_PROFILE"] = "OFF"
@@ -186,8 +184,7 @@ class TimemoryTimelineTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_timeline(self):
-        """
-        timeline
+        """timeline
         """
         n = 5
 

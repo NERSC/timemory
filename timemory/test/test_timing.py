@@ -103,8 +103,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test wall timer
     def test_wall_clock(self):
-        """
-        wall timer
+        """wall_timer
         """
         if not comp.MonotonicClock.available:
             raise unittest.SkipTest('[{}] not available'.format('wall_clock'))
@@ -125,8 +124,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test monotonic timer
     def test_monotonic_clock(self):
-        """
-        monotonic timer
+        """monotonic_timer
         """
         if not comp.MonotonicClock.available:
             raise unittest.SkipTest(
@@ -148,8 +146,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test monotonic timer raw
     def test_monotonic_raw_clock(self):
-        """
-        monotonic raw timer
+        """monotonic_raw_timer
         """
         if not comp.MonotonicRawClock.available:
             raise unittest.SkipTest(
@@ -171,8 +168,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test system timer
     def test_system_clock(self):
-        """
-        system timer
+        """system_timer
         """
         if not comp.SysClock.available:
             raise unittest.SkipTest('[{}] not available'.format('sys_clock'))
@@ -193,8 +189,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test user timer
     def test_user_clock(self):
-        """
-        user timer
+        """user_timer
         """
         if not comp.UserClock.available:
             raise unittest.SkipTest('[{}] not available'.format('user_clock'))
@@ -215,8 +210,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test cpu timer
     def test_cpu_clock(self):
-        """
-        cpu timer
+        """cpu_timer
         """
         if not comp.CpuClock.available:
             raise unittest.SkipTest('[{}] not available'.format('cpu_clock'))
@@ -237,8 +231,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test cpu utilization
     def test_cpu_util(self):
-        """
-        cpu utilization
+        """cpu_utilization
         """
         if not comp.CpuUtil.available:
             raise unittest.SkipTest('[{}] not available'.format('cpu_util'))
@@ -262,8 +255,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test thread cpu clock
     def test_thread_cpu_clock(self):
-        """
-        thread cpu timer
+        """thread_cpu_timer
         """
         if not comp.ThreadCpuClock.available:
             raise unittest.SkipTest(
@@ -285,8 +277,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test thread cpu utilization
     def test_thread_cpu_util(self):
-        """
-        thread cpu utilization
+        """thread_cpu_utilization
         """
         if not comp.ThreadCpuUtil.available:
             raise unittest.SkipTest(
@@ -311,8 +302,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test process_cpu_clock
     def test_process_cpu_clock(self):
-        """
-        process cpu timer
+        """process_cpu_timer
         """
         if not comp.ProcessCpuClock.available:
             raise unittest.SkipTest(
@@ -334,8 +324,7 @@ class TimemoryTimingTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test process cpu utilization
     def test_process_cpu_util(self):
-        """
-        process cpu utilization
+        """process_cpu_utilization
         """
         if not comp.ProcessCpuUtil.available:
             raise unittest.SkipTest(

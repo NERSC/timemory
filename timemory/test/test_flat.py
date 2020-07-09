@@ -133,8 +133,7 @@ class TimemoryFlatTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_parse(self):
-        """
-        parse
+        """parse
         """
         tim.settings.flat_profile = False
         os.environ["TIMEMORY_FLAT_PROFILE"] = "ON"
@@ -150,8 +149,7 @@ class TimemoryFlatTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_no_flat(self):
-        """
-        not flat
+        """not_flat
         """
         os.environ["TIMEMORY_FLAT_PROFILE"] = "OFF"
         tim.settings.parse()
@@ -169,8 +167,7 @@ class TimemoryFlatTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
     def test_flat(self):
-        """
-        flat
+        """flat
         """
         n = 25
         with marker(components=["wall_clock"], key=self.shortDescription()):

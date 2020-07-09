@@ -130,8 +130,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test expect_true
     def test_expect_true(self):
-        """
-        expect_true
+        """expect_true
         """
         n = 2 * settings.throttle_count
         tim.trace.push("true")
@@ -145,8 +144,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test expect_false
     def test_expect_false(self):
-        """
-        expect_false
+        """expect_false
         """
         n = 2 * settings.throttle_count
         v = 2 * settings.throttle_value
@@ -160,8 +158,7 @@ class TimemoryThrottleTests(unittest.TestCase):
 
     # ---------------------------------------------------------------------------------- #
     def test_region_serial(self):
-        """
-        region_serial
+        """region_serial
         """
         def _run(name):
             tim.region.push("rsthread")
@@ -181,8 +178,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test region_multithreaded
     def test_region_multithreaded(self):
-        """
-        region_multithreaded
+        """region_multithreaded
         """
         def _run(name):
             tim.region.push("rthread")
@@ -207,8 +203,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test multithreaded
     def test_multithreaded(self):
-        """
-        multithreaded
+        """multithreaded
         """
         # using tuple_t = tim::auto_tuple<tim::component::wall_clock>;
 
@@ -256,8 +251,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test tuple_serial
     def test_tuple_serial(self):
-        """
-        tuple_serial
+        """tuple_serial
         """
         @marker(components=("wall_clock"), key="thread")
         def _run(name):
@@ -277,8 +271,7 @@ class TimemoryThrottleTests(unittest.TestCase):
     # ---------------------------------------------------------------------------------- #
     # test tuple_multithreaded
     def test_tuple_multithreaded(self):
-        """
-        tuple_multithreaded
+        """tuple_multithreaded
         """
         @marker(components=("wall_clock"), key="thread")
         def _run(name):
