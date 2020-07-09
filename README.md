@@ -743,12 +743,13 @@ and `TIMEMORY_CXX_GOTCHA` macro for mangled functions:
 
 static constexpr size_t NUM_FUNCS = 2;
 using gotcha_t = tim::component::gotcha<NUM_FUNCS, tim::auto_timer_t>;
-
 void init()
 {
     TIMEMORY_C_GOTCHA(gotcha_t, 0, MPI_Allreduce);
     TIMEMORY_CXX_GOTCHA(gotcha_t, 1, ext::do_work);
 }
+// uses comma operator to call init() during static construction of boolean
+static bool is_initialized = (init(), true);
 ```
 
 ## Compilation with the Template Interface
@@ -798,7 +799,7 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, api::FooBenchmarking, false_type)
         tim::component::cpu_clock,              \
         tim::component::cpu_util,               \
         tim::component::user_global_bundle,     \
-        papi_vector*,                           \
+        tim::component::papi_vector*,           \
         tim::component::cupti_activity*,        \
         tim::component::cupti_counters*>
 #endif
