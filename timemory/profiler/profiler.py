@@ -29,10 +29,8 @@ import sys
 import copy
 from functools import wraps
 from collections import deque
-from ..libpytimemory import component_bundle
-from ..libpytimemory import settings
 
-__all__ = ["profile", "Profiler"]
+__all__ = ["profile", "Profiler", "FakeProfiler"]
 #
 #   Variables
 #
@@ -42,8 +40,8 @@ _skip_counts = []
 _is_running = False
 _start_events = ["call"]  # + ["c_call"]
 _stop_events = ["return"]  # + ["c_return"]
-_always_skipped_functions = ["__exit__"]
-_always_skipped_files = ["__init__.py"]
+_always_skipped_functions = ["__exit__", "_handle_fromlist", "<module>"]
+_always_skipped_files = ["__init__.py", "__main__.py", "<frozen importlib._bootstrap>"]
 
 #
 #   Profiler settings
@@ -58,6 +56,8 @@ def _default_functor():
 
 
 def _profiler_function(frame, event, arg):
+    from ..libpytimemory import settings
+    from ..libpytimemory import component_bundle
 
     global _records
     global _include_line
@@ -120,7 +120,31 @@ def _profiler_function(frame, event, arg):
 
 #----------------------------------------------------------------------------------------#
 #
-class profile():
+PY3 = sys.version_info[0] == 3
+PY35 = PY3 and sys.version_info[1] >= 5
+
+# exec (from https://bitbucket.org/gutworth/six/):
+if PY3:
+    import builtins
+    exec_ = getattr(builtins, "exec")
+    del builtins
+else:
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
+
+
+#----------------------------------------------------------------------------------------#
+#
+class Profiler():
     """
     Provides decorators and context-manager for the timemory profilers
     """
@@ -133,13 +157,13 @@ class profile():
     #
     @staticmethod
     def condition(functor):
-        profile._conditional_functor = functor
+        Profiler._conditional_functor = functor
 
     #------------------------------------------------------------------------------------#
     #
     @staticmethod
     def is_enabled():
-        ret = profile._conditional_functor()
+        ret = Profiler._conditional_functor()
         try:
             if ret is True:
                 return True
@@ -158,6 +182,8 @@ class profile():
             - flat [bool]                   : enable flat profiling
             - timeline [bool]               : enable timeline profiling
         """
+        from ..libpytimemory import settings
+
         global _records
         global _include_line
         global _include_filepath
@@ -173,14 +199,14 @@ class profile():
         _components = _profl if _trace is None else _trace
 
         self._original_profiler_function = sys.getprofile()
-        self._use = (not _is_running and profile.is_enabled() is True)
+        self._use = (not _is_running and Profiler.is_enabled() is True)
         self._flat_profile = (settings.flat_profile or flat)
         self._timeline_profile = (settings.timeline_profile or timeline)
         self.components = components + _components.split(",")
         if len(self.components) == 0:
             self.components += ["wall_clock"]
         os.environ["TIMEMORY_PROFILER_COMPONENTS"] = ",".join(self.components)
-        print("USE = {}, COMPONENTS = {}".format(self._use, self.components))
+        # print("USE = {}, COMPONENTS = {}".format(self._use, self.components))
 
     #------------------------------------------------------------------------------------#
     #
@@ -188,6 +214,7 @@ class profile():
         """
         Start the profiler explicitly
         """
+        from ..libpytimemory import component_bundle
         global _is_running
 
         if self._use:
@@ -216,6 +243,7 @@ class profile():
         """
         Decorator
         """
+        from ..libpytimemory import component_bundle
         global _is_running
 
         if self._use:
@@ -247,6 +275,7 @@ class profile():
         """
         Context manager
         """
+        from ..libpytimemory import component_bundle
         global _is_running
 
         if self._use:
@@ -276,6 +305,9 @@ class profile():
     #------------------------------------------------------------------------------------#
     #
     def run(self, cmd):
+        """
+        Execute and profile a command
+        """
         import __main__
         dict = __main__.__dict__
         if isinstance(cmd, str):
@@ -286,6 +318,10 @@ class profile():
     #------------------------------------------------------------------------------------#
     #
     def runctx(self, cmd, globals, locals):
+        """
+        Profile a context
+        """
+        from ..libpytimemory import component_bundle
         global _is_running
 
         if self._use:
@@ -296,11 +332,110 @@ class profile():
                                        self._timeline_profile)
 
         try:
-            exec(cmd, globals, locals)
+            exec_(cmd, globals, locals)
         finally:
             if self._use:
                 _is_running = False
         return self
 
+    #------------------------------------------------------------------------------------#
+    #
+    def runcall(self, func, *args, **kw):
+        """
+        Profile a single function call.
+        """
+        from ..libpytimemory import component_bundle
+        global _is_running
 
-Profiler = profile
+        if self._use:
+            self._original_profiler_function = sys.getprofile()
+            _is_running = True
+            component_bundle.reset()
+            component_bundle.configure(self.components, self._flat_profile,
+                                       self._timeline_profile)
+        try:
+            return func(*args, **kw)
+        finally:
+            if self._use:
+                _is_running = False
+
+    #------------------------------------------------------------------------------------#
+    #
+    def add_module(self, mod):
+        """ Add all the functions in a module and its classes.
+        """
+        from inspect import isclass, isfunction
+
+        nfuncsadded = 0
+        for item in mod.__dict__.values():
+            if isclass(item):
+                for k, v in item.__dict__.items():
+                    if isfunction(v):
+                        self.add_function(v)
+                        nfuncsadded += 1
+            elif isfunction(item):
+                self.add_function(item)
+                nfuncsadded += 1
+
+        return nfuncsadded
+
+
+profile = Profiler
+
+
+class FakeProfiler():
+    """
+    Provides decorators and context-manager for the timemory profiles which do nothing
+    """
+
+    #------------------------------------------------------------------------------------#
+    #
+    @staticmethod
+    def condition(functor):
+        pass
+
+    #------------------------------------------------------------------------------------#
+    #
+    @staticmethod
+    def is_enabled():
+        return False
+
+    #------------------------------------------------------------------------------------#
+    #
+    def __init__(self, *args, **kwargs):
+        """
+        Arguments:
+            - components [list of strings]  : list of timemory components
+            - flat [bool]                   : enable flat profiling
+            - timeline [bool]               : enable timeline profiling
+        """
+        pass
+
+    #------------------------------------------------------------------------------------#
+    #
+    def __call__(self, func):
+        """
+        Decorator
+        """
+        @wraps(func)
+        def function_wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return function_wrapper
+
+    #------------------------------------------------------------------------------------#
+    #
+    def __enter__(self, *args, **kwargs):
+        """
+        Context manager
+        """
+        pass
+
+    #------------------------------------------------------------------------------------#
+    #
+    def __exit__(self, exec_type, exec_value, exec_tb):
+        """
+        Context manager
+        """
+        import traceback
+        if exec_type is not None and exec_value is not None and exec_tb is not None:
+            traceback.print_exception(exec_type, exec_value, exec_tb, limit=5)

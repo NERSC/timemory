@@ -39,9 +39,7 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 //
-using auto_user_bundle_tuple_t = auto_tuple<component::user_tuple_bundle>;
-using auto_user_bundle_list_t  = auto_list<component::user_list_bundle>;
-using auto_user_bundle_t = auto_hybrid<auto_user_bundle_tuple_t, auto_user_bundle_list_t>;
+using auto_user_bundle_t = auto_bundle<TIMEMORY_API, component::user_global_bundle>;
 //
 //--------------------------------------------------------------------------------------//
 }  // namespace tim

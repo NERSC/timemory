@@ -153,10 +153,17 @@ public:
     component_type&       get_component() { return m_temporary; }
     const component_type& get_component() const { return m_temporary; }
 
+    /// implicit conversion to underlying component_type
     operator component_type&() { return m_temporary; }
+    /// implicit conversion to const ref of underlying component_type
     operator const component_type&() const { return m_temporary; }
 
-    // partial interface to underlying component_bundle
+    /// query the number of (compile-time) fixed components
+    static constexpr auto fixed_count() { return component_type::fixed_count(); }
+    /// query the number of (run-time) optional components
+    static constexpr auto optional_count() { return component_type::optional_count(); }
+    /// count number of active components in an instance
+    auto count() { return (m_enabled) ? m_temporary.count() : 0; }
     /// push components into call-stack storage
     void push()
     {

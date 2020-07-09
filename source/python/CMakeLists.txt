@@ -20,9 +20,8 @@ if(TIMEMORY_BUILD_PYTHON)
         -c "import sys; print('{}'.format(sys.version_info[0]))"
         OUTPUT_VARIABLE PYTHON_MAJOR_VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-    add_definitions(-D_PYTHON_MAJOR_VERSION=${PYTHON_MAJOR_VERSION})
 
-    file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
+    file(GLOB_RECURSE pybind_headers ${PROJECT_SOURCE_DIR}/external/pybind11/include/*.h)
     file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.hpp)
     file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/libpytimemory*.cpp)
 
@@ -34,10 +33,11 @@ if(TIMEMORY_BUILD_PYTHON)
 
     add_library(libpytimemory MODULE ${pysources} ${pyheaders} ${pybind_headers})
     add_library(${PROJECT_NAME}::libpytimemory ALIAS libpytimemory)
-    target_compile_definitions(libpytimemory PRIVATE TIMEMORY_PYBIND11_SOURCE)
+    target_compile_definitions(libpytimemory PRIVATE TIMEMORY_PYBIND11_SOURCE
+        _PYTHON_MAJOR_VERSION=${PYTHON_MAJOR_VERSION})
 
     target_include_directories(libpytimemory SYSTEM PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/pybind11/include>)
 
     target_link_libraries(libpytimemory PRIVATE
         pybind11::module

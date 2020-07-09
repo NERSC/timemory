@@ -172,6 +172,28 @@ percent_diff(const std::tuple<>&, const std::tuple<>&)
 }
 
 //--------------------------------------------------------------------------------------//
+//
+template <typename Up>
+inline void
+plus(std::tuple<>&, Up&&)
+{}
+
+template <typename Up>
+inline void
+minus(std::tuple<>&, Up&&)
+{}
+
+template <typename Up>
+inline void
+multiply(std::tuple<>&, Up&&)
+{}
+
+template <typename Up>
+inline void
+divide(std::tuple<>&, Up&&)
+{}
+
+//--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename std::enable_if<(std::is_integral<Tp>::value &&
                                                 std::is_unsigned<Tp>::value),
@@ -558,9 +580,14 @@ plus(Tp& _lhs, const Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs), 
     }
 }
 
+template <typename Tp, typename Up>
+auto
+plus(Tp&, const Up&, index_sequence<>, int)
+{}
+
 template <typename Tp, typename Up, size_t... Idx>
 auto
-plus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
+plus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
@@ -621,9 +648,14 @@ minus(Tp& _lhs, const Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs),
     }
 }
 
+template <typename Tp, typename Up>
+auto
+minus(Tp&, const Up&, index_sequence<>, int)
+{}
+
 template <typename Tp, typename Up, size_t... Idx>
 auto
-minus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
+minus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
@@ -718,10 +750,15 @@ multiply(Tp& _lhs, const Up& _rhs, std::tuple<>, int)
     }
 }
 
+template <typename Tp, typename Up>
+auto
+multiply(Tp&, const Up&, index_sequence<>, int)
+{}
+
 template <typename Tp, typename Up, size_t... Idx,
           enable_if_t<!(std::is_arithmetic<Up>::value), int> = 0>
 auto
-multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
+multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
@@ -733,7 +770,7 @@ multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
 template <typename Tp, typename Up, size_t... Idx,
           enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
 auto
-multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
+multiply(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
@@ -824,10 +861,15 @@ divide(Tp& _lhs, const Up& _rhs, std::tuple<>, int) -> decltype(std::begin(_lhs)
     }
 }
 
+template <typename Tp, typename Up>
+auto
+divide(Tp&, const Up&, index_sequence<>, int)
+{}
+
 template <typename Tp, typename Up, size_t... Idx,
           enable_if_t<!(std::is_arithmetic<Up>::value), int> = 0>
 auto
-divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
+divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");
@@ -839,7 +881,7 @@ divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
 template <typename Tp, typename Up, size_t... Idx,
           enable_if_t<(std::is_arithmetic<Up>::value), int> = 0>
 auto
-divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, int)
+divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), void())
 {
     static_assert(!std::is_same<decay_t<Tp>, std::tuple<>>::value, "Error! tuple<>");

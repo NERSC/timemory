@@ -614,9 +614,8 @@ protected:
     using base_type::value;
 
     friend struct base<this_type, value_type>;
-
-    using base_type::implements_storage_v;
-    friend class impl::storage<this_type, implements_storage_v>;
+    friend class impl::storage<this_type,
+                               implements_storage<this_type, value_type>::value>;
 
 public:
     //==================================================================================//

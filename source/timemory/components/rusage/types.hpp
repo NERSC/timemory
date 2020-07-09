@@ -324,16 +324,16 @@ TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, NUM_IO_IN, "num_io_in", "")
 TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, NUM_IO_OUT, "num_io_out", "")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(num_minor_page_faults, NUM_MINOR_PAGE_FAULTS,
-                                 "num_minor_page_faults", "")
+                                 "num_minor_page_faults", "minor_page_faults")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(num_major_page_faults, NUM_MAJOR_PAGE_FAULTS,
-                                 "num_major_page_faults", "")
+                                 "num_major_page_faults", "major_page_faults")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(voluntary_context_switch, VOLUNTARY_CONTEXT_SWITCH,
-                                 "voluntary_context_switch", "")
+                                 "voluntary_context_switch", "vol_ctx_switch")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(priority_context_switch, PRIORITY_CONTEXT_SWITCH,
-                                 "priority_context_switch", "")
+                                 "priority_context_switch", "prio_ctx_switch")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(virtual_memory, VIRTUAL_MEMORY, "virtual_memory", "")
 //

@@ -151,8 +151,6 @@ public:
     // public static functions
     //
     static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
-    static void                  print_storage();
-    static void                  init_storage();
 
     //----------------------------------------------------------------------------------//
     // public member functions
@@ -197,7 +195,9 @@ public:
     //----------------------------------------------------------------------------------//
     /// provide preliminary info to the objects with matching arguments
     //
-    template <typename... Args>
+    void assemble() { invoke::assemble(m_data, *this); }
+
+    template <typename... Args, size_t N = sizeof...(Args), enable_if_t<N != 0, int> = 0>
     void assemble(Args&&... _args)
     {
         invoke::assemble(m_data, std::forward<Args>(_args)...);
@@ -206,7 +206,9 @@ public:
     //----------------------------------------------------------------------------------//
     /// provide conclusive info to the objects with matching arguments
     //
-    template <typename... Args>
+    void derive() { invoke::derive(m_data, *this); }
+
+    template <typename... Args, size_t N = sizeof...(Args), enable_if_t<N != 0, int> = 0>
     void derive(Args&&... _args)
     {
         invoke::derive(m_data, std::forward<Args>(_args)...);

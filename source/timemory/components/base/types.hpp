@@ -42,6 +42,10 @@ namespace tim
 namespace component
 {
 //
+// generic static polymorphic base class
+template <typename Tp, typename ValueType = int64_t>
+struct base;
+//
 //--------------------------------------------------------------------------------------//
 //
 namespace

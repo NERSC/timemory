@@ -423,13 +423,14 @@ template <typename Type>
 void
 storage<Type, true>::stack_clear()
 {
-    using Base                       = typename Type::base_type;
     std::unordered_set<Type*> _stack = m_stack;
     if(settings::stack_clearing())
         for(auto& itr : _stack)
         {
-            static_cast<Base*>(itr)->stop();
-            static_cast<Base*>(itr)->pop_node();
+            operation::stop<Type>     _stopper(*itr);
+            operation::pop_node<Type> _popper(*itr);
+            // static_cast<Base*>(itr)->stop();
+            // static_cast<Base*>(itr)->pop_node();
         }
     m_stack.clear();
 }

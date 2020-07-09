@@ -42,7 +42,8 @@ endif()
 add_library(test-werror-flags INTERFACE)
 add_target_flag_if_avail(test-werror-flags "-W" "-Wall" "-Wextra" "-pedantic"
     "-Wno-mismatched-tags" "-Werror")
-target_link_libraries(test-werror-flags INTERFACE timemory::timemory-headers timemory::timemory-compile-timing)
+target_link_libraries(test-werror-flags INTERFACE
+    timemory::timemory-headers timemory::timemory-compile-timing)
 target_compile_definitions(test-werror-flags INTERFACE TIMEMORY_CMAKE)
 
 set(HYBRID_COMPONENTS )

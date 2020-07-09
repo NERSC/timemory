@@ -49,8 +49,8 @@ __status__ = "Development"
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))
 
-
-os.environ["PROFILESELECTED"] = "1"
+os.environ.setdefault("TIMEMORY_BANNER", "OFF")
+os.environ.setdefault("PROFILESELECTED", "1")
 '''
 Setting PROFILESELECTED=1 attempts to ensure that when gperftools is linked,
 cpu profiler, heap checker, and heap profiler lie dormant until activated.
@@ -113,6 +113,7 @@ else:
         from . import hardware_counters
         from .common import *
         from .libpytimemory import *
+        from .libpytimemory import settings as settings
         init = initialize
         __all__ = ['version_info',
                    'build_info',
@@ -122,6 +123,7 @@ else:
                    'hardware_counters',
                    'mpi_support',
                    'component',
+                   'settings',
                    'plotting',
                    'roofline',
                    'bundle',

@@ -409,8 +409,8 @@ struct argument_parser
 
         enum Position : int
         {
-            LAST   = -1,
-            IGNORE = -2
+            LastArgument   = -1,
+            IgnoreArgument = -2
         };
 
         enum Count : int
@@ -445,7 +445,7 @@ struct argument_parser
 
         argument& position(int position)
         {
-            if(position != Position::LAST)
+            if(position != Position::LastArgument)
             {
                 // position + 1 because technically argument zero is the name of the
                 // executable
@@ -603,7 +603,7 @@ struct argument_parser
         }
 
         friend struct argument_parser;
-        int                        m_position  = Position::IGNORE;
+        int                        m_position  = Position::IgnoreArgument;
         int                        m_count     = Count::ANY;
         int                        m_max_count = Count::ANY;
         std::vector<std::string>   m_names     = {};
@@ -676,7 +676,7 @@ struct argument_parser
             int current = 0;
             for(auto& v : m_positional_arguments)
             {
-                if(v.first != argument::Position::LAST)
+                if(v.first != argument::Position::LastArgument)
                 {
                     for(; current < v.first; ++current)
                         std::cerr << " [" << current << "]";
@@ -697,7 +697,7 @@ struct argument_parser
                         << "]";
                 }
             }
-            if(m_positional_arguments.find(argument::Position::LAST) ==
+            if(m_positional_arguments.find(argument::Position::LastArgument) ==
                m_positional_arguments.end())
                 std::cerr << " [options...]";
             std::cerr << " " << _extra << std::endl;
@@ -853,7 +853,7 @@ struct argument_parser
                     if(nleading_dash == 1 && name.length() > 1)
                         long_short_opts.insert(name);
                 }
-                if(a.m_position >= 0 || a.m_position == argument::Position::LAST)
+                if(a.m_position >= 0 || a.m_position == argument::Position::LastArgument)
                     m_positional_arguments.at(a.m_position) = a.m_index;
             }
 
@@ -869,12 +869,12 @@ struct argument_parser
                 if(arg_len == 0)
                     continue;
                 if(argv_index == argc - 1 &&
-                   m_positional_arguments.find(argument::Position::LAST) !=
+                   m_positional_arguments.find(argument::Position::LastArgument) !=
                        m_positional_arguments.end())
                 {
                     err          = end_argument();
                     arg_result b = err;
-                    err          = add_value(current_arg, argument::Position::LAST);
+                    err = add_value(current_arg, argument::Position::LastArgument);
                     if(b)
                         return b;
                     if(err)

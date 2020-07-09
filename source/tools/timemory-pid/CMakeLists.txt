@@ -1,4 +1,8 @@
 
+if(WIN32)
+    return()
+endif()
+
 #----------------------------------------------------------------------------------------#
 # Build and install timemory-pid tool which provides a PID to MPI applications
 #

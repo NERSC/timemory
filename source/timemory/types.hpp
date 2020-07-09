@@ -130,14 +130,14 @@
 #if !defined(TIMEMORY_MINIMAL_TUPLE_TYPES)
 #    define TIMEMORY_MINIMAL_TUPLE_TYPES                                                 \
         component::wall_clock, component::cpu_clock, component::cpu_util,                \
-            component::peak_rss, component::user_tuple_bundle
+            component::peak_rss, component::user_global_bundle
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_FULL_TUPLE_TYPES)
 #    define TIMEMORY_FULL_TUPLE_TYPES                                                    \
-        component::user_tuple_bundle, component::wall_clock, component::system_clock,    \
+        component::user_global_bundle, component::wall_clock, component::system_clock,   \
             component::user_clock, component::cpu_util, component::peak_rss
 #endif
 //
@@ -145,18 +145,17 @@
 //
 #if !defined(TIMEMORY_MINIMAL_LIST_TYPES)
 #    define TIMEMORY_MINIMAL_LIST_TYPES                                                  \
-        component::user_list_bundle*, component::papi_vector*, component::cuda_event*,   \
-            component::nvtx_marker*, component::cupti_activity*,                         \
-            component::cupti_counters*
+        component::papi_vector*, component::cuda_event*, component::nvtx_marker*,        \
+            component::cupti_activity*, component::cupti_counters*
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(TIMEMORY_FULL_LIST_TYPES)
 #    define TIMEMORY_FULL_LIST_TYPES                                                     \
-        component::user_list_bundle*, component::gperftools_cpu_profiler*,               \
-            component::caliper*, component::tau_marker*, component::papi_vector*,        \
-            component::cuda_event*, component::nvtx_marker*, component::cupti_activity*, \
+        component::gperftools_cpu_profiler*, component::caliper*,                        \
+            component::tau_marker*, component::papi_vector*, component::cuda_event*,     \
+            component::nvtx_marker*, component::cupti_activity*,                         \
             component::cupti_counters*, component::cpu_roofline_flops*,                  \
             component::gpu_roofline_flops*
 #endif

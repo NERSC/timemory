@@ -35,9 +35,16 @@ namespace pyinternal
 {
 //
 //--------------------------------------------------------------------------------------//
-//
+/// variadic wrapper around each component allowing to to accept arguments that it
+/// doesn't actually accept and implement functions it does not actually implement
 template <typename T>
 using pytuple_t = tim::lightweight_tuple<T>;
+/// a python object generator function via a string ID
+using keygen_t = std::function<py::object()>;
+/// pairs a set of matching strings to a generator function
+using keyset_t = std::pair<std::set<std::string>, keygen_t>;
+/// a python object generator function via an enumeration ID
+using indexgen_t = std::function<py::object(int)>;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -142,6 +149,75 @@ template <typename T, typename... Args>
 static inline void
 record(py::class_<pytuple_t<T>>&, long, long)
 {}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+static inline auto
+get_unit(py::class_<pytuple_t<T>>& _pyclass, int, int) -> decltype(T::get_unit(), void())
+{
+    auto _get_unit = []() { return T::get_unit(); };
+    _pyclass.def_static("unit", _get_unit, "Get the display units for the type");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+static inline auto
+get_unit(py::class_<pytuple_t<T>>& _pyclass, int, long)
+    -> decltype(std::declval<pytuple_t<T>>().template get<T>()->get_unit(), void())
+{
+    using bundle_t = pytuple_t<T>;
+    auto _get_unit = [](bundle_t* obj) { return obj->template get<T>()->get_unit(); };
+    _pyclass.def("unit", _get_unit, "Get the units of the object");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Args>
+static inline void
+get_unit(py::class_<pytuple_t<T>>& _pyclass, long, long)
+{
+    _pyclass.def_static("unit", []() { return 1; }, "Get the units of the object");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Args>
+static inline auto
+get_display_unit(py::class_<pytuple_t<T>>& _pyclass, int, int)
+    -> decltype(T::get_display_unit(), void())
+{
+    auto _get_display_unit = []() { return T::get_display_unit(); };
+    _pyclass.def_static("display_unit", _get_display_unit,
+                        "Get the display units of the type");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Args>
+static inline auto
+get_display_unit(py::class_<pytuple_t<T>>& _pyclass, int, long)
+    -> decltype(std::declval<pytuple_t<T>>().template get<T>()->get_display_unit(),
+                void())
+{
+    using bundle_t         = pytuple_t<T>;
+    auto _get_display_unit = [](bundle_t* obj) {
+        return obj->template get<T>()->get_display_unit();
+    };
+    _pyclass.def("display_unit", _get_display_unit,
+                 "Get the display units of the object");
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T, typename... Args>
+static inline void
+get_display_unit(py::class_<pytuple_t<T>>& _pyclass, long, long)
+{
+    _pyclass.def_static("display_unit", []() { return ""; },
+                        "Get the display units of the object");
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -315,9 +391,11 @@ operations(py::class_<TupleT<T>>& _pyclass, std::index_sequence<Idx...>)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Idx, std::enable_if_t<(tim::component::enumerator<Idx>::value), int> = 0>
+template <size_t Idx, size_t N,
+          std::enable_if_t<(tim::component::enumerator<Idx>::value), int> = 0>
 static void
-generate(py::module& _pymod)
+generate(py::module& _pymod, std::array<bool, N>& _boolgen,
+         std::array<keyset_t, N>& _keygen)
 {
     using T = typename tim::component::enumerator<Idx>::type;
     if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
@@ -370,6 +448,8 @@ generate(py::module& _pymod)
     // these require further evaluation
     pyinternal::get(_pycomp);
     pyinternal::record(_pycomp, 0, 0);
+    pyinternal::get_unit(_pycomp, 0, 0);
+    pyinternal::get_display_unit(_pycomp, 0, 0);
     pyinternal::configure(_pycomp, 0);
     pyinternal::configure(_pycomp, 0, 0, py::args{}, py::kwargs{});
     pyinternal::operations(_pycomp, std::make_index_sequence<TIMEMORY_OPERATION_END>{});
@@ -392,14 +472,20 @@ generate(py::module& _pymod)
                        "Get the description for the type");
     _pycomp.def_property_readonly_static("available", [](py::object) { return true; },
                                          "Whether the component is available");
+
+    std::set<std::string> _keys = property_t::ids();
+    _keys.insert(id);
+    _boolgen[Idx] = true;
+    _keygen[Idx]  = { _keys, []() { return py::cast(new bundle_t{}); } };
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Idx,
+template <size_t Idx, size_t N,
           std::enable_if_t<!(tim::component::enumerator<Idx>::value), int> = 0>
 static void
-generate(py::module& _pymod)
+generate(py::module& _pymod, std::array<bool, N>& _boolgen,
+         std::array<keyset_t, N>& _keygen)
 {
     using T = typename tim::component::enumerator<Idx>::type;
     if(std::is_same<T, tim::component::placeholder<tim::component::nothing>>::value)
@@ -458,19 +544,26 @@ generate(py::module& _pymod)
     _pycomp.def("__isub__", _isub, "Subtract rhs from lhs", py::is_operator());
     _pycomp.def("__repr__", _repr, "String representation");
 
+    _pycomp.def_static("unit", []() { return 1; }, "Get the units for the type");
+    _pycomp.def_static("display_unit", []() { return ""; },
+                       "Get the unit repr for the type");
     _pycomp.def_property_readonly_static("available", [](py::object) { return false; },
                                          "Whether the component is available");
     _pycomp.def_property_readonly_static("has_value", [](py::object) { return false; },
                                          "Whether the component has an accessible value");
+
+    _boolgen[Idx] = false;
+    _keygen[Idx]  = { {}, []() { return py::none{}; } };
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t... Idx>
+template <size_t... Idx, size_t N = sizeof...(Idx)>
 static void
-components(py::module& _pymod, std::index_sequence<Idx...>)
+components(py::module& _pymod, std::array<bool, N>& _boolgen,
+           std::array<keyset_t, N>& _keygen, std::index_sequence<Idx...>)
 {
-    TIMEMORY_FOLD_EXPRESSION(pyinternal::generate<Idx>(_pymod));
+    TIMEMORY_FOLD_EXPRESSION(pyinternal::generate<Idx>(_pymod, _boolgen, _keygen));
 }
 }  // namespace pyinternal
 //
@@ -486,7 +579,48 @@ generate(py::module& _pymod)
         "Stand-alone classes for the components. Unless push() and pop() are called on "
         "these objects, they will not store any data in the timemory call-graph (if "
         "applicable)");
-    pyinternal::components(_pycomp, std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+
+    constexpr size_t                    N = TIMEMORY_COMPONENTS_END;
+    std::array<bool, N>                 _boolgen;
+    std::array<pyinternal::keyset_t, N> _keygen;
+    _boolgen.fill(false);
+    _keygen.fill(pyinternal::keyset_t{ {}, []() -> py::function { return py::none{}; } });
+
+    pyinternal::components(_pycomp, _boolgen, _keygen,
+                           std::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
+
+    auto _keygenerator = [=](std::string _key) {
+        DEBUG_PRINT_HERE("pycomponents::get_generator :: looking for %s", _key.c_str());
+        size_t i = 0;
+        for(const auto& itr : _keygen)
+        {
+            if(!_boolgen[i++])
+                continue;
+            if(itr.first.find(_key) != itr.first.end())
+                return itr.second;
+        }
+        pyinternal::keygen_t _nogen = []() -> py::object { return py::none{}; };
+        return _nogen;
+    };
+
+    auto _indexgenerator = [=](TIMEMORY_NATIVE_COMPONENT _id) {
+        DEBUG_PRINT_HERE("pycomponents::get_generator :: looking for %i", (int) _id);
+        size_t i = static_cast<size_t>(_id);
+        if(!_boolgen[i])
+        {
+            pyinternal::keygen_t _nogen = []() -> py::object { return py::none{}; };
+            return _nogen;
+        }
+        return _keygen[i].second;
+    };
+
+    _pycomp.def("get_generator", _keygenerator,
+                "Get a functor for generating the component whose class name or string "
+                "IDs (see `timemory-avail -s`) match the given key");
+    _pycomp.def("get_generator", _indexgenerator,
+                "Get a functor for generating the component whose enumeration ID (see "
+                "`help(timemory.component.id)`) match the given enumeration ID");
+
     return _pycomp;
 }
 }  // namespace pycomponents

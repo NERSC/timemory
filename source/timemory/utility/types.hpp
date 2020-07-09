@@ -50,6 +50,60 @@
 
 //======================================================================================//
 //
+#if !defined(TIMEMORY_ALWAYS_INLINE)
+#    define TIMEMORY_ALWAYS_INLINE [[gnu::always_inline]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_FLATTEN)
+#    define TIMEMORY_FLATTEN [[gnu::flatten]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_HOT)
+#    define TIMEMORY_HOT [[gnu::hot]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_COLD)
+#    define TIMEMORY_COLD [[gnu::cold]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_CONST)
+#    define TIMEMORY_CONST [[gnu::const]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DEPRECATED)
+#    define TIMEMORY_DEPRECATED(...) [[gnu::deprecated(__VA_ARGS__)]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_EXTERN_VISIBLE)
+#    define TIMEMORY_EXTERN_VISIBLE [[gnu::externally_visible]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_ALIAS)
+#    define TIMEMORY_ALIAS(...) [[gnu::alias(__VA_ARGS__)]]
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_ATTRIBUTES)
+#    define TIMEMORY_ATTRIBUTES(...) __VA_ARGS__
+#endif
+
+//======================================================================================//
+//
 #if !defined(TIMEMORY_DELETED_OBJECT)
 #    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
         NAME()            = delete;                                                      \

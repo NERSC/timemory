@@ -1,0 +1,5 @@
+IPython>=0.13
+numpy
+matplotlib
+pillow
+six

@@ -57,10 +57,9 @@ struct base;
 template <typename Tp>
 struct base<Tp, skeleton::base>
 {
-    static constexpr bool implements_storage_v = false;
-    using Type                                 = Tp;
-    using value_type                           = void;
-    using base_type                            = base<Tp, skeleton::base>;
+    using Type       = Tp;
+    using value_type = void;
+    using base_type  = base<Tp, skeleton::base>;
 };
 
 //--------------------------------------------------------------------------------------//

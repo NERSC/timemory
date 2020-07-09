@@ -33,7 +33,7 @@
 #include "timemory/components/base/types.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/storage/declaration.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/utility/serializer.hpp"
 
 //======================================================================================//
@@ -90,14 +90,13 @@ struct base : public trait::dynamic_base<Tp>::type
     using vector_t = std::vector<U>;
 
 public:
-    static constexpr bool has_accum_v          = trait::base_has_accum<Tp>::value;
-    static constexpr bool has_last_v           = trait::base_has_last<Tp>::value;
-    static constexpr bool implements_storage_v = implements_storage<Tp, Value>::value;
-    static constexpr bool has_secondary_data   = trait::secondary_data<Tp>::value;
-    static constexpr bool is_sampler_v         = trait::sampler<Tp>::value;
-    static constexpr bool is_component_type    = false;
-    static constexpr bool is_auto_type         = false;
-    static constexpr bool is_component         = true;
+    static constexpr bool has_accum_v        = trait::base_has_accum<Tp>::value;
+    static constexpr bool has_last_v         = trait::base_has_last<Tp>::value;
+    static constexpr bool has_secondary_data = trait::secondary_data<Tp>::value;
+    static constexpr bool is_sampler_v       = trait::sampler<Tp>::value;
+    static constexpr bool is_component_type  = false;
+    static constexpr bool is_auto_type       = false;
+    static constexpr bool is_component       = true;
 
     using Type         = Tp;
     using value_type   = Value;
@@ -117,7 +116,7 @@ public:
     using fmtflags          = std::ios_base::fmtflags;
 
 private:
-    friend class impl::storage<Tp, implements_storage_v>;
+    friend class impl::storage<Tp, implements_storage<Tp, Value>::value>;
     friend class storage<Tp, Value>;
     friend struct node::graph<Tp>;
 
@@ -164,10 +163,6 @@ public:
     base& operator=(base_type&&) = default;
 
 public:
-    static void global_init(storage_type*) {}
-    static void thread_init(storage_type*) {}
-    static void global_finalize(storage_type*) {}
-    static void thread_finalize(storage_type*) {}
     template <typename Archive>
     static void extra_serialization(Archive&, const unsigned int)
     {}
@@ -176,17 +171,6 @@ public:
     template <typename... Args>
     static void configure(Args&&...)
     {}
-
-    //----------------------------------------------------------------------------------//
-    /// type contains secondary data resembling the original data
-    /// but should be another node entry in the graph. These types
-    /// must provide a get_secondary() member function and that member function
-    /// must return a pair-wise iterable container, e.g. std::map, of types:
-    ///     - std::string
-    ///     - value_type
-    ///
-    template <typename T = Type>
-    static void append(graph_iterator itr, const T& rhs);
 
 public:
     void reset();    /// reset the values
@@ -314,19 +298,6 @@ public:
     auto plus(crtp::base, const base_type& rhs) { this->plus(rhs); }
     auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
 
-protected:
-    //----------------------------------------------------------------------------------//
-    // insert the node into the graph
-    //
-    template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
-    void insert_node(scope::config, int64_t);
-
-    // pop the node off the graph
-    template <typename Up = Tp, typename Vp = Value,
-              enable_if_t<(implements_storage<Up, Vp>::value), int> = 0>
-    void pop_node();
-
     static Type dummy();  // create an instance
 
 protected:
@@ -368,8 +339,8 @@ public:
 
     template <typename Up = Type, typename UnitT = typename Up::display_unit_type,
               enable_if_t<(std::is_same<UnitT, std::string>::value), int> = 0>
+    static std::string get_display_unit();
 
-    static std::string             get_display_unit();
     static short                   get_width();
     static short                   get_precision();
     static std::ios_base::fmtflags get_format_flags();
@@ -392,12 +363,11 @@ struct base<Tp, void> : public trait::dynamic_base<Tp>::type
     using EmptyT = std::tuple<>;
 
 public:
-    static constexpr bool implements_storage_v = false;
-    static constexpr bool has_secondary_data   = false;
-    static constexpr bool is_sampler_v         = trait::sampler<Tp>::value;
-    static constexpr bool is_component_type    = false;
-    static constexpr bool is_auto_type         = false;
-    static constexpr bool is_component         = true;
+    static constexpr bool has_secondary_data = false;
+    static constexpr bool is_sampler_v       = trait::sampler<Tp>::value;
+    static constexpr bool is_component_type  = false;
+    static constexpr bool is_auto_type       = false;
+    static constexpr bool is_component       = true;
 
     using Type             = Tp;
     using value_type       = void;
@@ -410,7 +380,7 @@ public:
     using storage_type = storage<Tp, void>;
 
 private:
-    friend class impl::storage<Tp, implements_storage_v>;
+    friend class impl::storage<Tp, false>;
     friend class storage<Tp, void>;
     friend struct node::graph<Tp>;
 
@@ -445,10 +415,6 @@ public:
     base& operator=(base_type&&) = default;
 
 public:
-    static void global_init(storage_type*) {}
-    static void thread_init(storage_type*) {}
-    static void global_finalize(storage_type*) {}
-    static void thread_finalize(storage_type*) {}
     template <typename Archive>
     static void extra_serialization(Archive&, const unsigned int)
     {}
@@ -456,10 +422,6 @@ public:
 public:
     template <typename... Args>
     static void configure(Args&&...)
-    {}
-
-    template <typename GraphItr>
-    static void append(GraphItr, const Type&)
     {}
 
 public:

@@ -57,7 +57,7 @@ struct generic_operator
     TIMEMORY_DELETED_OBJECT(generic_operator)
 
     template <typename Up>
-    static void check()
+    TIMEMORY_ALWAYS_INLINE static void check()
     {
         using U = std::decay_t<std::remove_pointer_t<Up>>;
         static_assert(std::is_same<U, type>::value, "Error! Up != type");
@@ -72,7 +72,7 @@ struct generic_operator
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<(trait::is_available<Rp>::value), int> = 0,
               enable_if_t<(std::is_pointer<Up>::value), int>     = 0>
-    explicit generic_operator(Up obj, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up obj, Args&&... args)
     {
         check<Up>();
         if(obj)
@@ -82,7 +82,7 @@ struct generic_operator
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<(trait::is_available<Rp>::value), int> = 0,
               enable_if_t<(std::is_pointer<Up>::value), int>     = 0>
-    explicit generic_operator(Up obj, Up rhs, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up obj, Up rhs, Args&&... args)
     {
         check<Up>();
         if(obj && rhs)
@@ -92,40 +92,41 @@ struct generic_operator
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up obj, int, int, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, int, int, Args&&... args)
         -> decltype(Op(*obj, std::forward<Args>(args)...), void())
     {
-        Op(*obj, std::forward<Args>(args)...);
+        Op _tmp(*obj, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up obj, int, long, Args&&...) -> decltype(Op{ *obj }, void())
+    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, int, long, Args&&...)
+        -> decltype(Op{ *obj }, void())
     {
-        Op{ *obj };
+        Op _tmp{ *obj };
     }
 
     template <typename Up, typename... Args>
-    void pointer_sfinae(Up, long, long, Args&&...)
+    TIMEMORY_ALWAYS_INLINE void pointer_sfinae(Up, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up obj, Up rhs, int, int, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, Up rhs, int, int, Args&&... args)
         -> decltype(Op(*obj, *rhs, std::forward<Args>(args)...), void())
     {
         Op(*obj, *rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    auto pointer_sfinae(Up obj, Up rhs, int, long, Args&&...)
+    TIMEMORY_ALWAYS_INLINE auto pointer_sfinae(Up obj, Up rhs, int, long, Args&&...)
         -> decltype(Op(*obj, *rhs), void())
     {
         Op(*obj, *rhs);
     }
 
     template <typename Up, typename... Args>
-    void pointer_sfinae(Up, Up, long, long, Args&&...)
+    TIMEMORY_ALWAYS_INLINE void pointer_sfinae(Up, Up, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -137,7 +138,7 @@ struct generic_operator
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<(trait::is_available<Rp>::value), int> = 0,
               enable_if_t<!(std::is_pointer<Up>::value), int>    = 0>
-    explicit generic_operator(Up& obj, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up& obj, Args&&... args)
     {
         check<Up>();
         sfinae(obj, 0, 0, std::forward<Args>(args)...);
@@ -146,7 +147,7 @@ struct generic_operator
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<(trait::is_available<Rp>::value), int> = 0,
               enable_if_t<!(std::is_pointer<Up>::value), int>    = 0>
-    explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
     {
         check<Up>();
         sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
@@ -155,21 +156,22 @@ struct generic_operator
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(Op(obj, std::forward<Args>(args)...), void())
     {
-        Op(obj, std::forward<Args>(args)...);
+        Op _tmp(obj, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(Op{ obj }, void())
+    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, int, long, Args&&...)
+        -> decltype(Op{ obj }, void())
     {
-        Op{ obj };
+        Op _tmp{ obj };
     }
 
     template <typename Up, typename... Args,
               enable_if_t<(std::is_pointer<Up>::value), int> = 0>
-    void sfinae(Up& obj, long, long, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE void sfinae(Up& obj, long, long, Args&&... args)
     {
         // some operations want a raw pointer, e.g. generic_deleter
         pointer_sfinae(obj, 0, 0, std::forward<Args>(args)...);
@@ -177,27 +179,28 @@ struct generic_operator
 
     template <typename Up, typename... Args,
               enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
-    void sfinae(Up&, long, long, Args&&...)
+    TIMEMORY_ALWAYS_INLINE void sfinae(Up&, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
 
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, Up& rhs, int, int, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, Up& rhs, int, int, Args&&... args)
         -> decltype(Op(obj, rhs, std::forward<Args>(args)...), void())
     {
         Op(obj, rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, Up& rhs, int, long, Args&&...) -> decltype(Op(obj, rhs), void())
+    TIMEMORY_ALWAYS_INLINE auto sfinae(Up& obj, Up& rhs, int, long, Args&&...)
+        -> decltype(Op(obj, rhs), void())
     {
         Op(obj, rhs);
     }
 
     template <typename Up, typename... Args,
               enable_if_t<(std::is_pointer<Up>::value), int> = 0>
-    void sfinae(Up& obj, Up& rhs, long, long, Args&&... args)
+    TIMEMORY_ALWAYS_INLINE void sfinae(Up& obj, Up& rhs, long, long, Args&&... args)
     {
         // some operations want a raw pointer, e.g. generic_deleter
         pointer_sfinae(obj, rhs, 0, 0, std::forward<Args>(args)...);
@@ -205,7 +208,7 @@ struct generic_operator
 
     template <typename Up, typename... Args,
               enable_if_t<!(std::is_pointer<Up>::value), int> = 0>
-    void sfinae(Up&, Up&, long, long, Args&&...)
+    TIMEMORY_ALWAYS_INLINE void sfinae(Up&, Up&, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -217,7 +220,7 @@ struct generic_operator
     // if the type is not available, never do anything
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<!(trait::is_available<Rp>::value), int> = 0>
-    generic_operator(Up&, Args&&...)
+    TIMEMORY_ALWAYS_INLINE generic_operator(Up&, Args&&...)
     {}
 };
 //

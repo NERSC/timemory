@@ -189,7 +189,6 @@ template <typename... Args>
 void
 lightweight_tuple<Types...>::start(Args&&... args)
 {
-    assemble(*this);
     invoke::start(m_data, std::forward<Args>(args)...);
 }
 
@@ -202,7 +201,6 @@ lightweight_tuple<Types...>::stop(Args&&... args)
 {
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
-    derive(*this);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -300,15 +298,6 @@ lightweight_tuple<Types...>::operator+=(this_type& rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
-void
-lightweight_tuple<Types...>::print_storage()
-{
-    apply_v::type_access<operation::print_storage, data_type>();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
 typename lightweight_tuple<Types...>::data_type&
 lightweight_tuple<Types...>::data()
 {
@@ -352,19 +341,6 @@ lightweight_tuple<Types...>::set_scope(scope::config val)
 {
     m_scope = val;
     invoke::set_scope(m_data, m_scope);
-}
-
-//--------------------------------------------------------------------------------------//
-//
-template <typename... Types>
-void
-lightweight_tuple<Types...>::init_storage()
-{
-    static thread_local bool _once = []() {
-        apply_v::type_access<operation::init_storage, data_type>();
-        return true;
-    }();
-    consume_parameters(_once);
 }
 
 //--------------------------------------------------------------------------------------//

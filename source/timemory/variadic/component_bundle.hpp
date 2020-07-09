@@ -86,10 +86,10 @@ public:
     using string_t    = typename bundle_type::string_t;
     using string_hash = typename bundle_type::string_hash;
 
-    template <template <typename> class Op, typename Tuple = impl_type>
+    template <template <typename> class Op, typename Tuple = data_type>
     using operation_t = typename bundle_type::template generic_operation<Op, Tuple>::type;
 
-    template <template <typename> class Op, typename Tuple = impl_type>
+    template <template <typename> class Op, typename Tuple = data_type>
     using custom_operation_t =
         typename bundle_type::template custom_operation<Op, Tuple>::type;
 
@@ -252,6 +252,35 @@ public:
     using bundle_type::laps;
     using bundle_type::rekey;
     using bundle_type::store;
+
+    //----------------------------------------------------------------------------------//
+    /// query the number of (compile-time) fixed components
+    //
+    static constexpr uint64_t fixed_count()
+    {
+        return (size() -
+                mpl::get_tuple_size<
+                    typename get_true_types<std::is_pointer, data_type>::type>::value);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// query the number of (run-time) optional components
+    //
+    static constexpr uint64_t optional_count()
+    {
+        return mpl::get_tuple_size<
+            typename get_true_types<std::is_pointer, data_type>::type>::value;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// number of objects that will be performing measurements
+    //
+    uint64_t count()
+    {
+        uint64_t _count = 0;
+        invoke::invoke<operation::generic_counter>(m_data, std::ref(_count));
+        return _count;
+    }
 
     //----------------------------------------------------------------------------------//
     // construct the objects that have constructors with matching arguments
@@ -486,7 +515,7 @@ public:
     void init(Args&&... _args)
     {
         T& _obj = std::get<index_of<T, data_type>::value>(m_data);
-        operation::construct<T>(_obj, std::forward<Args>(_args)...);
+        operation::construct<T> _tmp(_obj, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

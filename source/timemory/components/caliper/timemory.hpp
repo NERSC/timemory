@@ -286,10 +286,10 @@ public:
         // add CALI_ATTRIBUTES
         pybind11::enum_<cali_attr_properties> _pyattr(
             _pyclass, "Attribute", pybind11::arithmetic(), "Attributes");
-        _pyattr.value("Nested", CALI_ATTR_NESTED, "Add nesting")
-            .value("ThreadScope", CALI_ATTR_SCOPE_THREAD, "Set thread scoping")
-            .value("ProcessScope", CALI_ATTR_SCOPE_PROCESS, "Set process scoping")
-            .value("TaskScope", CALI_ATTR_SCOPE_TASK, "Set task scoping");
+        _pyattr.value("Nested", CALI_ATTR_NESTED)
+            .value("ThreadScope", CALI_ATTR_SCOPE_THREAD)
+            .value("ProcessScope", CALI_ATTR_SCOPE_PROCESS)
+            .value("TaskScope", CALI_ATTR_SCOPE_TASK);
         // no need to add bindings to default start/stop, those are already added
     }
 #endif

@@ -270,6 +270,9 @@ add_subdirectory(timemory)
 message(STATUS "Adding source...")
 add_subdirectory(source)
 
+message(STATUS "Adding external")
+add_subdirectory(external)
+
 # Install the export set for use with the install-tree
 message(STATUS "Exporting library dependencies...")
 install(EXPORT ${PROJECT_NAME}-library-depends
@@ -282,7 +285,8 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 
 if(TIMEMORY_BUILD_EXAMPLES)
     message(STATUS "Adding examples...")
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory build examples directory" FORCE)
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING
+        "timemory build examples directory" FORCE)
     add_subdirectory(examples)
 endif()
 

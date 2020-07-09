@@ -7,10 +7,15 @@
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME tools)
 
-# JUMP AND STUBS LIBRARIES
+#----------------------------------------------------------------------------------------#
+# Build and install timemory-jump library
+#
 message(STATUS "Adding source/tools/timemory-jump...")
 add_subdirectory(timemory-jump)
 
+#----------------------------------------------------------------------------------------#
+# Build and install timemory-stubs library
+#
 message(STATUS "Adding source/tools/timemory-stubs...")
 add_subdirectory(timemory-stubs)
 

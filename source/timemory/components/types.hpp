@@ -56,10 +56,6 @@ namespace component
 template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
-// generic static polymorphic base class
-template <typename Tp, typename ValueType = int64_t>
-struct base;
-
 // holder that provides nothing
 template <typename... Types>
 struct placeholder;
@@ -93,6 +89,7 @@ struct no_store;
 //======================================================================================//
 
 #include "timemory/components/allinea/types.hpp"
+#include "timemory/components/base/types.hpp"
 #include "timemory/components/caliper/types.hpp"
 #include "timemory/components/craypat/types.hpp"
 #include "timemory/components/cuda/types.hpp"
@@ -179,10 +176,24 @@ namespace std
 //
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::component_tuple<Types...>>
+tuple_size<tim::lightweight_tuple<Types...>>
 {
 private:
-    using type = ::tim::stl_tuple_t<Types...>;
+    using type = tim::stl_tuple_t<Types...>;
+
+public:
+    static constexpr size_t value = tuple_size<type>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+TSTAG(struct)
+tuple_size<tim::component_bundle<Tag, Types...>>
+{
+private:
+    // component_bundle does not apply concat
+    using type = tim::convert_t<tim::available_t<tuple<Types...>>, tuple<>>;
 
 public:
     static constexpr size_t value = tuple_size<type>::value;
@@ -192,10 +203,10 @@ public:
 //
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::component_list<Types...>>
+tuple_size<tim::component_tuple<Types...>>
 {
 private:
-    using type = ::tim::stl_tuple_t<Types...>;
+    using type = tim::stl_tuple_t<Types...>;
 
 public:
     static constexpr size_t value = tuple_size<type>::value;
@@ -205,10 +216,24 @@ public:
 //
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::auto_tuple<Types...>>
+tuple_size<tim::component_list<Types...>>
 {
 private:
-    using type = ::tim::stl_tuple_t<Types...>;
+    using type = tim::stl_tuple_t<Types...>;
+
+public:
+    static constexpr size_t value = tuple_size<type>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename... Types>
+TSTAG(struct)
+tuple_size<tim::auto_bundle<Tag, Types...>>
+{
+private:
+    // auto_bundle does not apply concat
+    using type = tim::convert_t<tim::available_t<tuple<Types...>>, tuple<>>;
 
 public:
     static constexpr size_t value = tuple_size<type>::value;
@@ -218,10 +243,23 @@ public:
 //
 template <typename... Types>
 TSTAG(struct)
-tuple_size<::tim::auto_list<Types...>>
+tuple_size<tim::auto_tuple<Types...>>
 {
 private:
-    using type = ::tim::stl_tuple_t<Types...>;
+    using type = tim::stl_tuple_t<Types...>;
+
+public:
+    static constexpr size_t value = tuple_size<type>::value;
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+TSTAG(struct)
+tuple_size<tim::auto_list<Types...>>
+{
+private:
+    using type = tim::stl_tuple_t<Types...>;
 
 public:
     static constexpr size_t value = tuple_size<type>::value;
@@ -231,7 +269,7 @@ public:
 //
 template <typename Tuple, typename List>
 TSTAG(struct)
-tuple_size<::tim::component_hybrid<Tuple, List>>
+tuple_size<tim::component_hybrid<Tuple, List>>
 {
 public:
     static constexpr auto value = tuple_size<Tuple>::value + tuple_size<List>::value;
@@ -241,7 +279,7 @@ public:
 //
 template <typename Tuple, typename List>
 TSTAG(struct)
-tuple_size<::tim::auto_hybrid<Tuple, List>>
+tuple_size<tim::auto_hybrid<Tuple, List>>
 {
 public:
     using value_type            = size_t;

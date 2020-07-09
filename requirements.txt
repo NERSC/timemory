@@ -1,5 +1,2 @@
-scikit-build
-numpy
-matplotlib
-pillow
-six
+-r .requirements/runtime.txt
+-r .requirements/build.txt
